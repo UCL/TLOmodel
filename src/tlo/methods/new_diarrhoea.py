@@ -481,14 +481,9 @@ class NewDiarrhoea(Module):
         # Register this disease module with the health system
         # self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        ''' # death event
-        death_all_diarrhoea = DeathDiarrhoeaEvent(self)
-        sim.schedule_event(death_all_diarrhoea, sim.date)
-
         # add an event to log to screen
-        sim.schedule_event(AcuteDiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=1))
 
-       '''
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -1149,14 +1144,19 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Schedule recovery for acute diarrhoea episode
         for person_id in acute7_to_recover_idx:
+            random_date = rng.randint(low=3, high=6)
+            random_days = pd.to_timedelta(random_date, unit='d')
             self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=person_id),
-                                    df.at[person_id, 'date_of_onset_diarrhoea'] +
-                                    DateOffset(days=int(rng.random_integers(3, 6))))
+                                    df.at[person_id, 'date_of_onset_diarrhoea'] + random_days)
+            df.at[person_id, 'gi_recovered_date'] = df.at[person_id, 'date_of_onset_diarrhoea'] + random_days
+
         # Schedule recovery for prolonged diarrhoea episode
         for person_id in prolonged_to_recover_idx:
+            random_date = rng.randint(low=7, high=13)
+            random_days = pd.to_timedelta(random_date, unit='d')
             self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=person_id),
-                                    df.at[person_id, 'date_of_onset_diarrhoea'] +
-                                    DateOffset(days=int(rng.random_integers(7, 13))))
+                                    df.at[person_id, 'date_of_onset_diarrhoea'] + random_days)
+            df.at[person_id, 'gi_recovered_date'] = df.at[person_id, 'date_of_onset_diarrhoea'] + random_days
 
         # ---------------------------------------------------------------------------------------
         # # # # # # NEXT ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
@@ -1253,25 +1253,29 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             pd.Series(self.sim.rng.random_sample(size=len(eff_prob_death_diarr)), index=eff_prob_death_diarr.index)
         death_from_diarr = eff_prob_death_diarr > random_draw_death
         death_from_diarr_idx = eff_prob_death_diarr.index[death_from_diarr]
-        for child in death_from_diarr_idx:
-            logger.debug(
-                'This is DiarrhoeaEvent, scheduling diarrhoea death for person %d',
-                child)
-            random_date = rng.randint(low=7, high=30)
+        for child in death_from_diarr_idx & df.index[df.gi_diarrhoea_type == 'acute']:
+            random_date = rng.randint(low=4, high=6)
             random_days = pd.to_timedelta(random_date, unit='d')
             death_event = DeathDiarrhoeaEvent(self.module, person_id=child,
                                               cause='diarrhoea')  # make that death event
-            self.sim.schedule_event(death_event, self.sim.date + random_days)  # schedule the death
+            self.sim.schedule_event(death_event, df.at[child, 'date_of_onset_diarrhoea'] + random_days)  # schedule the death for acute cases
+
+        for child in death_from_diarr_idx & df.index[df.gi_diarrhoea_type == 'prolonged']:
+            random_date1 = rng.randint(low=7, high=13)
+            random_days1 = pd.to_timedelta(random_date1, unit='d')
+            death_event = DeathDiarrhoeaEvent(self.module, person_id=child,
+                                              cause='diarrhoea')  # make that death event
+            self.sim.schedule_event(death_event, df.at[child, 'date_of_onset_diarrhoea'] + random_days1)  # schedule the death for prolonged cases
+
+        for child in death_from_diarr_idx & df.index[df.gi_diarrhoea_type == 'persistent']:
+            random_date2 = rng.randint(low=14, high=30)
+            random_days2 = pd.to_timedelta(random_date2, unit='d')
+            death_event = DeathDiarrhoeaEvent(self.module, person_id=child,
+                                              cause='diarrhoea')  # make that death event
+            self.sim.schedule_event(death_event, df.at[child, 'date_of_onset_diarrhoea'] + random_days2)  # schedule the death for persistent cases
 
         recovery_from_diarr = eff_prob_death_diarr <= random_draw_death
         recovery_from_diarr_idx = eff_prob_death_diarr.index[recovery_from_diarr]
-        for child in recovery_from_diarr_idx:
-            logger.debug(
-                'This is DiarrhoeaEvent, scheduling recovery from diarrhoea for person %d',
-                child)
-            random_date1 = rng.randint(low=0, high=14)
-            random_days1 = pd.to_timedelta(random_date1, unit='d')
-            df.at[recovery_from_diarr_idx, 'gi_recovered_date'] = self.sim.date + random_days1
 
 
 class SelfRecoverEvent(Event, IndividualScopeEventMixin):
@@ -1281,7 +1285,7 @@ class SelfRecoverEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
         # set everything back to default
-        df.at[person_id, 'gi_recovered_date'] = self.sim.date
+        df.at[person_id, 'gi_recovered_date'] = pd.NaT
         df.at[person_id, 'gi_diarrhoea_status'] = False
         df.at[person_id, 'gi_diarrhoea_acute_type'] = np.nan
         df.at[person_id, 'gi_diarrhoea_type'] = np.nan
@@ -1310,15 +1314,15 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
             logger.info('This is DeathDiarrhoeaEvent determining if person %d on the date %s will die '
                         'from their disease', person_id, self.sim.date)
             '''death_count = sum(person_id)
-            # Log the diarrhoea death information
-            logger.info('%s|death_diarrhoea|%s', self.sim.date,
-                        {'death': sum(death_count)
-                         })'''
+                  # Log the diarrhoea death information
+                  logger.info('%s|death_diarrhoea|%s', self.sim.date,
+                  {'death': sum(death_count)
+                                           })'''
 
 
 class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        self.repeat = 12
+        self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -1327,6 +1331,7 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # -----------------------------------------------------------------------------------------------------
+        '''
         AWD_cases = \
             df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
                    (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea') & (df.gi_diarrhoea_type != 'persistent')]
@@ -1344,7 +1349,8 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                      'AWD': len(AWD_cases),
                      'dysentery': len(dysentery_cases),
                      'persistent': len(persistent_diarr_cases)
-                    })
+                     })
+                     '''
 
         # log information on attributable pathogens
         pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
@@ -1362,9 +1368,10 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                      'astrovirus': pathogen_count['astrovirus'],
                      'tEPEC': pathogen_count['tEPEC'],
                      })
+
         # incidence rate by pathogen
         logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
-                    {'total': (sum(pathogen_count) * 4 * 100) / len(under5),
+                    {'total': (sum(pathogen_count) * 4 * 100) / under5.size,
                      'rotavirus': (pathogen_count['rotavirus'] * 4 * 100) / len(under5),
                      'shigella': (pathogen_count['shigella'] * 4 * 100) / len(under5),
                      'adenovirus': (pathogen_count['adenovirus'] * 4 * 100) / len(under5),
@@ -1376,6 +1383,7 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                      'astrovirus': (pathogen_count['astrovirus'] * 4 * 100) / len(under5),
                      'tEPEC': (pathogen_count['tEPEC'] * 4 * 100) / len(under5),
                      })
+        '''
         # incidence rate per age group by pathogen
         pathogen_0to11mo = df[df.is_alive & (df.age_years < 1)].groupby('gi_diarrhoea_pathogen').size()
         pathogen_12to23mo = df[df.is_alive & (df.age_years >= 1) & (df.age_years < 2)].groupby(
@@ -1383,9 +1391,9 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
         pathogen_24to59mo = df[df.is_alive & (df.age_years >= 2) & (df.age_years < 5)].groupby(
             'gi_diarrhoea_pathogen').size()
         logger.info('%s|diarr_incidence_age|%s', self.sim.date,
-                    {'total': [(sum(pathogen_0to11mo) * 4 * 100) / len(under5),
-                               (sum(pathogen_12to23mo) * 4 * 100) / len(under5),
-                               (sum(pathogen_24to59mo) * 4 * 100) / len(under5)],
+                    {'total': [(sum(pathogen_0to11mo) * 4 * 100) / under5.size,
+                               (sum(pathogen_12to23mo) * 4 * 100) / under5.size,
+                               (sum(pathogen_24to59mo) * 4 * 100) / under5.size],
                      'rotavirus': [((pathogen_0to11mo['rotavirus'] * 4 * 100) / len(under5)),
                                    ((pathogen_12to23mo['rotavirus'] * 4 * 100) / len(under5)),
                                    ((pathogen_24to59mo['rotavirus'] * 4 * 100) / len(under5))],
@@ -1417,16 +1425,19 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                                (pathogen_12to23mo['tEPEC'] * 4 * 100) / len(under5),
                                (pathogen_24to59mo['tEPEC'] * 4 * 100) / len(under5)],
                      })
+                     '''
 
-        # Log the acute diarrhoea information
+        '''# Log the acute diarrhoea information
         diarrhoea_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
         logger.info('%s|acute_diarrhoea|%s', self.sim.date,
                     {'total': sum(diarrhoea_count),
-        #             'acute_dysentery': diarrhoea_count['dysentery'],
-        #             'AWD': diarrhoea_count['acute watery diarrhoea'],
+                     'acute_dysentery': diarrhoea_count['dysentery'],
+                     'AWD': diarrhoea_count['acute watery diarrhoea'],
                      })
+                   
         any_dehydration = df[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
-                                 (df.gi_dehydration_status != 'no dehydration')]
+                             (df.gi_dehydration_status != 'no dehydration')]
         logger.info('%s|dehydration_levels|%s', self.sim.date,
                     {'total': len(any_dehydration),
                      })
+        '''
