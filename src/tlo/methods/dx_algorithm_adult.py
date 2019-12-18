@@ -9,12 +9,13 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
 
-class DxAlgorithmChild(Module):
+class DxAlgorithmAdult(Module):
     """
     This is an example/placeholder to show how a diagnostic algorithm can be used.
     The module contains parameters and a function 'diagnose(...)' which is called by a HSI (usually a Generic HSI)
@@ -63,7 +64,6 @@ class DxAlgorithmChild(Module):
         symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
         # Make request for some malaria rdt consumables
-        # TODO: malaria RDT usually requires appt type 'LabPOC'
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # this package contains treatment too
         pkg_code1 = pd.unique(
@@ -92,7 +92,7 @@ class DxAlgorithmChild(Module):
                 diagnosis_str = 'severe_malaria'
 
                 logger.debug(
-                    "DxAlgorithmChild diagnosing severe malaria for child %d on date %s",
+                    "DxAlgorithmAdult diagnosing severe malaria for person %d on date %s",
                     person_id, self.sim.date)
 
             # clinical malaria
@@ -106,7 +106,7 @@ class DxAlgorithmChild(Module):
                 if diagnosed:
                     diagnosis_str = 'clinical_malaria'
 
-                    logger.debug("DxAlgorithmChild diagnosing clinical malaria for child %d on date %s",
+                    logger.debug("DxAlgorithmAdult diagnosing clinical malaria for person %d on date %s",
                                  person_id)
             else:
                 diagnosis_str = 'negative_malaria_test'

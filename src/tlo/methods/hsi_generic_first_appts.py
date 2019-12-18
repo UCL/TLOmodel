@@ -6,6 +6,8 @@ the health system following the onset of acute generic symptoms.
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.healthsystem import HSI_Event
 from tlo.population import logger
+from tlo import DateOffset, Module, Parameter, Property, Types
+
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
@@ -48,35 +50,135 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
+        logger.debug('HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
-        diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
-
-        malaria_dx_outcome = self.sim.modules['Malaira'].dx_using_rdt(person_id)
-        # need outcomes for true, false or not avail.
-        # write rdt function here which tests and returns the diagnosis
+        df = self.sim.population.props
 
         # make sure query consumables has the generic hsi as the module requesting
 
+        # ----------------------------------- CHILD <5 -----------------------------------
 
-
-        # Work out what to do with this person....
-        if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
+        # diagnostic algorithm for child <5 yrs
+        if df.at[person_id, 'age_years'] < 5.0:
             # It's a child:
-            logger.debug('Run the ICMI algorithm for this child')
+            logger.debug('Run the ICMI algorithm for this child [dx_algorithm_child]')
 
             # Get the diagnosis from the algorithm
             diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
-            # Do something based on this diagnosis...
-            if diagnosis == 'measles':
-                logger.info('Start treatment for measles')
-            else:
-                logger.info('No treatment. HSI ends.')
+            # Treat / refer based on diagnosis
+            if diagnosis == 'severe_malaria':
 
-        else:
-            # It's an adult
-            logger.debug('To fill in ... what to with an adult')
+                logger.debug(
+                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
+                    person_id, (self.sim.date + DateOffset(days=1)))
+
+                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_compl_child(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+
+            elif diagnosis == 'clinical_malaria':
+
+                logger.debug(
+                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_0_5 for person %d on date %s",
+                    person_id, (self.sim.date + DateOffset(days=1)))
+
+                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_0_5(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+
+            else:
+                logger.debug(
+                    'HSI_GenericFirstApptAtFacilityLevel1: negative malaria test for person %d so doing nothing',
+                    person_id)
+
+        # ----------------------------------- CHILD 5-15 -----------------------------------
+
+        # diagnostic algorithm for child 5-15 yrs
+        if df.at[person_id, 'age_years'].between(5, 15):
+            # It's a child:
+            logger.debug('Run the ICMI algorithm for this child [dx_algorithm_child]')
+
+            # Get the diagnosis from the algorithm
+            diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id,
+                                                                             hsi_event=self)
+
+            # Treat / refer based on diagnosis
+            if diagnosis == 'severe_malaria':
+
+                logger.debug(
+                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
+                    person_id, (self.sim.date + DateOffset(days=1)))
+
+                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_compl_child(self.module,
+                                                                                      person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+
+            elif diagnosis == 'clinical_malaria':
+
+                logger.debug(
+                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
+                    person_id, (self.sim.date + DateOffset(days=1)))
+
+                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_5_15(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+
+            else:
+                logger.debug(
+                    'HSI_GenericFirstApptAtFacilityLevel1: negative malaria test for person %d so doing nothing',
+                    person_id)
+
+        # ----------------------------------- ADULT -----------------------------------
+
+        # diagnostic algorithm for adult
+        if df.at[person_id, 'age_years'] >= 15:
+            # It's an adult:
+            logger.debug('Run the diagnostic algorithm for this adult [dx_algorithm_adult]')
+
+            # Get the diagnosis from the algorithm
+            diagnosis = self.module.sim.modules['DxAlgorithmAdult'].diagnose(person_id=person_id,
+                                                                             hsi_event=self)
+
+            # Treat / refer based on diagnosis
+            if diagnosis == 'severe_malaria':
+
+                logger.debug(
+                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
+                    person_id, (self.sim.date + DateOffset(days=1)))
+
+                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_compl_adult(self.module,
+                                                                                      person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+
+            elif diagnosis == 'clinical_malaria':
+
+                logger.debug(
+                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
+                    person_id, (self.sim.date + DateOffset(days=1)))
+
+                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_adult(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+
+            else:
+                logger.debug(
+                    'HSI_GenericFirstApptAtFacilityLevel1: negative malaria test for person %d so doing nothing',
+                    person_id)
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
