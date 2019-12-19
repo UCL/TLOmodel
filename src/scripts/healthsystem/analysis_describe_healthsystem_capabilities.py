@@ -14,6 +14,8 @@ resourcefilepath = Path("./resources")
 
 # %%
 
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+
 
 data = pd.read_csv(
     Path(resourcefilepath) / "ResourceFile_Daily_Capabilities.csv"
@@ -45,7 +47,7 @@ plt.xlabel('District')
 ax.legend(ncol=3, bbox_to_anchor=(0, 1),
           loc='lower left', fontsize='small')
 
-plt.savefig('health_officer_minutes_per_district.pdf', bbox_inches='tight')
+plt.savefig(outputpath / 'health_officer_minutes_per_district.pdf', bbox_inches='tight')
 plt.show()
 
 # %%

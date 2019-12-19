@@ -25,7 +25,7 @@ from tlo.methods import contraception, demography
 
 from tlo.util import create_age_range_lookup
 
-outputpath = Path("./outputs")  # folder for convenience of storing outputs - content does not need to be on git
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
