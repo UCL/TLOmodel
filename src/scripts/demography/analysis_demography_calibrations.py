@@ -3,8 +3,8 @@ Plot to demonstrate correspondence between model and data output wrt births, pop
 In the combination of both the codes from Tim C in Contraception and Tim H in Demography
 """
 
+# %% Import Statements and initial declarations
 import datetime
-# %% Import Statements
 import logging
 import os
 from pathlib import Path
@@ -23,7 +23,8 @@ from tlo.analysis.utils import (
 )
 from tlo.methods import contraception, demography
 
-# Where will output go - by default, wherever this script is run
+from tlo.util import create_age_range_lookup
+
 outputpath = Path("./outputs")  # folder for convenience of storing outputs - content does not need to be on git
 
 # date-stamp to label log files and any other outputs
@@ -34,7 +35,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 resourcefilepath = Path("./resources")
 
-logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 # %% Run the Simulation
 
@@ -98,7 +99,7 @@ plt.xlabel("Year")
 plt.ylabel("Population Size")
 plt.gca().set_xlim(2010, 2050)
 plt.legend(["Model", "WPP", "Census 2018"])
-plt.savefig('./output/' + "Pop_Over_Time" + datestamp + ".pdf")
+plt.savefig(outputpath / ("Pop_Over_Time" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # Population Size in 2018
@@ -117,7 +118,7 @@ popsize.columns = ['Females', 'Males']
 popsize.transpose().plot(kind='bar')
 plt.title('Population Size (2018)')
 plt.xticks(rotation=0)
-plt.savefig('./output/' + "Pop_Size_2018" + datestamp + ".pdf")
+plt.savefig(outputpath / ("Pop_Size_2018" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # %% Population Pyramid
@@ -177,7 +178,7 @@ for year in [2018, 2030]:
     pop_f.plot.bar(ax=axes[1], align="center")
     axes[1].set_xlabel('Age Group')
     axes[1].set_title('Females: ' + str(year))
-    plt.savefig('./output/' + "Pop_Size_" + str(year) + datestamp + ".pdf")
+    plt.savefig(outputpath / ("Pop_Size_" + str(year) + datestamp + ".pdf"), format='pdf')
     plt.show()
 
 # %% Births: Number over time
@@ -217,7 +218,7 @@ ax.set_title('Number of Births Per Calendar Period')
 ax.legend(loc='upper left')
 ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
-plt.savefig('./output/' + "Births_Over_Time_" + datestamp + ".pdf")
+plt.savefig(outputpath / ("Births_Over_Time_" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 
@@ -229,7 +230,7 @@ deaths_model = scaled_output['tlo.methods.demography']['death_groupby_scaled'].r
 # Aggregate the model output into five year periods for age and time:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 deaths_model["Period"] = deaths_model["year"].map(calendar_period_lookup)
-(__tmp__, age_grp_lookup) = make_age_range_lookup()
+(__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
 deaths_model["Age_Grp"] = deaths_model["age"].map(age_grp_lookup)
 
 deaths_model = deaths_model.rename(columns={'count': 'Count', 'sex': 'Sex'})
@@ -264,7 +265,7 @@ ax.set_title('Number of Deaths Per Calendar Period')
 ax.legend(loc='upper left')
 ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
-plt.savefig('./output/' + "Deaths_Over_Time_" + datestamp + ".pdf")
+plt.savefig(outputpath / ("Deaths_Over_Time_" + datestamp + ".pdf"), format='pdf')
 plt.show()
 # NB. Its' expected that WPP range is very narrow (to narrow to see)
 
@@ -284,5 +285,5 @@ ax.set_title('Number of Deaths Per Calendar Period: ' + str(period))
 ax.legend(loc='upper left')
 ax.set_xlabel('Age Group')
 ax.set_ylabel('Number per period')
-plt.savefig('./output/' + "Deaths_By_Age_" + datestamp + ".pdf")
+plt.savefig(outputpath / ("Deaths_By_Age_" + datestamp + ".pdf"), format='pdf')
 plt.show()
