@@ -65,6 +65,13 @@ fh.flush()
 # %% read the results
 output = parse_log_file(logfile)
 
+
+# TODO (what analysis do we need):
+# BIRTH- Bar chart, yearly % of births pre, term, post (as a % of all births)
+# PRETERM BIRTH - incidence (yearly), % of all births?, disaggregated by early, late preterm
+# POST TERM - incidence (yearly)
+
+
 # %% Plot Total Maternal Deaths Over time:
 
 # https://stackoverflow.com/questions/38792122/how-to-group-and-count-rows-by-month-and-year-using-pandas
