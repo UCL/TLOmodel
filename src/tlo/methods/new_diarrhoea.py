@@ -491,8 +491,19 @@ class NewDiarrhoea(Module):
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
+        df = self.sim.population.props
 
-        pass
+        df.at[child_id, 'gi_recovered_date'] = pd.NaT
+        df.at[child_id, 'gi_diarrhoea_status'] = False
+        df.at[child_id, 'gi_diarrhoea_acute_type'] = np.nan
+        df.at[child_id, 'gi_diarrhoea_type'] = np.nan
+        df.at[child_id, 'gi_persistent_diarrhoea'] = np.nan
+        df.at[child_id, 'gi_dehydration_status'] = 'no dehydration'
+        df.at[child_id, 'date_of_onset_diarrhoea'] = pd.NaT
+        df.at[child_id, 'gi_recovered_date'] = pd.NaT
+        df.at[child_id, 'gi_diarrhoea_death_date'] = pd.NaT
+        df.at[child_id, 'gi_diarrhoea_death'] = False
+        df.at[child_id, 'gi_diarrhoea_pathogen'] = np.nan
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -1322,7 +1333,7 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
 
 class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        self.repeat = 3
+        self.repeat = 6
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -1331,7 +1342,6 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # -----------------------------------------------------------------------------------------------------
-        '''
         AWD_cases = \
             df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
                    (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea') & (df.gi_diarrhoea_type != 'persistent')]
@@ -1350,25 +1360,40 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                      'dysentery': len(dysentery_cases),
                      'persistent': len(persistent_diarr_cases)
                      })
-                     '''
 
         # log information on attributable pathogens
         pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
         under5 = df[df.is_alive & df.age_years.between(0, 5)]
-        logger.info('%s|diarrhoea_pathogens|%s', self.sim.date,
-                    {'total': sum(pathogen_count),
-                     'rotavirus': pathogen_count['rotavirus'],
-                     'shigella': pathogen_count['shigella'],
-                     'adenovirus': pathogen_count['adenovirus'],
-                     'cryptosporidium': pathogen_count['cryptosporidium'],
-                     'campylobacter': pathogen_count['campylobacter'],
-                     'ETEC': pathogen_count['ST-ETEC'],
-                     'sapovirus': pathogen_count['sapovirus'],
-                     'norovirus': pathogen_count['norovirus'],
-                     'astrovirus': pathogen_count['astrovirus'],
-                     'tEPEC': pathogen_count['tEPEC'],
+        all_patho_counts = sum(pathogen_count)
+        length_under5 = len(under5)
+        # total_inc = all_patho_counts * 4 * 100 / length_under5
+        rota_inc = (pathogen_count['rotavirus'] * 4 * 100) / length_under5
+        shigella_inc = (pathogen_count['shigella'] * 4 * 100) / length_under5
+        adeno_inc = (pathogen_count['adenovirus'] * 4 * 100) / length_under5
+        crypto_inc = (pathogen_count['cryptosporidium'] * 4 * 100) / length_under5
+        campylo_inc = (pathogen_count['campylobacter'] * 4 * 100) / length_under5
+        ETEC_inc = (pathogen_count['ST-ETEC'] * 4 * 100) / length_under5
+        sapo_inc = (pathogen_count['sapovirus'] * 4 * 100) / length_under5
+        noro_inc = (pathogen_count['norovirus'] * 4 * 100) / length_under5
+        astro_inc = (pathogen_count['astrovirus'] * 4 * 100) / length_under5
+        tEPEC_inc = (pathogen_count['tEPEC'] * 4 * 100) / length_under5
+
+        # incidence rate by pathogen
+        logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
+                    {#'total': total_inc,
+                     'rotavirus': rota_inc,
+                     'shigella': shigella_inc,
+                     'adenovirus': adeno_inc,
+                     'cryptosporidium': crypto_inc,
+                     'campylobacter': campylo_inc,
+                     'ETEC': ETEC_inc,
+                     'sapovirus': sapo_inc,
+                     'norovirus': noro_inc,
+                     'astrovirus': astro_inc,
+                     'tEPEC': tEPEC_inc
                      })
 
+        '''
         # incidence rate by pathogen
         logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
                     {'total': (sum(pathogen_count) * 4 * 100) / under5.size,
@@ -1383,6 +1408,7 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                      'astrovirus': (pathogen_count['astrovirus'] * 4 * 100) / len(under5),
                      'tEPEC': (pathogen_count['tEPEC'] * 4 * 100) / len(under5),
                      })
+                     '''
         '''
         # incidence rate per age group by pathogen
         pathogen_0to11mo = df[df.is_alive & (df.age_years < 1)].groupby('gi_diarrhoea_pathogen').size()

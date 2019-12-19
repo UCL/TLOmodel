@@ -25,7 +25,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 # add file handler for the purpose of logging
@@ -56,8 +56,9 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
-'''
+
 # -----------------------------------------------------------------------------------
+'''
 # Load Model Results on Acute diarrhoea type
 diarrhoea_df = output['tlo.methods.new_diarrhoea']['acute_diarrhoea']
 Model_Years = pd.to_datetime(diarrhoea_df.date)
@@ -79,53 +80,14 @@ plt.savefig(outputpath + 'Diarrhoea incidence' + datestamp + '.pdf')
 
 plt.show()
 '''
+
 # -----------------------------------------------------------------------------------
 # %% Plot Incidence of Diarrhoea Over time:
 years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
-# Load Model Results on attributable pathogens
-diarrhoea_patho_df = output['tlo.methods.new_diarrhoea']['diarrhoea_pathogens']
-Model_Years = pd.to_datetime(diarrhoea_patho_df.date)
-Model_rotavirus = diarrhoea_patho_df.rotavirus
-Model_shigella = diarrhoea_patho_df.shigella
-Model_adenovirus = diarrhoea_patho_df.adenovirus
-Model_crypto = diarrhoea_patho_df.cryptosporidium
-Model_campylo = diarrhoea_patho_df.campylobacter
-Model_ETEC = diarrhoea_patho_df.ETEC
-Model_sapovirus = diarrhoea_patho_df.sapovirus
-Model_norovirus = diarrhoea_patho_df.norovirus
-Model_astrovirus = diarrhoea_patho_df.astrovirus
-Model_EPEC = diarrhoea_patho_df.tEPEC
-
-ig1, ax = plt.subplots()
-ax.plot(np.asarray(Model_Years), Model_rotavirus)
-ax.plot(np.asarray(Model_Years), Model_shigella)
-ax.plot(np.asarray(Model_Years), Model_adenovirus)
-ax.plot(np.asarray(Model_Years), Model_crypto)
-ax.plot(np.asarray(Model_Years), Model_campylo)
-ax.plot(np.asarray(Model_Years), Model_ETEC)
-ax.plot(np.asarray(Model_Years), Model_sapovirus)
-ax.plot(np.asarray(Model_Years), Model_norovirus)
-ax.plot(np.asarray(Model_Years), Model_astrovirus)
-ax.plot(np.asarray(Model_Years), Model_EPEC)
-
-# format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
-
-plt.title("Diarrhoea attributable pathogens")
-plt.xlabel("Year")
-plt.ylabel("Number of pathogen-attributed diarrhoea episodes")
-plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC', 'sapovirus', 'norovirus',
-            'astrovirus', 'tEPEC'])
-plt.savefig(outputpath + 'Diarrhoea attributable pathogens' + datestamp + '.pdf')
-
-plt.show()
-
 # -----------------------------------------------------------------------------------
-
 # Load Model Results on attributable pathogens
 incidence_by_patho_df = output['tlo.methods.new_diarrhoea']['diarr_incidence_by_patho']
 Model_Years = pd.to_datetime(incidence_by_patho_df.date)
@@ -165,6 +127,30 @@ plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campyloba
 plt.savefig(outputpath + 'Diarrhoea incidence by pathogens' + datestamp + '.pdf')
 
 plt.show()
+
+# -----------------------------------------------------------------------------
+# Load Model Results on clinical types of diarrhoea
+clinical_type_df = output['tlo.methods.new_diarrhoea']['clinical_diarrhoea_type']
+Model_Years = pd.to_datetime(clinical_type_df.date)
+Model_total = clinical_type_df.total
+Model_AWD = clinical_type_df.AWD
+Model_dysentery = clinical_type_df.dysentery
+Model_persistent = clinical_type_df.persistent
+
+fig2, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_total)
+ax.plot(np.asarray(Model_Years), Model_AWD)
+ax.plot(np.asarray(Model_Years), Model_dysentery)
+ax.plot(np.asarray(Model_Years), Model_persistent)
+
+plt.title("Total clinical diarrhoea")
+plt.xlabel("Year")
+plt.ylabel("Number of diarrhoea episodes")
+plt.legend(['total diarrhoea', 'acute watery diarrhoea', 'dysentery', 'persistent diarrhoea'])
+plt.savefig(outputpath + '3 clinical diarrhoea types' + datestamp + '.pdf')
+
+plt.show()
+
 '''
 # -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
@@ -208,30 +194,6 @@ plt.savefig(outputpath + 'Diarrhoea incidence by age group' + datestamp + '.pdf'
 plt.show()
 
 # -----------------------------------------------------------------------------------
-
-
-# Load Model Results on clinical types of diarrhoea
-clinical_type_df = output['tlo.methods.new_diarrhoea']['clinical_diarrhoea_type']
-Model_Years = pd.to_datetime(clinical_type_df.date)
-Model_total = clinical_type_df.total
-Model_AWD = clinical_type_df.AWD
-Model_dysentery = clinical_type_df.dysentery
-Model_persistent = clinical_type_df.persistent
-# diarrhoea_by_year = diarrhoea_df.groupby(['year'])['person_id'].size()
-
-fig2, ax = plt.subplots()
-ax.plot(np.asarray(Model_Years), Model_total)
-ax.plot(np.asarray(Model_Years), Model_AWD)
-ax.plot(np.asarray(Model_Years), Model_dysentery)
-ax.plot(np.asarray(Model_Years), Model_persistent)
-
-plt.title("Total clinical diarrhoea")
-plt.xlabel("Year")
-plt.ylabel("Number of diarrhoea episodes")
-plt.legend(['total diarrhoea', 'acute watery diarrhoea', 'dysentery', 'persistent diarrhoea'])
-plt.savefig(outputpath + '3 clinical diarrhoea types' + datestamp + '.pdf')
-
-plt.show()
 
 # -----------------------------------------------------------------------------------
 # Load Model Results on Dehydration
