@@ -9,7 +9,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, depression, enhanced_lifestyle, healthburden, healthsystem
+from tlo.methods import demography, depression, enhanced_lifestyle, healthburden, healthsystem, contraception
 
 # Where will output go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -42,9 +42,8 @@ logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       ignore_appt_constraints=True,
-                                       ignore_cons_constraints=True))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(depression.Depression(resourcefilepath=resourcefilepath))

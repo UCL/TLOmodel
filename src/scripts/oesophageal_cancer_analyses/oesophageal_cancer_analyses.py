@@ -5,7 +5,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthburden, healthsystem, lifestyle, oesophageal_cancer
+from tlo.methods import demography, healthburden, healthsystem, enhanced_lifestyle, oesophageal_cancer, contraception
 
 # import matplotlib.pyplot as plt
 # import numpy as np
@@ -13,13 +13,13 @@ from tlo.methods import demography, healthburden, healthsystem, lifestyle, oesop
 
 
 # Where will output go
-outputpath = './src/scripts/oesophageal_cancer_analyses/'
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -43,11 +43,10 @@ sim = Simulation(start_date=start_date)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-             ignore_appt_constraints=True,
-             ignore_cons_constraints=True))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
 
 # Run the simulation and flush the logger
