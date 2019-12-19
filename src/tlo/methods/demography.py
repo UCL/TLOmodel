@@ -159,6 +159,10 @@ class Demography(Module):
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(days=0))
 
+        # Check that the simulation does not run too long
+        if self.sim.end_date.year >= 2100:
+            raise Exception('Year is after 2100: Demographic data do not extend that far.')
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
