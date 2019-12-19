@@ -6,7 +6,6 @@ population structure' worksheet within to initialise the age & sex distribution 
 
 import logging
 import math
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +13,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -22,42 +22,7 @@ logger.setLevel(logging.INFO)
 MIN_AGE_FOR_RANGE = 0
 MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
-
 MAX_AGE = 120
-
-
-def make_age_range_lookup():
-    """Returns a dictionary mapping age (in years) to age range
-    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
-    """
-
-    def chunks(items, n):
-        """Takes a list and divides it into parts of size n"""
-        for index in range(0, len(items), n):
-            yield items[index:index + n]
-
-    # split all the ages from min to limit (100 years) into 5 year ranges
-    parts = chunks(range(MIN_AGE_FOR_RANGE, MAX_AGE_FOR_RANGE), AGE_RANGE_SIZE)
-
-    # any ages >= 100 are in the '100+' category
-    default_category = '%d+' % MAX_AGE_FOR_RANGE
-    lookup = defaultdict(lambda: default_category)
-
-    # collect the possible ranges
-    ranges = []
-
-    # loop over each range and map all ages falling within the range to the range
-    for part in parts:
-        start = part.start
-        end = part.stop - 1
-        value = '%s-%s' % (start, end)
-        ranges.append(value)
-        for i in range(start, part.stop):
-            lookup[i] = value
-
-    ranges.append(default_category)
-    return ranges, lookup
-
 
 class Demography(Module):
     """
@@ -69,7 +34,10 @@ class Demography(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
+    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+        min_age=MIN_AGE_FOR_RANGE,
+        max_age=MAX_AGE_FOR_RANGE,
+        range_size=AGE_RANGE_SIZE)
 
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
@@ -290,9 +258,9 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                                           how='inner').set_index('person')
         assert length_before_merge == len(alive)
 
-        # Work out probability of dying in the time before the next occurance of this poll
-        dur = float(np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y'))
-        prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate * dur)
+        # Work out probability of dying in the time before the next occurrence of this poll
+        dur_in_years_between_polls = float(np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y'))
+        prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate * dur_in_years_between_polls)
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < prob_of_dying_during_next_month)
