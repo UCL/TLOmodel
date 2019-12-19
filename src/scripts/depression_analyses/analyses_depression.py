@@ -5,18 +5,20 @@ import os
 # import pandas as pd
 # import matplotlib.pyplot as plt
 # import numpy as np
+from pathlib import Path
+
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, depression, enhanced_lifestyle, healthburden, healthsystem
 
 # Where will output go
-outputpath = './src/scripts/depression_analyses/'
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = './resources/'
+resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -26,7 +28,7 @@ popsize = 10000
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 if os.path.exists(logfile):
     os.remove(logfile)

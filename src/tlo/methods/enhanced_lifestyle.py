@@ -6,6 +6,7 @@ import datetime
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
@@ -1140,6 +1141,11 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
                 prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
             }
+
+        # Screen for null values before placing in the logger
+        for k, v in bmi_proportions.items():
+            if np.isnan(v):
+                bmi_proportions[k] = 0.0
 
         logger.info(
             '%s|bmi_proportions|%s',

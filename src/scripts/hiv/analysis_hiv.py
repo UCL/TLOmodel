@@ -10,21 +10,20 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     hiv,
-    lifestyle,
+    enhanced_lifestyle,
     male_circumcision,
     tb,
 )
 
 # Where will output go
-# outputpath = './src/scripts/outputLogs/'
-# TODO; NB that outputlogs is not a part of the directory structure in the git repo, so address here will fail.
-outputpath = ""
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+resourcefilepath = Path("./resources")
+
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 5000
@@ -33,7 +32,7 @@ popsize = 5000
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + "LogFile" + datestamp + ".log"
+logfile = outputpath / ("LogFile" + datestamp + ".log")
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -58,7 +57,7 @@ logging.getLogger("tlo.methods.male_circumcision").setLevel(logging.INFO)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.tb(resourcefilepath=resourcefilepath))
 sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))

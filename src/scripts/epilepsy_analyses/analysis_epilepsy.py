@@ -1,22 +1,24 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, epilepsy, healthburden, healthsystem, lifestyle
+from tlo.methods import demography, epilepsy, healthburden, healthsystem, enhanced_lifestyle
 
 # Where will output go
-outputpath = ''
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = './resources/'
+resourcefilepath = Path("./resources")
+
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 4, 1)
@@ -26,7 +28,7 @@ popsize = 5000
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -43,7 +45,7 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        ignore_appt_constraints=True,
                                        ignore_cons_constraints=True))
