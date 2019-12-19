@@ -22,8 +22,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
-start_date = Date(2015, 1, 1)
-end_date = Date(2025, 1, 1)
+start_date = Date(1950, 1, 1)
+end_date = Date(1990, 1, 1)
 popsize = 10000
 
 # Establish the simulation object
@@ -57,6 +57,9 @@ sim.register(schisto.Schisto(resourcefilepath=resourcefilepath))
 sim.seed_rngs(0)
 # initialise the population
 sim.make_initial_population(n=popsize)
+test_df = sim.population.props
+
+
 # start the simulation
 sim.simulate(end_date=end_date)
 fh.flush()
@@ -77,9 +80,9 @@ for s in symptoms_prevalence.keys():
     print(s + ", prevalence = " + str(round(symptoms_prevalence[s] / tot_pop_alive, 3)), ", expected = " + str(symptoms_params[s]))
 
 # get prevalence per age_years
-df_pa = df[['age_years', 'ss_is_infected']][df.is_alive]
+df_pa = df[['age_years', 'ss_infection_status']][df.is_alive]
 age_groups_count = df_pa['age_years'].value_counts().to_dict()
-infected_age_count = df_pa[df['ss_is_infected'] == 'Infected']['age_years'].value_counts().to_dict()
+infected_age_count = df_pa[df['ss_infection_status'] != 'Non-infected']['age_years'].value_counts().to_dict()
 age_prev = {}
 for k in age_groups_count.keys():
     if k in infected_age_count.keys():
@@ -165,6 +168,36 @@ plt.legend()
 plt.title('Prevalence per date')
 plt.ylabel('fraction of infected sub-population')
 plt.xlabel('logging date')
+plt.show()
+
+# Worm burden distribution
+wb = df.ss_aggregate_worm_burden.values
+plt.hist(wb, bins = 100)
+plt.xlabel('Worm burden')
+plt.ylabel('Count')
+plt.title('Aggregate worm burden distribution')
+plt.show()
+
+# Harbouring rates distributions
+hr = df.ss_harbouring_rate.values
+plt.hist(hr, bins=100)
+plt.xlabel('Harbouring rates')
+plt.ylabel('Count')
+plt.title('Harbouring ratesdistribution')
+plt.show()
+
+
+# Mean worm burden per age group
+age_map = {'0-4': 'PSAC', '5-9': 'SAC', '10-14': 'SAC'}
+df['age_group'] = df['age_range'].map(age_map)
+df['age_group'].fillna('Adults', inplace=True)  # the reminder will be Adults
+mwb_adults = df[df['age_group'] == 'Adults']['ss_aggregate_worm_burden'].values.mean()
+mwb_sac = df[df['age_group'] == 'SAC']['ss_aggregate_worm_burden'].values.mean()
+mwb_psac = df[df['age_group'] == 'PSAC']['ss_aggregate_worm_burden'].values.mean()
+plt.bar(x = ['PSAC', 'SAC', 'Adults'], height = [mwb_psac, mwb_sac, mwb_adults])
+plt.title('Mean worm burden per age group')
+plt.ylabel('MWB')
+plt.xlabel('Age group')
 plt.show()
 
 # My own DALYS
