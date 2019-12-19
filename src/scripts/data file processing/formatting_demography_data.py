@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import make_calendar_period_lookup
-from tlo.methods.demography import make_age_range_lookup
+from tlo.util import create_age_range_lookup
 
 resourcefilepath = Path("./resources")
 
@@ -313,7 +313,7 @@ ests_melt = ests.melt(id_vars=['Variant', 'Year', 'Sex'], value_name='Count', va
 
 ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
 
-(__tmp__, age_grp_lookup) = make_age_range_lookup()
+(__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size = 5)
 ests_melt['Age_Grp'] = ests_melt['Age'].astype(int).map(age_grp_lookup)
 ests_melt.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv', index=False)
 

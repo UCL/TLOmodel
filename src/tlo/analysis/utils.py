@@ -3,13 +3,12 @@ General utility functions for TLO analysis
 """
 import logging
 from ast import literal_eval
-from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
 from pandas.api.types import CategoricalDtype
-
-from tlo.methods.demography import make_age_range_lookup
+from tlo import util
+from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -207,33 +206,15 @@ def make_calendar_period_lookup():
     i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
     """
 
-    def chunks(items, n):
-        """Takes a list and divides it into parts of size n"""
-        for index in range(0, len(items), n):
-            yield items[index:index + n]
+    # Recycles the code used to make age-range lookups:
+    ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
 
-    # split all the ages from min to limit (100 years) into 5 year ranges
-    parts = chunks(range(1950, 2100), 5)
+    # Removes the '1950-' category
+    ranges.remove('1950-')
+    for year in range(1950):
+        lookup.pop(year)
 
-    # any year >= 2100 are in the '2100+' category
-    default_category = '%d+' % 2100
-    lookup = defaultdict(lambda: default_category)
-
-    # collect the possible ranges
-    ranges = []
-
-    # loop over each range and map all ages falling within the range to the range
-    for part in parts:
-        start = part.start
-        end = part.stop - 1
-        value = '%s-%s' % (start, end)
-        ranges.append(value)
-        for i in range(start, part.stop):
-            lookup[i] = value
-
-    ranges.append(default_category)
     return ranges, lookup
-
 
 def make_age_grp_types():
     """
@@ -241,7 +222,7 @@ def make_age_grp_types():
     Returns CategoricalDType
     """
 
-    (__tmp__, age_grp_lookup) = make_age_range_lookup()
+    (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size= 5)
     age_grp_cats = list()
     for i in age_grp_lookup.values():
         if i not in age_grp_cats:

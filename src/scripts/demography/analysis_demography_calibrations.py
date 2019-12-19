@@ -22,7 +22,6 @@ from tlo.analysis.utils import (
     scale_to_population,
 )
 from tlo.methods import contraception, demography
-from tlo.methods.demography import make_age_range_lookup
 
 # Where will output go - by default, wherever this script is run
 outputpath = Path("./outputs")  # folder for convenience of storing outputs - content does not need to be on git
@@ -35,8 +34,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 resourcefilepath = Path("./resources")
 
-# %% Run the Simulation
 logfile = outputpath + 'LogFile' + datestamp + '.log'
+
+# %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2050, 1, 2)
