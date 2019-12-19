@@ -259,7 +259,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         assert length_before_merge == len(alive)
 
         # Work out probability of dying in the time before the next occurrence of this poll
-        dur_in_years_between_polls = float(np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y'))
+        dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
         prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate * dur_in_years_between_polls)
 
         # flipping the coin to determine if this person will die
