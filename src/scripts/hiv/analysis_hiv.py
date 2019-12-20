@@ -7,10 +7,10 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    enhanced_lifestyle,
     healthburden,
     healthsystem,
     hiv,
-    enhanced_lifestyle,
     male_circumcision,
     tb,
 )

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 from pandas.api.types import CategoricalDtype
+
 from tlo import util
 from tlo.util import create_age_range_lookup
 

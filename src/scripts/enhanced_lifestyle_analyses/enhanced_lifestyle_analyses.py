@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, contraception
+from tlo.methods import contraception, demography, enhanced_lifestyle
 
 # Where will output go - by default, wherever this script is run
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
