@@ -313,7 +313,7 @@ ests_melt = ests.melt(id_vars=['Variant', 'Year', 'Sex'], value_name='Count', va
 
 ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
 
-(__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size = 5)
+(__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
 ests_melt['Age_Grp'] = ests_melt['Age'].astype(int).map(age_grp_lookup)
 ests_melt.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv', index=False)
 

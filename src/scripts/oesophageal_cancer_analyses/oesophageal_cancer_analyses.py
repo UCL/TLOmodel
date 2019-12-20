@@ -1,10 +1,7 @@
 import datetime
-# import logging
-import os
 from pathlib import Path
 
 from tlo import Date, Simulation
-# from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthburden, healthsystem, enhanced_lifestyle, oesophageal_cancer, contraception
 
 # import matplotlib.pyplot as plt
