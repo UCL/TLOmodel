@@ -24,6 +24,7 @@ MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
 MAX_AGE = 120
 
+
 class Demography(Module):
     """
     The core demography modules handling age and sex of individuals. Also is responsible for their

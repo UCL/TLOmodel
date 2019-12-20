@@ -216,13 +216,14 @@ def make_calendar_period_lookup():
 
     return ranges, lookup
 
+
 def make_age_grp_types():
     """
     Make an ordered categorical type for age-groups
     Returns CategoricalDType
     """
 
-    (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size= 5)
+    (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
     age_grp_cats = list()
     for i in age_grp_lookup.values():
         if i not in age_grp_cats:

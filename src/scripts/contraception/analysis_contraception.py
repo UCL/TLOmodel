@@ -84,7 +84,7 @@ plt.xlabel("Year")
 plt.ylabel("Number of women")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
-plt.savefig(outputpath / ('Contraception Use' + datestamp + '.pdf'),format='pdf')
+plt.savefig(outputpath / ('Contraception Use' + datestamp + '.pdf'), format='pdf')
 plt.show()
 
 
@@ -131,7 +131,7 @@ plt.ylabel("Number using method")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
             'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
-plt.savefig(outputpath /  ('Contraception Use By Method' + datestamp + '.pdf'), format='pdf')
+plt.savefig(outputpath / ('Contraception Use By Method' + datestamp + '.pdf'), format='pdf')
 plt.show()
 
 # %% Plot Pregnancies Over time:
