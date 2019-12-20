@@ -2,7 +2,14 @@ import datetime
 from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import demography, healthburden, healthsystem, enhanced_lifestyle, oesophageal_cancer, contraception
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    oesophageal_cancer,
+)
 
 # import matplotlib.pyplot as plt
 # import numpy as np

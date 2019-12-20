@@ -1,7 +1,6 @@
 import datetime
 import logging
 import os
-
 # import pandas as pd
 # import matplotlib.pyplot as plt
 # import numpy as np
@@ -9,8 +8,14 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, depression, enhanced_lifestyle, healthburden, healthsystem, contraception
-
+from tlo.methods import (
+    contraception,
+    demography,
+    depression,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+)
 # Where will output go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 

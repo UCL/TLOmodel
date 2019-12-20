@@ -8,7 +8,14 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, epilepsy, healthburden, healthsystem, enhanced_lifestyle, contraception
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    epilepsy,
+    healthburden,
+    healthsystem,
+)
 
 # Where will output go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

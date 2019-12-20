@@ -22,7 +22,6 @@ from tlo.analysis.utils import (
     scale_to_population,
 )
 from tlo.methods import contraception, demography
-
 from tlo.util import create_age_range_lookup
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
