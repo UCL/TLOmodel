@@ -16,6 +16,7 @@ from tlo.methods import (
     healthburden,
     healthsystem,
 )
+
 # Where will output go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
