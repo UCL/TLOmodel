@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from matplotlib.dates import DateFormatter
 
 from tlo import Date, Simulation
@@ -22,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
-start_date = Date(1950, 1, 1)
-end_date = Date(1990, 1, 1)
+start_date = Date(2012, 1, 1)
+end_date = Date(2022, 1, 1)
 popsize = 10000
 
 # Establish the simulation object
@@ -170,11 +171,33 @@ plt.ylabel('fraction of infected sub-population')
 plt.xlabel('logging date')
 plt.show()
 
-# Worm burden distribution
+# Mean Worm Burden per month
+plt.plot(loger_Adults.date, loger_Adults.MeanWormBurden, label='Adults')
+plt.plot(loger_PSAC.date, loger_PSAC.MeanWormBurden, label='PSAC')
+plt.plot(loger_SAC.date, loger_SAC.MeanWormBurden, label='SAC')
+plt.plot(loger_All.date, loger_All.MeanWormBurden, label='All')
+plt.xticks(rotation='vertical')
+# plt.xticks.set_major_formatter(DateFormatter('%m-%Y'))
+plt.legend()
+plt.title('Mean Worm Burden per date')
+plt.ylabel('Mean number of worms')
+plt.xlabel('logging date')
+plt.show()
+
+# Worm burden distribution at the end of the simulation & fitted NegBin
 wb = df.ss_aggregate_worm_burden.values
-plt.hist(wb, bins = 100)
+mu = wb.mean()
+theta = wb.var()
+r = (1 + mu) / (theta * mu * mu)
+p = mu / theta
+print('clumping param k=', r, ', mean = ', p)
+negbin = np.random.negative_binomial(r, p, size=len(wb))
+plt.hist(wb, bins=100, density=True, label='empirical')
+plt.hist(negbin, bins=100, density=True, label='parametrical', alpha=0.5)
 plt.xlabel('Worm burden')
 plt.ylabel('Count')
+plt.xlim([0, 100])
+plt.legend()
 plt.title('Aggregate worm burden distribution')
 plt.show()
 
@@ -183,22 +206,35 @@ hr = df.ss_harbouring_rate.values
 plt.hist(hr, bins=100)
 plt.xlabel('Harbouring rates')
 plt.ylabel('Count')
-plt.title('Harbouring ratesdistribution')
+plt.title('Harbouring rates distribution')
 plt.show()
 
 
-# Mean worm burden per age group
+# Mean worm burden per age group - bar plots - at the end of the simulation
 age_map = {'0-4': 'PSAC', '5-9': 'SAC', '10-14': 'SAC'}
 df['age_group'] = df['age_range'].map(age_map)
 df['age_group'].fillna('Adults', inplace=True)  # the reminder will be Adults
 mwb_adults = df[df['age_group'] == 'Adults']['ss_aggregate_worm_burden'].values.mean()
 mwb_sac = df[df['age_group'] == 'SAC']['ss_aggregate_worm_burden'].values.mean()
 mwb_psac = df[df['age_group'] == 'PSAC']['ss_aggregate_worm_burden'].values.mean()
-plt.bar(x = ['PSAC', 'SAC', 'Adults'], height = [mwb_psac, mwb_sac, mwb_adults])
+plt.bar(x=['PSAC', 'SAC', 'Adults'], height=[mwb_psac, mwb_sac, mwb_adults])
 plt.title('Mean worm burden per age group')
 plt.ylabel('MWB')
 plt.xlabel('Age group')
 plt.show()
+
+# Mean worm burden per age group - every age - at the end of the simulation
+def get_mwb_per_age(age):
+    mean = df[df['age_years'] == age]['ss_aggregate_worm_burden'].values.mean()
+    return mean
+
+ages = np.arange(0, 80, 1).tolist()
+mean_wb = [get_mwb_per_age(x) for x in ages]
+plt.scatter(ages, mean_wb)
+plt.xlabel('age')
+plt.ylabel('mean worm burden')
+plt.show()
+
 
 # My own DALYS
 def calculate_yearly_dalys(df):
@@ -215,6 +251,8 @@ plt.title('DALYs per year, schisto module calculation')
 plt.ylabel('DALYs')
 plt.xlabel('logging date')
 plt.show()
+
+
 
 # DALYS
 loger_daly = output['tlo.methods.healthburden']["DALYS"]
