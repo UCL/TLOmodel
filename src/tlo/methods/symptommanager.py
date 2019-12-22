@@ -169,3 +169,6 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
                                 symptom_string=self.symptom_string,
                                 add_or_remove='-',
                                 disease_module=self.disease_module)
+
+
+

@@ -502,7 +502,7 @@ def test_run_in_with_hs_disabled(tmpdir):
 
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
-    assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occured through hs.
+    assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occurred through hs.
 
 
 def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
