@@ -8,7 +8,7 @@ import pandas as pd
 
 import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent, Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -231,7 +231,8 @@ class HealthSystem(Module):
 
         # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
         if self.disable:
-            self.sim.schedule_event(hsi_event, topen, force_over_from_healthsystem=True)
+            wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
+            self.sim.schedule_event(wrapped_hsi_event, topen)
             return  # Terrminate this functional call
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
@@ -1208,3 +1209,16 @@ class HSI_Event:
         """Make the event happen."""
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
+
+
+class HSIEventWrapper(Event):
+    # This is wrapper that contains an HSI event.
+    # It is used when the healthsystem is 'diabled' and all HSI events sent to the health system scheduler should
+    # be passed to the main simulation scheduler.
+    # When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+
+    def __init__(self, hsi_event):
+        self.hsi_event=hsi_event
+
+    def run(self):
+        _tmp_ = self.hsi_event.run(squeeze_factor=0.0)
