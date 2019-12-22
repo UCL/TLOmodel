@@ -26,7 +26,8 @@ class SymptomManager(Module):
                         'dental_complaint',
                         'backache',
                         'injury',
-                        'eye_complaint']
+                        'eye_complaint',
+                        'diarrhoea']
 
     # These are properties of individual for the prescence/abscence of symptoms.
     # A value > 0 implies the symptom is present.
@@ -169,6 +170,4 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
                                 symptom_string=self.symptom_string,
                                 add_or_remove='-',
                                 disease_module=self.disease_module)
-
-
 
