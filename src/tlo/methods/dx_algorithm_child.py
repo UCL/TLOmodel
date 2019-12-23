@@ -55,6 +55,7 @@ class DxAlgorithmChild(Module):
 
         # get the symptoms of the person:
         symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
+        num_of_symptoms = sum(symptoms.apply(lambda symp: symp!=set()))
 
         # Make a request for consumables (making reference to the hsi_event from which this is called)
         # TODO: Finish this demonstration **
@@ -77,7 +78,7 @@ class DxAlgorithmChild(Module):
             # The neccessary diagnosis was available...
 
             # Example of a diangostic algorithm
-            if symptoms.sum() > 2:
+            if num_of_symptoms > 2:
                 diagnosis_str = 'measles'
             else:
                 diagnosis_str = 'just_a_common_cold'
