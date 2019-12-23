@@ -95,6 +95,16 @@ class Simulation:
         :param n: the number of individuals to create; must be given as
             a keyword parameter for clarity
         """
+
+        # Before the population is made, call 'before_make_initial_population' if the module has it.
+        # (This is used to collect up information from other modules that is needed to make the population dataframe)
+        for module in self.modules.values():
+            try:
+                module.before_make_initial_population()
+            except AttributeError:
+                pass
+
+        # Make the initial population
         self.population = Population(self, n)
         for module in self.modules.values():
             module.initialise_population(self.population)
@@ -145,10 +155,8 @@ class Simulation:
         :param event: :py:class:`Event` to fire
         :param date: the date of the event
         """
-
         self.date = date
         event.run()
-
 
     def do_birth(self, mother_id):
         """Create a new child person.

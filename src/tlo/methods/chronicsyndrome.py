@@ -17,7 +17,7 @@ class ChronicSyndrome(Module):
     This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthsystem module:
 
-        - Registration of the disease module
+        - Registration of the disease module with health system and symptom manager
         - Internal symptom tracking and health care seeking
         - Outreach campaigns
         - Piggy-backing appointments
@@ -66,6 +66,16 @@ class ChronicSyndrome(Module):
         ),
     }
 
+    SYMPTOMS = {
+        'inappropriate_jokes',
+        'craving_sandwiches'
+    }
+    def __init__(self, name=None, resourcefilepath=None):
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         For now, we are going to hard code them explicity
@@ -83,6 +93,14 @@ class ChronicSyndrome(Module):
             # get the DALY weight that this module will use from the weight database (these codes are just random!)
             seq_code = 87  # the sequale code that is related to this disease (notionally!)
             self.parameters['daly_wt_ill'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=seq_code)
+
+        # ---- Register this module ----
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # # Register this disease module with the symptom manager and declare the symptoms
+        # self.sim.modules['SymptomManager'].register_disease_symptoms(module=self,
+        #                                                            list_of_symptoms=['coughing_and_irritable'])
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -135,8 +153,7 @@ class ChronicSyndrome(Module):
         df.loc[df.cs_has_cs, 'cs_date_acquired'] = self.sim.date - acquired_td_ago
         df.loc[df.cs_has_cs, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+        #TODO: clean up use of these symptoms elsewhere in cs and mockitis
 
     def initialise_simulation(self, sim):
 

@@ -82,6 +82,7 @@ class Skeleton(Module):
         If this is a disease module, register this disease module with the healthsystem:
         self.sim.modules['HealthSystem'].register_disease_module(self)
         """
+        #TODO: Add in registeration to symptom manager and put in read_
 
         raise NotImplementedError
 
