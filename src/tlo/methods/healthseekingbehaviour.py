@@ -142,14 +142,15 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # Chronic conditions
             # - not encoded: awaiting suitable variable to include. effect size = 1.44 if pre-existing chronic_condition
 
-            # Symptom - (can have more than one)
+            # Symptoms (testing for empty or non-empty set) - (can have more than one)
+            # TODO; chdck that this is working with the sets stuff
             if person_profile['sy_fever']:
                 f += np.log(1.86)
 
             if person_profile['sy_vomiting']:
                 f += np.log(1.28)
 
-            if (person_profile['sy_stomachache'] or person_profile['diarrhoea']):
+            if (person_profile['sy_stomachache'] or person_profile['sy_diarrhoea']):
                 f += np.log(0.76)
 
             if person_profile['sy_sore_throat']:

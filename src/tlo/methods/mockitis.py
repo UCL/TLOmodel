@@ -16,7 +16,7 @@ class Mockitis(Module):
     """
     This is a dummy infectious disease.
     It demonstrates the following behaviours in respect of the healthsystem module:
-        - Registration of the disease module
+        - Registration of the disease module with healthsystem and symptom manager
         - Reading DALY weights and reporting daly values related to this disease
         - Health care seeking
         - Usual HSI behaviour
@@ -64,6 +64,19 @@ class Mockitis(Module):
             categories=[0, 1, 2, 3, 4])
     }
 
+    SYMPTOMS = {
+        'coughing_and_irritable',
+        'weird_sense_of_deja_vu',
+        'overly_loud_sneezing'
+    }
+
+    def __init__(self, name=None, resourcefilepath=None):
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+        print('@@@@@@hello@@@@@')
+
     def read_parameters(self, data_folder):
         p = self.parameters
 
@@ -84,6 +97,14 @@ class Mockitis(Module):
             p['daly_wt_mild_sneezing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
             p['daly_wt_coughing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
             p['daly_wt_advanced'] = self.sim.modules['HealthBurden'].get_daly_weight(589)
+
+        # ---- Register this module ----
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # # Register this disease module with the symptom manager and declare the symptoms
+        # self.sim.modules['SymptomManager'].register_disease_symptoms(module=self,
+        #                                                            list_of_symptoms=['flu_like_illness'])
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -138,9 +159,6 @@ class Mockitis(Module):
         # set the properties of infected individuals
         df.loc[df.mi_is_infected, 'mi_date_infected'] = self.sim.date - infected_td_ago
         df.loc[df.mi_is_infected, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
 
@@ -311,6 +329,9 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=10)
+
+            #TODO; checking that who_has() works
+            _tmp_ = self.sim.modules['SymptomManager'].who_has('headache')
 
             # Determine if anyone with severe symptoms will seek care
             # [as this is a specific symptom the disease module handles it]
