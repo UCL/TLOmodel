@@ -67,7 +67,7 @@ class Predictor(object):
         # We want to "short-circuit" values i.e. if an individual in a population matches a certain
         # condition, we don't want that individual to be matched in any subsequent conditions
 
-        output = pd.Series(data = 0, index = df.index)
+        output = pd.Series(data = np.nan, index = df.index)
         touched = pd.Series(False, index=df.index)
         print("touched = pd.Series(False, index=output.index)")
         for condition, value in self.conditions:
@@ -77,7 +77,7 @@ class Predictor(object):
                 condition = '~@touched'
             mask = df.eval(condition)
             print(f"mask = df.eval({condition})")
-            output[mask] += value
+            output[mask] = value
             print(f"output[mask] += {value}")
             touched = (touched | mask)
             print(f"touched = (touched | mask)")
@@ -91,12 +91,12 @@ class LinearModel(object):
         self.type = type
 
         if self.type == 'linear':
-            print("Prediction will be sum of each effect size.")
+            print("Linear Model: Prediction will be sum of each effect size.")
         elif self.type == 'logistic':
-            print("Prediction will be transform to be 'probabilities. \
-                                            Effect sizes assumed to be Odds Ratios.")
+            print("Logistic Regression Model: Prediction will be transform to be 'probabilities. " \
+                                            "Effect sizes assumed to be Odds Ratios.")
         elif self.type == 'multiplicative':
-            print("Prediction will be multiplication of each effect size.")
+            print("Multiplicative Model: Prediction will be multiplication of each effect size.")
 
         self.intercept = intercept
         self.predictors = list()
@@ -116,13 +116,13 @@ class LinearModel(object):
 
         # Do appropriate transformation on output
         if self.type == 'linear':
-            output = res_by_predictor.sum(axis=1)
+            output = res_by_predictor.sum(axis=1, skipna=True)
 
         elif self.type == 'logistic':
-            output = 1 / (1 + np.exp(-res_by_predictor.sum(axis=1)))
+            output = 1 / (1 + np.exp(-np.log(res_by_predictor).sum(axis=1, skipna=True)))
 
         elif self.type == 'multiplicative':
-            output = res_by_predictor.prod(axis=1)
+            output = res_by_predictor.prod(axis=1, skipna=True)
 
         return output
 
@@ -155,8 +155,9 @@ Northern,False,F,91,True
 Northern,True,M,29,False
 """
 
+# Linear Model
 eq = LinearModel(
-    'logistic',
+    'linear',
     0.0,
     Predictor('region_of_residence').when('Northern', 0.1).when('Central', 0.2).when('Southern', 0.3),
     Predictor('li_urban').when(True, 0.01).otherwise(0.02),
@@ -172,8 +173,33 @@ eq = LinearModel(
 )
 
 df = pd.read_csv(io.StringIO(EXAMPLE_POP))
-
 predicted = eq.predict(df)
 df['predicted'] = predicted
+print(df.to_string())
 
+
+# Logistic model
+eq = LinearModel(
+    'logistic',
+    1.0,
+    Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+    Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+)
+
+df = pd.read_csv(io.StringIO(EXAMPLE_POP))
+predicted = eq.predict(df)
+df['predicted'] = predicted
+print(df.to_string())
+
+# Multiplicative model
+eq = LinearModel(
+    'multiplicative',
+    1.0,
+    Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+    Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+)
+
+df = pd.read_csv(io.StringIO(EXAMPLE_POP))
+predicted = eq.predict(df)
+df['predicted'] = predicted
 print(df.to_string())
