@@ -55,6 +55,10 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         df = self.sim.population.props
 
+        # NOTES: this section is repeated from the malaria.HSI_Malaria_rdt
+        # requests for comsumables occur inside the HSI_treatment events
+        # perhaps requests also need to occur here in case alternative treatments need to be scheduled
+
         # make sure query consumables has the generic hsi as the module requesting
 
         # ----------------------------------- CHILD <5 -----------------------------------
@@ -94,7 +98,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             else:
                 logger.debug(
-                    'HSI_GenericFirstApptAtFacilityLevel1: negative malaria test for person %d so doing nothing',
+                    'HSI_GenericFirstApptAtFacilityLevel1: negative / no malaria test for person %d so doing nothing',
                     person_id)
 
         # ----------------------------------- CHILD 5-15 -----------------------------------
@@ -136,7 +140,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             else:
                 logger.debug(
-                    'HSI_GenericFirstApptAtFacilityLevel1: negative malaria test for person %d so doing nothing',
+                    'HSI_GenericFirstApptAtFacilityLevel1: negative / no malaria test for person %d so doing nothing',
                     person_id)
 
         # ----------------------------------- ADULT -----------------------------------
@@ -178,7 +182,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             else:
                 logger.debug(
-                    'HSI_GenericFirstApptAtFacilityLevel1: negative malaria test for person %d so doing nothing',
+                    'HSI_GenericFirstApptAtFacilityLevel1: negative / no malaria test for person %d so doing nothing',
                     person_id)
 
     def did_not_run(self):

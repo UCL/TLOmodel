@@ -5,6 +5,7 @@ import pandas as pd
 import logging
 
 from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo.methods import malaria
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -63,7 +64,7 @@ class DxAlgorithmAdult(Module):
         diagnosis_str = 'unknown'
 
         # get the symptoms of the person:
-        symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
+        # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
         # Make request for some malaria rdt consumables
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']

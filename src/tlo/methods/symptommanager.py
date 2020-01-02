@@ -2,9 +2,13 @@
 A skeleton template for disease methods.
 
 """
+import logging
 
 from tlo import DateOffset, Module, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -73,7 +77,11 @@ class SymptomManager(Module):
         """
         Set that the child will have no symptoms by default
         """
-        self.sim.population.props[child_id, self.symptom_var_names] = 0
+        # TODO: note - edited to fix error: TypeError: unhashable type: 'list'
+        df = self.sim.population.props
+        df.loc[child_id, df.columns.isin(self.symptom_var_names)] = 0
+
+        # self.sim.population.props[child_id, self.symptom_var_names] = 0
 
     def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module, duration_in_days=None):
         """
@@ -85,12 +93,14 @@ class SymptomManager(Module):
         :param disease_module: pointer to the disease module that is reporting this change in symptom
         """
 
+        df = self.sim.population.props
+
         # Make the person_id into a list
         if type(person_id) is not list:
             person_id = [person_id]
 
         # Strip out the person_ids for anyone who is not alive.
-        alive_person_ids = list(self.sim.population.props.index[self.sim.population.props.is_alive])
+        alive_person_ids = list(df.index[df.is_alive])
         person_id = list(set(person_id).intersection(alive_person_ids))
 
         # Confirm that all person_ids (after stripping) are alive
@@ -99,7 +109,7 @@ class SymptomManager(Module):
         # Check that the symptom_string is legitimate
         assert symptom_string in self.list_of_symptoms
         symptom_var_name = 'sy_' + symptom_string
-        assert symptom_var_name in self.sim.population.props.columns
+        assert symptom_var_name in df.columns
 
         # Check that the add/remove signal is legitimate
         assert add_or_remove in ['+', '-']
@@ -117,8 +127,10 @@ class SymptomManager(Module):
 
         # Make the operation:
         if add_or_remove == '+':
+            logger.info(f'SymptomManager [chg_symptom]: adding {symptom_var_name} for {person_id}')
+
             # Add the symptom
-            self.sim.population.props.loc[person_id, symptom_var_name] += 1
+            df.loc[person_id, symptom_var_name] += 1
             self.persons_with_newly_onset_acute_generic_symptoms = \
                 self.persons_with_newly_onset_acute_generic_symptoms + person_id
 
@@ -133,18 +145,20 @@ class SymptomManager(Module):
 
         else:
             # Remove the symptom
+            logger.info(f'SymptomManager [chg_symptom]: removing {symptom_var_name} for {person_id}')
+
             # NB. There are no checks that the disease module is only relieving symptoms that it imposed.
-            # So a disease module could erronesouly remove a symptom more than once and thus alleviate it even though
+            # So a disease module could erroneously remove a symptom more than once and thus alleviate it even though
             # another disease module would not want it removed.
 
-            assert (self.sim.population.props.loc[person_id, symptom_var_name] > 0).all(), \
+            assert (df.loc[person_id, symptom_var_name] > 0).all(), \
                 'Warning: Request to remove symptoms from individuals that do not have the symptom'
 
-            self.sim.population.props.loc[person_id, symptom_var_name] = \
-                (self.sim.population.props.loc[person_id, symptom_var_name] - 1).clip(lower=0)
+            df.loc[person_id, symptom_var_name] = \
+                (df.loc[person_id, symptom_var_name] - 1).clip(lower=0)
 
         # Check that all the symptom variables are in good condition (no negative values)
-        assert (self.sim.population.props[self.symptom_var_names] >= 0).all().all()
+        assert (df[self.symptom_var_names] >= 0).all().all()
 
 
 # ---------------------------------------------------------------------------------------------------------
