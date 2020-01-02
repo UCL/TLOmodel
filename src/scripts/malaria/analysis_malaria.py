@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-popsize = 500
+end_date = Date(2012, 12, 31)
+popsize = 50
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -50,7 +50,7 @@ logging.getLogger().addHandler(fh)
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
-service_availability = ["*"]
+service_availability = ['*']
 malaria_strat = 0  # levels: 0 = national; 1 = district
 
 # Register the appropriate modules
@@ -58,6 +58,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=0,
+                                       ignore_cons_constraints=True,
+                                       ignore_priority=True,
                                        capabilities_coefficient=1.0))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
@@ -74,11 +76,11 @@ for name in logging.root.manager.loggerDict:
         logging.getLogger(name).setLevel(logging.WARNING)
 
 logging.getLogger('tlo.methods.malaria').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.symptommanager').setLevel(logging.DEBUG)
 # logging.getLogger('tlo.methods.healthsystem').setLevel(logging.DEBUG)
 logging.getLogger('tlo.methods.dx_algorithm_child').setLevel(logging.DEBUG)
 logging.getLogger('tlo.methods.dx_algorithm_adult').setLevel(logging.DEBUG)
 logging.getLogger('tlo.methods.healthseekingbehaviour').setLevel(logging.DEBUG)
-logging.getLogger('tlo.methods.symptommanager').setLevel(logging.DEBUG)
 
 
 # Run the simulation and flush the logger

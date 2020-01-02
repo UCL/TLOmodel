@@ -5,9 +5,11 @@ import pandas as pd
 import logging
 
 from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo.methods import malaria
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -61,62 +63,68 @@ class DxAlgorithmChild(Module):
 
         diagnosis_str = 'unknown'
 
+        # NOTES:
+        # here I tried to call malaria.HSI_Malaria_rdt but couldn't get appropriate return value
+        # wanted to return diagnosis = 'clinical_malaria' etc but kept getting 'None' returned
+        # we end up with lots of repeated code in this case
+
         # get the symptoms of the person:
-        symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
+        # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
-        # Make request for some malaria rdt consumables
-        # TODO: malaria RDT usually requires appt type 'LabPOC'
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        # this package contains treatment too
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Items'] == 'Malaria test kit (RDT)',
-                'Intervention_Pkg_Code'])[0]
+        if df.at[person_id, 'sy_fever'] > 0:
 
-        consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': [],
-        }
+            # TODO: the rdt request needs a LabPOC appt type, not just generic OPD
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            # this package contains treatment too
+            pkg_code1 = pd.unique(
+                consumables.loc[
+                    consumables['Items'] == 'Malaria test kit (RDT)',
+                    'Intervention_Pkg_Code'])[0]
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=False
-        )
+            consumables_needed = {
+                'Intervention_Package_Code': [{pkg_code1: 1}],
+                'Item_Code': [],
+            }
 
-        if outcome_of_request_for_consumables:
-
-            # log the consumable use
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=True
+                hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=False
             )
 
-            # severe malaria
-            if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'severe'):
-                diagnosis_str = 'severe_malaria'
+            if outcome_of_request_for_consumables:
 
-                logger.debug(
-                    "DxAlgorithmChild diagnosing severe malaria for child %d on date %s",
-                    person_id, self.sim.date)
+                # log the consumable use
+                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=True
+                )
 
-            # clinical malaria
-            elif df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'clinical'):
+                # severe malaria
+                if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'severe'):
+                    diagnosis_str = 'severe_malaria'
 
-                # diagnosis of clinical disease dependent on RDT sensitivity
-                diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['sensitivity_rdt'],
-                                                                          (1 - params['sensitivity_rdt'])])
+                    logger.debug(
+                        "DxAlgorithmChild diagnosing severe malaria for child %d on date %s",
+                        person_id, self.sim.date)
 
-                # diagnosis
-                if diagnosed:
-                    diagnosis_str = 'clinical_malaria'
+                # clinical malaria
+                elif df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'clinical'):
 
-                    logger.debug("DxAlgorithmChild diagnosing clinical malaria for child %d on date %s",
-                                 person_id, self.sim.date)
+                    # diagnosis of clinical disease dependent on RDT sensitivity
+                    diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['sensitivity_rdt'],
+                                                                              (1 - params['sensitivity_rdt'])])
+
+                    # diagnosis
+                    if diagnosed:
+                        diagnosis_str = 'clinical_malaria'
+
+                        logger.debug("DxAlgorithmChild diagnosing clinical malaria for child %d on date %s",
+                                     person_id, self.sim.date)
+                else:
+                    diagnosis_str = 'negative_malaria_test'
+
             else:
-                diagnosis_str = 'negative_malaria_test'
+                diagnosis_str = 'no_rdt_available'
 
-        else:
-            diagnosis_str = 'no_rdt_available'
-
-        logger.debug(f'{person_id} diagnosis is {diagnosis_str}')
+            logger.debug(f'{person_id} diagnosis is {diagnosis_str}')
 
         # return the diagnosis as a string
         return diagnosis_str
