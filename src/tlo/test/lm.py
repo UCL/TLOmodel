@@ -60,13 +60,15 @@ class Predictor(object):
         self.conditions.append((parsed_condition, coefficient))
         return self
 
-    def predict(self, df: pd.DataFrame, output: pd.Series):
+    def predict(self, df: pd.DataFrame):
         """Will add the value(s) of this predictor to the output series, checking values in the supplied
         dataframe"""
 
         # We want to "short-circuit" values i.e. if an individual in a population matches a certain
         # condition, we don't want that individual to be matched in any subsequent conditions
-        touched = pd.Series(False, index=output.index)
+
+        output = pd.Series(data = 0, index = df.index)
+        touched = pd.Series(False, index=df.index)
         print("touched = pd.Series(False, index=output.index)")
         for condition, value in self.conditions:
             if condition:
@@ -81,9 +83,21 @@ class Predictor(object):
             print(f"touched = (touched | mask)")
         return output
 
-class LogisticModel(object):
-    def __init__(self, intercept: float, *args: Predictor):
+class LinearModel(object):
+    def __init__(self, type: str, intercept: float, *args: Predictor):
         """A logistic model has an intercept and one or more Predictor variables """
+
+        assert type in ['linear', 'logistic', 'multiplicative'], 'Model type not recognised'
+        self.type = type
+
+        if self.type == 'linear':
+            print("Prediction will be sum of each effect size.")
+        elif self.type == 'logistic':
+            print("Prediction will be transform to be 'probabilities. \
+                                            Effect sizes assumed to be Odds Ratios.")
+        elif self.type == 'multiplicative':
+            print("Prediction will be multiplication of each effect size.")
+
         self.intercept = intercept
         self.predictors = list()
         for predictor in args:
@@ -94,9 +108,22 @@ class LogisticModel(object):
         """Will call each Predictor's `predict` methods passing the supplied dataframe"""
 
         # store the result of summing all the calculated values of Predictors
-        output = pd.Series(self.intercept, index=df.index)
+        res_by_predictor = pd.DataFrame(index=df.index)
+        res_by_predictor['intercept'] = self.intercept
+
         for predictor in self.predictors:
-            predictor.predict(df, output)
+            res_by_predictor[predictor] = predictor.predict(df)
+
+        # Do appropriate transformation on output
+        if self.type == 'linear':
+            output = res_by_predictor.sum(axis=1)
+
+        elif self.type == 'logistic':
+            output = 1 / (1 + np.exp(-res_by_predictor.sum(axis=1)))
+
+        elif self.type == 'multiplicative':
+            output = res_by_predictor.prod(axis=1)
+
         return output
 
 
@@ -128,8 +155,9 @@ Northern,False,F,91,True
 Northern,True,M,29,False
 """
 
-eq = LogisticModel(
-    1.0,
+eq = LinearModel(
+    'logistic',
+    0.0,
     Predictor('region_of_residence').when('Northern', 0.1).when('Central', 0.2).when('Southern', 0.3),
     Predictor('li_urban').when(True, 0.01).otherwise(0.02),
     Predictor('sex').when('M', 0.001).when('F', 0.002),
@@ -147,8 +175,5 @@ df = pd.read_csv(io.StringIO(EXAMPLE_POP))
 
 predicted = eq.predict(df)
 df['predicted'] = predicted
-
-p = 1 / (1 + np.exp(-predicted))
-df['p'] = p
 
 print(df.to_string())
