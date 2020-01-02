@@ -195,7 +195,7 @@ class PregnancySupervisor(Module):
 
         # First we apply the baseline prevalence of pre-eclampsia to women who are pregnant at baseline
         preg_women = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F') & (df.ps_gestational_age > 20)]
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(preg_women)), index=preg_women)
+        random_draw = pd.Series(self.rng.random_sample(size=len(preg_women)), index=preg_women)
 
         eff_prob_pe = pd.Series(params['base_prev_pe'], index=preg_women)
         dfx = pd.concat((random_draw, eff_prob_pe), axis=1)
@@ -215,7 +215,7 @@ class PregnancySupervisor(Module):
 
         preg_women_no_pe = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F') & (df.ps_htn_disorder_preg=='none') &
                                     (df.ps_gestational_age > 20)]
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(preg_women_no_pe)), index=preg_women_no_pe)
+        random_draw = pd.Series(self.rng.random_sample(size=len(preg_women_no_pe)), index=preg_women_no_pe)
 
         eff_prob_gh = pd.Series(params['base_prev_gest_htn'], index=preg_women_no_pe)
         dfx = pd.concat((random_draw, eff_prob_gh), axis=1)
@@ -226,7 +226,7 @@ class PregnancySupervisor(Module):
         # ============================= GESTATIONAL DIABETES (at baseline) ========================================
         # Finally we apply the prevalence of gestational diabetes in the pregnant population
 
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(preg_women)), index=preg_women)
+        random_draw = pd.Series(self.rng.random_sample(size=len(preg_women)), index=preg_women)
 
         eff_prob_gd = pd.Series(params['base_prev_gest_diab'], index=preg_women)
         dfx = pd.concat((random_draw, eff_prob_gd), axis=1)

@@ -9,7 +9,7 @@ import random
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, labour, newborn_outcomes
+from tlo.methods import demography, newborn_outcomes
 from tlo.methods.healthsystem import HSI_Event
 
 
@@ -152,6 +152,7 @@ class NewbornOutcomes(Module):
         params['cfr_enceph_severe'] = dfd.loc['cfr_enceph_severe', 'value']
 
         if 'HealthBurden' in self.sim.modules.keys():
+            # TODO: Discuss with team the best way to organise and apply DALY weights for newborns
             params['daly_wt_mild_motor_cognitive_<28wks'] = self.sim.modules['HealthBurden'].get_daly_weight(357)
             params['daly_wt_mild_motor_cognitive_32_36wks'] = self.sim.modules['HealthBurden'].get_daly_weight(359)
             params['daly_wt_mild_motor_<28wks'] = self.sim.modules['HealthBurden'].get_daly_weight(371)
@@ -248,17 +249,18 @@ class NewbornOutcomes(Module):
             df.at[child_id, 'nb_early_preterm'] = False
             df.at[child_id, 'nb_late_preterm'] = False
 
-        # Here we apply the prevalence of congenital birth anomalies in infants who have survived to delivery
-
+        # We schedule the NewbornOutcome event for those newborns who survived labour
         if df.at[child_id, 'is_alive'] & ~mni[mother_id]['stillbirth_in_labour']:
             self.sim.schedule_event(newborn_outcomes.NewbornOutcomeEvent(self.sim.modules['NewbornOutcomes'], child_id,
                                                                          cause='newborn outcomes event'), self.sim.date)
-            random = self.sim.rng.random_sample(size=1)
+
+            # Here we apply the prevalence of congenital birth anomalies in infants who have survived to delivery
+            random = self.rng.random_sample(size=1)
             # todo: this should read from parameters files but isnt for some reason
             if random < params['prob_congenital_ba']:
                 #  etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
                 #  probabilities = params['prob_cba_type']
-                random_choice = self.sim.rng.choice(['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other'], size=1,
+                random_choice = self.rng.choice(['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other'], size=1,
                                                     p=[0, 0.36, 0.13, 0.25, 0.03, 0.23])
                 df.at[child_id, 'nb_congenital_anomaly'] = random_choice
 
@@ -316,14 +318,14 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
     # !!!!!!!!!!!!! PLACEHOLDER PRIOR TO MALNUTRITION MODULE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        # TODO: currently everyone at baseline is NBW- either we apply prevlance of LBW at birth or ignore for now
-        # DUMMY
+        # TODO: currently everyone at baseline is NBW- either we apply prevalence of LBW at birth or ignore for now
+
         # Applying a dummy incidence of low birth weight in term infants
         if ~df.at[individual_id, 'nb_early_preterm'] & ~df.at[individual_id, 'nb_late_preterm']:
             rf1 = 1
             risk_factors = rf1
             eff_prob_lbw = risk_factors * params['base_incidence_low_birth_weight']
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < eff_prob_lbw:
                 df.at[individual_id, 'nb_birth_weight'] = 'LBW'  # currently limiting to just LBW
 
@@ -332,7 +334,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'nb_late_preterm']:
             prob = 0.7  # Dummy probability of LBW in late preterm infants
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < prob:
                 df.at[individual_id, 'nb_birth_weight'] = 'LBW'
 
@@ -340,7 +342,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         #  rf2 = 1
         risk_factors = rf1  # '*rf2
         eff_prob_sga = risk_factors * params['base_incidence_sga']
-        random = self.sim.rng.random_sample(size=1)
+        random = self.module.rng.random_sample(size=1)
         if random < eff_prob_sga:
             df.at[individual_id, 'nb_size_for_gestational_age'] = 'SGA'
 
@@ -357,7 +359,6 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             rf1 = 1  # TBC
             riskfactors = rf1
             ind_sep_risk = nci[individual_id]['ongoing_sepsis_risk']
-            float(ind_sep_risk)
             eff_prob_sepsis = riskfactors * ind_sep_risk
 
             #  Store updated sepsis risk- variable will be changed in HSI
@@ -370,7 +371,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             riskfactors = rf1
             eff_prob_sepsis = riskfactors * params['prob_early_onset_neonatal_sepsis']
 
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < eff_prob_sepsis:
                 df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = True
 
@@ -391,7 +392,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             riskfactors = rf1
             eff_prob_ba = riskfactors * mni[mother_id]['risk_newborn_ba']
 
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < eff_prob_ba:
                 df.at[individual_id, 'nb_respiratory_depression '] = True
 
@@ -407,7 +408,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             riskfactors = rf1
             eff_prob_sepsis = riskfactors * params['prob_resp_depression']
 
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < eff_prob_sepsis:
                 df.at[individual_id, 'nb_respiratory_depression '] = True
 
@@ -425,9 +426,9 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         rf1 = 1
         riskfactors = rf1
         eff_prob_enceph = riskfactors * params['prob_encephalopathy']
-        random = self.sim.rng.random_sample(size=1)
+        random = self.module.rng.random_sample(size=1)
         if random < eff_prob_enceph:
-            random2 = self.sim.rng.choice(('mild', 'moderate', 'severe'), p=[0.422, 0.338, 0.24])
+            random2 = self.module.rng.choice(('mild', 'moderate', 'severe'), p=[0.422, 0.338, 0.24])
             if random2 == 'mild':
                 df.at[individual_id, 'nb_encephalopathy'] = 'mild_enceph'
             elif random2 == 'moderate':
@@ -448,30 +449,30 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             rf1 = 1
             riskfactors = rf1
             eff_prob_ivh = riskfactors * params['prob_ivh_preterm']
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < eff_prob_ivh:
                 df.at[individual_id, 'nb_intravascular_haem'] = True
-                logger.info('Neonate %d has developed intravascular haemorrhage secondary to prematurity',
-                            individual_id)
+                logger.debug('Neonate %d has developed intravascular haemorrhage secondary to prematurity',
+                             individual_id)
 
         if df.at[individual_id, 'nb_early_preterm'] or df.at[individual_id, 'nb_late_preterm']:
             rf1 = 1
             riskfactors = rf1
             eff_prob_nec = riskfactors * params['prob_nec_preterm']
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < eff_prob_nec:
                 df.at[individual_id, 'nb_necrotising_entero'] = True
-                logger.info('Neonate %d has developed necrotising enterocolitis secondary to prematurity',
-                            individual_id)
+                logger.debug('Neonate %d has developed necrotising enterocolitis secondary to prematurity',
+                             individual_id)
 
             rf1 = 1
             riskfactors = rf1
             eff_prob_rds = riskfactors * params['prob_nrds_preterm']
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < eff_prob_rds:
                 df.at[individual_id, 'nb_resp_distress_synd'] = True
-                logger.info('Neonate %d has developed newborn respiratory distress syndrome secondary to prematurity',
-                            individual_id)
+                logger.debug('Neonate %d has developed newborn respiratory distress syndrome secondary to prematurity',
+                             individual_id)
 
             # todo: retinopathy: a.) currently dummy probabilities used for severity, will need to review lit. b.)link
             #  with oxygen administration? therefore is there reduced likelihood in the community?
@@ -480,9 +481,9 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                 rf1 = 1
                 riskfactors = rf1
                 eff_prob_retinop = riskfactors * params['prob_retinopathy_preterm']
-                random = self.sim.rng.random_sample(size=1)
+                random = self.module.rng.random_sample(size=1)
                 if random < eff_prob_retinop:
-                    random2 = self.sim.rng.choice(('mild', 'moderate','severe', 'blindness'), p=[0.4, 0.3, 0.2, 0.1])
+                    random2 = self.module.rng.choice(('mild', 'moderate','severe', 'blindness'), p=[0.4, 0.3, 0.2, 0.1])
                     df.at[individual_id, 'nb_retinopathy_prem'] = random2
                     logger.info('Neonate %d has developed retinopathy of prematurity, severity:',random2,
                                 individual_id) #TODO this doesnt really work
@@ -513,7 +514,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                                                            or(df.at[individual_id, 'nb_encephalopathy'] ==
                                                               'severe_enceph')):  #  What about preterm comps?
             prob = 0.75
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < prob:
                 event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self.module, person_id=individual_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -532,13 +533,13 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                                                            ~df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] &
                                                            (df.at[individual_id, 'nb_encephalopathy'] == 'none')):
 
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < params['prob_early_breastfeeding_hb']:
                 df.at[individual_id, 'nb_early_breastfeeding'] = True
-                logger.info(
+                logger.debug(
                     'Neonate %d has started breastfeeding within 1 hour of birth', individual_id)
             else:
-                logger.info(
+                logger.debug(
                     'Neonate %d did not start breastfeeding within 1 hour of birth', individual_id)
 
 # ===================================== SCHEDULING NEWBORN DEATH EVENT  ================================================
@@ -569,7 +570,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
     # case fatality rates
 
         if df.at[individual_id, 'nb_early_onset_neonatal_sepsis']:
-            random = self.sim.rng.random_sample()
+            random = self.module.rng.random_sample()
             if random < params['cfr_neonatal_sepsis']:
                 df.at[individual_id, 'nb_death_after_birth'] = True
                 df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
@@ -578,13 +579,13 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
                     'Neonate %d has died from neonatal sepsis', individual_id)
 
         if df.at[individual_id, 'nb_respiratory_depression ']:
-            random = self.sim.rng.random_sample()
+            random = self.module.rng.random_sample()
             if random > params['cfr_enceph_mild_mod']: #dummy
                 df.at[individual_id, 'nb_death_after_birth'] = True
 
         if (df.at[individual_id, 'nb_encephalopathy'] == 'mild_enceph') or\
            (df.at[individual_id, 'nb_encephalopathy'] == 'moderate_enceph'):
-                random = self.sim.rng.random_sample()
+                random = self.module.rng.random_sample()
                 if random < params['cfr_enceph_mild_mod']:
                     df.at[individual_id, 'nb_death_after_birth'] = True
                     df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
@@ -592,7 +593,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
                     logger.info( 'Neonate %d has died from mild/moderate encephalopathy', individual_id)
 
         if df.at[individual_id, 'nb_encephalopathy'] == 'severe_enceph':
-            random = self.sim.rng.random_sample()
+            random = self.module.rng.random_sample()
             if random < params['cfr_enceph_severe']:
                 df.at[individual_id, 'nb_death_after_birth'] = True
                 df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
@@ -601,7 +602,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
                     'Neonate %d has died from severe encephalopathy', individual_id)
 
 #        if df.at[individual_id, 'nb_congenital_anomaly']: # will this live here?
-#            random = self.sim.rng.random_sample()
+#            random = self.module.rng.random_sample()
 #            if random < params['cfr_cba']:
 #                df.at[individual_id, 'nb_death_after_birth'] = True
 #                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
@@ -616,7 +617,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause="neonatal complications"), self.sim.date)
 
-            logger.info('This is NewbornDeathEvent scheduling a death for person %d on date %s who died due to '
+            logger.debug('This is NewbornDeathEvent scheduling a death for person %d on date %s who died due to '
                         ' complications following birth', individual_id, self.sim.date)
 
             logger.info('%s|neonatal_death_48hrs|%s', self.sim.date,
@@ -750,14 +751,14 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         if (df.at[person_id, 'nb_birth_weight'] == 'LBW') & (~df.at[person_id, 'nb_respiratory_depression '] &
                                                              ~df.at[person_id, 'nb_early_onset_neonatal_sepsis']
                                                              & (df.at[person_id, 'nb_encephalopathy'] == 'none')):
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < params['prob_facility_offers_kmc']: # CHECK THIS THINKING WITH TIM C
                 df.at[person_id, 'nb_kmc'] = True
                 # TODO: reduce incidence of sepsis
 
 # ------------------------------ EARLY INITIATION OF BREAST FEEDING ----------------------------------------------------
 #
-        random = self.sim.rng.random_sample(size=1)
+        random = self.module.rng.random_sample(size=1)
         if random < params['prob_early_breastfeeding_hf']:
             df.at[person_id, 'nb_early_breastfeeding'] = True
             logger.info(
@@ -770,7 +771,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
 
         # TODO code in effect of prophylaxsis
 
-        random = self.sim.rng.random_sample(size=1)
+        random = self.module.rng.random_sample(size=1)
         if random < nci[person_id]['ongoing_sepsis_risk']:
             df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
 
@@ -860,7 +861,7 @@ class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(HSI_Event, IndividualScop
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
             logger.debug('resuscitation equipment is available, so use it.')
-            random = self.sim.rng.random_sample(size=1)
+            random = self.module.rng.random_sample(size=1)
             if random < params['prob_successful_resuscitation']:
                 df.at[person_id, 'nb_respiratory_depression '] = False  # Link to severe enchep
                 logger.info('Neonate %d has been successfully resuscitated after delivery with birth asphyxia', person_id)
@@ -925,7 +926,7 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeE
 
         # TODO: SEPTIC NEWBORNS WOULD BE ADMITTED? AND RECEIVE 7-10 DAY ABX?
         treatment_effect = params['prob_cure_antibiotics']
-        random = self.sim.rng.random_sample(size=1)
+        random = self.module.rng.random_sample(size=1)
         if treatment_effect > random:
             df.at[person_id,'nb_early_onset_neonatal_sepsis'] = False
             print('Treatment success- antibiotics')
