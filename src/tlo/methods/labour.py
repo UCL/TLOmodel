@@ -766,24 +766,25 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ===================================== LABOUR STATE  ==================================================================
 
-        # Based on gestational age the woman in labour is allocated to either term, earl/late preterm or post term
-        # labour
-
+        # This check ensures only women whose due date is the date of this event go into labour
         if df.at[individual_id, 'la_due_date_current_pregnancy'] == pd.NaT:
             logger.info('This is LabourEvent, person %d has reached their previously allocated due date but is not '
                         'entering labour at this time', individual_id)
 
         if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive'] & \
             (df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date):
-
             df.at[individual_id, 'la_currently_in_labour'] = True
 
+            # If a woman has been induced/attempted induction she will already be in a facility therefore delivery_
+            # setting is set to facility
             if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'failed_induction') or \
                (df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction'):
                     mni[individual_id]['delivery_setting'] = 'FD'
+            # We then store her induction status if successful
             if df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction':
                     mni[individual_id]['induced_labour'] = True
 
+            # Now we use gestational age to categorise the 'labour_state'
             if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive']:
                 if 37 <= df.at[individual_id, 'ps_gestational_age'] < 42:
                     mni[individual_id]['labour_state'] = 'TL'
@@ -813,10 +814,13 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # =============================== PLACE HOLDER CARE SEEKING AND SCHEDULING (DUMMY) =====================================
 
-                # TODO: We are awaiting the equation to determie how we deal with care seeking in labour
+                # TODO: We are awaiting the equation to determine how we deal with care seeking in labour
 
+                # Here we apply a probability that a woman will seek care in a facility as she is in labour
                 prob = 0.73
                 random = self.sim.rng.random_sample(size=1)
+
+                # Again only women who have not undergone induction will be seeking care
                 if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random < prob):
                     mni[individual_id]['delivery_setting'] = 'FD'
                     logger.info(
@@ -831,9 +835,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                                                                         )
                     # TODO: Consider a reasonable tclose date
 
-                    # TODO: ISSUE- if woman wants to seek care but cant, her complications will not be allocated
-                    #  because she hasnt passed through the HSI. We need some logic that says- if seeking care, but not
-                    #  availble, deliver at home
+                    # TODO: Line of logic that says if woman cannot access care because of contraints then they are
+                    #  marked as having an out of facility birth and increased risk of death is applied (and increased
+                    #  risk of comp?)
 
                 elif (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random > prob):
                     mni[individual_id]['delivery_setting'] = 'HB'
@@ -893,6 +897,10 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                 riskfactors = rf1*rf2*rf3
                 eff_prob_ol = riskfactors * params['prob_pl_ol']
+
+                # For all the following complications, if a woman has delivered in a facility, we store their effective
+                # probability of experiencing this complication as we recalculate this risk based on preventative
+                # interventions during the firs SBA HSI
 
                 if mni[individual_id]['delivery_setting'] == 'FD':
                     mni[individual_id]['risk_ol'] = eff_prob_ol
@@ -969,7 +977,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 riskfactors = rf1 * rf2
                 eff_prob_aph = riskfactors * params['prob_aph']
 
-                # Todo: a/w review of evidence to determine strength of association between risk factors and
+                # TODO: a/w review of evidence to determine strength of association between risk factors and
                 #  praevia/abruption
 
                 if mni[individual_id]['delivery_setting'] == 'FD':
@@ -983,15 +991,15 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                         logger.debug('person %d is experiencing an antepartum haemorrhage in the community on date %s',
                                     individual_id, self.sim.date)
+
                         logger.info('%s|antepartum_haemorrhage|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
                                      'person_id': individual_id})
 
 
-# ==========================================  SEPSIS =================================================================
+# ======================================= PUERPERAL SEPSIS ============================================================
 
-        # Todo: We will include both obstetric and non obstetric sepsis, but will only apply here incidence on
-        #  obstetric sepsis and use properties from the other modules to determine non obstetric infection
+        # Here we apply the incidence of Puerperal sepsis (obstetric), we are not modelling here sepsis of other causes
 
                 if mni[individual_id]['labour_is_currently_obstructed']:
                     rf1 = params['rr_ip_sepsis_pl_ol']
@@ -1013,11 +1021,12 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                         logger.debug('person %d is experiencing intrapartum maternal sepsis in the community on date %s'
                                      ,individual_id, self.sim.date)
+
                         logger.info('%s|maternal_sepsis|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
                                      'person_id': individual_id})
 
-                        # TODO modify newborn risk of sepsis for septic women
+            # TODO: Consider how to quantitfy increased risk of sepsis (mtct) in the newborns of septic mothers
 
 # ====================================== UTERINE RUPTURE  =============================================================
 
@@ -1054,6 +1063,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                         logger.debug('person %d is experiencing uterine rupture in the community on date %s',
                                     individual_id, self.sim.date)
+
                         logger.info('%s|uterine_rupture|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
                                      'person_id': individual_id})
@@ -1071,7 +1081,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                 self.sim.schedule_event(LabourDeathEvent(self.module, individual_id, cause='labour'),
                                 self.sim.date + DateOffset(days=2))
-                logger.info('This is LabourEvent scheduling a potential death on date %s for mother %d',
+                logger.debug('This is LabourEvent scheduling a potential death on date %s for mother %d',
                              self.sim.date, individual_id)
 
                 # Here we set the due date of women who have been induced to pd.NaT so they dont go into labour twice
@@ -1099,21 +1109,22 @@ class BirthEvent(Event, IndividualScopeEventMixin):
 
         # If the mother is alive and still pregnant we generate a live child and the woman is scheduled to move to the
         # postpartum event to determine if she experiences any additional complications
-        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']: #TODO: INCLUDING WOMEN WHO HAVE AN INTRAPARTUM STILLBIRTH
+        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
+            #  TODO: Ensure women who have had an IP still birth still move to postpartum event
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'ps_gestational_age'] = 0
             df.at[mother_id, 'is_pregnant'] = False
             df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
 
-            logger.info('This is BirthEvent scheduling mother %d to undergo the PostPartumEvent following birth',
+            logger.debug('This is BirthEvent scheduling mother %d to undergo the PostPartumEvent following birth',
                          mother_id)
             self.sim.schedule_event(PostpartumLabourEvent(self.module, mother_id, cause='post partum'),
                                     self.sim.date)
 
+        # As only live births contribute to parity we exlcuded women who have had an IP stillbirth
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant'] & \
             ~df.at[mother_id,'la_intrapartum_still_birth']:
             df.at[mother_id, 'la_parity'] += 1
-            # TODO: consider storing gravidity
 
         # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
         # stillbirth rates. She will not pass through the postpartum complication events
@@ -1121,9 +1132,6 @@ class BirthEvent(Event, IndividualScopeEventMixin):
             (mni[mother_id]['death_in_labour'] == True):
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'is_pregnant'] = False
-
-        # Todo: ALL DISEASES OF PREGNANCY NEED TO BE SWITCHED OFF FOLLOWING BIRTH (some do carry on effects
-        #  post partum...?) - Or we could have a little event in the post partum period that turns them off?
 
 
 class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
@@ -1165,12 +1173,12 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     df.at[individual_id,'la_haemorrhage_disability'] = True
 
                     logger.debug('person %d is experiencing a postpartum haemorrhage in the community on date %s',
-                                individual_id, self.sim.date)
+                                 individual_id, self.sim.date)
                     logger.info('%s|postpartum_haemorrhage|%s', self.sim.date,
                                 {'age': df.at[individual_id, 'age_years'],
                                  'person_id': individual_id})
 
-            #  TODO: include severity
+            #  TODO: consider including severity of bleeding to match with DALYs
 
 # ============================================= RISK OF SEPSIS =========================================================
 
@@ -1193,7 +1201,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['sepsis_pp'] = True
 
                     logger.debug('person %d is experiencing postpartum maternal sepsis in the community on date %s',
-                            individual_id, self.sim.date)
+                                 individual_id, self.sim.date)
 
                     logger.info('%s|maternal_sepsis|%s', self.sim.date,
                                 {'age': df.at[individual_id, 'age_years'],
@@ -1230,26 +1238,28 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     df.at[individual_id, 'la_eclampsia_disability'] = True
 
                     logger.debug('person %d is experiencing postpartum eclampsia in the community on date %s',
-                                individual_id, self.sim.date)
+                                 individual_id, self.sim.date)
                     logger.info('%s|eclampsia|%s', self.sim.date,
                                 {'age': df.at[individual_id, 'age_years'],
                                  'person_id': individual_id})
 
-            # if in facility....
+            # If a woman has delivered in a facility we schedule her to now receive additional care following birth
             if mni[individual_id]['delivery_setting'] == 'FD':
                 logger.info('This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartumPeriod for person '
                             '%d on date %s', individual_id,self.sim.date)
                 event = HSI_Labour_ReceivesCareForPostpartumPeriod(self.module, person_id=individual_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1)
-                                                                )
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1)
+                                                                    )
                 # TODO: same issue for women who seek care but cant be seek- comps wont be allocated!
 
+            # We schedule all women to then go through the death event where those with untreated/unsuccessfully treated
+            # complications may experience death
             self.sim.schedule_event(PostPartumDeathEvent(self.module, individual_id, cause='labour'), self.sim.date)
             logger.info('This is PostPartumEvent scheduling a potential death for person %d on date %s', individual_id,
-                         self.sim.date + DateOffset(days=3))  # Date offsetted to allow for interventions
+                        self.sim.date + DateOffset(days=3))  # Date offsetted to allow for interventions
 
             # Here we schedule women to an event which resets 'daly' disability associated with delivery complications
             self.sim.schedule_event(DisabilityResetEvent(self.module, individual_id, cause='reset'),
@@ -1273,8 +1283,9 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         # complication
         # Similarly we apply a risk of still birth associated with each complication
 
-        # TODO: for each intervention where appropriate apply reduction in CFR based on interventions?
+        # TODO: Will we apply a reduced CFR in the instance of unsuccessful interventions
 
+        # First we determine if the mother will die due to her complication
         if mni[individual_id]['labour_is_currently_obstructed']:
             random = self.sim.rng.random_sample(size=1)
             if random < params['cfr_obstructed_labour']:
@@ -1282,11 +1293,14 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_maternal_death'] = True
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
+                # then if she does die, we determine if the child will still survive
                 random = self.sim.rng.random_sample()
                 if random < params['prob_still_birth_obstructed_labour_md']:
                     df.at[individual_id, 'la_intrapartum_still_birth'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
                     df.at[individual_id, 'ps_previous_stillbirth'] = True
+
+            # Otherwise we just determine if this complication will lead to a stillbirth
             else:
                 random = self.sim.rng.random_sample(size=1)
                 if random < params['prob_still_birth_obstructed_labour']:
@@ -1376,8 +1390,6 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             # Schedule death for women who die in labour
 
         if mni[individual_id]['death_in_labour']:
-            print('intrapartum death!!!')
-
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='labour'), self.sim.date)
 
@@ -1395,7 +1407,6 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                             'person_id': individual_id })
 
         if df.at[individual_id, 'la_intrapartum_still_birth']:
-            print('STILL BIRTH!!!!')
             logger.info('@@@@ A Still Birth has occurred, to mother %s', individual_id)
             logger.info('%s|still_birth|%s', self.sim.date,
                         {'mother_id': individual_id})
@@ -1440,7 +1451,6 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
         if mni[individual_id]['death_postpartum']:
-            print('post partum death!!!')
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='postpartum labour'), self.sim.date)
             logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
@@ -1457,6 +1467,11 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                          'labour_profile': complication_profile})
         else:
             complication_profile = mni[individual_id]
+            # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to false
+            # TODO: Consider how best to deal with complications that are long lasting.
+            self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id, cause='reset'),
+                                    self.sim.date + DateOffset(weeks=1))
+
             logger.debug('%s|labour_complications|%s', self.sim.date,
                         {'person_id': individual_id,
                          'labour_profile': complication_profile})
@@ -1473,6 +1488,7 @@ class DisabilityResetEvent (Event, IndividualScopeEventMixin):
 
         # TODO: Confirm this allows enough time for model to count DALYs before resetting
 
+        # Here we turn off all the properties which are used to count DALYs
         if df.at[individual_id, 'is_alive']:
             logger.debug('person %d is having their disability status reset', individual_id)
 
@@ -1482,13 +1498,35 @@ class DisabilityResetEvent (Event, IndividualScopeEventMixin):
             df.at[individual_id, 'la_eclampsia_disability'] = False
             df.at[individual_id, 'la_haemorrhage_disability'] = False
 
+
+class DiseaseResetEvent (Event, IndividualScopeEventMixin):
+    """resets a woman's disability properties one month after labour"""
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+
+        # This event ensures that for women who have survived delivery but have suffered a complication in which
+        # treatment was unsuccessful have their diseases variables reset
+
+        if df.at[individual_id, 'is_alive']:
+            logger.debug('person %d is having their maternal disease status reset', individual_id)
+
+            df.at[individual_id, 'la_sepsis'] = False
+            df.at[individual_id, 'la_obstructed_labour'] = False
+            df.at[individual_id, 'la_aph'] = False
+            df.at[individual_id, 'la_uterine_rupture'] = False
+            df.at[individual_id, 'la_eclampsia'] = False
+            df.at[individual_id, 'la_pph'] = False
+
 # ======================================================================================================================
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ====================================================
 # ======================================================================================================================
-    # TODO: need to confirm we accept that if there is staff time, and if there is resources then all these
-    #  interventions will be given (i.e. doesnt consider if people actively follow the guidelines which may be an
-    #  important determinant of intervention delivery)
-
+    # TODO: Discuss with the team the potential impact of deviating from guidelines- at present if a woman presents,
+    #  staff time is available and resources are available she gets all needed interventions (this may not be the case,
+    #  question of quality
 
 class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1507,7 +1545,8 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
         self.TREATMENT_ID = 'Labour_PresentsForInductionOfLabour'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1 # TODO: review (midwife time?)
+        the_appt_footprint['InpatientDays'] = 1
+        # TODO: review appt footprint as this wont include midwife time?
 
         # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -1538,7 +1577,7 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
         # TODO: review induction guidelines to confirm appropriate 1st line/2nd line consumable use
 
         consumables_needed = {'Intervention_Package_Code': [{pkg_code_induction: 1}],
-                                  'Item_Code': [],}
+                                  'Item_Code': [], }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_needed
@@ -1578,7 +1617,8 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
 class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-    This interaction manages a woman's initial presentation to a health facility when in labour
+    This interaction manages the care a woman receives when she is admitted to a facility in spontanous labour or in
+    labour following an induction
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1874,8 +1914,9 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
 
 # =====================================  OBSTRUCTED LABOUR TREATMENT ==================================================
 
-        # Differentiate between CPD and other?
+        # TODO: Differentiate between CPD and other?
 
+        # For women in obstructed labour delivery is first attempted by vacuum, delivery mode is stored
         if mni[person_id]['labour_is_currently_obstructed']:
             treatment_effect = params['prob_deliver_ventouse']
             random = self.sim.rng.random_sample(size=1)
@@ -1883,20 +1924,19 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
                 # df.at[person_id, 'la_obstructed_labour'] = False
                 mni[person_id]['labour_is_currently_obstructed'] = False
                 mni[person_id]['mode_of_delivery'] = 'AVDV'
-                print('Treatment success- delivery by Ventouse')
                 # add here effect of antibiotics?
             else:
-                print('Treatment failure- attempt forceps')
+                # If the vacuum is unsuccessful we apply the probability of successful forceps delivery
                 treatment_effect = params['prob_deliver_forceps']
                 random = self.sim.rng.random_sample(size=1)
                 if treatment_effect > random:
                     # df.at[person_id, 'la_obstructed_labour'] = False
                     mni[person_id]['labour_is_currently_obstructed'] = False
                     mni[person_id]['mode_of_delivery'] = 'AVDF'
-                    print('Treatment success- delivery by Forceps')
                     # add here effect of antibiotitcs?
+
+                # Finally if assisted vaginal delivery fails then CS is scheduled
                 else:
-                    print('Treatment Failure- Referral for CS ')
                     event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                         priority=0,
@@ -1968,13 +2008,15 @@ class HSI_Labour_ReceivesCareForMaternalSepsis(HSI_Event, IndividualScopeEventMi
         )
 
         # TODO: consider 1st line/2nd line and efficacy etc etc
+
+        # Treatment can only be delivered if appropriate antibiotics are available, if they're not the woman isn't
+        # treated
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sepsis]:
             logger.debug('pkg_code_sepsis is available, so use it.')
             treatment_effect = params['prob_cure_antibiotics']
             random = self.sim.rng.random_sample(size=1)
             if treatment_effect > random:
                 mni[person_id]['sepsis'] = False
-                print('Treatment success- antibiotics')
         else:
             logger.debug('pkg_code_sepsis is not available, so can' 't use it.')
 
@@ -2065,26 +2107,22 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
 
 # =======================================  ECLAMPSIA TREATMENT ========================================================
 
+        # Here we apply the treatment algorithm, unsuccessful control of seizures leads to caesarean delivery
         if mni[person_id]['eclampsia_ip'] or mni[person_id]['eclampsia_pp']:
             treatment_effect = params['prob_cure_mgso4']
             random = self.sim.rng.random_sample()
             if treatment_effect > random:
                 mni[person_id]['eclampsia'] = False
-                print('Treatment success- MgSO4')
             else:
-                print('1st line treatment failure- additional MgSO4 required')
                 random = self.sim.rng.random_sample()
                 if treatment_effect > random:
                     mni[person_id]['eclampsia'] = False
-                    print('Treatment success- MgSO4')
                 else:
                     treatment_effect = params['prob_cure_diazepam']
                     random = self.sim.rng.random_sample()
                     if treatment_effect > random:
                         mni[person_id]['eclampsia'] = False
-                        print('Treatment success- Diazepam')
                     else:
-                        print('Seizures uncontolled - emergency caesarean & ICU required')
                         event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
                         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                             priority=0,
@@ -2166,11 +2204,13 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
 # ===================================  ANTEPARTUM HAEMORRHAGE TREATMENT ===============================================
         # TODO: consider severity grading?
 
+        # Here we determine the etiology of the bleed, which will determine treatment algorithm
         etiology = ['PA', 'PP']  # May need to move this to allow for risk factors?
         probabilities = [0.67, 0.33]  # DUMMY
         random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
 
         mni[person_id]['source_aph'] = random_choice  # Storing as high chance of SB in severe placental abruption
+        # TODO: Needs to be dependent on blood availability and establish how we're quantifying effect
         mni[person_id]['units_transfused'] = 2
 
         event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
@@ -2197,40 +2237,33 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
             # and uterine massage in an attempt to stop bleeding
 
             if mni[person_id]['source_pph'] == 'UA':
-                print('This PPH is due to Uterine Atony')
                 random = self.sim.rng.random_sample(size=1)
                 if params['prob_cure_oxytocin'] > random:
                     mni[person_id]['PPH'] = False
-                    print('Treatment success- Oxytocin stopped the bleed')
                 else:
                     random = self.sim.rng.random_sample(size=1)
                     if params['prob_cure_misoprostol'] > random:
                         mni[person_id]['PPH'] = False
-                        print('Treatment success- Misoprostol stopped the bleed')
                     else:
                         random = self.sim.rng.random_sample(size=1)
                         if params['prob_cure_uterine_massage'] > random:
                             mni[person_id]['PPH'] = False
-                            print('Treatment success- uterine massage stopped the bleed')
                         else:
                             random = self.sim.rng.random_sample(size=1)
                             if params['prob_cure_uterine_tamponade'] > random:
                                 mni[person_id]['PPH'] = False
-                                print('Treatment success- a uterine tamponade stopped the bleed')
 
             # Todo: consider the impact of oxy + miso + massage as ONE value, Discuss with expert
 
             # ===================TREATMENT CASCADE FOR RETAINED PRODUCTS/PLACENTA:====================================
             if mni[person_id]['source_pph'] == 'RPP':
-                print('This PPH is due to retained products/placenta')
                 random = self.sim.rng.random_sample(size=1)
                 if params['prob_cure_manual_removal'] > random:
                     mni[person_id]['PPH'] = False
-                    print('Treatment success-products removed manually')
                     # blood?
 
+            # In the instance of uncontrolled bleeding a woman is referred on for surgical care
             if mni[person_id]['PPH']:
-                print('Treatment failure-medically management of bleed has failed, referred for surgical care')
                 event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=0,
@@ -2307,6 +2340,9 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
     # ===============================  POSTPARTUM COMPLICATIONS ========================================================
 
         # TODO: link eclampsia/sepsis diagnosis in SBA and PPC
+
+        # As with the SkilledBirthAttendance HSI we recalcualte risk of complications in light of preventative
+        # interventions
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_pp_eclampsia']:
             df.at[person_id, 'la_eclampsia'] = True
@@ -2455,19 +2491,16 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
             # apply risk of death from CS?
 
 # ====================================== UTERINE REPAIR ==============================================================
-        # Next we determine if the uterus can be repaired surgically
-        # if df.at[person_id,' la_uterine_rupture']:
 
+        # For women with UR we determine if the uterus can be repaired surgically
         if mni[person_id]['UR']:
             random = self.sim.rng.random_sample(size=1)
             if params['prob_cure_uterine_repair'] > random:
                 # df.at[person_id, 'la_uterine_rupture'] = False
                 mni[person_id]['UR'] = False
-                print('Treatment success- this persons uterine rupture has been repaired surgically')
+
         # In the instance of failed surgical repair, the woman undergoes a hysterectomy
             else:
-                print('Treatment Failure- this persons uterus couldnt be repaired, they are not undergoing '
-                      'a hysterectomy')
                 random = self.sim.rng.random_sample(size=1)
                 if params['prob_cure_hysterectomy'] > random:
                     # df.at[person_id, 'la_uterine_rupture'] = False
@@ -2475,6 +2508,8 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
 
 # ================================== SURGERY FOR UNCONTROLLED POSTPARTUM HAEMORRHAGE ==================================
 
+        # If a woman has be referred for surgery for uncontrolled post partum bleeding we use the treatment alogrith to
+        # determine if her bleeding can be controlled surgically
         if mni[person_id]['PPH']:
             random = self.sim.rng.random_sample(size=1)
             if params['prob_cure_uterine_ligation'] > random:
@@ -2533,9 +2568,6 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         print('The maternal mortality ratio for this year is', mmr)
 
         # Still Birth Rate
-
         # Perinatal Mortality
-        #
-
         # Disease Incidence
         # Intervention incidence
