@@ -150,7 +150,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             if person_profile['sy_vomiting']:
                 f += np.log(1.28)
 
-            if (person_profile['sy_stomachache'] or person_profile['sy_diarrhoea']):
+            if (person_profile['sy_stomachache']) or (person_profile['sy_diarrhoea']):
                 f += np.log(0.76)
 
             if person_profile['sy_sore_throat']:
