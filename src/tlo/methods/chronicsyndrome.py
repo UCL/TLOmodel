@@ -17,7 +17,7 @@ class ChronicSyndrome(Module):
     This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthsystem module:
 
-        - Registration of the disease module with health system and symptom manager
+        - Registration of the disease module with health system
         - Internal symptom tracking and health care seeking
         - Outreach campaigns
         - Piggy-backing appointments
@@ -27,6 +27,7 @@ class ChronicSyndrome(Module):
         - On-the-fly consumables access
         - Returning an update footprint
         - Receiving a 'squeeze factor'
+        - Use of the SymptomManager
     """
 
     PARAMETERS = {
@@ -66,10 +67,12 @@ class ChronicSyndrome(Module):
         ),
     }
 
+    # Declaration of the symptoms that this module will use
     SYMPTOMS = {
         'inappropriate_jokes',
         'craving_sandwiches'
     }
+
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 

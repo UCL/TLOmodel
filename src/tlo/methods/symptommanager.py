@@ -47,18 +47,18 @@ class SymptomManager(Module):
 
     def before_make_initial_population(self):
         """
-        Collect up the SYMPTOMS that are declared by each module and use this to establish the properties
-        for this module.
+        Collect up the SYMPTOMS that are declared by each disease module and use this to establish the properties
+        for this module. Skip over disease modules that do not have a declaration of symptoms
         """
         list_of_registered_symptoms = list()
-        for module in self.sim.modules.values():
+        for module in self.sim.modules['HealthSystem'].registered_disease_modules.values():
             try:
                 symptoms = module.SYMPTOMS
                 assert type(symptoms) is set
                 assert all([(symp not in list_of_registered_symptoms) for symp in symptoms]), \
                     'Symptoms are being declared that are already declared by another module.'
                 # Add the symptoms to the list
-                self.list_of_registered_symptoms.extend(list(symptoms))
+                list_of_registered_symptoms.extend(list(symptoms))
 
             except AttributeError:
                 pass
@@ -67,7 +67,6 @@ class SymptomManager(Module):
 
         for symp in self.total_list_of_symptoms:
             self.PROPERTIES['sy_' + symp] = Property(Types.LIST, 'Presence of symptom ' + symp)
-            # TODO: Property to include a type set (using Types.LISThere for now)
 
     def initialise_population(self, population):
         """
@@ -91,31 +90,8 @@ class SymptomManager(Module):
         for symptom_var in self.symptom_var_names:
            population.props.at[child_id,symptom_var]=set()
 
-    # def register_disease_symptoms(self, module, list_of_symptoms):
-    #     """
-    #     This function is called by disease module that will track specific symptoms in the symptom manager.
-    #     It will make sure there is set of unqiue symptoms.
-    #     :param module: the disease module that will log symptoms
-    #     :param list_of_symptoms: the list of strings that represent the symptoms that will be tracked
-    #     :return: void
-    #     """
-    #     # Check that this module has not already registered its disease symptoms
-    #     assert (module.name not in self.disease_module_names_that_have_registered_symptoms), \
-    #         'Module has already registered symptoms.'
-    #
-    #     # Check that the list of symptoms is really a list
-    #     assert (type(list_of_symptoms) is list), 'list_of_generic_symptoms is not a list'
-    #
-    #     # Check that the symptoms in the list of symptoms are not already in the list
-    #     assert all([(symp not in self.list_of_registered_symptoms) for symp in list_of_symptoms])
-    #
-    #     # Add the symptoms to the list
-    #     self.list_of_registered_symptoms.extend(list_of_symptoms)
-    #
-    #     # Record that this module has registered its symptoms
-    #     self.disease_module_names_that_have_registered_symptoms.append(module.name)
-
-    def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module, duration_in_days=None):
+    def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module, \
+                    duration_in_days=None, date_of_onset=None):
         """
         This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.
         The sy_ property contains a set of of the disease_module names that currenly cause the symptom.
@@ -139,19 +115,33 @@ class SymptomManager(Module):
         assert all([(p in alive_person_ids) for p in person_id])
 
         # Check that the symptom_string is legitimate
-        assert symptom_string in self.list_of_generic_symptoms
+        assert symptom_string in self.total_list_of_symptoms, 'Symptom is not recognised'
         symptom_var_name = 'sy_' + symptom_string
-        assert symptom_var_name in self.sim.population.props.columns
+        assert symptom_var_name in self.sim.population.props.columns, 'Symptom has not been declared'
 
         # Check that the add/remove signal is legitimate
         assert add_or_remove in ['+', '-']
 
-        # Check that the duation in days makes sense
+        # Check that the duration in days makes sense
         if duration_in_days is not None:
             assert int(duration_in_days) > 0
 
         # Check that the provided disease_module is a registered disease_module
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
+
+        # Check that a sensible or no date_of_onset is provided
+        assert (date_of_onset is None) or (
+            (type(date_of_onset) is pd._libs.tslibs.timestamps.Timestamp) and date_of_onset >= self.sim.date)
+
+        # If the date of onset if not equal to today's date, then schedule the auto_onset event
+        if date_of_onset is not None:
+            auto_onset_event = SymptomManager_AutoOnsetEvent(self,
+                                                             person_id=person_id,
+                                                             symptom_string=symptom_string,
+                                                             disease_module=disease_module,
+                                                             duration_in_days=duration_in_days)
+            self.sim.schedule_event(event=auto_onset_event,
+                                    date=date_of_onset)
 
         # Make the operation:
         if add_or_remove == '+':
@@ -175,7 +165,7 @@ class SymptomManager(Module):
             assert self.sim.population.props.loc[person_id, symptom_var_name].apply(\
                 lambda x: (disease_module.name in x))\
                 .all(), \
-                'Request from disease module to remove a symptom that it has not caused.'
+                'Error - request from disease module to remove a symptom that it has not caused.'
 
             self.sim.population.props.loc[person_id, symptom_var_name].apply( \
                 lambda x: x.remove(disease_module.name))
@@ -183,16 +173,18 @@ class SymptomManager(Module):
     def who_has(self, in_list_of_symptoms):
         """
         This is a helper function to look up who has a particular symptom or set of symptoms.
-        It retursn a list of indicies for person that have all of the symptoms specifid
-        :param: list_of_symptoms : list or strings for the symptoms of interest
+        It returns a list of indicies for person that have all of the symptoms specified
+
+        :param: list_of_symptoms : string or list of strings for the symptoms of interest
         :return: list of person_ids for those with all of the symptoms in list_of_symptoms
         """
+
         # Check formatting of list_of_symptoms is right (must be a list of strings)
         if type(in_list_of_symptoms) is str:
             list_of_symptoms = [in_list_of_symptoms]
         else:
             list_of_symptoms = in_list_of_symptoms
-        assert len(list_of_symptoms)>0
+        assert len(list_of_symptoms) > 0
 
         # Check that these are legitimate symptoms
         assert all([(symp in self.total_list_of_symptoms) for symp in list_of_symptoms])
@@ -206,6 +198,65 @@ class SymptomManager(Module):
 
         person_id_with_all_symp = list(mask_has_symp.loc[mask_has_symp].index)
         return person_id_with_all_symp
+
+    def has_what(self, person_id, disease_module=None):
+        """
+        This is a helper function that will give a list of strings for the symptoms that a person
+        is currently experiencing.
+        Optionally can specify disease_module_name to limit to the symptoms caused by that disease module
+
+        :param person_id: the person_of of interest
+        :param disease_module: (optional) disease module of interest.
+        :return: list of strings for the symptoms that are currently being experienced
+        """
+        df = self.sim.population.props
+        profile = df.loc[person_id,df.columns[df.columns.str.startswith('sy_')]]
+
+        assert df.at[person_id,'is_alive'], "The person is not alive"
+
+        if disease_module is None:
+            # search for symptoms that are present (non-empty sets)
+            symptoms_with_prefix = list(profile[profile.apply(lambda x: x!=set())].index)
+        else:
+            # search for symptoms that have a specified disease_module_name in their set
+            assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(),\
+                "Disease Module Name is not recognised"
+            symptoms_with_prefix = list(profile[profile.apply(lambda x: (disease_module.name in x))].index)
+
+        # remove the 'sy_' prefix
+        symptoms = [s[3:] for s in symptoms_with_prefix]
+
+        return symptoms
+
+    def clear_symptoms(self, person_id, disease_module):
+        """
+        This is a helper function that remove all the symptoms in a specified person that is caused by a specified
+        disease module
+
+        :param person_id:
+        :param disease_module_name:
+        :return: Nothing
+        """
+        df = self.sim.population.props
+
+        assert df.at[person_id, 'is_alive'], "The person is not alive"
+        assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(),\
+            "Disease Module Name is not recognised"
+
+        symptoms_caused_by_this_disease_module = \
+            self.has_what(person_id, disease_module)
+
+        for symp in symptoms_caused_by_this_disease_module:
+            self.chg_symptom(
+                person_id=person_id,
+                symptom_string=symp,
+                add_or_remove='-',
+                disease_module=disease_module
+            )
+
+
+
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
@@ -230,3 +281,25 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
                                 add_or_remove='-',
                                 disease_module=self.disease_module)
 
+
+class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
+    """
+    This utility function will add symptoms. It is scheduled by the SymptomManager to let symptoms 'auto-onset' on a
+    particular date.
+    """
+
+    def __init__(self, module, person_id, symptom_string, disease_module, duration_in_days):
+        super().__init__(module)
+        assert isinstance(module, SymptomManager)
+
+        self.person_id = person_id
+        self.symptom_string = symptom_string
+        self.disease_module = disease_module
+        self.duration_in_days = duration_in_days
+
+    def apply(self, population):
+        self.module.chg_symptom(person_id=self.person_id,
+                                symptom_string=self.symptom_string,
+                                add_or_remove='+',
+                                disease_module=self.disease_module,
+                                duration_in_days=self.duration_in_days)

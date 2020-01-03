@@ -49,6 +49,10 @@ class Skeleton(Module):
         'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
+    # Declare the symptoms that this module will create. (These are unique symptoms to the module.
+    # Generic symptoms are declare in in the symptom manager.)
+    SYMPTOMS = {}
+
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
