@@ -8,7 +8,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.population import logger
 
 # ---------------------------------------------------------------------------------------------------------
-#    HSI_GenericFirstApptAtFacilityLevel0
+#    HSI_GenericFirstApptAtFacilityLevel1
 # ---------------------------------------------------------------------------------------------------------
 
 

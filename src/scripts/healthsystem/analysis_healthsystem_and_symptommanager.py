@@ -59,8 +59,8 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        ignore_cons_constraints=False,
                                        disable=False))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
-sim.register(dx_algorithm_child.DxAlgorithmChild())
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
