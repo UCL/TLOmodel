@@ -16,7 +16,7 @@ from tlo.methods import (
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
-# Where will output go
+# Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs

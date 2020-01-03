@@ -703,7 +703,7 @@ class HealthSystem(Module):
                     items_req.loc[items_req['Item_Code'] == item_code, 'Available'].values[0]
                 )
 
-        # compile output
+        # compile outputs
         output = dict()
         output['Intervention_Package_Code'] = packages_availability
         output['Item_Code'] = items_availability

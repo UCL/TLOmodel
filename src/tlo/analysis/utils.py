@@ -17,7 +17,7 @@ logger.setLevel(logging.INFO)
 
 def parse_line(line):
     """
-    Parses a single line of logged output. It has the format:
+    Parses a single line of logged outputs. It has the format:
     INFO|<logger name>|<simulation date>|<log key>|<python object>
 
     It returns the dictionary:
@@ -46,7 +46,7 @@ def parse_line(line):
 
 def parse_log_file(filepath):
     """
-    Parses logged output from a TLO run and create Pandas dataframes for analysis. See
+    Parses logged outputs from a TLO run and create Pandas dataframes for analysis. See
     parse_output() for details
 
     :param filepath: file path to log file
@@ -58,7 +58,7 @@ def parse_log_file(filepath):
 
 def parse_output(list_of_log_lines):
     """
-    Parses logged output from a TLO run and create Pandas dataframes for analysis.
+    Parses logged outputs from a TLO run and create Pandas dataframes for analysis.
 
     Use parse_log_file() wrapper if required
 
@@ -146,7 +146,7 @@ def scale_to_population(parsed_output, resourcefilepath):
 
     NB. This file gives precedence to the Malawi Population Census
 
-    :param parsed_outoput: The output from parse_output
+    :param parsed_outoput: The outputs from parse_output
     :param resourcefilepath: The resourcefilepath
     :return: a new version of parsed_output that includes certain variables scaled
     """

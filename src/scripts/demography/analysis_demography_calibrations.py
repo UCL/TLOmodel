@@ -1,5 +1,5 @@
 """
-Plot to demonstrate correspondence between model and data output wrt births, population size and total deaths
+Plot to demonstrate correspondence between model and data outputs wrt births, population size and total deaths
 In the combination of both the codes from Tim C in Contraception and Tim H in Demography
 """
 
@@ -45,7 +45,7 @@ popsize = 1000
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
 
-# this block of code is to capture the output to file
+# this block of code is to capture the outputs to file
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -184,7 +184,7 @@ for year in [2018, 2030]:
 
 # Births over time (Model)
 births_model = scaled_output['tlo.methods.demography']['birth_groupby_scaled'].reset_index()
-# Aggregate the model output into five year periods:
+# Aggregate the model outputs into five year periods:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 births_model["Period"] = births_model["year"].map(calendar_period_lookup)
 births_model = births_model.groupby(by='Period')['count'].sum()
@@ -226,7 +226,7 @@ plt.show()
 # Get Model ouput
 deaths_model = scaled_output['tlo.methods.demography']['death_groupby_scaled'].reset_index()
 
-# Aggregate the model output into five year periods for age and time:
+# Aggregate the model outputs into five year periods for age and time:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 deaths_model["Period"] = deaths_model["year"].map(calendar_period_lookup)
 (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)

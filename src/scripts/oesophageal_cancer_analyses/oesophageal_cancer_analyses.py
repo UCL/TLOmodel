@@ -16,7 +16,7 @@ from tlo.methods import (
 # import pandas as pd
 
 
-# Where will output go
+# Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs

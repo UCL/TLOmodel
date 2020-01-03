@@ -15,7 +15,7 @@ from tlo.methods import (
     tb,
 )
 
-# Where will output go
+# Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
@@ -80,9 +80,9 @@ output = parse_log_file(logfile)
 # date-stamp to label log files and any other outputs
 # datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # logfile = outputpath + 'LogFile' + datestamp + '.log'
-# output = parse_log_file(logfile)
+# outputs = parse_log_file(logfile)
 #
-# deaths_df = output['tlo.methods.demography']['death']
+# deaths_df = outputs['tlo.methods.demography']['death']
 # deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 # deaths_df['year'] = deaths_df['date'].dt.year
 # death_by_cause = deaths_df.groupby(['year','cause'])['person_id'].size()

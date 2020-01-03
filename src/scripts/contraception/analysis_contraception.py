@@ -13,7 +13,7 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography
 
-# Where will output go - by default, wherever this script is run
+# Where will outputs go - by default, wherever this script is run
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
@@ -33,7 +33,7 @@ popsize = 1000
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
 
-# this block of code is to capture the output to file
+# this block of code is to capture the outputs to file
 logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 if os.path.exists(logfile):
