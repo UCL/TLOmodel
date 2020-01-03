@@ -1,17 +1,21 @@
 import logging
 import os
+import time
 
 import pytest
+from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, labour, eclampsia_treatment, caesarean_section, sepsis_treatment, \
-    newborn_outcomes
+from tlo.methods import demography,enhanced_lifestyle, labour, newborn_outcomes, healthburden, healthsystem, antenatal_care,\
+    pregnancy_supervisor, contraception
 
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 1000
+popsize = 100
+
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 
 @pytest.fixture(autouse=True)
@@ -21,36 +25,49 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
-    demography_workbook = os.path.join(os.path.dirname(__file__),
-                                       'resources',
-                                       workbook_name)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(workbook_path=demography_workbook))
-    sim.register(lifestyle.Lifestyle())
-    sim.register(labour.Labour())
-    sim.register(newborn_outcomes.NewbornOutcomes())
-    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
-#   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-#   sim.seed_rngs(1)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+    sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
+    sim.seed_rngs(1)
     return sim
 
 
-def __check_properties(df):
-
- def test_make_initial_population(simulation):
+def test_run(simulation):
     simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_simulate(simulation):
     simulation.simulate(end_date=end_date)
 
 
-def test_final_population(simulation):
-    __check_properties(simulation.population.props)
+def __check_properties(df):
+    pass
+    # TODO: TBC
+
+
+#def test_make_initial_population(simulation):
+#    simulation.make_initial_population(n=popsize)
+
+
+#def test_initial_population(simulation):
+#    __check_properties(simulation.population.props)
+
+
+#def test_simulate(simulation):
+#    simulation.simulate(end_date=end_date)
+
+
+#def test_final_population(simulation):
+#    __check_properties(simulation.population.props)
 
 
 def test_dypes(simulation):
@@ -61,7 +78,8 @@ def test_dypes(simulation):
 
 
 if __name__ == '__main__':
+    t0 = time.time()
     simulation = simulation()
-    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+    test_run(simulation)
+    t1 = time.time()
+    print('Time taken', t1 - t0)

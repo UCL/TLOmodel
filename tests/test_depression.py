@@ -12,7 +12,7 @@ from tlo.methods import (
     depression,
     enhanced_lifestyle,
     healthburden,
-    healthsystem,
+    healthsystem, labour
 )
 
 start_date = Date(2010, 1, 1)
@@ -38,6 +38,7 @@ def simulation():
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
     return sim

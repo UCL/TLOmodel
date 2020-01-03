@@ -256,7 +256,8 @@ class Labour (Module):
             params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
             params['daly_wt_haemorrhage_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338)
             params['daly_wt_maternal_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340)
-            params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=347)
+            params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=343)
+            # TODO: Eclampsia DALY weight is empty- this is htn disoders sequalae code
             params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)
             # TODO: source DALY weight for Uterine Rupture
 
@@ -328,7 +329,7 @@ class Labour (Module):
         dfx = pd.concat((simdate, random_draw), axis=1)
         dfx.columns = ['simdate', 'random_draw']
         dfx['gestational_age_in_weeks'] = (39 - 39 * dfx.random_draw)
-        df.loc[pregnant_idx, 'ps_gestational_age'] = dfx.gestational_age_in_weeks.astype(int)
+        df.loc[pregnant_idx, 'ps_gestational_age'] = dfx.gestational_age_in_weeks.astype('int64')
 
         # Use gestational age to calculate when the woman's baby was conceived
         dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age_in_weeks'], unit='w')
@@ -2074,10 +2075,13 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
             consumables.loc[consumables['Items'] == 'Hydralazine hydrochloride 20mg/ml, 1ml_each_CMST',
                             'Item_Code']
         )[0]
-        item_code_md = pd.unique(
-            consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMS',
-                            'Item_Code']
-        )[0]
+
+        # TODO: Methyldopa not being recognised?
+        # item_code_md = pd.unique(
+        #     consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMS',
+        #                    'Item_Code']
+        # )[0]
+
         item_code_hs = pd.unique(
             consumables.loc[consumables['Items'] ==  "Ringer's lactate (Hartmann's solution), 500 ml_20_IDA",
                             'Item_Code']
@@ -2085,7 +2089,7 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
 
         consumables_needed = {
             'Intervention_Package_Code': [{pkg_code_eclampsia: 1}],
-            'Item_Code': [{item_code_nf: 2}, {item_code_hz:  2}, {item_code_md: 2}, {item_code_hs: 1}],
+            'Item_Code': [{item_code_nf: 2}, {item_code_hz:  2}, {item_code_hs: 1}],
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -2487,7 +2491,6 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
             mni[person_id]['labour_is_currently_obstructed'] = False
             mni[person_id]['mode_of_delivery'] = 'CS'
             df.at[person_id, 'la_total_deliveries_by_cs'] = +1
-            print('Treatment success- This person has delivered via caesarean')
             # apply risk of death from CS?
 
 # ====================================== UTERINE REPAIR ==============================================================
@@ -2514,20 +2517,18 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
             random = self.module.rng.random_sample(size=1)
             if params['prob_cure_uterine_ligation'] > random:
                 mni[person_id]['PPH'] = False
-                print('Treatment success- this bleed has been stopped by uterine ligation')
             else:
                 random = self.module.rng.random_sample(size=1)
                 if params['prob_cure_b_lynch'] > random:
                     mni[person_id]['PPH'] = False
-                    print('Treatment success- this bleed has been stopped by b-lynch suturing')
                 else:
                     random = self.module.rng.random_sample(size=1)
                     # Todo: similarly consider bunching surgical interventions
                     if params['prob_cure_hysterectomy'] > random:
                         mni[person_id]['PPH'] = False
-                        print('Treatment success- this bleed has been stopped by a hysterectomy')
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT #  TODO: modify based on complications?
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+        #  TODO: modify based on complications?
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -2553,19 +2554,19 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #  MATERNAL MORTALITY RATIO:
 
         # live birth total
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-        live_births = df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)]
-        live_births_sum = len(live_births)
-        print(live_births_sum)
+        # one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+        # live_births = df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)]
+        # live_births_sum = len(live_births)
+        # print(live_births_sum)
 
-        deaths = df.index[(df.la_maternal_death == True) & (df.la_maternal_death_date > one_year_prior) &
-                          (df.la_maternal_death_date < self.sim.date)]
+        # deaths = df.index[(df.la_maternal_death == True) & (df.la_maternal_death_date > one_year_prior) &
+        #                  (df.la_maternal_death_date < self.sim.date)]
 
-        cumm_deaths = len(deaths)
-        print(cumm_deaths)
+        # cumm_deaths = len(deaths)
+        # print(cumm_deaths)
 
-        mmr = cumm_deaths/live_births_sum * 100000
-        print('The maternal mortality ratio for this year is', mmr)
+        # mmr = cumm_deaths/live_births_sum * 100000
+        # print('The maternal mortality ratio for this year is', mmr)
 
         # Still Birth Rate
         # Perinatal Mortality
