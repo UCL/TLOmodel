@@ -155,9 +155,7 @@ class HealthSystem(Module):
         assert len(prob_unique_item_codes_available) == len(unique_item_codes)
 
         # set the index as the Item_Code
-        prob_unique_item_codes_available = prob_unique_item_codes_available.set_index(
-            prob_unique_item_codes_available['Item_Code'])
-        prob_unique_item_codes_available = prob_unique_item_codes_available.drop(['Item_Code'], axis=1)
+        prob_unique_item_codes_available.set_index('Item_Code', drop=True, inplace=True)
 
         self.prob_unique_item_codes_available = prob_unique_item_codes_available
 
@@ -314,13 +312,14 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # 4) Check that at least one type of appointment is required
-        if not type(hsi_event.target) is tlo.population.Population:
+        # Further checks for HSI which are not population level events:
+        if type(hsi_event.target) is not tlo.population.Population:
+
+            # 4) Check that at least one type of appointment is required
             assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()), \
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
 
-        # 5) Check that the event does not request an appointment at a facility level which is not possible
-        if not type(hsi_event.target) is tlo.population.Population:
+            # 5) Check that the event does not request an appointment at a facility level which is not possible
             appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
             assert all([self.parameters['ApptType_By_FacLevel'].loc[
                 self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
@@ -331,10 +330,8 @@ class HealthSystem(Module):
                 "An appointment type has been requested at a facility level for which is it not possibe: " \
                 + hsi_event.TREATMENT_ID
 
-        # 6) Check that event (if individual level) is able to run with this configuration of officers
-        # (ie. Check that this does not demand officers that are never available at a particular facility)
-        if not type(hsi_event.target) is tlo.population.Population:
-            # we are dealing with an individual level event
+            # 6) Check that event (if individual level) is able to run with this configuration of officers
+            # (ie. Check that this does not demand officers that are never available at a particular facility)
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
 

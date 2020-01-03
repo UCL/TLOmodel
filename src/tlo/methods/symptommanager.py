@@ -17,15 +17,13 @@ class SymptomManager(Module):
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
     """
 
-    PROPERTIES = dict()     # give blank definition of parameters here. It is updated in before_make_initial_population
+    PROPERTIES = dict()     # give blank definition of parameters here. It's updated in 'before_make_initial_population'
 
     PARAMETERS = {
         'list_of_generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
     }
 
     def __init__(self, name=None, resourcefilepath=None):
-        # NB. Parameters passed to the module can be inserted in the __init__ definition.
-
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.persons_with_newly_onset_acute_generic_symptoms = list()
