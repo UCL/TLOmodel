@@ -165,7 +165,8 @@ class SymptomManager(Module):
             assert self.sim.population.props.loc[person_id, symptom_var_name].apply(\
                 lambda x: (disease_module.name in x))\
                 .all(), \
-                'Error - request from disease module to remove a symptom that it has not caused.'
+                ('Error - request from disease module to remove a symptom that it has not caused. ' +
+                disease_module.name + ': ' + symptom_var_name)
 
             self.sim.population.props.loc[person_id, symptom_var_name].apply( \
                 lambda x: x.remove(disease_module.name))

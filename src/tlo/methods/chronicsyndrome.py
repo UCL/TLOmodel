@@ -9,7 +9,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class ChronicSyndrome(Module):
@@ -31,19 +31,18 @@ class ChronicSyndrome(Module):
     """
 
     PARAMETERS = {
-        'p_acquisition': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
-        'level_of_symptoms': Parameter(
-            Types.CATEGORICAL, 'Level of symptoms that the individual will have', categories=['low', 'high']
-        ),
+        'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
+        'prob_of_symptoms': Parameter(
+            Types.DICT, 'Probabilities of developing each type of symptom at onset'),
         'p_cure': Parameter(Types.REAL, 'Probability that a treatment is succesful in curing the individual'),
         'initial_prevalence': Parameter(Types.REAL, 'Prevalence of the disease in the initial population'),
-        'prob_dev_severe_symptoms_per_year': Parameter(
-            Types.REAL, 'Probability per year of severe symptoms developing'
+        'prob_dev_symptom_craving_sandwiches': Parameter(
+            Types.REAL, 'Probability per year of developing severe symptoms of craving sandwiches'
         ),
-        'prob_severe_symptoms_seek_emergency_care': Parameter(
-            Types.REAL, 'Probability that an individual will seak emergency care on developing extreme illneess'
+        'prob_seek_emergency_care_if_craving_sandwiches': Parameter(
+            Types.REAL, 'Probability that an individual will seak emergency care following onset of craving sandwiches'
         ),
-        'daly_wt_ill': Parameter(Types.REAL, 'DALY weight for being ill caused by Chronic Syndrome'),
+        'daly_wts': Parameter(Types.DICT, 'DALY weights for conditions'),
     }
 
     PROPERTIES = {
@@ -54,17 +53,6 @@ class ChronicSyndrome(Module):
         'cs_date_acquired': Property(Types.DATE, 'Date of latest infection'),
         'cs_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
-        'cs_specific_symptoms': Property(
-            Types.CATEGORICAL,
-            'Level of symptoms for chronic syndrome specifically',
-            categories=['none', 'extreme illness'],
-        ),
-        'cs_unified_symptom_code': Property(
-            Types.CATEGORICAL,
-            'Level of symptoms on the standardised scale (governing health-care seeking): '
-            '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
-            categories=[0, 1, 2, 3, 4],
-        ),
     }
 
     # Declaration of the symptoms that this module will use
@@ -86,16 +74,19 @@ class ChronicSyndrome(Module):
         self.parameters['p_acquisition_per_year'] = 0.10
         self.parameters['p_cure'] = 0.10
         self.parameters['initial_prevalence'] = 0.30
-        self.parameters['level_of_symptoms'] = pd.DataFrame(
-            data={'level_of_symptoms': ['none', 'extreme illness'], 'probability': [0.95, 0.05]}
-        )
+        self.parameters['prob_of_symptoms'] = {
+            'inappropriate_jokes': 0.95,
+            'craving_sandwiches': 0.5
+        }
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
 
         if 'HealthBurden' in self.sim.modules.keys():
             # get the DALY weight that this module will use from the weight database (these codes are just random!)
-            seq_code = 87  # the sequale code that is related to this disease (notionally!)
-            self.parameters['daly_wt_ill'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=seq_code)
+            self.parameters['daly_wts'] = {
+                'inappropriate_jokes': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=86),
+                'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
+            }
 
         # ---- Register this module ----
         # Register this disease module with the health system
@@ -123,8 +114,7 @@ class ChronicSyndrome(Module):
         df.loc[df.is_alive, 'cs_date_acquired'] = pd.NaT  # default: not a time
         df.loc[df.is_alive, 'cs_scheduled_date_death'] = pd.NaT  # default: not a time
         df.loc[df.is_alive, 'cs_date_cure'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'cs_specific_symptoms'] = 'none'
-        df.loc[df.is_alive, 'cs_unified_symptom_code'] = 0
+
 
         # randomly selected some individuals as infected
         num_alive = df.is_alive.sum()
@@ -135,11 +125,24 @@ class ChronicSyndrome(Module):
         # get all the infected individuals
         acquired_count = df.cs_has_cs.sum()
 
-        # Assign level of symptoms
-        symptoms = self.rng.choice(
-            p['level_of_symptoms']['level_of_symptoms'], size=acquired_count, p=p['level_of_symptoms']['probability']
-        )
-        df.loc[df.cs_has_cs, 'cs_specific_symptoms'] = symptoms
+        # Assign level of symptoms to each person with cd:
+        person_id_all_with_cs = list(df[df.cs_has_cs].index)
+
+        for symp in self.parameters['prob_of_symptoms']:
+
+            # persons who will have symptoms (each can occur independently)
+            persons_id_with_symp = np.array(person_id_all_with_cs) \
+                                                        [self.rng.rand(len(person_id_all_with_cs)) < \
+                                                         self.parameters['prob_of_symptoms'][symp]
+            ]
+
+            self.sim.modules['SymptomManager'].chg_symptom(
+                                                        person_id=list(persons_id_with_symp),
+                                                        symptom_string=symp,
+                                                        add_or_remove='+',
+                                                        disease_module=self
+            )
+
 
         # date acquired cs
         # sample years in the past
@@ -155,8 +158,6 @@ class ChronicSyndrome(Module):
         # set the properties of infected individuals
         df.loc[df.cs_has_cs, 'cs_date_acquired'] = self.sim.date - acquired_td_ago
         df.loc[df.cs_has_cs, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
-
-        #TODO: clean up use of these symptoms elsewhere in cs and mockitis
 
     def initialise_simulation(self, sim):
 
@@ -208,8 +209,6 @@ class ChronicSyndrome(Module):
         df.at[child_id, 'cs_date_acquired'] = pd.NaT
         df.at[child_id, 'cs_scheduled_date_death'] = pd.NaT
         df.at[child_id, 'cs_date_cure'] = pd.NaT
-        df.at[child_id, 'cs_specific_symptoms'] = 'none'
-        df.at[child_id, 'cs_unified_symptom_code'] = 0
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -249,20 +248,17 @@ class ChronicSyndrome(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        # ChronicSyndrome will produce two sets of DALYS as it want to be able to count up disability according to
-        # different types of disability.
+        health_values_df = pd.DataFrame(index = df.index[df.is_alive])
 
-        health_values_1 = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
-            {'none': 0, 'extreme illness': self.parameters['daly_wt_ill']}
-        )
-        health_values_1.name = 'Extreme Illness'
+        for symptom, daly_wt in self.parameters['daly_wts'].items():
+            health_values_df.loc[
+                self.sim.modules['SymptomManager'].who_has(symptom),
+                symptom
+            ] = daly_wt
 
-        health_values_2 = df.loc[df.is_alive, 'cs_specific_symptoms'].map({'none': 0, 'extreme illness': 0.05})
-        health_values_2.name = 'Extra Terrible'
+        health_values_df.fillna(0, inplace=True)
 
-        health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
-
-        return health_values_df  # return the dataframe
+        return health_values_df
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
@@ -292,40 +288,48 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
             death_years_ahead = rng.exponential(scale=20, size=now_acquired.sum())
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
-            symptoms = rng.choice(
-                p['level_of_symptoms']['level_of_symptoms'],
-                size=now_acquired.sum(),
-                p=p['level_of_symptoms']['probability'],
-            )
 
             df.loc[newcases_idx, 'cs_has_cs'] = True
             df.loc[newcases_idx, 'cs_status'] = 'C'
             df.loc[newcases_idx, 'cs_date_acquired'] = self.sim.date
             df.loc[newcases_idx, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
             df.loc[newcases_idx, 'cs_date_cure'] = pd.NaT
-            df.loc[newcases_idx, 'cs_specific_symptoms'] = symptoms
-            df.loc[newcases_idx, 'cs_unified_symptom_code'] = 0
 
             # schedule death events for new cases
             for person_index in newcases_idx:
                 death_event = ChronicSyndromeDeathEvent(self.module, person_index)
                 self.sim.schedule_event(death_event, df.at[person_index, 'cs_scheduled_date_death'])
 
+            # Assign symptoms:
+            for symp in self.module.parameters['prob_of_symptoms']:
+                # persons who will have symptoms (each can occur independently)
+                persons_id_with_symp = np.array(newcases_idx) \
+                    [self.module.rng.rand(len(newcases_idx)) < \
+                     self.module.parameters['prob_of_symptoms'][symp]
+                     ]
+
+                self.sim.modules['SymptomManager'].chg_symptom(
+                    person_id=list(persons_id_with_symp),
+                    symptom_string=symp,
+                    add_or_remove='+',
+                    disease_module=self.module
+                )
+
         # 3) Handle progression to severe symptoms
-        curr_cs_not_severe = df.index[df.cs_has_cs & df.is_alive & (df.cs_specific_symptoms != 'extreme illness')]
+        curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive]) \
+                                                - set(self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
 
-        become_severe = rng.random_sample(size=len(curr_cs_not_severe)) < p['prob_dev_severe_symptoms_per_year'] / 12
-        become_severe_idx = curr_cs_not_severe[become_severe]
-        df.loc[become_severe_idx, 'cs_specific_symptoms'] = 'extreme illness'
+        become_severe = self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches)) \
+                        < p['prob_dev_severe_symptoms_per_year'] / 12
+        become_severe_idx = np.array(curr_cs_but_not_craving_sandwiches)[become_severe]
 
-        # Report this to the unified symptom manager:
-        if len(become_severe_idx) > 0:
-            self.sim.modules['SymptomManager'].chg_symptom(
-                person_id=list(become_severe_idx),
-                symptom_string='fever',
-                add_or_remove='+',
-                disease_module=self.module,
-                duration_in_days=5)
+        self.sim.modules['SymptomManager'].chg_symptom(
+            person_id=list(become_severe_idx),
+            symptom_string='craving_sandwiches',
+            add_or_remove='+',
+            disease_module=self.module
+        )
+
 
         # 4) With some probability, the new severe cases seek "Emergency care"...
         if len(become_severe_idx) > 0:
@@ -430,6 +434,11 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                 df.at[person_id, 'cs_date_cure'] = self.sim.date
                 df.at[person_id, 'cs_specific_symptoms'] = 'none'
                 df.at[person_id, 'cs_unified_symptom_code'] = 0
+
+                # remove all symptoms instantly
+                self.sim.modules['SymptomManager'].clear_symptoms(
+                    person_id=person_id,
+                    disease_module=self.module)
         else:
             # Squeeze factor is too large
             logger.debug("Treatment will not be provided due to squeeze factor.")
