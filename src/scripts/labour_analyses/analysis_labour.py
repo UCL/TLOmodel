@@ -10,7 +10,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, labour, lifestyle, newborn_outcomes, healthsystem, antenatal_care
+from tlo.methods import demography, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, antenatal_care
 
 # Where will output go - by default, wherever this script is run
 #outputpath = './src/scripts/analyses_labour/'
@@ -46,7 +46,7 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle())
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))

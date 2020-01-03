@@ -959,16 +959,16 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # First 48 hours NMR:
 
-        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-        live_births = df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)]
-        live_births_sum = len(live_births)
-        print(live_births_sum)
+    #    one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+    #    live_births = df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)]
+    #    live_births_sum = len(live_births)
+    #    print(live_births_sum)
 
-        deaths = df.index[(df.nb_death_after_birth == True) & (df.nb_death_after_birth_date > one_year_prior) &
-                          (df.nb_death_after_birth_date < self.sim.date)]
+    #    deaths = df.index[(df.nb_death_after_birth == True) & (df.nb_death_after_birth_date > one_year_prior) &
+    #                      (df.nb_death_after_birth_date < self.sim.date)]
 
-        cumm_deaths = len(deaths)
-        print(cumm_deaths)
+    #    cumm_deaths = len(deaths)
+    #    print(cumm_deaths)
 
-        nmr = cumm_deaths / live_births_sum * 1000
-        print('The neonatal mortality ratio for this year is', nmr)
+    #    nmr = cumm_deaths / live_births_sum * 1000
+    #    print('The neonatal mortality ratio for this year is', nmr)

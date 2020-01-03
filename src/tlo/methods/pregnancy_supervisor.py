@@ -333,7 +333,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
         pregnant_idx = df.index[df.is_alive & df.is_pregnant]
 
-        df.loc[pregnant_idx, 'ps_gestational_age'] = gestation_in_weeks.astype(int)
+        df.loc[pregnant_idx, 'ps_gestational_age'] = gestation_in_weeks.astype('int64')
 
     # ===================================== ECTOPIC PREGNANCY & MULTIPLES ==============================================
         # Here we look at all the newly pregnant women (1 week gestation) and apply the risk of this pregnancy being
