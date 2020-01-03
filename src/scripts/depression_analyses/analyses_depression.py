@@ -17,7 +17,7 @@ from tlo.methods import (
     healthsystem,
 )
 
-# Where will output go
+# Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
@@ -62,9 +62,9 @@ fh.flush()
 
 
 # %% read the results
-# output = parse_log_file(logfile)
+# outputs = parse_log_file(logfile)
 
 # %%  Load Model Results for n_suidides
 
-# suicides_per_3m = output['tlo.methods.depression']['summary_stats_per_3m']['suicides_this_3m']
+# suicides_per_3m = outputs['tlo.methods.depression']['summary_stats_per_3m']['suicides_this_3m']
 # plt.show()
