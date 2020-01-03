@@ -11,7 +11,6 @@ from tlo.events import Event, PopulationScopeEventMixin
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-
 class SymptomManager(Module):
     """
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
@@ -162,11 +161,14 @@ class SymptomManager(Module):
 
         else:
             # Remove this disease module as a cause of this symptom
+            test_to_see_of_any_illegal_removals = self.sim.population.props.loc[person_id, symptom_var_name].apply(\
+                lambda x: (disease_module.name in x))\
+                .all()
+
             assert self.sim.population.props.loc[person_id, symptom_var_name].apply(\
                 lambda x: (disease_module.name in x))\
                 .all(), \
-                ('Error - request from disease module to remove a symptom that it has not caused. ' +
-                disease_module.name + ': ' + symptom_var_name)
+                ('Error - request from disease module to remove a symptom that it has not caused. ')
 
             self.sim.population.props.loc[person_id, symptom_var_name].apply( \
                 lambda x: x.remove(disease_module.name))
@@ -254,9 +256,6 @@ class SymptomManager(Module):
                 add_or_remove='-',
                 disease_module=disease_module
             )
-
-
-
 
 
 # ---------------------------------------------------------------------------------------------------------
