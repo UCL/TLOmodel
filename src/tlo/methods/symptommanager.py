@@ -128,6 +128,9 @@ class SymptomManager(Module):
         # Check that the provided disease_module is a registered disease_module
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
 
+        # Check that the symptom is declared for use by the disease_module
+        assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not declared for use by disease module'
+
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
             (type(date_of_onset) is pd._libs.tslibs.timestamps.Timestamp) and date_of_onset >= self.sim.date)
