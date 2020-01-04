@@ -118,7 +118,7 @@ class ChronicSyndrome(Module):
         # randomly selected some individuals as infected
         num_alive = df.is_alive.sum()
         df.loc[df.is_alive, 'cs_has_cs'] = self.rng.random_sample(size=num_alive) < p['initial_prevalence']
-        df.loc[df.cs_has_cs, 'cs_status'] = 'C'
+        df.loc[df.cs_has_cs, 'cs_status'].values[:] = 'C'
 
         # Assign time of infections and dates of scheduled death for all those infected
         # get all the infected individuals
@@ -286,7 +286,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
             df.loc[newcases_idx, 'cs_has_cs'] = True
-            df.loc[newcases_idx, 'cs_status'] = 'C'
+            df.loc[newcases_idx, 'cs_status'].values[:] = 'C'
             df.loc[newcases_idx, 'cs_date_acquired'] = self.sim.date
             df.loc[newcases_idx, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
             df.loc[newcases_idx, 'cs_date_cure'] = pd.NaT
@@ -427,8 +427,6 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                 # (in this we nullify the death event that has been scheduled.)
                 df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
                 df.at[person_id, 'cs_date_cure'] = self.sim.date
-                df.at[person_id, 'cs_specific_symptoms'] = 'none'
-                df.at[person_id, 'cs_unified_symptom_code'] = 0
 
                 # remove all symptoms instantly
                 self.sim.modules['SymptomManager'].clear_symptoms(

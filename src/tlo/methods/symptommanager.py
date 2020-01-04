@@ -48,22 +48,21 @@ class SymptomManager(Module):
     def before_make_initial_population(self):
         """
         Collect up the SYMPTOMS that are declared by each disease module and use this to establish the properties
-        for this module. Skip over disease modules that do not have a declaration of symptoms
+        for this module. Skip over disease modules that do not have a declaration of symptoms.
+        This will make sure that each symptom is included in the list at most once (even if multiple disease modules
+        declare the same symptom).
         """
-        list_of_registered_symptoms = list()
+        set_of_registered_symptoms = set()
         for module in self.sim.modules['HealthSystem'].registered_disease_modules.values():
             try:
                 symptoms = module.SYMPTOMS
                 assert type(symptoms) is set
-                assert all([(symp not in list_of_registered_symptoms) for symp in symptoms]), \
-                    'Symptoms are being declared that are already declared by another module.'
-                # Add the symptoms to the list
-                list_of_registered_symptoms.extend(list(symptoms))
+                set_of_registered_symptoms = set_of_registered_symptoms.union(symptoms)
 
             except AttributeError:
                 pass
 
-        self.total_list_of_symptoms = self.parameters['list_of_generic_symptoms'] + list_of_registered_symptoms
+        self.total_list_of_symptoms = self.parameters['list_of_generic_symptoms'] + list(set_of_registered_symptoms)
 
         for symp in self.total_list_of_symptoms:
             self.PROPERTIES['sy_' + symp] = Property(Types.LIST, 'Presence of symptom ' + symp)

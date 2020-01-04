@@ -109,10 +109,10 @@ def test_run_no_interventions_allowed(tmpdir):
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
 
-    # Do the checks for the symptom manager: some symptoms registered
-    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] > 0).any().any()
-    assert not (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] < 0).any().any()
-    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'int64').all()
+    # Do the checks for the symptom manager: some symptoms should be registered
+    assert sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] \
+        .apply(lambda x: x != set()).any().any()
+    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'object').all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
 
@@ -491,8 +491,8 @@ def test_run_in_with_hs_disabled(tmpdir):
     sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    sim.make_initial_population(n=600)
+    sim.simulate(end_date=Date(2010,3,1))
     check_dtypes(sim)
 
     # read the results
@@ -502,7 +502,7 @@ def test_run_in_with_hs_disabled(tmpdir):
 
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
-    assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occurred through hs.
+    assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occurred (through HS)
 
 
 def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
