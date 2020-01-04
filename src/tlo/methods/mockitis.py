@@ -69,7 +69,7 @@ class Mockitis(Module):
         p = self.parameters
 
         p['p_infection'] = 0.001
-        p['p_cure'] = 0.50
+        p['p_cure'] = 0.99
         p['initial_prevalence'] = 0.5
 
         # The distribution of symptoms that may be caused at onset by mockitis
@@ -112,7 +112,6 @@ class Mockitis(Module):
         df.loc[df.is_alive, 'mi_date_infected'] = pd.NaT  # default: not a time
         df.loc[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT  # default: not a time
         df.loc[df.is_alive, 'mi_date_cure'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'mi_specific_symptoms'] = 'none'  # default: no symptoms
 
         alive_count = df.is_alive.sum()
 
