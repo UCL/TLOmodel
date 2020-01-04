@@ -276,6 +276,20 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         self.disease_module = disease_module
 
     def apply(self, population):
+
+        # extract any persons who have died or who have resolved the symptoms
+        symptom_var_name = 'sy_' + self.symptom_string
+
+        alive_person_ids = list(self.module.sim.population.props.index[self.module.sim.population.props.is_alive])
+        still_has_symptom_bools = self.sim.population.props.loc[self.person_id, symptom_var_name].apply(\
+                lambda x: (self.disease_module.name in x))
+        still_has_symptom_person_ids = list(still_has_symptom_bools[still_has_symptom_bools].index)
+
+        self.person_id = list(set(self.person_id).\
+                              intersection(alive_person_ids).\
+                              intersection(still_has_symptom_person_ids))
+
+        # run the chg_symptom function
         self.module.chg_symptom(person_id=self.person_id,
                                 symptom_string=self.symptom_string,
                                 add_or_remove='-',
