@@ -1,6 +1,5 @@
 import logging
 
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
@@ -95,7 +94,6 @@ class Mockitis(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -109,12 +107,12 @@ class Mockitis(Module):
         df = population.props  # a shortcut to the dataframe storing data for individiuals
 
         # Set default for properties
-        df.loc[df.is_alive, 'mi_is_infected'] = False                   # default: no individuals infected
-        df.loc[df.is_alive, 'mi_status'].values[:] = 'N'                # default: never infected
-        df.loc[df.is_alive, 'mi_date_infected'] = pd.NaT                # default: not a time
-        df.loc[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT         # default: not a time
-        df.loc[df.is_alive, 'mi_date_cure'] = pd.NaT                    # default: not a time
-        df.loc[df.is_alive, 'mi_specific_symptoms'] = 'none'            # default: no symptoms
+        df.loc[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
+        df.loc[df.is_alive, 'mi_status'].values[:] = 'N'  # default: never infected
+        df.loc[df.is_alive, 'mi_date_infected'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'mi_date_cure'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'mi_specific_symptoms'] = 'none'  # default: no symptoms
 
         alive_count = df.is_alive.sum()
 
@@ -132,17 +130,16 @@ class Mockitis(Module):
 
         for person_id_infected in df.index[df.mi_is_infected]:
             symptom_string_for_this_person = self.rng.choice(level_of_symptoms.level_of_symptoms,
-                                                        p=level_of_symptoms.probability)
+                                                             p=level_of_symptoms.probability)
 
             if symptom_string_for_this_person != 'none':
                 self.sim.modules['SymptomManager'].chg_symptom(
-                                                            person_id=person_id_infected,
-                                                            symptom_string=symptom_string_for_this_person,
-                                                            add_or_remove='+',
-                                                            disease_module=self,
-                                                            duration_in_days=20
+                    person_id=person_id_infected,
+                    symptom_string=symptom_string_for_this_person,
+                    add_or_remove='+',
+                    disease_module=self,
+                    duration_in_days=20
                 )
-
 
         # date of infection of infected individuals
         # sample years in the past
@@ -209,14 +206,14 @@ class Mockitis(Module):
             # Level of symptoms
             level_of_symptoms = self.parameters['level_of_symptoms']
             symptom_string_for_this_person = self.rng.choice(level_of_symptoms.level_of_symptoms,
-                                                        p=level_of_symptoms.probability)
+                                                             p=level_of_symptoms.probability)
 
             if symptom_string_for_this_person != 'none':
                 self.sim.modules['SymptomManager'].chg_symptom(
-                                                            person_id=child_id,
-                                                            symptom_string=symptom_string_for_this_person,
-                                                            add_or_remove='+',
-                                                            disease_module=self
+                    person_id=child_id,
+                    symptom_string=symptom_string_for_this_person,
+                    add_or_remove='+',
+                    disease_module=self
                 )
 
             # Assign properties
@@ -225,7 +222,6 @@ class Mockitis(Module):
             df.at[child_id, 'mi_date_infected'] = self.sim.date
             df.at[child_id, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
             df.at[child_id, 'mi_date_cure'] = pd.NaT
-
 
             # Schedule death event:
             death_event = MockitisDeathEvent(self, child_id)
@@ -238,7 +234,6 @@ class Mockitis(Module):
             df.at[child_id, 'mi_date_infected'] = pd.NaT
             df.at[child_id, 'mi_scheduled_date_death'] = pd.NaT
             df.at[child_id, 'mi_date_cure'] = pd.NaT
-
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -258,7 +253,7 @@ class Mockitis(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values=pd.Series(index=df.index[df.is_alive], data=0)
+        health_values = pd.Series(index=df.index[df.is_alive], data=0)
         for symptom, daly_wt in self.parameters['daly_wts'].items():
             health_values.loc[
                 self.sim.modules['SymptomManager'].who_has(symptom)] += daly_wt
@@ -319,7 +314,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             level_of_symptoms = self.module.parameters['level_of_symptoms']
             for person_id_infected in infected_idx:
                 symptom_string_for_this_person = self.module.rng.choice(level_of_symptoms.level_of_symptoms,
-                                                                 p=level_of_symptoms.probability)
+                                                                        p=level_of_symptoms.probability)
 
                 if symptom_string_for_this_person != 'none':
                     self.sim.modules['SymptomManager'].chg_symptom(
@@ -327,7 +322,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                         symptom_string=symptom_string_for_this_person,
                         add_or_remove='+',
                         disease_module=self.module,
-                        date_of_onset=self.sim.date + DateOffset(days=1+int(self.module.rng.rand()*5)),
+                        date_of_onset=self.sim.date + DateOffset(days=1 + int(self.module.rng.rand() * 5)),
                         duration_in_days=30
                     )
 
@@ -340,18 +335,17 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             prob_seeks_care_with_severe_symptoms = 0.99
 
             for person_id in person_id_with_new_serious_symptoms:
-                 if self.module.rng.rand() < prob_seeks_care_with_severe_symptoms:
+                if self.module.rng.rand() < prob_seeks_care_with_severe_symptoms:
+                    logger.debug(
+                        'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
+                        person_index)
 
-                     logger.debug(
-                         'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
-                         person_index)
-
-                     event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                         priority=2,
-                                                                         topen=self.sim.date,
-                                                                         tclose=self.sim.date + DateOffset(weeks=2)
-                                                                         )
+                    event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                        priority=2,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(weeks=2)
+                                                                        )
         else:
             logger.debug('This is MockitisEvent, no one is newly infected.')
 
@@ -403,11 +397,8 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-
         logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
                      person_id)
-
-        df = self.sim.population.props  # shortcut to the dataframe
 
         logger.debug(
             '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: \
@@ -419,7 +410,6 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
                                                             priority=2,
                                                             topen=self.sim.date,
                                                             tclose=None)
-
 
     def did_not_run(self):
         logger.debug('HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
@@ -454,10 +444,9 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
         df = self.sim.population.props
 
-        if not df.at[person_id,'is_alive']:
+        if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-
 
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
@@ -536,7 +525,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        if not df.at[person_id,'is_alive']:
+        if not df.at[person_id, 'is_alive']:
             # The person is not alive, the event did not happen: so return a blank footprint
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 

@@ -7,6 +7,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Property, Types, Parameter
 from tlo.events import Event, PopulationScopeEventMixin
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -16,7 +17,7 @@ class SymptomManager(Module):
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
     """
 
-    PROPERTIES = dict()     # give blank definition of parameters here. It's updated in 'before_make_initial_population'
+    PROPERTIES = dict()  # give blank definition of parameters here. It's updated in 'before_make_initial_population'
 
     PARAMETERS = {
         'list_of_generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
@@ -76,7 +77,7 @@ class SymptomManager(Module):
 
         for person_id in list(population.props.index):
             for symptom_var in self.symptom_var_names:
-               population.props.at[person_id,symptom_var]=set()
+                population.props.at[person_id, symptom_var] = set()
 
     def initialise_simulation(self, sim):
         pass
@@ -87,9 +88,9 @@ class SymptomManager(Module):
         """
         population = self.sim.population
         for symptom_var in self.symptom_var_names:
-           population.props.at[child_id,symptom_var]=set()
+            population.props.at[child_id, symptom_var] = set()
 
-    def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module, \
+    def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
                     duration_in_days=None, date_of_onset=None):
         """
         This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.
@@ -145,7 +146,7 @@ class SymptomManager(Module):
         # Make the operation:
         if add_or_remove == '+':
             # Add this disease module as a cause of this symptom
-            self.sim.population.props.loc[person_id, symptom_var_name].apply(\
+            self.sim.population.props.loc[person_id, symptom_var_name].apply(
                 lambda x: x.add(disease_module.name))
             self.persons_with_newly_onset_acute_generic_symptoms = \
                 self.persons_with_newly_onset_acute_generic_symptoms + person_id
@@ -161,16 +162,12 @@ class SymptomManager(Module):
 
         else:
             # Remove this disease module as a cause of this symptom
-            test_to_see_of_any_illegal_removals = self.sim.population.props.loc[person_id, symptom_var_name].apply(\
-                lambda x: (disease_module.name in x))\
-                .all()
-
-            assert self.sim.population.props.loc[person_id, symptom_var_name].apply(\
-                lambda x: (disease_module.name in x))\
+            assert self.sim.population.props.loc[person_id, symptom_var_name].apply(
+                lambda x: (disease_module.name in x)) \
                 .all(), \
                 ('Error - request from disease module to remove a symptom that it has not caused. ')
 
-            self.sim.population.props.loc[person_id, symptom_var_name].apply( \
+            self.sim.population.props.loc[person_id, symptom_var_name].apply(
                 lambda x: x.remove(disease_module.name))
 
     def who_has(self, in_list_of_symptoms):
@@ -194,7 +191,7 @@ class SymptomManager(Module):
 
         # get the person_id for those who have each symptom
         df = self.sim.population.props
-        mask_has_symp = pd.Series(data=True, index = df.loc[df['is_alive']].index)
+        mask_has_symp = pd.Series(data=True, index=df.loc[df['is_alive']].index)
         for symp in list_of_symptoms:
             symp_var_name = 'sy_' + symp
             mask_has_symp = mask_has_symp & df[symp_var_name].apply(lambda x: x != set())
@@ -213,16 +210,16 @@ class SymptomManager(Module):
         :return: list of strings for the symptoms that are currently being experienced
         """
         df = self.sim.population.props
-        profile = df.loc[person_id,df.columns[df.columns.str.startswith('sy_')]]
+        profile = df.loc[person_id, df.columns[df.columns.str.startswith('sy_')]]
 
-        assert df.at[person_id,'is_alive'], "The person is not alive"
+        assert df.at[person_id, 'is_alive'], "The person is not alive"
 
         if disease_module is None:
             # search for symptoms that are present (non-empty sets)
-            symptoms_with_prefix = list(profile[profile.apply(lambda x: x!=set())].index)
+            symptoms_with_prefix = list(profile[profile.apply(lambda x: x != set())].index)
         else:
             # search for symptoms that have a specified disease_module_name in their set
-            assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(),\
+            assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(), \
                 "Disease Module Name is not recognised"
             symptoms_with_prefix = list(profile[profile.apply(lambda x: (disease_module.name in x))].index)
 
@@ -243,7 +240,7 @@ class SymptomManager(Module):
         df = self.sim.population.props
 
         assert df.at[person_id, 'is_alive'], "The person is not alive"
-        assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(),\
+        assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(), \
             "Disease Module Name is not recognised"
 
         symptoms_caused_by_this_disease_module = \
@@ -276,17 +273,16 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         self.disease_module = disease_module
 
     def apply(self, population):
-
         # extract any persons who have died or who have resolved the symptoms
         symptom_var_name = 'sy_' + self.symptom_string
 
         alive_person_ids = list(self.module.sim.population.props.index[self.module.sim.population.props.is_alive])
-        still_has_symptom_bools = self.sim.population.props.loc[self.person_id, symptom_var_name].apply(\
-                lambda x: (self.disease_module.name in x))
+        still_has_symptom_bools = self.sim.population.props.loc[self.person_id, symptom_var_name].apply(
+            lambda x: (self.disease_module.name in x))
         still_has_symptom_person_ids = list(still_has_symptom_bools[still_has_symptom_bools].index)
 
-        self.person_id = list(set(self.person_id).\
-                              intersection(alive_person_ids).\
+        self.person_id = list(set(self.person_id).
+                              intersection(alive_person_ids).
                               intersection(still_has_symptom_person_ids))
 
         # run the chg_symptom function
