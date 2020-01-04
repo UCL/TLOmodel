@@ -1014,6 +1014,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event has expired (after tclose), do nothing more
                 pass
 
+            elif (type(event.target) is not tlo.population.Population) \
+                and (not self.sim.population.props.at[event.target,'is_alive']):
+                # if individual level event and the person who is the target is no longer alive, do nothing more
+                pass
+
             elif self.sim.date < next_event_tuple[1]:
                 # The event is not yet due (before topen), add to the hold-over list
                 hp.heappush(hold_over, next_event_tuple)
@@ -1025,7 +1030,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     break
 
             else:
-                # The event is now due to run today.
+                # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today (individual or population level)
                 # NB. These list is ordered by priority and then due date
 
