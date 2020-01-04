@@ -1,7 +1,9 @@
 import io
 import numbers
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 
 class Predictor(object):
     def __init__(self, property_name: str):
@@ -81,6 +83,7 @@ class Predictor(object):
             print(f"touched = (touched | mask)")
         return output
 
+
 class LogisticModel(object):
     def __init__(self, intercept: float, *args: Predictor):
         """A logistic model has an intercept and one or more Predictor variables """
@@ -104,7 +107,7 @@ class LogisticModel(object):
 # EXAMPLE USAGE:
 ################################################################################
 
-EXAMPLE_POP= """region_of_residence,li_urban,sex,age_years,sy_vomiting
+EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
 Northern,True,M,12,False
 Central,True,M,6,True
 Northern,True,M,24,False
@@ -134,12 +137,11 @@ eq = LogisticModel(
     Predictor('li_urban').when(True, 0.01).otherwise(0.02),
     Predictor('sex').when('M', 0.001).when('F', 0.002),
     Predictor('age_years')
-        .when('< 5', 0.0001)
-        # alternative: .when('.between(0,5)', 0.0001)
-        .when('< 15', 0.0002)
-        .when('< 35', 0.0003)
-        .when('< 60', 0.0004)
-        .otherwise(0.0005),
+    .when('< 5', 0.0001)  # alternative: .when('.between(0,5)', 0.0001)
+    .when('< 15', 0.0002)
+    .when('< 35', 0.0003)
+    .when('< 60', 0.0004)
+    .otherwise(0.0005),
     Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
 )
 

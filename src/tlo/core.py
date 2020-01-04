@@ -33,7 +33,8 @@ class Types(Enum):
     DATA_FRAME = auto()
     STRING = auto()
     DICT = auto()
-# TODO: Add 'set' too?
+    # TODO: Add 'set' too?
+
 
 class Specifiable:
     """Base class for Parameter and Property."""

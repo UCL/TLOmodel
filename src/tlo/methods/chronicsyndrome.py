@@ -115,7 +115,6 @@ class ChronicSyndrome(Module):
         df.loc[df.is_alive, 'cs_scheduled_date_death'] = pd.NaT  # default: not a time
         df.loc[df.is_alive, 'cs_date_cure'] = pd.NaT  # default: not a time
 
-
         # randomly selected some individuals as infected
         num_alive = df.is_alive.sum()
         df.loc[df.is_alive, 'cs_has_cs'] = self.rng.random_sample(size=num_alive) < p['initial_prevalence']
@@ -129,20 +128,17 @@ class ChronicSyndrome(Module):
         person_id_all_with_cs = list(df[df.cs_has_cs].index)
 
         for symp in self.parameters['prob_of_symptoms']:
-
             # persons who will have symptoms (each can occur independently)
-            persons_id_with_symp = np.array(person_id_all_with_cs) \
-                                                        [self.rng.rand(len(person_id_all_with_cs)) < \
-                                                         self.parameters['prob_of_symptoms'][symp]
+            persons_id_with_symp = np.array(person_id_all_with_cs)[
+                self.rng.rand(len(person_id_all_with_cs)) < self.parameters['prob_of_symptoms'][symp]
             ]
 
             self.sim.modules['SymptomManager'].chg_symptom(
-                                                        person_id=list(persons_id_with_symp),
-                                                        symptom_string=symp,
-                                                        add_or_remove='+',
-                                                        disease_module=self
+                person_id=list(persons_id_with_symp),
+                symptom_string=symp,
+                add_or_remove='+',
+                disease_module=self
             )
-
 
         # date acquired cs
         # sample years in the past
@@ -248,7 +244,7 @@ class ChronicSyndrome(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values_df = pd.DataFrame(index = df.index[df.is_alive])
+        health_values_df = pd.DataFrame(index=df.index[df.is_alive])
 
         for symptom, daly_wt in self.parameters['daly_wts'].items():
             health_values_df.loc[
@@ -303,10 +299,9 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             # Assign symptoms:
             for symp in self.module.parameters['prob_of_symptoms']:
                 # persons who will have symptoms (each can occur independently)
-                persons_id_with_symp = np.array(newcases_idx) \
-                    [self.module.rng.rand(len(newcases_idx)) < \
-                     self.module.parameters['prob_of_symptoms'][symp]
-                     ]
+                persons_id_with_symp = np.array(newcases_idx)[
+                    self.module.rng.rand(len(newcases_idx)) < self.module.parameters['prob_of_symptoms'][symp]
+                ]
 
                 self.sim.modules['SymptomManager'].chg_symptom(
                     person_id=list(persons_id_with_symp),
@@ -316,11 +311,12 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                 )
 
         # 3) Handle progression to severe symptoms
-        curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive]) \
-                                                - set(self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
+        curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive])
+                                                  - set(
+            self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
 
         become_severe = self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches)) \
-                        < p['prob_dev_severe_symptoms_per_year'] / 12
+            < p['prob_dev_severe_symptoms_per_year'] / 12
         become_severe_idx = np.array(curr_cs_but_not_craving_sandwiches)[become_severe]
 
         self.sim.modules['SymptomManager'].chg_symptom(
@@ -329,7 +325,6 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             add_or_remove='+',
             disease_module=self.module
         )
-
 
         # 4) With some probability, the new severe cases seek "Emergency care"...
         if len(become_severe_idx) > 0:

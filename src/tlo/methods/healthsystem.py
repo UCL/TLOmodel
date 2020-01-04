@@ -322,11 +322,11 @@ class HealthSystem(Module):
             # 5) Check that the event does not request an appointment at a facility level which is not possible
             appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
             assert all([self.parameters['ApptType_By_FacLevel'].loc[
-                self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
-                self.parameters['ApptType_By_FacLevel'].columns.str.contains(
-                    str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
-                         for appt_type_to_check in appt_type_to_check_list
-                        ]),\
+                            self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
+                            self.parameters['ApptType_By_FacLevel'].columns.str.contains(
+                                str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
+                        for appt_type_to_check in appt_type_to_check_list
+                        ]), \
                 "An appointment type has been requested at a facility level for which is it not possibe: " \
                 + hsi_event.TREATMENT_ID
 
@@ -1015,7 +1015,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif (type(event.target) is not tlo.population.Population) \
-                and (not self.sim.population.props.at[event.target,'is_alive']):
+                    and (not self.sim.population.props.at[event.target, 'is_alive']):
                 # if individual level event and the person who is the target is no longer alive, do nothing more
                 pass
 
@@ -1215,12 +1215,12 @@ class HSI_Event:
 
 class HSIEventWrapper(Event):
     # This is wrapper that contains an HSI event.
-    # It is used when the healthsystem is 'diabled' and all HSI events sent to the health system scheduler should
+    # It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
     # be passed to the main simulation scheduler.
     # When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
 
     def __init__(self, hsi_event):
-        self.hsi_event=hsi_event
+        self.hsi_event = hsi_event
 
     def run(self):
-        _tmp_ = self.hsi_event.run(squeeze_factor=0.0)
+        _ = self.hsi_event.run(squeeze_factor=0.0)

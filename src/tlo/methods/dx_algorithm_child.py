@@ -55,7 +55,7 @@ class DxAlgorithmChild(Module):
 
         # get the symptoms of the person:
         symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
-        num_of_symptoms = sum(symptoms.apply(lambda symp: symp!=set()))
+        num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
 
         # Make a request for consumables (making reference to the hsi_event from which this is called)
         # TODO: Finish this demonstration **
