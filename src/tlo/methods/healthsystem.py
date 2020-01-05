@@ -8,7 +8,7 @@ import pandas as pd
 
 import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, Event
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
