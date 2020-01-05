@@ -11,6 +11,7 @@ from tlo.events import Event, PopulationScopeEventMixin
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
+
 class SymptomManager(Module):
     """
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
