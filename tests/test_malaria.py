@@ -8,7 +8,18 @@ from tlo.analysis.utils import parse_log_file
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, healthsystem, enhanced_lifestyle, healthburden, contraception, malaria
+from tlo.methods import (
+    demography,
+    contraception,
+    healthburden,
+    healthsystem,
+    enhanced_lifestyle,
+    malaria,
+    dx_algorithm_child,
+    dx_algorithm_adult,
+    healthseekingbehaviour,
+    symptommanager,
+)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -36,6 +47,8 @@ def simulation():
     logging.getLogger().addHandler(fh)
 
     service_availability = ["*"]
+    malaria_strat = 0  # levels: 0 = national; 1 = district
+
     sim = Simulation(start_date=start_date)
 
     resourcefilepath = Path("./resources")
@@ -44,11 +57,18 @@ def simulation():
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            mode_appt_constraints=0,
+                                           ignore_cons_constraints=True,
+                                           ignore_priority=True,
                                            capabilities_coefficient=1.0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+    sim.register(dx_algorithm_adult.DxAlgorithmAdult())
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    # sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(malaria.Malaria(resourcefilepath=resourcefilepath))
+    sim.register(malaria.Malaria(resourcefilepath=resourcefilepath,
+                                 level=malaria_strat))
     return sim
 
 
@@ -64,24 +84,14 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def __check_properties(df):
-    # no-one on treatment if not clinical or severe
+def test_run_no_hsi():
+    # There should be no HSI events run or scheduled
 
-    # specific symptoms categorial: none, clinical or severe
-
-    # clinical counter >=0, integer
-
-    assert not ((df.sex == 'M') & (df.hv_sexual_risk != 'sex_work')).any()
-    assert not ((df.hv_number_tests >= 1) & ~df.hv_ever_tested).any()
-
-    assert not (df.mc_is_circumcised & (df.sex == 'F')).any()
-
-
-def test_run_no_capability(tmpdir):
-    # no HSI events should run
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
 
     # Establish the logger
-    logfile = outputpath + 'LogFile' + datestamp + 'no_capability' + '.log'
+    logfile = outputpath + 'LogFile' + datestamp + '.log'
 
     if os.path.exists(logfile):
         os.remove(logfile)
@@ -90,9 +100,8 @@ def test_run_no_capability(tmpdir):
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
 
-    service_availability = ["*"]
-    sim = Simulation(start_date=start_date)
-
+    service_availability = []
+    malaria_strat = 0  # levels: 0 = national; 1 = district
     resourcefilepath = Path("./resources")
 
     # Register the appropriate modules
@@ -100,11 +109,18 @@ def test_run_no_capability(tmpdir):
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            mode_appt_constraints=0,
+                                           ignore_cons_constraints=True,
+                                           ignore_priority=True,
                                            capabilities_coefficient=1.0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+    sim.register(dx_algorithm_adult.DxAlgorithmAdult())
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(malaria.Malaria(resourcefilepath=resourcefilepath))
+    sim.register(malaria.Malaria(resourcefilepath=resourcefilepath,
+                                 level=malaria_strat))
 
     sim.seed_rngs(0)
 
@@ -118,10 +134,17 @@ def test_run_no_capability(tmpdir):
     output = parse_log_file(logfile)
     fh.close()
 
-    # Do the checks
-    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
-    assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
+    # check no-one has been treated
+    assert output['tlo.methods.malaria']['tx_coverage'] == 0
+
+
+def __check_deaths(simulation):
+    # deaths only occur in severe malaria cases
+    # check types of columns
+    df = simulation.population.props
+
+    assert not (
+            (df.ma_date_death) & ((df.ma_specific_symptoms == 'clinical') | (df.ma_specific_symptoms == 'none'))).any()
 
 
 if __name__ == '__main__':
