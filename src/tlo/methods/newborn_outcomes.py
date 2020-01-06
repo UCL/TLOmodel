@@ -582,6 +582,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
             random = self.module.rng.random_sample()
             if random > params['cfr_enceph_mild_mod']: #dummy
                 df.at[individual_id, 'nb_death_after_birth'] = True
+                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
 
         if (df.at[individual_id, 'nb_encephalopathy'] == 'mild_enceph') or\
            (df.at[individual_id, 'nb_encephalopathy'] == 'moderate_enceph'):

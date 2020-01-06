@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography
+from tlo.methods import demography, pregnancy_supervisor
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -628,7 +628,6 @@ class Labour (Module):
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
                                       health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive],
                                       health_values_5.loc[df.is_alive], health_values_6.loc[df.is_alive]], axis=1)
-
 
         # Must not have one person with more than 1.00 daly weight
         # Hot fix - scale such that sum does not exceed one.
