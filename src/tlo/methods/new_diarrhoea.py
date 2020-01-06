@@ -491,7 +491,7 @@ class NewDiarrhoea(Module):
         # self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # add an event to log to screen
-        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=12))
+        # sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -561,7 +561,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
 
         # SET DIARRHOEAL PROPERTIES BACK TO FALSE FOR THE EVENT
-        df['gi_diarrhoea_status'] = False
+        '''df['gi_diarrhoea_status'] = False
         df['gi_diarrhoea_acute_type'] = np.nan
         df['gi_persistent_diarrhoea'] = np.nan
         df['gi_dehydration_status'] = 'no dehydration'
@@ -571,7 +571,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df['gi_diarrhoea_death_date'] = pd.NaT
         df['gi_diarrhoea_death'] = False
         df['gi_diarrhoea_type'] = np.nan
-        df['gi_diarrhoea_pathogen'] = np.nan
+        df['gi_diarrhoea_pathogen'] = np.nan '''
 
         # indexes
         no_diarrhoea0 = df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years < 1)
@@ -664,9 +664,10 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['random_draw_all'] = random_draw_all
 
         # running counts
-        pathogen_episodes = \
-            {'rotavirus': 0, 'shigella': 0, 'adenovirus': 0, 'cryptosporidium': 0,
-             'campylobacter': 0, 'ST-ETEC': 0, 'sapovirus': 0, 'norovirus': 0, 'astrovirus': 0, 'tEPEC': 0}
+        pathogen_episodes = {}
+           # {'rotavirus': np.nan, 'shigella': np.nan, 'adenovirus': np.nan, 'cryptosporidium': np.nan,
+            # 'campylobacter': np.nan, 'ST-ETEC': np.nan, 'sapovirus': np.nan, 'norovirus': np.nan,
+             # 'astrovirus': np.nan, 'tEPEC': np.nan}
 
         for i, column in enumerate(dfx.columns):
             # go through each pathogen and assign the pathogen and status
@@ -683,19 +684,32 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_to_infect, 'gi_diarrhoea_count'] += 1
             pathogen_episodes.update(
                 df.loc[df.is_alive & (df.age_exact_years < 5), 'gi_diarrhoea_pathogen'].value_counts().to_dict())
-            logger.info('%s|number_pathogen_diarrhoea|%s', self.sim.date,
-                        {
-                            'rotavirus': pathogen_episodes.get('rotavirus'),
-                            'shigella': pathogen_episodes.get('shigella'),
-                            'adenovirus': pathogen_episodes.get('adenovirus'),
-                            'cryptosporidium': pathogen_episodes.get('cryptosporidium'),
-                            'campylobacter': pathogen_episodes.get('campylobacter'),
-                            'ETEC': pathogen_episodes.get('ST-ETEC'),
-                            'sapovirus': pathogen_episodes.get('sapovirus'),
-                            'norovirus': pathogen_episodes.get('norovirus'),
-                            'astrovirus': pathogen_episodes.get('astrovirus'),
-                            'tEPEC': pathogen_episodes.get('tEPEC')
-                         })
+
+        '''pop_under5 = len(df[df.is_alive & (df.age_exact_years < 5)])
+        rota_inc = pathogen_episodes.get('rotavirus')
+        shig_inc = pathogen_episodes.get('shigella')
+        adeno_inc = pathogen_episodes.get('adenovirus')
+        crypto_inc = pathogen_episodes.get('cryptosporidium')
+        campy_inc = pathogen_episodes.get('campylobacter')
+        etec_inc = pathogen_episodes.get('ST-ETEC')
+        sapo_inc = pathogen_episodes.get('sapovirus')
+        noro_inc = pathogen_episodes.get('norovirus')
+        astro_inc = pathogen_episodes.get('astrovirus')
+        epec_inc = pathogen_episodes.get('tEPEC')
+
+        logger.info('%s|number_pathogen_diarrhoea|%s', self.sim.date,
+                    {'rotavirus': rota_inc,
+                     'shigella': shig_inc,
+                     'adenovirus': adeno_inc,
+                     'cryptosporidium': crypto_inc,
+                     'campylobacter': campy_inc,
+                     'ETEC': etec_inc,
+                     'sapovirus': sapo_inc,
+                     'norovirus': noro_inc,
+                     'astrovirus': astro_inc,
+                     'tEPEC': epec_inc
+                     })
+                     '''
 
         # ----------------------- ALLOCATE A RANDOM DATE OF ONSET OF ACUTE DIARRHOEA -----------------------
         incident_acute_diarrhoea = df.index[df.is_alive & df.gi_diarrhoea_status & (df.age_exact_years < 5)]
@@ -1308,7 +1322,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                     df.at[child, 'date_of_onset_diarrhoea'] + random_days1)
         # persistent diarrhoea
         for child in recovery_from_diarr_idx & df.index[df.gi_diarrhoea_type == 'persistent']:
-            random_date2 = rng.randint(low=7, high=13)
+            random_date2 = rng.randint(low=14, high=21)
             random_days2 = pd.to_timedelta(random_date2, unit='d')
             self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=child),
                                     df.at[child, 'date_of_onset_diarrhoea'] + random_days2)
@@ -1355,7 +1369,7 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
                         {'death': sum(death_count)
                          })
 
-
+'''
 class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.repeat = 12
@@ -1371,8 +1385,10 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
         count_episodes = df['gi_diarrhoea_count'].sum()
         pop_under5 = len(df[df.is_alive & (df.age_exact_years < 5)])
         # overall incidence rate in under 5
-        inc_100cy = (count_episodes / pop_under5) * 100
-        logger.info('%s|status_counts|%s', now, inc_100cy)
+        # inc_100cy = (count_episodes / pop_under5) * 100
+        # logger.info('%s|status_counts|%s', now,
+        #             {'incidence_per100cy': inc_100cy})
+        '''
 
 '''
         # log information on attributable pathogens

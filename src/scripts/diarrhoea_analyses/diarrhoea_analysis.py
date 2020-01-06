@@ -62,11 +62,12 @@ output = parse_log_file(logfile)
 years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
-
+'''
 # -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
 incidence_by_patho_df = output['tlo.methods.new_diarrhoea']['number_pathogen_diarrhoea']
 Model_Years = pd.to_datetime(incidence_by_patho_df.date)
+Model_Years = Model_Years.dt.year
 Model_rotavirus = incidence_by_patho_df.rotavirus
 Model_shigella = incidence_by_patho_df.shigella
 Model_adenovirus = incidence_by_patho_df.adenovirus
@@ -103,7 +104,7 @@ plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campyloba
 plt.savefig(outputpath + 'Diarrhoea incidence by pathogens' + datestamp + '.pdf')
 
 plt.show()
-
+'''
 # -----------------------------------------------------------------------------
 # Load Model Results on clinical types of diarrhoea
 clinical_type_df = output['tlo.methods.new_diarrhoea']['clinical_diarrhoea_type']
@@ -120,8 +121,24 @@ ax.plot(np.asarray(Model_Years), Model_persistent)
 plt.title("Total clinical diarrhoea")
 plt.xlabel("Year")
 plt.ylabel("Number of diarrhoea episodes")
-plt.legend(['total diarrhoea', 'acute watery diarrhoea', 'dysentery', 'persistent diarrhoea'])
+plt.legend(['acute watery diarrhoea', 'dysentery', 'persistent diarrhoea'])
 plt.savefig(outputpath + '3 clinical diarrhoea types' + datestamp + '.pdf')
+
+plt.show()
+
+# -----------------------------------------------------------------------------
+# Load Model Results on clinical types of diarrhoea
+status_counts_df = output['tlo.methods.new_diarrhoea']['status_counts']
+Model_Years = pd.to_datetime(status_counts_df.date)
+Model_incidence = status_counts_df.incidence_per100cy
+
+plt.plot(Model_Years, Model_incidence)
+
+plt.title("Overall incidence of diarrhoea per 100 child-years")
+plt.xlabel("Year")
+plt.ylabel("Incidence of diarrhoea per 100 child-years")
+plt.legend(['Yearly diarrhoea incidence'])
+plt.savefig(outputpath + 'Diarrhoea incidence per 100 child-years' + datestamp + '.pdf')
 
 plt.show()
 
