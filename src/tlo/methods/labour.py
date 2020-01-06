@@ -401,8 +401,11 @@ class Labour (Module):
         # Then all women are scheduled to go into labour on this due date
         for person in pregnant_idx:
             scheduled_labour_date = df.at[person, 'la_due_date_current_pregnancy']
-            labour = LabourEvent(self, individual_id=person, cause='Labour')
-            self.sim.schedule_event(labour, scheduled_labour_date)
+
+            # cannot schedule events in the past, so adding it a check here:
+            if scheduled_labour_date >= self.sim.date:
+                labour = LabourEvent(self, individual_id=person, cause='Labour')
+                self.sim.schedule_event(labour, scheduled_labour_date)
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
@@ -625,6 +628,13 @@ class Labour (Module):
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
                                       health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive],
                                       health_values_5.loc[df.is_alive], health_values_6.loc[df.is_alive]], axis=1)
+
+
+        # Must not have one person with more than 1.00 daly weight
+        # Hot fix - scale such that sum does not exceed one.
+        scaling_factor = (health_values_df.sum(axis=1).clip(lower=0, upper=1) /
+                          health_values_df.sum(axis=1)).fillna(1.0)
+        health_values_df = health_values_df.multiply(scaling_factor,axis=0)
 
         return health_values_df  # return the dataframe
 
@@ -1017,7 +1027,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     random = self.module.rng.random_sample(size=1)
                     if random < eff_prob_sepsis:
                         df.at[individual_id, 'la_sepsis'] = True
-                        df.at[individual_id]['sepsis_disability'] = True
+                        df.at[individual_id, 'la_sepsis_disability'] = True
                         mni[individual_id]['sepsis_ip'] = True
 
                         logger.debug('person %d is experiencing intrapartum maternal sepsis in the community on date %s'

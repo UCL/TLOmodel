@@ -47,7 +47,7 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
-
+    test_dtypes(simulation)
 
 def test_dtypes(simulation):
     # check types of columns
@@ -59,6 +59,7 @@ def test_dtypes(simulation):
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
+    simulation.make_initial_population(n=popsize)
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)

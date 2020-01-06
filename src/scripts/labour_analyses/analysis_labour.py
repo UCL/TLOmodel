@@ -10,7 +10,8 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, antenatal_care
+from tlo.methods import demography, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, antenatal_care, \
+    healthburden
 
 # Where will output go - by default, wherever this script is run
 #outputpath = './src/scripts/analyses_labour/'
@@ -22,7 +23,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
 #resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-resourcefilepath = "./resources/"
+resourcefilepath = Path("./resources/")
 
 
 # %% Run the Simulation
@@ -46,12 +47,12 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
-
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
