@@ -36,9 +36,8 @@ def simulation():
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
     return sim
@@ -47,35 +46,18 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
-    test_dtypes(simulation)
+
 
 def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
-
-    dfcol = df.columns
-    orcol = orig.columns
-
-    # for col in orcol:
-    #     if col not in dfcol:
-    #         print('this column not defined :' + col)
-    #
-    # for col in dfcol:
-    #     if col not in orcol:
-    #         print('this column not defined :' + col)
-
-
-    assert (df.dtypes == orig.dtypes).all(): FAILS
-
-
-
+    assert (df.dtypes == orig.dtypes).all()
 
 
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
-    simulation.make_initial_population(n=popsize)
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
