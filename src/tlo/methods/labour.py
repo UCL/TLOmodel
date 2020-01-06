@@ -1053,7 +1053,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 eff_prob_ur = riskfactors * params['prob_uterine_rupture']
 
                 if mni[individual_id]['delivery_setting'] == 'FD':
-                    df.at[individual_id, 'risk_ur'] = eff_prob_ur
+                    mni[individual_id]['risk_ur'] = eff_prob_ur
 
                 else:
                     random = self.module.rng.random_sample(size=1)
