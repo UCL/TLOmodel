@@ -14,6 +14,7 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     mockitis,
+    symptommanager,
 )
 
 try:
@@ -65,6 +66,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())

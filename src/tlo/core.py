@@ -32,6 +32,8 @@ class Types(Enum):
     SERIES = auto()
     DATA_FRAME = auto()
     STRING = auto()
+    DICT = auto()
+    # TODO: Add 'set' too?
 
 
 class Specifiable:
@@ -47,7 +49,8 @@ class Specifiable:
         Types.LIST: object,
         Types.SERIES: object,
         Types.DATA_FRAME: object,
-        Types.STRING: object
+        Types.STRING: object,
+        Types.DICT: dict
     }
 
     """Map our Types to Python types."""
@@ -60,7 +63,8 @@ class Specifiable:
         Types.LIST: list,
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
-        Types.STRING: object
+        Types.STRING: object,
+        Types.DICT: dict
     }
 
     def __init__(self, type_, description, categories=None):
