@@ -485,8 +485,8 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                 if random < eff_prob_retinop:
                     random2 = self.module.rng.choice(('mild', 'moderate','severe', 'blindness'), p=[0.4, 0.3, 0.2, 0.1])
                     df.at[individual_id, 'nb_retinopathy_prem'] = random2
-                    logger.info('Neonate %d has developed retinopathy of prematurity, severity:',random2,
-                                individual_id) #TODO this doesnt really work
+                    # logger.info('Neonate %d has developed retinopathy of prematurity, severity:',random2,
+                    #             individual_id) #TODO this doesnt really work
 
             #  TODO: Consider application of impairment variable and how based to decide probabilities
 
