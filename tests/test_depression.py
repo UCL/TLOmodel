@@ -53,7 +53,23 @@ def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
+
+    dfcol = df.columns
+    orcol = orig.columns
+
+    # for col in orcol:
+    #     if col not in dfcol:
+    #         print('this column not defined :' + col)
+    #
+    # for col in dfcol:
+    #     if col not in orcol:
+    #         print('this column not defined :' + col)
+
+
+    assert (df.dtypes == orig.dtypes).all(): FAILS
+
+
+
 
 
 if __name__ == '__main__':
