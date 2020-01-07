@@ -78,7 +78,7 @@ class Mockitis(Module):
                 'level_of_symptoms': ['none',
                                       'weird_sense_of_deja_vu',
                                       'coughing_and_irritable',
-                                      'extreme_pain_in_the_nose'],
+                                      'em_extreme_pain_in_the_nose'],
                 'probability': [0.25, 0.25, 0.25, 0.25]
             })
 
@@ -87,7 +87,7 @@ class Mockitis(Module):
             p['daly_wts'] = {
                 'weird_sense_of_deja_vu': self.sim.modules['HealthBurden'].get_daly_weight(48),
                 'coughing_and_irritable': self.sim.modules['HealthBurden'].get_daly_weight(49),
-                'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
+                'em_extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
 
         # ---- Register this module ----
@@ -363,7 +363,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Mockitis)
+        assert isinstance(module, Mockitis) or module.name == 'HealthSeekingBehaviour'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()

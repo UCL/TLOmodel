@@ -76,7 +76,7 @@ class ChronicSyndrome(Module):
         self.parameters['initial_prevalence'] = 0.30
         self.parameters['prob_of_symptoms'] = {
             'inappropriate_jokes': 0.95,
-            'craving_sandwiches': 0.5
+            'em_craving_sandwiches': 0.5
         }
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
@@ -85,7 +85,7 @@ class ChronicSyndrome(Module):
             # get the DALY weight that this module will use from the weight database (these codes are just random!)
             self.parameters['daly_wts'] = {
                 'inappropriate_jokes': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=86),
-                'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
+                'em_craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
             }
 
         # ---- Register this module ----
@@ -380,8 +380,8 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, ChronicSyndrome)
-
+        assert isinstance(module, ChronicSyndrome) or module.name == 'HealthSeekingBehaviour'
+        
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
