@@ -287,18 +287,18 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
 
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
-        if 'em_coma' in self.module['SymptomManager'].has_what(person_id):
-            if 'malaria' in self.sim.population.props.at[person_id,'sy_em_coma']:
+        if 'em_coma' in self.sim.modules['SymptomManager'].has_what(person_id):
+            if 'Malaria' in self.sim.population.props.at[person_id, 'sy_em_coma']:
                 # Launch the HSI for treatment for Malaria - chosing the right one for adults/children
                 if self.sim.population.props.at[person_id,'age_years']<5.0:
-                    self.module['HealthSystem'].schedule_hsi_event(
-                        event=HSI_Malaria_tx_compl_child(self.module, person_id=person_id),
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_Malaria_tx_compl_child(self.module, person_id=person_id),
                         priority=0,
                         topen=self.sim.date
                     )
                 else:
-                    self.module['HealthSystem'].schedule_hsi_event(
-                        event=HSI_Malaria_tx_compl_adult(self.module, person_id=person_id),
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event=HSI_Malaria_tx_compl_adult(self.module, person_id=person_id),
                         priority=0,
                         topen=self.sim.date
                     )

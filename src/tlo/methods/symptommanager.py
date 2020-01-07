@@ -114,6 +114,7 @@ class SymptomManager(Module):
         assert all([(p in alive_person_ids) for p in person_id])
 
         # Check that the symptom_string is legitimate
+        check = symptom_string in self.total_list_of_symptoms
         assert symptom_string in self.total_list_of_symptoms, 'Symptom is not recognised'
         symptom_var_name = 'sy_' + symptom_string
         assert symptom_var_name in self.sim.population.props.columns, 'Symptom has not been declared'

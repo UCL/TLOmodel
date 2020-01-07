@@ -117,15 +117,16 @@ class Malaria(Module):
             p['daly_wt_clinical'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
             p['daly_wt_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(589)
 
+        # ----------------------------------- REGISTER WITH HEALTH SYSTEM -----------------------------------
+        # need to register before any health system, stuff / symptom manager happens
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
     def initialise_population(self, population):
         df = population.props
         p = self.parameters
         now = self.sim.date
         rng = self.rng
 
-        # ----------------------------------- REGISTER WITH HEALTH SYSTEM -----------------------------------
-        # need to register before any health system, stuff / symptom manager happens
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # ----------------------------------- INITIALISE THE POPULATION-----------------------------------
         # Set default for properties
@@ -367,6 +368,13 @@ class Malaria(Module):
 
         # CLINICAL CASES
         if len(clin) > 0:
+            self.sim.modules['SymptomManager'].chg_symptom(
+                person_id=list(clin),
+                symptom_string='em_coma',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=p['dur_clin'])
+
             self.sim.modules['SymptomManager'].chg_symptom(
                 person_id=list(clin),
                 symptom_string='fever',
@@ -1509,6 +1517,8 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
+        # or isinstance(module, HSI_GenericEmergencyFirstApptAtFacilityLevel)
+        # TODO: bring back the assertion but also allow instances of 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
