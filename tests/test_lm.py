@@ -1,10 +1,11 @@
-import os
+import io
 from pathlib import Path
 
 from tlo.lm import LinearModel, Predictor
 import pandas as pd
 
 def test_of_example_useage():
+    # Test the use of basic functions using different syntax and model types
 
     EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
     Northern,True,M,12,False
@@ -39,7 +40,6 @@ def test_of_example_useage():
         Predictor('sex').when('M', 0.001).when('F', 0.002),
         Predictor('age_years')
             .when('< 5', 0.0001)
-            # alternative: .when('.between(0,5)', 0.0001)
             .when('< 15', 0.0002)
             .when('< 35', 0.0003)
             .when('< 60', 0.0004)
@@ -47,7 +47,7 @@ def test_of_example_useage():
         Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
     )
 
-    df = pd.read_csv(os.io.StringIO(EXAMPLE_POP))
+    df = pd.read_csv(io.StringIO(EXAMPLE_POP))
     predicted = eq.predict(df)
     df['predicted'] = predicted
     print(df.to_string())
@@ -57,7 +57,10 @@ def test_of_example_useage():
         'logistic',
         1.0,
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
-        Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+        Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0),
+        Predictor('age_years')
+            .when('.between(0,5)', 0.001)
+            .otherwise(0),
     )
 
     df = pd.read_csv(io.StringIO(EXAMPLE_POP))
@@ -68,7 +71,7 @@ def test_of_example_useage():
     # Multiplicative model
     eq = LinearModel(
         'multiplicative',
-        1.0,
+        0.02,
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
         Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
     )
@@ -78,3 +81,15 @@ def test_of_example_useage():
     df['predicted'] = predicted
     print(df.to_string())
 
+def test_linear_application():
+    # Take an example from ????
+    pass
+
+def test_multiplicative_application():
+    # Take an example from lifestyle
+    pass
+
+
+def test_logistic_application():
+    # Take an example from health seeking behaviour
+    pass
