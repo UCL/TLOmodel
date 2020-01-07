@@ -145,7 +145,7 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=1,  # ????
                                                                 topen=care_seeking_date,
-                                                                tclose=None)
+                                                                tclose=care_seeking_date + DateOffset(days=7))
         # Todo, is it here that we should be scheduling future ANC visits or should that be at the first HSI?
 
 
