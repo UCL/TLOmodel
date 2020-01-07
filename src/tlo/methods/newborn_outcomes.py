@@ -240,14 +240,27 @@ class NewbornOutcomes(Module):
 
         # Newborns delivered at less than 37 weeks are allocated as either late or early preterm based on the
         # gestation at labour
+
+        # TODO: will this log correctly considering IP still births will undergo instantaneous death
         if mni[mother_id]['labour_state'] == 'EPTL':
             df.at[child_id, 'nb_early_preterm'] = True
+            logger.info('%s|early_preterm|%s', self.sim.date,
+                        {'age': df.at[child_id, 'age_years'],
+                         'person_id': child_id})
 
         elif mni[mother_id]['labour_state'] == 'LPTL':
             df.at[child_id, 'nb_late_preterm'] = True
+            logger.info('%s|late_preterm|%s', self.sim.date,
+                        {'age': df.at[child_id, 'age_years'],
+                         'person_id': child_id})
         else:
             df.at[child_id, 'nb_early_preterm'] = False
             df.at[child_id, 'nb_late_preterm'] = False
+
+        if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
+            logger.info('%s|preterm_birth|%s', self.sim.date,
+                        {'age': df.at[child_id, 'age_years'],
+                         'person_id': child_id})
 
         # We schedule the NewbornOutcome event for those newborns who survived labour
         if df.at[child_id, 'is_alive'] & ~mni[mother_id]['stillbirth_in_labour']:

@@ -1178,6 +1178,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_gh, 'ps_gest_diab'] = True
         df.loc[idx_gh, 'ps_prev_gest_diab'] = True
 
+        # TODO: Review if we should bother going up to month ten OR we start looking at women every week from week 40
+        #  upwards to apply increased risk of stillbirth etc etc etc
 
 class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
     # TODO: consider renaming if only dealing with HTN diseases

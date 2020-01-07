@@ -217,6 +217,7 @@ class Labour (Module):
         'la_intrapartum_still_birth': Property(Types.BOOL, 'whether this womans most recent pregnancy has ended '
                                                            'in a stillbirth'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
+
         'la_total_deliveries_by_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
@@ -639,7 +640,7 @@ class Labour (Module):
 
 
 class LabourScheduler (Event, IndividualScopeEventMixin):
-    """This event determines when pregnant women, who have not experienced a miscarriage, will going to labour"""
+    """This event determines the gestation at which women will be scheduled to go into labour"""
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)

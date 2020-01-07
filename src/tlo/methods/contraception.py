@@ -510,8 +510,6 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                         })
 
 
-
-
 class DelayedBirthEvent(Event, IndividualScopeEventMixin): #TODO: Delete?
     """A one-off event in which a pregnant mother gives birth.
     """
