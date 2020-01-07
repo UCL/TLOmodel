@@ -57,8 +57,8 @@ class ChronicSyndrome(Module):
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
-        'inappropriate_jokes',
-        'craving_sandwiches'
+        'inappropriate_jokes',  # will not trigger any health seeking behaviour
+        'em_craving_sandwiches'    # symptom that will trigger emergency HSI
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -325,18 +325,6 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             add_or_remove='+',
             disease_module=self.module
         )
-
-        # 4) With some probability, the new severe cases seek "Emergency care"...
-        if len(become_severe_idx) > 0:
-            for person_index in become_severe_idx:
-                prob_seeks_emergency_care = 0.7
-                seeks_care = self.module.rng.rand() < prob_seeks_emergency_care
-                if seeks_care:
-                    event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        event, priority=1, topen=self.sim.date, tclose=None
-                    )
 
 
 class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):

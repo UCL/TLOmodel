@@ -4,7 +4,9 @@ the health system following the onset of acute generic symptoms.
 """
 
 from tlo.events import IndividualScopeEventMixin
+from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.population import logger
 from tlo import DateOffset
 
@@ -169,7 +171,29 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
+
+        # simple diagnosis to work out which HSI event to trigger
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+
+        if 'em_craving_sandwiches' in symptoms:
+            event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                event, priority=1, topen=self.sim.date, tclose=None
+            )
+
+        elif 'em_extreme_pain_in_the_nose' in symptoms:
+            event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
+        else:
+            logger.debug('Another symptom must have caused this emergency appointment')
+
+
         pass
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
+        pass
