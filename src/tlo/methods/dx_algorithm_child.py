@@ -103,17 +103,12 @@ class DxAlgorithmChild(Module):
                 if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'severe'):
                     diagnosis_str = 'severe_malaria'
 
-            # Example of a diangostic algorithm
-            if num_of_symptoms > 2:
-                diagnosis_str = 'measles'
-            else:
-                diagnosis_str = 'just_a_common_cold'
-                    logger.debug(
+                logger.debug(
                         "DxAlgorithmChild diagnosing severe malaria for child %d on date %s",
                         person_id, self.sim.date)
 
                 # clinical malaria
-                elif df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'clinical'):
+                if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'clinical'):
 
                     # diagnosis of clinical disease dependent on RDT sensitivity
                     diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['sensitivity_rdt'],
