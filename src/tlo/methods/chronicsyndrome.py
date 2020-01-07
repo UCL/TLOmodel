@@ -381,7 +381,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, ChronicSyndrome) or module.name == 'HealthSeekingBehaviour'
-        
+
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt

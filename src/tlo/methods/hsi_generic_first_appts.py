@@ -191,7 +191,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         else:
             logger.debug('Another symptom must have caused this emergency appointment')
 
-
         pass
 
     def did_not_run(self):
