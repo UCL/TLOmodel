@@ -94,9 +94,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 hsi_genericemergencyfirstappt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericemergencyfirstappt,
                                                                 priority=0,
-                                                                topen=date_of_seeking_care,
+                                                                topen=self.sim.date,
                                                                 tclose=None)
-
 
             # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO GENERIC SYMPTOMS ~~~~~~~~
             person_profile = self.sim.population.props.loc[person_id]
