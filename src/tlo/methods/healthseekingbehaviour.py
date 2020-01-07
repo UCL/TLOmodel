@@ -92,11 +92,12 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
             # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO EMERGENCY SYMPTOMS ~~~~~~~~
             if any([s.startswith('em_') for s in self.module.sim.modules['SymptomManager'].has_what(person_id)]):
-                hsi_genericemergencyfirstappt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.module, person_id=person_id)
+                hsi_genericemergencyfirstappt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.module,
+                                                                                              person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericemergencyfirstappt,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
 
             else:
                 # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO GENERIC SYMPTOMS ~~~~~~~~
@@ -144,7 +145,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # - not encoded: this effect ignored
 
                 # Chronic conditions
-                # - not encoded: awaiting suitable variable to include. effect size = 1.44 if pre-existing chronic_condition
+                # - not encoded: awaiting suitable variable to include.
+                #   (effect size = 1.44 if pre-existing chronic_condition)
 
                 # Symptoms (testing for empty or non-empty set) - (can have more than one)
                 # TODO; chdck that this is working with the sets stuff

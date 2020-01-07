@@ -129,7 +129,8 @@ class SymptomManager(Module):
 
         # Check that the symptom is declared for use by the disease_module
         if symptom_string not in self.parameters['list_of_generic_symptoms']:
-            assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not generic or declared for use by disease module'
+            assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not generic or declared for use by disease ' \
+                                                              'module '
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
