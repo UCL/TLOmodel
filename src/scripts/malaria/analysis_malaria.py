@@ -115,7 +115,7 @@ inc = output['tlo.methods.malaria']['incidence']
 pfpr = output['tlo.methods.malaria']['prevalence']
 tx = output['tlo.methods.malaria']['tx_coverage']
 mort = output['tlo.methods.malaria']['ma_mortality']
-symp = output['tlo.methods.malaria']['symptoms']
+# symp = output['tlo.methods.malaria']['symptoms']
 
 prev_district = output['tlo.methods.malaria']['prev_district']
 
@@ -141,8 +141,8 @@ tx_df.to_excel(writer, sheet_name='tx')
 mort_df = pd.DataFrame(mort)
 mort_df.to_excel(writer, sheet_name='mort')
 
-symp_df = pd.DataFrame(symp)
-symp_df.to_excel(writer, sheet_name='symp')
+# symp_df = pd.DataFrame(symp)
+# symp_df.to_excel(writer, sheet_name='symp')
 
 prev_district_df = pd.DataFrame(prev_district)
 prev_district_df.to_excel(writer, sheet_name='prev_district')
@@ -294,39 +294,39 @@ plt.close()
 
 # plt.figure(1, figsize=(30, 20))
 
-# Malaria symptom prevalence
-ax = plt.subplot(221)  # numrows, numcols, fignum
-plt.bar(symp.date, symp.fever_prev, align='center', alpha=0.5)
-# plt.xticks(symp.date, symp.fever_prev)
-# plt.xticks(rotation=45)
-plt.title("Fever prevalence")
-plt.xlabel("Year")
-plt.ylabel("Fever prevalence")
-plt.tight_layout()
-
-ax = plt.subplot(222)  # numrows, numcols, fignum
-plt.bar(symp.date, symp.headache_prev, align='center', alpha=0.5)
-# plt.xticks(rotation=45)
-plt.title("Headache prevalence")
-plt.xlabel("Year")
-plt.ylabel("Headache prevalence")
-plt.tight_layout()
-
-ax = plt.subplot(223)  # numrows, numcols, fignum
-plt.bar(symp.date, symp.vomiting_prev, align='center', alpha=0.5)
-# plt.xticks(rotation=45)
-plt.title("Vomiting prevalence")
-plt.xlabel("Year")
-plt.ylabel("Vomiting prevalence")
-plt.tight_layout()
-
-ax = plt.subplot(224)  # numrows, numcols, fignum
-plt.bar(symp.date, symp.stomachache_prev, align='center', alpha=0.5)
-# plt.xticks(rotation=45)
-plt.title("Stomach ache prevalence")
-plt.xlabel("Year")
-plt.ylabel("Stomach ache prevalence")
-plt.tight_layout()
-
-plt.show()
+# # Malaria symptom prevalence
+# ax = plt.subplot(221)  # numrows, numcols, fignum
+# plt.bar(symp.date, symp.fever_prev, align='center', alpha=0.5)
+# # plt.xticks(symp.date, symp.fever_prev)
+# # plt.xticks(rotation=45)
+# plt.title("Fever prevalence")
+# plt.xlabel("Year")
+# plt.ylabel("Fever prevalence")
+# plt.tight_layout()
+#
+# ax = plt.subplot(222)  # numrows, numcols, fignum
+# plt.bar(symp.date, symp.headache_prev, align='center', alpha=0.5)
+# # plt.xticks(rotation=45)
+# plt.title("Headache prevalence")
+# plt.xlabel("Year")
+# plt.ylabel("Headache prevalence")
+# plt.tight_layout()
+#
+# ax = plt.subplot(223)  # numrows, numcols, fignum
+# plt.bar(symp.date, symp.vomiting_prev, align='center', alpha=0.5)
+# # plt.xticks(rotation=45)
+# plt.title("Vomiting prevalence")
+# plt.xlabel("Year")
+# plt.ylabel("Vomiting prevalence")
+# plt.tight_layout()
+#
+# ax = plt.subplot(224)  # numrows, numcols, fignum
+# plt.bar(symp.date, symp.stomachache_prev, align='center', alpha=0.5)
+# # plt.xticks(rotation=45)
+# plt.title("Stomach ache prevalence")
+# plt.xlabel("Year")
+# plt.ylabel("Stomach ache prevalence")
+# plt.tight_layout()
+#
+# plt.show()
 # plt.close()
