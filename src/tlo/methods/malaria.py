@@ -1076,6 +1076,17 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                 # TODO:'duration_in_days' schedules symptom resolution and treatment also schedules resolution!
                 # TODO: check symptoms still present if treated before scheduling symptom resolution
 
+            sev = df.index[(df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now)]
+
+            if len(sev) > 0:
+                self.sim.modules['SymptomManager'].chg_symptom(
+                    person_id=list(clin),
+                    symptom_string='em_coma',
+                    add_or_remove='+',
+                    disease_module=self.module,
+                    duration_in_days=p['dur_clin'])
+
+
             # the HealthSeekingBehaviourPoll will check for generic symptoms daily and schedule a generic appt
             # in generic appt, code 'if fever: schedule HSI_malaria_rdt
             # if severe malaria, schedule my own HSI_severe_tx combined with rdt
