@@ -231,8 +231,20 @@ class SymptomManager(Module):
 
         return symptoms
 
-    # TODO: check what is causing any symptoms
-    # TODO: check if a sympton is being caused by a particular disease module
+    def causes_of(self, person_id, symptom_string):
+        """
+        This is a helper function that will give a list of the disease modules causing a particular symptom for
+        a particular person.
+        :param person_id:
+        :param disease_module:
+        :return: list of strings for the disease module name
+        """
+        df = self.sim.population.props
+
+        assert df.at[person_id, 'is_alive'], "The person is not alive"
+        assert symptom_string in self.total_list_of_symptoms
+
+        return list(df.at[person_id, 'sy_' + symptom_string])
 
     def clear_symptoms(self, person_id, disease_module):
         """
