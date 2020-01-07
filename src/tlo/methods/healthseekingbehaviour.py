@@ -6,7 +6,9 @@ import numpy as np
 
 from tlo import DateOffset, Module
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1, \
+    HSI_GenericEmergencyFirstApptAtFacilityLevel1
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -58,20 +60,11 @@ class HealthSeekingBehaviour(Module):
 # ---------------------------------------------------------------------------------------------------------
 
 class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
-    """This event occurs every day and determines if persons with newly onset acute generic symptoms will seek care.
-
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
+    """This event occurs every day and determines if persons with newly onset symptoms will seek care.
     """
 
     def __init__(self, module):
         """Initialise the HealthSeekingBehaviourPoll
-
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(days=1))
@@ -96,6 +89,15 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # NB. This is run looking at all symptoms even if only one is newly onset.
             # NB. The application of this equation could be streamlined.
 
+            # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO EMERGENCY SYMPTOMS ~~~~~~~~
+            if any([s.startswith('em_') for s in self.module.sim.modules['SymptomManager'].has_what(person_id)]):
+                hsi_genericemergencyfirstappt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericemergencyfirstappt,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
+            # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO GENERIC SYMPTOMS ~~~~~~~~
             person_profile = self.sim.population.props.loc[person_id]
 
             # Build up the RHS of the logistic regresssion equation: 'f' is the linear term f(beta*x +... )
