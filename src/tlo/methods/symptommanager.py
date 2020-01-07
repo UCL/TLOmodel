@@ -115,8 +115,7 @@ class SymptomManager(Module):
 
         # Check that the symptom_string is legitimate
         assert symptom_string in self.total_list_of_symptoms, 'Symptom is not recognised'
-        symptom_var_name = 'sy_' + symptom_string
-        assert symptom_var_name in self.sim.population.props.columns, 'Symptom has not been declared'
+        assert ('sy_' + symptom_string) in self.sim.population.props.columns, 'Symptom has not been declared'
 
         # Check that the add/remove signal is legitimate
         assert add_or_remove in ['+', '-']
@@ -129,7 +128,8 @@ class SymptomManager(Module):
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
 
         # Check that the symptom is declared for use by the disease_module
-        assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not declared for use by disease module'
+        if symptom_string not in self.parameters['list_of_generic_symptoms']:
+            assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not generic or declared for use by disease module'
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
