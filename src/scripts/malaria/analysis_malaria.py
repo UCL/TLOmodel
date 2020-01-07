@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 12, 31)
-popsize = 100
+end_date = Date(2012, 12, 31)
+popsize = 50
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -60,7 +60,8 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        mode_appt_constraints=0,
                                        ignore_cons_constraints=True,
                                        ignore_priority=True,
-                                       capabilities_coefficient=1.0))
+                                       capabilities_coefficient=1.0,
+                                       disable=True))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
 sim.register(dx_algorithm_child.DxAlgorithmChild())
