@@ -484,6 +484,7 @@ class Malaria(Module):
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(MalariaSymptomsLoggingEvent(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
 
@@ -1836,6 +1837,38 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     prev_ed.to_dict())
         logger.info('%s|pop_district|%s', self.sim.date,
                     pop.to_dict())
+
+
+class MalariaSymptomsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+
+    def __init__(self, module):
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        df = population.props
+        print('symptoms logger')
+
+        # ------------------------------------ PREVALENCE OF SYMPTOMS ------------------------------------
+        fever = df['sy_fever'].sum()  # number of fever episodes - maybe >1 per person (other causes)
+        headache = df['sy_headache'].sum()
+        vomiting = df['sy_vomiting'].sum()
+        stomachache = df['sy_stomachache'].sum()
+
+        pop = len(df[df.is_alive])
+
+        fever_prev = (fever / pop) if pop else 0
+        headache_prev = (headache / pop) if pop else 0
+        vomiting_prev = (vomiting / pop) if pop else 0
+        stomachache_prev = (stomachache / pop) if pop else 0
+
+        logger.info('%s|symptoms|%s', self.sim.date,
+                    {
+                        'fever_prev': fever_prev,
+                        'headache_prev': headache_prev,
+                        'vomiting_prev': vomiting_prev,
+                        'stomachache_prev': stomachache_prev
+                    })
 
 
 # ---------------------------------------------------------------------------------
