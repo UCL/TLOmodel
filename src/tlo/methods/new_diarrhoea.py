@@ -446,6 +446,7 @@ class NewDiarrhoea(Module):
         df['continued_breastfeeding'] = False
 
         # # # # # # # # # # # # # PREVALENCE OF DIARRHOEA AT THE START OF SIMULATION 2010 # # # # # # # # # # # # #
+        '''
 
         # # # # # # # # # DIAGNOSED AND TREATED BASED ON CARE SEEKING AND IMCI EFFECTIVENESS # # # # # # # # #
         # currently no init_diarrhoea_idx is empty
@@ -475,6 +476,7 @@ class NewDiarrhoea(Module):
                 df.at[i, 'gi_diarrhoea_status'] = False
             else:
                 df.at[i, 'gi_diarrhoea_status'] = False
+                '''
 
     def initialise_simulation(self, sim):
         """
@@ -491,7 +493,7 @@ class NewDiarrhoea(Module):
         # self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # add an event to log to screen
-        # sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -1369,7 +1371,7 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
                         {'death': sum(death_count)
                          })
 
-'''
+
 class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.repeat = 12
@@ -1386,9 +1388,9 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
         pop_under5 = len(df[df.is_alive & (df.age_exact_years < 5)])
         # overall incidence rate in under 5
         # inc_100cy = (count_episodes / pop_under5) * 100
-        # logger.info('%s|status_counts|%s', now,
-        #             {'incidence_per100cy': inc_100cy})
-        '''
+        # logger.info('%s|episodes_counts|%s', now, {'incidence_per100cy': inc_100cy})
+        logger.info('%s|pop_counts|%s', now, {'pop_len': pop_under5})
+
 
 '''
         # log information on attributable pathogens

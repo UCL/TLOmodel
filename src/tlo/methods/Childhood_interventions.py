@@ -207,19 +207,16 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
         sick_child = df.index[df.is_alive & (df.gi_diarrhoea_status | df.ri_pneumonia_status) & (df.age_years < 5)]
         # TODO: add other childhood diseases to the index: measles, malaria, malnutrition and other
 
-        for person_id in sick_child:
-            # first checking for imci general danger signs
-            # danger sign - convulsions ---------------------------------------------------------------------------
-            if df.at[person_id, 'ds_convulsions']:
-                convulsions_identified_by_HSA = \
-                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_convulsions'],
-                                                                  (1 - p['prob_correct_id_convulsions'])])
-                if convulsions_identified_by_HSA:
-                    df.at[person_id, 'ccm_correctly_identified_general_danger_signs'] = True
-                    df.at[person_id, 'ccm_correctly_identified_iccm_danger_sign'] = True
-                else:
-                    df.at[person_id, 'ccm_correctly_identified_general_danger_signs'] = False
-                    df.at[person_id, 'ccm_correctly_identified_iccm_danger_sign'] = False
+        # first checking for imci general danger signs
+        # danger sign - convulsions ---------------------------------------------------------------------------
+        if df.at[person_id, 'ds_convulsions']:
+            convulsions_identified_by_HSA = self.module.rng.rand() < p['prob_correct_id_convulsions']
+            if convulsions_identified_by_HSA:
+                df.at[person_id, 'ccm_correctly_identified_general_danger_signs'] = True
+                df.at[person_id, 'ccm_correctly_identified_iccm_danger_sign'] = True
+            else:
+                df.at[person_id, 'ccm_correctly_identified_general_danger_signs'] = False
+                df.at[person_id, 'ccm_correctly_identified_iccm_danger_sign'] = False
 
             # danger sign - not able to drink or breastfeed -------------------------------------------------------
             if df.at[person_id, 'ds_not_able_to_drink_or_breastfeed']:

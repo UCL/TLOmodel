@@ -15,18 +15,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def add_elements(el1, el2):
-    """Helper function for multiple symptoms assignments
-    :param el1: np.nan or a list
-    :param el2: list containing a single string with a symptom
-    :return: either a sum of two lists or the list el2
-    """
-    if isinstance(el1, list):
-        return el1 + el2
-    else:
-        return el2
-
-
 class NewPneumonia2(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -328,7 +316,7 @@ class NewPneumonia2(Module):
         p['dhs_care_seeking_2010'] = 0.6
         p['case_fatality_rate'] = 0.15
 
-        # symptoms prevalence
+        '''# symptoms prevalence
         p['symptoms_nonsev_pneum_lt2mo'] = pd.DataFrame(
             data={
                 'symptoms': ['fast_breathing', 'chest_indrawing', 'grunting', 'nasal flaring', 'head nod', 'cyanosis',
@@ -347,6 +335,7 @@ class NewPneumonia2(Module):
                              'sleepy', 'not breastfeeding', 'not drinking', 'wheeze', 'stridor', 'convulsions'],
                 'prevalence': [0.9, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
             })
+            '''
 
         # DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
@@ -409,30 +398,6 @@ class NewPneumonia2(Module):
                 df.at[i, 'ri_pneumonia_status'] = False
             else:
                 df.at[i, 'ri_pneumonia_status'] = False
-
-    def assign_symptoms(self, population, eligible_idx, severity):
-        """
-        Assigns multiple symptoms to the initial population.
-        :param eligible_idx: indices of infected individuals
-        :param population:
-        :param severity: level of severity, non-severe, severe or very severe pneumonia
-        """
-        assert severity in ['nonsev_pneumonia', 'severe_pneumonia', 'very_sev_pneumonia'], \
-            "Incorrect severity level. Can't assign symptoms."
-
-        if len(eligible_idx):
-            df = population.props
-            p = self.parameters
-            symptoms_dict = p['symptoms_' + severity].set_index('symptoms').to_dict()[
-                'prevalence']  # create a dictionary from a df
-            symptoms_column = severity + '_specific_symptoms'
-
-            for symptom in symptoms_dict.keys():
-                p = symptoms_dict[symptom]  # get the prevalence of the symptom among the infected population
-                # find who should get this symptom assigned - get p indices
-                s_idx = self.rng.choice(eligible_idx, size=int(p * len(eligible_idx)), replace=False)
-                df.loc[s_idx, symptoms_column] = df.loc[s_idx, symptoms_column].apply(
-                    lambda x: add_elements(x, [symptom]))
 
     def initialise_simulation(self, sim):
         """
@@ -986,10 +951,6 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # if doesn't seek care, probability of death and probability of recovery
         '''
 
-        # # # # # # # # # # # # # # #  ASSIGN SYMPTOMS # # # # # # # # # # # # # # # #
-        if df[df.is_alive & (df.age_exact_years < 5) & df.ri_pneumonia_status]:
-            self.module.assign_symptoms(population, new_infections, 'very severe pneumonia')
-
         # # # # # # ASSIGN DEATH PROBABILITIES BASED ON AGE, SEVERITY AND CO-MORBIDITIES # # # # # #
         # schedule death events for very severe pneumonia
         current_very_sev_pneumonia_idx = \
@@ -1020,15 +981,17 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         # schedule recovery event from very severe pneumonia
         for person_id in recover_from_very_sev_pneum_idx:
+            random_date = rng.randint(low=1, high=2)
+            random_days = pd.to_timedelta(random_date, unit='d')
             self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=person_id),
-                                    (df.at[person_id, 'date_of_progression_very_sev_pneum'] +
-                                    DateOffset(days=int(rng.random_integers(1, 2)))))
+                                    (df.at[person_id, 'date_of_progression_very_sev_pneum'] + random_days))
 
         # schedule death event
         for person_id in pneum_death_idx:
+            random_date = rng.randint(low=1, high=2)
+            random_days = pd.to_timedelta(random_date, unit='d')
             self.sim.schedule_event(DeathFromPneumoniaDisease(self.module, person_id=person_id, cause='pneumonia'),
-                                    (df.at[person_id, 'date_of_progression_very_sev_pneum'] +
-                                     DateOffset(days=int(rng.random_integers(1, 2)))))
+                                    (df.at[person_id, 'date_of_progression_very_sev_pneum'] + random_days))
 
 
 class SelfRecoverEvent(Event, IndividualScopeEventMixin):
@@ -1119,4 +1082,29 @@ for child in bacterial_infection:
                             
                              random_draw_days1 = np.random.randint(0, 7, size=len(progress_severe_pneum_idx))
         td = pd.to_timedelta(random_draw_days1, unit='d')
+        
+            def assign_symptoms(self, population, eligible_idx, severity):
+        """
+        Assigns multiple symptoms to the initial population.
+        :param eligible_idx: indices of infected individuals
+        :param population:
+        :param severity: level of severity, non-severe, severe or very severe pneumonia
+        """
+        assert severity in ['nonsev_pneumonia', 'severe_pneumonia', 'very_sev_pneumonia'], \
+            "Incorrect severity level. Can't assign symptoms."
+
+        if len(eligible_idx):
+            df = population.props
+            p = self.parameters
+            symptoms_dict = p['symptoms_' + severity].set_index('symptoms').to_dict()[
+                'prevalence']  # create a dictionary from a df
+            symptoms_column = severity + '_specific_symptoms'
+
+            for symptom in symptoms_dict.keys():
+                p = symptoms_dict[symptom]  # get the prevalence of the symptom among the infected population
+                # find who should get this symptom assigned - get p indices
+                s_idx = self.rng.choice(eligible_idx, size=int(p * len(eligible_idx)), replace=False)
+                df.loc[s_idx, symptoms_column] = df.loc[s_idx, symptoms_column].apply(
+                    lambda x: add_elements(x, [symptom]))
+        
 '''

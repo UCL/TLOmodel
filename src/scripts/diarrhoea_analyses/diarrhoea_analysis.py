@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea
+from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea, contraception
 
 # Where will output go - by default, wherever this script is run
 outputpath = ""
@@ -25,7 +25,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2017, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 # add file handler for the purpose of logging
@@ -44,6 +44,7 @@ logging.getLogger().addHandler(fh)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 # sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
 
@@ -128,21 +129,26 @@ plt.show()
 
 # -----------------------------------------------------------------------------
 # Load Model Results on clinical types of diarrhoea
-status_counts_df = output['tlo.methods.new_diarrhoea']['status_counts']
+status_counts_df = output['tlo.methods.new_diarrhoea']['episodes_counts']
 Model_Years = pd.to_datetime(status_counts_df.date)
 Model_incidence = status_counts_df.incidence_per100cy
 
 plt.plot(Model_Years, Model_incidence)
 
+plt.title("Number of children under 5 over the years")
+plt.xlabel("Year")
+plt.ylabel("number of children ")
+# plt.savefig(outputpath + 'Diarrhoea incidence per 100 child-years' + datestamp + '.pdf')
+
+plt.show()
+
+'''
 plt.title("Overall incidence of diarrhoea per 100 child-years")
 plt.xlabel("Year")
 plt.ylabel("Incidence of diarrhoea per 100 child-years")
 plt.legend(['Yearly diarrhoea incidence'])
 plt.savefig(outputpath + 'Diarrhoea incidence per 100 child-years' + datestamp + '.pdf')
 
-plt.show()
-
-'''
 # -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
 incidence_by_age_df = output['tlo.methods.new_diarrhoea']['diarr_incidence_age']
