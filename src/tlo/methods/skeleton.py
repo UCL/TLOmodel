@@ -49,6 +49,11 @@ class Skeleton(Module):
         'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
+    # Declare the non-generic symptoms that this module will use.
+    # It will not be able to use any that are not declared here. They do not need to be unique to this module.
+    # There is no need to declare symptoms that are generic here (i.e. in the generic list of symptoms)
+    SYMPTOMS = {}
+
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -82,6 +87,7 @@ class Skeleton(Module):
         If this is a disease module, register this disease module with the healthsystem:
         self.sim.modules['HealthSystem'].register_disease_module(self)
         """
+        # TODO: Add in registeration to symptom manager and put in read_
 
         raise NotImplementedError
 
@@ -161,7 +167,7 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
 class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summary of the numbers of people with respect to the action of this module.
-        This is a regular event that can output current states of people or cumulative events since last logging event.
+        This is a regular event that can outputs current states of people or cumulative events since last logging event.
         """
 
         # run this event every year
