@@ -50,6 +50,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
+        # todo: expected appt footprint
+
     def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
