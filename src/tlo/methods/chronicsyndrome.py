@@ -313,7 +313,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # 3) Handle progression to severe symptoms
         curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive])
                                                   - set(
-            self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
+            self.sim.modules['SymptomManager'].who_has('em_craving_sandwiches')))
 
         become_severe = self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches)) \
             < p['prob_dev_severe_symptoms_per_year'] / 12
@@ -321,7 +321,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
         self.sim.modules['SymptomManager'].chg_symptom(
             person_id=list(become_severe_idx),
-            symptom_string='craving_sandwiches',
+            symptom_string='em_craving_sandwiches',
             add_or_remove='+',
             disease_module=self.module
         )
@@ -380,7 +380,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, ChronicSyndrome) or module.name == 'HealthSeekingBehaviour'
+        assert isinstance(module, ChronicSyndrome)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()

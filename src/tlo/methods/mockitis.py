@@ -363,7 +363,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Mockitis) or module.name == 'HealthSeekingBehaviour'
+        assert isinstance(module, Mockitis)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
