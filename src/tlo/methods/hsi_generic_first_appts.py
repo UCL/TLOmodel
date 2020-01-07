@@ -169,24 +169,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
-
-        # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
-        if 'em_coma' in self.sim.modules['SymptomManager'].has_what(person_id):
-            if 'Malaria' in self.sim.population.props.at[person_id, 'sy_em_coma']:
-                # Launch the HSI for treatment for Malaria - chosing the right one for adults/children
-                if self.sim.population.props.at[person_id,'age_years']<5.0:
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=HSI_Malaria_tx_compl_child(self.module, person_id=person_id),
-                        priority=0,
-                        topen=self.sim.date
-                    )
-                else:
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=HSI_Malaria_tx_compl_adult(self.module, person_id=person_id),
-                        priority=0,
-                        topen=self.sim.date
-                    )
-            print('its working')
+        pass
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
