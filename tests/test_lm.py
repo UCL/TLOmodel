@@ -92,4 +92,13 @@ def test_multiplicative_application():
 
 def test_logistic_application():
     # Take an example from health seeking behaviour
+
+    # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
+
+    # 2) apply the LinearModel to it and make a prediction of the probabilities assinged to each person
+
+    # 3) generate the probabilities from the model in the 'classical' manner
+
+    # 4) conifrm
+
     pass
