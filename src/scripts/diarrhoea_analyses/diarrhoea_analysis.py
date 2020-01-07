@@ -66,8 +66,6 @@ num_births = len(output['tlo.methods.demography']['on_birth'])
 num_under_5ys = output['tlo.methods.demography']['age_range_m']['0-4'] + \
                     output['tlo.methods.demography']['age_range_f']['0-4']
 
-# births and under-5s
-
 
 
 # -----------------------------------------------------------------------------------
