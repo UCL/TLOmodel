@@ -187,55 +187,42 @@ class Malaria(Module):
 
             assert (not pd.isnull(df['ma_district_edited']).any())
 
-            # ----------------------------------- INTERVENTION COVERAGE -----------------------------------
+            # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
 
             # get ITN usage rates for current year by district
             itn = p['itn_district']
+            itn['itn_rates'] = itn['itn_rates'].round(decimals=1)
+            itn_curr = itn.loc[itn.Year == now.year]
 
+            # IRS coverage rates
             interv = p['interv']
-
-            # find annual intervention coverage levels rate for 2010
             irs_2010 = interv.loc[interv.Year == now.year, 'IRS_coverage'].values[0]
             irs_2010 = 0.8 if irs_2010 > 0.5 else 0  # round to 0 or 0.8
 
-            # ITN select current year for each district
-            itn_curr = itn.loc[itn.Year == now.year]
-            itn_curr.itn_rates = round(itn_curr.itn_rates, 1)  # round to nearest 0.1 to match Pete's data
-            itn_curr.distr_rate = itn_curr["District"].map(str) + itn_curr["itn_rates"]
-            print(itn_curr.distr_rate)
-
-            # ----------------------------------- INCIDENCE ESTIMATES -----------------------------------
+            # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
             # inf_inc select current month and irs
             month = now.month
 
             inf_inc = p['inf_inc']  # datasheet with infection incidence
-            inf_inc.distr_llin = inf_inc["admin"].map(str) + inf_inc["llin"]
-            print(inf_inc.distr_llin)
-
             inf_inc_month = inf_inc.loc[(inf_inc.month == month) & (inf_inc.irs == irs_2010)]
-
-            # need to select based on itn.itn_rates also
-            inf_inc_month = inf_inc_month.loc[inf_inc_month.distr_llin.isin(itn_curr.distr_rate)]
-
-            # there should now be only one llin level per district, and lots of ages
-
-
-
-
-
-            # ----------------------------------- INCIDENCE ESTIMATES -----------------------------------
-            month = now.month
-
-            inf_inc = p['inf_inc']
-            inf_inc_month = inf_inc.loc[
-                (inf_inc.month == month) & (inf_inc.llin == itn_2010) & (inf_inc.irs == irs_2010)]
             clin_inc = p['clin_inc']
             clin_inc_month = clin_inc.loc[
-                (clin_inc.month == month) & (clin_inc.llin == itn_2010) & (clin_inc.irs == irs_2010)]
+                (clin_inc.month == month) & (clin_inc.irs == irs_2010)]
             sev_inc = p['sev_inc']
             sev_inc_month = sev_inc.loc[
-                (sev_inc.month == month) & (sev_inc.llin == itn_2010) & (sev_inc.irs == irs_2010)]
-            ######################################################################################################
+                (sev_inc.month == month) & (sev_inc.irs == irs_2010)]
+
+            # merge incidence dataframes with itn_curr and keep only matching rows
+            inf_inc_month_itn = inf_inc_month.merge(itn_curr, left_on=['admin', 'llin'],
+                                                    right_on=['District', 'itn_rates'],
+                                                    how='inner')
+            clin_inc_month_itn = clin_inc_month.merge(itn_curr, left_on=['admin', 'llin'],
+                                                      right_on=['District', 'itn_rates'],
+                                                      how='inner')
+            sev_inc_month_itn = sev_inc_month.merge(itn_curr, left_on=['admin', 'llin'],
+                                                    right_on=['District', 'itn_rates'],
+                                                    how='inner')
+
             # for each district and age, look up incidence estimate using itn_2010 and irs_2010
             # create new age column with 0, 0.5, 1, 2, ...
             df.loc[df.age_exact_years.between(0, 0.5), 'ma_age_edited'] = 0
@@ -245,92 +232,26 @@ class Malaria(Module):
             df['ma_age_edited'] = df['ma_age_edited'].astype('float')  # for merge with malaria data
 
             # merge the incidence into the main df and replace each event call
-            df_ml = df.reset_index().merge(inf_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+            df_ml = df.reset_index().merge(inf_inc_month_itn, left_on=['ma_district_edited', 'ma_age_edited'],
                                            right_on=['admin', 'age'],
                                            how='left', indicator=True).set_index('person')
             df_ml['monthly_prob_inf'] = df_ml['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
             assert (not pd.isnull(df_ml['monthly_prob_inf']).any())
 
-            df_ml = df_ml.reset_index().merge(clin_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+            df_ml = df_ml.reset_index().merge(clin_inc_month_itn, left_on=['ma_district_edited', 'ma_age_edited'],
                                               right_on=['admin', 'age'],
                                               how='left').set_index('person')
             df_ml['monthly_prob_clin'] = df_ml['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
             assert (not pd.isnull(df_ml['monthly_prob_clin']).any())
 
-            df_ml = df_ml.reset_index().merge(sev_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+            df_ml = df_ml.reset_index().merge(sev_inc_month_itn, left_on=['ma_district_edited', 'ma_age_edited'],
                                               right_on=['admin', 'age'],
                                               how='left').set_index('person')
             df_ml['monthly_prob_sev'] = df_ml['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
             assert (not pd.isnull(df_ml['monthly_prob_sev']).any())
 
-            # ----------------------------------- NEW INFECTIONS -----------------------------------
-            ## infected
-            # risk_ml = pd.Series(0, index=df.index)
-            # risk_ml.loc[df.is_alive] = 1  # applied to everyone
-            # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
+            # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
 
-            # # new infections
-            # # uninf = df_ml.index[(df_ml.ma_specific_symptoms == 'none') & df_ml.is_alive]
-            # # now_infected = rng.choice([True, False],
-            # #                           size=len(uninf),
-            # #                           p=[df_ml.monthly_prob_inf[uninf], 1 - df_ml.monthly_prob_inf[uninf]])
-            #
-            # # randomly sample from completely susceptible population
-            # newly_infected_index = df_ml.index[(rng.random_sample(size=len(df_ml)) < df_ml.monthly_prob_inf)]
-            #
-            # # if any are infected
-            # if newly_infected_index.any():
-            #     # infected_idx = uninf[now_infected]
-            #     len_new = len(newly_infected_index)
-            #     logger.debug(f'MalariaEventDistrict: assigning {len_new} malaria infections')
-            #
-            #     df_ml.loc[newly_infected_index, 'ma_is_infected'] = True
-            #     df_ml.loc[newly_infected_index, 'ma_date_infected'] = now  # TODO: scatter dates across month
-            #
-            #     new_clinical = df_ml.index[
-            #         df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) &
-            #         (rng.random_sample(size=len(df_ml)) < df_ml.monthly_prob_clin)]
-            #
-            #     # now_clinical = rng.choice([True, False],
-            #     #                           size=len(new_inf),
-            #     #                           p=[df_ml.monthly_prob_inf[new_inf],
-            #     #                              1 - df_ml.monthly_prob_inf[new_inf]])
-            #
-            #     # newly_clinical = rng.random_sample(size=len(new_inf) < df_ml.monthly_prob_clin[new_inf])
-            #
-            #     # assign new clinical infections
-            #     if new_clinical.any():
-            #         # clinical_idx = new_inf[now_clinical]
-            #         len_new = len(new_clinical)
-            #         logger.debug(f'MalariaEventDistrict: assigning {len_new} clinical malaria infections')
-            #
-            #         df_ml.loc[new_clinical, 'ma_specific_symptoms'] = 'clinical'
-            #
-            #         # update main dataframe
-            #         df.loc[new_clinical, 'ma_specific_symptoms'] = 'clinical'
-            #         df.loc[new_clinical, 'ma_unified_symptom_code'] = 1
-            #         df.loc[new_clinical, 'ma_date_clinical'] = now
-            #         df.loc[new_clinical, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
-            #
-            #         # assign new severe infections
-            #         new_severe = df_ml.index[
-            #             df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) &
-            #             (df_ml.ma_specific_symptoms == 'clinical') &
-            #             (rng.random_sample(size=len(df_ml)) < df_ml.monthly_prob_sev)]
-            #
-            #         # now_severe = rng.choice([True, False],
-            #         #                         size=len(new_clin),
-            #         #                         p=[df_ml.monthly_prob_sev[new_clin],
-            #         #                            1 - df_ml.monthly_prob_sev[new_clin]])
-            #
-            #         if new_severe.any():
-            #             # severe_idx = new_clin[now_severe]
-            #             len_new = len(new_severe)
-            #             logger.debug(f'MalariaEventDistrict: assigning {len_new} severe malaria infections')
-            #
-            #             # update main dataframe
-            #             df.loc[new_severe, 'ma_specific_symptoms'] = 'severe'
-            #             df.loc[new_severe, 'ma_unified_symptom_code'] = 2
             ## infected
             risk_ml = pd.Series(0, index=df.index)
             risk_ml.loc[df.is_alive] = 1  # applied to everyone
@@ -904,55 +825,41 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
         now = self.sim.date
 
-        # ----------------------------------- INTERVENTION COVERAGE -----------------------------------
-        interv = p['interv']
-
-        # find annual intervention coverage levels
-        # TODO: replace with district-level intervention coverage estimates when available
-        # TODO: using 'slept under bednet' because ITN coverage >80% in 2013 and no more cases
-        # itn = interv.loc[interv.Year == now.year, 'MIS_sleptUnderITN'].values[0]
-        irs = interv.loc[interv.Year == now.year, 'IRS_coverage'].values[0]
-        irs = 0.8 if irs > 0.5 else 0  # round to 0 or 0.8
+        # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
 
         # get ITN usage rates for current year by district
         itn = p['itn_district']
-
+        itn['itn_rates'] = itn['itn_rates'].round(decimals=1)
         itn_curr = itn.loc[itn.Year == now.year]
-        # check this returns all values for the current year
 
-        itn.rate_distr = itn["Year"].map(str) + itn["itn_rates"]
+        # IRS coverage rates
+        interv = p['interv']
+        irs_2010 = interv.loc[interv.Year == now.year, 'IRS_coverage'].values[0]
+        irs_2010 = 0.8 if irs_2010 > 0.5 else 0  # round to 0 or 0.8
 
-
-        # select incidence based on intervention coverage
+        # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
+        # inf_inc select current month and irs
         month = now.month
 
-        # need to pull out the district values with district matching from itn dataset
         inf_inc = p['inf_inc']  # datasheet with infection incidence
-
-        # the districts from itn need to match with the districts from inf_inc_month
-        # get the dataset using month and irs
-        # match the inf_inc districts with the itn_districts to get district-level inf_inc
-        # then produce new dataset with distr, age and inf_inc
-        inf_inc.llin_distr = inf_inc["admin"].map(str) + inf_inc["llin"]
-
-        # maybe do these steps separately
-        inf_inc_month = inf_inc.loc[(inf_inc.month == month) & (inf_inc.irs == irs)]
-        itn.monthly_prob_inf = round(itn.monthly_prob_inf, 1)  # round to nearest 0.1 to match Pete's data
-
-        # should be a dataset with one entry per district/age combo but only one llin level per district
-
-        # select the district entries which match the district-level itn usage rates
-        inf_inc_month = inf_inc.loc[inf_inc.llin_distr.isin(itn.rate_distr)]
-
-
-
-
-
+        inf_inc_month = inf_inc.loc[(inf_inc.month == month) & (inf_inc.irs == irs_2010)]
         clin_inc = p['clin_inc']
         clin_inc_month = clin_inc.loc[
-            (clin_inc.month == month) & (clin_inc.llin == itn) & (clin_inc.irs == irs)]
+            (clin_inc.month == month) & (clin_inc.irs == irs_2010)]
         sev_inc = p['sev_inc']
-        sev_inc_month = sev_inc.loc[(sev_inc.month == month) & (sev_inc.llin == itn) & (sev_inc.irs == irs)]
+        sev_inc_month = sev_inc.loc[
+            (sev_inc.month == month) & (sev_inc.irs == irs_2010)]
+
+        # merge incidence dataframes with itn_curr and keep only matching rows
+        inf_inc_month_itn = inf_inc_month.merge(itn_curr, left_on=['admin', 'llin'],
+                                                right_on=['District', 'itn_rates'],
+                                                how='inner')
+        clin_inc_month_itn = clin_inc_month.merge(itn_curr, left_on=['admin', 'llin'],
+                                                  right_on=['District', 'itn_rates'],
+                                                  how='inner')
+        sev_inc_month_itn = sev_inc_month.merge(itn_curr, left_on=['admin', 'llin'],
+                                                right_on=['District', 'itn_rates'],
+                                                how='inner')
 
         # for each district and age, look up incidence estimate using itn_2010 and irs_2010
         # create new age column with 0, 0.5, 1, 2, ...
@@ -963,25 +870,26 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         df['ma_age_edited'] = df['ma_age_edited'].astype('float')  # for merge with malaria data
 
         # merge the incidence into the main df and replace each event call
-        df_ml = df.reset_index().merge(inf_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+        df_ml = df.reset_index().merge(inf_inc_month_itn, left_on=['ma_district_edited', 'ma_age_edited'],
                                        right_on=['admin', 'age'],
                                        how='left', indicator=True).set_index('person')
         df_ml['monthly_prob_inf'] = df_ml['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
         assert (not pd.isnull(df_ml['monthly_prob_inf']).any())
 
-        df_ml = df_ml.reset_index().merge(clin_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+        df_ml = df_ml.reset_index().merge(clin_inc_month_itn, left_on=['ma_district_edited', 'ma_age_edited'],
                                           right_on=['admin', 'age'],
                                           how='left').set_index('person')
         df_ml['monthly_prob_clin'] = df_ml['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
         assert (not pd.isnull(df_ml['monthly_prob_clin']).any())
 
-        df_ml = df_ml.reset_index().merge(sev_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+        df_ml = df_ml.reset_index().merge(sev_inc_month_itn, left_on=['ma_district_edited', 'ma_age_edited'],
                                           right_on=['admin', 'age'],
                                           how='left').set_index('person')
         df_ml['monthly_prob_sev'] = df_ml['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
         assert (not pd.isnull(df_ml['monthly_prob_sev']).any())
 
-        # ----------------------------------- NEW INFECTIONS -----------------------------------
+        # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
+
         ## infected
         risk_ml = pd.Series(0, index=df.index)
         risk_ml.loc[df.is_alive] = 1  # applied to everyone
