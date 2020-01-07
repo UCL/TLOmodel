@@ -10,7 +10,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography
+from tlo.methods import demography, contraception
 from tlo.methods.demography import make_age_range_lookup
 
 # Where will output go - by default, wherever this script is run
@@ -45,6 +45,8 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)

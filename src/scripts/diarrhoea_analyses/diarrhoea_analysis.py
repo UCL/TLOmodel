@@ -20,13 +20,15 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # Work out the resource path from the path of the analysis file
-resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+resourcefilepath = Path('./resources')
+
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 10000
+popsize = 1000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -58,11 +60,23 @@ fh.flush()
 # %% read the results
 output = parse_log_file(logfile)
 
+# %% TH: looking at births...
+num_births = len(output['tlo.methods.demography']['on_birth'])
+
+num_under_5ys = output['tlo.methods.demography']['age_range_m']['0-4'] + \
+                    output['tlo.methods.demography']['age_range_f']['0-4']
+
+# births and under-5s
+
+
+
 # -----------------------------------------------------------------------------------
 # %% Plot Incidence of Diarrhoea Over time:
 years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
+
+
 '''
 # -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
