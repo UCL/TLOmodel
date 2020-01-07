@@ -73,7 +73,13 @@ class DxAlgorithmChild(Module):
         num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
         # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
-        if df.at[person_id, 'sy_fever'] > 0:
+        # todo: this!!
+        # self.sim.modules['SymptomManager'].has_what(person_id)
+        # Out[2]: ['fever', 'vomiting', 'stomachache', 'headache']
+        # 'fever' in self.sim.modules['SymptomManager'].has_what(person_id)
+        # who_has
+
+        if 'fever' in self.sim.modules['SymptomManager'].has_what(person_id):
 
             # TODO: the rdt request needs a LabPOC appt type, not just generic OPD
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']

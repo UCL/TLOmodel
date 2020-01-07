@@ -76,23 +76,40 @@ class Malaria(Module):
             Types.INT, 'annual counter for malaria treatment episodes')
     }
 
+    # not generic symptoms here, only specific ones
+    SYMPTOMS = {
+        'em_coma',
+        'em_convulsions'
+    }
+
     def read_parameters(self, data_folder):
 
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_malaria.xlsx', sheet_name='parameters')
-        self.load_parameters_from_dataframe(dfd)
-
-        p = self.parameters
+        # dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_malaria.xlsx', sheet_name='parameters')
+        # self.load_parameters_from_dataframe(dfd)
+        #
+        # p = self.parameters
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
                                               'ResourceFile_malaria.xlsx'), sheet_name=None)
+        self.load_parameters_from_dataframe(workbook['parameters'])
 
+        p = self.parameters
         # baseline characteristics
         p['mal_inc'] = workbook['incidence']
         p['interv'] = workbook['interventions']
-        p['clin_inc'] = workbook['clin_inc_age']
-        p['inf_inc'] = workbook['inf_age']
-        p['sev_inc'] = workbook['sev_age']
         p['itn_district'] = workbook['MAP_ITNrates']
+
+        p['inf_inc'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_malaria_InfInc.csv'
+        )
+
+        p['clin_inc'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_malaria_ClinInc.csv'
+        )
+
+        p['sev_inc'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_malaria_SevInc.csv'
+        )
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
@@ -692,7 +709,6 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
-
 
                 # TODO:'duration_in_days' schedules symptom resolution and treatment also schedules resolution!
                 # TODO: check symptoms still present if treated before scheduling symptom resolution
@@ -1369,7 +1385,7 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'ma_tx']:
 
             logger.debug('HSI_Malaria_tx_5_15: requesting malaria treatment for child %d',
-                     person_id)
+                         person_id)
 
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
             pkg_code1 = pd.unique(
@@ -1499,7 +1515,7 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'ma_tx']:
 
             logger.debug('HSI_Malaria_tx_compl_child: requesting complicated malaria treatment for child %d',
-                     person_id)
+                         person_id)
 
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
             pkg_code1 = pd.unique(
@@ -1564,7 +1580,7 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'ma_tx']:
 
             logger.debug('HSI_Malaria_tx_compl_adult: requesting complicated malaria treatment for person %d',
-                     person_id)
+                         person_id)
 
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
             pkg_code1 = pd.unique(
@@ -1621,7 +1637,9 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, 'is_alive']:
 
             # check that a fever is present and was caused by malaria before resolving it
-            if (df.at[person_id, 'sy_fever'] > 0) & (df.at[person_id, 'ma_specific_symptoms'] == 'clinical'):
+            if ('fever' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
+                df.at[person_id, 'ma_specific_symptoms'] == 'clinical'):
+
                 self.sim.modules['SymptomManager'].chg_symptom(
                     person_id=person_id,
                     symptom_string='fever',
@@ -1650,12 +1668,12 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
                     disease_module=self.module,
                     duration_in_days=None)
 
-            # change treatment and infection status
-            df.at[person_id, 'ma_tx'] = False
+        # change treatment and infection status
+        df.at[person_id, 'ma_tx'] = False
 
-            df.at[person_id, 'ma_is_infected'] = False
-            df.at[person_id, 'ma_specific_symptoms'] = 'none'
-            df.at[person_id, 'ma_unified_symptom_code'] = 0
+        df.at[person_id, 'ma_is_infected'] = False
+        df.at[person_id, 'ma_specific_symptoms'] = 'none'
+        df.at[person_id, 'ma_unified_symptom_code'] = 0
 
 
 class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
@@ -1847,28 +1865,28 @@ class MalariaSymptomsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        print('symptoms logger')
+        # print('symptoms logger')
 
         # ------------------------------------ PREVALENCE OF SYMPTOMS ------------------------------------
-        fever = df['sy_fever'].sum()  # number of fever episodes - maybe >1 per person (other causes)
-        headache = df['sy_headache'].sum()
-        vomiting = df['sy_vomiting'].sum()
-        stomachache = df['sy_stomachache'].sum()
-
-        pop = len(df[df.is_alive])
-
-        fever_prev = (fever / pop) if pop else 0
-        headache_prev = (headache / pop) if pop else 0
-        vomiting_prev = (vomiting / pop) if pop else 0
-        stomachache_prev = (stomachache / pop) if pop else 0
-
-        logger.info('%s|symptoms|%s', self.sim.date,
-                    {
-                        'fever_prev': fever_prev,
-                        'headache_prev': headache_prev,
-                        'vomiting_prev': vomiting_prev,
-                        'stomachache_prev': stomachache_prev
-                    })
+        # fever = df['sy_fever'].sum()  # number of fever episodes - maybe >1 per person (other causes)
+        # headache = df['sy_headache'].sum()
+        # vomiting = df['sy_vomiting'].sum()
+        # stomachache = df['sy_stomachache'].sum()
+        #
+        # pop = len(df[df.is_alive])
+        #
+        # fever_prev = (fever / pop) if pop else 0
+        # headache_prev = (headache / pop) if pop else 0
+        # vomiting_prev = (vomiting / pop) if pop else 0
+        # stomachache_prev = (stomachache / pop) if pop else 0
+        #
+        # logger.info('%s|symptoms|%s', self.sim.date,
+        #             {
+        #                 'fever_prev': fever_prev,
+        #                 'headache_prev': headache_prev,
+        #                 'vomiting_prev': vomiting_prev,
+        #                 'stomachache_prev': stomachache_prev
+        #             })
 
 
 # ---------------------------------------------------------------------------------
