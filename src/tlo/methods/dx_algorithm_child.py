@@ -77,7 +77,7 @@ class DxAlgorithmChild(Module):
         # self.sim.modules['SymptomManager'].has_what(person_id)
         # Out[2]: ['fever', 'vomiting', 'stomachache', 'headache']
         # 'fever' in self.sim.modules['SymptomManager'].has_what(person_id)
-        # who_has
+        # also use who_has
 
         if 'fever' in self.sim.modules['SymptomManager'].has_what(person_id):
 

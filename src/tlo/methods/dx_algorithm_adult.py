@@ -64,7 +64,8 @@ class DxAlgorithmAdult(Module):
         diagnosis_str = 'unknown'
 
         # get the symptoms of the person:
-        # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
+        # if 'fever' in self.sim.modules['SymptomManager'].has_what(person_id):
+
 
         # Make request for some malaria rdt consumables
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
