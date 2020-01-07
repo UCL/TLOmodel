@@ -1,6 +1,6 @@
 """
-A skeleton template for disease methods.
-
+Health Seeking Behaviour Module
+This module determines if care is sought once a symptom is developed.
 """
 import numpy as np
 
