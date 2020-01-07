@@ -1,6 +1,5 @@
 """
-A skeleton template for disease methods.
-
+The Symptom Manager
 """
 import pandas as pd
 
