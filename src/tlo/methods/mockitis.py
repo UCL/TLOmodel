@@ -54,9 +54,9 @@ class Mockitis(Module):
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
-        'weird_sense_of_deja_vu',
-        'coughing_and_irritable',
-        'extreme_pain_in_the_nose'
+        'weird_sense_of_deja_vu',       # will not trigger any health seeking behaviour
+        'coughing_and_irritable',       # will not trigger any health seeking behaviour
+        'em_extreme_pain_in_the_nose'   # symptom that will trigger emergency HSI
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -325,26 +325,6 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=30
                     )
 
-            # Determine if anyone with severe symptoms will seek care
-            # [as this is a specific symptom the disease module handles it]
-            person_id_with_new_serious_symptoms = list(
-                set(self.sim.modules['SymptomManager'].who_has('extreme_pain_in_the_nose')).intersection(infected_idx)
-            )
-
-            prob_seeks_care_with_severe_symptoms = 0.99
-
-            for person_id in person_id_with_new_serious_symptoms:
-                if self.module.rng.rand() < prob_seeks_care_with_severe_symptoms:
-                    logger.debug(
-                        'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
-                        person_index)
-
-                    event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                        priority=2,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(weeks=2)
-                                                                        )
         else:
             logger.debug('This is MockitisEvent, no one is newly infected.')
 

@@ -114,7 +114,8 @@ class SymptomManager(Module):
 
         # Check that the symptom_string is legitimate
         assert symptom_string in self.total_list_of_symptoms, 'Symptom is not recognised'
-        assert ('sy_' + symptom_string) in self.sim.population.props.columns, 'Symptom has not been declared'
+        symptom_var_name = 'sy_' + symptom_string
+        assert symptom_var_name in self.sim.population.props.columns, 'Symptom has not been declared'
 
         # Check that the add/remove signal is legitimate
         assert add_or_remove in ['+', '-']
@@ -228,6 +229,9 @@ class SymptomManager(Module):
         symptoms = [s[3:] for s in symptoms_with_prefix]
 
         return symptoms
+
+    # TODO: check what is causing any symptoms
+    # TODO: check if a sympton is being caused by a particular disease module
 
     def clear_symptoms(self, person_id, disease_module):
         """
