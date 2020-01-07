@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -18,24 +19,25 @@ from tlo.methods import (
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
-# Where will output go
-outputpath = ''
+# Where will outputs go
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = 'resources'
+resourcefilepath = Path("./resources")
+
 
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=2010, month=12, day=31)
-popsize = 50
+popsize = 2000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -59,8 +61,8 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        ignore_cons_constraints=False,
                                        disable=False))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
-sim.register(dx_algorithm_child.DxAlgorithmChild())
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 

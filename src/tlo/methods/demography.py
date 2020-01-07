@@ -6,7 +6,6 @@ population structure' worksheet within to initialise the age & sex distribution 
 
 import logging
 import math
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +13,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -22,41 +22,7 @@ logger.setLevel(logging.WARNING)
 MIN_AGE_FOR_RANGE = 0
 MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
-
 MAX_AGE = 120
-
-
-def make_age_range_lookup():
-    """Returns a dictionary mapping age (in years) to age range
-    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
-    """
-
-    def chunks(items, n):
-        """Takes a list and divides it into parts of size n"""
-        for index in range(0, len(items), n):
-            yield items[index:index + n]
-
-    # split all the ages from min to limit (100 years) into 5 year ranges
-    parts = chunks(range(MIN_AGE_FOR_RANGE, MAX_AGE_FOR_RANGE), AGE_RANGE_SIZE)
-
-    # any ages >= 100 are in the '100+' category
-    default_category = '%d+' % MAX_AGE_FOR_RANGE
-    lookup = defaultdict(lambda: default_category)
-
-    # collect the possible ranges
-    ranges = []
-
-    # loop over each range and map all ages falling within the range to the range
-    for part in parts:
-        start = part.start
-        end = part.stop - 1
-        value = '%s-%s' % (start, end)
-        ranges.append(value)
-        for i in range(start, part.stop):
-            lookup[i] = value
-
-    ranges.append(default_category)
-    return ranges, lookup
 
 
 class Demography(Module):
@@ -69,7 +35,10 @@ class Demography(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
+    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+        min_age=MIN_AGE_FOR_RANGE,
+        max_age=MAX_AGE_FOR_RANGE,
+        range_size=AGE_RANGE_SIZE)
 
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
@@ -77,12 +46,9 @@ class Demography(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
-        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
+        'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
+        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'district_and_region_data': Parameter(Types.DATA_FRAME,
-                                              'Census data on the number of persons in '
-                                              'residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -94,7 +60,6 @@ class Demography(Module):
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
-        'is_married': Property(Types.BOOL, 'Whether this individual is currently married'),
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
@@ -102,9 +67,9 @@ class Demography(Module):
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
-
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
+        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
     }
 
     def read_parameters(self, data_folder):
@@ -113,29 +78,21 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_DemographicData.xlsx',
-                                 sheet_name=None)
 
-        self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
+        # Initial population size:
+        self.parameters['pop_2010'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Population_2010.csv'
+        )
 
-        # create new variable that will align with population.sex
-        ms = workbook['Mortality Rate']
-        ms['sex'] = ms.gender.map({'male': 'M', 'female': 'F'})
-        # long-list the column to avoid the problem about these being irregular age-groups
-        ms_new = []
-        for row in ms.itertuples():
-            age_high = row.age_to
-            if age_high == 99:
-                age_high = MAX_AGE
-            for age_years in range(row.age_from, age_high + 1):
-                ms_new.append(row._replace(age_from=age_years))
-        ms_new = pd.DataFrame(ms_new)
-        ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
-        self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
-        self.parameters['fraction_of_births_male'] = 0.5
+        # Fraction of babies that are male
+        self.parameters['fraction_of_births_male'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Pop_Frac_Births_Male.csv'
+        )
 
-        self.parameters['district_and_region_data'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv')
+        # Mortality schedule:
+        self.parameters['mortality_schedule'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
+        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -146,67 +103,45 @@ class Demography(Module):
         """
         df = population.props
 
-        df.date_of_death = pd.NaT
+        init_pop = self.parameters['pop_2010']
+        init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
-        worksheet = self.parameters['interpolated_pop']
+        # randomly pick from the init_pop sheet, to allocate charatceristic to each person in the df
+        demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
+                                                             size=len(df),
+                                                             replace=True,
+                                                             p=init_pop.prob)][
+            ['District', 'District_Num', 'Region', 'Sex', 'Age']] \
+            .reset_index(drop=True)
 
-        # get a subset of the rows from the interpolated population worksheet
-        intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
+        # make a date of birth that is consistent with the allocated age of each person
+        demog_char_to_assign['days_since_last_birthday'] = self.rng.randint(0, 365, len(demog_char_to_assign))
 
-        # get the probability of occurrence for each sex+age range in the population
-        intpop['probability'] = intpop.value / intpop.value.sum()
+        demog_char_to_assign['date_of_birth'] = [
+            self.sim.date - DateOffset(years=int(demog_char_to_assign['Age'][i]),
+                                       days=int(demog_char_to_assign['days_since_last_birthday'][i]))
+            for i in demog_char_to_assign.index]
+        demog_char_to_assign['age_in_days'] = self.sim.date - demog_char_to_assign['date_of_birth']
 
-        # calculate the month range interval for age ranges which are exactly 1 year
-        intpop['month_range'] = 12
-        is_age_range = (intpop['age_to'] != intpop['age_from'])
-        intpop.loc[is_age_range, 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
-
-        # randomly rows indices from the worksheet
-        pop_sample = intpop.iloc[self.rng.choice(intpop.index.values,
-                                                 size=len(df),
-                                                 replace=True,
-                                                 p=intpop.probability.values)]
-        pop_sample = pop_sample.reset_index()
-
-        # select a random number of months into age_range
-        months: pd.Series = pop_sample.month_range * self.rng.random_sample(size=len(df))
-        pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
-
-        # The entire initial population is alive!
+        # Assign the characteristics
         df.is_alive.values[:] = True
-
-        years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
-        df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
-        df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
-
-        # we can't use np.nan because that casts the series into a float
+        df['date_of_birth'] = demog_char_to_assign['date_of_birth']
+        df['date_of_death'] = pd.NaT
+        df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
-
-        # Assign district and region of residence
-        district_info = self.parameters['district_and_region_data']
-        prob_in_district = district_info['District Total'] / district_info['District Total'].sum()
-
-        assigned_district = district_info.loc[
-            self.rng.choice(np.arange(0, len(prob_in_district)), size=df.is_alive.sum(), p=prob_in_district),
-            ['District', 'Region']].copy().reset_index(drop=True)
-
-        df.loc[df.is_alive, 'region_of_residence'] = assigned_district['Region']
-        df.loc[df.is_alive, 'district_of_residence'] = assigned_district['District']
+        df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
+        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
+        df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
+        df['region_of_residence'] = demog_char_to_assign['Region']
+        df['district_of_residence'] = demog_char_to_assign['District']
+        df['district_num_of_residence'] = demog_char_to_assign['District_Num']
 
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
 
-        age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
-        df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
-        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
-        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
-        df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
-
-        # assign that half the adult population is married (will be done in lifestyle module)
-        df.loc[df.is_alive, 'is_married'] = False  # TODO: Lifestyle module should look after married property
-        adults = (df.loc[df.is_alive, 'age_years'] >= 18)
-        df.loc[adults, 'is_married'] = self.rng.choice([True, False], size=adults.sum(), p=[0.5, 0.5], replace=True)
+        # Update other age properties
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -225,6 +160,10 @@ class Demography(Module):
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(days=0))
 
+        # Check that the simulation does not run too long
+        if self.sim.end_date.year >= 2100:
+            raise Exception('Year is after 2100: Demographic data do not extend that far.')
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
@@ -236,12 +175,12 @@ class Demography(Module):
         df.at[child_id, 'is_alive'] = True
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
-        f_male = self.parameters['fraction_of_births_male']
+        fraction_of_births_male = self.parameters['fraction_of_births_male']
+        f_male = fraction_of_births_male.loc[fraction_of_births_male['Year'] == self.sim.date.year,
+                                             'frac_births_male'].values[0]
         df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
         df.at[child_id, 'mother_id'] = mother_id
-
-        df.at[child_id, 'is_married'] = False
 
         df.at[child_id, 'age_exact_years'] = 0.0
         df.at[child_id, 'age_years'] = 0
@@ -276,7 +215,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         age_in_days = population.sim.date - df.loc[df.is_alive, 'date_of_birth']
 
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
-        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
+        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
         df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
@@ -294,27 +233,29 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         logger.debug('Checking to see if anyone should die...')
+
+        # Get shortcut to main dataframe
         df = population.props
+
+        # Cause the death for anyone that is older than the maximum age
         over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
         for individual_id in over_max_age:
             self.sim.schedule_event(InstantaneousDeath(self.module, individual_id, 'OverMaxAge'))
 
-        # get the mortality schedule for now...
-
-        # load the mortality schedule (imported datasheet from excel workbook)
+        # Get the mortality schedule for now...
+        # load the mortality schedule from WPP
         mort_sched = self.module.parameters['mortality_schedule']
 
         # get the subset of mortality rates for this year.
         # confirms that we go to the five year period that we are in, not the exact year.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
-        mort_sched = mort_sched.loc[mort_sched.year == fallbackyear, ['age_years', 'sex', 'value']].copy()
+        mort_sched = mort_sched.loc[mort_sched.fallbackyear == fallbackyear, ['age_years', 'sex', 'death_rate']].copy()
 
         # get the population
         alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
 
-        # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of
-        # mortality for each person in the model
+        # merge the popualtion dataframe with the parameter dataframe to pick-up the death_rate for each person
         length_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_sched,
                                           left_on=['age_years', 'sex'],
@@ -322,20 +263,19 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                                           how='inner').set_index('person')
         assert length_before_merge == len(alive)
 
+        # Work out probability of dying in the time before the next occurrence of this poll
+        dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
+        prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate * dur_in_years_between_polls)
+
         # flipping the coin to determine if this person will die
-        will_die = (self.module.rng.random_sample(size=len(alive)) < alive.value / 12)
-
+        will_die = (self.module.rng.random_sample(size=len(alive)) < prob_of_dying_during_next_month)
         logger.debug('Will die count: %d', will_die.sum())
-
-        # the imported number is a yearly proportion. So adjust the rate according
-        # to the frequency with which the event is recurring
-        # TODO: this should be linked to the self.frequency value
 
         # loop through to see who is going to die:
         for person in alive.index[will_die]:
-            # schedule the death for "now"
+            # schedule the death for some point in the next month
             self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
-                                    self.sim.date)
+                                    self.sim.date + DateOffset(days=self.module.rng.randint(0, 30)))
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
@@ -365,6 +305,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         logger.info('%s|death|%s', self.sim.date,
                     {
                         'age': df.at[individual_id, 'age_years'],
+                        'sex': df.at[individual_id, 'sex'],
                         'cause': self.cause,
                         'person_id': individual_id
                     })

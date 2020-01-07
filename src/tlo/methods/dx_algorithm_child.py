@@ -69,6 +69,8 @@ class DxAlgorithmChild(Module):
         # we end up with lots of repeated code in this case
 
         # get the symptoms of the person:
+        symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
+        num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
         # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
         if df.at[person_id, 'sy_fever'] > 0:
@@ -101,6 +103,11 @@ class DxAlgorithmChild(Module):
                 if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'severe'):
                     diagnosis_str = 'severe_malaria'
 
+            # Example of a diangostic algorithm
+            if num_of_symptoms > 2:
+                diagnosis_str = 'measles'
+            else:
+                diagnosis_str = 'just_a_common_cold'
                     logger.debug(
                         "DxAlgorithmChild diagnosing severe malaria for child %d on date %s",
                         person_id, self.sim.date)
