@@ -193,6 +193,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     'HSI_GenericFirstApptAtFacilityLevel1: negative / no malaria test for person %d so doing nothing',
                     person_id)
 
+    # todo return actual footprint including LabPOC
+
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
 
