@@ -3,6 +3,8 @@ from pathlib import Path
 
 from tlo.lm import LinearModel, Predictor
 import pandas as pd
+import numpy as np
+
 
 def test_of_example_useage():
     # Test the use of basic functions using different syntax and model types
@@ -89,16 +91,72 @@ def test_multiplicative_application():
     # Take an example from lifestyle
     pass
 
-
 def test_logistic_application():
-    # Take an example from health seeking behaviour
+    # Take an example from lifestyle at initiation
 
     # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
+    df=pd.read_csv('tests/resources/df_at_init_of_lifestyle.csv')
 
-    # 2) apply the LinearModel to it and make a prediction of the probabilities assinged to each person
+    # 2) generate the probabilities from the model in the 'classical' manner
+    init_p_low_ex_urban_m = 0.32
+    init_or_low_ex_f=0.6
+    init_or_low_ex_rural=0.4
+    age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
+    init_odds_low_ex_urban_m = init_p_low_ex_urban_m / (1 - init_p_low_ex_urban_m)
+    odds_low_ex = pd.Series(init_odds_low_ex_urban_m, index=age_ge15_idx)
+    odds_low_ex.loc[df.sex == 'F'] *= init_or_low_ex_f
+    odds_low_ex.loc[~df.li_urban] *= init_or_low_ex_rural
+    low_ex_probs = odds_low_ex / (1 + odds_low_ex)
 
-    # 3) generate the probabilities from the model in the 'classical' manner
+    # 3) apply the LinearModel to it and make a prediction of the probabilities assinged to each person
+    eq = LinearModel(
+        'logistic',
+        init_p_low_ex_urban_m/(1-init_p_low_ex_urban_m),
+        Predictor('li_urban').when(False, init_or_low_ex_rural).otherwise(1.0),
+        Predictor('sex').when('F',init_or_low_ex_f).otherwise(1.0)
+    )
 
-    # 4) conifrm
+    lm_low_ex_probs =eq.predict(df)
 
-    pass
+    # init_p_low_ex_urban_m=0.32
+    # init_log_odds= np.log(init_p_low_ex_urban_m/(1-init_p_low_ex_urban_m))
+    # output = 1 / (1 + np.exp(-init_log_odds))
+
+    # 4) confirm that the two methods agree
+    assert lm_low_ex_probs.values == low_ex_probs.values
+
+
+
+"""
+        age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
+
+        init_odds_low_ex_urban_m = m.init_p_low_ex_urban_m / (1 - m.init_p_low_ex_urban_m)
+
+        odds_low_ex = pd.Series(init_odds_low_ex_urban_m, index=age_ge15_idx)
+
+        odds_low_ex.loc[df.sex == 'F'] *= m.init_or_low_ex_f
+        odds_low_ex.loc[~df.li_urban] *= m.init_or_low_ex_rural
+
+        low_ex_probs = odds_low_ex / (1 + odds_low_ex)
+
+        random_draw = rng.random_sample(size=len(age_ge15_idx))
+        df.loc[age_ge15_idx, 'li_low_ex'] = random_draw < low_ex_probs
+
+        # -------------------- TOBACCO USE ---------------------------------------------------------
+
+        init_odds_tob_age1519_m_wealth1 = m.init_p_tob_age1519_m_wealth1 / (1 - m.init_p_tob_age1519_m_wealth1)
+
+        odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
+
+        odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
+        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
+        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
+        odds_tob.loc[df.li_wealth == 2] *= 2
+        odds_tob.loc[df.li_wealth == 3] *= 3
+        odds_tob.loc[df.li_wealth == 4] *= 4
+        odds_tob.loc[df.li_wealth == 5] *= 5
+
+        tob_probs = odds_tob / (1 + odds_tob)
+
+        random_draw = rng.random_sample(size=len(age_ge15_idx))
+"""
