@@ -334,7 +334,7 @@ class Hiv(Module):
         df = population.props
 
         fsw = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (df.li_mar_stat != 2)].sample(
-            frac=self.parameters['proportion_female_sex_workers']).index
+            frac=self.parameters['proportion_female_sex_workers'], replace=False).index
 
         df.loc[fsw, 'hv_sexual_risk'] = 'sex_work'
 

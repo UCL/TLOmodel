@@ -25,7 +25,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 50
 
-outputpath = './src/scripts/malaria/'
+outputpath = './src/scripts/outputs/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 
