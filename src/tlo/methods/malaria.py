@@ -7,6 +7,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviour
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -78,8 +79,12 @@ class Malaria(Module):
 
     # not generic symptoms here, only specific ones
     SYMPTOMS = {
-        'em_coma',
-        'em_convulsions'
+        'em_acidosis',
+        'em_coma_convulsions',
+        'em_uraemia',  # final clinical manifestation of renal failure
+        'em_shock',
+        'jaundice',
+        'anaemia',
     }
 
     def read_parameters(self, data_folder):
@@ -348,7 +353,7 @@ class Malaria(Module):
             # projected date moving from clinical back to asymptomatic
             date_clin = rng.randint(low=p['dur_clin'] - 2, high=p['dur_clin'] + 2)
             date_clin_days = pd.to_timedelta(date_clin, unit='d')
-            print('date_clin_days', date_clin_days)
+            # print('date_clin_days', date_clin_days)
 
             cure = MalariaParasiteClearanceEvent(self, person)
             self.sim.schedule_event(cure, (self.sim.date + date_para_days))
@@ -358,23 +363,8 @@ class Malaria(Module):
             self.sim.schedule_event(symp_end, self.sim.date + date_clin_days)
 
         # ----------------------------------- HEALTHCARE-SEEKING -----------------------------------
-        # clinical cases will seek care with some probability
-        # severe cases will definitely seek care
-        interv = p['interv']
-
-        # find annual intervention coverage levels rate for 2010
-        act = interv.loc[interv.Year == now.year, 'ACT_coverage'].values[0]
-        # act = 1
-
         # CLINICAL CASES
         if len(clin) > 0:
-            self.sim.modules['SymptomManager'].chg_symptom(
-                person_id=list(clin),
-                symptom_string='em_coma',
-                add_or_remove='+',
-                disease_module=self,
-                duration_in_days=p['dur_clin'])
-
             self.sim.modules['SymptomManager'].chg_symptom(
                 person_id=list(clin),
                 symptom_string='fever',
@@ -403,77 +393,38 @@ class Malaria(Module):
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
 
-        # seeks_care = pd.Series(data=False, index=df.loc[clin].index)
-        #
-        # for i in df.loc[clin].index:
-        #     # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-        #     seeks_care[i] = rng.rand() < act  # placeholder for coverage / testing rates
-        #
-        # if seeks_care.sum() > 0:
-        #
-        #     for person_index in seeks_care.index[seeks_care]:
-        #         # print(person_index)
-        #
-        #         logger.debug(
-        #             'MalariaEvent: scheduling HSI_Malaria_rdt for clinical malaria case %d',
-        #             person_index)
-        #
-        #         delay = rng.choice(7)
-        #         # print(delay)
-        #
-        #         event = HSI_Malaria_rdt(self, person_id=person_index)
-        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-        #                                                             priority=2,
-        #                                                             topen=self.sim.date + DateOffset(
-        #                                                                 days=delay),
-        #                                                             tclose=self.sim.date + DateOffset(
-        #                                                                 days=(delay + 14))
-        #                                                             )
-        # else:
-        #     logger.debug(
-        #         'MalariaEvent: There is no new healthcare seeking for clinical cases')
-
         # SEVERE CASES
-        # todo check only severe selected here
         severe = df.index[(df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now)]
 
-        for person_index in severe:
-            # print(person_index)
+        # CLINICAL CASES
+        if len(severe) > 0:
+            self.sim.modules['SymptomManager'].chg_symptom(
+                person_id=list(severe),
+                symptom_string='fever',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=p['dur_clin'])
 
-            # adult severe malaria case
-            if df.at[person_index, 'age_exact_years'] >= 5:
-                logger.debug(
-                    'MalariaEventNational: scheduling HSI_Malaria_tx_compl_adult for severe malaria case %d',
-                    person_index)
+            self.sim.modules['SymptomManager'].chg_symptom(
+                person_id=list(severe),
+                symptom_string='headache',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=p['dur_clin'])
 
-                delay = rng.choice(2)  # random delay 0-2 days
-                # print(delay)
+            self.sim.modules['SymptomManager'].chg_symptom(
+                person_id=list(severe),
+                symptom_string='vomiting',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=p['dur_clin'])
 
-                # severe malaria intervention happen with priority=0 (highest)
-                event = HSI_Malaria_tx_compl_adult(self, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date + DateOffset(
-                                                                        days=delay),
-                                                                    tclose=self.sim.date + DateOffset(
-                                                                        days=(delay + 14))
-                                                                    )
-            if df.at[person_index, 'age_exact_years'] < 5:
-                logger.debug(
-                    'MalariaEventNational: scheduling HSI_Malaria_tx_compl_child for severe malaria case %d',
-                    person_index)
-
-                delay = rng.choice(2)  # random delay 0-2 days
-                # print(delay)
-
-                event = HSI_Malaria_tx_compl_child(self, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date + DateOffset(
-                                                                        days=delay),
-                                                                    tclose=self.sim.date + DateOffset(
-                                                                        days=(delay + 14))
-                                                                    )
+            self.sim.modules['SymptomManager'].chg_symptom(
+                person_id=list(severe),
+                symptom_string='stomachache',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=p['dur_clin'])
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
@@ -1517,8 +1468,6 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
-        # or isinstance(module, HSI_GenericEmergencyFirstApptAtFacilityLevel)
-        # TODO: bring back the assertion but also allow instances of 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()

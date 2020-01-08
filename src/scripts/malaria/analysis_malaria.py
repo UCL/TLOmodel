@@ -22,7 +22,7 @@ from tlo.methods import (
 t0 = time.time()
 
 # Where will output go
-outputpath = './src/scripts/malaria/'
+outputpath = './src/scripts/outputs/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -38,7 +38,7 @@ popsize = 500
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath + 'Malaria_LogFile' + datestamp + '.log'
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -104,10 +104,9 @@ import pandas as pd
 from pathlib import Path
 import xlsxwriter
 
-outputpath = './src/scripts/malaria/'
+outputpath = './src/scripts/outputs/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath + 'LogFile' + datestamp + '.log'
-# logfile = outputpath + 'LogFile' + '__2019_12_09' + '.log'
+logfile = outputpath + 'Malaria_LogFile' + datestamp + '.log'
 output = parse_log_file(logfile)
 resourcefilepath = Path("./resources")
 
