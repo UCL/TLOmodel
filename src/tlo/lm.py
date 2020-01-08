@@ -94,7 +94,7 @@ class LinearModel(object):
             print("Linear Model: Prediction will be sum of each effect size.")
         elif self.type == 'logistic':
             print("Logistic Regression Model: Prediction will be transform to be 'probabilities. " \
-                                            "Effect sizes assumed to be Odds Ratios.")
+                                            "Intercept assumed to be odds and effect sizes assumed to be Odds Ratios.")
         elif self.type == 'multiplicative':
             print("Multiplicative Model: Prediction will be multiplication of each effect size.")
 
@@ -119,7 +119,8 @@ class LinearModel(object):
             output = res_by_predictor.sum(axis=1, skipna=True)
 
         elif self.type == 'logistic':
-            output = 1 / (1 + np.exp(-np.log(res_by_predictor).sum(axis=1, skipna=True)))
+            odds = res_by_predictor.prod(axis=1, skipna=True)
+            output = 1 / (1 + odds)
 
         elif self.type == 'multiplicative':
             output = res_by_predictor.prod(axis=1, skipna=True)
