@@ -333,9 +333,6 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
-    sim.register(mockitis.Mockitis())
-    sim.register(chronicsyndrome.ChronicSyndrome())
-
     sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
