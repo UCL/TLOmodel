@@ -3,12 +3,12 @@ The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describe
 the health system following the onset of acute generic symptoms.
 """
 
+from tlo import DateOffset
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.population import logger
-from tlo import DateOffset
 
 # ---------------------------------------------------------------------------------------------------------
 #
