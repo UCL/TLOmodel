@@ -9,6 +9,7 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     chronicsyndrome,
+    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -16,7 +17,7 @@ from tlo.methods import (
     healthsystem,
     mockitis,
     symptommanager,
-    contraception)
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
