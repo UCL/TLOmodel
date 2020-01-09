@@ -491,8 +491,8 @@ def test_run_in_with_hs_disabled(tmpdir):
     sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=600)
-    sim.simulate(end_date=Date(2010, 3, 1))
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
