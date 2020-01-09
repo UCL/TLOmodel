@@ -148,6 +148,7 @@ def test_logistic_trivial_application():
     ])
 
 
+
 def test_linear_application():
     # Take an example from ????
     pass
@@ -161,6 +162,7 @@ def test_logistic_application():
 
     # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
     df=pd.read_csv('tests/resources/df_at_init_of_lifestyle.csv')
+    df.set_index('person',inplace=True, drop=True)
 
     # 2) generate the probabilities from the model in the 'classical' manner
     init_p_low_ex_urban_m = 0.32
@@ -177,18 +179,14 @@ def test_logistic_application():
     eq = LinearModel(
         'logistic',
         init_p_low_ex_urban_m/(1-init_p_low_ex_urban_m),
-        Predictor('li_urban').when(False, init_or_low_ex_rural).otherwise(1.0),
-        Predictor('sex').when('F',init_or_low_ex_f).otherwise(1.0)
+        Predictor('li_urban').when(False, init_or_low_ex_rural),
+        Predictor('sex').when('F', init_or_low_ex_f)
     )
 
-    lm_low_ex_probs = eq.predict(df)
-
-    # init_p_low_ex_urban_m=0.32
-    # init_log_odds= np.log(init_p_low_ex_urban_m/(1-init_p_low_ex_urban_m))
-    # output = 1 / (1 + np.exp(-init_log_odds))
+    lm_low_ex_probs = eq.predict(df.loc[df.is_alive & (df.age_years >= 15)])
 
     # 4) confirm that the two methods agree
-    assert lm_low_ex_probs.values == low_ex_probs.values
+    assert all(lm_low_ex_probs.values == low_ex_probs.values)
 
 
 
