@@ -150,7 +150,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 #   (effect size = 1.44 if pre-existing chronic_condition)
 
                 # Symptoms (testing for empty or non-empty set) - (can have more than one)
-                # TODO; chdck that this is working with the sets stuff
                 if person_profile['sy_fever']:
                     f += np.log(1.86)
 

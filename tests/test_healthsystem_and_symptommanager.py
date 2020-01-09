@@ -16,7 +16,7 @@ from tlo.methods import (
     healthsystem,
     mockitis,
     symptommanager,
-)
+    contraception)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -50,11 +50,17 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     # disable logging to stdout
     logging.getLogger().handlers.clear()
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
 
     sim.seed_rngs(0)
 
@@ -82,14 +88,19 @@ def test_run_no_interventions_allowed(tmpdir):
     # Define the service availability as null
     service_availability = []
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient=0.0,
-                                           mode_appt_constraints=0))
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -134,14 +145,19 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=0))
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -187,14 +203,19 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient=0.0,
-                                           mode_appt_constraints=0))
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -234,14 +255,19 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=1))
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -281,15 +307,22 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           # this effectively removes capabilities of HS:
-                                           capabilities_coefficient=0.0,
-                                           mode_appt_constraints=1))
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -331,14 +364,19 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -379,15 +417,19 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient=0.0,
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
 
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -430,15 +472,19 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=0,
-                                           ignore_cons_constraints=True))
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -476,22 +522,27 @@ def test_run_in_with_hs_disabled(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=0,
-                                           disable=True))
+                                           mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
 
     sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=2000)
-    sim.simulate(end_date=Date(2012,1,1))
+    sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
@@ -502,11 +553,11 @@ def test_run_in_with_hs_disabled(tmpdir):
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
     assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occurred (through HS)
+    assert any(sim.population.props['mi_status'] == 'P')  # At least some cure occured (though HS)
 
-    # check for hsi_wrappers
-    list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
-    any(['hsi' in str(ev_name) for ev_name in list_of_ev_name])
-
+    # # # check for hsi_wrappers
+    # list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
+    # assert any(['HSI' in str(ev_name) for ev_name in list_of_ev_name])
 
 
 def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
@@ -527,16 +578,19 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
-    # Register the appropriate modules
+    # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+
+    # Register the disease modules
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 

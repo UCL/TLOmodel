@@ -14,7 +14,7 @@ from tlo.methods import (
     healthsystem,
     mockitis,
     symptommanager,
-)
+    contraception)
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
@@ -52,6 +52,8 @@ service_availability = ['*']
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=2,
@@ -62,7 +64,6 @@ sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
@@ -75,8 +76,3 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
-
-import pandas as pd
-not pd.isnull(sim.population.props['mi_date_cure']).all()
-any(sim.population.props['mi_status']=='P')
-sim.population.props['mi_status'].value_counts(dropna=False)

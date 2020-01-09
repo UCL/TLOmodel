@@ -71,9 +71,9 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             # Do something based on this diagnosis...
             if diagnosis == 'measles':
-                logger.info('Start treatment for measles')
+                logger.debug('Start treatment for measles')
             else:
-                logger.info('No treatment. HSI ends.')
+                logger.debug('No treatment. HSI ends.')
 
         else:
             # It's an adult
