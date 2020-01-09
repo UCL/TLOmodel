@@ -42,11 +42,11 @@ def test_of_example_useage():
         Predictor('li_urban').when(True, 0.01).otherwise(0.02),
         Predictor('sex').when('M', 0.001).when('F', 0.002),
         Predictor('age_years')
-            .when('< 5', 0.0001)
-            .when('< 15', 0.0002)
-            .when('< 35', 0.0003)
-            .when('< 60', 0.0004)
-            .otherwise(0.0005),
+        .when('< 5', 0.0001)
+        .when('< 15', 0.0002)
+        .when('< 35', 0.0003)
+        .when('< 60', 0.0004)
+        .otherwise(0.0005),
         Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
     )
 
@@ -62,8 +62,8 @@ def test_of_example_useage():
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
         Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0),
         Predictor('age_years')
-            .when('.between(0,5)', 0.001)
-            .otherwise(0),
+        .when('.between(0,5)', 0.001)
+        .otherwise(0),
     )
 
     df = pd.read_csv(io.StringIO(EXAMPLE_POP))
@@ -231,6 +231,7 @@ def test_logistic_application_tob():
 
     assert all(tob_probs == lm_tob_probs)
 
-    # TODO: when the the condition is being equal to an number, it has to be passed into .when() as a string (e.g. li_weath)
+    # TODO: when the the condition is being equal to an number,
+    # it has to be passed into .when() as a string (e.g. li_weath)
     # TODO: a more elegant more to handle conditions that depend on two things? (as per test_logistic_application_tob)
     # TODO: warning when the same state is indicated for twice in then when() statement.

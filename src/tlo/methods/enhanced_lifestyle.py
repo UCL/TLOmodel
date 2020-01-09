@@ -397,22 +397,6 @@ class Lifestyle(Module):
         random_draw = rng.random_sample(size=len(age_ge15_idx))
         df.loc[age_ge15_idx, 'li_low_ex'] = random_draw < low_ex_probs
 
-
-        # sanitised version:
-        # init_p_low_ex_urban_m = 0.32
-        # init_or_low_ex_f=0.6
-        # init_or_low_ex_rural=0.4
-        # init_odds_low_ex_urban_m = init_p_low_ex_urban_m / (1 - init_p_low_ex_urban_m)
-        # odds_low_ex = pd.Series(init_odds_low_ex_urban_m, index=age_ge15_idx)
-        # odds_low_ex.loc[df.sex == 'F'] *= init_or_low_ex_f
-        # odds_low_ex.loc[~df.li_urban] *= init_or_low_ex_rural
-        # low_ex_probs = odds_low_ex / (1 + odds_low_ex)
-        #
-        # # get a freeze-frame of the csv
-        # ff=df.drop(columns=df.columns[(df.columns.str.startswith('cs_')) | (df.columns.str.startswith('mi_'))])
-        # ff.to_csv('tests/resources/df_at_init_of_lifestyle.csv')
-
-
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
         init_odds_tob_age1519_m_wealth1 = m.init_p_tob_age1519_m_wealth1 / (1 - m.init_p_tob_age1519_m_wealth1)
@@ -585,8 +569,6 @@ class Lifestyle(Module):
         random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
         df.loc[alive_idx, 'li_high_salt'] = random_draw < prob_high_salt
-
-
 
         # -------------------- SUGAR INTAKE ----------------------------------------------------------
 
