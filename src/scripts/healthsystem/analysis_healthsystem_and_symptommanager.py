@@ -57,7 +57,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        mode_appt_constraints=2,
                                        capabilities_coefficient=1.0,
                                        ignore_cons_constraints=False,
-                                       disable=False))
+                                       disable=True))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
@@ -75,3 +75,8 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
+
+import pandas as pd
+not pd.isnull(sim.population.props['mi_date_cure']).all()
+any(sim.population.props['mi_status']=='P')
+sim.population.props['mi_status'].value_counts(dropna=False)
