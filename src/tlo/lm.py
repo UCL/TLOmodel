@@ -56,7 +56,7 @@ class Predictor(object):
         else:
             raise RuntimeError(f"Unhandled condition: {args}")
 
-        print(f'\t{parsed_condition} -> {coefficient}')
+        # print(f'\t{parsed_condition} -> {coefficient}')
         self.conditions.append((parsed_condition, coefficient))
         return self
 
@@ -85,18 +85,18 @@ class Predictor(object):
 
 class LinearModel(object):
     def __init__(self, type: str, intercept: float, *args: Predictor):
-        """A logistic model has an intercept and one or more Predictor variables """
+        """
+        A Linear model has an intercept and none or more Predictor variables.
+        The type of model specifies how the results from the predictor are combined:
+        'additive' -> adds the effect_sizes from the predictors
+        'logisitc' -> multiples the effect_sizes from the predictors and applies the transform x/(1+x)
+                [Thus, the intercept can be taken to be an Odds and effect_sizes Odds Ratios,
+                and the prediction is a probability.]
+        'multiplicative' -> multiplies the effect_sizes from the predictors
+        """
 
-        assert type in ['linear', 'logistic', 'multiplicative'], 'Model type not recognised'
+        assert type in ['additive', 'logistic', 'multiplicative'], 'Model type not recognised'
         self.type = type
-
-        if self.type == 'linear':
-            print("Linear Model: Prediction will be sum of each effect size.")
-        elif self.type == 'logistic':
-            print("Logistic Regression Model: Prediction will be transform to probabilities. " \
-                                            "Intercept assumed to be Odds and effect sizes assumed to be Odds Ratios.")
-        elif self.type == 'multiplicative':
-            print("Multiplicative Model: Prediction will be multiplication of each effect size.")
 
         self.intercept = intercept
         self.predictors = list()
@@ -107,7 +107,11 @@ class LinearModel(object):
     def predict(self, df: pd.DataFrame):
         """Will call each Predictor's `predict` methods passing the supplied dataframe"""
 
-        # store the result of summing all the calculated values of Predictors
+        # Do some checks:
+        assert self.intercept is not None, "Interceipt is not specified"
+        assert all([pred.property_name in df.columns for pred in self.predictors]), "Predictor variables not in df"
+
+        # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
         res_by_predictor['intercept'] = self.intercept
 
@@ -115,14 +119,18 @@ class LinearModel(object):
             res_by_predictor[predictor] = predictor.predict(df)
 
         # Do appropriate transformation on output
-        if self.type == 'linear':
+        if self.type == 'additive':
+            # print("Linear Model: Prediction will be sum of each effect size.")
             output = res_by_predictor.sum(axis=1, skipna=True)
 
         elif self.type == 'logistic':
+            # print("Logistic Regression Model: Prediction will be transform to probabilities. " \
+            #       "Intercept assumed to be Odds and effect sizes assumed to be Odds Ratios.")
             odds = res_by_predictor.prod(axis=1, skipna=True)
             output = odds / (1 + odds)
 
         elif self.type == 'multiplicative':
+            # print("Multiplicative Model: Prediction will be multiplication of each effect size.")
             output = res_by_predictor.prod(axis=1, skipna=True)
 
         return output

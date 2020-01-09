@@ -36,7 +36,7 @@ def test_of_example_useage():
 
     # Linear Model
     eq = LinearModel(
-        'linear',
+        'additive',
         0.0,
         Predictor('region_of_residence').when('Northern', 0.1).when('Central', 0.2).when('Southern', 0.3),
         Predictor('li_urban').when(True, 0.01).otherwise(0.02),
@@ -85,9 +85,9 @@ def test_of_example_useage():
     print(df.to_string())
 
 
-def test_linear_trivial_application():
+def test_additive_trivial_application():
     eq = LinearModel(
-        'linear',
+        'additive',
         0.0,
         Predictor('FactorX').when(True, 10),
         Predictor('FactorY').when(True, 100)
