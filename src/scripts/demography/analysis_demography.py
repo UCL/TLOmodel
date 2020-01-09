@@ -7,7 +7,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, contraception
@@ -21,14 +20,14 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefilepath = Path("./resources")
-
+# resourcefilepath = Path("./resources")
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2031, 1, 1)  # so last full year of simulation will be 2030
-popsize = 1000
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)

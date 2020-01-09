@@ -666,10 +666,9 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['random_draw_all'] = random_draw_all
 
         # running counts
-        pathogen_episodes = {}
-           # {'rotavirus': np.nan, 'shigella': np.nan, 'adenovirus': np.nan, 'cryptosporidium': np.nan,
-            # 'campylobacter': np.nan, 'ST-ETEC': np.nan, 'sapovirus': np.nan, 'norovirus': np.nan,
-             # 'astrovirus': np.nan, 'tEPEC': np.nan}
+        pathogen_episodes = {'rotavirus': np.nan, 'shigella': np.nan, 'adenovirus': np.nan, 'cryptosporidium': np.nan,
+                             'campylobacter': np.nan, 'ST-ETEC': np.nan, 'sapovirus': np.nan, 'norovirus': np.nan,
+                             'astrovirus': np.nan, 'tEPEC': np.nan}
 
         for i, column in enumerate(dfx.columns):
             # go through each pathogen and assign the pathogen and status
@@ -710,8 +709,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'norovirus': noro_inc,
                      'astrovirus': astro_inc,
                      'tEPEC': epec_inc
-                     })
-                     '''
+                     })'''
 
         # ----------------------- ALLOCATE A RANDOM DATE OF ONSET OF ACUTE DIARRHOEA -----------------------
         incident_acute_diarrhoea = df.index[df.is_alive & df.gi_diarrhoea_status & (df.age_exact_years < 5)]
@@ -1387,12 +1385,11 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
         count_episodes = df['gi_diarrhoea_count'].sum()
         pop_under5 = len(df[df.is_alive & (df.age_exact_years < 5)])
         # overall incidence rate in under 5
-        # inc_100cy = (count_episodes / pop_under5) * 100
-        # logger.info('%s|episodes_counts|%s', now, {'incidence_per100cy': inc_100cy})
-        logger.info('%s|pop_counts|%s', now, {'pop_len': pop_under5})
+        inc_100cy = (count_episodes / pop_under5) * 100
+        logger.info('%s|episodes_counts|%s', now, {'incidence_per100cy': inc_100cy})
+        # logger.info('%s|pop_counts|%s', now, {'pop_len': pop_under5})
 
 
-'''
         # log information on attributable pathogens
         pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
         under5 = df[df.is_alive & df.age_years.between(0, 5)]
@@ -1424,75 +1421,88 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                      'astrovirus': astro_inc,
                      'tEPEC': tEPEC_inc
                      })
-   
-        # incidence rate by pathogen
-        logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
-                    {'total': (sum(pathogen_count) * 4 * 100) / under5.size,
-                     'rotavirus': (pathogen_count['rotavirus'] * 4 * 100) / len(under5),
-                     'shigella': (pathogen_count['shigella'] * 4 * 100) / len(under5),
-                     'adenovirus': (pathogen_count['adenovirus'] * 4 * 100) / len(under5),
-                     'cryptosporidium': (pathogen_count['cryptosporidium'] * 4 * 100) / len(under5),
-                     'campylobacter': (pathogen_count['campylobacter'] * 4 * 100) / len(under5),
-                     'ETEC': (pathogen_count['ST-ETEC'] * 4 * 100) / len(under5),
-                     'sapovirus': (pathogen_count['sapovirus'] * 4 * 100) / len(under5),
-                     'norovirus': (pathogen_count['norovirus'] * 4 * 100) / len(under5),
-                     'astrovirus': (pathogen_count['astrovirus'] * 4 * 100) / len(under5),
-                     'tEPEC': (pathogen_count['tEPEC'] * 4 * 100) / len(under5),
-                     })
-      
+
         # incidence rate per age group by pathogen
         pathogen_0to11mo = df[df.is_alive & (df.age_years < 1)].groupby('gi_diarrhoea_pathogen').size()
+        len_under12mo = df[df.is_alive & df.age_years.between(0, 1)]
         pathogen_12to23mo = df[df.is_alive & (df.age_years >= 1) & (df.age_years < 2)].groupby(
             'gi_diarrhoea_pathogen').size()
+        len_11to23mo = df[df.is_alive & df.age_years.between(1, 2)]
         pathogen_24to59mo = df[df.is_alive & (df.age_years >= 2) & (df.age_years < 5)].groupby(
             'gi_diarrhoea_pathogen').size()
+        len_24to59mo = df[df.is_alive & df.age_years.between(2, 5)]
 
-        rota_inc_by_age = [((pathogen_0to11mo['rotavirus'] * 4 * 100) / len(under5)),
-                           ((pathogen_12to23mo['rotavirus'] * 4 * 100) / len(under5)),
-                           ((pathogen_24to59mo['rotavirus'] * 4 * 100) / len(under5))]
-        shig_inc_by_age = [(pathogen_0to11mo['shigella'] * 4 * 100) / len(under5),
-                           (pathogen_12to23mo['shigella'] * 4 * 100) / len(under5),
-                           (pathogen_24to59mo['shigella'] * 4 * 100) / len(under5)]
-        adeno_inc_by_age = [(pathogen_0to11mo['adenovirus'] * 4 * 100) / len(under5),
-                            (pathogen_12to23mo['adenovirus'] * 4 * 100) / len(under5),
-                            (pathogen_24to59mo['adenovirus'] * 4 * 100) / len(under5)]
-        crypto_inc_by_age = [(pathogen_0to11mo['cryptosporidium'] * 4 * 100) / len(under5),
-                             (pathogen_12to23mo['cryptosporidium'] * 4 * 100) / len(under5),
-                             (pathogen_24to59mo['cryptosporidium'] * 4 * 100) / len(under5)]
-        campylo_inc_by_age = [(pathogen_0to11mo['campylobacter'] * 4 * 100) / len(under5),
-                              (pathogen_12to23mo['campylobacter'] * 4 * 100) / len(under5),
-                              (pathogen_24to59mo['campylobacter'] * 4 * 100) / len(under5)]
-        etec_inc_by_age = [(pathogen_0to11mo['ST-ETEC'] * 4 * 100) / len(under5),
-                           (pathogen_12to23mo['ST-ETEC'] * 4 * 100) / len(under5),
-                           (pathogen_24to59mo['ST-ETEC'] * 4 * 100) / len(under5)]
-        sapo_inc_by_age = [(pathogen_0to11mo['sapovirus'] * 4 * 100) / len(under5),
-                           (pathogen_12to23mo['sapovirus'] * 4 * 100) / len(under5),
-                           (pathogen_24to59mo['sapovirus'] * 4 * 100) / len(under5)]
-        noro_inc_by_age = [(pathogen_0to11mo['norovirus'] * 4 * 100) / len(under5),
-                           (pathogen_12to23mo['norovirus'] * 4 * 100) / len(under5),
-                           (pathogen_24to59mo['norovirus'] * 4 * 100) / len(under5)]
-        astro_inc_by_age = [(pathogen_0to11mo['astrovirus'] * 4 * 100) / len(under5),
-                            (pathogen_12to23mo['astrovirus'] * 4 * 100) / len(under5),
-                            (pathogen_24to59mo['astrovirus'] * 4 * 100) / len(under5)]
-        epec_inc_by_age = [(pathogen_0to11mo['tEPEC'] * 4 * 100) / len(under5),
-                           (pathogen_12to23mo['tEPEC'] * 4 * 100) / len(under5),
-                           (pathogen_24to59mo['tEPEC'] * 4 * 100) / len(under5)]
+        rota_inc_by_age = [((pathogen_0to11mo['rotavirus'] * 4 * 100) / len(len_under12mo)),
+                           ((pathogen_12to23mo['rotavirus'] * 4 * 100) / len(len_11to23mo)),
+                           ((pathogen_24to59mo['rotavirus'] * 4 * 100) / len(len_24to59mo))]
+        shig_inc_by_age = [(pathogen_0to11mo['shigella'] * 4 * 100) / len(len_under12mo),
+                           (pathogen_12to23mo['shigella'] * 4 * 100) / len(len_11to23mo),
+                           (pathogen_24to59mo['shigella'] * 4 * 100) / len(len_24to59mo)]
+        adeno_inc_by_age = [(pathogen_0to11mo['adenovirus'] * 4 * 100) / len(len_under12mo),
+                            (pathogen_12to23mo['adenovirus'] * 4 * 100) / len(len_11to23mo),
+                            (pathogen_24to59mo['adenovirus'] * 4 * 100) / len(len_24to59mo)]
+        crypto_inc_by_age = [(pathogen_0to11mo['cryptosporidium'] * 4 * 100) / len(len_under12mo),
+                             (pathogen_12to23mo['cryptosporidium'] * 4 * 100) / len(len_11to23mo),
+                             (pathogen_24to59mo['cryptosporidium'] * 4 * 100) / len(len_24to59mo)]
+        campylo_inc_by_age = [(pathogen_0to11mo['campylobacter'] * 4 * 100) / len(len_under12mo),
+                              (pathogen_12to23mo['campylobacter'] * 4 * 100) / len(len_11to23mo),
+                              (pathogen_24to59mo['campylobacter'] * 4 * 100) / len(len_24to59mo)]
+        etec_inc_by_age = [(pathogen_0to11mo['ST-ETEC'] * 4 * 100) / len(len_under12mo),
+                           (pathogen_12to23mo['ST-ETEC'] * 4 * 100) / len(len_11to23mo),
+                           (pathogen_24to59mo['ST-ETEC'] * 4 * 100) / len(len_24to59mo)]
+        sapo_inc_by_age = [(pathogen_0to11mo['sapovirus'] * 4 * 100) / len(len_under12mo),
+                           (pathogen_12to23mo['sapovirus'] * 4 * 100) / len(len_11to23mo),
+                           (pathogen_24to59mo['sapovirus'] * 4 * 100) / len(len_24to59mo)]
+        noro_inc_by_age = [(pathogen_0to11mo['norovirus'] * 4 * 100) / len(len_under12mo),
+                           (pathogen_12to23mo['norovirus'] * 4 * 100) / len(len_11to23mo),
+                           (pathogen_24to59mo['norovirus'] * 4 * 100) / len(len_24to59mo)]
+        astro_inc_by_age = [(pathogen_0to11mo['astrovirus'] * 4 * 100) / len(len_under12mo),
+                            (pathogen_12to23mo['astrovirus'] * 4 * 100) / len(len_11to23mo),
+                            (pathogen_24to59mo['astrovirus'] * 4 * 100) / len(len_24to59mo)]
+        epec_inc_by_age = [(pathogen_0to11mo['tEPEC'] * 4 * 100) / len(len_under12mo),
+                           (pathogen_12to23mo['tEPEC'] * 4 * 100) / len(len_11to23mo),
+                           (pathogen_24to59mo['tEPEC'] * 4 * 100) / len(len_24to59mo)]
 
-        logger.info('%s|diarr_incidence_age|%s', self.sim.date,
-                    {'total': [(sum(pathogen_0to11mo) * 4 * 100) / under5.size,
-                               (sum(pathogen_12to23mo) * 4 * 100) / under5.size,
-                               (sum(pathogen_24to59mo) * 4 * 100) / under5.size],
-                     'rotavirus': list(rota_inc_by_age),
-                     'shigella': list(shig_inc_by_age),
-                     'adenovirus': list(adeno_inc_by_age),
-                     'cryptosporidium': list(crypto_inc_by_age),
-                     'campylobacter': list(campylo_inc_by_age),
-                     'ETEC': list(etec_inc_by_age),
-                     'sapovirus': list(sapo_inc_by_age),
-                     'norovirus': list(noro_inc_by_age),
-                     'astrovirus': list(astro_inc_by_age),
-                     'tEPEC': list(epec_inc_by_age)
+        logger.info('%s|diarr_incidence_age0_11|%s', self.sim.date,
+                    {'total': (sum(pathogen_0to11mo) * 4 * 100) / len_under12mo.size,
+                     'rotavirus': rota_inc_by_age[0],
+                     'shigella': shig_inc_by_age[0],
+                     'adenovirus': adeno_inc_by_age[0],
+                     'cryptosporidium': crypto_inc_by_age[0],
+                     'campylobacter': campylo_inc_by_age[0],
+                     'ETEC': etec_inc_by_age[0],
+                     'sapovirus': sapo_inc_by_age[0],
+                     'norovirus': noro_inc_by_age[0],
+                     'astrovirus': astro_inc_by_age[0],
+                     'tEPEC': epec_inc_by_age[0]
                      })
+        logger.info('%s|diarr_incidence_age12_23|%s', self.sim.date,
+                    {'total': (sum(pathogen_0to11mo) * 4 * 100) / len_11to23mo.size,
+                     'rotavirus': rota_inc_by_age[1],
+                     'shigella': shig_inc_by_age[1],
+                     'adenovirus': adeno_inc_by_age[1],
+                     'cryptosporidium': crypto_inc_by_age[1],
+                     'campylobacter': campylo_inc_by_age[1],
+                     'ETEC': etec_inc_by_age[1],
+                     'sapovirus': sapo_inc_by_age[1],
+                     'norovirus': noro_inc_by_age[1],
+                     'astrovirus': astro_inc_by_age[1],
+                     'tEPEC': epec_inc_by_age[1]
+                     })
+        logger.info('%s|diarr_incidence_age24_59|%s', self.sim.date,
+                    {'total': (sum(pathogen_0to11mo) * 4 * 100) / pathogen_24to59mo.size,
+                     'rotavirus': rota_inc_by_age[2],
+                     'shigella': shig_inc_by_age[2],
+                     'adenovirus': adeno_inc_by_age[2],
+                     'cryptosporidium': crypto_inc_by_age[2],
+                     'campylobacter': campylo_inc_by_age[2],
+                     'ETEC': etec_inc_by_age[2],
+                     'sapovirus': sapo_inc_by_age[2],
+                     'norovirus': noro_inc_by_age[2],
+                     'astrovirus': astro_inc_by_age[2],
+                     'tEPEC': epec_inc_by_age[2]
+                     })
+        '''
       # Log the acute diarrhoea information
         diarrhoea_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
         logger.info('%s|acute_diarrhoea|%s', self.sim.date,

@@ -20,15 +20,15 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # Work out the resource path from the path of the analysis file
-# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
-resourcefilepath = Path('./resources')
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+# resourcefilepath = Path('./resources')
 
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1000
+end_date = Date(2017, 1, 1)
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -69,7 +69,6 @@ num_under_5ys = output['tlo.methods.demography']['age_range_m']['0-4'] + \
 # births and under-5s
 
 
-
 # -----------------------------------------------------------------------------------
 # %% Plot Incidence of Diarrhoea Over time:
 years = mdates.YearLocator()   # every year
@@ -77,10 +76,10 @@ months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 
-'''
+
 # -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
-incidence_by_patho_df = output['tlo.methods.new_diarrhoea']['number_pathogen_diarrhoea']
+incidence_by_patho_df = output['tlo.methods.new_diarrhoea']['diarr_incidence_by_patho']
 Model_Years = pd.to_datetime(incidence_by_patho_df.date)
 Model_Years = Model_Years.dt.year
 Model_rotavirus = incidence_by_patho_df.rotavirus
@@ -119,7 +118,7 @@ plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campyloba
 plt.savefig(outputpath + 'Diarrhoea incidence by pathogens' + datestamp + '.pdf')
 
 plt.show()
-'''
+
 # -----------------------------------------------------------------------------
 # Load Model Results on clinical types of diarrhoea
 clinical_type_df = output['tlo.methods.new_diarrhoea']['clinical_diarrhoea_type']
@@ -148,35 +147,28 @@ Model_Years = pd.to_datetime(status_counts_df.date)
 Model_incidence = status_counts_df.incidence_per100cy
 
 plt.plot(Model_Years, Model_incidence)
-
-plt.title("Number of children under 5 over the years")
-plt.xlabel("Year")
-plt.ylabel("number of children ")
-# plt.savefig(outputpath + 'Diarrhoea incidence per 100 child-years' + datestamp + '.pdf')
-
-plt.show()
-
-'''
 plt.title("Overall incidence of diarrhoea per 100 child-years")
 plt.xlabel("Year")
 plt.ylabel("Incidence of diarrhoea per 100 child-years")
 plt.legend(['Yearly diarrhoea incidence'])
 plt.savefig(outputpath + 'Diarrhoea incidence per 100 child-years' + datestamp + '.pdf')
 
+plt.show()
+
 # -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
-incidence_by_age_df = output['tlo.methods.new_diarrhoea']['diarr_incidence_age']
+incidence_by_age_df = output['tlo.methods.new_diarrhoea']['diarr_incidence_age0_11']
 Model_Years = pd.to_datetime(incidence_by_patho_df.date)
-Model_rotavirus = incidence_by_age_df.rotavirus[0]
-Model_shigella = incidence_by_age_df.shigella[0]
-Model_adenovirus = incidence_by_age_df.adenovirus[0]
-Model_crypto = incidence_by_age_df.cryptosporidium[0]
-Model_campylo = incidence_by_age_df.campylobacter[0]
-Model_ETEC = incidence_by_age_df.ETEC[0]
-Model_sapovirus = incidence_by_age_df.sapovirus[0]
-Model_norovirus = incidence_by_age_df.norovirus[0]
-Model_astrovirus = incidence_by_age_df.astrovirus[0]
-Model_EPEC = incidence_by_age_df.tEPEC[0]
+Model_rotavirus = incidence_by_age_df.rotavirus
+Model_shigella = incidence_by_age_df.shigella
+Model_adenovirus = incidence_by_age_df.adenovirus
+Model_crypto = incidence_by_age_df.cryptosporidium
+Model_campylo = incidence_by_age_df.campylobacter
+Model_ETEC = incidence_by_age_df.ETEC
+Model_sapovirus = incidence_by_age_df.sapovirus
+Model_norovirus = incidence_by_age_df.norovirus
+Model_astrovirus = incidence_by_age_df.astrovirus
+Model_EPEC = incidence_by_age_df.tEPEC
 # pathogen_by_age = diarrhoea_patho_df.groupby(['years'])['person_id'].size()
 
 fig3, ax = plt.subplots()
@@ -195,7 +187,7 @@ ax.plot(np.asarray(Model_Years), Model_EPEC)
 ax.xaxis.set_major_locator(years)
 ax.xaxis.set_major_formatter(years_fmt)
 
-plt.title("Pathogen-attributed incidence of diarrhoea by age group")
+plt.title("Pathogen-attributed incidence of diarrhoea in ages 0 to 11 months")
 plt.xlabel("Year")
 plt.ylabel("diarrhoea incidence by pathogen per 100 child-years")
 plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC', 'sapovirus', 'norovirus',
@@ -203,7 +195,7 @@ plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campyloba
 plt.savefig(outputpath + 'Diarrhoea incidence by age group' + datestamp + '.pdf')
 
 plt.show()
-'''
+
 '''
 # -----------------------------------------------------------------------------------
 
