@@ -245,6 +245,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
+
 def test_run_in_mode_1_with_capacity(tmpdir):
     # All events should run with some zero squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -298,6 +299,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
 
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
+
 
 def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Events should run but with high squeeze factors
@@ -468,6 +470,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     # Check that no mockitis cured occured (though health system)
     assert not any(sim.population.props['mi_status'] == 'P')
 
+
 def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -522,6 +525,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
 
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
+
 
 def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem
