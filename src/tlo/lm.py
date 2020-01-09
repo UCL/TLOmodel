@@ -93,8 +93,8 @@ class LinearModel(object):
         if self.type == 'linear':
             print("Linear Model: Prediction will be sum of each effect size.")
         elif self.type == 'logistic':
-            print("Logistic Regression Model: Prediction will be transform to be 'probabilities. " \
-                                            "Intercept assumed to be odds and effect sizes assumed to be Odds Ratios.")
+            print("Logistic Regression Model: Prediction will be transform to probabilities. " \
+                                            "Intercept assumed to be Odds and effect sizes assumed to be Odds Ratios.")
         elif self.type == 'multiplicative':
             print("Multiplicative Model: Prediction will be multiplication of each effect size.")
 
