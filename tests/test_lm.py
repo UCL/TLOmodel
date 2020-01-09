@@ -221,12 +221,11 @@ def test_logistic_application_tob():
     )
 
     men_only = eq_men_only.predict(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')])
-    men_only = pd.DataFrame(men_only).merge(df[['age_years','sex']], left_index=True, right_index=True)
-
+    men_only = pd.DataFrame(men_only).merge(df[['age_years', 'sex']], left_index=True, right_index=True)
 
     lm_tob_odds = eq_adults.predict(df.loc[df.is_alive & (df.age_years >= 15)]).multiply(
         eq_men_only.predict(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]),
-        fill_value = 1.0
+        fill_value=1.0
     )
     lm_tob_probs = lm_tob_odds / (1 + lm_tob_odds)
 

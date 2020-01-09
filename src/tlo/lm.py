@@ -1,7 +1,8 @@
-import io
 import numbers
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 
 class Predictor(object):
     def __init__(self, property_name: str):
@@ -67,7 +68,7 @@ class Predictor(object):
         # We want to "short-circuit" values i.e. if an individual in a population matches a certain
         # condition, we don't want that individual to be matched in any subsequent conditions
 
-        output = pd.Series(data = np.nan, index = df.index)
+        output = pd.Series(data=np.nan, index=df.index)
         touched = pd.Series(False, index=df.index)
         print("touched = pd.Series(False, index=output.index)")
         for condition, value in self.conditions:
@@ -82,6 +83,7 @@ class Predictor(object):
             touched = (touched | mask)
             print(f"touched = (touched | mask)")
         return output
+
 
 class LinearModel(object):
     def __init__(self, type: str, intercept: float, *args: Predictor):
