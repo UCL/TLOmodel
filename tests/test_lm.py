@@ -1,4 +1,6 @@
 import io
+import os
+from pathlib import Path
 
 import pandas as pd
 
@@ -145,21 +147,12 @@ def test_logistic_trivial_application():
     ])
 
 
-def test_linear_application():
-    # Take an example from ????
-    pass
-
-
-def test_multiplicative_application():
-    # Take an example from lifestyle
-    pass
-
-
 def test_logistic_application_low_ex():
     # Use an example from lifestyle at initiation: low exercise
 
     # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
-    df = pd.read_csv('tests/resources/df_at_init_of_lifestyle.csv')
+    df_file = Path(os.path.dirname(__file__)) / 'resources' / 'df_at_init_of_lifestyle.csv'
+    df = pd.read_csv(df_file)
     df.set_index('person', inplace=True, drop=True)
 
     # 2) generate the probabilities from the model in the 'classical' manner
@@ -190,7 +183,8 @@ def test_logistic_application_tob():
     # Use an example from lifestyle at initiation: tob (tobacco use)
 
     # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
-    df = pd.read_csv('tests/resources/df_at_init_of_lifestyle.csv')
+    df_file = Path(os.path.dirname(__file__)) / 'resources' / 'df_at_init_of_lifestyle.csv'
+    df = pd.read_csv(df_file)
     df.set_index('person', inplace=True, drop=True)
 
     # 2) generate the probabilities from the model in the 'classical' manner
