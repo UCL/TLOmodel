@@ -11,6 +11,7 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericFirstApptAtFacilityLevel1,
 )
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -77,9 +78,13 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
 
-        # get the list of person_ids who have onset generic acute symptoms in the last day
-        person_ids_with_new_symptoms = list(self.module.sim.modules[
-            'SymptomManager'].persons_with_newly_onset_symptoms)
+        # get the list of person_ids who have onset generic acute symptoms in the last day, extracting any person_ids
+        #    that have died (since the onset of symptoms)
+        alive_person_ids = list(self.sim.population.props.index[self.sim.population.props.is_alive])
+        person_ids_with_new_symptoms = list(
+            self.module.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms.
+            intersection(alive_person_ids)
+        )
 
         # clear the list of person_ids with newly onset symptoms
         self.module.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms = set()

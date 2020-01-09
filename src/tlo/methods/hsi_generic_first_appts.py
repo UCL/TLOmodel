@@ -3,7 +3,6 @@ The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describe
 the health system following the onset of acute generic symptoms.
 """
 
-from tlo import DateOffset
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
@@ -195,9 +194,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 topen=self.sim.date
                                                                 )
 
-
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
         pass
-
-
