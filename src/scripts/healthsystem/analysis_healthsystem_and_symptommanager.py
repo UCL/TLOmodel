@@ -7,6 +7,7 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     chronicsyndrome,
+    contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -15,7 +16,7 @@ from tlo.methods import (
     healthsystem,
     mockitis,
     symptommanager,
-    contraception)
+)
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
