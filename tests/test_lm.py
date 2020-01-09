@@ -1,9 +1,8 @@
 import io
-from pathlib import Path
+
+import pandas as pd
 
 from tlo.lm import LinearModel, Predictor
-import pandas as pd
-import numpy as np
 
 
 def test_of_example_useage():
@@ -85,7 +84,6 @@ def test_of_example_useage():
 
 
 def test_linear_trivial_application():
-
     eq = LinearModel(
         'linear',
         0.0,
@@ -120,12 +118,11 @@ def test_multiplier_trivial_application():
 
 
 def test_logistic_trivial_application():
-
-    prob=0.5
+    prob = 0.5
     OR_X = 2
     OR_Y = 5
 
-    odds = prob / (1-prob)
+    odds = prob / (1 - prob)
 
     eq = LinearModel(
         'logistic',
@@ -142,32 +139,33 @@ def test_logistic_trivial_application():
     pred = eq.predict(df)
     assert all(pred.values == [
         prob,
-        (odds*OR_X)/(1+odds*OR_X),
+        (odds * OR_X) / (1 + odds * OR_X),
         (odds * OR_Y) / (1 + odds * OR_Y),
-        (odds * OR_X*OR_Y) / (1 + odds * OR_X*OR_Y)
+        (odds * OR_X * OR_Y) / (1 + odds * OR_X * OR_Y)
     ])
-
 
 
 def test_linear_application():
     # Take an example from ????
     pass
 
+
 def test_multiplicative_application():
     # Take an example from lifestyle
     pass
 
-def test_logistic_application():
-    # Take an example from lifestyle at initiation
+
+def test_logistic_application_low_ex():
+    # Use an example from lifestyle at initiation: low exercise
 
     # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
-    df=pd.read_csv('tests/resources/df_at_init_of_lifestyle.csv')
-    df.set_index('person',inplace=True, drop=True)
+    df = pd.read_csv('tests/resources/df_at_init_of_lifestyle.csv')
+    df.set_index('person', inplace=True, drop=True)
 
     # 2) generate the probabilities from the model in the 'classical' manner
     init_p_low_ex_urban_m = 0.32
-    init_or_low_ex_f=0.6
-    init_or_low_ex_rural=0.4
+    init_or_low_ex_f = 0.6
+    init_or_low_ex_rural = 0.4
     age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
     init_odds_low_ex_urban_m = init_p_low_ex_urban_m / (1 - init_p_low_ex_urban_m)
     odds_low_ex = pd.Series(init_odds_low_ex_urban_m, index=age_ge15_idx)
@@ -175,51 +173,71 @@ def test_logistic_application():
     odds_low_ex.loc[~df.li_urban] *= init_or_low_ex_rural
     low_ex_probs = odds_low_ex / (1 + odds_low_ex)
 
-    # 3) apply the LinearModel to it and make a prediction of the probabilities assinged to each person
+    # 3) apply the LinearModel to it and make a prediction of the probabilities assigned to each person
     eq = LinearModel(
         'logistic',
-        init_p_low_ex_urban_m/(1-init_p_low_ex_urban_m),
+        init_p_low_ex_urban_m / (1 - init_p_low_ex_urban_m),
         Predictor('li_urban').when(False, init_or_low_ex_rural),
         Predictor('sex').when('F', init_or_low_ex_f)
     )
-
     lm_low_ex_probs = eq.predict(df.loc[df.is_alive & (df.age_years >= 15)])
 
     # 4) confirm that the two methods agree
     assert all(lm_low_ex_probs.values == low_ex_probs.values)
 
 
+def test_logistic_application_tob():
+    # Use an example from lifestyle at initiation: tob (tobacco use)
 
-"""
-        age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
+    # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
+    df = pd.read_csv('tests/resources/df_at_init_of_lifestyle.csv')
+    df.set_index('person', inplace=True, drop=True)
 
-        init_odds_low_ex_urban_m = m.init_p_low_ex_urban_m / (1 - m.init_p_low_ex_urban_m)
+    # 2) generate the probabilities from the model in the 'classical' manner
+    init_p_tob_age1519_m_wealth1 = 0.7
+    init_or_tob_f = 0.8
+    init_or_tob_agege40_m = 0.2
+    init_or_tob_age2039_m = 0.9
+    age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
+    init_odds_tob_age1519_m_wealth1 = init_p_tob_age1519_m_wealth1 / (1 - init_p_tob_age1519_m_wealth1)
+    odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
+    odds_tob.loc[df.sex == 'F'] *= init_or_tob_f
+    odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= init_or_tob_age2039_m
+    odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= init_or_tob_agege40_m
+    odds_tob.loc[df.li_wealth == 2] *= 2
+    odds_tob.loc[df.li_wealth == 3] *= 3
+    odds_tob.loc[df.li_wealth == 4] *= 4
+    odds_tob.loc[df.li_wealth == 5] *= 5
+    tob_probs = odds_tob / (1 + odds_tob)
 
-        odds_low_ex = pd.Series(init_odds_low_ex_urban_m, index=age_ge15_idx)
+    # 3) apply the LinearModel to it and make a prediction of the probabilities assigned to each person
+    # [As there is a joint condition on age and sex, need to build two seperate models]
+    eq_adults = LinearModel(
+        'multiplicative',
+        init_p_tob_age1519_m_wealth1 / (1 - init_p_tob_age1519_m_wealth1),
+        Predictor('sex').when('F', init_or_tob_f),
+        Predictor('li_wealth').when('2', 2).when('3', 3).when('4', 4).when('5', 5)
+    )
 
-        odds_low_ex.loc[df.sex == 'F'] *= m.init_or_low_ex_f
-        odds_low_ex.loc[~df.li_urban] *= m.init_or_low_ex_rural
+    eq_men_only = LinearModel(
+        'multiplicative',
+        1.0,
+        Predictor('age_years').when('.between(20,39)', init_or_tob_age2039_m),
+        Predictor('age_years').when('.between(40,120)', init_or_tob_agege40_m)
+    )
 
-        low_ex_probs = odds_low_ex / (1 + odds_low_ex)
+    men_only = eq_men_only.predict(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')])
+    men_only = pd.DataFrame(men_only).merge(df[['age_years','sex']], left_index=True, right_index=True)
 
-        random_draw = rng.random_sample(size=len(age_ge15_idx))
-        df.loc[age_ge15_idx, 'li_low_ex'] = random_draw < low_ex_probs
 
-        # -------------------- TOBACCO USE ---------------------------------------------------------
+    lm_tob_odds = eq_adults.predict(df.loc[df.is_alive & (df.age_years >= 15)]).multiply(
+        eq_men_only.predict(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]),
+        fill_value = 1.0
+    )
+    lm_tob_probs = lm_tob_odds / (1 + lm_tob_odds)
 
-        init_odds_tob_age1519_m_wealth1 = m.init_p_tob_age1519_m_wealth1 / (1 - m.init_p_tob_age1519_m_wealth1)
+    assert all(tob_probs == lm_tob_probs)
 
-        odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
-
-        odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
-        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
-        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
-        odds_tob.loc[df.li_wealth == 2] *= 2
-        odds_tob.loc[df.li_wealth == 3] *= 3
-        odds_tob.loc[df.li_wealth == 4] *= 4
-        odds_tob.loc[df.li_wealth == 5] *= 5
-
-        tob_probs = odds_tob / (1 + odds_tob)
-
-        random_draw = rng.random_sample(size=len(age_ge15_idx))
-"""
+    # TODO: when the the condition is being equal to an number, it has to be passed into .when() as a string (e.g. li_weath)
+    # TODO: a more elegant more to handle conditions that depend on two things? (as per test_logistic_application_tob)
+    # TODO: warning when the same state is indicated for twice in then when() statement.
