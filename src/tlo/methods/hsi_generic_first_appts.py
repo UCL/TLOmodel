@@ -180,9 +180,10 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 module=self.sim.modules['ChronicSyndrome'],
                 person_id=person_id
             )
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                event, priority=1, topen=self.sim.date, tclose=None
-            )
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=self.sim.date
+                                                                )
 
         elif 'em_extreme_pain_in_the_nose' in symptoms:
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
@@ -190,9 +191,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 person_id=person_id
             )
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                priority=1,
+                                                                topen=self.sim.date
                                                                 )
         else:
             logger.debug('Another symptom must have caused this emergency appointment')

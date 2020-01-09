@@ -486,13 +486,12 @@ def test_run_in_with_hs_disabled(tmpdir):
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
-    sim.register(chronicsyndrome.ChronicSyndrome())
 
     sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    sim.make_initial_population(n=2000)
+    sim.simulate(end_date=Date(2011,1,1))
     check_dtypes(sim)
 
     # read the results
@@ -503,6 +502,11 @@ def test_run_in_with_hs_disabled(tmpdir):
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
     assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occurred (through HS)
+
+    # check for hsi_wrappers
+    list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
+    any(['hsi' in str(ev_name) for ev_name in list_of_ev_name])
+
 
 
 def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
