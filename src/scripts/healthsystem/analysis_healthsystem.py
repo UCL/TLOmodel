@@ -5,7 +5,14 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, enhanced_lifestyle, mockitis
+from tlo.methods import (
+    chronicsyndrome,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    mockitis,
+)
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
