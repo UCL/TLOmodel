@@ -24,7 +24,7 @@ def run_simulation(alpha=None, r0=None, popsize=10000):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2005, 1, 1)
-    end_date = Date(2025, 1, 1)
+    end_date = Date(2019, 1, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -68,92 +68,72 @@ def run_simulation(alpha=None, r0=None, popsize=10000):
 sim, output = run_simulation(popsize=10000)
 
 # ---------------------------------------------------------------------------------------------------------
-#   save the district prevalence
-df = sim.population.props
-def get_prev_per_districts(output, df):
+#   Saving the results - prevalence, mwb, dalys and parameters used
+# ---------------------------------------------------------------------------------------------------------
+# prevalence, mean worm burden and states count
+def save_outputs_and_params():
+    output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
+    timestamp = str(datetime.datetime.now().replace(microsecond=0))
+    timestamp = timestamp.replace(" ", "_")
+    timestamp = timestamp.replace(":", "-")
+    print(timestamp)
+    savepath = output_path + "output_" + timestamp + ".csv"
+    savepath_full_pop = output_path + "output_population_" + timestamp + ".csv"
+    savepath_districts_prev = output_path + "output_districts_prev_" + timestamp + ".csv"
+    savepath_prevalent_years = output_path + "output_prevalent_years_" + timestamp + ".csv"
+    savepath_daly = output_path + "output_daly_" + timestamp + ".csv"
+    savepath_params = output_path + "input_" + timestamp + ".xlsx"
+
+    sim.population.props.to_csv(savepath_full_pop, index=False)
+
+    output_states = pd.DataFrame([])
+    for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
+        output['tlo.methods.schisto'][age_group]['Age_group'] = age_group
+        output_states = output_states.append(output['tlo.methods.schisto'][age_group], ignore_index=True)
+    output_states.to_csv(savepath, index=False)
+
+    #   save the district prevalence
+    df = sim.population.props
+    df = df[df['is_alive']]
+
     districts = list(df.district_of_residence.unique())
-    districts_prevalence = {}
+    districts.sort()
+    distr_end_data = pd.DataFrame(columns=['District', 'Prevalence', 'MWB', 'High-infection-prevalence'])
     for distr in districts:
         prev = output['tlo.methods.schisto'][distr].Prevalence.values[-1]
-        districts_prevalence.update({distr: prev})
-    return districts_prevalence
+        mwb = output['tlo.methods.schisto'][distr].MeanWormBurden.values[-1]
+        high_inf = output['tlo.methods.schisto'][distr]['High_infections'].values[-1]
+        low_inf = output['tlo.methods.schisto'][distr]['Low_infections'].values[-1]
+        non_inf = output['tlo.methods.schisto'][distr]['Non_infected'].values[-1]
+        high_inf_p = high_inf / (non_inf + low_inf + high_inf)
+        new_row = {'District': distr, 'Prevalence': prev, 'MWB': mwb,
+                               'High-infection-prevalence': high_inf_p}
+        distr_end_data = distr_end_data.append(new_row, ignore_index=True)
 
-# ---------------------------------------------------------------------------------------------------------
-#   Check the prevalence of the symptoms
-df = sim.population.props
-params = sim.modules['Schisto'].parameters
-symptoms_params = params['symptoms_haematobium'].set_index('symptoms').to_dict()['prevalence']
+    distr_end_data.to_csv(savepath_districts_prev, index=False)
 
-tot_pop_alive = len(df.index[df.is_alive])
-huge_list = df['ss_haematobium_specific_symptoms'].dropna().tolist()
-huge_list = [item for sublist in huge_list for item in sublist]
-symptoms_prevalence = [[x, huge_list.count(x)] for x in set(huge_list)]
-symptoms_prevalence = dict(symptoms_prevalence)
-for s in symptoms_prevalence.keys():
-    print(s + ", prevalence = " + str(round(symptoms_prevalence[s] / tot_pop_alive, 3)), ", expected = " + str(symptoms_params[s]))
+    # Prevalent years
+    loger_PrevalentYears_All = output['tlo.methods.schisto']['PrevalentYears_All']
+    loger_PrevalentYears_All.to_csv(savepath_prevalent_years, index=False)
 
-# get prevalence per age_years
-df_pa = df[['age_years', 'ss_infection_status']][df.is_alive]
-age_groups_count = df_pa['age_years'].value_counts().to_dict()
-infected_age_count = df_pa[df['ss_infection_status'] != 'Non-infected']['age_years'].value_counts().to_dict()
-age_prev = {}
-for k in age_groups_count.keys():
-    if k in infected_age_count.keys():
-        prev = infected_age_count[k] / age_groups_count[k]
-    else:
-        prev = 0
-    age_prev.update({k: prev})
+    # My own DALYS
+    loger_DALY_All = output['tlo.methods.schisto']['DALY_All']
+    loger_DALY_All.to_csv(savepath_daly, index=False)
 
-lists = sorted(age_prev.items())  # sorted by key, return a list of tuples
-x, y = zip(*lists)  # unpack a list of pairs into two tuples
-plt.plot(x[0:80], y[0:80])
-plt.xlabel('Age')
-plt.ylabel('Prevalence')
-plt.ylim([0, 1])
-plt.title('Final prevalence per age')
-plt.show()
-
-# ---------------------------------------------------------------------------------------------------------
-#   Saving the results - prevalence, dalys and parameters used
-# ---------------------------------------------------------------------------------------------------------
-# prevalence and states count
-output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
-timestamp = str(datetime.datetime.now().replace(microsecond=0))
-timestamp = timestamp.replace(" ", "_")
-timestamp = timestamp.replace(":", "-")
-savepath = output_path + "output_" + timestamp + ".csv"
-savepath_full_pop = output_path + "output_population_" + timestamp + ".csv"
-savepath_daly = output_path + "output_daly_" + timestamp + ".csv"
-savepath_params = output_path + "input_" + timestamp + ".xlsx"
-
-sim.population.props.to_csv(savepath_full_pop, index=False)
-
-output_states = pd.DataFrame([])
-for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
-    output['tlo.methods.schisto'][age_group]['Age_group'] = age_group
-    output_states = output_states.append(output['tlo.methods.schisto'][age_group], ignore_index=True)
-output_states.to_csv(savepath, index=False)
-
-# dalys calculated by a dedicated schisto-module functionality
-def calculate_yearly_dalys(df):
-    df['DALY_monthly'] = df['DALY_cumulative'] - df['DALY_cumulative'].shift(1)
-    df.loc[0, 'DALY_monthly'] = df.loc[0, 'DALY_cumulative']
-    return df
-
-dalys_output = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_All'])
-dalys_output['Age_group'] = 'All'
-dalys_output.to_csv(savepath_daly, index=False)
-
-# parameters spreadsheet
-parameters_used = pd.read_excel(Path("./resources/ResourceFile_Schisto.xlsx"), sheet_name=None)
-writer = pd.ExcelWriter(savepath_params)
-for sheet_name in parameters_used.keys():
-    parameters_used[sheet_name].to_excel(writer, sheet_name=sheet_name)
-writer.save()
-
+    # parameters spreadsheet
+    parameters_used = pd.read_excel(Path("./resources/ResourceFile_Schisto.xlsx"), sheet_name=None)
+    writer = pd.ExcelWriter(savepath_params)
+    for sheet_name in parameters_used.keys():
+        parameters_used[sheet_name].to_excel(writer, sheet_name=sheet_name)
+    writer.save()
+save_outputs_and_params()
 # ---------------------------------------------------------------------------------------------------------
 #   INSPECTING & PLOTTING
 # ---------------------------------------------------------------------------------------------------------
+# pzq pills used in 2018 for comparing
+ss = sim.modules['Schisto'].PZQ_per_district_used
+
+
 df = sim.population.props
 df = df[df['is_alive']]
 params = sim.modules['Schisto'].parameters
@@ -241,7 +221,7 @@ plt.plot(loger_All.date, loger_All.MeanWormBurden, label='All')
 plt.xticks(rotation='vertical')
 # plt.xticks.set_major_formatter(DateFormatter('%m-%Y'))
 plt.legend()
-plt.ylim([0,2])
+plt.ylim([0,5])
 plt.title('Mean Worm Burden per date')
 plt.ylabel('Mean number of worms')
 plt.xlabel('logging date')
@@ -340,4 +320,38 @@ plt.show()
 # plt.xlabel('logging date')
 # plt.show()
 
+# # ---------------------------------------------------------------------------------------------------------
+# #   Check the prevalence of the symptoms
+# df = sim.population.props
+# params = sim.modules['Schisto'].parameters
+# symptoms_params = params['symptoms_haematobium'].set_index('symptoms').to_dict()['prevalence']
+#
+# tot_pop_alive = len(df.index[df.is_alive])
+# huge_list = df['ss_haematobium_specific_symptoms'].dropna().tolist()
+# huge_list = [item for sublist in huge_list for item in sublist]
+# symptoms_prevalence = [[x, huge_list.count(x)] for x in set(huge_list)]
+# symptoms_prevalence = dict(symptoms_prevalence)
+# for s in symptoms_prevalence.keys():
+#     print(s + ", prevalence = " + str(round(symptoms_prevalence[s] / tot_pop_alive, 3)), ", expected = " + str(symptoms_params[s]))
+#
+# # get prevalence per age_years
+# df_pa = df[['age_years', 'ss_infection_status']][df.is_alive]
+# age_groups_count = df_pa['age_years'].value_counts().to_dict()
+# infected_age_count = df_pa[df['ss_infection_status'] != 'Non-infected']['age_years'].value_counts().to_dict()
+# age_prev = {}
+# for k in age_groups_count.keys():
+#     if k in infected_age_count.keys():
+#         prev = infected_age_count[k] / age_groups_count[k]
+#     else:
+#         prev = 0
+#     age_prev.update({k: prev})
+#
+# lists = sorted(age_prev.items())  # sorted by key, return a list of tuples
+# x, y = zip(*lists)  # unpack a list of pairs into two tuples
+# plt.plot(x[0:80], y[0:80])
+# plt.xlabel('Age')
+# plt.ylabel('Prevalence')
+# plt.ylim([0, 1])
+# plt.title('Final prevalence per age')
+# plt.show()
 

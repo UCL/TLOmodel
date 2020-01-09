@@ -88,6 +88,7 @@ class Schisto(Module):
         self.resourcefilepath = resourcefilepath
         self.alpha = alpha
         self.r0 = r0
+        self.PZQ_per_district_used = {}  # this will be updated in 2018 and contain a number of pzq pills used in each district
 
     PARAMETERS = {
         # natural history
@@ -174,8 +175,7 @@ class Schisto(Module):
             Types.REAL, 'Cumulative DALYs due to schistosomiasis symptoms'),
         'ss_harbouring_rate': Property(Types.REAL, 'Rate of harbouring new worms (Poisson), drawn from gamma distribution'),
         'ss_last_PZQ_date': Property(Types.DATE, 'Day of the most recent treatment with PZQ'),
-        'ss_prevalent_days_this_year': Property(Types.REAL, 'Cumulative days with infection in current year'),
-        'ss_worm_days_this_year': Property(Types.REAL, 'Cumulative worm days in current year')
+        'ss_prevalent_days_this_year': Property(Types.REAL, 'Cumulative days with infection in current year')
     }
 
     def read_parameters(self, data_folder):
@@ -221,11 +221,11 @@ class Schisto(Module):
         self.schisto_initial_reservoir.set_index("District", inplace=True)
         params['reservoir_2010'] = self.schisto_initial_reservoir.loc[:, 'Reservoir']
         params['gamma_alpha'] = self.schisto_initial_reservoir.loc[:, 'alpha_value']
-        if self.alpha is not None:
-            params['gamma_alpha'][:] = self.alpha
+        # if self.alpha is not None:
+        #     params['gamma_alpha'][:] = self.alpha
         params['R0'] = self.schisto_initial_reservoir.loc[:, 'R0_value']
-        if self.R0 is not None:
-            params['R0'][:] = self.R0
+        # if self.R0 is not None:
+        #     params['R0'][:] = self.R0
 
         # symptoms prevalence
         params['symptoms_haematobium'] = pd.DataFrame(
@@ -268,6 +268,10 @@ class Schisto(Module):
             params['daly_wt_vomit'] = self.sim.modules['HealthBurden'].get_daly_weight(254)
             params['daly_wt_ascites'] = self.sim.modules['HealthBurden'].get_daly_weight(261)
             params['daly_wt_hepatomegaly'] = self.sim.modules['HealthBurden'].get_daly_weight(257)
+
+        districts = pd.read_csv(os.path.join(self.resourcefilepath,
+                                              'ResourceFile_District_Population_Data.csv')).District.unique().tolist()
+        self.PZQ_per_district_used = {d: 0 for d in districts}
 
     def change_paramater_value(self, parameter_name, new_value):
         self.parameters[parameter_name] = new_value
@@ -409,7 +413,8 @@ class Schisto(Module):
         # this is SUPER important - density dependent fecundity factor - somehow does not do well without it
         # ACTUALLY it turns out it is not needed if we have a lifespan of adult worms defined
         # worms_total *= (1 + (1 - np.exp(-1 * params['worms_fecundity'])) * worms_total / k) ** (-k - 1)
-        harboured_worms = np.asarray([np.random.poisson(x * worms_total, 1)[0] for x in rates]).astype(int)
+        # harboured_worms = np.asarray([np.random.poisson(x * worms_total, 1)[0] for x in rates]).astype(int)
+        harboured_worms = np.asarray([self.rng.poisson(x * worms_total, 1)[0] for x in rates]).astype(int)
         return harboured_worms
 
     def intensity_of_infection(self, agg_wb):
@@ -464,29 +469,29 @@ class Schisto(Module):
         # add the basic events of infection
         sim.schedule_event(SchistoInfectionWormBurdenEvent(self), sim.date + DateOffset(months=1))
 
-        # # schedule historical MDA to happen once per year in July (4 events)
-        # for historical_mda_year in [2015, 2016, 2017, 2018]:
-        #     if historical_mda_year >= sim.date.year:
-        #         sim.modules['HealthSystem'].schedule_hsi_event(HSI_SchistoHistoricalMDAEvent(self),
-        #                                                         priority=0,
-        #                                                         topen=pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23),
-        #                                                         tclose=pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23) + DateOffset(
-        #                                                             weeks=4))
+        # schedule historical MDA to happen once per year in July (4 events)
+        for historical_mda_year in [2015, 2016, 2017, 2018]:
+            if historical_mda_year >= sim.date.year:
+                sim.modules['HealthSystem'].schedule_hsi_event(HSI_SchistoHistoricalMDAEvent(self),
+                                                                priority=0,
+                                                                topen=pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23),
+                                                                tclose=pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23) + DateOffset(
+                                                                    weeks=4))
+
+        # schedule prognosed MDA programmes for every district
+        for district in sim.population.props.district_of_residence.unique().tolist():
+            freq = self.parameters['MDA_frequency_prognosed'][district]
+            if freq > 0:  # frequency 0 means no need for MDA, because prevalence there is always 0
+                sim.schedule_event(SchistoPrognosedMDAEvent(self, freq, district),
+                                   pd.Timestamp(year=2019, month=6, day=1, hour=12) + DateOffset(months=0))
         #
-        # # schedule prognosed MDA programmes for every district
-        # for district in sim.population.props.district_of_residence.unique().tolist():
-        #     freq = self.parameters['MDA_frequency_prognosed'][district]
-        #     if freq > 0:  # frequency 0 means no need for MDA, because prevalence there is always 0
-        #         sim.schedule_event(SchistoPrognosedMDAEvent(self, freq, district),
-        #                            pd.Timestamp(year=2019, month=6, day=1, hour=12) + DateOffset(months=0))
-        # #
         # # schedule a change in a parameter
         # sim.schedule_event(SchistoChangeParameterEvent(self, 'prob_sent_to_lab_test_adults', 0.6),
         #                    pd.Timestamp(year=2019, month=1, day=1))
 
         # add an event to log to screen
         sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(SchistoLoggingPrevDistrictEvent(self), sim.date + DateOffset(months=180))
+        sim.schedule_event(SchistoLoggingPrevDistrictEvent(self), sim.date + DateOffset(months=120))
         sim.schedule_event(SchistoPrevalentDaysLoggingEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(SchistoDALYsLoggingEvent(self), sim.date + DateOffset(months=12))
 
@@ -838,6 +843,11 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
             df.loc[person_id, 'ss_prevalent_days_this_year'] += prevalent_duration
             df.loc[person_id, 'ss_start_of_prevalent_period'] = pd.NaT
 
+            # in 2018 we want to get number of PZQ pills used to compare with Malawi data
+            if self.sim.date.year == 2018:
+                d = df.loc[person_id, 'district_of_residence']
+                self.module.PZQ_per_district_used[d] = self.module.PZQ_per_district_used[d] + 1
+
             # the below should be used if the efficacy of PZQ is less than 100%
             # df.loc[person_id, 'ss_aggregate_worm_burden'] *= (1 - params['PZQ_efficacy'])  # decreasing number of worms
             # if df.loc[person_id, 'ss_aggregate_worm_burden'] <= params['low_intensity_threshold']:
@@ -1177,7 +1187,7 @@ class SchistoDALYsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class SchistoLoggingPrevDistrictEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        self.repeat = 12 * 5
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, Schisto)
 

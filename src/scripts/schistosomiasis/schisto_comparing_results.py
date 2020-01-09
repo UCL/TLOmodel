@@ -10,25 +10,27 @@ def load_outputs(timestamp):
     prevalence.date = pd.to_datetime(prevalence.date)
     dalys = pd.read_csv(load_path + "output_daly_" + timestamp + ".csv")
     dalys.date = pd.to_datetime(dalys.date)
-    cum_inf_time = pd.read_csv(load_path + "output_population_" + timestamp + ".csv")
-    cum_inf_time = cum_inf_time[['sex', 'ss_cumulative_infection_time']]
-    return prevalence, dalys, cum_inf_time
+    prev_years = pd.read_csv(load_path + "output_prevalent_years_" + timestamp + ".csv")
+    prev_years.date = pd.to_datetime(prev_years.date)
+    return prevalence, dalys, prev_years
 
 
-def plot_prev_age_group(sim_dict, age):
+def plot_per_age_group(sim_dict, age, vals):
+    assert vals in ['Prevalence', 'MeanWormBurden']
     fig, ax = plt.subplots(figsize=(9, 7))
     for k in sim_dict.keys():
         df = sim_dict[k]['prev']
         df = df[df['Age_group'] == age]
-        df_before_2019 = df[df.date <= pd.Timestamp(date(2019, 1, 1))]
+        df_before_2019 = df[(df.date <= pd.Timestamp(date(2019, 1, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
         df_after_2019 = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
-        ax.plot(df_after_2019.date, df_after_2019.Prevalence, label=k, linestyle=':')
-        ax.plot(df_before_2019.date, df_before_2019.Prevalence, color='b', label='_nolegend_', linestyle='-')
+        ax.plot(df_after_2019.date, df_after_2019[vals], label=k, linestyle=':')
+        ax.plot(df_before_2019.date, df_before_2019[vals], color='b', label='_nolegend_', linestyle='-')
         ax.xaxis_date()
     ax.set(xlabel='logging date',
            ylabel='fraction of infected sub-population',
-           title='Prevalence per date, ' + age)
-    plt.ylim([0, 0.5])
+           title=vals + ' per date, ' + age)
+    if vals == 'Prevalence':
+        plt.ylim([0, 0.5])
     # ax.grid()
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
     ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))
@@ -36,23 +38,48 @@ def plot_prev_age_group(sim_dict, age):
     plt.legend()
     plt.show()
 
-def plot_dalys_age_group(sim_dict, age):
+
+def plot_measure(sim_dict, measure_type):
+    assert measure_type in ['dalys', 'prev_years']
+    if measure_type == 'dalys':
+        value_col = 'DALY_this_year'
+        title = 'DALYs per year per 10.000 ppl'
+    else:
+        value_col = 'Prevalent_years_this_year'
+        title = 'Prevalent years per year per 10.000 ppl'
     fig, ax = plt.subplots(figsize=(9, 7))
     for k in sim_dict.keys():
-        df = sim_dict[k]['dalys']
-        df = df[df['Age_group'] == age]
-        df_before_2019 = df[df.date <= pd.Timestamp(date(2019, 1, 1))]
+        df = sim_dict[k][measure_type]
+        df_before_2019 = df[(df.date <= pd.Timestamp(date(2019, 1, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
         df_after_2019 = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
-        ax.plot(df_after_2019.date, df_after_2019.DALY_monthly, label=k, linestyle=':')
-        ax.plot(df_before_2019.date, df_before_2019.DALY_monthly, color='b', label='_nolegend_', linestyle='-')
+        ax.plot(df_after_2019.date, df_after_2019[value_col], label=k, linestyle=':')
+        ax.plot(df_before_2019.date, df_before_2019[value_col], color='b', label='_nolegend_', linestyle='-')
         ax.xaxis_date()
     ax.set(xlabel='logging date',
-           ylabel='DALYs',
-           title='DALYs per year, ' + age)
+           ylabel=measure_type,
+           title=title)
     ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.show()
+
+# def plot_dalys_age_group(sim_dict, age):
+#     fig, ax = plt.subplots(figsize=(9, 7))
+#     for k in sim_dict.keys():
+#         df = sim_dict[k]['dalys']
+#         df = df[df['Age_group'] == age]
+#         df_before_2019 = df[(df.date <= pd.Timestamp(date(2019, 1, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
+#         df_after_2019 = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
+#         ax.plot(df_after_2019.date, df_after_2019.DALY_monthly, label=k, linestyle=':')
+#         ax.plot(df_before_2019.date, df_before_2019.DALY_monthly, color='b', label='_nolegend_', linestyle='-')
+#         ax.xaxis_date()
+#     ax.set(xlabel='logging date',
+#            ylabel='DALYs',
+#            title='DALYs per year, ' + age)
+#     ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))
+#     plt.xticks(rotation='vertical')
+#     plt.legend()
+#     plt.show()
 
 def count_DALYs_after_2019(sim_dict):
     print("Total DALYs after 2019:")
@@ -74,59 +101,55 @@ def count_DALYs_after_2019(sim_dict):
     plt.title('DALYs per simulation, years 2019-2025')
     plt.show()
 
-def plot_cum_inf_time(sim_dict):
-    plt.figure(figsize=(9, 7))
-    for k in sim_dict.keys():
-        df = sim_dict[k]['cum_inf_time']
-        values = df['ss_cumulative_infection_time'].values
-        values = values[values != 0]
-        plt.hist(values, bins=100, alpha=0.5, label=k)
-    plt.xlabel('Cumulative infected times, days')
-    plt.ylabel('Number of observations')
-    plt.title('Distribution of cumulative infection times in ' + str(10) + ' years')
-    plt.legend()
-    plt.show()
+# def plot_cum_inf_time(sim_dict):
+#     plt.figure(figsize=(9, 7))
+#     for k in sim_dict.keys():
+#         df = sim_dict[k]['cum_inf_time']
+#         values = df['ss_cumulative_infection_time'].values
+#         values = values[values != 0]
+#         plt.hist(values, bins=100, alpha=0.5, label=k)
+#     plt.xlabel('Cumulative infected times, days')
+#     plt.ylabel('Number of observations')
+#     plt.title('Distribution of cumulative infection times in ' + str(10) + ' years')
+#     plt.legend()
+#     plt.show()
 
 #########################################################################################################
 
 # Load the simulations you want to compare
 simulations = {}
 load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
-# no repeated appt
-# timestamps = ['2019-12-05_16-32-28', '2019-12-05_16-00-46', '2019-12-04_16-40-40', '2019-12-04_16-08-16']
-# repeated appt
-# timestamps = ['2019-12-06_15-00-53', '2019-12-06_13-14-06', '2019-12-06_14-28-44', '2019-12-06_13-57-36']
-timestamps = ['2019-12-06_15-45-31', '2019-12-06_16-36-32', '2019-12-06_17-24-31', '2019-12-06_16-59-42']
 # symptomless not treated in HSI
-timestamps = ['2019-12-09_12-44-37', '2019-12-09_12-12-52', '2019-12-09_11-18-07', '2019-12-09_11-43-08']
-# varying the prob_sent_to_schisto_test_adult
-timestamps = ['2019-12-09_12-44-37', '2019-12-09_14-43-20', '2019-12-09_15-15-15', '2019-12-09_11-18-07', '2019-12-09_15-43-34']
-# labels = ['MDA once per year, PSAC coverage 0%', 'MDA once per year, PSAC coverage 50%',
-#           'MDA twice per year, PSAC coverage 0%', 'MDA twice per year, PSAC coverage 50%']
-labels = ['MDA once per year, PSAC = 0.0, p_test_a_2019 = 0.4', 'MDA once per year, PSAC = 0.0, p_test_a_2019 = 0.6',
-          'MDA once per year, PSAC = 0.5, p_test_a_2019 = 0.6', 'MDA twice per year, PSAC = 0.0, p_test_a_2019 = 0.4',
-          'MDA twice per year, PSAC = 0.0, p_test_a_2019 = 0.6']
+timestamps = ['2020-01-09_12-02-59', '2020-01-09_12-34-32', '2020-01-09_11-43-25', '2020-01-09_11-24-44',
+              '2020-01-09_13-37-38', '2020-01-09_14-42-29']
+
+labels = ['MDA once per year, PSAC coverage 0%', 'MDA once per year, PSAC coverage 50%',
+          'MDA twice per year, PSAC coverage 0%', 'MDA twice per year, PSAC coverage 50%',
+          'MDA once every two years, PSAC coverage 0%', 'MDA once per year, PSAC & Adults coverage 0%']
 
 sim_dict = dict(zip(timestamps, labels))
 
 for time, label in sim_dict.items():
-    prev, dalys, cum_inf_time = load_outputs(time)
-    outputs = {'prev': prev, 'dalys': dalys, 'cum_inf_time': cum_inf_time}
+    prev, dalys, prev_years = load_outputs(time)
+    outputs = {'prev': prev, 'dalys': dalys, 'prev_years': prev_years}
     simulations.update({label: outputs})
 
 # plots
 for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
-    plot_prev_age_group(simulations, age_group)
+    plot_per_age_group(simulations, age_group, 'Prevalence')
 
-# DALYs and Cum inf times only make sense when we look at the whole population
-plot_prev_age_group(simulations, 'PSAC')
-plot_prev_age_group(simulations, 'Adults')
+for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
+    plot_per_age_group(simulations, age_group, 'MeanWormBurden')
 
-plot_prev_age_group(simulations, 'All')
-# plot_dalys_age_group(simulations, 'All')
-count_DALYs_after_2019(simulations)
-plot_cum_inf_time(simulations)
-
+plot_measure(simulations, 'dalys')
+plot_measure(simulations, 'prev_years')
 
 # for testing
+plot_per_age_group(simulations, 'PSAC', 'Prevalence')
+plot_per_age_group(simulations, 'Adults', 'Prevalence')
+plot_per_age_group(simulations, 'All', 'Prevalence')
 df = simulations['MDA twice per year, PSAC coverage 50%']['dalys']
+
+# i don't think this works fine now
+count_DALYs_after_2019(simulations)
+
