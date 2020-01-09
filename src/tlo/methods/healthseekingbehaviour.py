@@ -78,11 +78,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """
 
         # get the list of person_ids who have onset generic acute symptoms in the last day
-        person_ids_with_new_symptoms = self.module.sim.modules[
-            'SymptomManager'].persons_with_newly_onset_acute_generic_symptoms
+        person_ids_with_new_symptoms = list(self.module.sim.modules[
+            'SymptomManager'].persons_with_newly_onset_symptoms)
 
         # clear the list of person_ids with onset generic acute symptoms (as now dealt with here)
-        self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms = list()
+        self.module.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms = set()
 
         for person_id in person_ids_with_new_symptoms:
             # For each individual person_id, with at least one new onset symptom, look at the symptoms and determine if
