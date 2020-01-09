@@ -89,7 +89,7 @@ class TestTransitionsStates:
         # default input data
         self.input = pd.DataFrame({'state': self.states * 1_000, 'other_data_1': range(0, 4_000)})
 
-        # default outputs data
+        # default output data
         nested_states = [  # perfect ratio would be: [1000, 600, 1500, 900]
             list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1465, 919])
         ]
@@ -132,7 +132,7 @@ class TestTransitionsStates:
         nested_states = [list(state * repeat) for state, repeat in zip(self.states, [2000, 2000, 0, 2000])]
         input = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 6000))})
 
-        # default outputs data
+        # default output data
         nested_states = [  # perfect ratio would be: [2000, 800, 1800, 1400]
             list(state * repeat) for state, repeat in zip(self.states, [2006, 760, 1853, 1381])
         ]
@@ -259,7 +259,7 @@ class TestNestedToRecord:
 
         output = tlo.util.nested_to_record(df)
 
-        # outputs as expected
+        # output as expected
         assert output == expected_output
         # original df index not changed
         assert (df.index == pd.Index(range(0, 3))).all()
@@ -271,7 +271,7 @@ class TestNestedToRecord:
 
         output = tlo.util.nested_to_record(df)
 
-        # outputs as expected
+        # output as expected
         assert output == expected_output
         # original df column not changed
         assert (df.columns == range(0, 3)).all()

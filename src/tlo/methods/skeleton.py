@@ -158,7 +158,7 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
 class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summary of the numbers of people with respect to the action of this module.
-        This is a regular event that can outputs current states of people or cumulative events since last logging event.
+        This is a regular event that can output current states of people or cumulative events since last logging event.
         """
 
         # run this event every year
