@@ -120,7 +120,7 @@ class LinearModel(object):
 
         elif self.type == 'logistic':
             odds = res_by_predictor.prod(axis=1, skipna=True)
-            output = 1 / (1 + odds)
+            output = odds / (1 + odds)
 
         elif self.type == 'multiplicative':
             output = res_by_predictor.prod(axis=1, skipna=True)
