@@ -200,7 +200,7 @@ class Mockitis(Module):
         if child_is_infected:
 
             # Scheduled death date
-            death_years_ahead = self.rng.random.exponential(scale=30)
+            death_years_ahead = self.rng.exponential(scale=30)
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
             # Level of symptoms
@@ -431,7 +431,6 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
         if treatmentworks:
-            print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ CURE')
             df.at[person_id, 'mi_is_infected'] = False
             df.at[person_id, 'mi_status'] = 'P'
 

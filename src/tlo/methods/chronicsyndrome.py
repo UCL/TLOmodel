@@ -417,7 +417,6 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                 df.at[person_id, 'cs_date_cure'] = self.sim.date
 
                 # remove all symptoms instantly
-                print(person_id)
                 self.sim.modules['SymptomManager'].clear_symptoms(
                     person_id=person_id,
                     disease_module=self.module)
