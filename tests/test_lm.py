@@ -83,6 +83,71 @@ def test_of_example_useage():
     df['predicted'] = predicted
     print(df.to_string())
 
+
+def test_linear_trivial_application():
+
+    eq = LinearModel(
+        'linear',
+        0.0,
+        Predictor('FactorX').when(True, 10),
+        Predictor('FactorY').when(True, 100)
+    )
+
+    df = pd.DataFrame(data={
+        'FactorX': [False, True, False, True],
+        'FactorY': [False, False, True, True]
+    })
+
+    pred = eq.predict(df)
+    assert all(pred.values == [0.0, 10.0, 100.0, 110.0])
+
+
+def test_multiplier_trivial_application():
+    eq = LinearModel(
+        'multiplicative',
+        1.0,
+        Predictor('FactorX').when(True, 5),
+        Predictor('FactorY').when(True, -1)
+    )
+
+    df = pd.DataFrame(data={
+        'FactorX': [False, True, False, True],
+        'FactorY': [False, False, True, True]
+    })
+
+    pred = eq.predict(df)
+    assert all(pred.values == [1.0, 5.0, -1.0, -5.0])
+
+
+def test_logistic_trivial_application():
+
+    prob=0.5
+    OR_X = 2
+    OR_Y = 5
+
+    odds = prob / (1-prob)
+
+    eq = LinearModel(
+        'logistic',
+        odds,
+        Predictor('FactorX').when(True, OR_X),
+        Predictor('FactorY').when(True, OR_Y)
+    )
+
+    df = pd.DataFrame(data={
+        'FactorX': [False, True, False, True],
+        'FactorY': [False, False, True, True]
+    })
+
+    pred = eq.predict(df)
+    assert all(pred.values == [
+        prob,
+        (odds*OR_X)/(1+odds*OR_X),
+        (odds * OR_Y) / (1 + odds * OR_Y),
+        (odds * OR_X*OR_Y) / (1 + odds * OR_X*OR_Y)
+    ])
+
+
 def test_linear_application():
     # Take an example from ????
     pass
@@ -116,7 +181,7 @@ def test_logistic_application():
         Predictor('sex').when('F',init_or_low_ex_f).otherwise(1.0)
     )
 
-    lm_low_ex_probs =eq.predict(df)
+    lm_low_ex_probs = eq.predict(df)
 
     # init_p_low_ex_urban_m=0.32
     # init_log_odds= np.log(init_p_low_ex_urban_m/(1-init_p_low_ex_urban_m))
