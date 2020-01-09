@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -19,13 +20,13 @@ from tlo.methods import (
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
 # Where will output go
-outputpath = ''
+outputpath = Path('./outputs')
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = 'resources'
+resourcefilepath = Path('./resources')
 
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=2010, month=12, day=31)
@@ -59,7 +60,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        mode_appt_constraints=2,
                                        capabilities_coefficient=1.0,
                                        ignore_cons_constraints=False,
-                                       disable=True))
+                                       disable=False))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))

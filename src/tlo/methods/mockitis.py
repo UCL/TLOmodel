@@ -140,9 +140,7 @@ class Mockitis(Module):
                     duration_in_days=20
                 )
 
-
-        # date of infection of infected individuals
-        # sample years in the past
+        # date of infection of infected individuals: sample years in the past
         infected_years_ago = self.rng.exponential(scale=5, size=infected_count)
 
         # pandas requires 'timedelta' type for date calculations
@@ -279,7 +277,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 1. get (and hold) index of currently infected and uninfected individuals
         currently_infected = df.index[df.mi_is_infected & df.is_alive]
-        currently_susc = df.index[(df.is_alive) & (df['mi_status']=='N')]
+        currently_susc = df.index[(df.is_alive) & (df['mi_status'] == 'N')]
 
         if df.is_alive.sum():
             prevalence = len(currently_infected) / (

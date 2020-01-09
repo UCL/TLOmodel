@@ -126,6 +126,9 @@ def test_run_no_interventions_allowed(tmpdir):
     assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'object').all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
+    # Check that no one was cured of mockitis:
+    assert not any(sim.population.props['mi_status'] == 'P')  # No cures
+
 
 def test_run_in_mode_0_with_capacity(tmpdir):
     # Events should run and there be no squeeze factors
@@ -143,7 +146,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -152,7 +155,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2))
+                                           mode_appt_constraints=0))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
@@ -184,6 +187,9 @@ def test_run_in_mode_0_with_capacity(tmpdir):
         all_req_granted.append(all([response for response in line.values()]))
     assert not all(all_req_granted)
 
+    # Check that some mockitis cured occured (though health system)
+    assert any(sim.population.props['mi_status'] == 'P')
+
 
 def test_run_in_mode_0_no_capacity(tmpdir):
     # Every events should run (no did_not_run) and no squeeze factors
@@ -201,7 +207,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -209,8 +215,8 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2))
+                                           capabilities_coefficient=0.0,
+                                           mode_appt_constraints=0))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
@@ -236,6 +242,8 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
+    # Check that some mockitis cured occured (though health system)
+    assert any(sim.population.props['mi_status'] == 'P')
 
 def test_run_in_mode_1_with_capacity(tmpdir):
     # All events should run with some zero squeeze factors
@@ -253,7 +261,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -262,7 +270,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2))
+                                           mode_appt_constraints=1))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
@@ -288,6 +296,8 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
+    # Check that some mockitis cured occured (though health system)
+    assert any(sim.population.props['mi_status'] == 'P')
 
 def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Events should run but with high squeeze factors
@@ -305,7 +315,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -313,8 +323,8 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2))
+                                           capabilities_coefficient=0.0,
+                                           mode_appt_constraints=1))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
@@ -345,6 +355,9 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     assert (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'Squeeze_Factor'] == 100.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'Squeeze_Factor'] == 0.0).all()
 
+    # Check that some mockitis cured occured (though health system)
+    assert any(sim.population.props['mi_status'] == 'P')
+
 
 def test_run_in_mode_2_with_capacity(tmpdir):
     # All events should run
@@ -362,7 +375,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -397,6 +410,9 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
+    # Check that some mockitis cured occured (though health system)
+    assert any(sim.population.props['mi_status'] == 'P')
+
 
 def test_run_in_mode_2_with_no_capacity(tmpdir):
     # No individual level events should run and the log should contain events with a flag showing that all individual
@@ -415,7 +431,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -423,7 +439,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient=1.0,
+                                           capabilities_coefficient=0.0,
                                            mode_appt_constraints=2))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
@@ -452,6 +468,8 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
     assert pd.isnull(sim.population.props['mi_date_cure']).all()  # No cures of mockitis occurring
 
+    # Check that no mockitis cured occured (though health system)
+    assert not any(sim.population.props['mi_status'] == 'P')
 
 def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # Events should run and there be no squeeze factors
@@ -470,7 +488,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -479,7 +497,8 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2))
+                                           mode_appt_constraints=0,
+                                           ignore_cons_constraints=True))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
@@ -504,6 +523,8 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
         assert all([response for response in line.values()])
 
+    # Check that some mockitis cured occured (though health system)
+    assert any(sim.population.props['mi_status'] == 'P')
 
 def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem
@@ -520,7 +541,7 @@ def test_run_in_with_hs_disabled(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -529,7 +550,8 @@ def test_run_in_with_hs_disabled(tmpdir):
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2))
+                                           mode_appt_constraints=2,
+                                           disable=True))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(dx_algorithm_child.DxAlgorithmChild())
@@ -553,11 +575,11 @@ def test_run_in_with_hs_disabled(tmpdir):
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
     assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occurred (through HS)
-    assert any(sim.population.props['mi_status'] == 'P')  # At least some cure occured (though HS)
+    assert any(sim.population.props['mi_status'] == 'P')  # At least some mockitis cure occured (though HS)
 
-    # # # check for hsi_wrappers
-    # list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
-    # assert any(['HSI' in str(ev_name) for ev_name in list_of_ev_name])
+    # Check for hsi_wrappers in the main event queue
+    list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
+    assert any(['HSIEventWrapper' in str(ev_name) for ev_name in list_of_ev_name])
 
 
 def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
@@ -576,7 +598,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+    service_availability = ['*']
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -608,3 +630,6 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 
     # Do the check for the occurance of the GenericFirstAppt which is created by the HSB module
     assert 'GenericFirstApptAtFacilityLevel1' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
+
+    # Check that some mockitis cured occured (though health system)
+    assert any(sim.population.props['mi_status'] == 'P')
