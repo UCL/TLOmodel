@@ -151,7 +151,7 @@ class SymptomManager(Module):
             # Add this disease module as a cause of this symptom
             self.sim.population.props.loc[person_id, symptom_var_name].apply(
                 lambda x: x.add(disease_module.name))
-            self.persons_with_newly_onset_symptoms.add(person_id)
+            self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:

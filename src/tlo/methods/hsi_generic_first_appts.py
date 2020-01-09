@@ -185,7 +185,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 topen=self.sim.date
                                                                 )
 
-        elif 'em_extreme_pain_in_the_nose' in symptoms:
+        if 'em_extreme_pain_in_the_nose' in symptoms:
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
                 module=self.sim.modules['Mockitis'],
                 person_id=person_id
@@ -194,11 +194,10 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 priority=1,
                                                                 topen=self.sim.date
                                                                 )
-        else:
-            logger.debug('Another symptom must have caused this emergency appointment')
 
-        pass
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
         pass
+
+

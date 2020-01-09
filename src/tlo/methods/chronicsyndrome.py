@@ -335,7 +335,7 @@ class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
 
         # Apply checks to ensure that this death should occur
-        if df.at[person_id, 'mi_status'] == 'C':
+        if df.at[person_id, 'cs_status'] == 'C':
             # Fire the centralised death event:
             death = InstantaneousDeath(self.module, person_id, cause='ChronicSyndrome')
             self.sim.schedule_event(death, self.sim.date)
@@ -417,6 +417,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                 df.at[person_id, 'cs_date_cure'] = self.sim.date
 
                 # remove all symptoms instantly
+                print(person_id)
                 self.sim.modules['SymptomManager'].clear_symptoms(
                     person_id=person_id,
                     disease_module=self.module)
