@@ -195,7 +195,7 @@ def test_logistic_application_tob():
 
     # 3) apply the LinearModel to it and make a prediction of the probabilities assigned to each person
     eq_tob = LinearModel(
-        LinearModelType.MULTIPLICATIVE,
+        LinearModelType.LOGISTIC,
         init_p_tob_age1519_m_wealth1 / (1 - init_p_tob_age1519_m_wealth1),
         Predictor('sex').when('F', init_or_tob_f),
         Predictor('li_wealth').when('2', 2).when('3', 3).when('4', 4).when('5', 5),
@@ -203,8 +203,7 @@ def test_logistic_application_tob():
                    .when('(age_years.between(40,120)) & (sex == "M")', init_or_tob_agege40_m)
     )
 
-    lm_tob_odds = eq_tob.predict(df.loc[df.is_alive & (df.age_years >= 15)])
-    lm_tob_probs = lm_tob_odds / (1 + lm_tob_odds)
+    lm_tob_probs = eq_tob.predict(df.loc[df.is_alive & (df.age_years >= 15)])
 
     assert tob_probs.equals(lm_tob_probs)
 
