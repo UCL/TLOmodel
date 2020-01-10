@@ -193,7 +193,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     'HSI_GenericFirstApptAtFacilityLevel1: negative / no malaria test for person %d so doing nothing',
                     person_id)
 
-    # todo return actual footprint including LabPOC
+        # Return the actual appt footprints, adding on rdt labPOC appt
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+        actual_appt_footprint['LabPOC'] = 1
+        logger.debug(f'the actual appt footprint for person {person_id} is {actual_appt_footprint}')
+        return actual_appt_footprint
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -270,14 +274,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         assert module in acceptable_originating_modules
 
         # Work out if this is for a child or an adult
-        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
+        # is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        if is_child:
-            the_appt_footprint['Under5OPD'] = 1.0  # Child out-patient appointment
-        else:
-            the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
+        the_appt_footprint['InpatientDays'] = 3.0
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -294,17 +295,16 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
                 if self.sim.population.props.at[person_id,'age_years']<5.0:
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=HSI_Malaria_tx_compl_child(self.sim.modules['malaria'], person_id=person_id),
+                        hsi_event=HSI_Malaria_tx_compl_child(self.sim.modules['Malaria'], person_id=person_id),
                         priority=0,
                         topen=self.sim.date
                     )
                 else:
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event=HSI_Malaria_tx_compl_adult(self.sim.modules['malaria'], person_id=person_id),
+                        hsi_event=HSI_Malaria_tx_compl_adult(self.sim.modules['Malaria'], person_id=person_id),
                         priority=0,
                         topen=self.sim.date
                     )
-            print('its working')
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')

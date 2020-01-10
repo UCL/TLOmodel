@@ -106,7 +106,7 @@ class DxAlgorithmChild(Module):
                 )
 
                 # severe malaria
-                if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'severe'):
+                if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_inf_type'] == 'severe'):
                     diagnosis_str = 'severe_malaria'
 
                 logger.debug(
@@ -114,7 +114,7 @@ class DxAlgorithmChild(Module):
                         person_id, self.sim.date)
 
                 # clinical malaria
-                if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_specific_symptoms'] == 'clinical'):
+                if df.at[person_id, 'ma_is_infected'] & (df.at[person_id, 'ma_inf_type'] == 'clinical'):
 
                     # diagnosis of clinical disease dependent on RDT sensitivity
                     diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['sensitivity_rdt'],
