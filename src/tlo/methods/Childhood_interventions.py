@@ -38,7 +38,7 @@ class ChildhoodDiseaseInterventions(Module):
 
     }
     PROPERTIES = {
-        # iCCM - Integrated community case management classification, referral and treatment algorithm
+        # iCCM - Integrated community case management properties used
         'iccm_danger_sign': Property
         (Types.BOOL, 'child has at least one iccm danger signs : '
                      'convulsions, very sleepy or unconscious, chest indrawing, vomiting everything, '
@@ -57,67 +57,93 @@ class ChildhoodDiseaseInterventions(Module):
                      'fever for last 7 days or more, blood in stool, diarrhoea for 14 days or more, '
                      'and cough for at least 21 days'
          ),
-        'ccm_correctly_assessed_fast_breathing_and_cough': Property
-        (Types.BOOL, 'HSA correctly assessed for fast breathing for age and cough'
-         ),
-        'ccm_correctly_assessed_diarrhoea_and_dehydration': Property
-        (Types.BOOL, 'HSA correctly assessed diarrhoea and dehydration'
-         ),
-        'ccm_correctly_assessed_fever_performed_RDT': Property
-        (Types.BOOL, 'HSA correctly assessed for fever and performed RDT test'
-         ),
-        'ccm_correctly_classified_severe_pneumonia': Property
-        (Types.BOOL, 'HSA correctly classified as fast breathing with danger sign and RDT negative (severe pneumonia)'
-         ),
-        'ccm_correctly_classified_pneumonia': Property
-        (Types.BOOL, 'HSA correctly classified as fast breathing for age, no danger sign and RDT negative (pneumonia)'
-         ),
-        'ccm_correctly_classified_cough_over_21days': Property
-        (Types.BOOL, 'HSA correctly noted cough for more than 3 weeks'
-         ),
-        'ccm_correctly_classified_common_cold_or_cough': Property
-        (Types.BOOL, 'HSA correctly classified as common cold or cough with no fast breathing'
-         ),
-        'ccm_correctly_classified_diarrhoea_with_danger_sign': Property
-        (Types.BOOL, 'HSA correctly classified as diarrhoea with danger sign or with signs of severe dehydration'
-         ),
-        'ccm_correctly_classified_persistent_or_bloody_diarrhoea': Property
-        (Types.BOOL, 'HSA correctly classified persistent diarrhoea or dysentery'
-         ),
-        'ccm_correctly_classified_diarrhoea': Property
-        (Types.BOOL, 'HSA correctly classified diarrhoea without blood and less than 14 days'
-         ),
-        'ccm_correctly_classified_severe_malaria': Property
-        (Types.BOOL, 'HSA correctly classified fever with 1 or more danger sign, positive RDT (severe malaria)'
-         ),
-        'ccm_correctly_classified_malaria': Property
-        (Types.BOOL, 'HSA correctly classified fever for 7 days or more, no danger sign, positive RDT (malaria)'
-         ),
-        'ccm_correctly_classified_uncomplicated_malaria': Property
-        (Types.BOOL, 'HSA correctly classified fever for less than 7 days, no danger sign, positive RDT'
-                     ' (uncomplicated malaria)'
-         ),
-        'ccm_correctly_classified_as_other_illness': Property
-        (Types.BOOL,
-         'HSA correctly classified fever, no danger sign, negative RDT (other illness)'
-         ),
-        'ccm_referral_options': Property
-        (Types.CATEGORICAL,
-         'Referral decisions', categories=['refer immediately', 'refer to health facility', 'do not refer']),
-        'ccm_correct_referral_decision': Property
-        (Types.BOOL,
-         'HSA made the correct referral decision based on the assessment and classification process'
-         ),
-        'ccm_correct_treatment_and_advice_given': Property
-        (Types.BOOL,
-         'HSA has given the correct treatment for the classified condition'
+
+        # iCCM symptoms
+        'ds_cough_for_more_than_21days': Property
+        (Types.BOOL, 'iCCM danger sign - cough for 21 days or more'
          ),
 
-         # IMCNI - Integrated Management of Neonatal and Childhood Illnesses algorithm
-         'imci_any_general_danger_sign': Property
-        (Types.BOOL,
-         'any of the 4 general danger signs defined by the IMNCI guidelines'
+
+
+
+
+
+
+
+        # HSA assessement of symptoms outcome
+        'ccm_assessed_cough': Property
+        (Types.BOOL, 'HSA asked if the child has cough, or mother\'s report'
          ),
+        'ccm_assessed_diarrhoea': Property
+        (Types.BOOL, 'HSA asked if the child has diarrhoea, or mother\'s report'
+         ),
+        'ccm_assessed_fever': Property
+        (Types.BOOL, 'HSA asked if the child has fever, or mother\'s report'
+         ),
+        'ccm_id_fast_breathing': Property
+        (Types.BOOL, 'HSA identified fast breathing in child'
+         ),
+        'ccm_id_ds_blood_in_stools': Property
+        (Types.BOOL, 'HSA identified bloody stool in child'
+         ),
+        'ccm_id_ds_diarrhoea_for_14days_or_more': Property
+        (Types.BOOL, 'HSA identified diarrhoea for 14 days or more in child'
+         ),
+        'ccm_id_ds_fever_for_last_7days': Property
+        (Types.BOOL, 'HSA identified fever lasting 7 days or more'
+         ),
+        'ccm_assessed_red_eyes': Property
+        (Types.BOOL, 'HSA asked if the child has red eyes, or mother\'s report'
+         ),
+        'ccm_id_ds_red_eye_for_4days_or_more': Property
+        (Types.BOOL, 'HSA identified red eye for 4 days or more in child'
+         ),
+        'ccm_id_ds_red_eye_with_visual_problem': Property
+        (Types.BOOL, 'HSA identified red eye with visual problem in child'
+         ),
+        'ccm_id_ds_convulsions': Property
+        (Types.BOOL, 'HSA identified convulsions in child'
+         ),
+        'ccm_id_ds_not_able_to_drink_or_feed': Property
+        (Types.BOOL, 'HSA identified inability to drink or breastfeed/feed in child'
+         ),
+        'ccm_id_ds_vomits_everything': Property
+        (Types.BOOL, 'HSA identified vomiting everything in child'
+         ),
+        'ccm_id_ds_very_sleepy_or_unconscious': Property
+        (Types.BOOL,
+         'HSA identified child to be very sleepy or unconscious'
+         ),
+        'ccm_id_ds_chest_indrawing': Property
+        (Types.BOOL,
+         'HSA identified chest indrawing in child'
+         ),
+        'ccm_id_ds_red_on_MUAC': Property
+        (Types.BOOL,
+         'HSA measured red on MUAC tape'
+         ),
+        'ccm_id_ds_swelling_of_both_feet': Property
+        (Types.BOOL,
+         'HSA identified swelling of both feet in child'
+         ),
+        'ccm_id_ds_palmar_pallor': Property
+        (Types.BOOL,
+         'HSA identified palmar pallor in child'
+         ),
+        'at_least_one_ccm_danger_sign_identified': Property
+        (Types.BOOL,
+         'HSA identified at least one iCCM danger sign'
+         ),
+        # iCCM treatment action
+        'ccm_referral_decision': Property
+        (Types.CATEGORICAL,
+         'HSA decided to refer or to treat at home', categories=['referred to health facility', 'home treatment']
+         ),
+
+
+
+         # IMCNI - Integrated Management of Neonatal and Childhood Illnesses algorithm
+
         'imci_assessment_of_main_symptoms': Property
         (Types.CATEGORICAL,
          'main symptoms assessments', categories=['correctly assessed', 'not assessed']
@@ -250,10 +276,7 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         p = self.module.parameters
 
-        symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
-
         # # # # # # # # # # # # FIRST IS THE ASSESSMENT OF SYMPTOMS # # # # # # # # # # # #
-
         # CHECKING FOR COUGH ---------------------------------------------------------------------------------
         HSA_asked_for_cough = self.module.rng.rand() < p['prob_checked_for_cough']
         if HSA_asked_for_cough:
@@ -290,7 +313,7 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
                 # df.at[person_id, 'ccm_correctly_classified_persistent_or_bloody_diarrhoea'] = False
         # Diarrhoea over 14 days
             HSA_asked_duration_diarrhoea = self.module.rng.rand() < p['prob_check_persistent_diarrhoea']
-            if HSA_asked_duration_diarrhoea & df.at[person_id, df.gi_persistent_diarrhoea]:
+            if HSA_asked_duration_diarrhoea & df.at[person_id, df.gi_diarrhoea_type] == 'persistent':
                 df.at[person_id, 'ccm_id_ds_diarrhoea_for_14days_or_more'] = True
             else: # does this else checks for those persistent but were not asked the duration?
                 df.at[person_id, 'ccm_id_ds_diarrhoea_for_14days_or_more'] = False
@@ -326,12 +349,6 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
             else:
                 df.at[person_id, 'ccm_id_ds_red_eye_with_visual_problem'] = False
 
-        # CHECKING FOR OTHER PROBLEMS -------------------------------------------------------------------------
-        HSA_checked_for_other_problems = self.module.rng.rand() < p['prob_checked_for_other_problems']
-        if HSA_checked_for_other_problems:
-            HSA_referred_other_problems = self.module.rng.rand() < p['prob_refer_other_problems']
-            df.at[person_id, 'referred'] = True # TODO: put at the bottom in referral, and complete
-
         # CHECKING FOR GENERAL DANGER SIGNS -------------------------------------------------------------------
         # danger sign - convulsions ---------------------------------------------------------------------------
         HSA_asked_for_convulsions = self.module.rng.rand() < p['prob_check_convulsions']
@@ -345,7 +362,7 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
         if HSA_asked_problem_feeding_drinking & df.at[person_id, 'ds_not_able_to_drink_or_breastfeed']:
             df.at[person_id, 'ccm_id_ds_not_able_to_drink_or_feed'] = True
         else:
-            df.at[person_id, 'ccm_ds_not_able_to_drink_or_feed'] = False
+            df.at[person_id, 'ccm_id_ds_not_able_to_drink_or_feed'] = False
 
         # danger sign - vomits everything ---------------------------------------------------------------------
         HSA_asked_vomiting = self.module.rng.rand() < p['prob_check_vomiting_everything']
@@ -369,7 +386,6 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
         else:
             df.at[person_id, 'ccm_id_ds_chest_indrawing'] = False
 
-        # TODO: complete this section with malnutrition code
         # danger sign - for child aged 6-59 months, red on MUAC strap ----------------------------------------
         HSA_used_MUAC_tape = self.module.rng.rand() < p['prob_using_MUAC_tape']
         if HSA_used_MUAC_tape & df.at[person_id, 'ds_red_MUAC_strap']:
@@ -401,44 +417,19 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ccm_id_ds_swelling_of_both_feet'] | df.at[person_id, 'ccm_id_ds_palmar_pallor']):
             df.at[person_id, 'at_least_one_ccm_danger_sign_identified'] = True
 
-        # Diseases plus a danger sign -----------------------------
-        # Diarrhoea + danger sign
-        if df.at[person_id, df.gi_diarrhoea_acute_type] == 'acute watery diarrhoea' & (
-            df.at[person_id, 'at_least_one_ccm_danger_sign_identified']):
-            df.at[person_id, 'ccm_correctly_classified_diarrhoea_with_danger_sign'] = True
-        if df.at[person_id, df.gi_diarrhoea_acute_type] == 'acute watery diarrhoea' & (
-            df.at[person_id, 'iccm_danger_sign' == False]):
-            df.at[person_id, 'ccm_correctly_classified_diarrhoea_with_danger_sign'] = False
-
-        # SICK BUT NO DANGER SIGN ----------------------------------------------------------------------------
-        # Just Diarrhoea
-        if HSA_asked_for_diarrhoea & df.at[person_id, 'sy_diarrhoea'] &\
-            df.at[person_id, df.gi_diarrhoea_acute_type] == 'acute watery diarrhoea' & (df.at[person_id, 'iccm_danger_sign'] == False):
-            HSA_classified_diarrhoea =  self.module.rng.rand() < p['prob_correct_classify_diarrhoea']
-            if HSA_classified_diarrhoea:
-                df.at[person_id, 'ccm_correctly_classified_diarrhoea'] = True
-            else:
-                df.at[person_id, 'ccm_correctly_classified_diarrhoea'] = False
-
-        # Just Fast breathing
-
-            # Do NOT refer, treat at home
-            # Checking for fast breathing and cough ----------------------------------------------------------------
-            HSA_identified_fast_breathing = \
-                self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_fast_breathing'],
-                                                              (1 - p['prob_correct_id_fast_breathing'])])
-            if HSA_identified_fast_breathing[True] & (
-                df.at[person_id, 'iccm_danger_sign'] == False):
-                df.at[person_id, 'ccm_correctly_classified_pneumonia'] = True
-                # do not refer, treat at home
-
-            if HSA_identified_fast_breathing[True] & df.at[person_id, 'ccm_correctly_identified_iccm_danger_sign']:
-                df.at[person_id, 'ccm_correctly_classified_severe_pneumonia'] = True
-                # give first dose of treatment before assisting referral
+        # CHECKING FOR OTHER PROBLEMS -------------------------------------------------------------------------
+            HSA_checked_for_other_problems = self.module.rng.rand() < p[
+                'prob_checked_for_other_problems']  # HSA check or mother's report
+            if HSA_checked_for_other_problems:
+                HSA_referred_other_problems = self.module.rng.rand() < p['prob_refer_other_problems']
+                if HSA_referred_other_problems:
+                    df.at[
+                        person_id, 'ccm_referral_decision'] = 'referred to health facility'  # TODO: put at the bottom in referral, and complete
+                else:
 
         # # # # # # # # # # # # SECOND, IS THE DECISION TO REFER OR TREAT # # # # # # # # # # # #
         # give referral decision
-        if df.at[person_id, 'at_least_one_danger_sign_identified']:
+        if df.at[person_id, 'at_least_one_ccm_danger_sign_identified']:
             HSA_referral_decision = self.module.rng.rand() < p['prob_correct_referral_decision_for_any_danger_signs']
             if HSA_referral_decision:
                 df.at[person_id, 'ccm_referral_decision'] = 'referred to health facility'
@@ -452,7 +443,7 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
                 df.at[person_id, 'ccm_referral_decision'] = 'referred to health facility'
 
         # # # # # # # # # # # # THIRD, IS THE DECISION TO REFER OR TREAT # # # # # # # # # # # #
-        # if danger signs and referred to health facility --------------------------------------------------
+        # danger signs identified and referred to health facility --------------------------------------------------
         # diarrhoea + danger sign
         if (df.at[person_id, 'sy_diarrhoea'] & df.at[person_id, 'ccm_assessed_diarrhoea'] &
             df.at[person_id, 'at_least_one_danger_sign_identified'] &
@@ -473,7 +464,7 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ccm_referral_decision'] == 'referred to health facility'):
             # TODO: INTERACTION WITH HEALTH SYSTEM CODE HERE ---- APPLY ANTIBIOTIC EYE OINTMENT
 
-        # if no danger signs identified and referred to health facility -------------------------------------
+        # no danger signs identified and referred to health facility -------------------------------------
 
 
 
@@ -489,6 +480,8 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
         # diarrhoea
         if (df.at[person_id, 'sy_diarrhoea'] & df.at[person_id, 'ccm_assessed_diarrhoea'] &
             df.at[person_id, 'ccm_referral_decision'] == 'home treatment'):
+            HSA_given_right_treatment = self.module.rng.rand() < p['prob_right_treatment_plan_diarrhoea']
+            HSA_given_complete_treatment_plan = self.module.rng.rand() < p['prob_complete_treatment_diarrhoea']
             # TODO: INTERACTION WITH HEALTH SYSTEM CODE HERE ---- GIVE ORS, + 2 ORS for mother, GIVE ZINC SUPPLEMENT (age dependent)
         # fever
         if (df.at[person_id, 'sy_fever'] & df.at[person_id, 'ccm_assessed_fever'] &
@@ -504,23 +497,60 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
             # TODO: INTERACTION WITH HEALTH SYSTEM CODE HERE ---- GIVE ANTIBIOTIC EYE OINTMENT
 
         # ----------------------------------------------------------------------------------------------------
-        # GET ALL THE CORRECT ASSESSMENT, REFERRAL AND TREATMENT
+        # GET ALL THE CORRECT ICCM ACTION PLAN
+        # ----------------------------------------------------------------------------------------------------
+        # get all the danger signs
+        if (df.at[person_id, 'ds_cough_more_than_21days'] | (
+            df.at[person_id, df.gi_diarrhoea_acute_type] == 'dysentery') |
+            (df.at[person_id, df.gi_diarrhoea_type] == 'persistent') | df.at[person_id, 'ds_cough_more_than_21days'] |
+            df.at[person_id, 'sy_fever_over_7days'] | df.at[person_id, 'sy_red_eyes_over_4days'] | df.at[
+                person_id, 'ds_convulsions'] |
+            df.at[person_id, 'ds_not_able_to_drink_or_breastfeed'] | df.at[person_id, 'ds_vomiting_everything'] |
+            df.at[person_id, 'ds_unusually_sleepy_unconscious'] | df.at[person_id, 'ds_chest_indrawing'] |
+            df.at[person_id, 'ds_palmar_pallor'] |
+            df.at[person_id, 'ds_red_MUAC_strap'] | df.at[person_id, 'ds_swelling_both_feet']):
+            df.at[person_id, 'presenting_at_least_one_ccm_danger_sign_symptom'] = True
 
-
-
-
-
-
-
+        # any danger sign to be referred
+        if (df.at[person_id, 'presenting_at_least_one_ccm_danger_sign_symptom'] &
+            (df.at[person_id, 'ccm_referral_decision'] == 'referred to health facility') &
+            (df.at[person_id, 'sy_fever'] == False) & (df.at[person_id, 'sy_diarrhoea'] == False) &
+            (df.at[person_id, 'sy_chest_indrawing'] == False) & (df.at[person_id, 'sy_fast_breathing'] == False)):
+            df.at[person_id, 'ccm_correct_action_plan'] = True
+        # for fever + danger sign
+        if (df.at[person_id, 'presenting_at_least_one_ccm_danger_sign_symptom'] &
+            (df.at[person_id, 'ccm_referral_decision'] == 'referred to health facility') & df.at[person_id, 'sy_fever'] &
+            df.at[person_id, 'pre-referral treatment given']):
+            df.at[person_id, 'ccm_correct_action_plan'] = True
+        # for diarrhoea + danger sign
+        if (df.at[person_id, 'presenting_at_least_one_ccm_danger_sign_symptom'] &
+            (df.at[person_id, 'ccm_referral_decision'] == 'referred to health facility') & df.at[person_id, 'sy_diarrhoea'] &
+            df.at[person_id, 'pre-referral treatment given']):
+            df.at[person_id, 'ccm_correct_action_plan'] = True
+        # for fast breathing + danger sign
+        if (df.at[person_id, 'presenting_at_least_one_ccm_danger_sign_symptom'] &
+            (df.at[person_id, 'ccm_referral_decision'] == 'referred to health facility') &
+            (df.at[person_id, 'sy_fast_breathing'] | df.at[person_id, 'sy_chest_indrawing']) &
+            df.at[person_id, 'pre-referral treatment given']):
+            df.at[person_id, 'ccm_correct_action_plan'] = True
+        # for red eye for 4 days or more
+        if ((df.at[person_id, 'ccm_referral_decision'] == 'referred to health facility') &
+            df.at[person_id, 'sy_red_eye_over_4_days'] & df.at[person_id, 'pre-referral treatment given']):
+            df.at[person_id, 'ccm_correct_action_plan'] = True
 
         # # # # # # # # # # # # FOURTH, CHECK VACCINES RECEIVED # # # # # # # # # # # #
+        # TODO: complete later with Tara's vaccine code
+        HSA_checked_vaccines_received = self.module.rng.rand() < p['prob_check_vaccines_status']
+        if HSA_checked_vaccines_received:
+            if ((df.at[person_id, 'vacc_DHH1'] == False | df.at[person_id, 'vacc_OPV1']) &
+                df.at[person_id, df.age_exact_years == 56/487]):
+                HSA_advise_on_vaccine_schedule = self.module.rng.rand() < p['prob_advise_vaccination']
+            if df.at[person_id, 'vacc_DHH2'] == False & df.at[person_id, df.age_exact_years == 280/1461]:
 
-        HSA_correct_treatment_given = \
-            self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_treatment_advice_given'],
-                                                          (1 - p['prob_correct_treatment_advice_given'])])
-        if HSA_referral_decision[True] & HSA_correct_treatment_given[True] & \
-            df.at[person_id, 'ccm_correctly_classified_severe_pneumonia']:
-            'ccm_correct_treatment_and_advice_given'
+            if df.at[person_id, 'vacc_DHH3'] == False & df.at[person_id, df.age_exact_years == 392/1461]:
+
+        # # # # # # # # # # # # FIFTH, FOLLOW UP # # # # # # # # # # # #
+
 
 
 class HSI_IMNCI (Event, IndividualScopeEventMixin):
