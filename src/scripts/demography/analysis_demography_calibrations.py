@@ -66,7 +66,7 @@ fh.flush()
 # %% read the results
 
 # FOR STORED RESULTS
-# logfile = 'LogFile__2019_12_10.log'
+# logfile = 'LogFile__2020_01_07.log'
 
 parsed_output = parse_log_file(logfile)
 
