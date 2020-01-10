@@ -18,6 +18,7 @@ class Predictor(object):
         return self._coeff(condition, value)
 
     def otherwise(self, value):
+        assert self.property_name is not None, "Can't use `otherwise` condition on unnamed Predictor"
         return self._coeff(value)
 
     def _coeff(self, *args):
