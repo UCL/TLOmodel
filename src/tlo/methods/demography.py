@@ -87,7 +87,7 @@ class Demography(Module):
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Pop_Frac_Births_Male.csv'
-        )
+        ).set_index('Year')['frac_births_male']
 
         # Mortality schedule:
         self.parameters['mortality_schedule'] = pd.read_csv(
@@ -175,10 +175,8 @@ class Demography(Module):
         df.at[child_id, 'is_alive'] = True
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
-        fraction_of_births_male = self.parameters['fraction_of_births_male']
-        f_male = fraction_of_births_male.loc[fraction_of_births_male['Year'] == self.sim.date.year,
-                                             'frac_births_male'].values[0]
-        df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
+        p_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
+        df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[p_male, 1 - p_male])
 
         df.at[child_id, 'mother_id'] = mother_id
 
