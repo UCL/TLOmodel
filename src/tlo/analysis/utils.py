@@ -6,7 +6,6 @@ from ast import literal_eval
 from pathlib import Path
 
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 
 from tlo import util
 from tlo.util import create_age_range_lookup
@@ -223,16 +222,8 @@ def make_age_grp_types():
     Make an ordered categorical type for age-groups
     Returns CategoricalDType
     """
-
-    (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
-    age_grp_cats = list()
-    for i in age_grp_lookup.values():
-        if i not in age_grp_cats:
-            age_grp_cats.append(i)
-
-    age_grp_type = CategoricalDtype(categories=age_grp_cats, ordered=True)
-
-    return age_grp_type
+    keys, _ = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
+    return pd.CategoricalIndex(categories=keys, ordered=True)
 
 
 def make_calendar_period_type():
@@ -240,13 +231,5 @@ def make_calendar_period_type():
     Make an ordered categorical type for calendar periods
     Returns CategoricalDType
     """
-    (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-
-    cal_per_cats = list()
-    for i in calendar_period_lookup.values():
-        if i not in cal_per_cats:
-            cal_per_cats.append(i)
-
-    cal_period_type = CategoricalDtype(categories=cal_per_cats, ordered=True)
-
-    return cal_period_type
+    keys, _ = make_calendar_period_lookup()
+    return pd.CategoricalIndex(categories=keys, ordered=True)
