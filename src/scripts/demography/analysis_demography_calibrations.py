@@ -19,7 +19,6 @@ from tlo.analysis.utils import (
     make_calendar_period_lookup,
     make_calendar_period_type,
     parse_log_file,
-    scale_to_population,
 )
 from tlo.methods import contraception, demography
 from tlo.util import create_age_range_lookup
@@ -71,6 +70,7 @@ fh.flush()
 
 parsed_output = parse_log_file(logfile)
 
+scale_to_population = demography.scale_to_population
 scaled_output = scale_to_population(parsed_output, resourcefilepath)
 
 # %% Population Size
