@@ -27,7 +27,7 @@ resourcefilepath = Path("./resources/")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2017, 1, 1)
 popsize = 10000
 
 # add file handler for the purpose of logging
@@ -84,8 +84,14 @@ ptb_df.columns = ['preterm_by_year', 'birth_by_year']
 ptb_df['PTBR'] = ptb_df['preterm_by_year']/ptb_df['birth_by_year'] * 100
 
 ptb_df.plot.bar(y='PTBR', stacked=True)
+#  Todo: get rate to appear above bar
+
+# for i, v in enumerate(y):
+#    ptb_df.text(v + 3, i + .25, str(v), color='blue', fontweight='bold')
+
 plt.title("Yearly Preterm Birth Rate")
 plt.show()
+
 
 # ============================ EARLY PRETERM BIRTH RATE ==============================================
 early_preterm_df = output['tlo.methods.newborn_outcomes']['early_preterm']
@@ -102,7 +108,7 @@ eptb_df = pd.concat((eptb_by_year, birth_by_year),axis=1)
 eptb_df.columns = ['eptb_by_year', 'birth_by_year']
 eptb_df['EPTBR'] = eptb_df['eptb_by_year']/eptb_df['birth_by_year'] * 100
 
-eptb_df.plot.bar(y='PTBR', stacked=True)
+eptb_df.plot.bar(y='EPTBR', stacked=True)
 plt.title("Yearly Early Preterm Birth Rate")
 plt.show()
 
@@ -119,13 +125,35 @@ birth_by_year = all_births_df.groupby(['year'])['child'].size()
 
 lptb_df = pd.concat((lptb_by_year, birth_by_year),axis=1)
 lptb_df.columns = ['lptb_by_year', 'birth_by_year']
-lptb_df['EPTBR'] = lptb_df['lptb_by_year']/lptb_df['birth_by_year'] * 100
+lptb_df['LPTBR'] = lptb_df['lptb_by_year']/lptb_df['birth_by_year'] * 100
 
-lptb_df.plot.bar(y='PTBR', stacked=True)
+lptb_df.plot.bar(y='LPTBR', stacked=True)
 plt.title("Yearly Late Preterm Birth Rate")
 plt.show()
 
+# ============================ POST TERM BIRTH RATE ==============================================
+# TODO: is the per 100 birth incidence measure correct for this outcome?
+post_term_df = output['tlo.methods.labour']['postterm_birth']
+post_term_df['date'] = pd.to_datetime(post_term_df['date'])
+post_term_df['year'] = post_term_df['date'].dt.year
+post_term_by_year = post_term_df.groupby(['year'])['person_id'].size()
+
+all_births_df = output['tlo.methods.demography']['on_birth']
+all_births_df['date'] = pd.to_datetime(all_births_df['date'])
+all_births_df['year'] = all_births_df['date'].dt.year
+birth_by_year = all_births_df.groupby(['year'])['child'].size()
+
+potb_df = pd.concat((post_term_by_year, birth_by_year),axis=1)
+potb_df.columns = ['post_term_by_year', 'birth_by_year']
+potb_df['LPTBR'] = potb_df['post_term_by_year']/potb_df['birth_by_year'] * 100
+
+potb_df.plot.bar(y='PoTBR', stacked=True)
+plt.title("Post Term Birth Rate")
+plt.show()
+
+
+
 # ======================== GESTATION AT BIRTH FOR ALL BIRTHS ========================================
+# Stacked bar chart for each year provide proportion of all births (term/early p/late p/ post)
 
-
-
+# Could also do week of gestation at delivery? but not sure we'd have any data to compare it too
