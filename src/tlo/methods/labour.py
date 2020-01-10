@@ -36,6 +36,8 @@ class Labour (Module):
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================
         'prob_pregnancy': Parameter(
             Types.REAL, 'baseline probability of pregnancy - currently included as a dummy parameter'),
+        'baseline_prev_cs': Parameter(
+            Types.REAL, 'prevalence of women who have previously ever delivered via caesarean section'),
         'prob_prom': Parameter(
             Types.REAL, 'probability of a woman in term labour having had experience prolonged rupture of membranes'),
         'prob_pl_ol': Parameter(
@@ -218,7 +220,7 @@ class Labour (Module):
                                                            'in a stillbirth'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
 
-        'la_total_deliveries_by_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
+        'la_previous_cs_delivery': Property(Types.BOOL, 'whether this woman has ever delivered via caesarean section'),
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'whether this womans labour has become obstructed'),
@@ -283,7 +285,7 @@ class Labour (Module):
         df.loc[df.sex == 'F', 'la_currently_in_labour'] = False
         df.loc[df.sex == 'F', 'la_intrapartum_still_birth'] = False
         df.loc[df.sex == 'F', 'la_parity'] = 0
-        df.loc[df.sex == 'F', 'la_total_deliveries_by_cs'] = 0
+        df.loc[df.sex == 'F', 'la_previous_cs_delivery'] = False
         df.loc[df.sex == 'F', 'la_has_previously_delivered_preterm'] = False
         df.loc[df.sex == 'F', 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.sex == 'F', 'la_obstructed_labour'] = False
@@ -464,65 +466,51 @@ class Labour (Module):
         idx_parity = dfx.index[dfx.baseline_p < dfx.random_draw]
         df.loc[idx_parity, 'la_parity'] = dfx.random_draw
 
-#   ------------------------------ ASSIGN PREVIOUS CS AT BASELINE -----------------------------------------------
+    # ------------------------------ ASSIGN PREVIOUS CS AT BASELINE -----------------------------------------------
 
-        # Get and hold women who have delivered one child and those who have delivered 2 or more children
-        women_para1_idx = df.index[(df.la_parity == 1)]
-        women_para2_idx = df.index[(df.la_parity >= 2)]
+        # First we get  and hold women who have delivered at least one child
+        women_para1_idx = df.index[(df.la_parity >= 1)]
+        random_draw = pd.Series(self.rng.random_sample(size=len(women_para1_idx)),
+                                index=df.index[(df.la_parity >= 1)])
+        prev_cs_baseline = pd.Series(params['baseline_prev_cs'], index=women_para1_idx)
 
-        baseline_cs1 = pd.Series(0, index=women_para1_idx)
-        baseline_cs2 = pd.Series(0, index=women_para2_idx)
+        dfx = pd.concat([prev_cs_baseline, random_draw], axis=1)
+        dfx.columns = ['prev_cs_baseline', 'random_draw']
+        idx_cs = dfx.index[dfx.prev_cs_baseline < dfx.random_draw]
+        df.loc[idx_cs, 'la_previous_cs_delivery'] = True
 
-        # A weighted random choice is used to determine whether women who are para1 had delivered via caesarean
-        random_draw1 = pd.Series(self.rng.choice(range(0, 2), p=[0.954, 0.046], size=len(women_para1_idx)),
-                               index=women_para1_idx)
-
-        # A second weighted random choice is applied to women with greater than 2 deliveries, due to low section rates
-        # a maximum of 2 previous deliveries by caesarean is allowed
-        random_draw2 = pd.Series(self.rng.choice(range(0, 3), p=[0.90, 0.07, 0.03], size=len(women_para2_idx)),
-                                 index=women_para2_idx)
-
-        dfx = pd.concat([baseline_cs1, random_draw1], axis=1)
-        dfx.columns = ['baseline_cs1', 'random_draw1']
-        idx_prev_cs = dfx.index[dfx.random_draw1 >= 0]
-        df.loc[idx_prev_cs, 'la_total_deliveries_by_cs'] = dfx.random_draw1
-
-        dfx = pd.concat([baseline_cs2, random_draw2], axis=1)
-        dfx.columns = ['baseline_cs2','random_draw2']
-        idx_prev_cs1 = dfx.index[dfx.random_draw2 >= 0]
-        df.loc[idx_prev_cs1, 'la_total_deliveries_by_cs'] = dfx.random_draw2
-
-        # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE ----------------------------------------------
+    # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE ----------------------------------------------
+        # TODO: Commented out whilst consider pulling in from another data source
 
         # Get and hold all women who have given birth previously, excluding those with previous caesarean section
-        women_para1_nocs_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity == 1) &
-                                        (df.la_total_deliveries_by_cs ==0)]
+#        women_para1_nocs_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity == 1) &
+#                                        ~df.la_previous_cs_delivery]
 
         # Get and hold all women with greater than 2 deliveries excluding those in which both deliveries were by
         # caesarean
-        women_para2_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 2) &
-                                   (df.la_total_deliveries_by_cs < 2)]
+#        women_para2_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 2) &
+#                                   (df.la_total_deliveries_by_cs < 2)]
 
-        baseline_ptb = pd.Series(m.prob_ptl, index=women_para1_nocs_idx)
-        baseline_ptb_p2 = pd.Series(m.prob_ptl, index=women_para2_idx)
+#        baseline_ptb = pd.Series(m.prob_ptl, index=women_para1_nocs_idx)
+#        baseline_ptb_p2 = pd.Series(m.prob_ptl, index=women_para2_idx)
 
-        random_draw = pd.Series(self.rng.random_sample(size=len(women_para1_nocs_idx)),
-                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
-                                               (df.la_parity == 1) & (df.la_total_deliveries_by_cs == 0)])
-        random_draw2 = pd.Series(self.rng.random_sample(size=len(women_para2_idx)),
-                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
-                                               (df.la_parity >= 2) & (df.la_total_deliveries_by_cs < 2)])
+#        random_draw = pd.Series(self.rng.random_sample(size=len(women_para1_nocs_idx)),
+#                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
+#                                               (df.la_parity == 1) & (df.la_total_deliveries_by_cs == 0)])
+#        random_draw2 = pd.Series(self.rng.random_sample(size=len(women_para2_idx)),
+#                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
+#                                               (df.la_parity >= 2) & (df.la_total_deliveries_by_cs < 2)])
 
         # Use a random draw to determine if this woman's past deliveries have ever been preterm
-        dfx = pd.concat([baseline_ptb, random_draw], axis=1)
-        dfx.columns = ['baseline_ptb', 'random_draw']
-        idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
-        df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
+#        dfx = pd.concat([baseline_ptb, random_draw], axis=1)
+#        dfx.columns = ['baseline_ptb', 'random_draw']
+#        idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
+#        df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
 
-        dfx = pd.concat([baseline_ptb_p2, random_draw2], axis=1)
-        dfx.columns = ['baseline_ptb_p2', 'random_draw2']
-        idx_prev_ptb = dfx.index[dfx.baseline_ptb_p2 > dfx.random_draw2]
-        df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
+#        dfx = pd.concat([baseline_ptb_p2, random_draw2], axis=1)
+#        dfx.columns = ['baseline_ptb_p2', 'random_draw2']
+#        idx_prev_ptb = dfx.index[dfx.baseline_ptb_p2 > dfx.random_draw2]
+#        df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
 
     def initialise_simulation(self, sim):
 
@@ -542,7 +530,7 @@ class Labour (Module):
             df.at[child_id, 'la_current_labour_successful_induction'] = 'not_induced'
             df.at[child_id, 'la_intrapartum_still_birth'] = False
             df.at[child_id, 'la_parity'] = 0
-            df.at[child_id, 'la_total_deliveries_by_cs'] = 0
+            df.at[child_id, 'la_previous_cs_delivery'] = False
             df.at[child_id, 'la_has_previously_delivered_preterm'] = False
             df.at[child_id, 'la_obstructed_labour'] = False
             df.at[child_id, 'la_ol_disability'] = False
@@ -819,6 +807,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                 elif df.at[individual_id, 'ps_gestational_age'] > 41:
                     mni[individual_id]['labour_state'] = 'POTL'
+                    logger.info('%s|postterm_birth|%s', self.sim.date,
+                                {'age': df.at[individual_id, 'age_years'],
+                                 'person_id': individual_id})
 
                     logger.debug('This is LabourEvent, person %d is now overdue labour and is post-term  on date %s',
                                  individual_id, self.sim.date)
@@ -844,11 +835,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=1)
                                                                         )
-                    # TODO: Consider a reasonable tclose date
-
-                    # TODO: Line of logic that says if woman cannot access care because of contraints then they are
-                    #  marked as having an out of facility birth and increased risk of death is applied (and increased
-                    #  risk of comp?)
+                    # TODO: Issue of complications not being allocated if this HSI doesnt run- will be rectified with
+                    #  'does_not_run' function
 
                 elif (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random > prob):
                     mni[individual_id]['delivery_setting'] = 'HB'
@@ -1041,21 +1029,21 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ====================================== UTERINE RUPTURE  =============================================================
 
-                if (df.at[individual_id, 'la_parity'] >= 5) & (df.at[individual_id, 'la_total_deliveries_by_cs'] == 0)\
-                    & ~df.at[individual_id, 'la_obstructed_labour']:
-                     rf1 = params['rr_ur_grand_multip']
+                if (df.at[individual_id, 'la_parity'] >= 5) & ~df.at[individual_id, 'la_previous_cs_delivery'] & \
+                        ~df.at[individual_id, 'la_obstructed_labour']:
+                    rf1 = params['rr_ur_grand_multip']
                 else:
                     rf1 = 1
 
-                if (df.at[individual_id, 'la_parity'] < 5) & (df.at[individual_id, 'la_total_deliveries_by_cs'] >= 1) & \
-                    ~df.at[individual_id, 'la_obstructed_labour']:
+                if (df.at[individual_id, 'la_parity'] < 5) & df.at[individual_id, 'la_previous_cs_delivery'] & \
+                        ~df.at[individual_id, 'la_obstructed_labour']:
                     rf2 = params['rr_ur_prev_cs']
                 else:
                     rf2 = 1
 
-                if (df.at[individual_id, 'la_parity'] < 5) & (df.at[individual_id, 'la_total_deliveries_by_cs'] == 0) & \
-                    (mni[individual_id]['labour_is_currently_obstructed'] == True):  # only HBs can already be in OL
-                        rf3 = params['rr_ur_ref_ol']
+                if (df.at[individual_id, 'la_parity'] < 5) & ~df.at[individual_id, 'la_previous_cs_delivery'] & \
+                        (mni[individual_id]['labour_is_currently_obstructed'] == True):  # only HBs can already be in OL
+                    rf3 = params['rr_ur_ref_ol']
                 else:
                     rf3 = 1
 
@@ -1866,7 +1854,15 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
 
     def did_not_run(self):
         logger.debug('HSI_Labour_PresentsForSkilledAttendanceInLabour: did not run')
-        # TODO: What else needs to go in here?
+        return False
+        # The event wont run if a.) not allowed in policy set up b.)there isn't the available officer time
+        # TODO: Here, if false is returned then if the event does not run it is taken out of the queue. In this instance
+        #  we need to decide what these women would do (its unlikely they would leave)- what this essentially means is
+        #  there is no SBA availble to assist in their delivery, so they will deliver unaided (may get some benifits of
+        #  being in the vacinity of a facility(
+
+        # TODO: Can we then schedule like a post-attempted facilty delivery event?
+
         pass
 
 
@@ -2222,8 +2218,8 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
         etiology = ['PA', 'PP']  # May need to move this to allow for risk factors?
         probabilities = [0.67, 0.33]  # DUMMY
         random_choice = self.module.rng.choice(etiology, size=1, p=probabilities)
-
-        mni[person_id]['source_aph'] = random_choice  # Storing as high chance of SB in severe placental abruption
+        # Todo: below line isnt storing correctly so effects parsing of log file
+#        mni[person_id]['source_aph'] = random_choice  # Storing as high chance of SB in severe placental abruption
         # TODO: Needs to be dependent on blood availability and establish how we're quantifying effect
         mni[person_id]['units_transfused'] = 2
 
@@ -2241,7 +2237,8 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
             etiology = ['UA', 'RPP']
             probabilities = [0.67, 0.33]  # dummy
             random_choice = self.module.rng.choice(etiology, size=1, p=probabilities)
-            mni[person_id]['source_pph'] = random_choice
+            # Todo: below line isnt storing correctly so effects parsing of log file
+            #            mni[person_id]['source_pph'] = random_choice
             # Todo: add a level of severity of PPH -yes
 
             # ======================== TREATMENT CASCADE FOR ATONIC UTERUS:=============================================
@@ -2500,7 +2497,7 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
             # reset eclampsia status?
             mni[person_id]['labour_is_currently_obstructed'] = False
             mni[person_id]['mode_of_delivery'] = 'CS'
-            df.at[person_id, 'la_total_deliveries_by_cs'] = +1
+            df.at[person_id, 'la_previous_cs_delivery'] = True
             # apply risk of death from CS?
 
 # ====================================== UTERINE REPAIR ==============================================================
