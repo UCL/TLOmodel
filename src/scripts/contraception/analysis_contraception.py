@@ -13,15 +13,15 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography
 
-# Where will output go - by default, wherever this script is run
-outputpath = ''
+# Where will outputs go - by default, wherever this script is run
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource directory for modules
 # by default, this script runs in the same directory as this file
-resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+resourcefilepath = Path("./resources")
 
 
 # %% Run the Simulation
@@ -33,8 +33,8 @@ popsize = 1000
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
 
-# this block of code is to capture the output to file
-logfile = outputpath + 'LogFile' + datestamp + '.log'
+# this block of code is to capture the outputs to file
+logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -84,8 +84,7 @@ plt.xlabel("Year")
 plt.ylabel("Number of women")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
-plt.savefig(outputpath + 'Contraception Use' + datestamp + '.pdf')
-
+plt.savefig(outputpath / ('Contraception Use' + datestamp + '.pdf'), format='pdf')
 plt.show()
 
 
@@ -132,8 +131,7 @@ plt.ylabel("Number using method")
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
             'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional'])
-plt.savefig(outputpath + 'Contraception Use By Method' + datestamp + '.pdf')
-
+plt.savefig(outputpath / ('Contraception Use By Method' + datestamp + '.pdf'), format='pdf')
 plt.show()
 
 # %% Plot Pregnancies Over time:
@@ -164,6 +162,5 @@ plt.ylabel("Number of pregnancies")
 # plt.gca().set_ylim(0, 50)
 # plt.gca().set_xlim(Date(2010, 1, 1), Date(2013, 1, 1))
 plt.legend(['total', 'pregnant', 'not_pregnant'])
-plt.savefig(outputpath + 'Pregnancies Over Time' + datestamp + '.pdf')
-
+plt.savefig(outputpath / ('Pregnancies Over Time' + datestamp + '.pdf'), format='pdf')
 plt.show()
