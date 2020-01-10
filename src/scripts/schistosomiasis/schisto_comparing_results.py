@@ -31,6 +31,8 @@ def plot_per_age_group(sim_dict, age, vals):
            title=vals + ' per date, ' + age)
     if vals == 'Prevalence':
         plt.ylim([0, 0.5])
+    else:
+        plt.ylim([0, 2.5])
     # ax.grid()
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
     ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))

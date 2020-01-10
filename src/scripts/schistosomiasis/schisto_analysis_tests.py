@@ -23,8 +23,8 @@ def run_simulation(alpha=None, r0=None, popsize=10000):
 
     # The resource files
     resourcefilepath = Path("./resources")
-    start_date = Date(2005, 1, 1)
-    end_date = Date(2019, 1, 1)
+    start_date = Date(2013, 1, 1)
+    end_date = Date(2021, 1, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -53,6 +53,8 @@ def run_simulation(alpha=None, r0=None, popsize=10000):
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, alpha=alpha, r0=r0))
+    sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, alpha=alpha, r0=r0))
+    sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, alpha=alpha, r0=r0))
 
     # Run the simulation and flush the logger
     sim.seed_rngs(0)
@@ -65,7 +67,7 @@ def run_simulation(alpha=None, r0=None, popsize=10000):
     output = parse_log_file(logfile)
     return sim, output
 
-sim, output = run_simulation(popsize=10000)
+sim, output = run_simulation(popsize=1000)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
