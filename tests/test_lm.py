@@ -41,17 +41,16 @@ def test_of_example_usage():
         Predictor('region_of_residence').when('Northern', 0.1).when('Central', 0.2).when('Southern', 0.3),
         Predictor('li_urban').when(True, 0.01).otherwise(0.02),
         Predictor('sex').when('M', 0.001).when('F', 0.002),
-        Predictor('age_years')
-            .when('< 5', 0.0001)
-            .when('< 15', 0.0002)
-            .when('< 35', 0.0003)
-            .when('< 60', 0.0004)
-            .otherwise(0.0005),
+        Predictor('age_years').when('< 5', 0.0001)
+                              .when('< 15', 0.0002)
+                              .when('< 35', 0.0003)
+                              .when('< 60', 0.0004)
+                              .otherwise(0.0005),
         Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
     )
 
     df = pd.read_csv(io.StringIO(EXAMPLE_POP))
-    predicted = eq.predict(df)
+    eq.predict(df)
 
     # Logistic model
     eq = LinearModel(
@@ -63,8 +62,7 @@ def test_of_example_usage():
         .when('.between(0,5)', 0.001)
         .otherwise(0),
     )
-
-    predicted = eq.predict(df)
+    eq.predict(df)
 
     # Multiplicative model
     eq = LinearModel(
@@ -73,9 +71,7 @@ def test_of_example_usage():
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
         Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
     )
-
-    df = pd.read_csv(io.StringIO(EXAMPLE_POP))
-    predicted = eq.predict(df)
+    eq.predict(df)
 
 
 def test_additive_trivial_application():
@@ -203,9 +199,8 @@ def test_logistic_application_tob():
         init_p_tob_age1519_m_wealth1 / (1 - init_p_tob_age1519_m_wealth1),
         Predictor('sex').when('F', init_or_tob_f),
         Predictor('li_wealth').when('2', 2).when('3', 3).when('4', 4).when('5', 5),
-        Predictor()
-            .when('(age_years.between(20,39)) & (sex == "M")', init_or_tob_age2039_m)
-            .when('(age_years.between(40,120)) & (sex == "M")', init_or_tob_agege40_m)
+        Predictor().when('(age_years.between(20,39)) & (sex == "M")', init_or_tob_age2039_m)
+                   .when('(age_years.between(40,120)) & (sex == "M")', init_or_tob_agege40_m)
     )
 
     lm_tob_odds = eq_tob.predict(df.loc[df.is_alive & (df.age_years >= 15)])
