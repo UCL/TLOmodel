@@ -85,7 +85,7 @@ class Predictor(object):
             else:
                 condition = '~@touched'
             mask = df.eval(condition)
-            print(f"mask = df.eval({condition})")
+            print(f"mask = df.eval('{condition}')")
             output[mask] = value
             print(f"output[mask] += {value}")
             touched = (touched | mask)
@@ -127,11 +127,13 @@ class LinearModel(object):
 
         # Do some checks:
         assert self.intercept is not None, "Interceipt is not specified"
-        assert all([pred.property_name in df.columns for pred in self.predictors if pred.property_name is not None]), "Predictor variables not in df"
+        assert all([p.property_name in df.columns
+                    for p in self.predictors
+                    if p.property_name is not None]), "Predictor variables not in df"
 
         # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
-        res_by_predictor['intercept'] = self.intercept
+        res_by_predictor['__intercept__'] = self.intercept
 
         for predictor in self.predictors:
             res_by_predictor[predictor] = predictor.predict(df)
