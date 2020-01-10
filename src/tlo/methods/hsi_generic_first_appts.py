@@ -196,6 +196,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         # Return the actual appt footprints, adding on rdt labPOC appt
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         actual_appt_footprint['LabPOC'] = 1
+
         logger.debug(f'the actual appt footprint for person {person_id} is {actual_appt_footprint}')
         return actual_appt_footprint
 
@@ -289,11 +290,22 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
 
+        df = self.sim.population.props
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
-        if 'em_coma' in self.sim.modules['SymptomManager'].has_what(person_id):
-            if 'Malaria' in self.sim.population.props.at[person_id, 'sy_em_coma']:
+        sev_symp = ['em_acidosis', 'em_coma_convulsions', 'em_renal_failure', 'em_shock', 'jaundice', 'anaemia']
+        sev_set = set(sev_symp)
+
+        # get the individual symptoms
+        ind_symps = set(self.sim.modules['SymptomManager'].has_what(person_id))
+        # if person's symptoms are on severe malaria list then treat
+        malaria_susp_symp = sev_set.intersection(ind_symps)
+
+        # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
+        if len(malaria_susp_symp) > 0:
+            # if 'Malaria' in df.at[person_id, 'sy_em_coma']:
+            if df.at[person_id, 'ma_is_infected']:
                 # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-                if self.sim.population.props.at[person_id,'age_years']<5.0:
+                if df.at[person_id, 'age_years'] < 5.0:
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         hsi_event=HSI_Malaria_tx_compl_child(self.sim.modules['Malaria'], person_id=person_id),
                         priority=0,

@@ -65,8 +65,6 @@ class Malaria(Module):
         'ma_inf_type': Property(
             Types.CATEGORICAL,
             'specific symptoms with malaria infection', categories=['none', 'asym', 'clinical', 'severe']),
-        'ma_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
-                                            categories=[0, 1, 2, 3, 4]),
         'ma_district_edited': Property(
             Types.STRING, 'edited districts to match with malaria data'),
         'ma_age_edited': Property(
@@ -142,7 +140,6 @@ class Malaria(Module):
         df['ma_tx'] = False
         df['ma_date_tx'] = pd.NaT
         df['ma_inf_type'].values[:] = 'none'
-        df['ma_unified_symptom_code'].values[:] = 0
         df['ma_district_edited'] = df['district_of_residence']
         df['ma_age_edited'] = 0
 
@@ -175,7 +172,6 @@ class Malaria(Module):
                 df.loc[infected_idx, 'ma_is_infected'] = True
                 df.loc[infected_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
                 df.loc[infected_idx, 'ma_inf_type'] = 'clinical'
-                df.loc[infected_idx, 'ma_unified_symptom_code'] = 1
                 df.loc[infected_idx, 'ma_date_symptoms'] = now
                 df.loc[infected_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
 
@@ -195,7 +191,6 @@ class Malaria(Module):
                     logger.debug(f'Malaria Module: assigning {len_sev} severe malaria infections')
 
                     df.loc[severe_idx, 'ma_inf_type'] = 'severe'
-                    df.loc[severe_idx, 'ma_unified_symptom_code'] = 2
 
         else:
             # ----------------------------------- INCIDENCE - DISTRICT -----------------------------------
@@ -287,7 +282,7 @@ class Malaria(Module):
                 df_ml.is_alive & ~df_ml.ma_is_infected & (random_draw < df_ml.monthly_prob_inf)].index
             df_ml.loc[ml_idx, 'ma_is_infected'] = True
             df_ml.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
-            df_ml.loc[ml_idx, 'ma_inf_type'] = 'asym'
+            df_ml.loc[ml_idx, 'ma_inf_type'] = 'clinical'
             # print('len ml_idx', len(ml_idx))
 
             ## clinical - subset of anyone currently infected
@@ -580,7 +575,6 @@ class Malaria(Module):
         df.at[child_id, 'ma_tx'] = False
         df.at[child_id, 'ma_date_tx'] = pd.NaT
         df.at[child_id, 'ma_inf_type'] = 'none'
-        df.at[child_id, 'ma_unified_symptom_code'] = 0
         df.at[child_id, 'ma_district_edited'] = df.at[child_id, 'district_of_residence']
         df.at[child_id, 'ma_age_edited'] = 0
         df.at[child_id, 'ma_clinical_counter'] = 0
@@ -676,7 +670,6 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             df.loc[infected_idx, 'ma_is_infected'] = True
             df.loc[infected_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
             df.loc[infected_idx, 'ma_inf_type'] = 'clinical'
-            df.loc[infected_idx, 'ma_unified_symptom_code'] = 1
             df.loc[infected_idx, 'ma_date_symptoms'] = now
             df.loc[infected_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
 
@@ -696,7 +689,6 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 logger.debug(f'MalariaEventNational: assigning {len_sev} severe malaria infections')
 
                 df.loc[severe_idx, 'ma_inf_type'] = 'severe'
-                df.loc[severe_idx, 'ma_unified_symptom_code'] = 2
 
             # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
             # schedule self-cure if no treatment, no self-cure from severe malaria
@@ -1063,13 +1055,11 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         df.loc[ml_idx, 'ma_inf_type'] = 'asym'
 
         df.loc[clin_idx, 'ma_inf_type'] = 'clinical'
-        df.loc[clin_idx, 'ma_unified_symptom_code'] = 1
         df.loc[clin_idx, 'ma_date_symptoms'] = now
         df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
         # print('clin counter', df['ma_clinical_counter'].sum())
 
         df.loc[sev_idx, 'ma_inf_type'] = 'severe'
-        df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
 
         ## tidy up
         del df_ml
@@ -1869,7 +1859,6 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'ma_is_infected'] = False
         df.at[person_id, 'ma_inf_type'] = 'none'
-        df.at[person_id, 'ma_unified_symptom_code'] = 0
 
 
 class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
@@ -1885,7 +1874,6 @@ class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, 'is_alive']:
             df.at[person_id, 'ma_is_infected'] = False
             df.at[person_id, 'ma_inf_type'] = 'none'
-            df.at[person_id, 'ma_unified_symptom_code'] = 0
 
 
 class MalariaClinEndEvent(Event, IndividualScopeEventMixin):
@@ -1902,7 +1890,6 @@ class MalariaClinEndEvent(Event, IndividualScopeEventMixin):
 
         if df.at[person_id, 'is_alive']:
             df.at[person_id, 'ma_inf_type'] = 'asym'
-            df.at[person_id, 'ma_unified_symptom_code'] = 0
 
 
 # ---------------------------------------------------------------------------------
