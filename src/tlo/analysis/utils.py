@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 def parse_line(line):
     """
-    Parses a single line of logged outputs. It has the format:
+    Parses a single line of logged output. It has the format:
     INFO|<logger name>|<simulation date>|<log key>|<python object>
 
     It returns the dictionary:
@@ -45,7 +45,7 @@ def parse_line(line):
 
 def parse_log_file(filepath):
     """
-    Parses logged outputs from a TLO run and create Pandas dataframes for analysis. See
+    Parses logged output from a TLO run and create Pandas dataframes for analysis. See
     parse_output() for details
 
     :param filepath: file path to log file
@@ -57,7 +57,7 @@ def parse_log_file(filepath):
 
 def parse_output(list_of_log_lines):
     """
-    Parses logged outputs from a TLO run and create Pandas dataframes for analysis.
+    Parses logged output from a TLO run and create Pandas dataframes for analysis.
 
     Use parse_log_file() wrapper if required
 
