@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo.lm import LinearModel, Predictor
+from tlo.lm import LinearModel, LinearModelType, Predictor
 
 
-def test_of_example_useage():
+def test_of_example_usage():
     # Test the use of basic functions using different syntax and model types
 
     EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
@@ -36,28 +36,26 @@ def test_of_example_useage():
 
     # Linear Model
     eq = LinearModel(
-        'additive',
+        LinearModelType.ADDITIVE,
         0.0,
         Predictor('region_of_residence').when('Northern', 0.1).when('Central', 0.2).when('Southern', 0.3),
         Predictor('li_urban').when(True, 0.01).otherwise(0.02),
         Predictor('sex').when('M', 0.001).when('F', 0.002),
         Predictor('age_years')
-        .when('< 5', 0.0001)
-        .when('< 15', 0.0002)
-        .when('< 35', 0.0003)
-        .when('< 60', 0.0004)
-        .otherwise(0.0005),
+            .when('< 5', 0.0001)
+            .when('< 15', 0.0002)
+            .when('< 35', 0.0003)
+            .when('< 60', 0.0004)
+            .otherwise(0.0005),
         Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
     )
 
     df = pd.read_csv(io.StringIO(EXAMPLE_POP))
     predicted = eq.predict(df)
-    df['predicted'] = predicted
-    print(df.to_string())
 
     # Logistic model
     eq = LinearModel(
-        'logistic',
+        LinearModelType.LOGISTIC,
         1.0,
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
         Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0),
@@ -66,14 +64,11 @@ def test_of_example_useage():
         .otherwise(0),
     )
 
-    df = pd.read_csv(io.StringIO(EXAMPLE_POP))
     predicted = eq.predict(df)
-    df['predicted'] = predicted
-    print(df.to_string())
 
     # Multiplicative model
     eq = LinearModel(
-        'multiplicative',
+        LinearModelType.MULTIPLICATIVE,
         0.02,
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
         Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
@@ -81,13 +76,11 @@ def test_of_example_useage():
 
     df = pd.read_csv(io.StringIO(EXAMPLE_POP))
     predicted = eq.predict(df)
-    df['predicted'] = predicted
-    print(df.to_string())
 
 
 def test_additive_trivial_application():
     eq = LinearModel(
-        'additive',
+        LinearModelType.ADDITIVE,
         0.0,
         Predictor('FactorX').when(True, 10),
         Predictor('FactorY').when(True, 100)
@@ -104,7 +97,7 @@ def test_additive_trivial_application():
 
 def test_multiplier_trivial_application():
     eq = LinearModel(
-        'multiplicative',
+        LinearModelType.MULTIPLICATIVE,
         1.0,
         Predictor('FactorX').when(True, 5),
         Predictor('FactorY').when(True, -1)
@@ -127,7 +120,7 @@ def test_logistic_trivial_application():
     odds = prob / (1 - prob)
 
     eq = LinearModel(
-        'logistic',
+        LinearModelType.LOGISTIC,
         odds,
         Predictor('FactorX').when(True, OR_X),
         Predictor('FactorY').when(True, OR_Y)
@@ -168,7 +161,7 @@ def test_logistic_application_low_ex():
 
     # 3) apply the LinearModel to it and make a prediction of the probabilities assigned to each person
     eq = LinearModel(
-        'logistic',
+        LinearModelType.LOGISTIC,
         init_p_low_ex_urban_m / (1 - init_p_low_ex_urban_m),
         Predictor('li_urban').when(False, init_or_low_ex_rural),
         Predictor('sex').when('F', init_or_low_ex_f)
@@ -176,7 +169,7 @@ def test_logistic_application_low_ex():
     lm_low_ex_probs = eq.predict(df.loc[df.is_alive & (df.age_years >= 15)])
 
     # 4) confirm that the two methods agree
-    assert all(lm_low_ex_probs.values == low_ex_probs.values)
+    assert lm_low_ex_probs.equals(low_ex_probs)
 
 
 def test_logistic_application_tob():

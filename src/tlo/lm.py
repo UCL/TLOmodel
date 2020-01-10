@@ -1,4 +1,5 @@
 import numbers
+from enum import Enum
 
 import numpy as np
 import pandas as pd
@@ -85,22 +86,30 @@ class Predictor(object):
         return output
 
 
-class LinearModel(object):
-    def __init__(self, type: str, intercept: float, *args: Predictor):
-        """
-        A Linear model has an intercept and none or more Predictor variables.
-        The type of model specifies how the results from the predictor are combined:
-        'additive' -> adds the effect_sizes from the predictors
-        'logisitc' -> multiples the effect_sizes from the predictors and applies the transform x/(1+x)
-                [Thus, the intercept can be taken to be an Odds and effect_sizes Odds Ratios,
-                and the prediction is a probability.]
-        'multiplicative' -> multiplies the effect_sizes from the predictors
-        """
+class LinearModelType(Enum):
+    """
+    The type of model specifies how the results from the predictor are combined:
+    'additive' -> adds the effect_sizes from the predictors
+    'logisitc' -> multiples the effect_sizes from the predictors and applies the transform x/(1+x)
+    [Thus, the intercept can be taken to be an Odds and effect_sizes Odds Ratios,
+    and the prediction is a probability.]
+    'multiplicative' -> multiplies the effect_sizes from the predictors
+    """
+    ADDITIVE = 1
+    LOGISTIC = 2
+    MULTIPLICATIVE = 3
 
-        assert type in ['additive', 'logistic', 'multiplicative'], 'Model type not recognised'
-        self.type = type
+
+class LinearModel(object):
+    def __init__(self, lm_type: LinearModelType, intercept: float, *args: Predictor):
+        """
+        A linear model has an intercept and zero or more Predictor variables.
+        """
+        assert lm_type in LinearModelType, 'Model should be one of the prescribed LinearModelTypes'
+        self.lm_type = lm_type
 
         self.intercept = intercept
+
         self.predictors = list()
         for predictor in args:
             assert isinstance(predictor, Predictor)
@@ -121,18 +130,18 @@ class LinearModel(object):
             res_by_predictor[predictor] = predictor.predict(df)
 
         # Do appropriate transformation on output
-        if self.type == 'additive':
+        if self.lm_type is LinearModelType.ADDITIVE:
             # print("Linear Model: Prediction will be sum of each effect size.")
-            output = res_by_predictor.sum(axis=1, skipna=True)
+            return res_by_predictor.sum(axis=1, skipna=True)
 
-        elif self.type == 'logistic':
+        elif self.lm_type is LinearModelType.LOGISTIC:
             # print("Logistic Regression Model: Prediction will be transform to probabilities. " \
             #       "Intercept assumed to be Odds and effect sizes assumed to be Odds Ratios.")
             odds = res_by_predictor.prod(axis=1, skipna=True)
-            output = odds / (1 + odds)
+            return odds / (1 + odds)
 
-        elif self.type == 'multiplicative':
+        elif self.lm_type is LinearModelType.MULTIPLICATIVE:
             # print("Multiplicative Model: Prediction will be multiplication of each effect size.")
-            output = res_by_predictor.prod(axis=1, skipna=True)
+            return res_by_predictor.prod(axis=1, skipna=True)
 
-        return output
+        return None
