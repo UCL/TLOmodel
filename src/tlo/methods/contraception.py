@@ -44,6 +44,11 @@ class Contraception(Module):
         # from Fracpoly regression:
         'r_discont_age': Parameter(Types.REAL, 'proportioniate change in drate for each age in years'),
         'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s'),
+        'r_init_year': Parameter(Types.REAL,
+                                 'proportional change in contraception initiation rates for each year, 2010 to 2100'),
+        'r_discont_year': Parameter(Types.REAL,
+                                    'proportional change in contraception_discontinuation rate for each year,\
+                                     2010 to 2100'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
     }
 
@@ -84,11 +89,11 @@ class Contraception(Module):
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
         self.parameters['contraception_initiation2'] = workbook['irate2_'].loc[0]
-        # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do'
+        # this Excel sheet is irate2_all.csv outputs from 'initiation rates_age_stcox.do'
         # Stata analysis of DHS contraception calendar data
 
         self.parameters['contraception_failure'] = workbook['Failure'].loc[0]
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
 
         self.parameters['rr_fail_under25'] = 2.2
@@ -100,6 +105,10 @@ class Contraception(Module):
         self.parameters['r_discont_age'] = workbook['r_discont_age']
         # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age:
         # - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
+
+        self.parameters['r_init_year'] = workbook['r_init_year'].set_index('year')
+
+        self.parameters['r_discont_year'] = workbook['r_discont_year'].set_index('year')
 
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
@@ -113,25 +122,24 @@ class Contraception(Module):
 
         # 'irate_1_' sheet created manually as a work around to address to do point on line 39
         c_baseline = workbook['irate1_']
-        # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do'
+        # this Excel sheet is irate1_all.csv outputs from 'initiation rates_age_stcox.do'
         # Stata analysis of DHS contraception calendar data
 
         c_baseline = c_baseline.drop(columns=['not_using'])
         c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
         c_adjusted = c_baseline.mul(c_multiplier.r_init1_age, axis='index')
         c_adjusted = c_baseline + c_adjusted
-        c_adjusted['not_using'] = 1 - c_adjusted.sum(axis=1)
         self.parameters['contraception_initiation1'] = c_adjusted.set_index(c_multiplier.age)
 
         # For ContraceptionSwitchingPoll.switch ----------------------------------------------------
         switching_prob = workbook['Switching'].transpose()
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
         switching_prob.columns = ['probability']
         self.parameters['contraception_switching'] = switching_prob
 
         switching_matrix = workbook['switching_matrix']
-        # this Excel sheet is from contraception switching matrix output from line 144 of
+        # this Excel sheet is from contraception switching matrix outputs from line 144 of
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
 
         switching_matrix = switching_matrix.set_index('switchfrom')
@@ -140,7 +148,7 @@ class Contraception(Module):
 
         # For ContraceptionSwitchingPoll.discontinue
         c_baseline = workbook['Discontinuation']
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv outputs from
         # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
         c_multiplier = self.parameters['r_discont_age']
         c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
@@ -258,6 +266,7 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
     (Was previously in Init1, Switch, Discontinue events)
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
         self.age_low = 15
@@ -291,7 +300,9 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        co_start_prob_by_age = p['contraception_initiation1']
+        c_multiplier = p['r_init_year'].at[self.sim.date.year, 'r_init_year']
+        co_start_prob_by_age = p['contraception_initiation1'].mul(c_multiplier)
+        co_start_prob_by_age['not_using'] = 1 - co_start_prob_by_age.sum(axis=1)
 
         # all the contraceptive types we can randomly choose
         co_types = list(co_start_prob_by_age.columns)
@@ -362,7 +373,8 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        c_adjustment = p['contraception_discontinuation']
+        c_multiplier = p['r_discont_year'].at[self.sim.date.year, 'r_discont_year']
+        c_adjustment = p['contraception_discontinuation'].mul(c_multiplier)
 
         def get_prob_discontinued(row):
             """returns the probability of discontinuing contraceptive based on age and current
@@ -431,7 +443,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             df.at[woman, 'co_date_of_childbirth'] = date_of_birth
             self.sim.schedule_event(DelayedBirthEvent(self.module, mother_id=woman), date_of_birth)
 
-            # output some logging if any pregnancy (contraception failure)
+            # outputs some logging if any pregnancy (contraception failure)
             logger.info('%s|fail_contraception|%s',
                         self.sim.date,
                         {
@@ -461,7 +473,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # get the subset of women from the population dataframe and relevant characteristics
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (
-                df.co_contraception == 'not_using')
+            df.co_contraception == 'not_using')
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)
@@ -551,7 +563,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """Logs output for analysis_contraception
+        """Logs outputs for analysis_contraception
         """
         # run this event every 12 months (every year)
         self.repeat = 12
