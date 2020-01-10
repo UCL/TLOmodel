@@ -198,28 +198,17 @@ def test_logistic_application_tob():
     tob_probs = odds_tob / (1 + odds_tob)
 
     # 3) apply the LinearModel to it and make a prediction of the probabilities assigned to each person
-    # [As there is a joint condition on age and sex, need to build two seperate models]
-    eq_adults = LinearModel(
-        'multiplicative',
+    eq_tob = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
         init_p_tob_age1519_m_wealth1 / (1 - init_p_tob_age1519_m_wealth1),
         Predictor('sex').when('F', init_or_tob_f),
-        Predictor('li_wealth').when('2', 2).when('3', 3).when('4', 4).when('5', 5)
+        Predictor('li_wealth').when('2', 2).when('3', 3).when('4', 4).when('5', 5),
+        Predictor()
+            .when('(age_years.between(20,39)) & (sex == "M")', init_or_tob_age2039_m)
+            .when('(age_years.between(40,120)) & (sex == "M")', init_or_tob_agege40_m)
     )
 
-    eq_men_only = LinearModel(
-        'multiplicative',
-        1.0,
-        Predictor('age_years').when('.between(20,39)', init_or_tob_age2039_m),
-        Predictor('age_years').when('.between(40,120)', init_or_tob_agege40_m)
-    )
-
-    men_only = eq_men_only.predict(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')])
-    men_only = pd.DataFrame(men_only).merge(df[['age_years', 'sex']], left_index=True, right_index=True)
-
-    lm_tob_odds = eq_adults.predict(df.loc[df.is_alive & (df.age_years >= 15)]).multiply(
-        eq_men_only.predict(df.loc[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]),
-        fill_value=1.0
-    )
+    lm_tob_odds = eq_tob.predict(df.loc[df.is_alive & (df.age_years >= 15)])
     lm_tob_probs = lm_tob_odds / (1 + lm_tob_odds)
 
     assert all(tob_probs == lm_tob_probs)
