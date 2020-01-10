@@ -211,7 +211,7 @@ def make_calendar_period_lookup():
     ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
 
     # Removes the '1950-' category
-    ranges.remove('1950-')
+    ranges.remove('0-1950')
     for year in range(1950):
         lookup.pop(year)
 
