@@ -271,7 +271,7 @@ class HealthSystem(Module):
                         break
 
         # 4) Check that event (if individual level) is able to run with this configuration of officers
-        # (ie. Check that this does demand officers that are never available at a particular facility)
+        # (ie. Check that this does not demand officers that are never available at a particular facility)
         if not type(hsi_event.target) is tlo.population.Population:
             # dealing with an individual level event
             caps = self.parameters['Daily_Capabilities']
@@ -703,12 +703,10 @@ class HealthSystem(Module):
                     items_req.loc[items_req['Item_Code'] == item_code, 'Available'].values[0]
                 )
 
-        # compile output
+        # compile outputs
         output = dict()
         output['Intervention_Package_Code'] = packages_availability
         output['Item_Code'] = items_availability
-
-        # TODO: confirm output is in right format
 
         return output
 
@@ -1074,8 +1072,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             current_capabilities=current_capabilities, all_calls_today=df_footprints_of_all_individual_level_hsi_event
         )
 
-        # TODO- ERROR CATCHING:for a call that is not represented among the current capabilities
-
 
 class HSI_Event:
     """Base HSI event class, from which all others inherit.
@@ -1099,9 +1095,6 @@ class HSI_Event:
         self.target = None  # Overwritten by the mixin
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
-
-        # TODO: make better use of templating for the HSI events
-        #  (to incl. information that is required for each HSI Event?)
 
     def apply(self, *args, **kwargs):
         """Apply this event to the population.
