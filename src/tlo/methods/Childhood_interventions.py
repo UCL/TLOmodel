@@ -11,32 +11,69 @@ logger.setLevel(logging.DEBUG)
 class ChildhoodDiseaseInterventions(Module):
     PARAMETER = {
         # Parameters for the iCCM algorithm performed by the HSA
-        'prob_correct_id_danger_sign':
-            Parameter(Types.REAL, 'probability of HSA correctly identified a general danger sign'
+        'prob_checked_for_cough':
+            Parameter(Types.REAL, 'probability of HSA checking for presence of cough in the child, or mother\'s report'
                       ),
-        'prob_correct_id_fast_breathing_and_cough':
-            Parameter(Types.REAL, 'probability of HSA correctly identified fast breathing for age and cough'
+        'prob_asked_for_duration_of_cough':
+            Parameter(Types.REAL, 'probability of HSA asking for the duration of cough'
                       ),
-        'prob_correct_id_diarrhoea_dehydration':
-            Parameter(Types.REAL, 'probability of HSA correctly identified diarrhoea and dehydrayion'
+        'prob_assess_fast_breathing':
+            Parameter(Types.REAL, 'probability of HSA counting breaths per minute'
                       ),
-        'prob_correct_classified_diarrhoea_danger_sign':
-            Parameter(Types.REAL, 'probability of HSA correctly identified diarrhoea with a danger sign'
+        'prob_check_for_diarrhoea':
+            Parameter(Types.REAL, 'probability of HSA asking for the presence of diarrhoea, or mother\'s report'
                       ),
-        'prob_correct_identified_persist_or_bloody_diarrhoea':
-            Parameter(Types.REAL, 'probability of HSA correctly identified persistent diarrhoea or dysentery'
+        'prob_check_bloody_stools':
+            Parameter(Types.REAL, 'probability of HSA asking for the presence of blood in stools'
                       ),
-        'prob_correct_classified_diarrhoea':
-            Parameter(Types.REAL, 'probability of HSA correctly classified diarrhoea'
+        'prob_check_persistent_diarrhoea':
+            Parameter(Types.REAL, 'probability of HSA asking for the duration of diarrhoea episode'
                       ),
-        'prob_correct_referral_decision':
-            Parameter(Types.REAL, 'probability of HSA correctly referred the case'
+        'prob_checked_for_fever':
+            Parameter(Types.REAL, 'probability of HSA asked for fever, or mother\'s report'
                       ),
-        'prob_correct_treatment_advice_given':
-            Parameter(Types.REAL, 'probability of HSA correctly treated and advised caretaker'
+        'prob_check_duration_fever':
+            Parameter(Types.REAL, 'probability of HSA asked the duration of fever'
                       ),
+        'prob_checked_for_red_eyes':
+            Parameter(Types.REAL, 'probability of HSA checking the presence of red eyes in child'
+                      ),
+        'prob_asked_duration_red_eyes':
+            Parameter(Types.REAL, 'probability of HSA asking the duration of child having red eyes'
+                      ),
+        'prob_asked_visual_difficulty':
+            Parameter(Types.REAL, 'probability of HSA asked for visual difficulty in child'
+                      ),
+        'prob_check_convulsions':
+            Parameter(Types.REAL, 'probability of HSA asked for convulsions'
+                      ),
+        'prob_check_feeding_drinking':
+            Parameter(Types.REAL, 'probability of HSA asking for problems in feeding or drinking'
+                      ),
+        'prob_check_vomiting_everything':
+            Parameter(Types.REAL, 'probability of HSA asking for vomiting, specifically vomiting everything'
+                      ),
+        'prob_id_unusually_sleepy_unconscious':
+            Parameter(Types.REAL, 'probability of HSA identifying child as very sleepy or unconscious'
+                      ),
+        'pprob_check_chest_indrawing':
+            Parameter(Types.REAL, 'probability of HSA checking for chest indrawing in child'
+                      ),
+        'prob_using_MUAC_tape':
+            Parameter(Types.REAL, 'probability of HSA using MUAC tape for measurement of arm circumference'
+                      ),
+        'prob_check_swelling_both_feet':
+            Parameter(Types.REAL, 'probability of HSA checking for swelling of booth feet'
+                      ),
+        'prob_check_palmar_pallor':
+            Parameter(Types.REAL, 'probability of HSA checking for palmar pallor in child'
+                      ),
+        'prob_check_for_other_problems':
+            Parameter(Types.REAL, 'probability of HSA checking fother problems not included in the iCCM'
+                      ),
+        }
 
-    }
+
     PROPERTIES = {
         # iCCM - Integrated community case management properties used
         'iccm_danger_sign': Property
@@ -59,17 +96,57 @@ class ChildhoodDiseaseInterventions(Module):
          ),
 
         # iCCM symptoms
+        'sy_cough': Property
+        (Types.BOOL, 'symptom - cough'
+         ),
         'ds_cough_for_more_than_21days': Property
         (Types.BOOL, 'iCCM danger sign - cough for 21 days or more'
          ),
-
-
-
-
-
-
-
-
+        'sy_fast_breathing': Property
+        (Types.BOOL, 'symptom - fast breathing'
+         ),
+        'sy_diarrhoea': Property
+        (Types.BOOL, 'symptom - diarrhoea'
+         ),
+        'sy_fever': Property
+        (Types.BOOL, 'symptom - fever'
+         ),
+        'ds_fever_over_7days': Property
+        (Types.BOOL, 'iCCM danger sign - fever for last 7 days'
+         ),
+        'sy_red_eyes': Property
+        (Types.BOOL, 'symptom - red eye'
+         ),
+        'ds_red_eyes_over_4days': Property
+        (Types.BOOL, 'iCCM danger sign - red eye for 4 days or more'
+         ),
+        'ds_red_eye_with_visual_problem': Property
+        (Types.BOOL, 'iCCM danger sign - red eye with visual problem'
+         ),
+        'ds_convulsions': Property
+        (Types.BOOL, 'iCCM danger sign - convulsions'
+         ),
+        'ds_not_able_to_drink_or_breastfeed': Property
+        (Types.BOOL, 'iCCM danger sign - unable to drink or breastfeed'
+         ),
+        'ds_vomiting_everything': Property
+        (Types.BOOL, 'iCCM danger sign - vomiting everything'
+         ),
+        'ds_unusually_sleepy_unconscious': Property
+        (Types.BOOL, 'iCCM danger sign - unusually sleepy or unconscious'
+         ),
+        'ds_chest_indrawing': Property
+        (Types.BOOL, 'iCCM danger sign - chest indrawing'
+         ),
+        'ds_red_MUAC_strap': Property
+        (Types.BOOL, 'iCCM danger sign - red on MUAC tape'
+         ),
+        'ds_sweeling_both_feet': Property
+        (Types.BOOL, 'iCCM danger sign - swelling of both feet'
+         ),
+        'ds_palmar_pallor': Property
+        (Types.BOOL, 'iCCM danger sign - palmar pallor'
+         ),
         # HSA assessement of symptoms outcome
         'ccm_assessed_cough': Property
         (Types.BOOL, 'HSA asked if the child has cough, or mother\'s report'
@@ -140,10 +217,7 @@ class ChildhoodDiseaseInterventions(Module):
          'HSA decided to refer or to treat at home', categories=['referred to health facility', 'home treatment']
          ),
 
-
-
          # IMCNI - Integrated Management of Neonatal and Childhood Illnesses algorithm
-
         'imci_assessment_of_main_symptoms': Property
         (Types.CATEGORICAL,
          'main symptoms assessments', categories=['correctly assessed', 'not assessed']
@@ -171,23 +245,27 @@ class ChildhoodDiseaseInterventions(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
 
-        p['prob_correct_id_diarrhoea_dehydration'] = 0.8
-        p['prob_correct_id_convulsions'] = 0.8
-        p['prob_correct_id_vomits_everything'] = 0.8
-        p['prob_correct_id_not_able_to_drink_or_breastfeed'] = 0.8
-        p['prob_correct_id_unusually_sleepy_unconscious'] = 0.8
-        p['prob_correct_id_red_MUAC'] = 0.8
-        p['prob_correct_id_swelling_both_feet'] = 0.8
-        p['prob_correct_id_diarrhoea'] = 0.9
-        p['prob_correct_id_bloody_stools'] = 0.8
-        p['prob_correct_id_persistent_diarrhoea'] = 0.8
-        p['prob_correct_id_danger_sign'] = 0.7
-        p['prob_correct_id_fast_breathing'] = 0.8
-        p['prob_correct_id_fast_breathing_and_cough'] = 0.8
-        p['prob_correct_id_chest_indrawing'] = 0.8
-        p['prob_correct_id_cough_more_than_21days'] = 0.8
-        p['prob_correct_id_fever_more_than_7days'] = 0.8
-        p['prob_correct_id_persist_or_bloody_diarrhoea'] = 0.8
+        p['prob_checked_for_cough'] = 0.8
+        p['prob_ask_duration_of_cough'] = 0.8
+        p['prob_assess_fast_breathing'] = 0.8
+        p['prob_check_for_diarrhoea'] = 0.8
+        p['prob_check_bloody_stools'] = 0.8
+        p['prob_check_persistent_diarrhoea'] = 0.8
+        p['prob_checked_for_fever'] = 0.7
+        p['prob_asked_duration_fever'] = 0.8
+        p['prob_checked_for_red_eyes'] = 0.8
+        p['prob_asked_duration_red_eyes'] = 0.8
+        p['prob_asked_visual_difficulty'] = 0.8
+        p['prob_check_convulsions'] = 0.8
+        p['prob_check_feeding_drinking'] = 0.8
+        p['prob_check_vomiting_everything'] = 0.8
+        p['prob_id_unusually_sleepy_unconscious'] = 0.8
+        p['prob_check_chest_indrawing'] = 0.8
+        p['prob_using_MUAC_tape'] = 0.8
+        p['prob_check_swelling_both_feet'] = 0.8
+        p['prob_check_palmar_pallor'] = 0.9
+        p['prob_check_for_other_problems'] = 0.8
+
         p['prob_correctly_classified_diarrhoea_danger_sign'] = 0.8
         p['prob_correctly_classified_persist_or_bloody_diarrhoea'] = 0.8
         p['prob_correctly_classified_diarrhoea'] = 0.8
@@ -326,7 +404,7 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ccm_assessed_fever'] = False
         if HSA_asked_for_fever & df.at[person_id, 'sy_fever']:
             HSA_asked_duration_fever = self.module.rng.rand() < p['prob_check_duration_fever']
-            if HSA_asked_duration_fever & df.at[person_id, 'sy_fever_over_7days']:
+            if HSA_asked_duration_fever & df.at[person_id, 'ds_fever_over_7days']:
                 df.at[person_id, 'ccm_id_ds_fever_for_last_7days'] = True
             else:
                 df.at[person_id, 'ccm_id_ds_fever_for_last_7days'] = False
@@ -340,11 +418,11 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
         if HSA_checked_for_red_eyes & df.at[person_id, 'sy_red_eyes']:
             HSA_asked_duration_red_eyes = self.module.rng.rand() < p['prob_asked_duration_red_eyes']
             HSA_asked_visual_difficulty = self.module.rng.rand() < p['prob_asked_visual_difficulty']
-            if HSA_asked_duration_red_eyes & df.at[person_id, 'sy_red_eyes_over_4days']:
+            if HSA_asked_duration_red_eyes & df.at[person_id, 'ds_red_eyes_over_4days']:
                 df.at[person_id, 'ccm_id_ds_red_eye_for_4days_or_more'] = True
             else:
                 df.at[person_id, 'ccm_id_ds_red_eye_for_4days_or_more'] = False
-            if HSA_asked_visual_difficulty & df.at[person_id, 'sy_red_eye_with_visual_problem']:
+            if HSA_asked_visual_difficulty & df.at[person_id, 'ds_red_eye_with_visual_problem']:
                 df.at[person_id, 'ccm_id_ds_red_eye_with_visual_problem'] = True
             else:
                 df.at[person_id, 'ccm_id_ds_red_eye_with_visual_problem'] = False
@@ -372,7 +450,7 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ccm_id_ds_vomits_everything'] = False
 
         # danger sign - unusually sleepy or unconscious -------------------------------------------------------
-        HSA_looked_for_sleepy_unconscious = self.module.rng.rand() < p['prob_correct_id_unusually_sleepy_unconscious']
+        HSA_looked_for_sleepy_unconscious = self.module.rng.rand() < p['prob_id_unusually_sleepy_unconscious']
         if HSA_looked_for_sleepy_unconscious & df.at[person_id, 'ds_unusually_sleepy_unconscious']:
             df.at[person_id, 'ccm_id_ds_very_sleepy_or_unconscious'] = True
         else:
