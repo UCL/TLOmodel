@@ -6,7 +6,7 @@ import pandas as pd
 
 
 class Predictor(object):
-    def __init__(self, property_name: str):
+    def __init__(self, property_name: str = None):
         """A Predictor variable for the regression model. The property_name is a property of the
          population dataframe e.g. age, sex, etc."""
         self.property_name = property_name
@@ -34,6 +34,13 @@ class Predictor(object):
             condition = None
             coefficient = args[0]
 
+        # If there isn't a property name
+        if self.property_name is None:
+            # We use the supplied condition literally
+            self.conditions.append((condition, coefficient))
+            return self
+
+        # Otherwise, the condition is applied on a specific property
         if isinstance(condition, str):
             # Handle either a complex condition (begins with an operator) or implicit equality
             if condition[0] in ['=', '<', '>', '~', '(', '.']:
@@ -120,7 +127,7 @@ class LinearModel(object):
 
         # Do some checks:
         assert self.intercept is not None, "Interceipt is not specified"
-        assert all([pred.property_name in df.columns for pred in self.predictors]), "Predictor variables not in df"
+        assert all([pred.property_name in df.columns for pred in self.predictors if pred.property_name is not None]), "Predictor variables not in df"
 
         # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
