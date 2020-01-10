@@ -191,7 +191,7 @@ def test_logistic_application_tob():
     odds_tob.loc[df.li_wealth == 3] *= 3
     odds_tob.loc[df.li_wealth == 4] *= 4
     odds_tob.loc[df.li_wealth == 5] *= 5
-    tob_probs = odds_tob / (1 + odds_tob)
+    tob_probs: pd.Series = odds_tob / (1 + odds_tob)
 
     # 3) apply the LinearModel to it and make a prediction of the probabilities assigned to each person
     eq_tob = LinearModel(
@@ -206,7 +206,7 @@ def test_logistic_application_tob():
     lm_tob_odds = eq_tob.predict(df.loc[df.is_alive & (df.age_years >= 15)])
     lm_tob_probs = lm_tob_odds / (1 + lm_tob_odds)
 
-    assert all(tob_probs == lm_tob_probs)
+    assert tob_probs.equals(lm_tob_probs)
 
     # TODO: when the the condition is being equal to an number,
     # it has to be passed into .when() as a string (e.g. li_weath)
