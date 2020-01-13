@@ -96,13 +96,10 @@ class Simulation:
             a keyword parameter for clarity
         """
 
-        # Before the population is made, call 'before_make_initial_population' if the module has it.
-        # (This is used to collect up information from other modules that is needed to make the population dataframe)
+        # Collect information from all modules, that is required the population dataframe
         for module in self.modules.values():
-            try:
-                module.before_make_initial_population()
-            except AttributeError:
-                pass
+            module.pre_initialise_population()
+
 
         # Make the initial population
         self.population = Population(self, n)
