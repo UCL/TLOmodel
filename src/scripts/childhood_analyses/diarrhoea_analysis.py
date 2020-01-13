@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea, contraception
+from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea, contraception, healthsystem
 
 # Where will output go - by default, wherever this script is run
 outputpath = ""
@@ -47,7 +47,7 @@ logging.getLogger().addHandler(fh)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(1)
