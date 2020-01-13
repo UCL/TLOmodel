@@ -8,7 +8,7 @@ import pandas as pd
 
 import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -155,9 +155,7 @@ class HealthSystem(Module):
         assert len(prob_unique_item_codes_available) == len(unique_item_codes)
 
         # set the index as the Item_Code
-        prob_unique_item_codes_available = prob_unique_item_codes_available.set_index(
-            prob_unique_item_codes_available['Item_Code'])
-        prob_unique_item_codes_available = prob_unique_item_codes_available.drop(['Item_Code'], axis=1)
+        prob_unique_item_codes_available.set_index('Item_Code', drop=True, inplace=True)
 
         self.prob_unique_item_codes_available = prob_unique_item_codes_available
 
@@ -231,7 +229,8 @@ class HealthSystem(Module):
 
         # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
         if self.disable:
-            self.sim.schedule_event(hsi_event, topen, force_over_from_healthsystem=True)
+            wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
+            self.sim.schedule_event(wrapped_hsi_event, topen)
             return  # Terrminate this functional call
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
@@ -313,27 +312,26 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # 4) Check that at least one type of appointment is required
-        if not type(hsi_event.target) is tlo.population.Population:
+        # Further checks for HSI which are not population level events:
+        if type(hsi_event.target) is not tlo.population.Population:
+
+            # 4) Check that at least one type of appointment is required
             assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()), \
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
 
-        # 5) Check that the event does not request an appointment at a facility level which is not possible
-        if not type(hsi_event.target) is tlo.population.Population:
+            # 5) Check that the event does not request an appointment at a facility level which is not possible
             appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
             assert all([self.parameters['ApptType_By_FacLevel'].loc[
-                self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
-                self.parameters['ApptType_By_FacLevel'].columns.str.contains(
-                    str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
-                         for appt_type_to_check in appt_type_to_check_list
-                        ]),\
+                            self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
+                            self.parameters['ApptType_By_FacLevel'].columns.str.contains(
+                                str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
+                        for appt_type_to_check in appt_type_to_check_list
+                        ]), \
                 "An appointment type has been requested at a facility level for which is it not possibe: " \
                 + hsi_event.TREATMENT_ID
 
-        # 6) Check that event (if individual level) is able to run with this configuration of officers
-        # (ie. Check that this does not demand officers that are never available at a particular facility)
-        if not type(hsi_event.target) is tlo.population.Population:
-            # we are dealing with an individual level event
+            # 6) Check that event (if individual level) is able to run with this configuration of officers
+            # (ie. Check that this does not demand officers that are never available at a particular facility)
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
 
@@ -1016,6 +1014,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event has expired (after tclose), do nothing more
                 pass
 
+            elif (type(event.target) is not tlo.population.Population) \
+                    and (not self.sim.population.props.at[event.target, 'is_alive']):
+                # if individual level event and the person who is the target is no longer alive, do nothing more
+                pass
+
             elif self.sim.date < next_event_tuple[1]:
                 # The event is not yet due (before topen), add to the hold-over list
                 hp.heappush(hold_over, next_event_tuple)
@@ -1027,7 +1030,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     break
 
             else:
-                # The event is now due to run today.
+                # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today (individual or population level)
                 # NB. These list is ordered by priority and then due date
 
@@ -1208,3 +1211,21 @@ class HSI_Event:
         """Make the event happen."""
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
+
+
+class HSIEventWrapper(Event):
+    # This is wrapper that contains an HSI event.
+    # It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
+    # be passed to the main simulation scheduler.
+    # When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+
+    def __init__(self, hsi_event):
+        self.hsi_event = hsi_event
+
+    def run(self):
+        # check that the person is still alive
+        # (this check normally happens in the HealthSystemScheduler and silently do not run the HSI event)
+
+        if isinstance(self.hsi_event.target, tlo.population.Population) \
+                or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
+            _ = self.hsi_event.run(squeeze_factor=0.0)

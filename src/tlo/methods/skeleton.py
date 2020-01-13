@@ -49,6 +49,11 @@ class Skeleton(Module):
         'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
+    # Declare the non-generic symptoms that this module will use.
+    # It will not be able to use any that are not declared here. They do not need to be unique to this module.
+    # There is no need to declare symptoms that are generic here (i.e. in the generic list of symptoms)
+    SYMPTOMS = {}
+
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -68,6 +73,9 @@ class Skeleton(Module):
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
+        If this is a disease module, register this disease module with the healthsystem:
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
         :param population: the population of individuals
         """
         raise NotImplementedError
@@ -79,10 +87,7 @@ class Skeleton(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
 
-        If this is a disease module, register this disease module with the healthsystem:
-        self.sim.modules['HealthSystem'].register_disease_module(self)
         """
-
         raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
