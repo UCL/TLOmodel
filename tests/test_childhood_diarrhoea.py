@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 from tlo import Date, Simulation
-from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea, healthsystem
+from tlo.methods import demography, enhanced_lifestyle, diarrhoea, healthsystem
 
 workbook_name = 'demography.xlsx'
 
@@ -25,7 +25,7 @@ def simulation():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
+    sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
     # sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)

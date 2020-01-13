@@ -807,7 +807,6 @@ class HSI_IMNCI2 (Event, IndividualScopeEventMixin):
                 self.sim.rng.choice([True, False], size=1, p=[p['prob_pinched_abdomen'], # 10%
                                                               (1 - p['prob_pinched_abdomen'])])
 
-
 class IMNCI_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -843,7 +842,6 @@ class IMNCI_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
                                                             tclose=None
                                                             )
 
-
 class Referral_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
 
     #TODO: This should be HSI
@@ -867,7 +865,6 @@ class Referral_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
         self.CONS_FOOTPRINT = the_cons_footprint # self.sim.modules['HealthSystem'].get_blank_cons_footprint()
         self.ACCEPTED_FACILITY_LEVELS = [1]
         self.ALERT_OTHER_DISEASES = []
-
 
 class IMNCI_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
     #TODO: This should be HSI

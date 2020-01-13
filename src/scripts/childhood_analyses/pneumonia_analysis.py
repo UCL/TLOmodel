@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, pneumonia2
+from tlo.methods import demography, enhanced_lifestyle, pneumonia
 
 # Where will output go - by default, wherever this script is run
 outputpath = ""
@@ -45,7 +45,7 @@ logging.getLogger().addHandler(fh)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle())
 # sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-sim.register(pneumonia2.NewPneumonia2(resourcefilepath=resourcefilepath))
+sim.register(pneumonia.Pneumonia(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
@@ -57,7 +57,7 @@ output = parse_log_file(logfile)
 
 # ---------------------------------------------------------------------------------------
 df = sim.population.props
-params = sim.modules['NewPneumonia2'].parameters
+params = sim.modules['Pneumonia'].parameters
 
 tot_pop_under5_alive = len(df.index[df.is_alive & df.age_exact_years < 5])
 

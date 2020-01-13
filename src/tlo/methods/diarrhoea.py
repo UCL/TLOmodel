@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class NewDiarrhoea(Module):
+class Diarrhoea(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -476,7 +476,7 @@ class NewDiarrhoea(Module):
                 df.is_alive & (random_draw2 < self.parameters['r_death_diarrhoea'])
                 & (df.age_years < 5)]
             if death_diarrhoea[i]:
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, i, 'NewDiarrhoea'), self.sim.date)
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, i, 'Diarrhoea'), self.sim.date)
                 df.at[i, 'gi_diarrhoea_status'] = False
             else:
                 df.at[i, 'gi_diarrhoea_status'] = False
