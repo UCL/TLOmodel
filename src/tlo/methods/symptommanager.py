@@ -16,7 +16,7 @@ class SymptomManager(Module):
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
     """
 
-    PROPERTIES = dict()  # give blank definition of parameters here. It's updated in 'before_make_initial_population'
+    PROPERTIES = dict()  # give blank definition of parameters here. It's updated in 'pre_initialise_population'
 
     PARAMETERS = {
         'list_of_generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
@@ -44,7 +44,7 @@ class SymptomManager(Module):
             'diarrhoea',
         ]
 
-    def before_make_initial_population(self):
+    def pre_initialise_population(self):
         """
         Collect up the SYMPTOMS that are declared by each disease module and use this to establish the properties
         for this module. Skip over disease modules that do not have a declaration of symptoms.
