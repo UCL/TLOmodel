@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
@@ -716,6 +717,76 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'tEPEC': epec_inc
                      })'''
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Here's an example of another way to organise this job of working out who gets which (if any) pathogen:
+
+        # Make a dict to hold the equations that govern the probability that a person gets a pathogen
+        prob_eqs = dict()
+        prob_eqs.update({
+            # Define the equation using LinearModel (note that this stage could be done in read_parms)
+            'rota':  LinearModel(LinearModelType.MULTIPLICATIVE,
+                                1,
+                                Predictor('age_years')
+                                        .when('<1', m.base_incidence_diarrhoea_by_rotavirus[0])
+                                        .when('<2', m.base_incidence_diarrhoea_by_rotavirus[1])
+                                        .when('<3', m.base_incidence_diarrhoea_by_rotavirus[2])
+                                        .otherwise(0.0),
+                                Predictor('li_no_access_handwashing')
+                                        .when('False', m.rr_gi_diarrhoea_HHhandwashing),
+                                Predictor().
+                                        when('continued_breastfeeding & age_exact_years > 0.5', m.rr_gi_diarrhoea_cont_breast)
+                                  )
+        })
+
+        prob_eqs.update({
+            'shigella':  LinearModel(LinearModelType.MULTIPLICATIVE,
+                                1,
+                                Predictor('age_years')
+                                        .when('<1', m.base_incidence_diarrhoea_by_shigella[0])
+                                        .when('<2', m.base_incidence_diarrhoea_by_shigella[1])
+                                        .when('<3', m.base_incidence_diarrhoea_by_shigella[2])
+                                        .otherwise(0.0),
+                                Predictor('li_no_access_handwashing')
+                                        .when('False', m.rr_gi_diarrhoea_HHhandwashing),
+                                Predictor().
+                                        when('continued_breastfeeding & age_exact_years > 0.5', m.rr_gi_diarrhoea_cont_breast)
+                                  )
+        })
+
+        # Compute probabilities and organise in a dataframe
+        probs = pd.DataFrame()
+        for k,v in prob_eqs.items():
+            probs[k] = v.predict(df.loc[df['age_years']<5])
+
+        # Declare that pathogens are mutally exclusive and do the random choice for each person
+        probs['none'] = 1 - probs.sum(axis=1)
+        outcome = pd.Series(data='none', index = probs.index)
+
+        # then we work out if the people who got the diarahhea, get a symptom:
+        prob_symptoms = {
+            'rota': {'fever': 0.1, 'dehyration': 0.2},
+            'shigella': {'fever': 0.1, 'dehydration': 0.2}
+        }
+
+        for i in outcome.index:
+            outcome[i] = rng.choice(probs.columns, p=probs.loc[i].values)
+            # (NB. there is probably a faster way to do this using apply than the for loop)
+
+
+            # this person will get the following symptoms:
+            if outcome[i] != 'none':
+                symp = prob_symptoms[outcome[i]]
+
+                # print([str(s) + '_' for s in symp.keys() if rng.rand()<symp[s]])
+
+        # check out what people got:
+        outcome.value_counts()
+
+
+
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
         # ----------------------- ALLOCATE A RANDOM DATE OF ONSET OF ACUTE DIARRHOEA -----------------------
         incident_acute_diarrhoea = df.index[df.is_alive & df.gi_diarrhoea_status & (df.age_exact_years < 5)]
         random_draw_days = np.random.randint(0, 90, size=len(incident_acute_diarrhoea))  # runs every 3 months
@@ -840,11 +911,13 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         # # # # # # # # # # # # # # # # # ASSIGN DEHYDRATION LEVELS # # # # # # # # # # # # # # # # #
         # ANY DEHYDRATION CAUSED BY PATHOGEN
         # ROTAVIRUS
+        # TODO: should this be a call to self.module.parameters['rotavirus_dehyration']?
         p_dehydration_rotavirus = pd.Series(self.module.rotavirus_dehydration, index=diarr_rotavirus_idx)
         random_draw_c = pd.Series(rng.random_sample(size=len(diarr_rotavirus_idx)), index=diarr_rotavirus_idx)
         diarr_rota_dehydration = p_dehydration_rotavirus >= random_draw_c
         diarr_rota_dehydration_idx = p_dehydration_rotavirus.index[diarr_rota_dehydration]
         df.loc[diarr_rota_dehydration_idx, 'di_dehydration_present'] = True
+
         # SHIGELLA
         p_dehydration_shigella = pd.Series(self.module.shigella_dehydration, index=diarr_shigella_idx)
         random_draw_c = pd.Series(rng.random_sample(size=len(diarr_shigella_idx)), index=diarr_shigella_idx)
@@ -1145,6 +1218,9 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR ACUTE WATERY DIARRHOEA
         # --------------------------------------------------------------------------------------------------------
+
+        # TODO: when you declare the symptoms in the symptom manager, the health care seeking will follow automatically
+
         '''watery_diarrhoea_symptoms = \
             df.index[df.is_alive & (df.age_years < 5) & (df.di_diarrhoea_loose_watery_stools == True) &
                      (df.di_blood_in_stools == False) & df.di_diarrhoea_over14days == False]
@@ -1220,6 +1296,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[just_persistent_diarr, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
 
 
+        # TODO: so the symptom in the symptom manager are 'diarh' and 'persistent_diarh'
 
         '''
              # --------------------------------------------------------------------------------------------------------
@@ -1262,6 +1339,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'dysentery': len(dysentery_cases),
                      'persistent': len(persistent_diarr_cases)
                      })
+
         # --------------------------------------------------------------------------------------------------------
         # # # # # # ASSIGN DEATH PROBABILITIES BASED ON DEHYDRATION, CO-MORBIDITIES AND DIARRHOEA TYPE # # # # # #
         # mortality rates by diarrhoea clinical type

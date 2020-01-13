@@ -85,11 +85,11 @@ class Predictor(object):
             else:
                 condition = '~@touched'
             mask = df.eval(condition)
-            print(f"mask = df.eval('{condition}')")
+            # print(f"mask = df.eval('{condition}')")
             output[mask] = value
-            print(f"output[mask] += {value}")
+            # print(f"output[mask] += {value}")
             touched = (touched | mask)
-            print(f"touched = (touched | mask)")
+            # print(f"touched = (touched | mask)")
         return output
 
 
