@@ -51,7 +51,7 @@ class Skeleton(Module):
 
     # Declare the non-generic symptoms that this module will use.
     # It will not be able to use any that are not declared here. They do not need to be unique to this module.
-    # There is no need to declare symptoms that are generic here (i.e. in the generic list of symptoms)
+    # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
     SYMPTOMS = {}
 
     def __init__(self, name=None, resourcefilepath=None):
