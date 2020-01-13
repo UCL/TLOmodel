@@ -64,7 +64,7 @@ class SymptomManager(Module):
         self.all_registered_symptoms = registered_symptoms.union(self.parameters['list_of_generic_symptoms'])
 
         for symptom in self.all_registered_symptoms:
-            self.PROPERTIES[f'sy_{symptom}'] = Property(Types.INT, f'Presence of symptom {symptom}')
+            self.PROPERTIES[f'sy_{symptom}'] = Property(Types.LIST, f'Presence of symptom {symptom}')
 
     def initialise_population(self, population):
         """
