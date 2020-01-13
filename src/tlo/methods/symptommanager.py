@@ -134,7 +134,7 @@ class SymptomManager(Module):
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
-            (type(date_of_onset) is pd._libs.tslibs.timestamps.Timestamp) and date_of_onset >= self.sim.date)
+            isinstance(date_of_onset, pd.Timestamp) and date_of_onset >= self.sim.date)
 
         # If the date of onset if not equal to today's date, then schedule the auto_onset event
         if date_of_onset is not None:
