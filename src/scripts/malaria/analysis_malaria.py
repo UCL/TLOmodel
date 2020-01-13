@@ -119,7 +119,7 @@ mort = output['tlo.methods.malaria']['ma_mortality']
 prev_district = output['tlo.methods.malaria']['prev_district']
 
 # ----------------------------------- SAVE OUTPUTS -----------------------------------
-out_path = '//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/'
+out_path = '//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/'
 
 if malaria_strat == 0:
     savepath = out_path + "national_output_" + datestamp + ".xlsx"
