@@ -20,21 +20,23 @@ from tlo.methods import (
 import json
 import sys
 
-def run_simulation(alpha, r0):
-    outputpath = ""
+INFECTION_TYPE = 'mansoni'
+OUTPUT_PATH = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/params_fitting_mansoni/'
+def run_simulation(infection_type, alpha, r0):
+    outputpath = Path("./outputs")  # folder for convenience of storing outputs
     datestamp = datetime.datetime.now().strftime("__%Y_%m_%d_%H_%M")
 
     # The resource files
     resourcefilepath = Path("./resources")
-    start_date = Date(1950, 1, 1)
-    end_date = Date(1970, 1, 1)
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2020, 2, 1)
     popsize = 10000
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
     # Establish the logger
-    logfile = outputpath + "LogFile" + datestamp + ".log"
+    logfile = outputpath / ('LogFile' + datestamp + '.log')
 
     if os.path.exists(logfile):
         os.remove(logfile)
@@ -55,7 +57,11 @@ def run_simulation(alpha, r0):
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, alpha=alpha, r0=r0))
+    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath))
+    if infection_type == 'haematobium':
+        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, alpha=alpha, r0=r0))
+    if infection_type == 'mansoni':
+        sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, alpha=alpha, r0=r0))
 
     # Run the simulation and flush the logger
     sim.seed_rngs(0)
@@ -68,14 +74,14 @@ def run_simulation(alpha, r0):
 
     return sim, output
 
-def run_sims_and_save(a, ro, ii, jj):
-    sim, output = run_simulation(a, ro)
+def run_sims_and_save(infection_type, a, ro, ii, jj):
+    sim, output = run_simulation(infection_type, a, ro)
     global districts
 
-    district_prevalence = get_prev_per_districts(output, districts)
-    districts_mwb = get_mwb_per_districts(output, districts)
+    district_prevalence = get_prev_per_districts(infection_type, output, districts)
+    districts_mwb = get_mwb_per_districts(infection_type, output, districts)
 
-    output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/params_fitting_new/'
+    output_path = OUTPUT_PATH
     save_str_prev = output_path + 'prev_r0=' + str(ro) + '_alpha=' + str(a) + '.json'
     save_str_mwb = output_path + 'mwb_r0=' + str(ro) + '_alpha=' + str(a) + '.json'
     json_prev = json.dumps(district_prevalence)
@@ -97,28 +103,22 @@ def run_sims_and_save(a, ro, ii, jj):
         d_mwb[ii, jj] = districts_mwb[d]
         all_mwb_district.update({d: d_mwb})
 
-def get_prev_per_districts(output, districts):
+def get_prev_per_districts(infection_type, output, districts):
     districts_prevalence = {}
     for distr in districts:
-        prev = output['tlo.methods.schisto'][distr].Prevalence.values[-1]
+        prev = output['tlo.methods.schisto'][distr + '_' + infection_type.capitalize()].Prevalence.values[-1]
         districts_prevalence.update({distr: prev})
     return districts_prevalence
 
-def get_mwb_per_districts(output, districts):
+def get_mwb_per_districts(infection_type, output, districts):
     districts_mwb = {}
     for distr in districts:
-        mwb = output['tlo.methods.schisto'][distr].MeanWormBurden.values[-1]
+        mwb = output['tlo.methods.schisto'][distr + '_' + infection_type.capitalize()].MeanWormBurden.values[-1]
         districts_mwb.update({distr: mwb})
     return districts_mwb
 
-r0 = np.arange(2, 6, 0.5)
-alpha = np.arange(0.07, 0.15, 0.02)
-# r0 = np.arange(1, 2.5, 0.2)
-# alpha = np.arange(0.05, 0.1, 0.01)
-# r0 = np.arange(1, 2.5, 0.2)
-# alpha = np.arange(0.1, 0.25, 0.02)
-# r0 = np.arange(0.5, 0.9, 0.2)
-# alpha = np.arange(0.1, 0.13, 0.02)
+r0 = np.arange(0.25, 1.5, 0.25)
+alpha = np.arange(0.01, 0.07, 0.01)
 districts = ['Mangochi', 'Lilongwe City', 'Balaka', 'Lilongwe', 'Kasungu', 'Mzimba', 'Chitipa', 'Mulanje',
              'Zomba', 'Dowa', 'Blantyre City', 'Ntcheu', 'Mzuzu City', 'Nsanje', 'Phalombe', 'Nkhata Bay',
              'Chiradzulu', 'Thyolo', 'Blantyre', 'Chikwawa', 'Salima', 'Dedza', 'Nkhotakota', 'Neno',
@@ -141,11 +141,10 @@ for ii in range(len(r0)):
         f = open('nul', 'w')
         sys.stdout = f
 
-        run_sims_and_save(a, ro, ii, jj)
+        run_sims_and_save(INFECTION_TYPE, a, ro, ii, jj)
 
 # save final outputs in an excel file
-output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/params_fitting_new/'
-writer = pd.ExcelWriter(output_path + 'ParameterFitting.xlsx')
+writer = pd.ExcelWriter(OUTPUT_PATH + 'ParameterFitting.xlsx')
 for distr in districts:
     index = r0
     columns = alpha
@@ -157,19 +156,19 @@ writer.save()
 # read in the baseline prevalence
 sys.stdout = old_stdout
 resourcefilepath = Path("./resources/ResourceFile_Schisto.xlsx")
-baseline_prev = pd.read_excel(resourcefilepath, sheet_name='Prevalence_2010')
+baseline_prev = pd.read_excel(resourcefilepath, sheet_name='District_Params_' + INFECTION_TYPE)
 baseline_prev.set_index("District", inplace=True)
 baseline_prev = baseline_prev.loc[:, 'Prevalence']
 baseline_prev = baseline_prev.to_dict()
 
 # read in the simulations outputs
 # simulated_results_lower = pd.read_excel(output_path + 'ParameterFitting.xlsx', sheet_name=None)
-simulated_results = pd.read_excel(output_path + 'ParameterFitting.xlsx', sheet_name=None)
+simulated_results = pd.read_excel(OUTPUT_PATH + 'ParameterFitting.xlsx', sheet_name=None)
 # for k in simulated_results.keys():
 #     simulated_results[k] = simulated_results[k].join(simulated_results_lower[k])
 #     simulated_results[k] = simulated_results[k].reindex(sorted(simulated_results[k].columns), axis=1)
 diff_in_prev_all_districts = {}
-writer = pd.ExcelWriter(output_path + 'ParamsFittingPrevDifferenceAllAlphas.xlsx')
+writer = pd.ExcelWriter(OUTPUT_PATH + 'ParamsFittingPrevDifferenceAllAlphas.xlsx')
 
 # calculate the difference between baseline and simulated prevalence and save in a file
 # save in a dictionary the best pairs of (r0, alpha) that gives the lowest absolute difference
@@ -187,5 +186,5 @@ for d in districts:
     diff_in_prev_all_districts.update({d: diff_in_prev})
     diff_in_prev.to_excel(writer, sheet_name=d)
 writer.save()
-fitted_params.to_csv(output_path + 'FittedParams.csv', index=False)
+fitted_params.to_csv(OUTPUT_PATH + 'FittedParams.csv', index=False)
 
