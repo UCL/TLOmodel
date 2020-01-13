@@ -47,8 +47,9 @@ class Malaria(Module):
         'rr_hiv': Parameter(
             Types.REAL, 'relative risk of clinical malaria if hiv-positive'),
         'treatment_adjustment': Parameter(
-            Types.REAL, 'probability of death from severe malaria if on treatment'
-        )
+            Types.REAL, 'probability of death from severe malaria if on treatment'),
+        'p_sev_anaemia_preg': Parameter(
+            Types.REAL, 'probability of severe anaemia in pregnant women with clinical malaria'),
     }
 
     PROPERTIES = {
@@ -73,7 +74,9 @@ class Malaria(Module):
         'ma_clinical_counter': Property(
             Types.INT, 'annual counter for malaria clinical episodes'),
         'ma_tx_counter': Property(
-            Types.INT, 'annual counter for malaria treatment episodes')
+            Types.INT, 'annual counter for malaria treatment episodes'),
+        'ma_clinical_preg_counter': Property(
+            Types.INT, 'annual counter for malaria clinical episodes in pregnant women'),
     }
 
     # not generic symptoms here, only specific ones
@@ -83,7 +86,7 @@ class Malaria(Module):
         'em_renal_failure',
         'em_shock',
         'jaundice',
-        'anaemia',
+        'severe_anaemia',
     }
 
     def read_parameters(self, data_folder):
@@ -147,6 +150,7 @@ class Malaria(Module):
 
         df['ma_clinical_counter'] = 0
         df['ma_tx_counter'] = 0
+        df['ma_clinical_preg_counter'] = 0
 
         if self.level == 0:
             # ----------------------------------- INCIDENCE - NATIONAL -----------------------------------
@@ -176,6 +180,10 @@ class Malaria(Module):
                 df.loc[infected_idx, 'ma_inf_type'] = 'clinical'
                 df.loc[infected_idx, 'ma_date_symptoms'] = now
                 df.loc[infected_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+
+                inf_preg = df.index[(df.ma_date_infected == now) & (df.ma_inf_type == 'clinical')
+                                    & df.is_pregnant]
+                df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
 
                 ## severe - subset of newly clinical
                 prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
@@ -336,6 +344,10 @@ class Malaria(Module):
             df.loc[clin_idx, 'ma_date_symptoms'] = now
             df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
 
+            inf_preg = df.index[(df.ma_date_infected == now) & (df.ma_inf_type == 'clinical')
+                                & df.is_pregnant]
+            df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
+
             df.loc[sev_idx, 'ma_inf_type'] = 'severe'
 
             ## tidy up
@@ -412,6 +424,19 @@ class Malaria(Module):
                 add_or_remove='+',
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
+
+            # additional risk of severe anaemia in pregnancy
+            random_draw = rng.random_sample(size=len(df))
+            preg_infected = df.index[(df.ma_inf_type == 'clinical') & (df.ma_date_infected == now) &
+                                     df.is_pregnant & (random_draw < p['p_sev_anaemia_preg'])]
+
+            if len(preg_infected) > 0:
+                self.sim.modules['SymptomManager'].chg_symptom(
+                    person_id=list(preg_infected),
+                    symptom_string='severe_anaemia',
+                    add_or_remove='+',
+                    disease_module=self,
+                    duration_in_days=None)
 
         # SEVERE CASES
         severe = df.index[(df.ma_inf_type == 'severe') & (df.ma_date_infected == now)]
@@ -541,7 +566,7 @@ class Malaria(Module):
             if anaemia.any():
                 self.sim.modules['SymptomManager'].chg_symptom(
                     person_id=list(anaemia),
-                    symptom_string='anaemia',
+                    symptom_string='severe_anaemia',
                     add_or_remove='+',
                     disease_module=self,
                     duration_in_days=None)
@@ -604,6 +629,7 @@ class Malaria(Module):
         df.at[child_id, 'ma_district_edited'] = df.at[child_id, 'district_of_residence']
         df.at[child_id, 'ma_age_edited'] = 0
         df.at[child_id, 'ma_clinical_counter'] = 0
+        df.at[child_id, 'ma_clinical_preg_counter'] = 0
         df.at[child_id, 'ma_tx_counter'] = 0
 
         # ----------------------------------- RENAME DISTRICTS -----------------------------------
@@ -698,6 +724,10 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             df.loc[infected_idx, 'ma_inf_type'] = 'clinical'
             df.loc[infected_idx, 'ma_date_symptoms'] = now
             df.loc[infected_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+
+            inf_preg = df.index[(df.ma_date_infected == now) & (df.ma_inf_type == 'clinical')
+                                & df.is_pregnant]
+            df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
 
             ## severe - subset of newly clinical
             prob_sev = 0.05  # tmp value for prob of clinical case becoming severe
@@ -795,9 +825,22 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
 
+                # additional risk of severe anaemia in pregnancy
+                random_draw = rng.random_sample(size=len(df))
+                preg_infected = df.index[(df.ma_inf_type == 'clinical') & (df.ma_date_infected == now) &
+                                         df.is_pregnant & (random_draw < p['p_sev_anaemia_preg'])]
+
+                if len(preg_infected) > 0:
+                    self.sim.modules['SymptomManager'].chg_symptom(
+                        person_id=list(preg_infected),
+                        symptom_string='severe_anaemia',
+                        add_or_remove='+',
+                        disease_module=self.module,
+                        duration_in_days=None)
+
             # TODO:'duration_in_days' schedules symptom resolution and treatment also schedules resolution!
             # TODO: check symptoms still present if treated before scheduling symptom resolution
-            # todo: MIS 2017 54% children <5 with fever sought care
+            # todo: MIS 2017 54% children <5 with fever sought care - check against outputs
             # todo: 30.5% sought care same/next day
 
             # SEVERE CASES
@@ -893,7 +936,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 anaemia = anaemia_ch.append(anaemia_ad)
                 shock = shock_ch.append(shock_ad)
 
-                if jaundice.any():
+                if jaundice is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(jaundice),
                         symptom_string='jaundice',
@@ -901,7 +944,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if acidosis.any():
+                if acidosis is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(acidosis),
                         symptom_string='em_acidosis',
@@ -909,7 +952,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if coma_convulsions.any():
+                if coma_convulsions is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(coma_convulsions),
                         symptom_string='em_coma_convulsions',
@@ -917,7 +960,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if renal_failure.any():
+                if renal_failure is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(renal_failure),
                         symptom_string='em_renal_failure',
@@ -925,15 +968,15 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if anaemia.any():
+                if anaemia is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(anaemia),
-                        symptom_string='anaemia',
+                        symptom_string='severe_anaemia',
                         add_or_remove='+',
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if shock.any():
+                if shock is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(shock),
                         symptom_string='em_shock',
@@ -1085,6 +1128,10 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
         # print('clin counter', df['ma_clinical_counter'].sum())
 
+        inf_preg = df.index[(df.ma_date_infected == now) & (df.ma_inf_type == 'clinical')
+                            & df.is_pregnant]
+        df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
+
         df.loc[sev_idx, 'ma_inf_type'] = 'severe'
 
         ## tidy up
@@ -1169,6 +1216,19 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
+
+                # additional risk of severe anaemia in pregnancy
+                random_draw = rng.random_sample(size=len(df))
+                preg_infected = df.index[(df.ma_inf_type == 'clinical') & (df.ma_date_infected == now) &
+                                         df.is_pregnant & (random_draw < p['p_sev_anaemia_preg'])]
+
+                if len(preg_infected) > 0:
+                    self.sim.modules['SymptomManager'].chg_symptom(
+                        person_id=list(preg_infected),
+                        symptom_string='severe_anaemia',
+                        add_or_remove='+',
+                        disease_module=self.module,
+                        duration_in_days=None)
 
                 # TODO:'duration_in_days' schedules symptom resolution and treatment also schedules resolution!
                 # TODO: check symptoms still present if treated before scheduling symptom resolution
@@ -1266,7 +1326,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                 anaemia = anaemia_ch.append(anaemia_ad)
                 shock = shock_ch.append(shock_ad)
 
-                if jaundice.any():
+                if jaundice is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(jaundice),
                         symptom_string='jaundice',
@@ -1274,7 +1334,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if acidosis.any():
+                if acidosis is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(acidosis),
                         symptom_string='em_acidosis',
@@ -1282,7 +1342,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if coma_convulsions.any():
+                if coma_convulsions is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(coma_convulsions),
                         symptom_string='em_coma_convulsions',
@@ -1290,7 +1350,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if renal_failure.any():
+                if renal_failure is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(renal_failure),
                         symptom_string='em_renal_failure',
@@ -1298,15 +1358,15 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if anaemia.any():
+                if anaemia is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(anaemia),
-                        symptom_string='anaemia',
+                        symptom_string='severe_anaemia',
                         add_or_remove='+',
                         disease_module=self.module,
                         duration_in_days=None)
 
-                if shock.any():
+                if shock is not None:
                     self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(shock),
                         symptom_string='em_shock',
@@ -1851,7 +1911,6 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
             # check that a fever is present and was caused by malaria before resolving it
             if ('fever' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
                 df.at[person_id, 'ma_inf_type'] == 'clinical'):
-
                 self.sim.modules['SymptomManager'].chg_symptom(
                     person_id=person_id,
                     symptom_string='fever',
@@ -1959,6 +2018,8 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         clin_episodes = df['ma_clinical_counter'].sum()  # clinical episodes (inc severe)
         incCounter_1000py = (clin_episodes / pop) * 1000
 
+        clin_preg_episodes = df['ma_clinical_preg_counter'].sum()  # clinical episodes in pregnant women (inc severe)
+
         logger.info('%s|incidence|%s', now,
                     {
                         'number_new_cases': tmp,
@@ -1968,12 +2029,13 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'new_cases_2_10': tmp2,
                         'population2_10': pop2_10,
                         'inc_1000py_2_10': inc_1000py_2_10,
-                        'inc_clin_counter': incCounter_1000py
+                        'inc_clin_counter': incCounter_1000py,
+                        'clinical_preg_counter': clin_preg_episodes
                     })
 
         # ------------------------------------ RUNNING COUNTS ------------------------------------
 
-        counts = {'None': 0, 'clinical': 0, 'severe': 0}
+        counts = {'none': 0, 'asym': 0, 'clinical': 0, 'severe': 0}
         counts.update(df.loc[df.is_alive, 'ma_inf_type'].value_counts().to_dict())
 
         logger.info('%s|status_counts|%s', now, counts)
@@ -2116,3 +2178,4 @@ class MalariaResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
 
         df['ma_clinical_counter'] = 0
         df['ma_tx_counter'] = 0
+        df['ma_clinical_preg_counter'] = 0
