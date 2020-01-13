@@ -36,7 +36,7 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
 
     # create category for minimum age
     if min_age > 0:
-        under_min_age_category = f'{min_age}-'
+        under_min_age_category = f'0-{min_age}'
         age_categories.append(under_min_age_category)
         for i in range(0, min_age):
             lookup[i] = under_min_age_category
