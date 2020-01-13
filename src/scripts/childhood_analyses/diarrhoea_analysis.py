@@ -10,31 +10,24 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea, contraception, healthsystem
+from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea, contraception, healthsystem, healthburden
 
-# Where will output go - by default, wherever this script is run
-outputpath = ""
-
-# date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
-# The resource file for demography module
-# Work out the resource path from the path of the analysis file
-resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
-# resourcefilepath = Path('./resources')
-
+# Declare the paths
+resourcefilepath = Path('./resources')
+outputpath = Path('./outputs/')
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2017, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
 
-# this block of code is to capture the output to file
-logfile = outputpath + "LogFile" + datestamp + ".log"
+# Set up the logger:
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+logfile = outputpath / ("LogFile" + datestamp + ".log")
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -43,14 +36,15 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
-# run the simulation
+# Run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
-sim.seed_rngs(1)
+sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
@@ -59,6 +53,7 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
+
 
 # %% TH: looking at births...
 num_births = len(output['tlo.methods.demography']['on_birth'])
@@ -113,8 +108,7 @@ plt.xlabel("Year")
 plt.ylabel("diarrhoea incidence by pathogen per 100 child-years")
 plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC', 'sapovirus', 'norovirus',
             'astrovirus', 'tEPEC'])
-plt.savefig(outputpath + 'Diarrhoea incidence by pathogens' + datestamp + '.pdf')
-
+plt.savefig(outputpath / ('Diarrhoea incidence by pathogens' + datestamp + '.pdf'))
 plt.show()
 
 # -----------------------------------------------------------------------------
@@ -134,7 +128,7 @@ plt.title("Total clinical diarrhoea")
 plt.xlabel("Year")
 plt.ylabel("Number of diarrhoea episodes")
 plt.legend(['acute watery diarrhoea', 'dysentery', 'persistent diarrhoea'])
-plt.savefig(outputpath + '3 clinical diarrhoea types' + datestamp + '.pdf')
+plt.savefig(outputpath / ('3 clinical diarrhoea types' + datestamp + '.pdf'))
 
 plt.show()
 
@@ -149,7 +143,7 @@ plt.title("Overall incidence of diarrhoea per 100 child-years")
 plt.xlabel("Year")
 plt.ylabel("Incidence of diarrhoea per 100 child-years")
 plt.legend(['Yearly diarrhoea incidence'])
-plt.savefig(outputpath + 'Diarrhoea incidence per 100 child-years' + datestamp + '.pdf')
+plt.savefig(outputpath / ('Diarrhoea incidence per 100 child-years' + datestamp + '.pdf'))
 
 plt.show()
 
@@ -190,9 +184,12 @@ plt.xlabel("Year")
 plt.ylabel("diarrhoea incidence by pathogen per 100 child-years")
 plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC', 'sapovirus', 'norovirus',
             'astrovirus', 'tEPEC'])
-plt.savefig(outputpath + 'Diarrhoea incidence by age group' + datestamp + '.pdf')
+plt.savefig(outputpath / ('Diarrhoea incidence by age group' + datestamp + '.pdf'))
 
 plt.show()
+
+
+
 
 '''
 # -----------------------------------------------------------------------------------

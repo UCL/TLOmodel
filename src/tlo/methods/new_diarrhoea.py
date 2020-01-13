@@ -184,6 +184,7 @@ class NewDiarrhoea(Module):
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
+    # TODO: why do some have gi_ and some have di_ as the prefix?
     PROPERTIES = {
         'gi_diarrhoea_status': Property(Types.BOOL, 'symptomatic infection - diarrhoea disease'),
         'gi_diarrhoea_pathogen': Property(Types.CATEGORICAL, 'attributable pathogen for diarrhoea',
@@ -205,7 +206,7 @@ class NewDiarrhoea(Module):
         'gi_recovered_date': Property(Types.DATE, 'date of recovery from enteric infection'),
         'gi_diarrhoea_death_date': Property(Types.DATE, 'date of death from enteric infection'),
         'gi_diarrhoea_count': Property(Types.INT, 'annual counter for diarrhoea episodes'),
-        'has_hiv': Property(Types.BOOL, 'temporary property - has hiv'),
+        'has_hiv': Property(Types.BOOL, 'temporary property - has hiv'),   # TODO: you could use the real one.
         'malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
@@ -413,7 +414,7 @@ class NewDiarrhoea(Module):
         p['rr_recovery_dehydration'] = 0.81
 
 
-        # DALY weights
+        # DALY weights  # Could load these
         if 'HealthBurden' in self.sim.modules.keys():
             p['daly_mild_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=32)
             p['daly_moderate_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=35)
@@ -444,6 +445,8 @@ class NewDiarrhoea(Module):
         df['has_hiv'] = False
         df['exclusive_breastfeeding'] = False
         df['continued_breastfeeding'] = False
+
+        # TODO: looks like some properties not defined here?
 
         # # # # # # # # # # # # # PREVALENCE OF DIARRHOEA AT THE START OF SIMULATION 2010 # # # # # # # # # # # # #
         '''
@@ -490,7 +493,7 @@ class NewDiarrhoea(Module):
         sim.schedule_event(AcuteDiarrhoeaEvent(self), sim.date + DateOffset(months=0))
 
         # Register this disease module with the health system
-        # self.sim.modules['HealthSystem'].register_disease_module(self)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # add an event to log to screen
         sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=12))
@@ -553,6 +556,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=3))
 
     def apply(self, population):
+        # TODO: Say what this event is for and what it will do.
         """Apply this event to the population.
         :param population: the current population
         """
@@ -575,7 +579,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df['gi_diarrhoea_type'] = np.nan
         df['gi_diarrhoea_pathogen'] = np.nan '''
 
-        # indexes
+        # indexes  TODO: Can you make these names more descriptive? [btw- these things are sometimes called 'masks']
+        # These applications of probabilities of onset of something could be made easier with the LM
         no_diarrhoea0 = df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years < 1)
         no_diarrhoea1 = \
             df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years >= 1) & (df.age_exact_years < 2)
