@@ -55,22 +55,14 @@ fh.flush()
 output = parse_log_file(logfile)
 
 
-# %% TH: looking at births...
-num_births = len(output['tlo.methods.demography']['on_birth'])
-
-num_under_5ys = output['tlo.methods.demography']['age_range_m']['0-4'] + \
-                    output['tlo.methods.demography']['age_range_f']['0-4']
-
-
-# -----------------------------------------------------------------------------------
+# %% -----------------------------------------------------------------------------------
 # %% Plot Incidence of Diarrhoea Over time:
 years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
 
-
-# -----------------------------------------------------------------------------------
+# %% -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
 incidence_by_patho_df = output['tlo.methods.new_diarrhoea']['diarr_incidence_by_patho']
 Model_Years = pd.to_datetime(incidence_by_patho_df.date)

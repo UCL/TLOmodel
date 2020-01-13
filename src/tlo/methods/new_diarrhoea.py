@@ -1388,6 +1388,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                               cause='diarrhoea')  # make that death event
             self.sim.schedule_event(death_event, df.at[child, 'date_of_onset_diarrhoea'] + random_days2)  # schedule the death for persistent cases
 
+        # TODO: Nice!
         # schedule recovery for those who didn't die
         recovery_from_diarr = eff_prob_death_diarr <= random_draw_death
         recovery_from_diarr_idx = eff_prob_death_diarr.index[recovery_from_diarr]
@@ -1444,13 +1445,13 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
                                     self.sim.date)
             df.at[person_id, 'gi_diarrhoea_death_date'] = self.sim.date
             df.at[person_id, 'gi_diarrhoea_death'] = True
-            logger.info('This is DeathDiarrhoeaEvent determining if person %d on the date %s will die '
-                        'from their disease', person_id, self.sim.date)
-            death_count = sum(person_id)
-            # Log the diarrhoea death information
-            logger.info('%s|death_diarrhoea|%s', self.sim.date,
-                        {'death': sum(death_count)
-                         })
+            # logger.info('This is DeathDiarrhoeaEvent determining if person %d on the date %s will die '
+            #             'from their disease', person_id, self.sim.date)
+            # death_count = sum(person_id)
+            # # Log the diarrhoea death information
+            # logger.info('%s|death_diarrhoea|%s', self.sim.date,
+            #             {'death': sum(death_count)
+            #              })
 
 
 class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
@@ -1471,6 +1472,9 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
         inc_100cy = (count_episodes / pop_under5) * 100
         logger.info('%s|episodes_counts|%s', now, {'incidence_per100cy': inc_100cy})
         # logger.info('%s|pop_counts|%s', now, {'pop_len': pop_under5})
+
+        # TODO: I think it's easier to output the number of events in the logger and work out the incidence afterwards.
+        # So, I would propose just logging value counts.
 
 
         # log information on attributable pathogens
