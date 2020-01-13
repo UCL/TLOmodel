@@ -17,9 +17,6 @@ from tlo.methods import (
     schisto
 )
 
-popsize = 10000
-alpha = None
-r0 = None
 def run_simulation(alpha=None, r0=None, popsize=10000, haem=True, mansoni=True):
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
     datestamp = datetime.datetime.now().strftime("__%Y_%m_%d_%H_%M")
@@ -27,7 +24,7 @@ def run_simulation(alpha=None, r0=None, popsize=10000, haem=True, mansoni=True):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2025, 2, 1)
+    end_date = Date(2011, 2, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -72,7 +69,7 @@ def run_simulation(alpha=None, r0=None, popsize=10000, haem=True, mansoni=True):
     output = parse_log_file(logfile)
     return sim, output
 
-sim, output = run_simulation(popsize=10000, haem=True, mansoni=True)
+sim, output = run_simulation(popsize=1000, haem=True, mansoni=True)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
@@ -362,7 +359,7 @@ plot_mwb_age_profile('Mansoni')
 # Prevalent years
 def plot_prevalent_years():
     loger_PrevalentYears_All = output['tlo.methods.schisto']['PrevalentYears_All']
-    plt.plot(loger_PrevalentYears_All.date, loger_PrevalentYears_All.Prevalent_years_this_year_total, label='All')
+    plt.scatter(loger_PrevalentYears_All.date, loger_PrevalentYears_All.Prevalent_years_this_year_total, label='All')
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.title('Prevalent years per year')
@@ -373,7 +370,7 @@ def plot_prevalent_years():
 # My own DALYS
 def plot_DALYs():
     loger_DALY_All = output['tlo.methods.schisto']['DALY_All']
-    plt.plot(loger_DALY_All.date, loger_DALY_All.DALY_this_year_total, label='All')
+    plt.scatter(loger_DALY_All.date, loger_DALY_All.DALY_this_year_total, label='All')
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.title('DALYs per year, schisto module calculation')
