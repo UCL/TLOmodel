@@ -51,20 +51,20 @@ class SymptomManager(Module):
         This will make sure that each symptom is included in the list at most once (even if multiple disease modules
         declare the same symptom).
         """
-        set_of_registered_symptoms = set()
+        registered_symptoms = set()
         for module in self.sim.modules['HealthSystem'].registered_disease_modules.values():
             try:
                 symptoms = module.SYMPTOMS
                 assert type(symptoms) is set
-                set_of_registered_symptoms = set_of_registered_symptoms.union(symptoms)
+                registered_symptoms = registered_symptoms.union(symptoms)
 
             except AttributeError:
                 pass
 
-        self.total_list_of_symptoms = self.parameters['list_of_generic_symptoms'] + list(set_of_registered_symptoms)
+        self.all_registered_symptoms = registered_symptoms.union(self.parameters['list_of_generic_symptoms'])
 
-        for symp in self.total_list_of_symptoms:
-            self.PROPERTIES['sy_' + symp] = Property(Types.LIST, 'Presence of symptom ' + symp)
+        for symptom in self.all_registered_symptoms:
+            self.PROPERTIES[f'sy_{symptom}'] = Property(Types.INT, f'Presence of symptom {symptom}')
 
     def initialise_population(self, population):
         """
@@ -113,7 +113,7 @@ class SymptomManager(Module):
         assert all([(p in alive_person_ids) for p in person_id])
 
         # Check that the symptom_string is legitimate
-        assert symptom_string in self.total_list_of_symptoms, 'Symptom is not recognised'
+        assert symptom_string in self.all_registered_symptoms, 'Symptom is not recognised'
         symptom_var_name = 'sy_' + symptom_string
         assert symptom_var_name in self.sim.population.props.columns, 'Symptom has not been declared'
 
@@ -189,7 +189,7 @@ class SymptomManager(Module):
         assert len(list_of_symptoms) > 0
 
         # Check that these are legitimate symptoms
-        assert all([(symp in self.total_list_of_symptoms) for symp in list_of_symptoms])
+        assert all([(symp in self.all_registered_symptoms) for symp in list_of_symptoms])
 
         # get the person_id for those who have each symptom
         df = self.sim.population.props
@@ -241,7 +241,7 @@ class SymptomManager(Module):
         df = self.sim.population.props
 
         assert df.at[person_id, 'is_alive'], "The person is not alive"
-        assert symptom_string in self.total_list_of_symptoms
+        assert symptom_string in self.all_registered_symptoms
 
         return list(df.at[person_id, 'sy_' + symptom_string])
 
