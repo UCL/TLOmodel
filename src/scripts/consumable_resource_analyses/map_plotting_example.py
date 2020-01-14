@@ -12,9 +12,9 @@ resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs")
 
 # read in the shape file for district level maps
-sf = shp.Reader(shp=open(Path(resourcefilepath) / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp', 'rb'),
-                dbf=open(Path(resourcefilepath) / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf', 'rb'),
-                shx=open(Path(resourcefilepath) / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shx', 'rb'))
+sf = shp.Reader(shp=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp', 'rb'),
+                dbf=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf', 'rb'),
+                shx=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shx', 'rb'))
 
 # create a figure
 plt.figure()
@@ -36,7 +36,7 @@ plt.axis('off')
 plt.gca().set_aspect('equal')
 
 # example of how to add data to the map using a colour map:
-paracetamol_df = pd.read_csv(Path(resourcefilepath) / 'ResourceFile_Example_Paracetamol_DataFrame.csv')
+paracetamol_df = pd.read_csv(resourcefilepath / 'ResourceFile_Example_Paracetamol_DataFrame.csv')
 stock_out_days = paracetamol_df['Stock Out Days']
 eastings = paracetamol_df['Eastings']
 northings = paracetamol_df['Northings']
@@ -48,7 +48,7 @@ plt.colorbar(sc, fraction=0.01, pad=0.01, label="Stock Out Days")
 plt.title("Paracetamol Stock Out Days Example")
 
 # save the figure
-plt.savefig(Path(outputfilepath) / 'Map_Paracetamol_Stock_Out_Days_Example.png', bbox_inches="tight", dpi=600)
+plt.savefig(outputfilepath / 'Map_Paracetamol_Stock_Out_Days_Example.png', bbox_inches="tight", dpi=600)
 
 # display the figure in PyCharm's Plots window
 plt.show()
