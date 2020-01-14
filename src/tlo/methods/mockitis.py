@@ -132,7 +132,7 @@ class Mockitis(Module):
                                                              p=level_of_symptoms.probability)
 
             if symptom_string_for_this_person != 'none':
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id_infected,
                     symptom_string=symptom_string_for_this_person,
                     add_or_remove='+',
@@ -207,7 +207,7 @@ class Mockitis(Module):
                                                              p=level_of_symptoms.probability)
 
             if symptom_string_for_this_person != 'none':
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=child_id,
                     symptom_string=symptom_string_for_this_person,
                     add_or_remove='+',
@@ -315,7 +315,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                                                                         p=level_of_symptoms.probability)
 
                 if symptom_string_for_this_person != 'none':
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=person_id_infected,
                         symptom_string=symptom_string_for_this_person,
                         add_or_remove='+',
