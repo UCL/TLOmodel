@@ -133,7 +133,6 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
 
 
-
 # ---------------------------------------------------------------------------------------------------------
 #
 #    ** EMERGENCY APPOINTMENTS **
