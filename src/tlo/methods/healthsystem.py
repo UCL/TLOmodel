@@ -8,7 +8,7 @@ import pandas as pd
 
 import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,12 +27,20 @@ class HealthSystem(Module):
         resourcefilepath=None,
         service_availability=None,  # must be a list of treatment_ids to allow
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+        ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
-        capabilities_coefficient=1.0,
-    ):  # multiplier for the capabilities of health officers
+        capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+        disable=False  # disables the healthsystem (no constraints and no logging).
+    ):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        assert type(ignore_cons_constraints) is bool
+        self.ignore_cons_constraints = ignore_cons_constraints
+
+        assert type(disable) is bool
+        self.disable = disable
 
         assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
         # 0: no constraints -- all HSI Events run with no squeeze factor
@@ -79,6 +87,9 @@ class HealthSystem(Module):
         'Appt_Time_Table': Parameter(
             Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
         ),
+        'ApptType_By_FacLevel': Parameter(
+            Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
+        ),
         'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
         'Facilities_For_Each_District': Parameter(
             Types.DATA_FRAME,
@@ -109,6 +120,10 @@ class HealthSystem(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
         )
 
+        self.parameters['ApptType_By_FacLevel'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_ApptType_By_FacLevel.csv'
+        )
+
         mfl = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Master_Facilities_List.csv')
         self.parameters['Master_Facilities_List'] = mfl.iloc[:, 1:]  # get rid of extra column
 
@@ -125,6 +140,24 @@ class HealthSystem(Module):
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
+
+        # Make a dataframe that organsie the probabilities of individual consumables items being available
+        # (by unique item codes)
+        cons = self.parameters['Consumables']
+        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(cons['Item_Code'])})
+
+        # merge in probabilities of being available
+        filter_col = [col for col in cons if col.startswith('Available_Facility_Level_')]
+        filter_col.append('Item_Code')
+        prob_unique_item_codes_available = unique_item_codes.merge(
+            cons.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
+        )
+        assert len(prob_unique_item_codes_available) == len(unique_item_codes)
+
+        # set the index as the Item_Code
+        prob_unique_item_codes_available.set_index('Item_Code', drop=True, inplace=True)
+
+        self.prob_unique_item_codes_available = prob_unique_item_codes_available
 
     def initialise_population(self, population):
         df = population.props
@@ -150,8 +183,9 @@ class HealthSystem(Module):
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
-        # Launch the healthsystem scheduler (a regular event occurring each day)
-        sim.schedule_event(HealthSystemScheduler(self), sim.date)
+        # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
+        if not self.disable:
+            sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
 
@@ -192,6 +226,12 @@ class HealthSystem(Module):
         )
 
         assert isinstance(hsi_event, HSI_Event)
+
+        # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
+        if self.disable:
+            wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
+            self.sim.schedule_event(wrapped_hsi_event, topen)
+            return  # Terrminate this functional call
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
@@ -261,6 +301,8 @@ class HealthSystem(Module):
             allowed = True
         elif hsi_event.TREATMENT_ID is None:
             allowed = True  # (if no treatment_id it can pass)
+        elif hsi_event.TREATMENT_ID.startswith('GenericFirstAppt'):
+            allowed = True  # allow all GenericFirstAppt's
         else:
             # check to see if anything provided given any wildcards
             for s in self.service_availability:
@@ -270,13 +312,31 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # 4) Check that event (if individual level) is able to run with this configuration of officers
-        # (ie. Check that this does not demand officers that are never available at a particular facility)
-        if not type(hsi_event.target) is tlo.population.Population:
-            # dealing with an individual level event
+        # Further checks for HSI which are not population level events:
+        if type(hsi_event.target) is not tlo.population.Population:
+
+            # 4) Check that at least one type of appointment is required
+            assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()), \
+                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
+
+            # 5) Check that the event does not request an appointment at a facility level which is not possible
+            appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
+            assert all([self.parameters['ApptType_By_FacLevel'].loc[
+                            self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
+                            self.parameters['ApptType_By_FacLevel'].columns.str.contains(
+                                str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
+                        for appt_type_to_check in appt_type_to_check_list
+                        ]), \
+                "An appointment type has been requested at a facility level for which is it not possibe: " \
+                + hsi_event.TREATMENT_ID
+
+            # 6) Check that event (if individual level) is able to run with this configuration of officers
+            # (ie. Check that this does not demand officers that are never available at a particular facility)
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
+
+            footprint_is_possible = (len(footprint) > 0) & (
+                caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning("The expected footprint is not possible with the configuration of officers.")
 
@@ -477,11 +537,10 @@ class HealthSystem(Module):
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
         """
-        This gives the probability that a person who had developed a particular symptom will seek care.
-        Disease modules call this when a person has symptoms onset to determine if there will be a health interaction.
+        This is depracted. Report onset of generic acute symptoms to the symptom mananger.
+        HealthSeekingBehaviour module will schedule a generic hsi.
         """
-        # It currently just returns 1.0, pending the work of Wingston on the health care seeking behaviour.
-        return 1.0
+        raise Exception('Do not use get_prob_seek_care().')
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
@@ -514,7 +573,7 @@ class HealthSystem(Module):
             # use the actual_appt_provided
             the_appt_footprint = actual_appt_footprint
 
-        # Get the (one) health_facilities available to this person (based on their district), which is accepted by the
+        # Get the (one) health_facility available to this person (based on their district), which is accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility_id = fac_per_district.loc[
             (fac_per_district['District'] == the_district)
@@ -532,6 +591,12 @@ class HealthSystem(Module):
             ['Officer_Type_Code', 'Time_Taken'],
         ].copy()
 
+        assert len(df_appt_footprint) > 0, \
+            "The time needed for this appointment" \
+            " is not defined for this specified facility level in the Appt_Time_Table. " \
+            "And it should not go to this point" \
+            ": " + hsi_event.TREATMENT_ID
+
         # Using f string or format method throws and error when df_appt_footprint is empty so hybrid used
         df_appt_footprint.set_index(
             f'FacilityID_{the_facility_id}_Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str), inplace=True
@@ -540,9 +605,10 @@ class HealthSystem(Module):
         # Create Series of summed required time for each officer type
         appt_footprint_as_time_request = df_appt_footprint['Time_Taken'].groupby(level=0).sum()
 
-        # TODO: ADD assertion that some time is requested (UNLESS POPULATION LEVEL???)
-        # TODO: ADD assertion that indicies are unique.
+        # Check that indicies are unique
+        assert not any(appt_footprint_as_time_request.index.duplicated())
 
+        # Return
         return appt_footprint_as_time_request
 
     def get_squeeze_factors(self, all_calls_today, current_capabilities):
@@ -551,6 +617,7 @@ class HealthSystem(Module):
         system resources for the day.
         The squeeze factor is defined as (call/available - 1). ie. the highest fractional over-demand among any type of
         officer that is called-for in the appt_footprint of an HSI event.
+        A value of 0.0 signifies that there is no squeezeing (sufficient resources for the EXPECTED_APPT_FOOTPRINT).
         A value of 99.99 signifies that the call is for an officer_type in a health-facility that is not available.
 
         :param all_calls_today: Dataframe, one column per HSI event, containing the minutes required from each health
@@ -577,6 +644,7 @@ class HealthSystem(Module):
         for col_num in np.arange(0, len(all_calls_today.columns)):
             load_factor_per_officer_needed = list()
             officers_needed = all_calls_today.loc[all_calls_today[col_num] > 0, col_num].index.astype(str)
+            assert len(officers_needed) > 0
             for officer in officers_needed:
                 load_factor_per_officer_needed.append(load_factor.loc[officer])
             squeeze_factor_per_hsi_event.append(max(load_factor_per_officer_needed))
@@ -637,6 +705,30 @@ class HealthSystem(Module):
             assert itm_quant > 0
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if self.disable:
+            # If the healthsystem module is disabled, return True for all consuambles
+            # without checking or logging.
+            packages_availability = dict()
+            if not cons_req_as_footprint['Intervention_Package_Code'] == []:
+                for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
+                    # dict only ever has one item so we only want the key
+                    package_code, = p_dict.keys()
+                    packages_availability[package_code] = True
+
+            # Iterate through the individual items that were requested
+            items_availability = dict()
+            if not cons_req_as_footprint['Item_Code'] == []:
+                for i_dict in cons_req_as_footprint['Item_Code']:
+                    item_code, = i_dict.keys()
+                    # check if *all* items in this package are available
+                    items_availability[item_code] = True
+
+            # compile output
+            output = dict()
+            output['Intervention_Package_Code'] = packages_availability
+            output['Item_Code'] = items_availability
+            return output
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # 0) Get information about the hsi_event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
@@ -672,7 +764,6 @@ class HealthSystem(Module):
             )
 
             # Enter to the log
-
             items_req_to_log = items_req_to_log.drop(['Package_Code'], axis=1)  # drop from log for neatness
 
             log_consumables = items_req_to_log.to_dict()
@@ -703,7 +794,7 @@ class HealthSystem(Module):
                     items_req.loc[items_req['Item_Code'] == item_code, 'Available'].values[0]
                 )
 
-        # compile outputs
+        # compile output
         output = dict()
         output['Intervention_Package_Code'] = packages_availability
         output['Item_Code'] = items_availability
@@ -879,26 +970,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         )
 
         # 0) Determine the availability of consumables today based on their probabilities
-        cons = self.module.parameters['Consumables']
-        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(cons['Item_Code'])})
-
-        # merge in probabilities of being available
-        filter_col = [col for col in cons if col.startswith('Available_Facility_Level_')]
-        filter_col.append('Item_Code')
-        unique_item_codes = unique_item_codes.merge(
-            cons.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
-        )
-        assert len(unique_item_codes) == len(unique_item_codes)
-
-        # set the index as the Item_Code
-        unique_item_codes = unique_item_codes.set_index(unique_item_codes['Item_Code'])
-        unique_item_codes = unique_item_codes.drop(['Item_Code'], axis=1)
 
         # random draws: assume that availability of the same item is independent between different facility levels
-        random_draws = self.module.rng.rand(len(unique_item_codes), len(unique_item_codes.columns))
+        random_draws = self.module.rng.rand(
+            len(self.module.prob_unique_item_codes_available), len(self.module.prob_unique_item_codes_available.columns)
+        )
 
         # Determine the availability of the consumables today
-        self.module.cons_item_code_availability_today = unique_item_codes > random_draws
+        if not self.module.ignore_cons_constraints:
+            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > random_draws
+        else:
+            # Make all true if ignoring consumables constraints
+            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > 0.0
 
         logger.debug('----------------------------------------------------------------------')
         logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
@@ -931,6 +1014,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event has expired (after tclose), do nothing more
                 pass
 
+            elif (type(event.target) is not tlo.population.Population) \
+                    and (not self.sim.population.props.at[event.target, 'is_alive']):
+                # if individual level event and the person who is the target is no longer alive, do nothing more
+                pass
+
             elif self.sim.date < next_event_tuple[1]:
                 # The event is not yet due (before topen), add to the hold-over list
                 hp.heappush(hold_over, next_event_tuple)
@@ -942,7 +1030,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     break
 
             else:
-                # The event is now due to run today.
+                # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today (individual or population level)
                 # NB. These list is ordered by priority and then due date
 
@@ -1049,10 +1137,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 else:
                     # Do not run,
                     # Call did_not_run for the hsi_event
-                    event.did_not_run()
+                    rtn_from_did_not_run = event.did_not_run()
 
-                    # add to the hold-over queue
-                    hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
+                    # If received no response from the call to did_not_run, or a True signal, then
+                    # add to the hold-over queue.
+                    # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
+
+                    if not (rtn_from_did_not_run is False):
+                        # reschedule event
+                        hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
 
                     # Log that the event did not run
                     self.module.log_hsi_event(
@@ -1104,7 +1197,7 @@ class HSI_Event:
         raise NotImplementedError
 
     def did_not_run(self, *args, **kwargs):
-        """Called when this event is due but it is not run.
+        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled.
 
         Must be implemented by subclasses.
         """
@@ -1118,3 +1211,21 @@ class HSI_Event:
         """Make the event happen."""
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
+
+
+class HSIEventWrapper(Event):
+    # This is wrapper that contains an HSI event.
+    # It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
+    # be passed to the main simulation scheduler.
+    # When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+
+    def __init__(self, hsi_event):
+        self.hsi_event = hsi_event
+
+    def run(self):
+        # check that the person is still alive
+        # (this check normally happens in the HealthSystemScheduler and silently do not run the HSI event)
+
+        if isinstance(self.hsi_event.target, tlo.population.Population) \
+                or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
+            _ = self.hsi_event.run(squeeze_factor=0.0)
