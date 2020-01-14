@@ -105,6 +105,3 @@ venv.bak/
 
 # PyCharm
 .idea/
-
-# Project specific
-outputs/
