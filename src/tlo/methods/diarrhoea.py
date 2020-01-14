@@ -19,6 +19,10 @@ logger.setLevel(logging.DEBUG)
 class Diarrhoea(Module):
 
     PARAMETERS = {
+        #
+        # 'eq_for_alloc_shigella': Parameter(Types.Eq, 'the e.... '),
+        # 'eq_for_alloc_rota': Parameter(Types.Eq), 'the XX...')
+
         'base_incidence_diarrhoea_by_rotavirus':
             Parameter(Types.LIST, 'incidence of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
                       ),
@@ -252,6 +256,7 @@ class Diarrhoea(Module):
     # Declares symptoms
     SYMPTOMS = {'dehydration', 'diarrhoea_watery', 'diarrhoea_bloody'}
 
+
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -265,6 +270,7 @@ class Diarrhoea(Module):
         dfd.set_index("Parameter_name", inplace=True)
 
         #TODO: (@Ines - you might find it easier to use the utility function for importing long lists of parameters from excel files.)
+        # Cookbook! or ask Joe (or Tim will find it for you!)
 
         # all diarrhoea prevalence values
         p['rp_acute_diarr_age12to23mo'] = dfd.loc['rp_acute_diarr_age12to23mo', 'value1']
@@ -400,30 +406,30 @@ class Diarrhoea(Module):
         p['rr_bec_persistent_cont_breast'] = dfd.loc['rr_bec_persistent_cont_breast', 'value1']
 
 
-        # health system iccm stuff:             TODO: This stuff is not used in this module
-        p['prob_correct_id_diarrhoea_dehydration'] = 0.8
-        p['prob_correct_id_danger_sign'] = 0.7
-        p['prob_correct_id_persist_or_bloody_diarrhoea'] = 0.8
-        p['prob_correctly_classified_diarrhoea_danger_sign'] = 0.8
-        p['prob_correctly_classified_persist_or_bloody_diarrhoea'] = 0.8
-        p['prob_correctly_classified_diarrhoea'] = 0.8
-        p['prob_correct_referral_decision'] = 0.8
-        p['prob_correct_treatment_advice_given'] = 0.8
-        p['dhs_care_seeking_2010'] = 0.58
-        p['IMCI_effectiveness_2010'] = 0.6
-        p['r_death_diarrhoea'] = 0.3
-        p['prob_prolonged_to_persistent_diarr'] = 0.2866
-        p['case_fatality_rate_AWD'] = dfd.loc['case_fatality_rate_AWD', 'value1']
-        p['case_fatality_rate_dysentery'] = dfd.loc['case_fatality_rate_dysentery', 'value1']
-        p['case_fatality_rate_persistent'] = dfd.loc['case_fatality_rate_persistent', 'value1']
-        p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
-        p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
-        p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
-        p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
-        p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
-        p['r_recovery_AWD'] = 0.8
-        p['r_recovery_dysentery'] = 0.5
-        p['rr_recovery_dehydration'] = 0.81
+        # # health system iccm stuff:             TODO: This stuff is not used in this module
+        # p['prob_correct_id_diarrhoea_dehydration'] = 0.8
+        # p['prob_correct_id_danger_sign'] = 0.7
+        # p['prob_correct_id_persist_or_bloody_diarrhoea'] = 0.8
+        # p['prob_correctly_classified_diarrhoea_danger_sign'] = 0.8
+        # p['prob_correctly_classified_persist_or_bloody_diarrhoea'] = 0.8
+        # p['prob_correctly_classified_diarrhoea'] = 0.8
+        # p['prob_correct_referral_decision'] = 0.8
+        # p['prob_correct_treatment_advice_given'] = 0.8
+        # p['dhs_care_seeking_2010'] = 0.58
+        # p['IMCI_effectiveness_2010'] = 0.6
+        # p['r_death_diarrhoea'] = 0.3
+        # p['prob_prolonged_to_persistent_diarr'] = 0.2866
+        # p['case_fatality_rate_AWD'] = dfd.loc['case_fatality_rate_AWD', 'value1']
+        # p['case_fatality_rate_dysentery'] = dfd.loc['case_fatality_rate_dysentery', 'value1']
+        # p['case_fatality_rate_persistent'] = dfd.loc['case_fatality_rate_persistent', 'value1']
+        # p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
+        # p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
+        # p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
+        # p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
+        # p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
+        # p['r_recovery_AWD'] = 0.8
+        # p['r_recovery_dysentery'] = 0.5
+        # p['rr_recovery_dehydration'] = 0.81
 
 
         # DALY weights
@@ -461,9 +467,9 @@ class Diarrhoea(Module):
         df['exclusive_breastfeeding'] = False
         df['continued_breastfeeding'] = False
 
-        # TODO: looks like some properties not defined here?
+        # TODO: looks like some properties not defined here? - all properties initialised
 
-        # TODO: Assuming zero prevalence initially
+        # TODO: Assuming zero prevalence initially - fine
 
 
     def initialise_simulation(self, sim):
@@ -501,6 +507,9 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_diarrhoea_pathogen'] = np.nan
         df.at[child_id, 'gi_diarrhoea_count'] = 0
 
+        # todo; make sure all properties intiialised for the child
+
+
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -523,14 +532,15 @@ class Diarrhoea(Module):
 
         health_values = df.loc[df.is_alive, 'gi_dehydration_status'].map({
             'none': 0,
-            'no dehydration': p['daly_mild_diarrhoea'],
+            'no dehydration': p['daly_mild_diarrhoea'],     # TODO; maybe rename and checkdaly_mild_dehydration_due_to_diarrahea
             'some dehydration': p['daly_moderate_diarrhoea'],
             'severe dehydration': p['daly_severe_diarrhoea']
         })
         health_values.name = 'dehydration'    # label the cause of this disability
 
-        #TODO: is it right that the only thing causing dlays from diarrhoa is the dehydration
+        #TODO: is it right that the only thing causing lays from diarrhoa is the dehydration
         #TODO: are these dalys for the episode of diarrhoa of for an amount of time?
+        #TODO; nb that this will change when symtoms tracked in SymptomManager
 
         return health_values.loc[df.is_alive]   # returns the series
 

@@ -58,6 +58,14 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
+
+        # TODO: @Ines -- I am putting stuff for you here!!
+        print("@@@@ Someone has come to an appt at Facility1")
+
+        # diagnoiss
+
+
+
         diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
         # Work out what to do with this person....
@@ -193,11 +201,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 priority=1,
                                                                 topen=self.sim.date
                                                                 )
-
-
-        # TODO: @Ines -- I am putting stuff for you here!!
-        print("@@@@ Someone has come to an appt at Facility1")
-
 
 
     def did_not_run(self):
