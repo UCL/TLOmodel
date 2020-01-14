@@ -57,7 +57,7 @@ class SymptomManager(Module):
         for module in self.sim.modules['HealthSystem'].registered_disease_modules.values():
             try:
                 symptoms = module.SYMPTOMS
-                assert type(symptoms) is set
+                assert isinstance(symptoms, set)
                 registered_symptoms = registered_symptoms.union(symptoms)
 
             except AttributeError:
@@ -101,7 +101,7 @@ class SymptomManager(Module):
         """
 
         # Make the person_id into a list
-        if type(person_id) is not list:
+        if not isinstance(person_id, list):
             person_id = [person_id]
 
         # Strip out the person_ids for anyone who is not alive.
@@ -181,7 +181,7 @@ class SymptomManager(Module):
         """
 
         # Check formatting of list_of_symptoms is right (must be a list of strings)
-        if type(in_list_of_symptoms) is str:
+        if isinstance(in_list_of_symptoms, str):
             list_of_symptoms = [in_list_of_symptoms]
         else:
             list_of_symptoms = in_list_of_symptoms
