@@ -239,7 +239,6 @@ class SymptomManager(Module):
 
         :param person_id:
         :param disease_module_name:
-        :return: Nothing
         """
         df = self.sim.population.props
 
@@ -247,8 +246,7 @@ class SymptomManager(Module):
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(), \
             "Disease Module Name is not recognised"
 
-        symptoms_caused_by_this_disease_module = \
-            self.has_what(person_id, disease_module)
+        symptoms_caused_by_this_disease_module = self.has_what(person_id, disease_module)
 
         for symp in symptoms_caused_by_this_disease_module:
             self.change_symptom(
@@ -278,19 +276,11 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         # extract any persons who have died or who have resolved the symptoms
-        symptom_var_name = 'sy_' + self.symptom_string
-
-        alive_person_ids = list(self.module.sim.population.props.index[self.module.sim.population.props.is_alive])
-        still_has_symptom_bools = self.sim.population.props.loc[self.person_id, symptom_var_name].apply(
-            lambda x: (self.disease_module.name in x))
-        still_has_symptom_person_ids = list(still_has_symptom_bools[still_has_symptom_bools].index)
-
-        self.person_id = list(set(self.person_id).
-                              intersection(alive_person_ids).
-                              intersection(still_has_symptom_person_ids))
-
+        df = population.props
+        people_to_resolve = df.loc[df.is_alive & df.index.isin(self.person_id), 'sy_' + self.symptom_string]
+        people_to_resolve = people_to_resolve.apply(lambda x: self.disease_module.name in x).index
         # run the chg_symptom function
-        self.module.change_symptom(person_id=self.person_id,
+        self.module.change_symptom(person_id=list(people_to_resolve),
                                    symptom_string=self.symptom_string,
                                    add_or_remove='-',
                                    disease_module=self.disease_module)
