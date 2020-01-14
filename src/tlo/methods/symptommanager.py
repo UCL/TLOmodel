@@ -22,6 +22,8 @@ class SymptomManager(Module):
         'list_of_generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
     }
 
+    symptom_var_names = []
+
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -65,17 +67,14 @@ class SymptomManager(Module):
 
         for symptom in self.all_registered_symptoms:
             self.PROPERTIES[f'sy_{symptom}'] = Property(Types.LIST, f'Presence of symptom {symptom}')
+            self.symptom_var_names.append(f'sy_{symptom}')
 
     def initialise_population(self, population):
         """
         Give all individuals the no symptoms (ie. an empty set)
         """
-        # Get the variable names that are defined
-        self.symptom_var_names = [col for col in self.sim.population.props if col.startswith('sy_')]
-
-        for person_id in list(population.props.index):
-            for symptom_var in self.symptom_var_names:
-                population.props.at[person_id, symptom_var] = set()
+        for symptom_var in self.symptom_var_names:
+            population.props[symptom_var].values[:] = set()
 
     def initialise_simulation(self, sim):
         pass
