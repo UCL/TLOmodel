@@ -10,7 +10,8 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, diarrhoea, contraception, healthsystem, healthburden
+from tlo.methods import demography, enhanced_lifestyle, diarrhoea, contraception, healthsystem, healthburden, \
+    symptommanager, healthseekingbehaviour
 
 # Declare the paths
 resourcefilepath = Path('./resources')
@@ -41,8 +42,11 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+
+sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)

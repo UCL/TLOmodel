@@ -14,6 +14,7 @@ from tlo.methods.hsi_generic_first_appts import (
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+from tlo.util import choose_outcome_from_a_dict
 
 
 class HealthSeekingBehaviour(Module):
@@ -95,14 +96,38 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # If one symptom is an 'emergency symptom' a generic emergency appointment is scheduled
             #   (and no non-emergency appointment)
 
+            symps_this_person = self.module.sim.modules['SymptomManager'].has_what(person_id)
+
             # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO EMERGENCY SYMPTOMS ~~~~~~~~
-            if any([s.startswith('em_') for s in self.module.sim.modules['SymptomManager'].has_what(person_id)]):
+            if any([s.startswith('em_') for s in symps_this_person]):
                 hsi_genericemergencyfirstappt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.module,
                                                                                               person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericemergencyfirstappt,
                                                                     priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=None)
+
+            elif any([s in symps_this_person for s in ['dehydration', 'diarrhoea_bloody', 'diarrhoea_watery']]):
+                # TODO: @Ines Health Care seeking routine in the case of the symptom being diarrhoae
+                # Or maybe this could be folded into the below clause - depending on what you want it to do.
+                # But, this is where this kind of thing would go.
+
+                # If you wanted to select whether they go to level0 or level1 health facility
+                prob_hsb_with_severe_diarrhoaea = {
+                    'nothing': 0.7,
+                    'level0': 0.1,
+                    'level1': 0.2
+                }
+
+                hsb_outcome = choose_outcome_from_a_dict(prob_hsb_with_severe_diarrhoaea, self.module.rng)
+
+                if (hsb_outcome == 'level1') or ((hsb_outcome == 'level0')):
+                    # in this example, we send them all to level1
+                    hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericfirstappt,
+                                                                        priority=0,
+                                                                        topen=self.sim.date,
+                                                                        tclose=None)
 
             else:
                 # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO GENERIC SYMPTOMS ~~~~~~~~

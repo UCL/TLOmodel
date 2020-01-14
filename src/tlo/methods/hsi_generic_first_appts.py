@@ -194,6 +194,12 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 topen=self.sim.date
                                                                 )
 
+
+        # TODO: @Ines -- I am putting stuff for you here!!
+        print("@@@@ Someone has come to an appt at Facility1")
+
+
+
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
         pass
