@@ -1,8 +1,12 @@
+import logging
 import numbers
 from enum import Enum, auto
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Predictor(object):
@@ -96,6 +100,9 @@ class Predictor(object):
 
             # update elements in the output series with the corresponding value for the condition
             output[mask] = value
+
+            logger.debug('predictor: %s; condition: %s; value: %s; matched rows: %d/%d',
+                         self.property_name, condition, value, mask.sum(), len(mask))
 
             # add this condition's matching rows to the list of matched rows
             matched = (matched | mask)
