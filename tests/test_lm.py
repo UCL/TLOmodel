@@ -198,7 +198,7 @@ def test_logistic_application_tob():
         LinearModelType.LOGISTIC,
         init_p_tob_age1519_m_wealth1 / (1 - init_p_tob_age1519_m_wealth1),
         Predictor('sex').when('F', init_or_tob_f),
-        Predictor('li_wealth').when('2', 2).when('3', 3).when('4', 4).when('5', 5),
+        Predictor('li_wealth').when(2, 2).when(3, 3).when(4, 4).when(5, 5),
         Predictor().when('(age_years.between(20,39)) & (sex == "M")', init_or_tob_age2039_m)
                    .when('(age_years.between(40,120)) & (sex == "M")', init_or_tob_agege40_m)
     )
