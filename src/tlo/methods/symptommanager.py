@@ -280,7 +280,7 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         # extract any persons who have died or who have resolved the symptoms
         df = population.props
         people_to_resolve = df.loc[df.is_alive & df.index.isin(self.person_id), 'sy_' + self.symptom_string]
-        people_to_resolve = people_to_resolve.apply(lambda x: self.disease_module.name in x).index
+        people_to_resolve = people_to_resolve[people_to_resolve.apply(lambda x: self.disease_module.name in x)].index
         # run the chg_symptom function
         self.module.change_symptom(person_id=list(people_to_resolve),
                                    symptom_string=self.symptom_string,
