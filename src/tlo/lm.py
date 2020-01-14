@@ -61,7 +61,7 @@ class Predictor(object):
             else:
                 parsed_condition = f'({self.property_name} == False)'
         elif isinstance(condition, numbers.Number):
-            parsed_condition = f'({self.property_name} == {condition}'
+            parsed_condition = f'({self.property_name} == {condition})'
         elif condition is None:
             assert not self.else_condition_supplied, "You can only give one unconditioned value to predictor"
             self.else_condition_supplied = True
