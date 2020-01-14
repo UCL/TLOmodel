@@ -5,6 +5,7 @@ jupyter
 
 # Plotting
 matplotlib
+pyshp
 
 # Running tests
 pytest
