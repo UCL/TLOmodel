@@ -3,12 +3,18 @@ import logging
 import pandas as pd
 from tlo import Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+"""
+This module determines how the diagnosis of children at their initial presentation at a health facility
 
-class ChildhoodDiseaseInterventions(Module):
+"""
+
+class ChildhoodManagement(Module):
+
     PARAMETER = {
         # Parameters for the iCCM algorithm performed by the HSA
         'prob_checked_for_cough':
@@ -73,174 +79,175 @@ class ChildhoodDiseaseInterventions(Module):
                       ),
         }
 
+    PROPERTIES = {}   # TODO: I think we want this module to not have any properties of its own.
 
-    PROPERTIES = {
-        # iCCM - Integrated community case management properties used
-        'iccm_danger_sign': Property
-        (Types.BOOL, 'child has at least one iccm danger signs : '
-                     'convulsions, very sleepy or unconscious, chest indrawing, vomiting everything, '
-                     'not able to drink or breastfeed, red on MUAC strap, swelling of both feet, '
-                     'fever for last 7 days or more, blood in stool, diarrhoea for 14 days or more, '
-                     'and cough for at least 21 days'
-         ),
-        'ccm_correctly_identified_general_danger_signs': Property
-        (Types.BOOL, 'HSA correctly identified at least one of the IMCI 4 general danger signs - '
-                     'convulsions, lethargic or unconscious, vomiting everything, not able to drink or breastfeed'
-         ),
-        'ccm_correctly_identified_danger_signs': Property
-        (Types.BOOL, 'HSA correctly identified at least one danger sign, including '
-                     'convulsions, very sleepy or unconscious, chest indrawing, vomiting everything, '
-                     'not able to drink or breastfeed, red on MUAC strap, swelling of both feet, '
-                     'fever for last 7 days or more, blood in stool, diarrhoea for 14 days or more, '
-                     'and cough for at least 21 days'
-         ),
-
-        # iCCM symptoms
-        'sy_cough': Property
-        (Types.BOOL, 'symptom - cough'
-         ),
-        'ds_cough_for_more_than_21days': Property
-        (Types.BOOL, 'iCCM danger sign - cough for 21 days or more'
-         ),
-        'sy_fast_breathing': Property
-        (Types.BOOL, 'symptom - fast breathing'
-         ),
-        'sy_diarrhoea': Property
-        (Types.BOOL, 'symptom - diarrhoea'
-         ),
-        'sy_fever': Property
-        (Types.BOOL, 'symptom - fever'
-         ),
-        'ds_fever_over_7days': Property
-        (Types.BOOL, 'iCCM danger sign - fever for last 7 days'
-         ),
-        'sy_red_eyes': Property
-        (Types.BOOL, 'symptom - red eye'
-         ),
-        'ds_red_eyes_over_4days': Property
-        (Types.BOOL, 'iCCM danger sign - red eye for 4 days or more'
-         ),
-        'ds_red_eye_with_visual_problem': Property
-        (Types.BOOL, 'iCCM danger sign - red eye with visual problem'
-         ),
-        'ds_convulsions': Property
-        (Types.BOOL, 'iCCM danger sign - convulsions'
-         ),
-        'ds_not_able_to_drink_or_breastfeed': Property
-        (Types.BOOL, 'iCCM danger sign - unable to drink or breastfeed'
-         ),
-        'ds_vomiting_everything': Property
-        (Types.BOOL, 'iCCM danger sign - vomiting everything'
-         ),
-        'ds_unusually_sleepy_unconscious': Property
-        (Types.BOOL, 'iCCM danger sign - unusually sleepy or unconscious'
-         ),
-        'ds_chest_indrawing': Property
-        (Types.BOOL, 'iCCM danger sign - chest indrawing'
-         ),
-        'ds_red_MUAC_strap': Property
-        (Types.BOOL, 'iCCM danger sign - red on MUAC tape'
-         ),
-        'ds_sweeling_both_feet': Property
-        (Types.BOOL, 'iCCM danger sign - swelling of both feet'
-         ),
-        'ds_palmar_pallor': Property
-        (Types.BOOL, 'iCCM danger sign - palmar pallor'
-         ),
-        # HSA assessement of symptoms outcome
-        'ccm_assessed_cough': Property
-        (Types.BOOL, 'HSA asked if the child has cough, or mother\'s report'
-         ),
-        'ccm_assessed_diarrhoea': Property
-        (Types.BOOL, 'HSA asked if the child has diarrhoea, or mother\'s report'
-         ),
-        'ccm_assessed_fever': Property
-        (Types.BOOL, 'HSA asked if the child has fever, or mother\'s report'
-         ),
-        'ccm_id_fast_breathing': Property
-        (Types.BOOL, 'HSA identified fast breathing in child'
-         ),
-        'ccm_id_ds_blood_in_stools': Property
-        (Types.BOOL, 'HSA identified bloody stool in child'
-         ),
-        'ccm_id_ds_diarrhoea_for_14days_or_more': Property
-        (Types.BOOL, 'HSA identified diarrhoea for 14 days or more in child'
-         ),
-        'ccm_id_ds_fever_for_last_7days': Property
-        (Types.BOOL, 'HSA identified fever lasting 7 days or more'
-         ),
-        'ccm_assessed_red_eyes': Property
-        (Types.BOOL, 'HSA asked if the child has red eyes, or mother\'s report'
-         ),
-        'ccm_id_ds_red_eye_for_4days_or_more': Property
-        (Types.BOOL, 'HSA identified red eye for 4 days or more in child'
-         ),
-        'ccm_id_ds_red_eye_with_visual_problem': Property
-        (Types.BOOL, 'HSA identified red eye with visual problem in child'
-         ),
-        'ccm_id_ds_convulsions': Property
-        (Types.BOOL, 'HSA identified convulsions in child'
-         ),
-        'ccm_id_ds_not_able_to_drink_or_feed': Property
-        (Types.BOOL, 'HSA identified inability to drink or breastfeed/feed in child'
-         ),
-        'ccm_id_ds_vomits_everything': Property
-        (Types.BOOL, 'HSA identified vomiting everything in child'
-         ),
-        'ccm_id_ds_very_sleepy_or_unconscious': Property
-        (Types.BOOL,
-         'HSA identified child to be very sleepy or unconscious'
-         ),
-        'ccm_id_ds_chest_indrawing': Property
-        (Types.BOOL,
-         'HSA identified chest indrawing in child'
-         ),
-        'ccm_id_ds_red_on_MUAC': Property
-        (Types.BOOL,
-         'HSA measured red on MUAC tape'
-         ),
-        'ccm_id_ds_swelling_of_both_feet': Property
-        (Types.BOOL,
-         'HSA identified swelling of both feet in child'
-         ),
-        'ccm_id_ds_palmar_pallor': Property
-        (Types.BOOL,
-         'HSA identified palmar pallor in child'
-         ),
-        'at_least_one_ccm_danger_sign_identified': Property
-        (Types.BOOL,
-         'HSA identified at least one iCCM danger sign'
-         ),
-        # iCCM treatment action
-        'ccm_referral_decision': Property
-        (Types.CATEGORICAL,
-         'HSA decided to refer or to treat at home', categories=['referred to health facility', 'home treatment']
-         ),
-
-         # IMCNI - Integrated Management of Neonatal and Childhood Illnesses algorithm
-        'imci_assessment_of_main_symptoms': Property
-        (Types.CATEGORICAL,
-         'main symptoms assessments', categories=['correctly assessed', 'not assessed']
-         ),
-        'imci_classification_of_illness': Property
-        (Types.CATEGORICAL,
-         'disease classification', categories=['correctly classified', 'incorrectly classified']
-         ),
-        'imci_treatment': Property
-        (Types.CATEGORICAL,
-         'treatment given', categories=['correctly treated', 'incorrectly treated', 'not treated']
-         ),
-        'classification_for_cough_or_difficult_breathing': Property
-        (Types.CATEGORICAL,
-         'classification for cough or difficult breathing',
-         categories=['classified as severe pneumonia or very severe disease',
-                     'classified as pneumonia', 'classified as no pneumonia']
-         ),
-        'correct_classification_for_cough_or_difficult_breathing': Property
-        (Types.BOOL,
-         'classification for cough or difficult breathing is correct'
-         ),
-    }
+    # PROPERTIES = {
+    #     # iCCM - Integrated community case management properties used
+    #     'iccm_danger_sign': Property
+    #     (Types.BOOL, 'child has at least one iccm danger signs : '
+    #                  'convulsions, very sleepy or unconscious, chest indrawing, vomiting everything, '
+    #                  'not able to drink or breastfeed, red on MUAC strap, swelling of both feet, '
+    #                  'fever for last 7 days or more, blood in stool, diarrhoea for 14 days or more, '
+    #                  'and cough for at least 21 days'
+    #      ),
+    #     'ccm_correctly_identified_general_danger_signs': Property
+    #     (Types.BOOL, 'HSA correctly identified at least one of the IMCI 4 general danger signs - '
+    #                  'convulsions, lethargic or unconscious, vomiting everything, not able to drink or breastfeed'
+    #      ),
+    #     'ccm_correctly_identified_danger_signs': Property
+    #     (Types.BOOL, 'HSA correctly identified at least one danger sign, including '
+    #                  'convulsions, very sleepy or unconscious, chest indrawing, vomiting everything, '
+    #                  'not able to drink or breastfeed, red on MUAC strap, swelling of both feet, '
+    #                  'fever for last 7 days or more, blood in stool, diarrhoea for 14 days or more, '
+    #                  'and cough for at least 21 days'
+    #      ),
+    #
+    #     # iCCM symptoms
+    #     'sy_cough': Property
+    #     (Types.BOOL, 'symptom - cough'
+    #      ),
+    #     'ds_cough_for_more_than_21days': Property
+    #     (Types.BOOL, 'iCCM danger sign - cough for 21 days or more'
+    #      ),
+    #     'sy_fast_breathing': Property
+    #     (Types.BOOL, 'symptom - fast breathing'
+    #      ),
+    #     'sy_diarrhoea': Property
+    #     (Types.BOOL, 'symptom - diarrhoea'
+    #      ),
+    #     'sy_fever': Property
+    #     (Types.BOOL, 'symptom - fever'
+    #      ),
+    #     'ds_fever_over_7days': Property
+    #     (Types.BOOL, 'iCCM danger sign - fever for last 7 days'
+    #      ),
+    #     'sy_red_eyes': Property
+    #     (Types.BOOL, 'symptom - red eye'
+    #      ),
+    #     'ds_red_eyes_over_4days': Property
+    #     (Types.BOOL, 'iCCM danger sign - red eye for 4 days or more'
+    #      ),
+    #     'ds_red_eye_with_visual_problem': Property
+    #     (Types.BOOL, 'iCCM danger sign - red eye with visual problem'
+    #      ),
+    #     'ds_convulsions': Property
+    #     (Types.BOOL, 'iCCM danger sign - convulsions'
+    #      ),
+    #     'ds_not_able_to_drink_or_breastfeed': Property
+    #     (Types.BOOL, 'iCCM danger sign - unable to drink or breastfeed'
+    #      ),
+    #     'ds_vomiting_everything': Property
+    #     (Types.BOOL, 'iCCM danger sign - vomiting everything'
+    #      ),
+    #     'ds_unusually_sleepy_unconscious': Property
+    #     (Types.BOOL, 'iCCM danger sign - unusually sleepy or unconscious'
+    #      ),
+    #     'ds_chest_indrawing': Property
+    #     (Types.BOOL, 'iCCM danger sign - chest indrawing'
+    #      ),
+    #     'ds_red_MUAC_strap': Property
+    #     (Types.BOOL, 'iCCM danger sign - red on MUAC tape'
+    #      ),
+    #     'ds_sweeling_both_feet': Property
+    #     (Types.BOOL, 'iCCM danger sign - swelling of both feet'
+    #      ),
+    #     'ds_palmar_pallor': Property
+    #     (Types.BOOL, 'iCCM danger sign - palmar pallor'
+    #      ),
+    #     # HSA assessement of symptoms outcome
+    #     'ccm_assessed_cough': Property
+    #     (Types.BOOL, 'HSA asked if the child has cough, or mother\'s report'
+    #      ),
+    #     'ccm_assessed_diarrhoea': Property
+    #     (Types.BOOL, 'HSA asked if the child has diarrhoea, or mother\'s report'
+    #      ),
+    #     'ccm_assessed_fever': Property
+    #     (Types.BOOL, 'HSA asked if the child has fever, or mother\'s report'
+    #      ),
+    #     'ccm_id_fast_breathing': Property
+    #     (Types.BOOL, 'HSA identified fast breathing in child'
+    #      ),
+    #     'ccm_id_ds_blood_in_stools': Property
+    #     (Types.BOOL, 'HSA identified bloody stool in child'
+    #      ),
+    #     'ccm_id_ds_diarrhoea_for_14days_or_more': Property
+    #     (Types.BOOL, 'HSA identified diarrhoea for 14 days or more in child'
+    #      ),
+    #     'ccm_id_ds_fever_for_last_7days': Property
+    #     (Types.BOOL, 'HSA identified fever lasting 7 days or more'
+    #      ),
+    #     'ccm_assessed_red_eyes': Property
+    #     (Types.BOOL, 'HSA asked if the child has red eyes, or mother\'s report'
+    #      ),
+    #     'ccm_id_ds_red_eye_for_4days_or_more': Property
+    #     (Types.BOOL, 'HSA identified red eye for 4 days or more in child'
+    #      ),
+    #     'ccm_id_ds_red_eye_with_visual_problem': Property
+    #     (Types.BOOL, 'HSA identified red eye with visual problem in child'
+    #      ),
+    #     'ccm_id_ds_convulsions': Property
+    #     (Types.BOOL, 'HSA identified convulsions in child'
+    #      ),
+    #     'ccm_id_ds_not_able_to_drink_or_feed': Property
+    #     (Types.BOOL, 'HSA identified inability to drink or breastfeed/feed in child'
+    #      ),
+    #     'ccm_id_ds_vomits_everything': Property
+    #     (Types.BOOL, 'HSA identified vomiting everything in child'
+    #      ),
+    #     'ccm_id_ds_very_sleepy_or_unconscious': Property
+    #     (Types.BOOL,
+    #      'HSA identified child to be very sleepy or unconscious'
+    #      ),
+    #     'ccm_id_ds_chest_indrawing': Property
+    #     (Types.BOOL,
+    #      'HSA identified chest indrawing in child'
+    #      ),
+    #     'ccm_id_ds_red_on_MUAC': Property
+    #     (Types.BOOL,
+    #      'HSA measured red on MUAC tape'
+    #      ),
+    #     'ccm_id_ds_swelling_of_both_feet': Property
+    #     (Types.BOOL,
+    #      'HSA identified swelling of both feet in child'
+    #      ),
+    #     'ccm_id_ds_palmar_pallor': Property
+    #     (Types.BOOL,
+    #      'HSA identified palmar pallor in child'
+    #      ),
+    #     'at_least_one_ccm_danger_sign_identified': Property
+    #     (Types.BOOL,
+    #      'HSA identified at least one iCCM danger sign'
+    #      ),
+    #     # iCCM treatment action
+    #     'ccm_referral_decision': Property
+    #     (Types.CATEGORICAL,
+    #      'HSA decided to refer or to treat at home', categories=['referred to health facility', 'home treatment']
+    #      ),
+    #
+    #      # IMCNI - Integrated Management of Neonatal and Childhood Illnesses algorithm
+    #     'imci_assessment_of_main_symptoms': Property
+    #     (Types.CATEGORICAL,
+    #      'main symptoms assessments', categories=['correctly assessed', 'not assessed']
+    #      ),
+    #     'imci_classification_of_illness': Property
+    #     (Types.CATEGORICAL,
+    #      'disease classification', categories=['correctly classified', 'incorrectly classified']
+    #      ),
+    #     'imci_treatment': Property
+    #     (Types.CATEGORICAL,
+    #      'treatment given', categories=['correctly treated', 'incorrectly treated', 'not treated']
+    #      ),
+    #     'classification_for_cough_or_difficult_breathing': Property
+    #     (Types.CATEGORICAL,
+    #      'classification for cough or difficult breathing',
+    #      categories=['classified as severe pneumonia or very severe disease',
+    #                  'classified as pneumonia', 'classified as no pneumonia']
+    #      ),
+    #     'correct_classification_for_cough_or_difficult_breathing': Property
+    #     (Types.BOOL,
+    #      'classification for cough or difficult breathing is correct'
+    #      ),
+    # }
 
     def read_parameters(self, data_folder):
         p = self.parameters
@@ -281,72 +288,7 @@ class ChildhoodDiseaseInterventions(Module):
     def on_birth(self, mother_id, child_id):
         pass
 
-    def diagnose(self, person_id, hsi_event):
-        """
-        This will diagnose the condition of the person. It is being called from inside an HSI Event.
-
-        :param person_id: The person is to be diagnosed
-        :param hsi_event: The calling hsi_event.
-        :return: a string representing the diagnosis
-        """
-
-        # get the symptoms of the person:
-        symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
-
-        # Make a request for consumables (making reference to the hsi_event from which this is called)
-        # TODO: Finish this demonstration **
-
-        # Make request for some consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        item_code_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Proteinuria test (dipstick)', 'Item_Code']
-        )[0]
-        consumables_needed = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [{item_code_test: 1}],
-        }
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_needed
-        )
-
-        if outcome_of_request_for_consumables['Item_Code'][item_code_test]:
-            # The neccessary diagnosis was available...
-
-            # Example of a diangostic algorithm
-            if symptoms.sum() > 2:
-                diagnosis_str = 'measles'
-            else:
-                diagnosis_str = 'just_a_common_cold'
-
-        else:
-            # Without the diagnostic test, there cannot be a determinant diagnsosi
-            diagnosis_str = 'indeterminate'
-
-        # return the diagnosis as a string
-        return diagnosis_str
-
-class HSI_ICCM(Event, IndividualScopeEventMixin):
-    """ This is the first Health Systems Interaction event in the community for all childhood diseases modules.
-    A sick child presenting symptoms is taken to the HSA for assessment, referral and treatment. """
-
-    # TODO: Should this be in the GenericFirstAppt
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [1]
-        self.ALERT_OTHER_DISEASES = ['NewPneumonia']
-
-    def apply(self, person_id):
+    def do_management_of_child_at_facility_level_0(self, person_id, hsi_event):
 
         logger.debug('This is HSI_ICCM, a first appointment for person %d in the community',
                      person_id)
@@ -629,17 +571,8 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
 
         # # # # # # # # # # # # FIFTH, FOLLOW UP # # # # # # # # # # # #
 
-class HSI_IMNCI2 (Event, IndividualScopeEventMixin):
-    """ This is the first Health Systems Interaction event at the first level health facilities for all
-    childhood diseases modules. A sick child taken to the health centre for assessment, classification and treatment.
-    Also, sick children referred by the HSA """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-    def apply(self, person_id):
-        logger.debug('This is HSI_IMNCI, a first appointment for person %d in the health centre',
-                     person_id)
+    def do_management_of_child_at_facility_level_1(self, person_id, hsi_event):
+        logger.debug('This is HSI_IMNCI, a first appointment for person %d in the health centre',person_id)
 
         df = self.sim.population.props
         p = self.module.parameters
@@ -807,7 +740,14 @@ class HSI_IMNCI2 (Event, IndividualScopeEventMixin):
                 self.sim.rng.choice([True, False], size=1, p=[p['prob_pinched_abdomen'], # 10%
                                                               (1 - p['prob_pinched_abdomen'])])
 
-class IMNCI_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
+
+# --------------------------------------------------------------------------------------------------
+#
+# --- HSI for specific courses of treatment ---
+#
+# --------------------------------------------------------------------------------------------------
+
+class HSI_Diarrhoea_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -815,76 +755,17 @@ class IMNCI_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
-                                              'Treatment of severe pneumonia', 'Intervention_Pkg_Code'])[138]
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-        # Define the necessary information for an HSI
-        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint # self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [1]
+
+        self.TREATMENT_ID = 'Diarrhoea_Treatment'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
-        logger.debug(
-            '....IMNCI_VerySevere_Pneumonia_Treatment: giving treatment for %d with very severe pneumonia',
-            person_id)
 
-        # schedule referral event
-        imci_severe_pneumonia_referral = Referral_Severe_Pneumonia_Treatment(self.module, person_id=person_id)
-        self.sim.modules['HealthSystem'].schedule_hsi_event(imci_severe_pneumonia_referral,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=None
-                                                            )
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('Do the action of the HSI')
+        pass
 
-class Referral_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
 
-    #TODO: This should be HSI
 
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
-                                              'Treatment of severe pneumonia', 'Intervention_Pkg_Code'])[138]
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-        # Define the necessary information for an HSI
-        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint # self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [1]
-        self.ALERT_OTHER_DISEASES = []
-
-class IMNCI_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
-    #TODO: This should be HSI
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
-                                              'Treatment of severe pneumonia', 'Intervention_Pkg_Code'])[138]
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-        # Define the necessary information for an HSI
-        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint  # self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [1]
-        self.ALERT_OTHER_DISEASES = []
 
