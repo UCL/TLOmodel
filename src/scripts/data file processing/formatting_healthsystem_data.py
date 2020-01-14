@@ -341,7 +341,7 @@ assert not pd.isnull(appt_types_table).any().any()
 appt_types_table.to_csv(resourcefilepath + 'ResourceFile_Appt_Types_Table.csv')
 # ----------
 
-# Now, Make the ApptTimeTable
+# Now, make the ApptTimeTable
 # (Table that gives for each appointtment, when occuring in each appt_type at each facility type, the time of each \
 # type of officer required
 
@@ -410,6 +410,25 @@ ApptTimeTable = ApptTimeTable.drop(ApptTimeTable[ApptTimeTable['Time_Taken'] == 
 
 # Save
 ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_Appt_Time_Table.csv')
+
+
+# Create a table that determines what kind of appointment can be serviced in each Facility Level
+ApptType_By_FacLevel = pd.DataFrame(index=appt_types_table['Appt_Type_Code'],
+                                    columns=Facility_Levels,
+                                    data=False,
+                                    dtype=bool)
+
+for appt_type in ApptType_By_FacLevel.index:
+    for fac_level in ApptType_By_FacLevel.columns:
+
+        # Can this appt_type happen at this facility_level?
+        # Check to see if ApptTimeTable has any time requirement
+
+        ApptType_By_FacLevel.at[appt_type, fac_level] = \
+            ((ApptTimeTable['Facility_Level'] == fac_level) & (ApptTimeTable['Appt_Type_Code'] == appt_type)).any()
+
+ApptType_By_FacLevel = ApptType_By_FacLevel.add_prefix('Facility_Level_')
+ApptType_By_FacLevel.to_csv(resourcefilepath + 'ResourceFile_ApptType_By_FacLevel.csv')
 
 # -------
 # -------
@@ -521,7 +540,7 @@ assert ~ (pd.isnull(facility_assignment).any().any())
 # -----------------
 
 # Check that every appointment that can be raised by someone in any district is going to be possible to be met by at\
-#  least one of their facilities (if staff numbers (if >0) were not a limiting factor: ie. just checking the \
+# least one of their facilities (if staff numbers (if >0) were not a limiting factor: ie. just checking the \
 # distribution of the officer types between the facilities)
 
 for d in pop_districts:
@@ -559,6 +578,7 @@ for d in pop_districts:
             appt_ok_per_fac[f] = appt_ok_in_this_fac
 
         assert np.asarray(list(appt_ok_per_fac.values())).any()
+
 
 # -----------------
 # -----------------

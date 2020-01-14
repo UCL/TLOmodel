@@ -590,7 +590,7 @@ class HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(HSI_Event, IndividualScop
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_low_grade_oes_dysplasia"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -627,7 +627,7 @@ class HSI_OesCancer_StartTreatmentStage1OesCancer(HSI_Event, IndividualScopeEven
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage1_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -645,7 +645,7 @@ class HSI_OesCancer_StartTreatmentStage2OesCancer(HSI_Event, IndividualScopeEven
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage2_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -664,7 +664,7 @@ class HSI_OesCancer_StartTreatmentStage3OesCancer(HSI_Event, IndividualScopeEven
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage3_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
