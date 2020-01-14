@@ -100,7 +100,6 @@ class Simulation:
         for module in self.modules.values():
             module.pre_initialise_population()
 
-
         # Make the initial population
         self.population = Population(self, n)
         for module in self.modules.values():
