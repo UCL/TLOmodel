@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt
-import shapefile as shp
-import pandas as pd
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import shapefile as shp
 
 # Example plotting script for administrative district boundaries in Malawi
 # More details available in the cookbook: https://github.com/UCL/TLOmodel/wiki/Cookbook#plotting-maps
