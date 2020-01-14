@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 """
-This module determines how the diagnosis of children at their initial presentation at a health facility
+This module determines what happens to children at their initial presentation at a health facility and afterwards.
+Children that are presenting in GenericFirstAppts, will cause the respective 'do_management_' routine to be run.
 
 """
 
@@ -249,6 +250,11 @@ class ChildhoodManagement(Module):
     #      ),
     # }
 
+
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
     def read_parameters(self, data_folder):
         p = self.parameters
 
@@ -292,7 +298,7 @@ class ChildhoodManagement(Module):
 
         logger.debug('This is do_management_of_child_at_facility_level_0, for person %d in the community', person_id)
         df = self.sim.population.props
-        p = self.module.parameters
+        p = self.parameters
         logger.debug("I will now do anything that needs to be done in an initial appointment")
 
         #     # # # # # # # # # # # # FIRST IS THE ASSESSMENT OF SYMPTOMS # # # # # # # # # # # #
@@ -568,7 +574,9 @@ class ChildhoodManagement(Module):
     def do_management_of_child_at_facility_level_1(self, person_id, hsi_event):
         logger.debug('This is HSI_IMNCI, a first appointment for person %d in the health centre',person_id)
         df = self.sim.population.props
-        p = self.module.parameters
+        p = self.parameters
+
+
         #     # THIS EVENT CHECKS FOR ALL SICK CHILDREN PRESENTING FOR CARE AT AN OUTPATIENT HEALTH FACILITY
         #
         #     # cough_or_difficult_breathing = df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
@@ -732,6 +740,25 @@ class ChildhoodManagement(Module):
         #             self.sim.rng.choice([True, False], size=1, p=[p['prob_pinched_abdomen'], # 10%
         #                                                           (1 - p['prob_pinched_abdomen'])])
 
+        # TODO: the job here is diagnose the children based on the symptoms and underlying conditions they have.
+        # .... So Could do the following:
+
+        # profile of the child from the df and the symtommaneer
+        c = df.loc[person_id,]
+        s = self.sim.modules['SymptomManager'].has_what(person_id)
+
+        # Extract the things that may be checked by the nurse and the true state
+        # (here filled in with dummy values but this would be done by looking inside c and s)
+
+        true_condition = dict({
+            'diarrhoea': True,
+            'vomitting_everything': True,
+            'difficulty_breathing': False
+        })
+
+        perceived_condition = diagnose(true_condition)
+
+        # best way to do this???
 
 # --------------------------------------------------------------------------------------------------
 #
