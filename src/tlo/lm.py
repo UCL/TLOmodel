@@ -1,5 +1,5 @@
 import numbers
-from enum import Enum
+from enum import Enum, auto
 
 import numpy as np
 import pandas as pd
@@ -12,7 +12,6 @@ class Predictor(object):
         self.property_name = property_name
         self.conditions = list()
         self.else_condition_supplied = False
-        print(f'{self.property_name}:')
 
     def when(self, condition, value):
         return self._coeff(condition, value)
@@ -66,7 +65,6 @@ class Predictor(object):
         else:
             raise RuntimeError(f"Unhandled condition: {args}")
 
-        # print(f'\t{parsed_condition} -> {coefficient}')
         self.conditions.append((parsed_condition, coefficient))
         return self
 
@@ -79,18 +77,14 @@ class Predictor(object):
 
         output = pd.Series(data=np.nan, index=df.index)
         touched = pd.Series(False, index=df.index)
-        print("touched = pd.Series(False, index=output.index)")
         for condition, value in self.conditions:
             if condition:
                 condition = condition + ' & (~@touched)'
             else:
                 condition = '~@touched'
             mask = df.eval(condition)
-            print(f"mask = df.eval('{condition}')")
             output[mask] = value
-            print(f"output[mask] += {value}")
             touched = (touched | mask)
-            print(f"touched = (touched | mask)")
         return output
 
 
@@ -103,9 +97,9 @@ class LinearModelType(Enum):
     and the prediction is a probability.]
     'multiplicative' -> multiplies the effect_sizes from the predictors
     """
-    ADDITIVE = 1
-    LOGISTIC = 2
-    MULTIPLICATIVE = 3
+    ADDITIVE = auto()
+    LOGISTIC = auto()
+    MULTIPLICATIVE = auto()
 
 
 class LinearModel(object):
@@ -116,6 +110,7 @@ class LinearModel(object):
         assert lm_type in LinearModelType, 'Model should be one of the prescribed LinearModelTypes'
         self.lm_type = lm_type
 
+        assert isinstance(intercept, float), "Intercept is not specified"
         self.intercept = intercept
 
         self.predictors = list()
@@ -125,9 +120,6 @@ class LinearModel(object):
 
     def predict(self, df: pd.DataFrame):
         """Will call each Predictor's `predict` methods passing the supplied dataframe"""
-
-        # Do some checks:
-        assert self.intercept is not None, "Interceipt is not specified"
         assert all([p.property_name in df.columns
                     for p in self.predictors
                     if p.property_name is not None]), "Predictor variables not in df"
