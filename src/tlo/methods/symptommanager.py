@@ -105,7 +105,7 @@ class SymptomManager(Module):
             person_id = [person_id]
 
         # Strip out the person_ids for anyone who is not alive.
-        person_id = df.index[df.is_alive & (df.index.isin(person_id))]
+        person_id = list(df.index[df.is_alive & (df.index.isin(person_id))])
 
         # Check that the symptom_string is legitimate
         assert symptom_string in self.all_registered_symptoms, 'Symptom is not recognised'
@@ -161,7 +161,7 @@ class SymptomManager(Module):
 
             df.loc[person_id, symptom_var_name].apply(lambda x: x.remove(disease_module.name))
 
-    def who_has(self, in_list_of_symptoms):
+    def who_has(self, list_of_symptoms):
         """
         This is a helper function to look up who has a particular symptom or set of symptoms.
         It returns a list of indicies for person that have all of the symptoms specified
@@ -171,24 +171,21 @@ class SymptomManager(Module):
         """
 
         # Check formatting of list_of_symptoms is right (must be a list of strings)
-        if isinstance(in_list_of_symptoms, str):
-            list_of_symptoms = [in_list_of_symptoms]
+        if isinstance(list_of_symptoms, str):
+            list_of_symptoms = [list_of_symptoms]
         else:
-            list_of_symptoms = in_list_of_symptoms
+            list_of_symptoms = list_of_symptoms
         assert len(list_of_symptoms) > 0
 
         # Check that these are legitimate symptoms
-        assert all([(symp in self.all_registered_symptoms) for symp in list_of_symptoms])
+        assert all([symp in self.all_registered_symptoms for symp in list_of_symptoms])
 
         # get the person_id for those who have each symptom
         df = self.sim.population.props
-        mask_has_symp = pd.Series(data=True, index=df.loc[df['is_alive']].index)
-        for symp in list_of_symptoms:
-            symp_var_name = 'sy_' + symp
-            mask_has_symp = mask_has_symp & df[symp_var_name].apply(lambda x: x != set())
+        symptom_columns = [f'sy_{col}' for col in list_of_symptoms]
+        people_with_all_symptoms = df.loc[df.is_alive, symptom_columns].applymap(lambda x: x != set()).all(axis=1).index
 
-        person_id_with_all_symp = list(mask_has_symp.loc[mask_has_symp].index)
-        return person_id_with_all_symp
+        return list(people_with_all_symptoms)
 
     def has_what(self, person_id, disease_module=None):
         """
