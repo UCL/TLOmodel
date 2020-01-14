@@ -28,7 +28,7 @@ class SymptomManager(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.persons_with_newly_onset_symptoms = set()
-        self.symptom_var_names = []
+        self.symptom_column_names = []
         self.all_registered_symptoms = None
 
     def read_parameters(self, data_folder):
@@ -64,13 +64,13 @@ class SymptomManager(Module):
 
         for symptom in self.all_registered_symptoms:
             self.PROPERTIES[f'sy_{symptom}'] = Property(Types.LIST, f'Presence of symptom {symptom}')
-            self.symptom_var_names.append(f'sy_{symptom}')
+            self.symptom_column_names.append(f'sy_{symptom}')
 
     def initialise_population(self, population):
         """
         Give all individuals the no symptoms (ie. an empty set)
         """
-        for symptom_var in self.symptom_var_names:
+        for symptom_var in self.symptom_column_names:
             population.props[symptom_var].values[:] = set()
 
     def initialise_simulation(self, sim):
@@ -81,7 +81,7 @@ class SymptomManager(Module):
         Set that the child will have no symptoms by default (empty set)
         """
         df = self.sim.population.props
-        for symptom_var in self.symptom_var_names:
+        for symptom_var in self.symptom_column_names:
             df.at[child_id, symptom_var] = set()
 
     def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
@@ -198,18 +198,19 @@ class SymptomManager(Module):
         :return: list of strings for the symptoms that are currently being experienced
         """
         df = self.sim.population.props
-        profile = df.loc[person_id, df.columns[df.columns.str.startswith('sy_')]]
+
+        profile = df.loc[person_id, self.symptom_column_names]
 
         assert df.at[person_id, 'is_alive'], "The person is not alive"
 
-        if disease_module is None:
-            # search for symptoms that are present (non-empty sets)
-            symptoms_with_prefix = list(profile[profile.apply(lambda x: x != set())].index)
-        else:
-            # search for symptoms that have a specified disease_module_name in their set
+        if disease_module:
             assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(), \
                 "Disease Module Name is not recognised"
-            symptoms_with_prefix = list(profile[profile.apply(lambda x: (disease_module.name in x))].index)
+            fun = lambda x: disease_module.name in x
+        else:
+            fun = lambda x: x != set()
+
+        symptoms_with_prefix = profile[profile.apply(fun)].index
 
         # remove the 'sy_' prefix
         symptoms = [s[3:] for s in symptoms_with_prefix]
