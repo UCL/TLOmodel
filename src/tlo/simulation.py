@@ -95,6 +95,12 @@ class Simulation:
         :param n: the number of individuals to create; must be given as
             a keyword parameter for clarity
         """
+
+        # Collect information from all modules, that is required the population dataframe
+        for module in self.modules.values():
+            module.pre_initialise_population()
+
+        # Make the initial population
         self.population = Population(self, n)
         for module in self.modules.values():
             module.initialise_population(self.population)
@@ -129,6 +135,7 @@ class Simulation:
 
         :param event: the Event to schedule
         :param date: when the event should happen
+        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 

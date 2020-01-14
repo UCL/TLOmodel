@@ -318,7 +318,7 @@ class Lifestyle(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
         dfd = pd.read_excel(
-            self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
+            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
         )
 
         self.load_parameters_from_dataframe(dfd)
@@ -1153,15 +1153,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             bmi_proportions
         )
 
-        #       logger.debug('%s|person_one|%s',
-        #                    self.sim.date,
-        #                    df.loc[0].to_dict())
-
         """
         logger.info('%s|li_urban|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_urban').size().to_dict())
-
         logger.info('%s|li_wealth|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_wealth').size().to_dict())
