@@ -19,19 +19,21 @@ class SymptomManager(Module):
     PROPERTIES = dict()  # give blank definition of parameters here. It's updated in 'pre_initialise_population'
 
     PARAMETERS = {
-        'list_of_generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
+        'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
     }
 
-    symptom_var_names = []
+
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.persons_with_newly_onset_symptoms = set()
+        self.symptom_var_names = []
+        self.all_registered_symptoms = None
 
     def read_parameters(self, data_folder):
         # Generic Symptoms: pre-defined and used in health seeking behaviour
-        self.parameters['list_of_generic_symptoms'] = [
+        self.parameters['generic_symptoms'] = {
             'fever',
             'vomiting',
             'stomachache',
@@ -44,7 +46,7 @@ class SymptomManager(Module):
             'injury',
             'eye_complaint',
             'diarrhoea',
-        ]
+        }
 
     def pre_initialise_population(self):
         """
@@ -53,17 +55,12 @@ class SymptomManager(Module):
         This will make sure that each symptom is included in the list at most once (even if multiple disease modules
         declare the same symptom).
         """
-        registered_symptoms = set()
+        registered_symptoms = self.parameters['generic_symptoms']
         for module in self.sim.modules['HealthSystem'].registered_disease_modules.values():
-            try:
-                symptoms = module.SYMPTOMS
-                assert isinstance(symptoms, set)
-                registered_symptoms = registered_symptoms.union(symptoms)
+            if hasattr(module, 'SYMPTOMS'):
+                registered_symptoms = registered_symptoms.union(module.SYMPTOMS)
 
-            except AttributeError:
-                pass
-
-        self.all_registered_symptoms = registered_symptoms.union(self.parameters['list_of_generic_symptoms'])
+        self.all_registered_symptoms = registered_symptoms
 
         for symptom in self.all_registered_symptoms:
             self.PROPERTIES[f'sy_{symptom}'] = Property(Types.LIST, f'Presence of symptom {symptom}')
@@ -95,7 +92,7 @@ class SymptomManager(Module):
         Check if the set is empty or not to determine if the sympton is currently present.
 
         :param person_id: The person_id (int or list of int) for whom the symptom changes
-        :param symptom_string: The string for the symptom (must be one of the list_of_generic_symptoms)
+        :param symptom_string: The string for the symptom (must be one of the generic_symptoms)
         :param add_or_remove: '+' to add the symptom or '-' to remove the symptom
         :param disease_module: pointer to the disease module that is reporting this change in symptom
         """
@@ -127,7 +124,7 @@ class SymptomManager(Module):
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
 
         # Check that the symptom is declared for use by the disease_module
-        if symptom_string not in self.parameters['list_of_generic_symptoms']:
+        if symptom_string not in self.parameters['generic_symptoms']:
             assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not generic or declared for use by disease ' \
                                                               'module '
 
