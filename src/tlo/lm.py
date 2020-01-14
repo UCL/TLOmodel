@@ -75,16 +75,30 @@ class Predictor(object):
         # We want to "short-circuit" values i.e. if an individual in a population matches a certain
         # condition, we don't want that individual to be matched in any subsequent conditions
 
+        # result of assigning coefficients on this predictor
         output = pd.Series(data=np.nan, index=df.index)
-        touched = pd.Series(False, index=df.index)
+
+        # keep a record of all rows matched by this predictor's conditions
+        matched = pd.Series(False, index=df.index)
+
         for condition, value in self.conditions:
+            # don't include rows that were matched by a previous condition
             if condition:
-                condition = condition + ' & (~@touched)'
+                unmatched_condition = f'{condition} & (~@matched)'
             else:
-                condition = '~@touched'
-            mask = df.eval(condition)
+                unmatched_condition = '~@matched'
+
+            # rows matching the current conditional
+            mask = df.eval(unmatched_condition)
+
+            # test if mask includes rows that were already matched by a previous condition
+            assert not (matched & mask).any(), f'condition "{unmatched_condition}" matches rows already matched'
+
+            # update elements in the output series with the corresponding value for the condition
             output[mask] = value
-            touched = (touched | mask)
+
+            # add this condition's matching rows to the list of matched rows
+            matched = (matched | mask)
         return output
 
 
