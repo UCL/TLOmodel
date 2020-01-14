@@ -6,6 +6,9 @@ from ast import literal_eval
 
 import pandas as pd
 
+from tlo import util
+from tlo.util import create_age_range_lookup
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -131,3 +134,37 @@ def parse_output(list_of_log_lines):
             # append the new row to the dataframe for this logger & log name
             o[i['logger']][i['key']] = df.append(row, ignore_index=True)
     return o
+
+
+def make_calendar_period_lookup():
+    """Returns a dictionary mapping calendar year (in years) to five year period
+    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    """
+
+    # Recycles the code used to make age-range lookups:
+    ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
+
+    # Removes the '1950-' category
+    ranges.remove('0-1950')
+    for year in range(1950):
+        lookup.pop(year)
+
+    return ranges, lookup
+
+
+def make_age_grp_types():
+    """
+    Make an ordered categorical type for age-groups
+    Returns CategoricalDType
+    """
+    keys, _ = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
+    return pd.CategoricalIndex(categories=keys, ordered=True)
+
+
+def make_calendar_period_type():
+    """
+    Make an ordered categorical type for calendar periods
+    Returns CategoricalDType
+    """
+    keys, _ = make_calendar_period_lookup()
+    return pd.CategoricalIndex(categories=keys, ordered=True)

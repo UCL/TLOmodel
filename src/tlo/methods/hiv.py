@@ -1084,7 +1084,8 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_specific_symptoms'] = 'symp'
             df.at[person_id, 'hv_unified_symptom_code'] = 2
 
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+            # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+            prob = 1.0  # Do not use get_prob_seek_care()
             seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
@@ -1119,7 +1120,8 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_specific_symptoms'] = 'aids'
             df.at[person_id, 'hv_unified_symptom_code'] = 3
 
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
+            # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
+            prob = 0.5  # NB. Do not use get_prob_seek_care(). For non-generic symptoms do inside the module.
             seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
@@ -1230,7 +1232,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1299,7 +1301,7 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TestingInfant'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1402,13 +1404,14 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
+        # the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
+        # -- CANNOT HAVE ConWithDCSA at Level 1
         the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1472,7 +1475,7 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Prep'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1551,7 +1554,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantProphylaxis'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1605,7 +1608,7 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantTreatmentInitiation'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1726,7 +1729,7 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentInitiation'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1904,7 +1907,7 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
