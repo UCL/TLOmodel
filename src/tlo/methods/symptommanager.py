@@ -22,8 +22,6 @@ class SymptomManager(Module):
         'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
     }
 
-
-
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -206,11 +204,15 @@ class SymptomManager(Module):
         if disease_module:
             assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(), \
                 "Disease Module Name is not recognised"
-            fun = lambda x: disease_module.name in x
-        else:
-            fun = lambda x: x != set()
 
-        symptoms_with_prefix = profile[profile.apply(fun)].index
+            def filter_symptoms(x):
+                return disease_module.name in x
+        else:
+
+            def filter_symptoms(x):
+                return x != set()
+
+        symptoms_with_prefix = profile[profile.apply(filter_symptoms)].index
 
         # remove the 'sy_' prefix
         symptoms = [s[3:] for s in symptoms_with_prefix]
