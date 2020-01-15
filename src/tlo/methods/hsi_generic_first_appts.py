@@ -240,7 +240,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ConWithDCSA'] = 1.0  # Consultantion with DCSA
+        the_appt_footprint['ConWithDCSA'] = 1.0  # Consultation with DCSA
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
