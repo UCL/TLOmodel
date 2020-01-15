@@ -21,14 +21,23 @@ class Predictor(object):
             self.property_name = f'__{self.property_name}__'
 
         self.conditions = list()
+        self.callback = None
         self.else_condition_supplied = False
 
     def when(self, condition, value):
+        assert self.callback is None, "Can't use `when` on Predictor with function"
         return self._coeff(condition, value)
 
     def otherwise(self, value):
         assert self.property_name is not None, "Can't use `otherwise` condition on unnamed Predictor"
+        assert self.callback is None, "Can't use `otherwise` on Predictor with function"
         return self._coeff(value)
+
+    def apply(self, callback):
+        assert self.property_name is not None, "Can't use `apply` on unnamed Predictor"
+        assert len(self.conditions) == 0, "Can't specify `apply` on Predictor with when/otherwise conditions"
+        self.callback = callback
+        return self
 
     def _coeff(self, *args):
         """Adds the coefficient for the Predictor. The arguments can be two:
@@ -87,6 +96,13 @@ class Predictor(object):
 
         # result of assigning coefficients on this predictor
         output = pd.Series(data=np.nan, index=df.index)
+
+        # if this predictor's coefficient is calculated by callback, run it and return
+        if self.callback:
+            # note that callback only works on single column
+            output = df[self.property_name].apply(self.callback)
+            logger.debug('predictor: %s; function: %s; matched: %d', self.property_name, self.callback, len(df))
+            return output
 
         # keep a record of all rows matched by this predictor's conditions
         matched = pd.Series(False, index=df.index)
