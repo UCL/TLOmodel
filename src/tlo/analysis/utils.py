@@ -3,10 +3,8 @@ General utility functions for TLO analysis
 """
 import logging
 from ast import literal_eval
-from pathlib import Path
 
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 
 from tlo import util
 from tlo.util import create_age_range_lookup
@@ -17,7 +15,7 @@ logger.setLevel(logging.INFO)
 
 def parse_line(line):
     """
-    Parses a single line of logged outputs. It has the format:
+    Parses a single line of logged output. It has the format:
     INFO|<logger name>|<simulation date>|<log key>|<python object>
 
     It returns the dictionary:
@@ -46,7 +44,7 @@ def parse_line(line):
 
 def parse_log_file(filepath):
     """
-    Parses logged outputs from a TLO run and create Pandas dataframes for analysis. See
+    Parses logged output from a TLO run and create Pandas dataframes for analysis. See
     parse_output() for details
 
     :param filepath: file path to log file
@@ -58,7 +56,7 @@ def parse_log_file(filepath):
 
 def parse_output(list_of_log_lines):
     """
-    Parses logged outputs from a TLO run and create Pandas dataframes for analysis.
+    Parses logged output from a TLO run and create Pandas dataframes for analysis.
 
     Use parse_log_file() wrapper if required
 
@@ -138,70 +136,6 @@ def parse_output(list_of_log_lines):
     return o
 
 
-def scale_to_population(parsed_output, resourcefilepath):
-    """
-    This helper function scales certain outputs so that they can create statistics for the whole population.
-    e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
-    {Real Population at the same time}.
-
-    NB. This file gives precedence to the Malawi Population Census
-
-    :param parsed_outoput: The outputs from parse_output
-    :param resourcefilepath: The resourcefilepath
-    :return: a new version of parsed_output that includes certain variables scaled
-    """
-
-    # Get information about the real population size (Malawi Census in 2018)
-    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
-    cens_yr = 2018
-
-    # Get information about the model population size in 2018 (and fail if no 2018)
-    model_res = parsed_output['tlo.methods.demography']['population']
-    model_res['year'] = pd.to_datetime(model_res.date).dt.year
-
-    assert cens_yr in model_res.year.values, "Model results do not contain the year of the census, so cannot scale"
-    model_tot = model_res.loc[model_res['year'] == cens_yr, 'total'].values[0]
-
-    # Calculate ratio for scaling
-    ratio_data_to_model = cens_tot / model_tot
-
-    # Do the scaling on selected columns in the parsed outputs:
-    o = parsed_output.copy()
-
-    # Multiply population count summaries by ratio
-    o['tlo.methods.demography']['population']['male'] *= ratio_data_to_model
-    o['tlo.methods.demography']['population']['female'] *= ratio_data_to_model
-    o['tlo.methods.demography']['population']['total'] *= ratio_data_to_model
-
-    o['tlo.methods.demography']['age_range_m'].iloc[:, 1:] *= ratio_data_to_model
-    o['tlo.methods.demography']['age_range_f'].iloc[:, 1:] *= ratio_data_to_model
-
-    # For individual-level reporting, construct groupby's and then multipy by ratio
-    # 1) Counts of numbers of death by year/age/cause
-    deaths = o['tlo.methods.demography']['death']
-    deaths.index = pd.to_datetime(deaths['date'])
-    deaths['year'] = deaths.index.year.astype(int)
-
-    deaths_groupby_scaled = deaths[['year', 'sex', 'age', 'cause', 'person_id']].groupby(
-        by=['year', 'sex', 'age', 'cause']).count().unstack(fill_value=0).stack() * ratio_data_to_model
-    deaths_groupby_scaled.rename(columns={'person_id': 'count'}, inplace=True)
-    o['tlo.methods.demography'].update({'death_groupby_scaled': deaths_groupby_scaled})
-
-    # 2) Counts of numbers of births by year/age-of-mother
-    births = o['tlo.methods.demography']['on_birth']
-    births.index = pd.to_datetime(births['date'])
-    births['year'] = births.index.year
-    births_groupby_scaled = \
-        births[['year', 'mother_age', 'mother']].groupby(by=['year', 'mother_age']).count() \
-        * ratio_data_to_model
-    births_groupby_scaled.rename(columns={'mother': 'count'}, inplace=True)
-    o['tlo.methods.demography'].update({'birth_groupby_scaled': births_groupby_scaled})
-
-    # TODO: Do this kind of manipulation for all things in the log that are /
-    #  flagged are being subject to scaling - issue raised.
-    return o
-
-
 def make_calendar_period_lookup():
     """Returns a dictionary mapping calendar year (in years) to five year period
     i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
@@ -211,7 +145,7 @@ def make_calendar_period_lookup():
     ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
 
     # Removes the '1950-' category
-    ranges.remove('1950-')
+    ranges.remove('0-1950')
     for year in range(1950):
         lookup.pop(year)
 
@@ -223,16 +157,8 @@ def make_age_grp_types():
     Make an ordered categorical type for age-groups
     Returns CategoricalDType
     """
-
-    (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
-    age_grp_cats = list()
-    for i in age_grp_lookup.values():
-        if i not in age_grp_cats:
-            age_grp_cats.append(i)
-
-    age_grp_type = CategoricalDtype(categories=age_grp_cats, ordered=True)
-
-    return age_grp_type
+    keys, _ = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
+    return pd.CategoricalIndex(categories=keys, ordered=True)
 
 
 def make_calendar_period_type():
@@ -240,13 +166,5 @@ def make_calendar_period_type():
     Make an ordered categorical type for calendar periods
     Returns CategoricalDType
     """
-    (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-
-    cal_per_cats = list()
-    for i in calendar_period_lookup.values():
-        if i not in cal_per_cats:
-            cal_per_cats.append(i)
-
-    cal_period_type = CategoricalDtype(categories=cal_per_cats, ordered=True)
-
-    return cal_period_type
+    keys, _ = make_calendar_period_lookup()
+    return pd.CategoricalIndex(categories=keys, ordered=True)

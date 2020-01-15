@@ -36,7 +36,7 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
 
     # create category for minimum age
     if min_age > 0:
-        under_min_age_category = f'{min_age}-'
+        under_min_age_category = f'0-{min_age}'
         age_categories.append(under_min_age_category)
         for i in range(0, min_age):
             lookup[i] = under_min_age_category
@@ -57,7 +57,7 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
 
 def nested_to_record(df: pd.DataFrame) -> Dict[str, Any]:
     """Transform dataframe into flattened dictionary,
-    a convenience wrapper for nested_to_record (from pandas.io.json.normalize) on a df.to_dict() outputs
+    a convenience wrapper for nested_to_record (from pandas.io.json.normalize) on a df.to_dict() output
 
     Dictionary keys are in the form f'{column_name}_{index_name}'
 
@@ -77,7 +77,7 @@ def show_changes(sim, initial_state, final_state):
     This is intended for interactive testing on small populations. It uses
     pandas' styling support to colour changed property values red. Within
     a Jupyter notebook, just calling this function at the end of a cell will
-    display colourful outputs.
+    display colourful output.
 
     :param Simulation sim: the simulation these states came from
     :param DataFrame initial_state: the initial population properties

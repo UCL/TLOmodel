@@ -2,13 +2,26 @@
 The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
 the health system following the onset of acute generic symptoms.
 """
+import logging
 
 from tlo.events import IndividualScopeEventMixin
+from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods import malaria
 from tlo.methods.malaria import HSI_Malaria_tx_compl_child, HSI_Malaria_tx_compl_adult
 from tlo.population import logger
 from tlo import DateOffset
+
+# ---------------------------------------------------------------------------------------------------------
+#
+#    ** NON-EMERGENCY APPOINTMENTS **
+#
+# ---------------------------------------------------------------------------------------------------------
+
+from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -55,8 +68,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
-
-        # todo: expected appt footprint
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)

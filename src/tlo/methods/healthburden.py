@@ -75,7 +75,7 @@ class HealthBurden(Module):
         pass
 
     def on_simulation_end(self):
-        logger.debug('This is being called at the end of the simulation. Time to outputs to the logs....')
+        logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
 
         # Label and concantenate YLL and YLD dataframes
         assert self.YearsLifeLost.index.equals(self.multi_index)
@@ -95,7 +95,7 @@ class HealthBurden(Module):
         for line_num in range(len(dalys)):
             line_as_dict = dalys.loc[line_num].to_dict()
             year = line_as_dict.pop('year')
-            year_as_date = pd.Timestamp(year=year, month=12, day=31)  # log outputs for the year on 31st December
+            year_as_date = pd.Timestamp(year=year, month=12, day=31)  # log output for the year on 31st December
             logger.info('%s|DALYS|%s', year_as_date, line_as_dict)
 
     def get_daly_weight(self, sequlae_code):

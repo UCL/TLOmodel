@@ -106,9 +106,9 @@ class Contraception(Module):
         # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age:
         # - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
 
-        self.parameters['r_init_year'] = workbook['r_init_year']
+        self.parameters['r_init_year'] = workbook['r_init_year'].set_index('year')
 
-        self.parameters['r_discont_year'] = workbook['r_discont_year']
+        self.parameters['r_discont_year'] = workbook['r_discont_year'].set_index('year')
 
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
@@ -129,7 +129,6 @@ class Contraception(Module):
         c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
         c_adjusted = c_baseline.mul(c_multiplier.r_init1_age, axis='index')
         c_adjusted = c_baseline + c_adjusted
-        c_adjusted['not_using'] = 1 - c_adjusted.sum(axis=1)
         self.parameters['contraception_initiation1'] = c_adjusted.set_index(c_multiplier.age)
 
         # For ContraceptionSwitchingPoll.switch ----------------------------------------------------
@@ -301,16 +300,9 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        co_start_prob_by_age = p['contraception_initiation1']
-
-        c_multiplier = p['r_init_year'].set_index('year')
-        year = self.sim.date.year
-        c_multiplier = c_multiplier.loc[year, 'r_init_year']
-        c_baseline = co_start_prob_by_age
-        c_baseline = c_baseline.drop(columns=['not_using'])
-        c_adjusted = c_baseline.mul(c_multiplier)
-        c_adjusted['not_using'] = 1 - c_adjusted.sum(axis=1)
-        co_start_prob_by_age = c_adjusted.set_index(c_baseline.index)
+        c_multiplier = p['r_init_year'].at[self.sim.date.year, 'r_init_year']
+        co_start_prob_by_age = p['contraception_initiation1'].mul(c_multiplier)
+        co_start_prob_by_age['not_using'] = 1 - co_start_prob_by_age.sum(axis=1)
 
         # all the contraceptive types we can randomly choose
         co_types = list(co_start_prob_by_age.columns)
@@ -381,14 +373,8 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         rng = self.module.rng
 
-        c_adjustment = p['contraception_discontinuation']
-
-        c_multiplier = p['r_discont_year'].set_index('year')
-        year = self.sim.date.year
-        c_multiplier = c_multiplier.loc[year, 'r_discont_year']
-        c_baseline = c_adjustment
-        c_adjusted = c_baseline.mul(c_multiplier)
-        c_adjustment = c_adjusted.set_index(c_baseline.index)
+        c_multiplier = p['r_discont_year'].at[self.sim.date.year, 'r_discont_year']
+        c_adjustment = p['contraception_discontinuation'].mul(c_multiplier)
 
         def get_prob_discontinued(row):
             """returns the probability of discontinuing contraceptive based on age and current

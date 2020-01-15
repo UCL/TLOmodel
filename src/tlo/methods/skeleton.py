@@ -51,7 +51,7 @@ class Skeleton(Module):
 
     # Declare the non-generic symptoms that this module will use.
     # It will not be able to use any that are not declared here. They do not need to be unique to this module.
-    # There is no need to declare symptoms that are generic here (i.e. in the generic list of symptoms)
+    # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
     SYMPTOMS = {}
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -73,6 +73,9 @@ class Skeleton(Module):
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
+        If this is a disease module, register this disease module with the healthsystem:
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
         :param population: the population of individuals
         """
         raise NotImplementedError
@@ -84,11 +87,7 @@ class Skeleton(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
 
-        If this is a disease module, register this disease module with the healthsystem:
-        self.sim.modules['HealthSystem'].register_disease_module(self)
         """
-        # TODO: Add in registeration to symptom manager and put in read_
-
         raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
@@ -167,7 +166,7 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
 class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summary of the numbers of people with respect to the action of this module.
-        This is a regular event that can outputs current states of people or cumulative events since last logging event.
+        This is a regular event that can output current states of people or cumulative events since last logging event.
         """
 
         # run this event every year
