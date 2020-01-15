@@ -158,6 +158,46 @@ def test_external_variable():
                                3.3, 3.3, 3.3, 3.3, 3.1, 3.3, 3.3, 3.3, 3.1, 3.1]
 
 
+def test_callback_value():
+    # as lambda
+    eq = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years').apply(lambda x: x / 100)
+    )
+    output1 = eq.predict(EXAMPLE_DF)
+
+    # as function
+    def callback(x):
+        return x/100
+
+    eq2 = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('age_years').apply(callback)
+    )
+    output2 = eq2.predict(EXAMPLE_DF)
+
+    assert output1.tolist() == (EXAMPLE_DF.age_years/100).tolist()
+    assert output1.tolist() == output2.tolist()
+
+def test_callback_with_external_variable():
+    eq = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('region_of_residence').when('Northern', 1).otherwise(2),
+        Predictor('year', external=True).apply(lambda x: (x - 10) / 10000)
+    )
+    output1 = eq.predict(EXAMPLE_DF, year=2019)
+    assert output1.tolist() == [1.2009, 2.2009, 1.2009, 2.2009, 2.2009, 2.2009, 2.2009, 1.2009,
+                                2.2009, 2.2009, 2.2009, 2.2009, 2.2009, 2.2009, 2.2009, 1.2009,
+                                2.2009, 2.2009, 2.2009, 1.2009, 1.2009]
+
+    output2 = eq.predict(EXAMPLE_DF, year=2010)
+    assert output2.tolist() == [1.2000, 2.2000, 1.2000, 2.2000, 2.2000, 2.2000, 2.2000, 1.2000,
+                                2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 1.2000,
+                                2.2000, 2.2000, 2.2000, 1.2000, 1.2000]
+
 def test_logistic_application_low_ex():
     # Use an example from lifestyle at initiation: low exercise
 
