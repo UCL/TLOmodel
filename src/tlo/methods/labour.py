@@ -330,84 +330,40 @@ class Labour (Module):
 
 # ---------------------------------    GESTATION AND SCHEDULING BIRTH BASELINE  ---------------------------------------
 
+        # TODO: random_intergers produces same random integer for each person needs a fix
         # Get and hold all the women who are pregnant at baseline
         pregnant_idx = df.index[df.is_pregnant & df.is_alive]
-        random_draw = pd.Series(self.rng.random_sample(size=len(pregnant_idx)),
-                                index=df.index[df.is_pregnant & df.is_alive])
-
-        # Randomly generate a number of weeks gestation between 1-39 for all pregnant women at baseline
+        due_date_period = pd.Series(self.rng.choice(('early_preterm', 'late_preterm','term', 'post_term'), p=[0.04, 0.12,
+                                                                                                        0.80, 0.04],
+                                               size=len(pregnant_idx)), index=pregnant_idx)
+        # TODO: use parameter values for probabilities above
         simdate = pd.Series(self.sim.date, index=pregnant_idx)
-        dfx = pd.concat((simdate, random_draw), axis=1)
-        dfx.columns = ['simdate', 'random_draw']
-        dfx['gestational_age_in_weeks'] = (39 - 39 * dfx.random_draw)
-        df.loc[pregnant_idx, 'ps_gestational_age'] = dfx.gestational_age_in_weeks.astype('int64')
+        dfx = pd.concat((simdate, due_date_period), axis=1)
+        dfx.columns = ['simdate', 'due_date_period']
 
-        # Use gestational age to calculate when the woman's baby was conceived
-        dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age_in_weeks'], unit='w')
+        idx_term = dfx.index[dfx.due_date_period == 'term']
+        df.loc[idx_term, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 39), index=idx_term))
+        df.loc[idx_term, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
+        weeks_till_due = pd.Series(self.rng.random_integers(37, 41), index=idx_term) - df['ps_gestational_age']
+        df.loc[idx_term, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
-        # Apply a due date of 9 months in the future from the date of conception for each woman
-        dfx['due_date_mth'] = 39 - df['ps_gestational_age']
-        dfx['due_date'] = dfx['simdate'] + pd.to_timedelta(dfx['due_date_mth'], unit='w')
-        df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
-        df.loc[pregnant_idx, 'la_due_date_current_pregnancy'] = dfx.due_date
+        idx_late = dfx.index[dfx.due_date_period == 'post_term']
+        df.loc[idx_late, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 46), index=idx_late))
+        df.loc[idx_late, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
+        weeks_till_due = pd.Series(self.rng.random_integers(42, 46), index=idx_late) - df['ps_gestational_age']
+        df.loc[idx_late, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
-        # For women whose gestation is less than 37 weeks at baseline, we determine if they will go into preterm/
-        # post term or term labour:
+        idx_e_preterm = dfx.index[dfx.due_date_period == 'early_preterm']
+        df.loc[idx_e_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 21), index=idx_e_preterm))
+        df.loc[idx_e_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
+        weeks_till_due = pd.Series(self.rng.random_integers(24, 32), index=idx_e_preterm) - df['ps_gestational_age']
+        df.loc[idx_e_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
-        # First we apply the risk of preterm birth to these women
-        non_term_women = dfx.index[dfx.gestational_age_in_weeks < 36]
-        eff_prob_ptl = pd.Series(params['prob_ptl'], index=non_term_women)
-        random_draw = pd.Series(self.rng.random_sample(size=len(non_term_women)),
-                                index=non_term_women)
-
-        dfx = pd.concat((eff_prob_ptl, random_draw), axis=1)
-        dfx.columns = ['eff_prob_ptl', 'random_draw']
-        idx_ptb = dfx.index[dfx.eff_prob_ptl > dfx.random_draw]
-        idx_no_ptb = dfx.index[dfx.eff_prob_ptl < dfx.random_draw]
-
-        # Todo: consider if we should apply risk factors to women at baseline (anaemia and age)
-
-        # For those who will be preterm we then determine if this will be early (24-33 weeks) or late (34-36)
-        random = pd.Series(self.rng.choice(('late', 'early'), p=[0.752, 0.248], size=len(idx_ptb)), index=idx_ptb)
-        conception = pd.Series(df.date_of_last_pregnancy, index=idx_ptb)
-        dfx = pd.concat((conception, random), axis=1)
-        dfx.columns = ['conception', 'random']
-
-        idx_e_ptl = dfx.index[dfx.random == 'early']
-        idx_l_ptl = dfx.index[dfx.random == 'late']
-
-        # We then set there due date for somewhere between 24-33 weeks in the future from their contraception date
-        random_e = pd.Series(self.rng.choice(range(24, 34), size=len(idx_e_ptl)), index=idx_e_ptl)
-        idx_e_ptl_concep = pd.Series(df.date_of_last_pregnancy, index=idx_e_ptl)
-        dfx = pd.concat((idx_e_ptl_concep, random_e), axis=1)
-        dfx.columns = ['idx_e_ptl_concep', 'random_e']
-        dfx['due_date'] = dfx['idx_e_ptl_concep'] + pd.to_timedelta(dfx['random_e'], unit='w')
-        df.loc[idx_e_ptl, 'la_due_date_current_pregnancy'] = dfx.due_date
-
-        # or for late preterm women we set the due date between 34-36 weeks
-        random_l = pd.Series(self.rng.choice(range(34, 37), size=len(idx_l_ptl)), index=idx_l_ptl)
-        idx_l_ptl_concep = pd.Series(df.date_of_last_pregnancy, index=idx_l_ptl)
-        dfx = pd.concat((idx_l_ptl_concep, random_l), axis=1)
-        dfx.columns = ['idx_l_ptl_concep', 'random_l']
-        dfx['due_date'] = dfx['idx_l_ptl_concep'] + pd.to_timedelta(dfx['random_l'], unit='w')
-        df.loc[idx_l_ptl, 'la_due_date_current_pregnancy'] = dfx.due_date
-
-        # For women who wont go into preterm labour, we then apply the risk of post term labour
-        eff_prob_potl = pd.Series(params['prob_potl'], index=idx_no_ptb)
-        random_draw = pd.Series(self.rng.random_sample(size=len(idx_no_ptb)),
-                                index=idx_no_ptb)
-
-        dfx = pd.concat((eff_prob_potl, random_draw), axis=1)
-        dfx.columns = ['eff_prob_potl', 'random_draw']
-        idx_potl = dfx.index[dfx.eff_prob_potl > dfx.random_draw]
-
-        # And schedule these women's due dates between 42-44 weeks from gestation
-        random = pd.Series(self.rng.choice(range(42, 46), size=len(idx_potl)), index=idx_potl)
-        conception = pd.Series(df.date_of_last_pregnancy, index=idx_potl)
-        dfx = pd.concat((conception, random), axis=1)
-        dfx.columns = ['conception', 'random']
-        dfx['due_date'] = dfx['conception'] + pd.to_timedelta(dfx['random'], unit='w')
-        df.loc[idx_potl, 'la_due_date_current_pregnancy'] = dfx.due_date
+        idx_l_preterm = dfx.index[dfx.due_date_period == 'late_preterm']
+        df.loc[idx_l_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 32), index=idx_l_preterm))
+        df.loc[idx_l_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
+        weeks_till_due = pd.Series(self.rng.random_integers(33, 36), index=idx_l_preterm) - df['ps_gestational_age']
+        df.loc[idx_l_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
         # Then all women are scheduled to go into labour on this due date
         for person in pregnant_idx:
@@ -417,6 +373,8 @@ class Labour (Module):
             if scheduled_labour_date >= self.sim.date:
                 labour = LabourEvent(self, individual_id=person, cause='Labour')
                 self.sim.schedule_event(labour, scheduled_labour_date)
+
+        # Todo: consider if we should apply risk factors to women at baseline (anaemia and age)
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 

@@ -440,12 +440,6 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], woman, cause='pregnancy')
                                     , self.sim.date)
 
-            # schedule date of birth for this pregnancy
-        #   date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * rng.random_sample())
-        #   # TODO: change DateOffest to capture full range of gestations inline with Joe's Pregnancy code
-        #   df.at[woman, 'co_date_of_childbirth'] = date_of_birth
-        #   self.sim.schedule_event(DelayedBirthEvent(self.module, mother_id=woman), date_of_birth)
-
             # outputs some logging if any pregnancy (contraception failure)
             logger.info('%s|fail_contraception|%s',
                         self.sim.date,
@@ -520,36 +514,6 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                             'person_id': female_id,
                             'age_years': females.at[female_id, 'age_years']
                         })
-
-
-class DelayedBirthEvent(Event, IndividualScopeEventMixin): #TODO: Delete?
-    """A one-off event in which a pregnant mother gives birth.
-    """
-
-    def __init__(self, module, mother_id):
-        """Create a new birth event.
-
-        We need to pass the person this event happens to to the base class constructor
-        using super(). We also pass the module that created this event, so that random
-        number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        :param mother_id: the person giving birth
-        """
-        super().__init__(module, person_id=mother_id)
-
-    def apply(self, mother_id):
-        """Apply this event to the given person.
-        Assuming the person is still alive, we ask the simulation to create a new offspring.
-        :param mother_id: the person the event happens to, i.e. the mother giving birth
-        """
-        logger.info('%s|birth_occurring_to_mother|%s', self.sim.date, {'mother_id': mother_id})
-
-        df = self.sim.population.props
-
-        # If the mother is alive and still pregnant
-        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
-            self.sim.do_birth(mother_id)
 
 
 class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
