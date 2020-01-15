@@ -2,13 +2,12 @@
 
 import heapq
 import itertools
-import logging
 import sys
 from collections import OrderedDict
 
 import numpy as np
 
-from tlo import Population
+from tlo import Population, logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
