@@ -2,15 +2,18 @@
 A skeleton template for disease methods.
 
 """
+import logging
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
-from tlo.population import logger
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Skeleton(Module):
@@ -23,7 +26,7 @@ class Skeleton(Module):
     * `read_parameters(data_folder)`
     * `initialise_population(population)`
     * `initialise_simulation(sim)`
-    * `on_birth(mother, child)` [If this is disease module]
+    * `on_birth(mother, child)`
     * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
     *  `report_daly_values()` [If this is disease module]
 
@@ -46,6 +49,11 @@ class Skeleton(Module):
         'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
+    # Declare the non-generic symptoms that this module will use.
+    # It will not be able to use any that are not declared here. They do not need to be unique to this module.
+    # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
+    SYMPTOMS = {}
+
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -65,6 +73,9 @@ class Skeleton(Module):
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
+        If this is a disease module, register this disease module with the healthsystem:
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
         :param population: the population of individuals
         """
         raise NotImplementedError
@@ -76,10 +87,7 @@ class Skeleton(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
 
-        If this is a disease module, register this disease module with the healthsystem:
-        self.sim.modules['HealthSystem'].register_disease_module(self)
         """
-
         raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
@@ -220,7 +228,8 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         """
         Do any action that is neccessary when the health system interaction is not run.
-        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities
-
+        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities.
+        Return False to cause this HSI event not to be rescheduled and to therefore never be run.
+        (Returning nothing or True will cause this event to be rescheduled for the next day.)
         """
         pass
