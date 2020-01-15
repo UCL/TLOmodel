@@ -228,10 +228,6 @@ class Malaria(Module):
             irs.loc[(irs.irs_rates > 0.5), 'irs_rates_round'] = 0.8
             irs.loc[(irs.irs_rates <= 0.5), 'irs_rates_round'] = 0
 
-            # interv = p['interv']
-            # irs_2010 = interv.loc[interv.Year == now.year, 'IRS_coverage'].values[0]
-            # irs_2010 = 0.8 if irs_2010 > 0.5 else 0  # round to 0 or 0.8
-
             # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
             # inf_inc select current month and irs
             month = now.month
@@ -397,6 +393,9 @@ class Malaria(Module):
         # ----------------------------------- SYMPTOMS -----------------------------------
         # CLINICAL CASES
         if len(clin) > 0:
+
+            df.loc[clin, 'ma_date_symptoms'] = now
+
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(clin),
                 symptom_string='fever',
@@ -442,6 +441,8 @@ class Malaria(Module):
         severe = df.index[(df.ma_inf_type == 'severe') & (df.ma_date_infected == now)]
 
         if len(severe) > 0:
+
+            df.loc[severe, 'ma_date_symptoms'] = now
 
             # generic symptoms present in clinical and severe
             self.sim.modules['SymptomManager'].change_symptom(
@@ -796,6 +797,8 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 # TODO: if clinical symptoms too short maybe no healthcare seeking scheduled in time
                 # TODO: symptoms may occur with different probabilities, lasting for diff durations
 
+                df.loc[clin, 'ma_date_symptoms'] = now
+
                 # this also schedules symptom resolution in 5 days
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
@@ -847,6 +850,8 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             severe = df.index[(df.ma_inf_type == 'severe') & (df.ma_date_infected == now)]
 
             if len(severe) > 0:
+
+                df.loc[severe, 'ma_date_symptoms'] = now
 
                 # generic symptoms present in clinical and severe
                 self.sim.modules['SymptomManager'].change_symptom(
@@ -1188,6 +1193,8 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             # CLINICAL
             if len(clin) > 0:
 
+                df.loc[clin, 'ma_date_symptoms'] = now
+
                 # this also schedules symptom resolution in 5 days
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
@@ -1237,6 +1244,8 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             severe = df.index[(df.ma_inf_type == 'severe') & (df.ma_date_infected == now)]
 
             if len(severe) > 0:
+
+                df.loc[severe, 'ma_date_symptoms'] = now
 
                 # generic symptoms present in clinical and severe
                 self.sim.modules['SymptomManager'].change_symptom(
@@ -1910,40 +1919,18 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
 
             # check that a fever is present and was caused by malaria before resolving it
             if ('fever' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
-                df.at[person_id, 'ma_inf_type'] == 'clinical'):
-                self.sim.modules['SymptomManager'].change_symptom(
+                'Malaria' in self.sim.modules['SymptomManager'].causes_of(person_id, 'fever')):
+                # this will clear all malaria symptoms
+                self.sim.modules['SymptomManager'].clear_symptoms(
                     person_id=person_id,
-                    symptom_string='fever',
-                    add_or_remove='-',
-                    disease_module=self.module,
-                    duration_in_days=None)
-
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=person_id,
-                    symptom_string='headache',
-                    add_or_remove='-',
-                    disease_module=self.module,
-                    duration_in_days=None)
-
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=person_id,
-                    symptom_string='vomiting',
-                    add_or_remove='-',
-                    disease_module=self.module,
-                    duration_in_days=None)
-
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=person_id,
-                    symptom_string='stomachache',
-                    add_or_remove='-',
-                    disease_module=self.module,
-                    duration_in_days=None)
+                    disease_module=self.module)
 
         # change treatment and infection status
         df.at[person_id, 'ma_tx'] = False
 
         df.at[person_id, 'ma_is_infected'] = False
         df.at[person_id, 'ma_inf_type'] = 'none'
+        df.at[person_id, 'ma_date_symptoms'] = pd.NaT
 
 
 class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
@@ -1968,13 +1955,21 @@ class MalariaClinEndEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         logger.debug("This is MalariaClinEndEvent changing person %d from clinical to asymptomatic", person_id)
-        # symptom manager will resolve the symptoms
-        # need to move clinical people back from ma_inf_type = clinical to asymptomatic
 
+        # need to move clinical people back from ma_inf_type = clinical to asymptomatic
         df = self.sim.population.props
 
         if df.at[person_id, 'is_alive']:
+
+            if ('fever' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
+                'Malaria' in self.sim.modules['SymptomManager'].causes_of(person_id, 'fever')):
+                # this will clear all malaria symptoms
+                self.sim.modules['SymptomManager'].clear_symptoms(
+                    person_id=person_id,
+                    disease_module=self.module)
+
             df.at[person_id, 'ma_inf_type'] = 'asym'
+            df.at[person_id, 'ma_date_symptoms'] = pd.NaT
 
 
 # ---------------------------------------------------------------------------------
