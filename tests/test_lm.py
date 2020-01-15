@@ -7,30 +7,31 @@ import pandas as pd
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
 EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
-    Northern,True,M,12,False
-    Central,True,M,6,True
-    Northern,True,M,24,False
-    Southern,True,M,46,True
-    Central,True,M,91,True
-    Central,False,M,16,False
-    Southern,False,F,80,True
-    Northern,True,F,99,False
-    Western,True,F,63,False
-    Central,True,F,51,True
-    Central,True,M,57,False
-    Central,False,F,2,False
-    Central,True,F,93,False
-    Western,False,M,15,True
-    Western,False,M,5,False
-    Northern,True,M,29,True
-    Western,True,M,63,False
-    Southern,True,F,54,False
-    Western,False,M,94,False
-    Northern,False,F,91,True
-    Northern,True,M,29,False
-    """
+Northern,True,M,12,False
+Central,True,M,6,True
+Northern,True,M,24,False
+Southern,True,M,46,True
+Central,True,M,91,True
+Central,False,M,16,False
+Southern,False,F,80,True
+Northern,True,F,99,False
+Western,True,F,63,False
+Central,True,F,51,True
+Central,True,M,57,False
+Central,False,F,2,False
+Central,True,F,93,False
+Western,False,M,15,True
+Western,False,M,5,False
+Northern,True,M,29,True
+Western,True,M,63,False
+Southern,True,F,54,False
+Western,False,M,94,False
+Northern,False,F,91,True
+Northern,True,M,29,False
+"""
 
 EXAMPLE_DF = pd.read_csv(io.StringIO(EXAMPLE_POP))
+
 
 def test_of_example_usage():
     # Test the use of basic functions using different syntax and model types
@@ -134,6 +135,27 @@ def test_logistic_trivial_application():
         (odds * OR_Y) / (1 + odds * OR_Y),
         (odds * OR_X * OR_Y) / (1 + odds * OR_X * OR_Y)
     ])
+
+
+def test_external_variable():
+    eq = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('region_of_residence').when('Northern', 0.1).otherwise(0.3),
+        Predictor('year', external=True).when('.between(0,2019)', 1).when(2020, 2).otherwise(3)
+    )
+
+    output = eq.predict(EXAMPLE_DF, year=2010)
+    assert output.tolist() == [1.1, 1.3, 1.1, 1.3, 1.3, 1.3, 1.3, 1.1, 1.3, 1.3, 1.3,
+                               1.3, 1.3, 1.3, 1.3, 1.1, 1.3, 1.3, 1.3, 1.1, 1.1]
+
+    output = eq.predict(EXAMPLE_DF, year=2020)
+    assert output.tolist() == [2.1, 2.3, 2.1, 2.3, 2.3, 2.3, 2.3, 2.1, 2.3, 2.3, 2.3,
+                               2.3, 2.3, 2.3, 2.3, 2.1, 2.3, 2.3, 2.3, 2.1, 2.1]
+
+    output = eq.predict(EXAMPLE_DF, year=2021)
+    assert output.tolist() == [3.1, 3.3, 3.1, 3.3, 3.3, 3.3, 3.3, 3.1, 3.3, 3.3, 3.3,
+                               3.3, 3.3, 3.3, 3.3, 3.1, 3.3, 3.3, 3.3, 3.1, 3.1]
 
 
 def test_logistic_application_low_ex():

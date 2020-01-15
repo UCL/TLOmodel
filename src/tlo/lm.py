@@ -10,10 +10,16 @@ logger.setLevel(logging.INFO)
 
 
 class Predictor(object):
-    def __init__(self, property_name: str = None):
+    def __init__(self, property_name: str = None, external: bool = False):
         """A Predictor variable for the regression model. The property_name is a property of the
          population dataframe e.g. age, sex, etc."""
         self.property_name = property_name
+
+        # If this is a property that is not part of the population dataframe
+        if external:
+            # It will be an private column appended to the dataframe
+            self.property_name = f'__{self.property_name}__'
+
         self.conditions = list()
         self.else_condition_supplied = False
 
@@ -65,7 +71,7 @@ class Predictor(object):
         elif condition is None:
             assert not self.else_condition_supplied, "You can only give one unconditioned value to predictor"
             self.else_condition_supplied = True
-            parsed_condition = ''
+            parsed_condition = None
         else:
             raise RuntimeError(f"Unhandled condition: {args}")
 
@@ -139,11 +145,19 @@ class LinearModel(object):
             assert isinstance(predictor, Predictor)
             self.predictors.append(predictor)
 
-    def predict(self, df: pd.DataFrame):
+    def predict(self, df: pd.DataFrame, **kwargs) -> pd.Series:
         """Will call each Predictor's `predict` methods passing the supplied dataframe"""
+
+        # addition external variables used in the model but not part of the population dataframe
+        if kwargs:
+            new_columns = {}
+            for column_name, value in kwargs.items():
+                new_columns[f'__{column_name}__'] = kwargs[column_name]
+            df = df.assign(**new_columns)
+
         assert all([p.property_name in df.columns
                     for p in self.predictors
-                    if p.property_name is not None]), "Predictor variables not in df"
+                    if p.property_name is not None]), f"Predictor variables not in df"
 
         # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
@@ -167,4 +181,4 @@ class LinearModel(object):
             # print("Multiplicative Model: Prediction will be multiplication of each effect size.")
             return res_by_predictor.prod(axis=1, skipna=True)
 
-        return None
+        raise ValueError(f'Unhandled linear model type: {self.lm_type}')
