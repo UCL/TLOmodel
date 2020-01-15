@@ -16,7 +16,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -87,7 +87,7 @@ class Demography(Module):
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Pop_Frac_Births_Male.csv'
-        )
+        ).set_index('Year')['frac_births_male']
 
         # Mortality schedule:
         self.parameters['mortality_schedule'] = pd.read_csv(
@@ -175,10 +175,8 @@ class Demography(Module):
         df.at[child_id, 'is_alive'] = True
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
-        fraction_of_births_male = self.parameters['fraction_of_births_male']
-        f_male = fraction_of_births_male.loc[fraction_of_births_male['Year'] == self.sim.date.year,
-                                             'frac_births_male'].values[0]
-        df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
+        p_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
+        df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[p_male, 1 - p_male])
 
         df.at[child_id, 'mother_id'] = mother_id
 
@@ -191,13 +189,13 @@ class Demography(Module):
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
         # Log the birth:
-        # logger.info('%s|on_birth|%s',
-        #             self.sim.date,
-        #             {
-        #                 'mother': mother_id,
-        #                 'child': child_id,
-        #                 'mother_age': df.at[mother_id, 'age_years']
-        #             })
+        logger.info('%s|on_birth|%s',
+                    self.sim.date,
+                    {
+                        'mother': mother_id,
+                        'child': child_id,
+                        'mother_age': df.at[mother_id, 'age_years']
+                    })
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -333,21 +331,85 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        # logger.info('%s|population|%s',
-        #             self.sim.date,
-        #             {
-        #                 'total': sum(sex_count),
-        #                 'male': sex_count['M'],
-        #                 'female': sex_count['F']
-        #             })
+        logger.info('%s|population|%s',
+                    self.sim.date,
+                    {
+                        'total': sum(sex_count),
+                        'male': sex_count['M'],
+                        'female': sex_count['F']
+                    })
 
         # if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        # logger.info('%s|age_range_m|%s', self.sim.date,
-        #             m_age_counts.to_dict())
-        #
-        # logger.info('%s|age_range_f|%s', self.sim.date,
-        #             f_age_counts.to_dict())
+        logger.info('%s|age_range_m|%s', self.sim.date,
+                    m_age_counts.to_dict())
+
+        logger.info('%s|age_range_f|%s', self.sim.date,
+                    f_age_counts.to_dict())
+
+
+def scale_to_population(parsed_output, resourcefilepath):
+    """
+    This helper function scales certain outputs so that they can create statistics for the whole population.
+    e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
+    {Real Population at the same time}.
+
+    NB. This file gives precedence to the Malawi Population Census
+
+    :param parsed_outoput: The outputs from parse_output
+    :param resourcefilepath: The resourcefilepath
+    :return: a new version of parsed_output that includes certain variables scaled
+    """
+
+    # Get information about the real population size (Malawi Census in 2018)
+    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+    cens_yr = 2018
+
+    # Get information about the model population size in 2018 (and fail if no 2018)
+    model_res = parsed_output['tlo.methods.demography']['population']
+    model_res['year'] = pd.to_datetime(model_res.date).dt.year
+
+    assert cens_yr in model_res.year.values, "Model results do not contain the year of the census, so cannot scale"
+    model_tot = model_res.loc[model_res['year'] == cens_yr, 'total'].values[0]
+
+    # Calculate ratio for scaling
+    ratio_data_to_model = cens_tot / model_tot
+
+    # Do the scaling on selected columns in the parsed outputs:
+    o = parsed_output.copy()
+
+    # Multiply population count summaries by ratio
+    o['tlo.methods.demography']['population']['male'] *= ratio_data_to_model
+    o['tlo.methods.demography']['population']['female'] *= ratio_data_to_model
+    o['tlo.methods.demography']['population']['total'] *= ratio_data_to_model
+
+    o['tlo.methods.demography']['age_range_m'].iloc[:, 1:] *= ratio_data_to_model
+    o['tlo.methods.demography']['age_range_f'].iloc[:, 1:] *= ratio_data_to_model
+
+    # For individual-level reporting, construct groupby's and then multipy by ratio
+    # 1) Counts of numbers of death by year/age/cause
+    deaths = o['tlo.methods.demography']['death']
+    deaths.index = pd.to_datetime(deaths['date'])
+    deaths['year'] = deaths.index.year.astype(int)
+
+    deaths_groupby_scaled = deaths[['year', 'sex', 'age', 'cause', 'person_id']].groupby(
+        by=['year', 'sex', 'age', 'cause']).count().unstack(fill_value=0).stack() * ratio_data_to_model
+    deaths_groupby_scaled.rename(columns={'person_id': 'count'}, inplace=True)
+    o['tlo.methods.demography'].update({'death_groupby_scaled': deaths_groupby_scaled})
+
+    # 2) Counts of numbers of births by year/age-of-mother
+    births = o['tlo.methods.demography']['on_birth']
+    births.index = pd.to_datetime(births['date'])
+    births['year'] = births.index.year
+    births_groupby_scaled = \
+        births[['year', 'mother_age', 'mother']].groupby(by=['year', 'mother_age']).count() \
+        * ratio_data_to_model
+    births_groupby_scaled.rename(columns={'mother': 'count'}, inplace=True)
+    o['tlo.methods.demography'].update({'birth_groupby_scaled': births_groupby_scaled})
+
+    # TODO: Do this kind of manipulation for all things in the log that are /
+    #  flagged are being subject to scaling - issue raised.
+    return o

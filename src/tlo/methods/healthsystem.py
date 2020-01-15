@@ -1224,4 +1224,9 @@ class HSIEventWrapper(Event):
         self.hsi_event = hsi_event
 
     def run(self):
-        _ = self.hsi_event.run(squeeze_factor=0.0)
+        # check that the person is still alive
+        # (this check normally happens in the HealthSystemScheduler and silently do not run the HSI event)
+
+        if isinstance(self.hsi_event.target, tlo.population.Population) \
+                or (self.hsi_event.module.sim.population.props.at[self.hsi_event.target, 'is_alive']):
+            _ = self.hsi_event.run(squeeze_factor=0.0)

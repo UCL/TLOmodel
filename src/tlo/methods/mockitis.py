@@ -54,9 +54,9 @@ class Mockitis(Module):
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
-        'weird_sense_of_deja_vu',
-        'coughing_and_irritable',
-        'extreme_pain_in_the_nose'
+        'weird_sense_of_deja_vu',       # will not trigger any health seeking behaviour
+        'coughing_and_irritable',       # will not trigger any health seeking behaviour
+        'em_extreme_pain_in_the_nose'   # symptom that will trigger emergency HSI
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -78,7 +78,7 @@ class Mockitis(Module):
                 'level_of_symptoms': ['none',
                                       'weird_sense_of_deja_vu',
                                       'coughing_and_irritable',
-                                      'extreme_pain_in_the_nose'],
+                                      'em_extreme_pain_in_the_nose'],
                 'probability': [0.25, 0.25, 0.25, 0.25]
             })
 
@@ -87,7 +87,7 @@ class Mockitis(Module):
             p['daly_wts'] = {
                 'weird_sense_of_deja_vu': self.sim.modules['HealthBurden'].get_daly_weight(48),
                 'coughing_and_irritable': self.sim.modules['HealthBurden'].get_daly_weight(49),
-                'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
+                'em_extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
 
         # ---- Register this module ----
@@ -108,7 +108,7 @@ class Mockitis(Module):
 
         # Set default for properties
         df.loc[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
-        df.loc[df.is_alive, 'mi_status'].values[:] = 'N'  # default: never infected
+        df.loc[df.is_alive, 'mi_status'] = 'N'  # default: never infected
         df.loc[df.is_alive, 'mi_date_infected'] = pd.NaT  # default: not a time
         df.loc[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT  # default: not a time
         df.loc[df.is_alive, 'mi_date_cure'] = pd.NaT  # default: not a time
@@ -132,7 +132,7 @@ class Mockitis(Module):
                                                              p=level_of_symptoms.probability)
 
             if symptom_string_for_this_person != 'none':
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id_infected,
                     symptom_string=symptom_string_for_this_person,
                     add_or_remove='+',
@@ -140,15 +140,14 @@ class Mockitis(Module):
                     duration_in_days=20
                 )
 
-        # date of infection of infected individuals
-        # sample years in the past
+        # date of infection of infected individuals: sample years in the past
         infected_years_ago = self.rng.exponential(scale=5, size=infected_count)
 
         # pandas requires 'timedelta' type for date calculations
         infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
-        death_years_ahead = self.rng.exponential(scale=10, size=infected_count)
+        death_years_ahead = self.rng.exponential(scale=20, size=infected_count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals
@@ -199,7 +198,7 @@ class Mockitis(Module):
         if child_is_infected:
 
             # Scheduled death date
-            death_years_ahead = self.rng.random.exponential(scale=20)
+            death_years_ahead = self.rng.exponential(scale=30)
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
             # Level of symptoms
@@ -208,7 +207,7 @@ class Mockitis(Module):
                                                              p=level_of_symptoms.probability)
 
             if symptom_string_for_this_person != 'none':
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=child_id,
                     symptom_string=symptom_string_for_this_person,
                     add_or_remove='+',
@@ -278,24 +277,24 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 1. get (and hold) index of currently infected and uninfected individuals
         currently_infected = df.index[df.mi_is_infected & df.is_alive]
-        currently_uninfected = df.index[~df.mi_is_infected & df.is_alive]
+        currently_susc = df.index[(df.is_alive) & (df['mi_status'] == 'N')]
 
         if df.is_alive.sum():
             prevalence = len(currently_infected) / (
-                len(currently_infected) + len(currently_uninfected))
+                len(currently_infected) + len(currently_susc))
         else:
             prevalence = 0
 
         # 2. handle new infections
         now_infected = self.module.rng.choice([True, False],
-                                              size=len(currently_uninfected),
+                                              size=len(currently_susc),
                                               p=[prevalence, 1 - prevalence])
 
         # if any are newly infected...
         if now_infected.sum():
-            infected_idx = currently_uninfected[now_infected]
+            infected_idx = currently_susc[now_infected]
 
-            death_years_ahead = self.module.rng.exponential(scale=10, size=now_infected.sum())
+            death_years_ahead = 5  # self.module.rng.exponential(scale=30, size=now_infected.sum())
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
             df.loc[infected_idx, 'mi_is_infected'] = True
@@ -316,7 +315,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                                                                         p=level_of_symptoms.probability)
 
                 if symptom_string_for_this_person != 'none':
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=person_id_infected,
                         symptom_string=symptom_string_for_this_person,
                         add_or_remove='+',
@@ -325,26 +324,6 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=30
                     )
 
-            # Determine if anyone with severe symptoms will seek care
-            # [as this is a specific symptom the disease module handles it]
-            person_id_with_new_serious_symptoms = list(
-                set(self.sim.modules['SymptomManager'].who_has('extreme_pain_in_the_nose')).intersection(infected_idx)
-            )
-
-            prob_seeks_care_with_severe_symptoms = 0.99
-
-            for person_id in person_id_with_new_serious_symptoms:
-                if self.module.rng.rand() < prob_seeks_care_with_severe_symptoms:
-                    logger.debug(
-                        'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
-                        person_index)
-
-                    event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                        priority=2,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(weeks=2)
-                                                                        )
         else:
             logger.debug('This is MockitisEvent, no one is newly infected.')
 

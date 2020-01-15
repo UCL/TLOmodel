@@ -57,8 +57,8 @@ class ChronicSyndrome(Module):
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
-        'inappropriate_jokes',
-        'craving_sandwiches'
+        'inappropriate_jokes',  # will not trigger any health seeking behaviour
+        'em_craving_sandwiches'    # symptom that will trigger emergency HSI
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -76,7 +76,7 @@ class ChronicSyndrome(Module):
         self.parameters['initial_prevalence'] = 0.30
         self.parameters['prob_of_symptoms'] = {
             'inappropriate_jokes': 0.95,
-            'craving_sandwiches': 0.5
+            'em_craving_sandwiches': 0.5
         }
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
@@ -85,7 +85,7 @@ class ChronicSyndrome(Module):
             # get the DALY weight that this module will use from the weight database (these codes are just random!)
             self.parameters['daly_wts'] = {
                 'inappropriate_jokes': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=86),
-                'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
+                'em_craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
             }
 
         # ---- Register this module ----
@@ -133,7 +133,7 @@ class ChronicSyndrome(Module):
                 self.rng.rand(len(person_id_all_with_cs)) < self.parameters['prob_of_symptoms'][symp]
             ]
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(persons_id_with_symp),
                 symptom_string=symp,
                 add_or_remove='+',
@@ -303,7 +303,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                     self.module.rng.rand(len(newcases_idx)) < self.module.parameters['prob_of_symptoms'][symp]
                 ]
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(persons_id_with_symp),
                     symptom_string=symp,
                     add_or_remove='+',
@@ -313,30 +313,18 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # 3) Handle progression to severe symptoms
         curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive])
                                                   - set(
-            self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
+            self.sim.modules['SymptomManager'].who_has('em_craving_sandwiches')))
 
         become_severe = self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches)) \
             < p['prob_dev_severe_symptoms_per_year'] / 12
         become_severe_idx = np.array(curr_cs_but_not_craving_sandwiches)[become_severe]
 
-        self.sim.modules['SymptomManager'].chg_symptom(
+        self.sim.modules['SymptomManager'].change_symptom(
             person_id=list(become_severe_idx),
-            symptom_string='craving_sandwiches',
+            symptom_string='em_craving_sandwiches',
             add_or_remove='+',
             disease_module=self.module
         )
-
-        # 4) With some probability, the new severe cases seek "Emergency care"...
-        if len(become_severe_idx) > 0:
-            for person_index in become_severe_idx:
-                prob_seeks_emergency_care = 0.7
-                seeks_care = self.module.rng.rand() < prob_seeks_emergency_care
-                if seeks_care:
-                    event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        event, priority=1, topen=self.sim.date, tclose=None
-                    )
 
 
 class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
@@ -347,7 +335,7 @@ class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
 
         # Apply checks to ensure that this death should occur
-        if df.at[person_id, 'mi_status'] == 'C':
+        if df.at[person_id, 'cs_status'] == 'C':
             # Fire the centralised death event:
             death = InstantaneousDeath(self.module, person_id, cause='ChronicSyndrome')
             self.sim.schedule_event(death, self.sim.date)
