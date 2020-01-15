@@ -6,11 +6,7 @@ import pandas as pd
 
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
-
-def test_of_example_usage():
-    # Test the use of basic functions using different syntax and model types
-
-    EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
+EXAMPLE_POP = """region_of_residence,li_urban,sex,age_years,sy_vomiting
     Northern,True,M,12,False
     Central,True,M,6,True
     Northern,True,M,24,False
@@ -34,6 +30,11 @@ def test_of_example_usage():
     Northern,True,M,29,False
     """
 
+EXAMPLE_DF = pd.read_csv(io.StringIO(EXAMPLE_POP))
+
+def test_of_example_usage():
+    # Test the use of basic functions using different syntax and model types
+
     # Linear Model
     eq = LinearModel(
         LinearModelType.ADDITIVE,
@@ -49,8 +50,7 @@ def test_of_example_usage():
         Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
     )
 
-    df = pd.read_csv(io.StringIO(EXAMPLE_POP))
-    eq.predict(df)
+    eq.predict(EXAMPLE_DF)
 
     # Logistic model
     eq = LinearModel(
@@ -62,7 +62,7 @@ def test_of_example_usage():
         .when('.between(0,5)', 0.001)
         .otherwise(0),
     )
-    eq.predict(df)
+    eq.predict(EXAMPLE_DF)
 
     # Multiplicative model
     eq = LinearModel(
@@ -71,7 +71,7 @@ def test_of_example_usage():
         Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
         Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
     )
-    eq.predict(df)
+    eq.predict(EXAMPLE_DF)
 
 
 def test_additive_trivial_application():
