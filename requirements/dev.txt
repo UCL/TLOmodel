@@ -47,6 +47,7 @@ ptyprocess==0.5.2         # via pexpect, terminado
 py==1.5.3                 # via pytest, tox
 pygments==2.2.0           # via ipython, jupyter-console, nbconvert, qtconsole
 pyparsing==2.2.2          # via matplotlib
+pyshp==2.1.0
 pytest==3.6.1
 python-dateutil==2.7.3
 pytz==2018.4

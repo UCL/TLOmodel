@@ -183,7 +183,7 @@ class TestCreateAgeRangeLookup:
         should get a below age category, ranges of 5 and then an above maximum age category
         """
         ranges, lookup = tlo.util.create_age_range_lookup(10, 20)
-        assert ranges == ["10-", "10-14", "15-19", "20+"]
+        assert ranges == ["0-10", "10-14", "15-19", "20+"]
         for i in range(0, 10):
             assert lookup[i] == ranges[0]
         for i in range(10, 15):
@@ -199,7 +199,7 @@ class TestCreateAgeRangeLookup:
         should get a below age category, ranges of 10 and then an above maximum age category
         """
         ranges, lookup = tlo.util.create_age_range_lookup(10, 30, 10)
-        assert ranges == ["10-", "10-19", "20-29", "30+"]
+        assert ranges == ["0-10", "10-19", "20-29", "30+"]
         for i in range(0, 10):
             assert lookup[i] == ranges[0]
         for i in range(10, 20):
