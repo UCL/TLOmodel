@@ -36,6 +36,7 @@ class Predictor(object):
     def apply(self, callback):
         assert self.property_name is not None, "Can't use `apply` on unnamed Predictor"
         assert len(self.conditions) == 0, "Can't specify `apply` on Predictor with when/otherwise conditions"
+        assert self.callback is None, "Can't specify more than one callback for a Predictor"
         self.callback = callback
         return self
 
