@@ -394,7 +394,7 @@ class Labour (Module):
         idx_potl = dfx.index[dfx.eff_prob_potl > dfx.random_draw]
 
         # And schedule these women's due dates between 42-44 weeks from gestation
-        random = pd.Series(self.rng.choice(range(42, 45), size=len(idx_potl)), index=idx_potl)
+        random = pd.Series(self.rng.choice(range(42, 46), size=len(idx_potl)), index=idx_potl)
         conception = pd.Series(df.date_of_last_pregnancy, index=idx_potl)
         dfx = pd.concat((conception, random), axis=1)
         dfx.columns = ['conception', 'random']
@@ -683,6 +683,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
                                                                     pd.Timedelta(random, unit='W')
             due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
 
+            # TODO: Anaemia/ Malaria
         # For women who will deliver after term we apply a risk of post term birth
         elif random > eff_prob_late_ptb:
             random = self.module.rng.random_sample(size=1)
@@ -856,7 +857,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                                                                         )
 
 # ============================ INDIVIDUAL RISK OF COMPLICATIONS DURING LABOUR =========================================
-
+# DEAL WITH VERY EARLY PRETERM BIRTHS?!?!
 # ====================================== STATUS OF MEMBRANES ==========================================================
 
         # TODO: discuss with Tim C importance of modelling PPROM (would change structure)
@@ -891,6 +892,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 else:
                     rf3 = 1
 
+        # TODO: Stunting/ malnutrition
         # TODO: this formulation of the risk factors (which is used very often) might be more readble as: p_outcome =
         #  p_baseeline * (has_rf1*rr1) * (has_rf2*rr2) - discussed with TC may not work at individual level
 
