@@ -2,10 +2,13 @@
 The Symptom Manager
 """
 import pandas as pd
+import logging
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -139,6 +142,9 @@ class SymptomManager(Module):
 
         # Make the operation:
         if add_or_remove == '+':
+
+            logger.debug(f'SymptomManager: assigning {symptom_var_name} to {person_id}')
+
             # Add this disease module as a cause of this symptom
             df.loc[person_id, symptom_var_name].apply(lambda x: x.add(disease_module.name))
             self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
