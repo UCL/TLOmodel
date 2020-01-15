@@ -256,12 +256,20 @@ class Labour (Module):
         # Here we will include DALY weights if applicable...
 
         if 'HealthBurden' in self.sim.modules.keys():
-            params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
-            params['daly_wt_haemorrhage_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338)
-            params['daly_wt_maternal_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340)
-            params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=343)
+            params['daly_wts'] = \
+                {'hemorrhage_moderate':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339),
+                 'haemorrhage_severe':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338),
+                 'maternal_sepsis':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340),
+                 'eclampsia':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=343),
+                 'obstructed_labour':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)}
             # TODO: Eclampsia DALY weight is empty- this is htn disoders sequalae code
-            params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)
+            # TODO: source DALY weight for Uterine Rupture
+
+        #    params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
+        #    params['daly_wt_haemorrhage_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338)
+        #    params['daly_wt_maternal_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340)
+        #    params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=343)
+        #    params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)
             # TODO: source DALY weight for Uterine Rupture
 
     def initialise_population(self, population):
@@ -591,27 +599,27 @@ class Labour (Module):
         p = self.parameters
 
         health_values_1 = df.loc[df.is_alive, 'la_ol_disability'].map(
-            {False: 0, True: 0.324})  # p['daly_wt_obstructed_labour']
+            {False: 0, True: 0.324})  # p['daly_wts']['obstructed_labour']
         health_values_1.name = 'Obstructed Labour'
 
         health_values_2 = df.loc[df.is_alive, 'la_eclampsia_disability'].map(
-            {False: 0, True: 0.5})  # p['daly_wt_eclampsia']
+            {False: 0, True: 0.5})  # p['daly_wts']['eclampsia']
         health_values_2.name = 'Eclampsia'
 
         health_values_3 = df.loc[df.is_alive, 'la_sepsis_disability'].map(
-            {False: 0, True: 0.133})  # p['daly_wt_maternal_sepsis']
+            {False: 0, True: 0.133})  # p['daly_wts']['maternal_sepsis']
         health_values_3.name = 'Maternal Sepsis'
 
         health_values_4 = df.loc[df.is_alive, 'la_haemorrhage_disability'].map(  # TODO: consider severity
-            {False: 0, True: 0.324})  # p['daly_wt_haemorrhage_severe']
+            {False: 0, True: 0.324})  # p['daly_wts']['haemorrhage_severe']
         health_values_4.name = 'Antepartum Haemorrhage'
 
         health_values_5 = df.loc[df.is_alive, 'la_haemorrhage_disability'].map(  # TODO: consider severity
-            {False: 0, True: 0.324})  # p['daly_wt_haemorrhage_severe']
+            {False: 0, True: 0.324})  # p['daly_wts']['haemorrhage_severe']
         health_values_5.name = 'Postpartum Haemorrhage'
 
         health_values_6 = df.loc[df.is_alive, 'la_ur_disability'].map(  # TODO: consider severity
-            {False: 0, True: 0.5})  # p['daly_wt_haemorrhage_severe']
+            {False: 0, True: 0.5})  # p['daly_wts']['haemorrhage_severe']
         health_values_6.name = 'Uterine Rupture'
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
