@@ -397,28 +397,28 @@ class Malaria(Module):
         # ----------------------------------- SYMPTOMS -----------------------------------
         # CLINICAL CASES
         if len(clin) > 0:
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(clin),
                 symptom_string='fever',
                 add_or_remove='+',
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(clin),
                 symptom_string='headache',
                 add_or_remove='+',
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(clin),
                 symptom_string='vomiting',
                 add_or_remove='+',
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(clin),
                 symptom_string='stomachache',
                 add_or_remove='+',
@@ -431,7 +431,7 @@ class Malaria(Module):
                                      df.is_pregnant & (random_draw < p['p_sev_anaemia_preg'])]
 
             if len(preg_infected) > 0:
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(preg_infected),
                     symptom_string='severe_anaemia',
                     add_or_remove='+',
@@ -444,28 +444,28 @@ class Malaria(Module):
         if len(severe) > 0:
 
             # generic symptoms present in clinical and severe
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(severe),
                 symptom_string='fever',
                 add_or_remove='+',
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(severe),
                 symptom_string='headache',
                 add_or_remove='+',
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(severe),
                 symptom_string='vomiting',
                 add_or_remove='+',
                 disease_module=self,
                 duration_in_days=p['dur_clin'])
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(severe),
                 symptom_string='stomachache',
                 add_or_remove='+',
@@ -532,7 +532,7 @@ class Malaria(Module):
             shock = shock_ch.append(shock_ad)
 
             if jaundice.any():
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(jaundice),
                     symptom_string='jaundice',
                     add_or_remove='+',
@@ -540,7 +540,7 @@ class Malaria(Module):
                     duration_in_days=None)
 
             if acidosis.any():
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(acidosis),
                     symptom_string='em_acidosis',
                     add_or_remove='+',
@@ -548,7 +548,7 @@ class Malaria(Module):
                     duration_in_days=None)
 
             if coma_convulsions.any():
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(coma_convulsions),
                     symptom_string='em_coma_convulsions',
                     add_or_remove='+',
@@ -556,7 +556,7 @@ class Malaria(Module):
                     duration_in_days=None)
 
             if renal_failure.any():
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(renal_failure),
                     symptom_string='em_renal_failure',
                     add_or_remove='+',
@@ -564,7 +564,7 @@ class Malaria(Module):
                     duration_in_days=None)
 
             if anaemia.any():
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(anaemia),
                     symptom_string='severe_anaemia',
                     add_or_remove='+',
@@ -572,7 +572,7 @@ class Malaria(Module):
                     duration_in_days=None)
 
             if shock.any():
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(shock),
                     symptom_string='em_shock',
                     add_or_remove='+',
@@ -797,28 +797,28 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 # TODO: symptoms may occur with different probabilities, lasting for diff durations
 
                 # this also schedules symptom resolution in 5 days
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='fever',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='headache',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='vomiting',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='stomachache',
                     add_or_remove='+',
@@ -831,7 +831,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                                          df.is_pregnant & (random_draw < p['p_sev_anaemia_preg'])]
 
                 if len(preg_infected) > 0:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(preg_infected),
                         symptom_string='severe_anaemia',
                         add_or_remove='+',
@@ -849,28 +849,28 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             if len(severe) > 0:
 
                 # generic symptoms present in clinical and severe
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='fever',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='headache',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='vomiting',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='stomachache',
                     add_or_remove='+',
@@ -937,7 +937,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 shock = shock_ch.append(shock_ad)
 
                 if jaundice is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(jaundice),
                         symptom_string='jaundice',
                         add_or_remove='+',
@@ -945,7 +945,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if acidosis is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(acidosis),
                         symptom_string='em_acidosis',
                         add_or_remove='+',
@@ -953,7 +953,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if coma_convulsions is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(coma_convulsions),
                         symptom_string='em_coma_convulsions',
                         add_or_remove='+',
@@ -961,7 +961,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if renal_failure is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(renal_failure),
                         symptom_string='em_renal_failure',
                         add_or_remove='+',
@@ -969,7 +969,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if anaemia is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(anaemia),
                         symptom_string='severe_anaemia',
                         add_or_remove='+',
@@ -977,7 +977,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if shock is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(shock),
                         symptom_string='em_shock',
                         add_or_remove='+',
@@ -1189,28 +1189,28 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             if len(clin) > 0:
 
                 # this also schedules symptom resolution in 5 days
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='fever',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='headache',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='vomiting',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=p['dur_clin'])
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(clin),
                     symptom_string='stomachache',
                     add_or_remove='+',
@@ -1223,7 +1223,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                                          df.is_pregnant & (random_draw < p['p_sev_anaemia_preg'])]
 
                 if len(preg_infected) > 0:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(preg_infected),
                         symptom_string='severe_anaemia',
                         add_or_remove='+',
@@ -1239,28 +1239,28 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             if len(severe) > 0:
 
                 # generic symptoms present in clinical and severe
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='fever',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='headache',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='vomiting',
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(severe),
                     symptom_string='stomachache',
                     add_or_remove='+',
@@ -1327,7 +1327,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                 shock = shock_ch.append(shock_ad)
 
                 if jaundice is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(jaundice),
                         symptom_string='jaundice',
                         add_or_remove='+',
@@ -1335,7 +1335,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if acidosis is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(acidosis),
                         symptom_string='em_acidosis',
                         add_or_remove='+',
@@ -1343,7 +1343,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if coma_convulsions is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(coma_convulsions),
                         symptom_string='em_coma_convulsions',
                         add_or_remove='+',
@@ -1351,7 +1351,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if renal_failure is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(renal_failure),
                         symptom_string='em_renal_failure',
                         add_or_remove='+',
@@ -1359,7 +1359,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if anaemia is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(anaemia),
                         symptom_string='severe_anaemia',
                         add_or_remove='+',
@@ -1367,7 +1367,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                         duration_in_days=None)
 
                 if shock is not None:
-                    self.sim.modules['SymptomManager'].chg_symptom(
+                    self.sim.modules['SymptomManager'].change_symptom(
                         person_id=list(shock),
                         symptom_string='em_shock',
                         add_or_remove='+',
@@ -1911,28 +1911,28 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
             # check that a fever is present and was caused by malaria before resolving it
             if ('fever' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
                 df.at[person_id, 'ma_inf_type'] == 'clinical'):
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string='fever',
                     add_or_remove='-',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string='headache',
                     add_or_remove='-',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string='vomiting',
                     add_or_remove='-',
                     disease_module=self.module,
                     duration_in_days=None)
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string='stomachache',
                     add_or_remove='-',
