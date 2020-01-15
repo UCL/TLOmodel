@@ -450,28 +450,28 @@ class Malaria(Module):
                 symptom_string='fever',
                 add_or_remove='+',
                 disease_module=self,
-                duration_in_days=p['dur_clin'])
+                duration_in_days=None)
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(severe),
                 symptom_string='headache',
                 add_or_remove='+',
                 disease_module=self,
-                duration_in_days=p['dur_clin'])
+                duration_in_days=None)
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(severe),
                 symptom_string='vomiting',
                 add_or_remove='+',
                 disease_module=self,
-                duration_in_days=p['dur_clin'])
+                duration_in_days=None)
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(severe),
                 symptom_string='stomachache',
                 add_or_remove='+',
                 disease_module=self,
-                duration_in_days=p['dur_clin'])
+                duration_in_days=None)
 
             # symptoms specific to severe cases
             # get range of probabilities of each symptom for severe cases for children and adults
@@ -532,7 +532,7 @@ class Malaria(Module):
             anaemia = anaemia_ch.append(anaemia_ad)
             shock = shock_ch.append(shock_ad)
 
-            if jaundice.any():
+            if jaundice is not None:
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(jaundice),
                     symptom_string='jaundice',
@@ -540,7 +540,7 @@ class Malaria(Module):
                     disease_module=self,
                     duration_in_days=None)
 
-            if acidosis.any():
+            if acidosis is not None:
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(acidosis),
                     symptom_string='em_acidosis',
@@ -548,7 +548,7 @@ class Malaria(Module):
                     disease_module=self,
                     duration_in_days=None)
 
-            if coma_convulsions.any():
+            if coma_convulsions is not None:
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(coma_convulsions),
                     symptom_string='em_coma_convulsions',
@@ -556,7 +556,7 @@ class Malaria(Module):
                     disease_module=self,
                     duration_in_days=None)
 
-            if renal_failure.any():
+            if renal_failure is not None:
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(renal_failure),
                     symptom_string='em_renal_failure',
@@ -564,7 +564,7 @@ class Malaria(Module):
                     disease_module=self,
                     duration_in_days=None)
 
-            if anaemia.any():
+            if anaemia is not None:
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(anaemia),
                     symptom_string='severe_anaemia',
@@ -572,7 +572,7 @@ class Malaria(Module):
                     disease_module=self,
                     duration_in_days=None)
 
-            if shock.any():
+            if shock is not None:
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(shock),
                     symptom_string='em_shock',
