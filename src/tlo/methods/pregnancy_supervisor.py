@@ -757,6 +757,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Todo: review lit in regards to onset date and potentially move this to earlier
 
     # =========================== MONTH 6 RISK APPLICATION =============================================================
+        #TODO: should this be 28 weeks to align with still birth definition
+
         # From month 6 it is possible women could be in labour at the time of this event so we exclude them
         month_6_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 27) &
                                ~df.la_currently_in_labour]
