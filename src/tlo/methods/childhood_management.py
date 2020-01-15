@@ -756,7 +756,7 @@ class ChildhoodManagement(Module):
             'difficulty_breathing': False
         })
 
-        perceived_condition = diagnose(true_condition)
+        # perceived_condition = diagnose(true_condition)
 
         # best way to do this???
 
