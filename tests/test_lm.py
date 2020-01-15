@@ -158,6 +158,26 @@ def test_external_variable():
                                3.3, 3.3, 3.3, 3.3, 3.1, 3.3, 3.3, 3.3, 3.1, 3.1]
 
 
+def test_multiple_external_variables():
+    eq = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('region_of_residence').when('Northern', 100).otherwise(200),
+        Predictor('tens_digit', external=True).when('a', 10).when('b', 20).otherwise(30),
+        Predictor('units_digit', external=True).when('x', 1).when('y', 2).otherwise(3)
+    )
+
+    output = eq.predict(EXAMPLE_DF, tens_digit='a', units_digit='z')
+    result = output.astype(int).astype(str)
+    assert (result.str.get(1) == '1').all()
+    assert (result.str.get(2) == '3').all()
+
+    output = eq.predict(EXAMPLE_DF, tens_digit='b', units_digit='y')
+    result = output.astype(int).astype(str)
+    assert (result.str.get(1) == '2').all()
+    assert (result.str.get(2) == '2').all()
+
+
 def test_callback_value():
     # as lambda
     eq = LinearModel(
@@ -181,6 +201,7 @@ def test_callback_value():
     assert output1.tolist() == (EXAMPLE_DF.age_years/100).tolist()
     assert output1.tolist() == output2.tolist()
 
+
 def test_callback_with_external_variable():
     eq = LinearModel(
         LinearModelType.ADDITIVE,
@@ -197,6 +218,7 @@ def test_callback_with_external_variable():
     assert output2.tolist() == [1.2000, 2.2000, 1.2000, 2.2000, 2.2000, 2.2000, 2.2000, 1.2000,
                                 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 2.2000, 1.2000,
                                 2.2000, 2.2000, 2.2000, 1.2000, 1.2000]
+
 
 def test_logistic_application_low_ex():
     # Use an example from lifestyle at initiation: low exercise
