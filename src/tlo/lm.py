@@ -77,7 +77,7 @@ class Predictor(object):
             self.has_otherwise = True
             parsed_condition = None
         else:
-            raise RuntimeError(f"Unhandled condition: {args}")
+            raise RuntimeError(f"Unhandled condition: {condition}")
 
         self.conditions.append((parsed_condition, coefficient))
         return self
