@@ -32,39 +32,36 @@ class StreamHandler(_logging.StreamHandler):
 
 
 class Logger:
-    _Logger = _logging.getLoggerClass()
-
     def __init__(self, name, level=_logging.NOTSET):
-        self._Logger.__init__(self._Logger, name, level=level)
+        self._StdLogger = _logging.getLogger(name=name)
         self.name = name
-        self.handlers = self._Logger.handlers
-        self.propagate = self._Logger.propagate
-        self.level = self._Logger.level
-        self.parent = self._Logger.parent
-        self.disabled = self._Logger.disabled
-
+        self.handlers = self._StdLogger.handlers
+        self.propagate = self._StdLogger.propagate
+        self.level = self._StdLogger.level
+        self.parent = self._StdLogger.parent
+        self.disabled = self._StdLogger.disabled
 
     def addHandler(self, hdlr):
-        self._Logger.addHandler(self._Logger, hdlr=hdlr)
+        self._StdLogger.addHandler(hdlr=hdlr)
 
     def setLevel(self, level):
-        self._Logger.setLevel(self._Logger, level)
+        self._StdLogger.setLevel(level)
 
     def critical(self, msg, *args, **kwargs):
-        self._Logger.critical(self._Logger, msg, *args, **kwargs)
+        self._StdLogger.critical(msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
-        self._Logger.debug(self._Logger, msg, *args, **kwargs)
+        self._StdLogger.debug(msg, *args, **kwargs)
 
     def fatal(self, msg, *args, **kwargs):
-        self._Logger.fatal(self._Logger, msg, *args, **kwargs)
+        self._StdLogger.fatal(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         print("--custom info--")
-        self._Logger.info(self._Logger, msg, *args, **kwargs)
+        self._StdLogger.info(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        self._Logger.warning(self._Logger, msg, *args, **kwargs)
+        self._StdLogger.warning(msg, *args, **kwargs)
 
 
 class RootLogger(Logger):
@@ -77,7 +74,7 @@ class RootLogger(Logger):
         """
         Initialize the logger with the name "root".
         """
-        Logger.__init__(self, "root", level)
+        super(RootLogger, self).__init__("root", level)
 
 
 class Manager:
