@@ -253,6 +253,96 @@ class Labour (Module):
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
 
+        # TODO: Discuss with Stef change to params- reading in from file
+    #    params['baseline_pregnancy_info'] = {'prob_pregnancy': 0.1,
+    #                                         'baseline_cs_prev': 0.1}
+
+    #    params['preterm_labour'] = {'prob_ptl': 0.1,
+    #                                'prob_early_ptb': 0.1,
+    #                                'rr_early_ptb_age<20': 1.5,
+    #                                'rr_early_ptb_prev_ptb': 1.5,
+    #                                'rr_early_ptb_anaemia': 1.5,
+    #                                'prob_late_ptb': 1.5,
+    #                                'rr_late_ptb_prev_ptb': 1.5}
+    #    params['postterm_labour'] = {'prob_potl': 0.1}
+
+    #    params['obstructed_labour'] = {'prob_pl_ol': 0.1,
+    #                                   'rr_PL_OL_nuliparity': 0.1,
+    #                                   'rr_PL_OL_para1<20': 1.5,
+    #                                   'rr_PL_OL_age_less20': 1.5,
+    #                                   'cfr_obstructed_labour': 0.1,
+    #                                   'prob_still_birth_obstructed_labour': 0.1,
+    #                                   'prob_still_birth_obstructed_labour_md': 0.1}
+
+    #    params['maternal_sepsis'] = {'prob_ip_sepsis': 0.1,
+    #                                 'rr_ip_sepsis_pl_ol': 0.1,
+    #                                 'rr_ip_sepsis_anc_4': 1.5,
+    #                                 'cfr_sepsis': 1.5,
+    #                                 'prob_still_birth_sepsis': 0.1,
+    #                                 'prob_still_birth_sepsis_md': 0.1,
+    #                                 'prob_pp_sepsis': 0.1,
+    #                                 'cfr_pp_sepsis': 0.1}
+
+    #    params['eclampsia'] = {'prob_ip_eclampsia': 0.1,
+    #                           'rr_ip_eclampsia_30_34': 0.1,
+    #                           'rr_ip_eclampsia_35': 1.5,
+    #                           'rr_ip_eclampsia_nullip': 1.5,
+    #                           'cfr_eclampsia': 0.1,
+    #                           'prob_still_birth_eclampsia': 0.1,
+    #                           'prob_still_birth_eclampsia_md': 0.1,
+    #                           'prob_pp_eclampsia': 0.1,
+    #                           'cfr_pp_eclampsia': 0.1}
+
+    #    params['antepartum_haemorrhage'] = {'prob_aph': 0.1,
+    #                                        'rr_aph_pl_ol': 0.1,
+    #                                        'cfr_aph<20': 1.5,
+    #                                        'prob_still_birth_aph': 1.5,
+    #                                        'prob_still_birth_aph_md': 1.5}
+
+    #    params['uterine_rupture'] = {'prob_uterine_rupture': 0.1,
+    #                                 'rr_ur_grand_multip': 0.1,
+    #                                 'rr_ur_prev_cs': 1.5,
+    #                                 'rr_ur_ref_ol': 1.5,
+    #                                 'cfr_uterine_rupture': 0.1,
+    #                                 'prob_still_birth_ur': 0.1,
+    #                                 'prob_still_birth_ur_md': 0.1}
+
+    #    params['postpartum_haemorrhage'] = {'prob_pph': 0.1,
+    #                                        'rr_pph_pl_ol': 0.1,
+    #                                        'cfr_pph': 0.1}
+
+    #    params['neonatal_factors'] = {'prob_neonatal_sepsis': 0.1,
+    #                                  'prob_neonatal_birth_asphyxia': 0.1}
+
+    #    params['treatment_induction'] = {'prob_successful_induction': 0.1}
+
+    #    params['treatment_prevention'] = {'rr_maternal_sepsis_clean_delivery': 0.1,
+    #                                      'rr_newborn_sepsis_clean_delivery': 0.1,
+    #                                      'rr_sepsis_post_abx_prom': 1.5,
+    #                                      'rr_newborn_sepsis_proph_abx': 1.5,
+    #                                      'rr_pph_amtsl': 1.5}
+
+    #    params['treatment_obstructed_labour'] = {'prob_deliver_ventouse': 0.1,
+    #                                             'prob_deliver_forceps': 0.1}
+
+    #    params['treatment_sepsis'] = {'prob_cure_antibiotics': 0.1}
+
+    #    params['treatment_haemorrhage'] = {'prob_cure_blood_transfusion': 0.1,
+    #                                       'prob_cure_oxytocin': 0.1,
+    #                                       'prob_cure_misoprostol': 1.5,
+    #                                       'prob_cure_uterine_massage': 1.5,
+    #                                       'prob_cure_manual_removal': 1.5}
+
+    #    params['treatment_hypertension'] = {'prob_cure_mgso4': 0.1,
+    #                                        'prob_prevent_mgso4': 0.1,
+    #                                        'prob_cure_diazepam': 0.1}
+
+    #    params['treatment_surgical'] = {'prob_cure_uterine_tamponade': 0.1,
+    #                                    'prob_cure_uterine_ligation': 0.1,
+    #                                    'prob_cure_b_lynch': 1.5,
+    #                                    'prob_cure_hysterectomy': 1.5,
+    #                                    'prob_cure_uterine_repair': 1.5}
+
         # Here we will include DALY weights if applicable...
 
         if 'HealthBurden' in self.sim.modules.keys():
@@ -328,7 +418,7 @@ class Labour (Module):
         idx_pregnant = dfx.index[dfx.eff_prob_pregnancy > dfx.random_draw]
         df.loc[idx_pregnant, 'is_pregnant'] = True
 
-        logger.debug('these women are pregnant at baseline', str(idx_pregnant))
+        logger.debug(idx_pregnant)
 
 # ---------------------------------    GESTATION AND SCHEDULING BIRTH BASELINE  ---------------------------------------
 
@@ -346,32 +436,28 @@ class Labour (Module):
         dfx.columns = ['simdate', 'due_date_period']
 
         idx_term = dfx.index[dfx.due_date_period == 'term']
-        df.loc[idx_term, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 39), index=idx_term))
+        df.loc[idx_term, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 36), index=idx_term))
         df.loc[idx_term, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
         weeks_till_due = (pd.Series(self.rng.random_integers(37, 41), index=idx_term)) - df['ps_gestational_age']
         df.loc[idx_term, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
-#        assert df.date_of_last_pregnancy != pd.NaT in idx_term
 
         idx_late = dfx.index[dfx.due_date_period == 'post_term']
-        df.loc[idx_late, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 46), index=idx_late))
+        df.loc[idx_late, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 41), index=idx_late))
         df.loc[idx_late, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
         weeks_till_due = (pd.Series(self.rng.random_integers(42, 46), index=idx_late)) - df['ps_gestational_age']
         df.loc[idx_late, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
-  #      assert df.date_of_last_pregnancy != pd.NaT in idx_late
 
         idx_e_preterm = dfx.index[dfx.due_date_period == 'early_preterm']
-        df.loc[idx_e_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 21), index=idx_e_preterm))
+        df.loc[idx_e_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 23), index=idx_e_preterm))
         df.loc[idx_e_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
         weeks_till_due = (pd.Series(self.rng.random_integers(24, 32), index=idx_e_preterm)) - df['ps_gestational_age']
         df.loc[idx_e_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
- #       assert df.date_of_last_pregnancy != pd.NaT in idx_e_preterm
 
         idx_l_preterm = dfx.index[dfx.due_date_period == 'late_preterm']
         df.loc[idx_l_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 32), index=idx_l_preterm))
         df.loc[idx_l_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
         weeks_till_due = pd.Series(self.rng.random_integers(33, 36), index=idx_l_preterm) - df['ps_gestational_age']
         df.loc[idx_l_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
-#        assert df.date_of_last_pregnancy != pd.NaT in idx_l_preterm
 
         # Then all women are scheduled to go into labour on this due date
         for person in pregnant_idx:
@@ -747,17 +833,17 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 
 # ===================================== LABOUR STATE  ==================================================================
-
-        # This check ensures only women whose due date is the date of this event go into labour
         logger.debug('person %d has just reached LabourEvent on %s',individual_id, self.sim.date)
-        assert df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date
-#        assert df.at[individual_id, 'is_pregnant']
-#        assert df.at[individual_id, 'is_alive']
 
-        # TODO: add error message?
-        #  TODO: pd.NaT check was for women who were induced to prevent them going into labour again- but pregnancy date
-        #   being reset would stop them that from happening - need another assert function
+        # Debug logging to highlight the women who have miscarried/had an abortion/stillbirth who still come to the
+        # event
+        if ~df.at[individual_id, 'is_pregnant']:
+            logger.debug('person %d has just reached LabourEvent on %s but is no longer pregnant',
+                         individual_id, self.sim.date)
 
+        # The event is conditioned on the woman being pregnant, today being her due date and being alive
+        # We don't use assert functions to ensure the due date is correct as women who lose their pregnancy will still
+        # have this event scheduled
         if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive'] & \
             (df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date):
             df.at[individual_id, 'la_currently_in_labour'] = True
@@ -1323,8 +1409,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             random = self.module.rng.random_sample(size=1)
             if random < params['cfr_aph']:
                 mni[individual_id]['death_in_labour'] = True
-                df.at[individual_id, 'la_maternal_death'] = True
                 mni[individual_id]['cause_of_death_in_labour'].add('APH')
+                df.at[individual_id, 'la_maternal_death'] = True
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
                 random = self.module.rng.random_sample(size=1)
@@ -1344,8 +1430,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             random = self.module.rng.random_sample(size=1)
             if random < params['cfr_sepsis']:
                 mni[individual_id]['death_in_labour'] = True
-                df.at[individual_id, 'la_maternal_death'] = True
                 mni[individual_id]['cause_of_death_in_labour'].add('sepsis')
+                df.at[individual_id, 'la_maternal_death'] = True
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
                 random = self.module.rng.random_sample(size=1)
@@ -1365,8 +1451,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             random = self.module.rng.random_sample(size=1)
             if random < params['cfr_uterine_rupture']:
                 mni[individual_id]['death_in_labour'] = True
-                df.at[individual_id, 'la_maternal_death'] = True
                 mni[individual_id]['cause_of_death_in_labour'].add('uterine_rupture')
+                df.at[individual_id, 'la_maternal_death'] = True
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
                 random = self.module.rng.random_sample(size=1)
@@ -1386,6 +1472,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         if mni[individual_id]['death_in_labour']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='labour'), self.sim.date)
+            # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id][cause_of_death_in_labour]
 
             # Log the maternal death
             logger.info('This is LabourDeathEvent scheduling a death for person %d on date %s who died due to '
@@ -1450,6 +1537,8 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         if mni[individual_id]['death_postpartum']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='postpartum labour'), self.sim.date)
+            # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id][cause_of_death_in_labour]
+
             logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
                         'postpartum complications', individual_id,
                          self.sim.date)
@@ -1548,7 +1637,7 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1629,7 +1718,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         # TODO: Squeeze factor, consumable conditions?
@@ -1882,7 +1971,7 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         # TODO: apply squeeze factor
@@ -1984,7 +2073,7 @@ class HSI_Labour_ReceivesCareForMaternalSepsis(HSI_Event, IndividualScopeEventMi
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         # TODO: Apply squeeze factor
@@ -2053,7 +2142,7 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -2173,7 +2262,7 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         # TODO: squeeze factor AND consider having APH, PPH and RPP as separate treatment events??
@@ -2307,7 +2396,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 2 # check this?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
