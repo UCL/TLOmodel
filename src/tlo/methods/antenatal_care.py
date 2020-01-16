@@ -169,7 +169,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(HSI_Event, Individual
         # Define the necessary information for an HSI
         self.ACCEPTED_FACILITY_LEVEL = 1  # Community?!
         # TODO: ANC should be offered at level 0-2. Can all interventions be given at level 0?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -251,7 +251,7 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(HSI_Event, Indiv
 
         # Define the necessary information for an HSI
         self.ACCEPTED_FACILITY_LEVEL = 0  # Community?!
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -319,7 +319,7 @@ class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(HSI_Event, IndividualScopeE
 
         # Define the necessary information for an HSI
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -387,7 +387,7 @@ class HSI_AntenatalCare_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin)
 
         # Define the necessary information for an HSI
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -453,7 +453,7 @@ class HSI_AntenatalCare_PostAbortionCare(HSI_Event, IndividualScopeEventMixin): 
 
         # Define the necessary information for an HSI
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -519,7 +519,7 @@ class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(HSI_Event, Indivi
 
         # Define the necessary information for an HSI
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
-        self.ALERT_OTHER_DISEASES = ['*']
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
