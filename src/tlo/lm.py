@@ -1,6 +1,7 @@
 import logging
 import numbers
 from enum import Enum, auto
+from typing import Any, Callable, Union
 
 import numpy as np
 import pandas as pd
@@ -25,36 +26,28 @@ class Predictor(object):
         self.callback = None
         self.has_otherwise = False
 
-    def when(self, condition, value: float) -> 'Predictor':
+    def when(self, condition: Union[str, float, bool], value: float) -> 'Predictor':
         assert self.callback is None, "Can't use `when` on Predictor with function"
-        return self._coeff(condition, value)
+        return self._coeff(condition=condition, coefficient=value)
 
-    def otherwise(self, value) -> 'Predictor':
+    def otherwise(self, value: float) -> 'Predictor':
         assert self.property_name is not None, "Can't use `otherwise` condition on unnamed Predictor"
         assert self.callback is None, "Can't use `otherwise` on Predictor with function"
-        return self._coeff(value)
+        return self._coeff(coefficient=value)
 
-    def apply(self, callback) -> 'Predictor':
+    def apply(self, callback: Callable[[Any], float]) -> 'Predictor':
         assert self.property_name is not None, "Can't use `apply` on unnamed Predictor"
         assert len(self.conditions) == 0, "Can't specify `apply` on Predictor with when/otherwise conditions"
         assert self.callback is None, "Can't specify more than one callback for a Predictor"
         self.callback = callback
         return self
 
-    def _coeff(self, *args) -> 'Predictor':
+    def _coeff(self, *, coefficient, condition=None) -> 'Predictor':
         """Adds the coefficient for the Predictor. The arguments can be two:
                 `coeff(condition, value)` where the condition evaluates the property value to true/false
                 `coeff(value)` where the value is given to all unconditioned values of the property
         The second style (unconditioned value) only makes sense after one or more conditioned values
         """
-        num_args = len(args)
-        if num_args == 2:
-            condition = args[0]
-            coefficient = args[1]
-        else:
-            condition = None
-            coefficient = args[0]
-
         # If there isn't a property name
         if self.property_name is None:
             # We use the supplied condition literally
