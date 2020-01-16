@@ -328,6 +328,8 @@ class Labour (Module):
         idx_pregnant = dfx.index[dfx.eff_prob_pregnancy > dfx.random_draw]
         df.loc[idx_pregnant, 'is_pregnant'] = True
 
+        logger.debug('these women are pregnant at baseline', str(idx_pregnant))
+
 # ---------------------------------    GESTATION AND SCHEDULING BIRTH BASELINE  ---------------------------------------
 
         # TODO: random_intergers produces same random integer for each person needs a fix
@@ -346,35 +348,41 @@ class Labour (Module):
         idx_term = dfx.index[dfx.due_date_period == 'term']
         df.loc[idx_term, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 39), index=idx_term))
         df.loc[idx_term, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
-        weeks_till_due = pd.Series(self.rng.random_integers(37, 41), index=idx_term) - df['ps_gestational_age']
+        weeks_till_due = (pd.Series(self.rng.random_integers(37, 41), index=idx_term)) - df['ps_gestational_age']
         df.loc[idx_term, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
+#        assert df.date_of_last_pregnancy != pd.NaT in idx_term
 
         idx_late = dfx.index[dfx.due_date_period == 'post_term']
         df.loc[idx_late, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 46), index=idx_late))
         df.loc[idx_late, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
-        weeks_till_due = pd.Series(self.rng.random_integers(42, 46), index=idx_late) - df['ps_gestational_age']
+        weeks_till_due = (pd.Series(self.rng.random_integers(42, 46), index=idx_late)) - df['ps_gestational_age']
         df.loc[idx_late, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
+  #      assert df.date_of_last_pregnancy != pd.NaT in idx_late
 
         idx_e_preterm = dfx.index[dfx.due_date_period == 'early_preterm']
         df.loc[idx_e_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 21), index=idx_e_preterm))
         df.loc[idx_e_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
-        weeks_till_due = pd.Series(self.rng.random_integers(24, 32), index=idx_e_preterm) - df['ps_gestational_age']
+        weeks_till_due = (pd.Series(self.rng.random_integers(24, 32), index=idx_e_preterm)) - df['ps_gestational_age']
         df.loc[idx_e_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
+ #       assert df.date_of_last_pregnancy != pd.NaT in idx_e_preterm
 
         idx_l_preterm = dfx.index[dfx.due_date_period == 'late_preterm']
         df.loc[idx_l_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 32), index=idx_l_preterm))
         df.loc[idx_l_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
         weeks_till_due = pd.Series(self.rng.random_integers(33, 36), index=idx_l_preterm) - df['ps_gestational_age']
         df.loc[idx_l_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
+#        assert df.date_of_last_pregnancy != pd.NaT in idx_l_preterm
 
         # Then all women are scheduled to go into labour on this due date
         for person in pregnant_idx:
-            scheduled_labour_date = df.at[person, 'la_due_date_current_pregnancy']
+            assert df.at[person, 'la_due_date_current_pregnancy'] > self.sim.date
+            labour = LabourEvent(self, individual_id=person, cause='Labour')
+            self.sim.schedule_event(labour, df.at[person, 'la_due_date_current_pregnancy'])
 
             # cannot schedule events in the past, so adding it a check here:
-            if scheduled_labour_date >= self.sim.date:
-                labour = LabourEvent(self, individual_id=person, cause='Labour')
-                self.sim.schedule_event(labour, scheduled_labour_date)
+#           if scheduled_labour_date >= self.sim.date:
+#               labour = LabourEvent(self, individual_id=person, cause='Labour')
+#              self.sim.schedule_event(labour, scheduled_labour_date)
 
         # Todo: consider if we should apply risk factors to women at baseline (anaemia and age)
 
@@ -607,6 +615,8 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
+        logger.debug('person %d is having their labour scheduled on date %s', individual_id, self.sim.date)
+
         # First we determine this woman's risk of early preterm birth based on independent risk factors
         if ~df.at[individual_id, 'la_has_previously_delivered_preterm'] & (df.at[individual_id, 'age_years'] < 20):
             rf1 = params['rr_early_ptb_age<20']
@@ -637,41 +647,40 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
             eff_prob_late_ptb = riskfactors * params['prob_late_ptb']
 
         # We then use a random draw to determine if the woman will go into preterm labour and how early she will deliver
-        random = self.module.rng.random_sample(size=1)
-        if (random < eff_prob_late_ptb) & (random > eff_prob_early_ptb):
-            random = np.random.randint(34, 36, size=1)
-            random = int(random)
+        random_draw = self.module.rng.random_sample(size=1)
+        if (random_draw < eff_prob_late_ptb) & (random_draw > eff_prob_early_ptb):
+            random = int(self.module.rng.random_integers(34,36))
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                     pd.Timedelta(random, unit='W')
-            due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
 
-        elif random < eff_prob_early_ptb:
-            random = np.random.randint(24, 33, size=1)
-            random = int(random)
+        elif random_draw < eff_prob_early_ptb or ((random_draw < eff_prob_early_ptb) & (random_draw < eff_prob_late_ptb)):
+            random = int(self.module.rng.random_integers(24,33))
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                     pd.Timedelta(random, unit='W')
-            due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
 
             # TODO: Anaemia/ Malaria
         # For women who will deliver after term we apply a risk of post term birth
-        elif random > eff_prob_late_ptb:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['prob_potl']:
+        elif random_draw > eff_prob_late_ptb:
+            random_draw_2 = self.module.rng.random_sample(size=1)
+            if random_draw_2 < params['prob_potl']:
                 # TODO: To explore causal influences on post term labour
-                random = np.random.randint(42, 46, size=1)
-                random = int(random)
+                random = int(self.module.rng.random_integers(42, 46))
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta(random, unit='W')
-                due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
+
             else:
-                random = np.random.randint(37, 41, size=1)
-                random = int(random)
+                random = int(self.module.rng.random_integers(37, 41))
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta(random, unit='W')
-                due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
+
+        days_untill_labour = df.at[individual_id, 'la_due_date_current_pregnancy'] - self.sim.date
+        assert days_untill_labour >= pd.Timedelta(168, unit='d')
+
+        self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'),
+                                df.at[individual_id, 'la_due_date_current_pregnancy'])
 
         # Labour is then scheduled on the newly generated due date
-        self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
+      #  self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
         # TODO: 'Local variable 'due_date' might be referenced before assignment more' - i can't see how
 
 
@@ -740,11 +749,14 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 # ===================================== LABOUR STATE  ==================================================================
 
         # This check ensures only women whose due date is the date of this event go into labour
+        logger.debug('person %d has just reached LabourEvent on %s',individual_id, self.sim.date)
         assert df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date
+#        assert df.at[individual_id, 'is_pregnant']
+#        assert df.at[individual_id, 'is_alive']
+
         # TODO: add error message?
         #  TODO: pd.NaT check was for women who were induced to prevent them going into labour again- but pregnancy date
         #   being reset would stop them that from happening - need another assert function
-
 
         if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive'] & \
             (df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date):

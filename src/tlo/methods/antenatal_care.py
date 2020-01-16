@@ -167,7 +167,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(HSI_Event, Individual
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Community?!
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Community?!
         # TODO: ANC should be offered at level 0-2. Can all interventions be given at level 0?
         self.ALERT_OTHER_DISEASES = ['*']
 
