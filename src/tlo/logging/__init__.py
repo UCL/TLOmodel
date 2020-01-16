@@ -26,6 +26,7 @@ class Formatter(_logging.Formatter):
 class StreamHandler(_logging.StreamHandler):
     pass
 
+
 class Logger:
     def __init__(self, name, level=_logging.NOTSET):
         self._StdLogger = _logging.getLogger(name=name)
