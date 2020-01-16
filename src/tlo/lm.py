@@ -172,7 +172,7 @@ class LinearModel(object):
 
         # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
-        res_by_predictor['__intercept__'] = self.intercept
+        res_by_predictor[f'__intercept{id(self)}__'] = self.intercept
 
         for predictor in self.predictors:
             res_by_predictor[predictor] = predictor.predict(df)
