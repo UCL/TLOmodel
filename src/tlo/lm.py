@@ -17,30 +17,31 @@ class Predictor(object):
 
         # If this is a property that is not part of the population dataframe
         if external:
+            assert property_name is not None, "Can't have an unnamed external predictor"
             # It will be an private column appended to the dataframe
             self.property_name = f'__{self.property_name}__'
 
         self.conditions = list()
         self.callback = None
-        self.else_condition_supplied = False
+        self.has_otherwise = False
 
-    def when(self, condition, value):
+    def when(self, condition, value: float) -> 'Predictor':
         assert self.callback is None, "Can't use `when` on Predictor with function"
         return self._coeff(condition, value)
 
-    def otherwise(self, value):
+    def otherwise(self, value) -> 'Predictor':
         assert self.property_name is not None, "Can't use `otherwise` condition on unnamed Predictor"
         assert self.callback is None, "Can't use `otherwise` on Predictor with function"
         return self._coeff(value)
 
-    def apply(self, callback):
+    def apply(self, callback) -> 'Predictor':
         assert self.property_name is not None, "Can't use `apply` on unnamed Predictor"
         assert len(self.conditions) == 0, "Can't specify `apply` on Predictor with when/otherwise conditions"
         assert self.callback is None, "Can't specify more than one callback for a Predictor"
         self.callback = callback
         return self
 
-    def _coeff(self, *args):
+    def _coeff(self, *args) -> 'Predictor':
         """Adds the coefficient for the Predictor. The arguments can be two:
                 `coeff(condition, value)` where the condition evaluates the property value to true/false
                 `coeff(value)` where the value is given to all unconditioned values of the property
@@ -79,8 +80,8 @@ class Predictor(object):
         elif isinstance(condition, numbers.Number):
             parsed_condition = f'({self.property_name} == {condition})'
         elif condition is None:
-            assert not self.else_condition_supplied, "You can only give one unconditioned value to predictor"
-            self.else_condition_supplied = True
+            assert not self.has_otherwise, "You can only give one unconditioned value to predictor"
+            self.has_otherwise = True
             parsed_condition = None
         else:
             raise RuntimeError(f"Unhandled condition: {args}")
@@ -88,7 +89,7 @@ class Predictor(object):
         self.conditions.append((parsed_condition, coefficient))
         return self
 
-    def predict(self, df: pd.DataFrame):
+    def predict(self, df: pd.DataFrame) -> pd.Series:
         """Will add the value(s) of this predictor to the output series, checking values in the supplied
         dataframe"""
 
