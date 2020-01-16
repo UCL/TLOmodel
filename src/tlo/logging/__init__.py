@@ -16,20 +16,15 @@ def getLogger(name=None):
 
 
 class FileHandler(_logging.FileHandler):
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
-        super(FileHandler, self).__init__(filename, mode=mode, encoding=encoding, delay=delay)
+    pass
 
 
 class Formatter(_logging.Formatter):
-    def __init__(self, fmt=None, datefmt=None, style='%'):
-        super(Formatter, self).__init__(fmt=fmt, datefmt=datefmt, style=style)
-
+    pass
 
 
 class StreamHandler(_logging.StreamHandler):
-    def __init__(self, stream=None):
-        super(StreamHandler, self).__init__(stream=stream)
-
+    pass
 
 class Logger:
     def __init__(self, name, level=_logging.NOTSET):
@@ -57,7 +52,6 @@ class Logger:
         self._StdLogger.fatal(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        print("--custom info--")
         self._StdLogger.info(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
@@ -77,28 +71,14 @@ class RootLogger(Logger):
         super(RootLogger, self).__init__("root", level)
 
 
-class Manager:
-    """
-       There is [under normal circumstances] just one Manager instance, which
-       holds the hierarchy of loggers.
-       """
-
-    def __init__(self, rootnode):
-        """
-        Initialize the manager with the root node of the logger hierarchy.
-        """
-        self.root = rootnode
-        self.disable = 0
-        self.emittedNoHandlerWarning = False
-        self.loggerDict = {}
-        self.loggerClass = None
-        self.logRecordFactory = None
+class Manager(_logging.Manager):
 
     def getLogger(self, name):
         """
         Get a logger with the specified name (channel name), creating it
         if it doesn't yet exist. This name is a dot-separated hierarchical
         name, such as "a", "a.b", "a.b.c" or similar.
+
         If a PlaceHolder existed for the specified name [i.e. the logger
         didn't exist but a child of it did], replace it with the created
         logger and fix up the parent/child references which pointed to the
@@ -137,13 +117,6 @@ class Manager:
                                 + klass.__name__)
         self.loggerClass = klass
 
-    def setLogRecordFactory(self, factory):
-        """
-        Set the factory to be used when instantiating a log record with this
-        Manager.
-        """
-        self.logRecordFactory = factory
-
     def _fixupParents(self, alogger):
         """
         Ensure that there are either loggers or placeholders all the way
@@ -167,19 +140,6 @@ class Manager:
         if not rv:
             rv = self.root
         alogger.parent = rv
-
-    def _fixupChildren(self, ph, alogger):
-        """
-        Ensure that children of the placeholder ph are connected to the
-        specified logger.
-        """
-        name = alogger.name
-        namelen = len(name)
-        for c in ph.loggerMap.keys():
-            # The if means ... if not c.parent.name.startswith(nm)
-            if c.parent.name[:namelen] != name:
-                alogger.parent = c.parent
-                c.parent = alogger
 
 
 # set up singleton objects ---
