@@ -81,7 +81,7 @@ logging.getLogger('tlo.methods.symptommanager').setLevel(logging.DEBUG)
 logging.getLogger('tlo.methods.healthsystem').setLevel(logging.DEBUG)
 logging.getLogger('tlo.methods.dx_algorithm_child').setLevel(logging.DEBUG)
 logging.getLogger('tlo.methods.dx_algorithm_adult').setLevel(logging.DEBUG)
-logging.getLogger('tlo.methods.healthseekingbehaviour').setLevel(logging.DEBUG)
+# logging.getLogger('tlo.methods.healthseekingbehaviour').setLevel(logging.DEBUG)
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
