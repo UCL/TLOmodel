@@ -41,7 +41,9 @@ class SymptomManager(Module):
             'backache',
             'injury',
             'eye_complaint',
-            'diarrhoea',
+            'watery diarrhoea',
+            'bloody diarrhoea',
+            'dehydration'
         ]
 
     def before_make_initial_population(self):
