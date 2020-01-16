@@ -1508,7 +1508,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
                             person_id, (self.sim.date + DateOffset(days=1)))
 
-                        treat = HSI_Malaria_tx_compl_child(self.module, person_id=person_id)
+                        treat = HSI_Malaria_tx_compl_child(self.sim.modules['Malaria'], person_id=person_id)
                         self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
                                                                             priority=1,
                                                                             topen=self.sim.date,
@@ -1963,6 +1963,7 @@ class MalariaClinEndEvent(Event, IndividualScopeEventMixin):
 
             if ('fever' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
                 'Malaria' in self.sim.modules['SymptomManager'].causes_of(person_id, 'fever')):
+
                 # this will clear all malaria symptoms
                 self.sim.modules['SymptomManager'].clear_symptoms(
                     person_id=person_id,
@@ -2092,8 +2093,8 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|tx_coverage|%s', now,
                     {
-                        'number treated': tx,
-                        'number clinical episodes': clin,
+                        'number_treated': tx,
+                        'number_clinical episodes': clin,
                         'treatment_coverage': tx_coverage,
                     })
 
