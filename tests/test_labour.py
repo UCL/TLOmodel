@@ -7,7 +7,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 
-from tlo.methods import demography,enhanced_lifestyle, labour, newborn_outcomes, healthburden, healthsystem, antenatal_care,\
+from tlo.methods import demography, enhanced_lifestyle, labour, newborn_outcomes, healthburden, healthsystem, antenatal_care,\
     pregnancy_supervisor, contraception
 
 start_date = Date(2010, 1, 1)

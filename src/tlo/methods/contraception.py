@@ -418,8 +418,10 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
 
         prob_of_failure = p['contraception_failure']
 
+        # TODO: N.B edited by joe- was allowing pregnant women (at baseline) to become pregnant again!,
+        #  ~df.is_pregnant added
         possible_to_fail = ((df.sex == 'F') &
-                            df.is_alive &
+                            df.is_alive & ~df.is_pregnant &
                             df.age_years.between(self.age_low, self.age_high) &
                             ~df.co_contraception.isin(['not_using', 'female_steralization']))
 
