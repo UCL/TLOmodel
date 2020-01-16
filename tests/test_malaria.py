@@ -32,9 +32,14 @@ except NameError:
     resourcefilepath = 'resources'
 
 
-# @pytest.fixture(autouse=True)
-# def disable_logging():
-#     logging.disable(logging.DEBUG)
+# TODO change the output file path and see if that works
+# todo think the issue is that nothing is written to the logfile or it can't be accessed maybe?
+# todo but no error writing/reading, just key error in tlo.methods.malaria
+# todo maybe output file is empty??
+
+@pytest.fixture(autouse=True)
+def disable_logging():
+    logging.disable(logging.DEBUG)
 
 
 def check_dtypes(simulation):
@@ -90,6 +95,7 @@ def test_no_hsi(tmpdir):
     fh.close()
 
     # check no-one has been treated
+    print(output)  # todo try this and see if output is indeed empty
     assert (output['tlo.methods.malaria']['tx_coverage']['number_treated'] == 0).all()
 
     # check scheduled malaria deaths occurring only due to severe malaria (not clinical or asym)
