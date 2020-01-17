@@ -272,7 +272,7 @@ class Diarrhoea(Module):
         #TODO: (@Ines - you might find it easier to use the utility function for importing long lists of parameters from excel files.)
         # Cookbook! or ask Joe (or Tim will find it for you!)
 
-        # all diarrhoea prevalence values
+        # all diarrhoea prevalence values:
         p['rp_acute_diarr_age12to23mo'] = dfd.loc['rp_acute_diarr_age12to23mo', 'value1']
         p['rp_acute_diarr_age24to59mo'] = dfd.loc['rp_acute_diarr_age24to59mo', 'value1']
         p['rp_acute_diarr_HIV'] = dfd.loc['rp_acute_diarr_HIV', 'value1']
@@ -665,9 +665,13 @@ class Diarrhoea(Module):
         })
 
         # Organise probability of getting symptoms:
-        prob_symptoms = {
-            'rotavirus': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                          'dehydration': 0.2, 'prolonged episode': 0.1},
+        params['prob_symptoms'] = {
+            'rotavirus': {'watery diarrhoea': p['rp_acute_diarr_age12to23mo'],
+                          'bloody diarrhoea': dfd.loc['dehydration_by_ETEC', 'value1'],
+                          'fever': dfd.loc['dehydration_by_ETEC', 'value1'],
+                          'vomiting': dfd.loc['dehydration_by_ETEC', 'value1'],
+                          'dehydration': dfd.loc['dehydration_by_ETEC', 'value1'],
+                          'prolonged episode': dfd.loc['dehydration_by_ETEC', 'value1']},
             'shigella': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
                          'dehydration': 0.2, 'prolonged episode': 0.1},
             'adenovirus': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
@@ -822,6 +826,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             # the outcome - diarrhoea (and which pathogen...) to put in the df
             outcome_i = rng.choice(probs.columns, p=probs.loc[i].values)
 
+            df.at[i, 'diarah-pathogen'] = outcome_i
+
             # Then work out the symptoms for this person:
             if outcome_i != 'none':
                 for symptom_string, prob in self.module.read_parameters().prob_symptoms[outcome_i].items():
@@ -829,7 +835,9 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                         self.sim.modules['SymptomManager'].chg_symptom(symptom_string=symptom_string,
                                                                        person_id=i,
                                                                        add_or_remove='+',
-                                                                       disease_module=self.module
+                                                                       disease_module=self.module,
+                                                                       date_of_onset=self.sim.date + DateOffset(days=10),
+                                                                       duration_in_days=10
                                                                        )
 
         # # # # # HEALTHCARE SEEKING BEHAVIOUR - INTERACTION WITH HSB MODULE # # # # #
@@ -837,7 +845,9 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 
+        # schedule death -- just as you do already! (commented out below)
 
+        # and schedule recovery event - just as you do already
 
 
 
@@ -1620,6 +1630,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         #     self.sim.schedule_event(death_event, df.at[child, 'date_of_onset_diarrhoea'] + random_days2)  # schedule the death for persistent cases
         #
         #
+        # ALL GOOD!!!! ;-)
         # # schedule recovery for those who didn't die
         # recovery_from_diarr = eff_prob_death_diarr <= random_draw_death
         # recovery_from_diarr_idx = eff_prob_death_diarr.index[recovery_from_diarr]
@@ -1672,17 +1683,21 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
 
         if df.at[person_id, 'is_alive']:
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, cause='diarrhoea'),
-                                    self.sim.date)
-            df.at[person_id, 'gi_diarrhoea_death_date'] = self.sim.date
-            df.at[person_id, 'gi_diarrhoea_death'] = True
-            # logger.info('This is DeathDiarrhoeaEvent determining if person %d on the date %s will die '
-            #             'from their disease', person_id, self.sim.date)
-            # death_count = sum(person_id)
-            # # Log the diarrhoea death information
-            # logger.info('%s|death_diarrhoea|%s', self.sim.date,
-            #             {'death': sum(death_count)
-            #              })
+
+            # check if person should still die of diarah
+            if df.at[person_id,gi_will_die_of_diarh]:
+
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, cause='diarrhoea'),
+                                        self.sim.date)
+                df.at[person_id, 'gi_diarrhoea_death_date'] = self.sim.date
+                df.at[person_id, 'gi_diarrhoea_death'] = True
+                # logger.info('This is DeathDiarrhoeaEvent determining if person %d on the date %s will die '
+                #             'from their disease', person_id, self.sim.date)
+                # death_count = sum(person_id)
+                # # Log the diarrhoea death information
+                # logger.info('%s|death_diarrhoea|%s', self.sim.date,
+                #             {'death': sum(death_count)
+                #              })
 
 
 class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):

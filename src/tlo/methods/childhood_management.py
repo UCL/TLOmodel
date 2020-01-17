@@ -739,24 +739,31 @@ class ChildhoodManagement(Module):
         #         HCW_pinched_abdomen = \
         #             self.sim.rng.choice([True, False], size=1, p=[p['prob_pinched_abdomen'], # 10%
         #                                                           (1 - p['prob_pinched_abdomen'])])
+        #
+        # # TODO: the job here is diagnose the children based on the symptoms and underlying conditions they have.
+        # # .... So Could do the following:
+        #
+        # # profile of the child from the df and the symtommaneer
+        # c = df.loc[person_id,]
+        # s = self.sim.modules['SymptomManager'].has_what(person_id)
+        #
+        # # Extract the things that may be checked by the nurse and the true state
+        # # (here filled in with dummy values but this would be done by looking inside c and s)
+        #
+        # true_condition = dict({
+        #     'diarrhoea': True,
+        #     'vomitting_everything': True,
+        #     'difficulty_breathing': False
+        # })
+        #
+        # # perceived_condition = diagnose(true_condition)
+        #
+        # # self.sim.modules['diarrhoea'].parameters(['param_name'])
 
-        # TODO: the job here is diagnose the children based on the symptoms and underlying conditions they have.
-        # .... So Could do the following:
+        # I have diagnosed this child as having severe diarahhea and needing treament
+        # <<< __ALGORITHM__ >>>>
 
-        # profile of the child from the df and the symtommaneer
-        c = df.loc[person_id,]
-        s = self.sim.modules['SymptomManager'].has_what(person_id)
-
-        # Extract the things that may be checked by the nurse and the true state
-        # (here filled in with dummy values but this would be done by looking inside c and s)
-
-        true_condition = dict({
-            'diarrhoea': True,
-            'vomitting_everything': True,
-            'difficulty_breathing': False
-        })
-
-        perceived_condition = diagnose(true_condition)
+        treatment_event = diarahheoa.HSI_Diarrhoea_Treatment(person_id, self)
 
         # best way to do this???
 
@@ -783,6 +790,12 @@ class HSI_Diarrhoea_Treatment(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('Do the action of the HSI')
+
+        # do treatment
+
+        if treatmentworks:
+            df.at[person_id, gi_will_die_of_diarh] = False
+
         pass
 
 
