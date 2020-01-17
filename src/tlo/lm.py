@@ -166,6 +166,14 @@ class LinearModel(object):
                 new_columns[f'__{column_name}__'] = kwargs[column_name]
             df = df.assign(**new_columns)
 
+
+        indicator_property_names_not_in_df = [p.property_name
+                    for p in self.predictors
+                    if (p.property_name is not None) and (p.property_name not in df.columns)]
+
+        assert not indicator_property_names_not_in_df,\
+            f"Predictor variables not in df: {indicator_property_names_not_in_df}"
+
         assert all([p.property_name in df.columns
                     for p in self.predictors
                     if p.property_name is not None]), f"Predictor variables not in df"
