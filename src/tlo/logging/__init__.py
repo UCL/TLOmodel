@@ -6,6 +6,8 @@ import logging as _logging
 def basicConfig(**kwargs):
     _logging.basicConfig(**kwargs)
 
+def disable(level):
+    _logging.disable(level=level)
 
 def getLogger(name=None):
     if name:

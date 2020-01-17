@@ -94,3 +94,15 @@ def test_messages_at_lower_level(basic_configuration, message_level):
 
     # messages should not be written to log
     assert [] == lines
+
+
+@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+def test_disable(basic_configuration, message_level):
+    # given that messages are at a higher level as the logger BUT the logger is disabled at critical
+    logging_level = eval(message_level) - 1
+    logging.disable(logging.CRITICAL)
+    log_message(message_level, logging_level, "test message")
+    lines = read_file(*basic_configuration)
+
+    # messages should not be written to log
+    assert [] == lines
