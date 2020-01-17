@@ -63,7 +63,7 @@ def log_message(message_level, logger_level, message):
         logger.critical(message)
 
 
-@pytest.mark.parametrize("logging_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
 def test_messages_at_same_level(basic_configuration, message_level):
     # given that messages are at the same level as the logger
     logger_level = eval(message_level)
@@ -74,7 +74,7 @@ def test_messages_at_same_level(basic_configuration, message_level):
     assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
 
 
-@pytest.mark.parametrize("logging_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
 def test_messages_at_higher_level(basic_configuration, message_level):
     # given that messages are at a higher level as the logger
     logging_level = eval(message_level) - 1
@@ -85,7 +85,7 @@ def test_messages_at_higher_level(basic_configuration, message_level):
     assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
 
 
-@pytest.mark.parametrize("logging_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
 def test_messages_at_lower_level(basic_configuration, message_level):
     # given that messages are at a lower level as the logger
     logging_level = eval(message_level) + 1
