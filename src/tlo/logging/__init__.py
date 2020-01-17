@@ -1,6 +1,9 @@
 import logging as _logging
 
 
+# logging functions ---
+
+
 def basicConfig(**kwargs):
     _logging.basicConfig(**kwargs)
 
@@ -12,7 +15,7 @@ def getLogger(name=None):
         return root_logger
 
 
-# allow access to logging classes ---
+# logging classes ---
 
 
 class FileHandler(_logging.FileHandler):
@@ -28,10 +31,19 @@ class StreamHandler(_logging.StreamHandler):
 
 
 class Logger:
+    """
+    TLO logging facade so that logging can be intercepted and customised
+    """
     def __init__(self, name, level=_logging.NOTSET):
-        self._StdLogger = _logging.getLogger(name=name)
+        if name == "root":
+            self._StdLogger = _logging.getLogger()
+        else:
+            self._StdLogger = _logging.getLogger(name=name)
         self.name = name
         self.handlers = self._StdLogger.handlers
+
+    def __repr__(self):
+        return f'<tlo Logger containing {self._StdLogger}>'
 
     def addHandler(self, hdlr):
         self._StdLogger.addHandler(hdlr=hdlr)
@@ -56,13 +68,18 @@ class Logger:
 
 
 class Manager:
+    """
+    Manager for tlo logging, ensuring singletons for each logger name
+    """
 
     def __init__(self):
         self.loggers = {"root": root_logger}
 
     def getLogger(self, name):
         """
-        Ge
+        Get or create tlo Logger
+        :param name: name of logger
+        :return:  tlo Logger instance
         """
         rv = None
         if not isinstance(name, str):
@@ -72,7 +89,7 @@ class Manager:
             if name in self.loggers:
                 rv = self.loggers[name]
             else:
-                rv = _loggerClass(name)
+                rv = Logger(name)
                 rv.manager = self
                 self.loggers[name] = rv
         finally:
@@ -81,7 +98,6 @@ class Manager:
 
 
 # set up singleton objects ---
-_loggerClass = Logger
 root_logger = Logger("root", _logging.WARNING)
 Logger.manager = Manager()
 
