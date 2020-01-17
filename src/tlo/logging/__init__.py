@@ -1,6 +1,5 @@
 import logging as _logging
 
-
 # logging functions ---
 
 
@@ -60,9 +59,6 @@ class Logger:
 
     def debug(self, msg, *args, **kwargs):
         self._StdLogger.debug(msg, *args, **kwargs)
-
-    def fatal(self, msg, *args, **kwargs):
-        self._StdLogger.fatal(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
         self._StdLogger.info(msg, *args, **kwargs)
