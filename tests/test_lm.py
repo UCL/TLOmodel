@@ -291,7 +291,128 @@ def test_logistic_application_tob():
 
     assert tob_probs.equals(lm_tob_probs)
 
-    # TODO: when the the condition is being equal to an number,
-    # it has to be passed into .when() as a string (e.g. li_weath)
-    # TODO: a more elegant more to handle conditions that depend on two things? (as per test_logistic_application_tob)
-    # TODO: warning when the same state is indicated for twice in then when() statement.
+
+def test_logisitc_HSB_example():
+    # This example is taking from healthcareseeking.py.
+    # It tests use of:
+    #   * continuous effects with applied lambda functions
+    #   * external variables
+    #   * complex conditions (more than one variable being used)
+
+    # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
+    #   (This has lots of randomly added symptoms)
+    df_file = Path(os.path.dirname(__file__)) / 'resources' / 'df_at_healthcareseeking.csv'
+
+    # # to delete --- just for console running during development
+    import pandas as pd
+    import numpy as np
+    from tlo.lm import LinearModel, LinearModelType, Predictor
+    df_file = 'tests/resources/df_at_healthcareseeking.csv'
+    # # ----
+
+    df = pd.read_csv(df_file)
+    df.set_index('person', inplace=True, drop=True)
+
+    # 2) generate the probabilities from the model in the 'classical' manner
+    # nb. In the code this is done for one individual, so looping through individual to get a good range
+    # f is the odds
+
+    prob_seeking_care = pd.Series(index = df.index)
+    for i in df.index:
+        person_profile = df.loc[i]
+        f = 3.237729            # 'Constant' term from STATA is the baseline odds.
+
+        # Region
+        if person_profile['region_of_residence'] == 'Northern':
+            f *= 1.00
+        elif person_profile['region_of_residence'] == 'Central':
+            f *= 0.61
+        elif person_profile['region_of_residence'] == 'Southern':
+            f *= 0.67
+
+        # Urban/Rural residence
+        if person_profile['li_urban'] is False:
+            f *= 1.00
+        else:
+            f *= 1.63
+
+        # Sex
+        if person_profile['sex'] == 'M':
+            f *= 1.00
+        else:
+            f *= 1.19
+
+        # Age (NB. This is made to a continuous variable for the purposing of testing: do not use for sims!)
+        f *= (1.02 * (5 + np.power(person_profile['age_years'],2)))
+
+        # Year (NB. This is included so as to test the use of external variables: do not use for sims!)
+        year = 2015
+        f *= (0.99 * (year - 2010))
+
+        # Symptoms (testing for empty or non-empty set) - (can have more than one)
+        if person_profile['sy_fever']:
+            f *= 1.86
+
+        if person_profile['sy_vomiting']:
+            f *= 1.28
+
+        if (person_profile['sy_stomachache']) or (person_profile['sy_diarrhoea']):
+            f *= 0.76
+
+        if person_profile['sy_sore_throat']:
+            f *= 0.89
+
+        if person_profile['sy_respiratory_symptoms']:
+            f *= 0.71
+
+        if person_profile['sy_headache']:
+            f *= 0.52
+
+        if person_profile['sy_skin_complaint']:
+            f *= 2.31
+
+        if person_profile['sy_dental_complaint']:
+            f *= 0.94
+
+        if person_profile['sy_backache']:
+            f *= 1.01
+
+        if person_profile['sy_injury']:
+            f *= 1.02
+
+        if person_profile['sy_eye_complaint']:
+            f *= 1.33
+
+        # convert into a probability of seeking care:
+        prob_seeking_care[i] = f / (1 + f)
+
+    # 3) Use LinearModel:
+
+    lm = LinearModel(
+        LinearModelType.LOGISTIC,
+        3.237729,   # baseline oddds
+        Predictor('region_of_residence').when('Central', 0.61)
+                                        .when('Southern', 0.67),
+        Predictor('li_urban').when(True, 1.63),
+        Predictor('sex').when('F', 1.19),
+        Predictor('age_years').apply(lambda age_years: (5 + np.power(age_years, 2)) * 1.02),
+        Predictor('year', external=True).apply(lambda year: 0.99 * (year - 2010)),
+        Predictor('sy_fever').when(True, 1.86),
+        Predictor('sy_vomiting').when(True, 1.28),
+        Predictor().when('(sy_stomachache==True) or (sy_diarrhoea==True)', 0.76),
+        Predictor('sy_sore_throat').when(True, 0.89),
+        Predictor('sy_respiratory_symptoms').when(True, 0.71),
+        Predictor('sy_headache').when(True, 0.52),
+        Predictor('sy_skin_complaint').when(True, 2.31),
+        Predictor('sy_dental_complaint').when(True, 0.94),
+        Predictor('sy_backache').when(True, 1.01),
+        Predictor('sy_injury').when(True, 1.02),
+        Predictor('sy_eye_complaint').when(True, 1.33)
+    )
+
+    prob_seeking_care_lm = lm.predict(df, year=2015)
+
+    assert prob_seeking_care_lm.equals(prob_seeking_care)
+
+    # TODO: make this work
+    # Add in random set of symptoms into the df that is loaded up.
