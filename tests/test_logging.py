@@ -77,8 +77,8 @@ def test_messages_at_same_level(basic_configuration, message_level):
 @pytest.mark.parametrize("logging_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
 def test_messages_at_higher_level(basic_configuration, message_level):
     # given that messages are at a higher level as the logger
-    logging_int = eval(message_level) - 1
-    log_message(message_level, logging_int, "test message")
+    logging_level = eval(message_level) - 1
+    log_message(message_level, logging_level, "test message")
     lines = read_file(*basic_configuration)
 
     # messages should be written to log
@@ -88,8 +88,8 @@ def test_messages_at_higher_level(basic_configuration, message_level):
 @pytest.mark.parametrize("logging_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
 def test_messages_at_lower_level(basic_configuration, message_level):
     # given that messages are at a lower level as the logger
-    logging_int = eval(message_level) + 1
-    log_message(message_level, logging_int, "test message")
+    logging_level = eval(message_level) + 1
+    log_message(message_level, logging_level, "test message")
     lines = read_file(*basic_configuration)
 
     # messages should not be written to log
