@@ -10,9 +10,12 @@ def basicConfig(**kwargs):
 
 def getLogger(name=None):
     if name:
-        return Logger.manager.getLogger(name)
+        # Singleton loggers
+        if name not in _loggers.keys():
+            _loggers[name] = Logger(name)
+        return _loggers[name]
     else:
-        return root_logger
+        return _loggers['root']
 
 
 # logging classes ---
@@ -34,8 +37,9 @@ class Logger:
     """
     TLO logging facade so that logging can be intercepted and customised
     """
+
     def __init__(self, name, level=_logging.NOTSET):
-        if name == "root":
+        if name == 'root':
             self._StdLogger = _logging.getLogger()
         else:
             self._StdLogger = _logging.getLogger(name=name)
@@ -67,39 +71,9 @@ class Logger:
         self._StdLogger.warning(msg, *args, **kwargs)
 
 
-class Manager:
-    """
-    Manager for tlo logging, ensuring singletons for each logger name
-    """
+# setup default logger
 
-    def __init__(self):
-        self.loggers = {"root": root_logger}
-
-    def getLogger(self, name):
-        """
-        Get or create tlo Logger
-        :param name: name of logger
-        :return:  tlo Logger instance
-        """
-        rv = None
-        if not isinstance(name, str):
-            raise TypeError('A logger name must be a string')
-        _logging._acquireLock()
-        try:
-            if name in self.loggers:
-                rv = self.loggers[name]
-            else:
-                rv = Logger(name)
-                rv.manager = self
-                self.loggers[name] = rv
-        finally:
-            _logging._releaseLock()
-        return rv
-
-
-# set up singleton objects ---
-root_logger = Logger("root", _logging.WARNING)
-Logger.manager = Manager()
+_loggers = {'root': Logger('root', _logging.WARNING)}
 
 # allow access to logging levels ---
 
