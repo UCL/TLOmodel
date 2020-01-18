@@ -12,7 +12,9 @@ from tlo.methods import (
     depression,
     enhanced_lifestyle,
     healthburden,
-    healthsystem, labour
+    healthsystem,
+    labour,
+    pregnancy_supervisor
 )
 
 start_date = Date(2010, 1, 1)
@@ -37,6 +39,7 @@ def simulation():
                                            mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
@@ -60,4 +63,5 @@ if __name__ == '__main__':
     simulation = simulation()
     test_run(simulation)
     t1 = time.time()
+    test_dtypes(simulation)
     print('Time taken', t1 - t0)

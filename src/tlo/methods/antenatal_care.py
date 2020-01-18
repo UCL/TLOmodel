@@ -115,17 +115,17 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
         # Todo: to discuss with Tim C the best way to mirror whats happening in malawi (only 50% women have ANC1 in
         #  first trimester)
 
-        pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age <= 8) &
+        pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks <= 8) &
                                        (df.date_of_last_pregnancy > self.sim.start_date)]
 
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 DUMMY CARE SEEKING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_month)),
-                                index=df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age <= 8) &
+                                index=df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks <= 8) &
                                                (df.date_of_last_pregnancy > self.sim.start_date)])
 
         prob_care_seeking = float(params['prob_seek_care_first_anc'])
         eff_prob_anc = pd.Series(prob_care_seeking,
-                                 index=df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age <= 8) &
+                                 index=df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks <= 8) &
                                                 (df.date_of_last_pregnancy > self.sim.start_date)])
         dfx = pd.concat([eff_prob_anc, random_draw], axis=1)
         dfx.columns = ['eff_prob_anc', 'random_draw']
@@ -175,7 +175,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(HSI_Event, Individual
         df = self.sim.population.props
         params = self.module.parameters
 
-        gestation_at_visit = df.at[person_id, 'ps_gestational_age']
+        gestation_at_visit = df.at[person_id, 'ps_gestational_age_in_weeks']
         logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
                     'first antenatal care visit of their pregnancy on date %s at gestation %d', person_id,
                     self.sim.date, gestation_at_visit)

@@ -17,6 +17,8 @@ from tlo.methods import (
     healthsystem,
     mockitis,
     symptommanager,
+    labour,
+    pregnancy_supervisor
 )
 
 try:
@@ -54,6 +56,8 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
@@ -62,6 +66,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
+
 
     sim.seed_rngs(0)
 
@@ -92,6 +97,8 @@ def test_run_no_interventions_allowed(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -152,6 +159,8 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -213,6 +222,8 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -268,6 +279,8 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -323,6 +336,8 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -380,6 +395,8 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -436,6 +453,8 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -495,6 +514,8 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -549,6 +570,8 @@ def test_run_in_with_hs_disabled(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -606,6 +629,8 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
