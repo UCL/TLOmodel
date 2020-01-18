@@ -118,9 +118,9 @@ class Labour (Module):
             Types.REAL, 'probability of a still birth following sepsis in labour where the mother survives'),
         'prob_still_birth_sepsis_md': Parameter(
             Types.REAL, 'probability of a still birth following sepsis in labour where the mother dies'),
-        'prob_still_birth_ur': Parameter(
+        'prob_still_birth_uterine_rupture': Parameter(
             Types.REAL, 'probability of a still birth following uterine rupture in labour where the mother survives'),
-        'prob_still_birth_ur_md': Parameter(
+        'prob_still_birth_uterine_rupture_md': Parameter(
             Types.REAL, 'probability of a still birth following uterine rupture in labour where the mother dies'),
         'prob_still_birth_eclampsia': Parameter(
             Types.REAL, 'probability of still birth following eclampsia in labour where the mother survives'),
@@ -304,8 +304,8 @@ class Labour (Module):
     #                                 'rr_ur_prev_cs': 1.5,
     #                                 'rr_ur_ref_ol': 1.5,
     #                                 'cfr_uterine_rupture': 0.1,
-    #                                 'prob_still_birth_ur': 0.1,
-    #                                 'prob_still_birth_ur_md': 0.1}
+    #                                 'prob_still_birth_uterine_rupture': 0.1,
+    #                                 'prob_still_birth_uterine_rupture_md': 0.1}
 
     #    params['postpartum_haemorrhage'] = {'prob_pph': 0.1,
     #                                        'rr_pph_pl_ol': 0.1,
@@ -436,27 +436,27 @@ class Labour (Module):
         dfx.columns = ['simdate', 'due_date_period']
 
         idx_term = dfx.index[dfx.due_date_period == 'term']
-        df.loc[idx_term, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 36), index=idx_term))
-        df.loc[idx_term, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
-        weeks_till_due = (pd.Series(self.rng.random_integers(37, 41), index=idx_term)) - df['ps_gestational_age']
+        df.loc[idx_term, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 36), index=idx_term))
+        df.loc[idx_term, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
+        weeks_till_due = (pd.Series(self.rng.random_integers(37, 41), index=idx_term)) - df['ps_gestational_age_in_weeks']
         df.loc[idx_term, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
         idx_late = dfx.index[dfx.due_date_period == 'post_term']
-        df.loc[idx_late, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 41), index=idx_late))
-        df.loc[idx_late, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
-        weeks_till_due = (pd.Series(self.rng.random_integers(42, 46), index=idx_late)) - df['ps_gestational_age']
+        df.loc[idx_late, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 41), index=idx_late))
+        df.loc[idx_late, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
+        weeks_till_due = (pd.Series(self.rng.random_integers(42, 46), index=idx_late)) - df['ps_gestational_age_in_weeks']
         df.loc[idx_late, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
         idx_e_preterm = dfx.index[dfx.due_date_period == 'early_preterm']
-        df.loc[idx_e_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 23), index=idx_e_preterm))
-        df.loc[idx_e_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
-        weeks_till_due = (pd.Series(self.rng.random_integers(24, 32), index=idx_e_preterm)) - df['ps_gestational_age']
+        df.loc[idx_e_preterm, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 23), index=idx_e_preterm))
+        df.loc[idx_e_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
+        weeks_till_due = (pd.Series(self.rng.random_integers(24, 32), index=idx_e_preterm)) - df['ps_gestational_age_in_weeks']
         df.loc[idx_e_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
         idx_l_preterm = dfx.index[dfx.due_date_period == 'late_preterm']
-        df.loc[idx_l_preterm, 'ps_gestational_age'] = (pd.Series(self.rng.random_integers(0, 32), index=idx_l_preterm))
-        df.loc[idx_l_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age'], unit='w')
-        weeks_till_due = pd.Series(self.rng.random_integers(33, 36), index=idx_l_preterm) - df['ps_gestational_age']
+        df.loc[idx_l_preterm, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 32), index=idx_l_preterm))
+        df.loc[idx_l_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
+        weeks_till_due = pd.Series(self.rng.random_integers(33, 36), index=idx_l_preterm) - df['ps_gestational_age_in_weeks']
         df.loc[idx_l_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
 
         # Then all women are scheduled to go into labour on this due date
@@ -826,7 +826,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                               # Assisted Vaginal Delivery Forceps (AVDF) Assisted Vaginal Delivery Ventouse (AVDV)
                               # Caesarean Section (CS)
                               'death_in_labour': False,  # True (T) or False (F)
-                              'cause_of_death_in_labour': None, # Appended list of cause/causes of death
+                              'cause_of_death_in_labour': [], # Appended list of cause/causes of death
                               # TODO: should we do the same thing for still birth? Would help with mapping
                               'stillbirth_in_labour': False,  # True (T) or False (F)
                               'death_postpartum': False}  # True (T) or False (F)
@@ -859,27 +859,27 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
             # Now we use gestational age to categorise the 'labour_state'
             if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive']:
-                if 37 <= df.at[individual_id, 'ps_gestational_age'] < 42:
+                if 37 <= df.at[individual_id, 'ps_gestational_age_in_weeks'] < 42:
                     mni[individual_id]['labour_state'] = 'TL'
 
                     logger.debug('This is LabourEvent, person %d has now gone into term labour on date %s',
                                  individual_id, self.sim.date)
 
-                elif 24 <= df.at[individual_id, 'ps_gestational_age'] < 34:
+                elif 24 <= df.at[individual_id, 'ps_gestational_age_in_weeks'] < 34:
                     mni[individual_id]['labour_state'] = 'EPTL'
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                     logger.debug('This is LabourEvent, person %d has now gone into early preterm labour on date %s',
                                  individual_id, self.sim.date)
 
-                elif 37 > df.at[individual_id, 'ps_gestational_age'] >= 34:
+                elif 37 > df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 34:
                     mni[individual_id]['labour_state'] = 'LPTL'
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                     logger.debug('This is LabourEvent, person %d has now gone into late preterm labour on date %s',
                                  individual_id, self.sim.date)
 
-                elif df.at[individual_id, 'ps_gestational_age'] > 41:
+                elif df.at[individual_id, 'ps_gestational_age_in_weeks'] > 41:
                     mni[individual_id]['labour_state'] = 'POTL'
                     logger.info('%s|postterm_birth|%s', self.sim.date,
                                 {'age': df.at[individual_id, 'age_years'],
@@ -1159,8 +1159,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                              self.sim.date, individual_id)
 
                 # Here we set the due date of women who have been induced to pd.NaT so they dont go into labour twice
-                if df.at[individual_id, 'la_current_labour_successful_induction']:
-                    df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
+       #         if df.at[individual_id, 'la_current_labour_successful_induction']:
+       #             df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
 
 
 class BirthEvent(Event, IndividualScopeEventMixin):
@@ -1186,7 +1186,7 @@ class BirthEvent(Event, IndividualScopeEventMixin):
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             #  TODO: Ensure women who have had an IP still birth still move to postpartum event
             self.sim.do_birth(mother_id)
-            df.at[mother_id, 'ps_gestational_age'] = 0
+            df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
             df.at[mother_id, 'is_pregnant'] = False
             df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
 
@@ -1360,115 +1360,46 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
 
         # TODO: Will we apply a reduced CFR in the instance of unsuccessful interventions
 
-        # First we determine if the mother will die due to her complication
-        if mni[individual_id]['labour_is_currently_obstructed']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_obstructed_labour']:
+        def dies_by_complication(rng, df, mni, cause):
+            random = rng.random_sample(size=1)
+            if random < params[f'cfr_{cause}']:
                 mni[individual_id]['death_in_labour'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('obstructed_labour')
+                mni[individual_id]['cause_of_death_in_labour'].append(cause)
                 df.at[individual_id, 'la_maternal_death'] = True
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
                 # then if she does die, we determine if the child will still survive
                 random = self.module.rng.random_sample()
-                if random < params['prob_still_birth_obstructed_labour_md']:
+                if random < params[f'prob_still_birth_{cause}_md']:
                     df.at[individual_id, 'la_intrapartum_still_birth'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
                     df.at[individual_id, 'ps_previous_stillbirth'] = True
 
-            # Otherwise we just determine if this complication will lead to a stillbirth
-            else:
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_obstructed_labour']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
+                # Otherwise we just determine if this complication will lead to a stillbirth
+                else:
+                    random = rng.random_sample(size=1)
+                    if random < params[f'prob_still_birth_{cause}']:
+                        df.at[individual_id, 'la_intrapartum_still_birth'] = True
+                        mni[individual_id]['stillbirth_in_labour'] = True
+                        df.at[individual_id, 'ps_previous_stillbirth'] = True
 
-        if mni[individual_id]['eclampsia_ip']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_eclampsia']:
-                mni[individual_id]['death_in_labour'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('eclampsia')
-                df.at[individual_id, 'la_maternal_death'] = True
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
+            # First we determine if the mother will die due to her complication
+            if mni[individual_id]['labour_is_currently_obstructed']:
+                dies_by_complication(self.module.rng, df, mni, 'obstructed_labour')
 
-                random = self.module.rng.random_sample()
-                if random < params['prob_still_birth_eclampsia_md']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
-            else:
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_eclampsia']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
+            if mni[individual_id]['eclampsia_ip']:
+                dies_by_complication(self.module.rng, df, mni, 'eclampsia') #TODO: check
 
-        # if df.at[individual_id, 'la_aph']:
-        if mni[individual_id]['APH']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_aph']:
-                mni[individual_id]['death_in_labour'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('APH')
-                df.at[individual_id, 'la_maternal_death'] = True
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
+            if mni[individual_id]['APH']:
+                dies_by_complication(self.module.rng, df, mni, 'aph')
 
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_aph_md']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
-            else:
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_aph']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
+            if mni[individual_id]['sepsis_ip']:
+                dies_by_complication(self.module.rng, df, mni, 'sepsis') # TODO: check
 
-        # if df.at[individual_id, 'la_sepsis']:
-        if mni[individual_id]['sepsis_ip']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_sepsis']:
-                mni[individual_id]['death_in_labour'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('sepsis')
-                df.at[individual_id, 'la_maternal_death'] = True
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
-
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_sepsis_md']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
-            else:
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_sepsis']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
-
-        # if df.at[individual_id, 'la_uterine_rupture']:
-        if mni[individual_id]['UR']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_uterine_rupture']:
-                mni[individual_id]['death_in_labour'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('uterine_rupture')
-                df.at[individual_id, 'la_maternal_death'] = True
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
-
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_ur_md']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
-            else:
-                random = self.module.rng.random_sample(size=1)
-                if random < params['prob_still_birth_ur']:
-                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                    mni[individual_id]['stillbirth_in_labour'] = True
-                    df.at[individual_id, 'ps_previous_stillbirth'] = True
+            if mni[individual_id]['UR']:
+                dies_by_complication(self.module.rng, df, mni, 'uterine_rupture') # TODO: check
 
             # Schedule death for women who die in labour
-
         if mni[individual_id]['death_in_labour']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='labour'), self.sim.date)
@@ -1513,7 +1444,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             if random < params['cfr_pp_eclampsia']:
                 mni[individual_id]['death_postpartum'] = True
                 df.at[individual_id, 'la_maternal_death'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('eclampsia_pp')
+        #        mni[individual_id]['cause_of_death_in_labour'].add('eclampsia_pp')
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
         # if df.at[individual_id, 'la_pph']:
@@ -1522,7 +1453,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             if random < params['cfr_pph']:
                 mni[individual_id]['death_postpartum'] = True
                 df.at[individual_id, 'la_maternal_death'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('PPH')
+        #        mni[individual_id]['cause_of_death_in_labour'].add('PPH')
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
         # if df.at[individual_id, 'la_sepsis']:
@@ -1531,7 +1462,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             if random < params['cfr_pp_sepsis']:
                 mni[individual_id]['death_postpartum'] = True
                 df.at[individual_id, 'la_maternal_death'] = True
-                mni[individual_id]['cause_of_death_in_labour'].add('sepsis_pp')
+        #        mni[individual_id]['cause_of_death_in_labour'].add('sepsis_pp')
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
         if mni[individual_id]['death_postpartum']:
@@ -1681,13 +1612,13 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
         random = self.module.rng.random_sample(size=1)
         if random < params['prob_successful_induction']:
             logger.info('Person %d has had her labour successfully induced', person_id)
-            df.at[person_id, 'la_current_labour_successful_induction'] = 'successful_induction'
+            df.at[person_id, 'la_current_labour_successful_induction'].values[:] = 'successful_induction'
             self.sim.schedule_event(LabourEvent(self.module, person_id, cause='labour'), self.sim.date)
 
             # For women whose induction fails they will undergo caesarean section
         else:
             logger.info('Persons %d labour has been unsuccessful induced', person_id)
-            df.at[person_id, 'la_current_labour_successful_induction'] = 'failed_induction'
+            df.at[person_id, 'la_current_labour_successful_induction'].values[:] = 'failed_induction'
             # TODO: schedule CS or second attempt induction? -- will need to lead to labour event
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected

@@ -87,7 +87,7 @@ class NewbornOutcomes(Module):
                                           categories=['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
-        'nb_respiratory_depression ': Property(Types.BOOL, 'whether this neonate has been born asphyxiated and apneic '
+        'nb_respiratory_depression': Property(Types.BOOL, 'whether this neonate has been born asphyxiated and apneic '
                                                            'due to intrapartum related complications'),
         'nb_hypoxic_ischemic_enceph': Property(Types.BOOL, 'whether a perinatally asphyxiated neonate has developed '
                                                            'hypoxic ischemic encephalopathy'),
@@ -188,17 +188,17 @@ class NewbornOutcomes(Module):
 
         df['nb_early_preterm'] = False
         df['nb_late_preterm'] = False
-        df['nb_congenital_anomaly'] = 'none'
+        df['nb_congenital_anomaly'].values[:] = 'none'
         df['nb_early_onset_neonatal_sepsis'] = False
-        df['nb_respiratory_depression '] = False
+        df['nb_respiratory_depression'] = False
         df['nb_hypoxic_ischemic_enceph'] = False
-        df['nb_encephalopathy'] = 'none'
+        df['nb_encephalopathy'].values[:] ='none'
         df['nb_intravascular_haem'] = False
         df['nb_necrotising_entero'] = False
         df['nb_resp_distress_synd'] = False
-        df['nb_retinopathy_prem'] = 'none'
-        df['nb_ongoing_impairment'] = 'none'
-        df['nb_birth_weight'] = 'NBW'
+        df['nb_retinopathy_prem'].values[:] = 'none'
+        df['nb_ongoing_impairment'].values[:] = 'none'
+        df['nb_birth_weight'].values[:] = 'NBW'
         df['nb_size_for_gestational_age'] = None
         df['nb_early_breastfeeding'] = False
         df['nb_kmc'] = False
@@ -223,9 +223,9 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_late_preterm'] = False
         df.at[child_id, 'nb_congenital_anomaly'] = 'none'
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
-        df.at[child_id, 'nb_respiratory_depression '] = False
+        df.at[child_id, 'nb_respiratory_depression'] = False
         df.at[child_id, 'nb_hypoxic_ischemic_enceph'] = False
-        df.at[child_id, 'nb_encephalopathy'] = 'none'
+        df.at[child_id, 'nb_encephalopathy'] ='none'
         df.at[child_id, 'nb_intravascular_haem'] = False
         df.at[child_id, 'nb_necrotising_entero'] = False
         df.at[child_id, 'nb_resp_distress_synd'] = False
@@ -298,10 +298,13 @@ class NewbornOutcomes(Module):
 
         return health_values_df
 
+        # TODO: use parameter when its working as opposed to hard coding
         # TODO: discuss with TC 1.) will these all be managed here. 2.) application of incidence of these comps?
 
 
 class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
+
+        # TODO Move to on_birth as per PR comments
     """ This event determines if , following delivery, a newborn has experienced any complications """
 
     def __init__(self, module, individual_id,cause):
@@ -317,6 +320,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
     # For all newborns we first generate a dictionary that will store the prophylactic interventions then receive at
     # birth if delivered in a facility
 
+        # todo: also review in context of properties
         nci = self.module.newborn_care_info
         nci[individual_id] = {'cord_care': False,
                               'bcg_vacc': False,
@@ -407,7 +411,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
             random = self.module.rng.random_sample(size=1)
             if random < eff_prob_ba:
-                df.at[individual_id, 'nb_respiratory_depression '] = True
+                df.at[individual_id, 'nb_respiratory_depression'] = True
 
                 logger.info('Neonate %d has been born asphyxiated in a health facility on date %s',
                             individual_id, self.sim.date)
@@ -423,7 +427,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
             random = self.module.rng.random_sample(size=1)
             if random < eff_prob_sepsis:
-                df.at[individual_id, 'nb_respiratory_depression '] = True
+                df.at[individual_id, 'nb_respiratory_depression'] = True
 
                 logger.info('Neonate %d has been born asphyxiated following a home birth on date %s',
                             individual_id, self.sim.date)
@@ -457,7 +461,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         # TODO: Risk reduction associated with steroids, equal across all PTB comps or different values for different
         #  comps?
 
-        if df.at[individual_id, 'nb_early_preterm'] & (df.at[mother_id,'ps_gestational_age'] < 32):
+        if df.at[individual_id, 'nb_early_preterm'] & (df.at[mother_id,'ps_gestational_age_in_weeks'] < 32):
             # LINKED WITH <32 weeks gest & VLBW/LBW (maybe exclude others)
             rf1 = 1
             riskfactors = rf1
@@ -519,7 +523,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         # TODO: Finalise care seeking for home birth neonates who develop a complication (below is a dummy)
 
         # If this neonate was delivered at home and develops a complications we determine the liklihood of care seeking
-        if (mni[mother_id]['delivery_setting'] == 'HB') & (df.at[individual_id, 'nb_respiratory_depression '] or
+        if (mni[mother_id]['delivery_setting'] == 'HB') & (df.at[individual_id, 'nb_respiratory_depression'] or
                                                            df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] or
                                                            (df.at[individual_id, 'nb_encephalopathy'] == 'mild_enceph')
                                                            or (df.at[individual_id, 'nb_encephalopathy']
@@ -542,7 +546,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 # ============================================ NEWBORN CARE PRACTICES AT HOME ==========================================
 
         # and apply care practices of home birth (breast feeding etc)
-        if (mni[mother_id]['delivery_setting'] == 'HB') & (~df.at[individual_id, 'nb_respiratory_depression '] &
+        if (mni[mother_id]['delivery_setting'] == 'HB') & (~df.at[individual_id, 'nb_respiratory_depression'] &
                                                            ~df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] &
                                                            (df.at[individual_id, 'nb_encephalopathy'] == 'none')):
 
@@ -559,14 +563,15 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
         # All neonates are scheduled death event
         self.sim.schedule_event(newborn_outcomes.NewbornDeathEvent(self.module, individual_id,
-                                                                       cause='neonatal compilications'), self.sim.date)
+                                                                       cause='neonatal compilications'), self.sim.date
+                                + DateOffset(days=2))
 
         logger.info('This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person %d', individual_id)
 
 
 class NewbornDeathEvent(Event, IndividualScopeEventMixin):
-
-    """ This event determines if neonates who have experience complications will die because of them  """
+        # todo: Tim H also suggested moving to on_birth
+    """All neonates pass through this event and a risk of death is applied to all those who experience complications """
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
@@ -591,7 +596,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
                 logger.info(
                     'Neonate %d has died from neonatal sepsis', individual_id)
 
-        if df.at[individual_id, 'nb_respiratory_depression ']:
+        if df.at[individual_id, 'nb_respiratory_depression']:
             random = self.module.rng.random_sample()
             if random > params['cfr_enceph_mild_mod']: #dummy
                 df.at[individual_id, 'nb_death_after_birth'] = True
@@ -628,6 +633,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
         # as "neonatal complications" we will have contributory factors recorded as the properties of newborns
 
         if df.at[individual_id, 'nb_death_after_birth']:
+            # Todo: make sure this is delayed enough following HSI?
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause="neonatal complications"), self.sim.date)
 
@@ -762,7 +768,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         # CURRENTLY ONLY APPLYING TO STABLE NEWBORNS (or should anyone be eligible- cochrane looks at discharge
         # mortality)
 
-        if (df.at[person_id, 'nb_birth_weight'] == 'LBW') & (~df.at[person_id, 'nb_respiratory_depression '] &
+        if (df.at[person_id, 'nb_birth_weight'] == 'LBW') & (~df.at[person_id, 'nb_respiratory_depression'] &
                                                              ~df.at[person_id, 'nb_early_onset_neonatal_sepsis']
                                                              & (df.at[person_id, 'nb_encephalopathy'] == 'none')):
             random = self.module.rng.random_sample(size=1)
@@ -797,7 +803,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
 
 #  ================================ SCHEDULE ADDITIONAL TREATMENT ===================================================
 
-        if df.at[person_id, 'nb_respiratory_depression ']:
+        if df.at[person_id, 'nb_respiratory_depression']:
             logger.info('This is HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: scheduling resuscitation for '
                         'neonateperson %d who has experienced birth asphyxia following delivery', person_id)
 
@@ -877,7 +883,7 @@ class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(HSI_Event, IndividualScop
             logger.debug('resuscitation equipment is available, so use it.')
             random = self.module.rng.random_sample(size=1)
             if random < params['prob_successful_resuscitation']:
-                df.at[person_id, 'nb_respiratory_depression '] = False  # Link to severe enchep
+                df.at[person_id, 'nb_respiratory_depression'] = False  # Link to severe enchep
                 logger.info('Neonate %d has been successfully resuscitated after delivery with birth asphyxia', person_id)
             # else:
             # SCHEDULE NICU?

@@ -12,7 +12,7 @@ from tlo.methods import demography, enhanced_lifestyle, labour, newborn_outcomes
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 500
+popsize = 1000
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -90,3 +90,4 @@ if __name__ == '__main__':
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
+    test_dypes(simulation)
