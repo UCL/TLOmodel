@@ -208,130 +208,50 @@ class Tb(Module):
         'tb_symptoms': Property(Types.BOOL, 'tb-like symptoms present')
     }
 
+    SYMPTOMS = {
+        'chronic_cough',
+        'chronic_fever'
+    }
+
     def read_parameters(self, data_folder):
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
                                               'ResourceFile_TB.xlsx'), sheet_name=None)
-        params = self.parameters
+        self.load_parameters_from_dataframe(workbook['parameters'])
+
+        p = self.parameters
 
         # workbooks
-        params['prop_active_2010'], params['prop_latent_2010'] = workbook['cases2010district'], workbook[
+        p['prop_active_2010'], p['prop_latent_2010'] = workbook['cases2010district'], workbook[
             'Latent_TB_prob']
-        params['pulm_tb'] = workbook['pulm_tb']
-        params['followup_times'] = workbook['followup']
-        params['tb_high_risk_distr'] = workbook['IPTdistricts']
-        params['ipt_contact_cov'] = workbook['ipt_coverage']
-        params['bcg_coverage_year'] = workbook['BCG']
-        params['initial_bcg_coverage'] = workbook['BCG_baseline']
-
-        # parameter list from workbook 'parameters'
-        params['param_list'] = workbook['parameters']
-        self.param_list.set_index("parameter", inplace=True)
-
-        # baseline
-        params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value']
-
-        # natural history
-        params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value']
-        params['rel_inf_smear_ng'] = self.param_list.loc['rel_inf_smear_ng', 'value']
-        params['rel_inf_poor_tx'] = self.param_list.loc['rel_inf_poor_tx', 'value']
-        params['rr_bcg_inf'] = self.param_list.loc['rr_bcg_inf', 'value']
-        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['monthly_prob_relapse_tx_complete', 'value']
-        params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc[
-            'monthly_prob_relapse_tx_incomplete', 'value']
-        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['monthly_prob_relapse_2yrs', 'value']
-        params['rr_relapse_hiv'] = self.param_list.loc['rr_relapse_hiv', 'value']
-        params['r_trans_mdr'] = self.param_list.loc['r_trans_mdr', 'value']
-        params['p_mdr_new'] = self.param_list.loc['p_mdr_new', 'value']
-        params['p_mdr_retreat'] = self.param_list.loc['p_mdr_retreat', 'value']
-        params['p_mdr_tx_fail'] = self.param_list.loc['p_mdr_tx_fail', 'value']
-
-        # progression
-        params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value']
-        params['prop_fast_progressor_hiv'] = self.param_list.loc['prop_fast_progressor_hiv', 'value']
-        params['prog_active'] = self.param_list.loc['prog_active', 'value']
-        params['prog_1yr'] = self.param_list.loc['progr_1yr', 'value']
-        params['prog_1_2yr'] = self.param_list.loc['progr_1_2yr', 'value']
-        params['prog_2_5yr'] = self.param_list.loc['progr_2_5yr', 'value']
-        params['prog_5_10yr'] = self.param_list.loc['progr_5_10yr', 'value']
-        params['prog_10yr'] = self.param_list.loc['progr_10yr', 'value']
-        params['monthly_prob_self_cure'] = self.param_list.loc['monthly_prob_self_cure', 'value']
-        params['monthly_prob_self_cure_hiv'] = self.param_list.loc['monthly_prob_self_cure_hiv', 'value']
-
-        # clinical features
-        params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value']
-        params['prop_smear_positive_hiv'] = self.param_list.loc['prop_smear_positive_hiv', 'value']
-
-        # mortality
-        params['monthly_prob_tb_mortality'] = self.param_list.loc['monthly_prob_tb_mortality', 'value']
-        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['monthly_prob_tb_mortality_hiv', 'value']
-        params['mort_cotrim'] = self.param_list.loc['mort_cotrim', 'value']
-        params['mort_tx'] = self.param_list.loc['mort_tx', 'value']
-
-        # relative risks of progression to active disease
-        params['rr_tb_bcg'] = self.param_list.loc['rr_tb_bcg', 'value']
-        params['rr_tb_hiv'] = self.param_list.loc['rr_tb_hiv', 'value']
-        params['rr_tb_aids'] = self.param_list.loc['rr_tb_aids', 'value']
-        params['rr_tb_art_adult'] = self.param_list.loc['rr_tb_art_adult', 'value']
-        params['rr_tb_art_child'] = self.param_list.loc['rr_tb_art_child', 'value']
-        params['rr_tb_overweight'] = self.param_list.loc['rr_tb_overweight', 'value']
-        params['rr_tb_obese'] = self.param_list.loc['rr_tb_obese', 'value']
-        params['rr_tb_diabetes1'] = self.param_list.loc['rr_tb_diabetes1', 'value']
-        params['rr_tb_alcohol'] = self.param_list.loc['rr_tb_alcohol', 'value']
-        params['rr_tb_smoking'] = self.param_list.loc['rr_tb_smoking', 'value']
-
-        params['dur_prot_ipt'] = self.param_list.loc['dur_prot_ipt', 'value']
-        params['dur_prot_ipt_infant'] = self.param_list.loc['dur_prot_ipt_infant', 'value']
-        params['rr_ipt_adult'] = self.param_list.loc['rr_ipt_adult', 'value']
-        params['rr_ipt_child'] = self.param_list.loc['rr_ipt_child', 'value']
-        params['rr_ipt_adult_hiv'] = self.param_list.loc['rr_ipt_adult_hiv', 'value']
-        params['rr_ipt_child_hiv'] = self.param_list.loc['rr_ipt_child_hiv', 'value']
-        params['rr_ipt_art_adult'] = self.param_list.loc['rr_ipt_art_adult', 'value']
-        params['rr_ipt_art_child'] = self.param_list.loc['rr_ipt_art_child', 'value']
-
-        # health system interactions
-        params['sens_xpert'] = self.param_list.loc['sens_xpert', 'value']
-        params['sens_sputum_pos'] = self.param_list.loc['sens_sputum_pos', 'value']
-        params['sens_sputum_neg'] = self.param_list.loc['sens_sputum_neg', 'value']
-        params['sens_clinical'] = self.param_list.loc['sens_clinical', 'value']
-        params['spec_clinical'] = self.param_list.loc['spec_clinical', 'value']
-        params['prob_tx_success_new'] = self.param_list.loc['prob_tx_success_new', 'value']
-        params['prob_tx_success_prev'] = self.param_list.loc['prob_tx_success_prev', 'value']
-        params['prob_tx_success_hiv'] = self.param_list.loc['prob_tx_success_hiv', 'value']
-        params['prob_tx_success_mdr'] = self.param_list.loc['prob_tx_success_mdr', 'value']
-        params['prob_tx_success_extra'] = self.param_list.loc['prob_tx_success_extra', 'value']
-        params['prob_tx_success_0_4'] = self.param_list.loc['prob_tx_success_0_4', 'value']
-        params['prob_tx_success_5_14'] = self.param_list.loc['prob_tx_success_5_14', 'value']
-
-        params['prop_ltfu_tx'] = self.param_list.loc['prop_ltfu_tx', 'value']
-        params['prop_ltfu_retx'] = self.param_list.loc['prop_ltfu_retx', 'value']
-        params['rate_testing_tb'] = self.param_list.loc['rate_testing_tb', 'value']
-        params['rr_testing_non_tb'] = self.param_list.loc['rr_testing_non_tb', 'value']
-        params['rate_testing_hiv'] = self.param_list.loc['rate_testing_hiv', 'value']
-
-        params['presump_testing'] = self.param_list.loc['presump_testing', 'value']
+        p['pulm_tb'] = workbook['pulm_tb']
+        p['followup_times'] = workbook['followup']
+        p['tb_high_risk_distr'] = workbook['IPTdistricts']
+        p['ipt_contact_cov'] = workbook['ipt_coverage']
+        p['bcg_coverage_year'] = workbook['BCG']
+        p['initial_bcg_coverage'] = workbook['BCG_baseline']
 
         # get the DALY weight that this module will use from the weight database
         if 'HealthBurden' in self.sim.modules.keys():
-            params['daly_wt_susc_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_susc_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 0)  # Drug-susecptible tuberculosis, not HIV infected
-            params['daly_wt_resistant_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_resistant_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 1)  # multidrug-resistant tuberculosis, not HIV infected
-            params['daly_wt_susc_tb_hiv_severe_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_susc_tb_hiv_severe_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 4)  # Drug-susecptible Tuberculosis, HIV infected and anemia, severe
-            params['daly_wt_susc_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_susc_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 5)  # Drug-susecptible Tuberculosis, HIV infected and anemia, moderate
-            params['daly_wt_susc_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_susc_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 6)  # Drug-susecptible Tuberculosis, HIV infected and anemia, mild
-            params['daly_wt_susc_tb_hiv'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_susc_tb_hiv'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 7)  # Drug-susecptible Tuberculosis, HIV infected
-            params['daly_wt_resistant_tb_hiv_severe_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_resistant_tb_hiv_severe_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 8)  # Multidrug resistant Tuberculosis, HIV infected and anemia, severe
-            params['daly_wt_resistant_tb_hiv'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_resistant_tb_hiv'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 9)  # Multidrug resistant Tuberculosis, HIV infected
-            params['daly_wt_resistant_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_resistant_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 10)  # Multidrug resistant Tuberculosis, HIV infected and anemia, moderate
-            params['daly_wt_resistant_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_resistant_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 11)  # Multidrug resistant Tuberculosis, HIV infected and anemia, mild
 
     def initialise_population(self, population):

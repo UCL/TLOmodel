@@ -4,6 +4,7 @@ HIV infection event
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -160,6 +161,11 @@ class Hiv(Module):
 
     }
 
+    SYMPTOMS = {
+        'wasting',
+        'fatigue'
+    }
+
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         :param data_folder: path of a folder supplied to the Simulation containing data files.
@@ -167,122 +173,32 @@ class Hiv(Module):
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
                                               'ResourceFile_HIV.xlsx'), sheet_name=None)
-        params = self.parameters
-        params['param_list'] = workbook['parameters']
-        self.param_list.set_index("Parameter", inplace=True)
+        self.load_parameters_from_dataframe(workbook['parameters'])
+
+        p = self.parameters
 
         # baseline characteristics
-        params['hiv_prev'] = workbook['prevalence']
-        params['hiv_prev_2010'] = \
-            self.param_list.loc['hiv_prev_2010', 'Value1']
-        params['time_inf'] = workbook['timeSinceInf2010']
-        params['child_hiv_prev2010'] = \
-            self.param_list.loc['child_hiv_prev2010', 'Value1']
-        params['testing_coverage_male'] = \
-            self.param_list.loc['testing_coverage_male_2010', 'Value1']
-        params['testing_coverage_female'] = \
-            self.param_list.loc['testing_coverage_female_2010', 'Value1']
-        params['initial_art_coverage'] = workbook['coverage']
-        params['vls_m'] = \
-            self.param_list.loc['vls_m', 'Value1']
-        params['vls_f'] = \
-            self.param_list.loc['vls_f', 'Value1']
-        params['vls_child'] = \
-            self.param_list.loc['vls_child', 'Value1']
+        p['hiv_prev'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_HIV_prevalence.csv'
+        )
 
-        # natural history
-        params['beta'] = \
-            self.param_list.loc['beta', 'Value1']
-        params['exp_rate_mort_infant_fast_progressor'] = \
-            self.param_list.loc['exp_rate_mort_infant_fast_progressor', 'Value1']
-        params['weibull_scale_mort_infant_slow_progressor'] = \
-            self.param_list.loc['weibull_scale_mort_infant_slow_progressor', 'Value1']
-        params['weibull_shape_mort_infant_slow_progressor'] = \
-            self.param_list.loc['weibull_shape_mort_infant_slow_progressor', 'Value1']
-        params['weibull_shape_mort_adult'] = \
-            self.param_list.loc['weibull_shape_mort_adult', 'Value1']
-        params['prob_mtct_untreated'] = \
-            self.param_list.loc['prob_mtct_untreated', 'Value1']
-        params['prob_mtct_treated'] = \
-            self.param_list.loc['prob_mtct_treated', 'Value1']
-        params['prob_mtct_incident_preg'] = \
-            self.param_list.loc['prob_mtct_incident_preg', 'Value1']
-        params['monthly_prob_mtct_bf_untreated'] = \
-            self.param_list.loc['monthly_prob_mtct_bf_untreated', 'Value1']
-        params['monthly_prob_mtct_bf_treated'] = \
-            self.param_list.loc['monthly_prob_mtct_bf_treated', 'Value1']
+        p['time_inf'] = workbook['timeSinceInf2010']
 
-        # behavioural parameters
-        params['proportion_female_sex_workers'] = \
-            self.param_list.loc['proportion_female_sex_workers', 'Value1']
-        params['fsw_transition'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
-
-        # relative risk of HIV acquisition
-        params['rr_fsw'] = \
-            self.param_list.loc['rr_fsw', 'Value1']
-        params['rr_circumcision'] = \
-            self.param_list.loc['rr_circumcision', 'Value1']
-        params['rr_behaviour_change'] = \
-            self.param_list.loc['rr_behaviour_change', 'Value1']
-        params['rr_condom'] = \
-            self.param_list.loc['rr_condom', 'Value1']
-        params['rr_rural'] = \
-            self.param_list.loc['rr_rural', 'Value1']
-        params['rr_windex_poorer'] = \
-            self.param_list.loc['rr_windex_poorer', 'Value1']
-        params['rr_windex_middle'] = \
-            self.param_list.loc['rr_windex_middle', 'Value1']
-        params['rr_windex_richer'] = \
-            self.param_list.loc['rr_windex_richer', 'Value1']
-        params['rr_windex_richest'] = \
-            self.param_list.loc['rr_windex_richest', 'Value1']
-        params['rr_sex_f'] = \
-            self.param_list.loc['rr_sex_f', 'Value1']
-        params['rr_age_gp20'] = \
-            self.param_list.loc['rr_age_gp20', 'Value1']
-        params['rr_age_gp25'] = \
-            self.param_list.loc['rr_age_gp25', 'Value1']
-        params['rr_age_gp30'] = \
-            self.param_list.loc['rr_age_gp30', 'Value1']
-        params['rr_age_gp35'] = \
-            self.param_list.loc['rr_age_gp35', 'Value1']
-        params['rr_age_gp40'] = \
-            self.param_list.loc['rr_age_gp40', 'Value1']
-        params['rr_age_gp45'] = \
-            self.param_list.loc['rr_age_gp45', 'Value1']
-        params['rr_age_gp50'] = \
-            self.param_list.loc['rr_age_gp50', 'Value1']
-        params['rr_edlevel_primary'] = \
-            self.param_list.loc['rr_edlevel_primary', 'Value1']
-        params['rr_edlevel_secondary'] = \
-            self.param_list.loc['rr_edlevel_secondary', 'Value1']
-        params['rr_edlevel_higher'] = \
-            self.param_list.loc['rr_edlevel_higher', 'Value1']
-        params['hv_behav_mod'] = \
-            self.param_list.loc['hv_behav_mod', 'Value1']
+        p['initial_art_coverage'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_HIV_coverage.csv'
+        )
 
         # daly weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
-            params['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 17)  # Symptomatic HIV without anemia
-            params['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(
+            p['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 19)  # AIDS without antiretroviral treatment without anemia
 
         # health system interactions
-        params['prob_high_to_low_art'] = \
-            self.param_list.loc['prob_high_to_low_art', 'Value1']
-        params['prob_low_to_high_art'] = \
-            self.param_list.loc['prob_low_to_high_art', 'Value1']
-        params['prob_off_art'] = \
-            self.param_list.loc['prob_off_art', 'Value1']
-        params['vl_monitoring_times'] = workbook['VL_monitoring']
-        params['fsw_prep'] = \
-            self.param_list.loc['fsw_prep', 'Value1']
-        params['hiv_art_ipt'] = self.param_list.loc['hiv_art_ipt', 'Value1']
-
-        params['tb_high_risk_distr'] = workbook['IPTdistricts']
+        p['vl_monitoring_times'] = workbook['VL_monitoring']
+        p['tb_high_risk_distr'] = workbook['IPTdistricts']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.

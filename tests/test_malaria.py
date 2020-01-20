@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 import datetime
 from tlo.analysis.utils import parse_log_file
-
+import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
@@ -23,7 +23,7 @@ from tlo.methods import (
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
-popsize = 50
+popsize = 100
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -31,11 +31,6 @@ except NameError:
     # running interactively
     resourcefilepath = 'resources'
 
-
-# TODO change the output file path and see if that works
-# todo think the issue is that nothing is written to the logfile or it can't be accessed maybe?
-# todo but no error writing/reading, just key error in tlo.methods.malaria
-# todo maybe output file is empty??
 
 @pytest.fixture(autouse=True)
 def disable_logging():
@@ -51,16 +46,6 @@ def check_dtypes(simulation):
 
 # @pytest.fixture(scope='module')
 def test_no_hsi(tmpdir):
-    # temporary log-file
-    f = tmpdir.mkdir("malaria").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-
-    # disable logging to stdout
-    logging.getLogger().handlers.clear()
-
-    logging.getLogger().addHandler(fh)
 
     service_availability = ["*"]
     malaria_strat = 1  # levels: 0 = national; 1 = district
@@ -89,16 +74,15 @@ def test_no_hsi(tmpdir):
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
-    # read the results
-    fh.flush()
-    output = parse_log_file(f)
-    fh.close()
-
-    # check no-one has been treated
-    print(output)  # todo try this and see if output is indeed empty
-    assert (output['tlo.methods.malaria']['tx_coverage']['number_treated'] == 0).all()
-
     # check scheduled malaria deaths occurring only due to severe malaria (not clinical or asym)
     df = sim.population.props
     assert not (
-        (df.ma_date_death) & ((df.ma_specific_symptoms == 'clinical') | (df.ma_specific_symptoms == 'none'))).any()
+        (df.ma_date_death) & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'none'))).any()
+
+    # check no treatment occurred
+    assert (df.ma_clinical_counter == 0).all()
+    assert (df.ma_tx == False).all()
+    assert (df.ma_date_tx == pd.NaT).all()
+
+    # check clinical malaria in pregnancy counter not including males
+    assert ((df.sex == 'M') & (df.ma_clinical_preg_counter == 0)).all()
