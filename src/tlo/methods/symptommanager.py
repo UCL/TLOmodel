@@ -2,7 +2,6 @@
 The Symptom Manager
 """
 import pandas as pd
-import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin
@@ -78,7 +77,6 @@ class SymptomManager(Module):
         for person_id in list(population.props.index):
             for symptom_var in self.symptom_column_names:
                 population.props.at[person_id, symptom_var] = set()
-
 
     def initialise_simulation(self, sim):
         pass

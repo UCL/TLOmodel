@@ -2,12 +2,10 @@ import logging
 import os
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    chronicsyndrome,
     contraception,
     demography,
     dx_algorithm_child,
@@ -27,6 +25,7 @@ except NameError:
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
 popsize = 200
+
 
 @pytest.fixture(autouse=True)
 def disable_logging():
@@ -88,14 +87,13 @@ def test_adding_symptoms():
     # Check that symptoms are add to checked and removed correctly
     df = sim.population.props
 
-    symp = 'backache'   # this is a generic symptoms that is not added by any disease module that is registered
+    symp = 'backache'  # this is a generic symptoms that is not added by any disease module that is registered
 
     # No one should have any symptom currently
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
-
     # check adding symptoms
-    ids = list(sim.rng.choice(list(df.index[df.is_alive]),5))
+    ids = list(sim.rng.choice(list(df.index[df.is_alive]), 5))
 
     sim.modules['SymptomManager'].change_symptom(
         symptom_string=symp,
@@ -118,9 +116,3 @@ def test_adding_symptoms():
         sim.modules['SymptomManager'].clear_symptoms(person, disease_module=sim.modules['Mockitis'])
 
     assert list() == sim.modules['SymptomManager'].who_has(symp)
-
-
-
-
-
-
