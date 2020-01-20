@@ -190,9 +190,9 @@ class SymptomManager(Module):
         # get the person_id for those who have each symptom
         df = self.sim.population.props
         symptom_columns = [f'sy_{col}' for col in list_of_symptoms]
-        people_with_all_symptoms = df.loc[df.is_alive, symptom_columns].applymap(lambda x: x != set()).all(axis=1).index
+        people_with_all_symptoms_mask = df.loc[df.is_alive, symptom_columns].applymap(lambda x: x != set()).all(axis=1)
 
-        return list(people_with_all_symptoms)
+        return list(people_with_all_symptoms_mask[people_with_all_symptoms_mask].index)
 
     def has_what(self, person_id, disease_module=None):
         """
