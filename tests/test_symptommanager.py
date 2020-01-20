@@ -22,7 +22,7 @@ try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 except NameError:
     # running interactively
-    resourcefilepath = 'resources'
+    resourcefilepath = './resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
@@ -93,9 +93,10 @@ def test_adding_symptoms():
     # No one should have any symptom currently
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
-    ids = list(sim.rng.choice(list(df.index[df.is_alive]),5))
 
     # check adding symptoms
+    ids = list(sim.rng.choice(list(df.index[df.is_alive]),5))
+
     sim.modules['SymptomManager'].change_symptom(
         symptom_string=symp,
         person_id=ids,
@@ -107,11 +108,15 @@ def test_adding_symptoms():
     assert set(has_symp) == set(ids)
 
     # check causes of the symptoms:
-    causes = sim.modules['SymptomManager'].causes_of(ids, symp)
-    assert all([c == 'Mockitis' for c in causes])
+    for person in ids:
+        causes = sim.modules['SymptomManager'].causes_of(person, symp)
+        assert 'Mockitis' in causes
+        assert 1 == len(causes)
 
-    # remove the symptoms:
-    sim.modules['SymptomManager'].clear_symptoms(ids, disease_module=sim.modules['Mockitis'])
+    # Remove the symptoms:
+    for person in ids:
+        sim.modules['SymptomManager'].clear_symptoms(person, disease_module=sim.modules['Mockitis'])
+
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
 
