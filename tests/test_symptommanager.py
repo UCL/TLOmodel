@@ -51,8 +51,6 @@ def test_no_symptoms_if_no_diseases():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    df = sim.population.props
-
     generic_symptoms = list(sim.modules['SymptomManager'].parameters['generic_symptoms'])
 
     for symp in generic_symptoms:
