@@ -141,8 +141,6 @@ class Hiv(Module):
         'hv_mother_art': Property(Types.CATEGORICAL, 'art status', categories=[0, 1, 2]),
         'hv_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for hiv',
                                          categories=['none', 'symp', 'aids']),
-        'hv_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
-                                            categories=[0, 1, 2, 3, 4]),
         'hv_proj_date_symp': Property(Types.DATE, 'Date becomes symptomatic'),
         'hv_proj_date_aids': Property(Types.DATE, 'Date develops AIDS'),
 
@@ -213,7 +211,6 @@ class Hiv(Module):
         df['hv_mother_art'].values[:] = 0
 
         df['hv_specific_symptoms'].values[:] = 'none'
-        df['hv_unified_symptom_code'].values[:] = 0
 
         df['hv_proj_date_symp'] = pd.NaT
         df['hv_proj_date_aids'] = pd.NaT
@@ -525,14 +522,12 @@ class Hiv(Module):
         chronic = time_death < (2 * 365.25)
         idx = adults[chronic]
         df.loc[idx, 'hv_specific_symptoms'] = 'symp'
-        df.loc[idx, 'hv_unified_symptom_code'] = 2
 
         # if <1 year from scheduled death = aids
         time_death = (df.loc[adults, 'hv_proj_date_death'] - now).dt.days  # returns days
         aids = time_death < 365.25
         idx = adults[aids]
         df.loc[idx, 'hv_specific_symptoms'] = 'aids'
-        df.loc[idx, 'hv_unified_symptom_code'] = 3
 
         # ----------------------------------- CHILD SYMPTOMS -----------------------------------
 
@@ -545,14 +540,12 @@ class Hiv(Module):
         chronic = time_death < (2 * 365.25)
         idx = infants[chronic]
         df.loc[idx, 'hv_specific_symptoms'] = 'symp'
-        df.loc[idx, 'hv_unified_symptom_code'] = 2
 
         # if <1 year from scheduled death = aids
         time_death = (df.loc[infants, 'hv_proj_date_death'] - now).dt.days  # returns days
         aids = time_death < 365.25
         idx = infants[aids]
         df.loc[idx, 'hv_specific_symptoms'] = 'aids'
-        df.loc[idx, 'hv_unified_symptom_code'] = 3
 
     def schedule_symptoms(self, population):
         """ assign level of symptoms to infected people
@@ -659,7 +652,6 @@ class Hiv(Module):
         df.at[child_id, 'hv_mother_art'] = 0
 
         df.at[child_id, 'hv_specific_symptoms'] = 'none'
-        df.at[child_id, 'hv_unified_symptom_code'] = 0
 
         df.at[child_id, 'hv_proj_date_symp'] = pd.NaT
         df.at[child_id, 'hv_proj_date_aids'] = pd.NaT
@@ -720,7 +712,6 @@ class Hiv(Module):
                                               size=1)
             df.at[child_id, 'hv_fast_progressor'] = True
             df.at[child_id, 'hv_specific_symptoms'] = 'aids'
-            df.at[child_id, 'hv_unified_symptom_code'] = 2
 
             time_death = pd.to_timedelta(time_death[0] * 365.25, unit='d')
             df.at[child_id, 'hv_proj_date_death'] = now + time_death
@@ -985,7 +976,6 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'hv_inf'] = True
         df.at[person_id, 'hv_specific_symptoms'] = 'none'  # all start at none
-        df.at[person_id, 'hv_unified_symptom_code'] = 0
 
 
 class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
@@ -1004,7 +994,6 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'hv_on_art']:
             logger.debug("Scheduling symptom onset for person %d", person_id)
             df.at[person_id, 'hv_specific_symptoms'] = 'symp'
-            df.at[person_id, 'hv_unified_symptom_code'] = 2
 
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
             prob = 1.0  # Do not use get_prob_seek_care()
@@ -1039,7 +1028,6 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
             logger.debug("This is HivAidsEvent scheduling aids onset for person %d", person_id)
 
             df.at[person_id, 'hv_specific_symptoms'] = 'aids'
-            df.at[person_id, 'hv_unified_symptom_code'] = 3
 
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
             prob = 0.5  # NB. Do not use get_prob_seek_care(). For non-generic symptoms do inside the module.
@@ -1819,7 +1807,6 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             # change specific_symptoms to 'none' if virally suppressed and adherent (hiv_on_art = 2)
             if df.at[person_id, 'hv_on_art'] == 2:
                 df.at[person_id, 'hv_specific_symptoms'] = 'none'
-                df.at[person_id, 'hv_unified_symptom_code'] = 1
 
             # ----------------------------------- SCHEDULE VL MONITORING -----------------------------------
 
