@@ -184,8 +184,6 @@ class Tb(Module):
         'tb_ever_tb_mdr': Property(Types.BOOL, 'if ever had active multi-drug resistant tb'),
         'tb_stage': Property(Types.CATEGORICAL, 'Level of symptoms for tb',
                              categories=['none', 'latent', 'active_pulm', 'active_extra']),
-        'tb_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
-                                            categories=[0, 1, 2, 3, 4]),
         'tb_ever_tested': Property(Types.BOOL, 'ever had a tb test'),
         'tb_smear_test': Property(Types.BOOL, 'ever had a tb smear test'),
         'tb_result_smear_test': Property(Types.BOOL, 'result from tb smear test'),
@@ -271,7 +269,6 @@ class Tb(Module):
         df['tb_ever_tb_mdr'] = False
 
         df['tb_stage'].values[:] = 'none'
-        df['tb_unified_symptom_code'].values[:] = 0
 
         df['tb_ever_tested'] = False  # default: no individuals tested
         df['tb_smear_test'] = False
@@ -328,7 +325,6 @@ class Tb(Module):
         df.loc[tb_idx, 'tb_inf'] = 'latent_susc_new'
         df.loc[tb_idx, 'tb_date_latent'] = now
         df.loc[tb_idx, 'tb_stage'] = 'latent'
-        df.loc[tb_idx, 'tb_unified_symptom_code'] = 0
 
         # allocate some latent infections as mdr-tb
         if len(df[df.is_alive & (df.tb_inf == 'latent_susc_new')]) > 10:
@@ -472,7 +468,6 @@ class Tb(Module):
         df.at[child_id, 'tb_ever_tb'] = False
         df.at[child_id, 'tb_ever_tb_mdr'] = False
         df.at[child_id, 'tb_stage'] = 'none'
-        df.at[child_id, 'tb_unified_symptom_code'] = 0
 
         df.at[child_id, 'tb_ever_tested'] = False  # default: not tested
         df.at[child_id, 'tb_smear_test'] = False
@@ -648,7 +643,6 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[tb_idx, 'tb_inf'] = 'latent_susc_new'
         df.loc[tb_idx, 'tb_date_latent'] = now
         df.loc[tb_idx, 'tb_stage'] = 'latent'
-        df.loc[tb_idx, 'tb_unified_symptom_code'] = 0
 
         # ----------------------------------- RE-INFECTIONS -----------------------------------
 
@@ -661,7 +655,6 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[repeat_case, 'tb_date_latent'] = now
         df.loc[repeat_case, 'tb_stage'] = 'latent'
-        df.loc[repeat_case, 'tb_unified_symptom_code'] = 0
 
         del df_distr
 
@@ -849,7 +842,6 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'tb_on_ipt'] and not df.at[person_id, 'tb_on_treatment']:
 
             df.at[person_id, 'tb_date_active'] = self.sim.date
-            df.at[person_id, 'tb_unified_symptom_code'] = 2
             df.at[person_id, 'tb_symptoms'] = True
 
             # check if new infection or re-infection
@@ -953,7 +945,6 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_date_active'] = now
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
-        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_unified_symptom_code'] = 2
 
         # HIV-POSITIVE
 
@@ -982,7 +973,6 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_date_active'] = now
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
-        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_unified_symptom_code'] = 2
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'] = True
 
         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
@@ -1139,7 +1129,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_unified_symptom_code'] = 0
         df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, not on art
@@ -1148,7 +1137,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure_hiv'])].index
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_unified_symptom_code'] = 0
         df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, on art
@@ -1157,7 +1145,6 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_unified_symptom_code'] = 0
         df.loc[self_cure, 'tb_symptoms'] = False
 
 
@@ -1237,7 +1224,6 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[tb_idx, 'tb_inf'] = 'latent_mdr_new'
         df.loc[tb_idx, 'tb_date_latent'] = now
         df.loc[tb_idx, 'tb_stage'] = 'latent'
-        df.loc[tb_idx, 'tb_unified_symptom_code'] = 0
 
         # ----------------------------------- RE-INFECTIONS -----------------------------------
 
@@ -1253,7 +1239,6 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[repeat_case, 'tb_date_latent'] = now
         df.loc[repeat_case, 'tb_stage'] = 'latent'
-        df.loc[repeat_case, 'tb_unified_symptom_code'] = 0
 
         # -----------------------------------------------------------------------------------------------------
         # PROGRESSION TO ACTIVE MDR-TB DISEASE
@@ -1509,7 +1494,6 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_date_active'] = now
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
-        df.loc[relapse_tx_complete | relapse_tx_incomplete, 'tb_unified_symptom_code'] = 2
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'] = True
 
         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
@@ -1596,7 +1580,6 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_unified_symptom_code'] = 0
         df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, not on art
@@ -1605,7 +1588,6 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure_hiv'])].index
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_unified_symptom_code'] = 0
         df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, on art
@@ -1614,7 +1596,6 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_unified_symptom_code'] = 0
         df.loc[self_cure, 'tb_symptoms'] = False
 
 
@@ -2870,7 +2851,6 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_inf'] = 'latent_susc_tx'
             df.at[person_id, 'tb_diagnosed'] = False
             df.at[person_id, 'tb_stage'] = 'latent'
-            df.at[person_id, 'tb_unified_symptom_code'] = 1
             df.at[person_id, 'tb_treatment_failure'] = False
             df.at[person_id, 'tb_symptoms'] = False
             df.at[person_id, 'tb_smear'] = False
@@ -2911,7 +2891,6 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_inf'] = 'latent_mdr_tx'
             df.at[person_id, 'tb_diagnosed'] = False
             df.at[person_id, 'tb_stage'] = 'latent'
-            df.at[person_id, 'tb_unified_symptom_code'] = 1
             df.at[person_id, 'tb_treatment_failure'] = False
             df.at[person_id, 'tb_symptoms'] = False
             df.at[person_id, 'tb_smear'] = False
