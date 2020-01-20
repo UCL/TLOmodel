@@ -200,7 +200,7 @@ class Diarrhoea(Module):
         'gi_diarrhoea_pathogen': Property(Types.CATEGORICAL, 'attributable pathogen for diarrhoea',
                                           categories=['rotavirus', 'shigella', 'adenovirus', 'cryptosporidium',
                                                       'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus',
-                                                      'astrovirus', 'tEPEC']),
+                                                      'astrovirus', 'tEPEC', 'none']),
         'gi_diarrhoea_type': Property(Types.CATEGORICAL, 'progression of diarrhoea type',
                                       categories=['acute', 'prolonged', 'persistent']),
         'gi_diarrhoea_acute_type': Property(Types.CATEGORICAL, 'clinical acute diarrhoea type',
@@ -736,7 +736,7 @@ class Diarrhoea(Module):
         # DEFAULTS
         df['gi_diarrhoea_status'] = False
         df['gi_diarrhoea_acute_type'] = np.nan
-        df['gi_diarrhoea_pathogen'] = np.nan
+        df['gi_diarrhoea_pathogen'].values[:] = 'none'
         df['gi_diarrhoea_type'] = np.nan
         df['gi_persistent_diarrhoea'] = np.nan
         df['gi_dehydration_status'] = 'no dehydration'
@@ -786,7 +786,7 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_recovered_date'] = pd.NaT
         df.at[child_id, 'gi_diarrhoea_death_date'] = pd.NaT
         df.at[child_id, 'gi_diarrhoea_death'] = False
-        df.at[child_id, 'gi_diarrhoea_pathogen'] = np.nan
+        df.at[child_id, 'gi_diarrhoea_pathogen'].values[:] = 'none'
         df.at[child_id, 'gi_diarrhoea_count'] = 0
 
         # todo; make sure all properties intiialised for the child
@@ -858,30 +858,19 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
             # the outcome - diarrhoea (and which pathogen...) to put in the df
             outcome_i = rng.choice(probs.columns, p=probs.loc[i].values)
-            df.at[i, 'gi_diarrhoea_pathogen'] = outcome_i
 
             if outcome_i != 'none':
-                for symptom_string, prob in m.parameters['prob_symptoms'][outcome_i].items():
+                df.at[i, 'gi_diarrhoea_pathogen'].values[:] = outcome_i
                 df.at[i, 'gi_diarrhoea_status'] = True
                 df.at[i, 'gi_diarrhoea_type'] = 'acute'
                 df.at[i, 'gi_diarrhoea_count'] += 1
+                # @@@ INES --- is there a need for an else statement to set these variables to values consistent with no new diarrahea episode?
 
                 # ----------------------- ALLOCATE A RANDOM DATE OF ONSET OF ACUTE DIARRHOEA ----------------------
-                incident_acute_diarrhoea = df.index[df.is_alive & df.gi_diarrhoea_status & (df.age_exact_years < 5)]
-                random_draw_days = np.random.randint(0, 90, size=len(incident_acute_diarrhoea))  # runs every 3 months
-                adding_days = pd.to_timedelta(random_draw_days, unit='d')
-                df.loc[incident_acute_diarrhoea, 'date_of_onset_diarrhoea'] = self.sim.date + adding_days
-                # -------------------------------------------------------------------------------------------------
-                # for prob in self.module.read_parameters().prob_symptoms[outcome_i].items('watery_diarrhoea'):
-                #     if rng.rand() < prob:
-                #         df.at[i, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
-                #     if rng.rand() < prob:
-                #         df.at[i, 'gi_diarrhoea_acute_type'] = 'dysentery'
-                # for prob in self.module.read_parameters().prob_symptoms[outcome_i].items('dehydration'):
-                #     if rng.rand() < prob:
-                #         df.at[i, 'gi_dehydration_status'] = 'dehydration'
-                #     if rng.rand() < prob:
-                #         df.at[i, 'gi_diarrhoea_acute_type'] = 'dysentery'
+                # @@ INES --- Note that  i is the person_id of the person with diarahhea: no need for any more .loc
+
+                df.at[i, 'date_of_onset_diarrhoea'] = self.sim.date + DateOffset(days = np.random.randint(0, 90))
+
 
                 # # # ASSIGN SOME OR SEVERE DEHYDRATION LEVELS FOR DIARRHOEA EPISODE # # #
                 di_with_dehydration_idx = df.index[df.di_dehydration_present] & incident_acute_diarrhoea
@@ -898,7 +887,16 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                         > dfx.random_draw]
                 df.loc[diarr_some_dehydration, 'gi_dehydration_status'] = 'some dehydration'
                 df.loc[diarr_severe_dehydration, 'gi_dehydration_status'] = 'severe dehydration'
-                # -------------------------------------------------------------------------------------------------
+
+                # @@ INES - not sure what the above paragraph is aiming to do. If it's about probabilisitically
+                # assigning a symptom, then can it not be handled in the part done with the prob_symptoms and SymptomManager ?
+
+
+                # ----------------------------------------------------------------------------------------
+
+                # @@@ INES --- you're building an equation here... perhaps easier to use LinearModel again?
+
+
                 # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
                 ProD_idx = df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'prolonged') & df.is_alive &
                                     (df.age_exact_years < 5)]
@@ -937,8 +935,9 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                 df.loc[just_persistent_diarr, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
                 # -------------------------------------------------------------------------------------------------
 
+
                 # Then work out the symptoms for this person:
-                for symptom_string, prob in self.module.read_parameters().prob_symptoms[outcome_i].items():
+                for symptom_string, prob in m.parameters['prob_symptoms'][outcome_i].items():
                     if rng.rand() < prob:
                         self.sim.modules['SymptomManager'].chg_symptom(symptom_string=symptom_string,
                                                                        person_id=i,
@@ -947,6 +946,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                        date_of_onset='date_of_onset_diarrhoea',
                                                                        duration_in_days=10
                                                                        )
+
+
 
         # # # # # HEALTHCARE SEEKING BEHAVIOUR - INTERACTION WITH HSB MODULE # # # # #
         # TODO: when you declare the symptoms in the symptom manager, the health care seeking will follow automatically
@@ -1074,7 +1075,7 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, 'is_alive']:
 
             # check if person should still die of diarah
-            if df.at[person_id, gi_will_die_of_diarh]:
+            if df.at[person_id, 'gi_will_die_of_diarh']:
 
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, cause='diarrhoea'),
                                         self.sim.date)
