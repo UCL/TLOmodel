@@ -347,19 +347,12 @@ class Labour (Module):
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wts'] = \
-                {'hemorrhage_moderate':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339),
-                 'haemorrhage_severe':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338),
-                 'maternal_sepsis':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340),
-                 'eclampsia':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=343),
-                 'obstructed_labour':self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)}
-            # TODO: Eclampsia DALY weight is empty- this is htn disoders sequalae code
-            # TODO: source DALY weight for Uterine Rupture
-
-        #    params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
-        #    params['daly_wt_haemorrhage_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338)
-        #    params['daly_wt_maternal_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340)
-        #    params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=343)
-        #    params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)
+                {'hemorrhage_moderate': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339),
+                 'haemorrhage_severe': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338),
+                 'maternal_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340),
+                 'eclampsia': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=343),
+                 'obstructed_labour': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)}
+            # TODO: Eclampsia DALY weight is empty- this is htn disorders sequalae code
             # TODO: source DALY weight for Uterine Rupture
 
     def initialise_population(self, population):
@@ -435,40 +428,28 @@ class Labour (Module):
         dfx = pd.concat((simdate, due_date_period), axis=1)
         dfx.columns = ['simdate', 'due_date_period']
 
-        idx_term = dfx.index[dfx.due_date_period == 'term']
-        df.loc[idx_term, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 36), index=idx_term))
-        df.loc[idx_term, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
-        weeks_till_due = (pd.Series(self.rng.random_integers(37, 41), index=idx_term)) - df['ps_gestational_age_in_weeks']
-        df.loc[idx_term, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
+        # TODO: this is still applying the same random number to the index
+        def gestation_and_due_date_setting(df, dfx, rng, gestation, upper_limit_gest, lower_rand, higher_rand, prob):
+            index = dfx.index[dfx.due_date_period == f'{gestation}']
+            df.loc[index, 'ps_gestational_age_in_weeks'] = (pd.Series(rng.random_integers(0, upper_limit_gest),
+                                                                      index=index))
+            df.loc[index, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'],
+                                                                                      unit='w')
+            weeks_till_due = (pd.Series(rng.choice(list(range(lower_rand, higher_rand)), size=len(index), replace=True,
+                                                   p=[(1 / prob)] * prob), index=index))
+            due_on = weeks_till_due - df.loc[index, 'ps_gestational_age_in_weeks']
+            df.loc[index, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(due_on, unit='w')
 
-        idx_late = dfx.index[dfx.due_date_period == 'post_term']
-        df.loc[idx_late, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 41), index=idx_late))
-        df.loc[idx_late, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
-        weeks_till_due = (pd.Series(self.rng.random_integers(42, 46), index=idx_late)) - df['ps_gestational_age_in_weeks']
-        df.loc[idx_late, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
-
-        idx_e_preterm = dfx.index[dfx.due_date_period == 'early_preterm']
-        df.loc[idx_e_preterm, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 23), index=idx_e_preterm))
-        df.loc[idx_e_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
-        weeks_till_due = (pd.Series(self.rng.random_integers(24, 32), index=idx_e_preterm)) - df['ps_gestational_age_in_weeks']
-        df.loc[idx_e_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
-
-        idx_l_preterm = dfx.index[dfx.due_date_period == 'late_preterm']
-        df.loc[idx_l_preterm, 'ps_gestational_age_in_weeks'] = (pd.Series(self.rng.random_integers(0, 32), index=idx_l_preterm))
-        df.loc[idx_l_preterm, 'date_of_last_pregnancy'] = self.sim.date - pd.to_timedelta(df['ps_gestational_age_in_weeks'], unit='w')
-        weeks_till_due = pd.Series(self.rng.random_integers(33, 36), index=idx_l_preterm) - df['ps_gestational_age_in_weeks']
-        df.loc[idx_l_preterm, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(weeks_till_due, unit='w')
+        gestation_and_due_date_setting(df, dfx, self.rng, 'term', 36, 37, 42, 5)
+        gestation_and_due_date_setting(df, dfx, self.rng, 'post_term', 41, 42, 47, 5)
+        gestation_and_due_date_setting(df, dfx, self.rng, 'early_preterm', 23, 24, 33, 9)
+        gestation_and_due_date_setting(df, dfx, self.rng, 'late_preterm', 32, 33, 37, 4)
 
         # Then all women are scheduled to go into labour on this due date
         for person in pregnant_idx:
             assert df.at[person, 'la_due_date_current_pregnancy'] > self.sim.date
             labour = LabourEvent(self, individual_id=person, cause='Labour')
             self.sim.schedule_event(labour, df.at[person, 'la_due_date_current_pregnancy'])
-
-            # cannot schedule events in the past, so adding it a check here:
-#           if scheduled_labour_date >= self.sim.date:
-#               labour = LabourEvent(self, individual_id=person, cause='Labour')
-#              self.sim.schedule_event(labour, scheduled_labour_date)
 
         # Todo: consider if we should apply risk factors to women at baseline (anaemia and age)
 
