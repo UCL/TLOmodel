@@ -428,7 +428,7 @@ class Diarrhoea(Module):
         # p['rr_recovery_dehydration'] = 0.81
 
         # Register this disease module with the health system
-        # self.sim.modules['HealthSystem'].register_disease_module(self)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
@@ -736,9 +736,9 @@ class Diarrhoea(Module):
         # DEFAULTS
         df['gi_diarrhoea_status'] = False
         df['gi_diarrhoea_acute_type'] = np.nan
-        df['gi_diarrhoea_pathogen'].values[:] = 'none'
-        df['gi_diarrhoea_type'] = np.nan
-        df['gi_persistent_diarrhoea'] = np.nan
+        df['gi_diarrhoea_pathogen'] = 'none'
+        df['gi_diarrhoea_type'] = ''     ## You can't make these nans as they are cateogrical. For now I am putting in str so we can use.
+        df['gi_persistent_diarrhoea'] = ''      # same here
         df['gi_dehydration_status'] = 'no dehydration'
         df['date_of_onset_diarrhoea'] = pd.NaT
         df['gi_recovered_date'] = pd.NaT
@@ -779,14 +779,14 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_recovered_date'] = pd.NaT
         df.at[child_id, 'gi_diarrhoea_status'] = False
         df.at[child_id, 'gi_diarrhoea_acute_type'] = np.nan
-        df.at[child_id, 'gi_diarrhoea_type'] = np.nan
+        df.at[child_id, 'gi_diarrhoea_type'] = ''
         df.at[child_id, 'gi_persistent_diarrhoea'] = np.nan
         df.at[child_id, 'gi_dehydration_status'] = 'no dehydration'
         df.at[child_id, 'date_of_onset_diarrhoea'] = pd.NaT
         df.at[child_id, 'gi_recovered_date'] = pd.NaT
         df.at[child_id, 'gi_diarrhoea_death_date'] = pd.NaT
         df.at[child_id, 'gi_diarrhoea_death'] = False
-        df.at[child_id, 'gi_diarrhoea_pathogen'].values[:] = 'none'
+        df.at[child_id, 'gi_diarrhoea_pathogen'] = 'none'
         df.at[child_id, 'gi_diarrhoea_count'] = 0
 
         # todo; make sure all properties intiialised for the child
@@ -860,7 +860,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             outcome_i = rng.choice(probs.columns, p=probs.loc[i].values)
 
             if outcome_i != 'none':
-                df.at[i, 'gi_diarrhoea_pathogen'].values[:] = outcome_i
+                df.at[i, 'gi_diarrhoea_pathogen'] = outcome_i
                 df.at[i, 'gi_diarrhoea_status'] = True
                 df.at[i, 'gi_diarrhoea_type'] = 'acute'
                 df.at[i, 'gi_diarrhoea_count'] += 1
@@ -869,24 +869,25 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                 # ----------------------- ALLOCATE A RANDOM DATE OF ONSET OF ACUTE DIARRHOEA ----------------------
                 # @@ INES --- Note that  i is the person_id of the person with diarahhea: no need for any more .loc
 
+                # does this need to be stored in the df?
                 df.at[i, 'date_of_onset_diarrhoea'] = self.sim.date + DateOffset(days = np.random.randint(0, 90))
 
 
                 # # # ASSIGN SOME OR SEVERE DEHYDRATION LEVELS FOR DIARRHOEA EPISODE # # #
-                di_with_dehydration_idx = df.index[df.di_dehydration_present] & incident_acute_diarrhoea
-                prob_some_dehydration = pd.Series(0.7, index=di_with_dehydration_idx)
-                prob_severe_dehydration = pd.Series(0.3, index=di_with_dehydration_idx)
-                random_draw = pd.Series(self.sim.rng.random_sample(size=len(di_with_dehydration_idx)),
-                                        index=di_with_dehydration_idx)
-                dfx = pd.concat([prob_some_dehydration, prob_severe_dehydration, random_draw], axis=1)
-                dfx.columns = ['p_some_dehydration', 'p_severe_dehydration', 'random_draw']
-                diarr_some_dehydration = dfx.index[dfx.p_some_dehydration > dfx.random_draw]
-                diarr_severe_dehydration = \
-                    dfx.index[
-                        (dfx.p_some_dehydration < dfx.random_draw) & (dfx.p_some_dehydration + dfx.p_severe_dehydration)
-                        > dfx.random_draw]
-                df.loc[diarr_some_dehydration, 'gi_dehydration_status'] = 'some dehydration'
-                df.loc[diarr_severe_dehydration, 'gi_dehydration_status'] = 'severe dehydration'
+                # di_with_dehydration_idx = df.index[df.di_dehydration_present] & incident_acute_diarrhoea
+                # prob_some_dehydration = pd.Series(0.7, index=di_with_dehydration_idx)
+                # prob_severe_dehydration = pd.Series(0.3, index=di_with_dehydration_idx)
+                # random_draw = pd.Series(self.sim.rng.random_sample(size=len(di_with_dehydration_idx)),
+                #                         index=di_with_dehydration_idx)
+                # dfx = pd.concat([prob_some_dehydration, prob_severe_dehydration, random_draw], axis=1)
+                # dfx.columns = ['p_some_dehydration', 'p_severe_dehydration', 'random_draw']
+                # diarr_some_dehydration = dfx.index[dfx.p_some_dehydration > dfx.random_draw]
+                # diarr_severe_dehydration = \
+                #     dfx.index[
+                #         (dfx.p_some_dehydration < dfx.random_draw) & (dfx.p_some_dehydration + dfx.p_severe_dehydration)
+                #         > dfx.random_draw]
+                # df.loc[diarr_some_dehydration, 'gi_dehydration_status'] = 'some dehydration'
+                # df.loc[diarr_severe_dehydration, 'gi_dehydration_status'] = 'severe dehydration'
 
                 # @@ INES - not sure what the above paragraph is aiming to do. If it's about probabilisitically
                 # assigning a symptom, then can it not be handled in the part done with the prob_symptoms and SymptomManager ?
@@ -896,43 +897,51 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
                 # @@@ INES --- you're building an equation here... perhaps easier to use LinearModel again?
 
-
                 # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
                 ProD_idx = df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'prolonged') & df.is_alive &
                                     (df.age_exact_years < 5)]
-                becoming_persistent = pd.Series(self.module.prob_prolonged_to_persistent_diarr, index=ProD_idx)
 
-                becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)] \
-                    *= m.rr_bec_persistent_age12to23
-                becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 2) & (df.age_exact_years < 5)] \
-                    *= m.rr_bec_persistent_age24to59
-                becoming_persistent.loc[df.is_alive & (df.age_exact_years < 5) & df.has_hiv] \
-                    *= m.rr_bec_persistent_HIV
-                becoming_persistent.loc[df.is_alive & (df.age_exact_years < 5) & df.malnutrition == True] \
-                    *= m.rr_bec_persistent_SAM
-                becoming_persistent.loc[
-                    df.is_alive & df.exclusive_breastfeeding == True & (df.age_exact_years <= 0.5)] \
-                    *= m.rr_bec_persistent_excl_breast
-                becoming_persistent.loc[
-                    df.is_alive & df.continued_breastfeeding == True & (df.age_exact_years > 0.5) &
-                    (df.age_exact_years < 2)] *= m.rr_bec_persistent_cont_breast
+                # **** is 'self.module.prob_prolonged_to_persistent_diarr' trying to access self.module.parameters['prob_prolonged_to_persistent_diarr'] ??
+                # It is not defined at the moment ;;. so I am commenting it out
 
-                random_draw = pd.Series(self.sim.rng.random_sample(size=len(becoming_persistent)),
-                                        index=becoming_persistent.index)
-                persistent_diarr = becoming_persistent > random_draw
-                persistent_diarr_idx = becoming_persistent.index[persistent_diarr]
-                df.loc[persistent_diarr_idx, 'gi_diarrhoea_type'] = 'persistent'
+                # becoming_persistent = pd.Series(self.module.prob_prolonged_to_persistent_diarr, index=ProD_idx)
+                #
+                # becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)] \
+                #     *= m.rr_bec_persistent_age12to23
+                # becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 2) & (df.age_exact_years < 5)] \
+                #     *= m.rr_bec_persistent_age24to59
+                # becoming_persistent.loc[df.is_alive & (df.age_exact_years < 5) & df.has_hiv] \
+                #     *= m.rr_bec_persistent_HIV
+                # becoming_persistent.loc[df.is_alive & (df.age_exact_years < 5) & df.malnutrition == True] \
+                #     *= m.rr_bec_persistent_SAM
+                # becoming_persistent.loc[
+                #     df.is_alive & df.exclusive_breastfeeding == True & (df.age_exact_years <= 0.5)] \
+                #     *= m.rr_bec_persistent_excl_breast
+                # becoming_persistent.loc[
+                #     df.is_alive & df.continued_breastfeeding == True & (df.age_exact_years > 0.5) &
+                #     (df.age_exact_years < 2)] *= m.rr_bec_persistent_cont_breast
+                #
+                # random_draw = pd.Series(self.sim.rng.random_sample(size=len(becoming_persistent)),
+                #                         index=becoming_persistent.index)
+                # persistent_diarr = becoming_persistent > random_draw
+                #
+                # persistent_diarr_idx = becoming_persistent.index[persistent_diarr]
+                # df.loc[i, 'gi_diarrhoea_type'] = 'persistent'
 
                 # # # # # # PERSISTENT DIARRHOEA OR SEVERE PERSISTENT DIARRHOEA # # # # # #
-                severe_persistent_diarr = \
-                    df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'persistent') &
-                             (df.gi_dehydration_status != 'no dehydration')]
-                df.loc[severe_persistent_diarr, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
+                # severe_persistent_diarr = \
+                    # df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'persistent') &
+                    #          (df.gi_dehydration_status != 'no dehydration')]
 
-                just_persistent_diarr = \
-                    df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'persistent') &
-                             (df.gi_dehydration_status == 'no dehydration')]
-                df.loc[just_persistent_diarr, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
+                # i is the person who has just be given an outcome... so work out what to do with this one person
+
+                # Are these things not equal to symptoms?
+
+                # The underlying thing is the infection with the pthogen. The symptom it creates is a certain type of diarrahea, right?
+
+                df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
+                # or...
+                df.at[i, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
                 # -------------------------------------------------------------------------------------------------
 
 
@@ -943,7 +952,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                        person_id=i,
                                                                        add_or_remove='+',
                                                                        disease_module=self.module,
-                                                                       date_of_onset='date_of_onset_diarrhoea',
+                                                                       date_of_onset=df.at[i, 'date_of_onset_diarrhoea'],
                                                                        duration_in_days=10
                                                                        )
 
@@ -1061,7 +1070,7 @@ class SelfRecoverEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_recovered_date'] = pd.NaT
         df.at[person_id, 'gi_diarrhoea_death_date'] = pd.NaT
         df.at[person_id, 'gi_diarrhoea_death'] = False
-        df.at[person_id, 'gi_diarrhoea_pathogen'] = np.nan
+        df.at[person_id, 'gi_diarrhoea_pathogen'].values[:] = 'none'
 
 
 class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
