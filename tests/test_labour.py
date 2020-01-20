@@ -11,8 +11,8 @@ from tlo.methods import demography, enhanced_lifestyle, labour, newborn_outcomes
     pregnancy_supervisor, contraception
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1000
+end_date = Date(2011, 1, 1)
+popsize = 50
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -77,10 +77,15 @@ def __check_properties(df):
 #    __check_properties(simulation.population.props)
 
 
+
 def test_dypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
+    counter = 0
+    for orig_type, df_type in zip(orig.dtypes, df.dtypes):
+        counter += 1
+        assert orig_type == df_type, f"column number {counter}\n - orig: {orig_type},  df: {df_type}"
     assert (df.dtypes == orig.dtypes).all()
 
 

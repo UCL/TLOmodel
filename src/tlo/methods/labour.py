@@ -135,7 +135,7 @@ class Labour (Module):
             Types.REAL, 'relative risk of postpartum haemorrhage following obstructed labour'),
         'prob_pp_sepsis': Parameter(
             Types.REAL, 'probability of sepsis following delivery'),
-        'cfr_pph': Parameter(
+        'cfr_pp_pph': Parameter(
             Types.REAL, 'case fatality rate for postpartum haemorrhage'),
         'cfr_pp_eclampsia': Parameter(
             Types.REAL, 'case fatality rate for eclampsia following delivery'),
@@ -309,7 +309,7 @@ class Labour (Module):
 
     #    params['postpartum_haemorrhage'] = {'prob_pph': 0.1,
     #                                        'rr_pph_pl_ol': 0.1,
-    #                                        'cfr_pph': 0.1}
+    #                                        'cfr_pp_pph': 0.1}
 
     #    params['neonatal_factors'] = {'prob_neonatal_sepsis': 0.1,
     #                                  'prob_neonatal_birth_asphyxia': 0.1}
@@ -1358,9 +1358,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         # complication
         # Similarly we apply a risk of still birth associated with each complication
 
-        # TODO: Will we apply a reduced CFR in the instance of unsuccessful interventions
-
         def dies_by_complication(rng, df, mni, cause):
+            logger.debug(f'{cause} has contributed to person %d death during labour', individual_id)
             random = rng.random_sample(size=1)
             if random < params[f'cfr_{cause}']:
                 mni[individual_id]['death_in_labour'] = True
@@ -1388,16 +1387,18 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                 dies_by_complication(self.module.rng, df, mni, 'obstructed_labour')
 
             if mni[individual_id]['eclampsia_ip']:
-                dies_by_complication(self.module.rng, df, mni, 'eclampsia') #TODO: check
+                dies_by_complication(self.module.rng, df, mni, 'eclampsia')
 
             if mni[individual_id]['APH']:
                 dies_by_complication(self.module.rng, df, mni, 'aph')
 
             if mni[individual_id]['sepsis_ip']:
-                dies_by_complication(self.module.rng, df, mni, 'sepsis') # TODO: check
+                dies_by_complication(self.module.rng, df, mni, 'sepsis')
 
             if mni[individual_id]['UR']:
-                dies_by_complication(self.module.rng, df, mni, 'uterine_rupture') # TODO: check
+                dies_by_complication(self.module.rng, df, mni, 'uterine_rupture')
+
+            # TODO: Will we apply a reduced CFR in the instance of unsuccessful interventions
 
             # Schedule death for women who die in labour
         if mni[individual_id]['death_in_labour']:
@@ -1439,39 +1440,33 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
 
         # We apply the same structure as with the LabourDeathEvent to women who experience postpartum complications
         # if df.at[individual_id, 'la_eclampsia']:
+
+        def dies_by_complication_postpartum(rng, df, mni, cause):
+            random = self.module.rng.random_sample(size=1)
+            if random < params[f'cfr_pp_{cause}']:
+                logger.debug(f'{cause} has contributed to person %d death following labour', individual_id)
+                mni[individual_id]['death_postpartum'] = True
+                df.at[individual_id, 'la_maternal_death'] = True
+                mni[individual_id]['cause_of_death_in_labour'].append(f'{cause}_postpartum')
+                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
+        
         if mni[individual_id]['eclampsia_pp']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_pp_eclampsia']:
-                mni[individual_id]['death_postpartum'] = True
-                df.at[individual_id, 'la_maternal_death'] = True
-        #        mni[individual_id]['cause_of_death_in_labour'].add('eclampsia_pp')
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
+            dies_by_complication_postpartum(self.module.rng, df, mni, 'eclampsia')
 
-        # if df.at[individual_id, 'la_pph']:
         if mni[individual_id]['PPH']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_pph']:
-                mni[individual_id]['death_postpartum'] = True
-                df.at[individual_id, 'la_maternal_death'] = True
-        #        mni[individual_id]['cause_of_death_in_labour'].add('PPH')
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
+            dies_by_complication_postpartum(self.module.rng, df, mni, 'pph')
 
-        # if df.at[individual_id, 'la_sepsis']:
         if mni[individual_id]['sepsis_pp']:
-            random = self.module.rng.random_sample(size=1)
-            if random < params['cfr_pp_sepsis']:
-                mni[individual_id]['death_postpartum'] = True
-                df.at[individual_id, 'la_maternal_death'] = True
-        #        mni[individual_id]['cause_of_death_in_labour'].add('sepsis_pp')
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
+            dies_by_complication_postpartum(self.module.rng, df, mni, 'sepsis')
 
         if mni[individual_id]['death_postpartum']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='postpartum labour'), self.sim.date)
-            # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id][cause_of_death_in_labour]
+
+    # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id][cause_of_death_in_labour]
 
             logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
-                        'postpartum complications', individual_id,
+                         'postpartum complications', individual_id,
                          self.sim.date)
 
             logger.info('%s|maternal_death|%s', self.sim.date,
@@ -1483,7 +1478,6 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                         {'person_id': individual_id,
                          'labour_profile': complication_profile})
         else:
-            complication_profile = mni[individual_id]
             # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to false
             # TODO: Consider how best to deal with complications that are long lasting.
             self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id, cause='reset'),
@@ -1491,7 +1485,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
 
             logger.debug('%s|labour_complications|%s', self.sim.date,
                         {'person_id': individual_id,
-                         'labour_profile': complication_profile})
+                         'labour_profile': mni[individual_id]})
 
 
 class DisabilityResetEvent (Event, IndividualScopeEventMixin):
