@@ -199,7 +199,7 @@ class NewbornOutcomes(Module):
         df['nb_retinopathy_prem'].values[:] = 'none'
         df['nb_ongoing_impairment'].values[:] = 'none'
         df['nb_birth_weight'].values[:] = 'NBW'
-        df['nb_size_for_gestational_age'] = None
+        df['nb_size_for_gestational_age'].values[:] = 'AGA'
         df['nb_early_breastfeeding'] = False
         df['nb_kmc'] = False
         df['nb_death_after_birth'] = False
@@ -232,7 +232,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_retinopathy_prem'] = 'none'
         df.at[child_id, 'nb_ongoing_impairment'] = 'none'
         df.at[child_id, 'nb_birth_weight'] = 'NBW'
-        df.at[child_id, 'nb_size_for_gestational_age'] = None
+        df.at[child_id, 'nb_size_for_gestational_age'] = 'AGA'
         df.at[child_id, 'nb_early_breastfeeding'] = False
         df.at[child_id, 'nb_kmc'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
@@ -583,42 +583,36 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 
         # TODO: Currently death from preterm birth complications isnt handled here
         # TODO: will we treat unsuccessful BA and enceph as the same?
+        # tim h: use append to add cause of death to mni?
 
     # Here we look at all neonates who have experienced a complication that has been unsucessfully treated and apply
     # case fatality rates
 
-        if df.at[individual_id, 'nb_early_onset_neonatal_sepsis']:
-            random = self.module.rng.random_sample()
-            if random < params['cfr_neonatal_sepsis']:
+        def neonatal_death_following_delivery (rng, df, cause):
+            random = rng.random_sample()
+            if random < params[f'cfr_{cause}']:
                 df.at[individual_id, 'nb_death_after_birth'] = True
                 df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
 
-                logger.info(
-                    'Neonate %d has died from neonatal sepsis', individual_id)
+        if df.at[individual_id, 'nb_early_onset_neonatal_sepsis']:
+            neonatal_death_following_delivery(self.module.rng, df, 'neonatal_sepsis')
 
+        if (df.at[individual_id, 'nb_encephalopathy'] == 'mild_enceph') or \
+            (df.at[individual_id, 'nb_encephalopathy'] == 'moderate_enceph'):
+            neonatal_death_following_delivery(self.module.rng, df, 'enceph_mild_mod')
+
+        if df.at[individual_id, 'nb_encephalopathy'] == 'severe_enceph':
+            neonatal_death_following_delivery(self.module.rng, df, 'enceph_severe')
+
+        # if df.at[individual_id, 'nb_respiratory_depression']:
+
+        # todo: do we not have cfr for resp depression
         if df.at[individual_id, 'nb_respiratory_depression']:
             random = self.module.rng.random_sample()
             if random > params['cfr_enceph_mild_mod']: #dummy
                 df.at[individual_id, 'nb_death_after_birth'] = True
                 df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
 
-        if (df.at[individual_id, 'nb_encephalopathy'] == 'mild_enceph') or\
-           (df.at[individual_id, 'nb_encephalopathy'] == 'moderate_enceph'):
-                random = self.module.rng.random_sample()
-                if random < params['cfr_enceph_mild_mod']:
-                    df.at[individual_id, 'nb_death_after_birth'] = True
-                    df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
-
-                    logger.info( 'Neonate %d has died from mild/moderate encephalopathy', individual_id)
-
-        if df.at[individual_id, 'nb_encephalopathy'] == 'severe_enceph':
-            random = self.module.rng.random_sample()
-            if random < params['cfr_enceph_severe']:
-                df.at[individual_id, 'nb_death_after_birth'] = True
-                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
-
-                logger.info(
-                    'Neonate %d has died from severe encephalopathy', individual_id)
 
 #        if df.at[individual_id, 'nb_congenital_anomaly']: # will this live here?
 #            random = self.module.rng.random_sample()
@@ -717,6 +711,10 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         )
         # TODO: Need to ensure not double counting consumables (i.e. chlorhexidine for cord care already included in
         #  delivery kit?)
+
+        # Todo: could this be a function?
+    #  def newborn_receives_prophylaxsis(nci,consumable_pkg,intervention):
+
 
 # ----------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------------------
 

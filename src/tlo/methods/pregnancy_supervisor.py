@@ -247,6 +247,8 @@ class PregnancySupervisor(Module):
         event = PregnancySupervisorLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
+#        self.sim.modules['HealthSystem'].register_disease_module(self)
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -288,25 +290,25 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
         params = self.parameters
 
-        one_month_prior = self.sim.date - pd.to_timedelta(1, unit='m')
+#        one_month_prior = self.sim.date - pd.to_timedelta(1, unit='m')
 
-        recent_abortion = df.index[df.is_alive & (df.am_total_induced_abortion == 1) &
-                               (df.am_date_most_recent_abortion > one_month_prior)]
+#        recent_abortion = df.index[df.is_alive & (df.ps_total_induced_abortion == 1) &
+#                               (df.ps_date_most_recent_abortion > one_month_prior)]
 
-        recent_miscarriage = df.index[df.is_alive & (df.am_total_miscarriages == 1) &
-                                  (df.am_date_most_recent_miscarriage > one_month_prior)]
+#        recent_miscarriage = df.index[df.is_alive & (df.ps_total_miscarriages == 1) &
+#                                  (df.ps_date_most_recent_miscarriage > one_month_prior)]
 
-        health_values_1 = df.loc[recent_abortion, 'ps_total_induced_abortion'].map(
-            {0: 0, 1: params['daly_wt_abortive_outcome']})
-        health_values_1.name = 'Induced Abortion'
+#        health_values_1 = df.loc[recent_abortion, 'ps_total_induced_abortion'].map(
+#            {0: 0, 1: params['daly_wt_abortive_outcome']})
+#        health_values_1.name = 'Induced Abortion'
 
-        health_values_2 = df.loc[recent_miscarriage, 'ps_total_miscarriages'].map(
-            {0: 0, 1: params['daly_wt_abortive_outcome']})
-        health_values_2.name = 'Spontaneous Miscarriage '
+#        health_values_2 = df.loc[recent_miscarriage, 'ps_total_miscarriages'].map(
+#            {0: 0, 1: params['daly_wt_abortive_outcome']})
+#        health_values_2.name = 'Spontaneous Miscarriage '
 
-        health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
+#        health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
 
-        return health_values_df
+#        return health_values_df
 
     # Todo: Have yet to confirm this runs as HealthBurden is not registered presently
 
