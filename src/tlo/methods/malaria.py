@@ -58,7 +58,7 @@ class Malaria(Module):
         'ma_date_infected': Property(
             Types.DATE, 'Date of latest infection'),
         'ma_date_symptoms': Property(
-            Types.DATE, 'Date of latest clinical infection'),
+            Types.DATE, 'Date of symptom start for clinical infection'),
         'ma_date_death': Property(
             Types.DATE, 'Date of scheduled death due to malaria'),
         'ma_tx': Property(Types.BOOL, 'Currently on anti-malarial treatment'),

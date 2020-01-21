@@ -198,6 +198,9 @@ class Hiv(Module):
         p['vl_monitoring_times'] = workbook['VL_monitoring']
         p['tb_high_risk_distr'] = workbook['IPTdistricts']
 
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -589,10 +592,6 @@ class Hiv(Module):
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivArtGoodToPoorAdherenceEvent(self), sim.date + DateOffset(months=12))
