@@ -178,6 +178,8 @@ class Tb(Module):
                                        'latent_mdr_tx', 'active_mdr_tx'],
                            description='tb status'),
         'tb_date_active': Property(Types.DATE, 'Date active tb started'),
+        'tb_date_symptoms': Property(
+            Types.DATE, 'Date of symptom start'),
         'tb_smear': Property(Types.BOOL, 'smear positivity with active infection'),
         'tb_date_latent': Property(Types.DATE, 'Date acquired tb infection (latent stage)'),
         'tb_ever_tb': Property(Types.BOOL, 'if ever had active drug-susceptible tb'),
@@ -206,9 +208,10 @@ class Tb(Module):
         'tb_symptoms': Property(Types.BOOL, 'tb-like symptoms present')
     }
 
+    # cough and fever are part of generic symptoms
     SYMPTOMS = {
-        'chronic_cough',
-        'chronic_fever'
+        'fatigue',
+        'night_sweats'
     }
 
     def read_parameters(self, data_folder):
@@ -252,6 +255,9 @@ class Tb(Module):
             p['daly_wt_resistant_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 11)  # Multidrug resistant Tuberculosis, HIV infected and anemia, mild
 
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -262,6 +268,7 @@ class Tb(Module):
         # set-up baseline population
         df['tb_inf'].values[:] = 'uninfected'
         df['tb_date_active'] = pd.NaT
+        df['tb_date_symptoms'] = pd.NaT
         df['tb_smear'] = False
         df['tb_date_latent'] = pd.NaT
 
@@ -450,11 +457,6 @@ class Tb(Module):
         # Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ HEALTH SYSTEM ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         """
@@ -463,6 +465,7 @@ class Tb(Module):
 
         df.at[child_id, 'tb_inf'] = 'uninfected'
         df.at[child_id, 'tb_date_active'] = pd.NaT
+        df.at[child_id, 'tb_date_symptoms'] = pd.NaT
         df.at[child_id, 'tb_smear'] = False
         df.at[child_id, 'tb_date_latent'] = pd.NaT
         df.at[child_id, 'tb_ever_tb'] = False
@@ -816,6 +819,28 @@ class NonTbSymptomsEvent(RegularEvent, PopulationScopeEventMixin):
 
         # schedule tb screening and test
         if len(test_non_tb):
+
+            # ----------------------------------- SYMPTOMS -----------------------------------
+            # ACTIVE CASES - smear positive and smear negative
+
+            df.loc[test_non_tb, 'tb_date_symptoms'] = self.sim.date
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=test_non_tb,
+                symptom_string='fever',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=None)
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=test_non_tb,
+                symptom_string='respiratory_symptoms',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=None)
+
+            # ----------------------------------- SCHEDULE TB SCREENING -----------------------------------
+
             for person in test_non_tb:
                 logger.debug('This is NonTbSymptomsEvent, scheduling HSI_Tb_Screening for person %d', person)
 
@@ -859,12 +884,42 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
             elif (df.at[person_id, 'hv_inf'] == False) & (rng.rand() < params['prop_smear_positive']):
                 df.at[person_id, 'tb_smear'] = True
 
-            # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
+            # ----------------------------------- SYMPTOMS -----------------------------------
+            # ACTIVE CASES - smear positive and smear negative
 
-            # for each person determine whether they will seek care on symptom change
-            # prob_care = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+            df.at[person_id, 'tb_date_symptoms'] = now
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string='fever',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=None)
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string='respiratory_symptoms',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=None)
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string='fatigue',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=None)
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string='night_sweats',
+                add_or_remove='+',
+                disease_module=self,
+                duration_in_days=None)
+
+            # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
+            # TODO leave this in here for now until diagnostic algorithm updated
             # TODO: calibrate / input these data from MOH reports
-            # this will be removed once healthcare seeking model is in place
             prob_care = 0.47
             if now.year == 2013:
                 prob_care = 0.44
@@ -975,10 +1030,68 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'] = True
 
+        all_relapse = pd.concat(relapse_tx_complete, relapse_tx_incomplete, relapse_tx_2yrs)
+
+        # ----------------------------------- SYMPTOMS -----------------------------------
+        df.loc[all_relapse, 'tb_date_symptoms'] = now
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=all_relapse,
+            symptom_string='fever',
+            add_or_remove='+',
+            disease_module=self,
+            duration_in_days=None)
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=all_relapse,
+            symptom_string='respiratory_symptoms',
+            add_or_remove='+',
+            disease_module=self,
+            duration_in_days=None)
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=all_relapse,
+            symptom_string='fatigue',
+            add_or_remove='+',
+            disease_module=self,
+            duration_in_days=None)
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=all_relapse,
+            symptom_string='night_sweats',
+            add_or_remove='+',
+            disease_module=self,
+            duration_in_days=None)
+
         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
         # relapse after complete treatment course - refer for xpert testing
         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_complete].index)
         for i in df.loc[relapse_tx_complete].index:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+            seeks_care[i] = rng.rand() < prob
+
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care]:
+                logger.debug(
+                    'This is TbRelapseEvent, scheduling HSI_Tb_XpertTest for person %d',
+                    person_index)
+                event = HSI_Tb_XpertTest(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=2,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(weeks=2)
+                                                                    )
+
+                # add back-up check if xpert is not available, then schedule sputum smear
+                self.sim.schedule_event(TbCheckXpert(self.module, person_index), self.sim.date + DateOffset(weeks=2))
+
+        else:
+            logger.debug(
+                'This is TbRelapseEvent, there are no new relapse cases seeking care')
+
+        # relapse after 2 years - refer for xpert testing
+        seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_2yrs].index)
+        for i in df.loc[relapse_tx_2yrs].index:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
             seeks_care[i] = rng.rand() < prob
 
@@ -1105,7 +1218,6 @@ class TbCheckXray(Event, IndividualScopeEventMixin):
                                                                 )
 
 
-# TODO change this to multiplier for hiv-TB
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb self-cure events
     """
@@ -1120,7 +1232,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-        # self-cure - move from active to latent, make sure it's not the ones that just became active
+        # self-cure - move from active to latent, excludes cases that just became active
         random_draw = rng.random_sample(size=len(df))
 
         # hiv-negative
@@ -1132,20 +1244,30 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, not on art
-        self_cure = df[
+        self_cure_hiv = df[
             df['tb_inf'].str.contains('active_susc') & df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure_hiv'])].index
-        df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
-        df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_symptoms'] = False
+        df.loc[self_cure_hiv, 'tb_inf'] = 'latent_susc_new'
+        df.loc[self_cure_hiv, 'tb_stage'] = 'latent'
+        df.loc[self_cure_hiv, 'tb_symptoms'] = False
 
         # hiv-positive, on art
-        self_cure = df[
+        self_cure_art = df[
             df['tb_inf'].str.contains('active_susc') & df.is_alive & df.hv_inf & (df.hv_on_art == 2) & (
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
-        df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
-        df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_symptoms'] = False
+        df.loc[self_cure_art, 'tb_inf'] = 'latent_susc_new'
+        df.loc[self_cure_art, 'tb_stage'] = 'latent'
+        df.loc[self_cure_art, 'tb_symptoms'] = False
+
+        # check that tb symptoms are present and caused by tb before resolving
+        all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
+        for person_id in all_self_cure:
+            if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
+                'Tb' in self.sim.modules['SymptomManager'].causes_of(person_id, 'respiratory_symptoms')):
+                # this will clear all tb symptoms
+                self.sim.modules['SymptomManager'].clear_symptoms(
+                    person_id=person_id,
+                    disease_module=self.module)
 
 
 # ---------------------------------------------------------------------------
@@ -1557,7 +1679,6 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                 'This is TbMdrRelapseEvent, there are no new relapse cases seeking care')
 
 
-# TODO change this to multiplier for hiv-TB
 class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb-mdr self-cure events
     """
@@ -1583,20 +1704,30 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, not on art
-        self_cure = df[
+        self_cure_hiv = df[
             df['tb_inf'].str.contains('active_mdr') & df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure_hiv'])].index
-        df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
-        df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_symptoms'] = False
+        df.loc[self_cure_hiv, 'tb_inf'] = 'latent_susc_new'
+        df.loc[self_cure_hiv, 'tb_stage'] = 'latent'
+        df.loc[self_cure_hiv, 'tb_symptoms'] = False
 
         # hiv-positive, on art
-        self_cure = df[
+        self_cure_art = df[
             df['tb_inf'].str.contains('active_mdr') & df.is_alive & df.hv_inf & (df.hv_on_art == 2) & (
                 df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
-        df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
-        df.loc[self_cure, 'tb_stage'] = 'latent'
-        df.loc[self_cure, 'tb_symptoms'] = False
+        df.loc[self_cure_art, 'tb_inf'] = 'latent_susc_new'
+        df.loc[self_cure_art, 'tb_stage'] = 'latent'
+        df.loc[self_cure_art, 'tb_symptoms'] = False
+
+        # check that tb symptoms are present and caused by tb before resolving
+        all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
+        for person_id in all_self_cure:
+            if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
+                'Tb' in self.sim.modules['SymptomManager'].causes_of(person_id, 'respiratory_symptoms')):
+                # this will clear all tb symptoms
+                self.sim.modules['SymptomManager'].clear_symptoms(
+                    person_id=person_id,
+                    disease_module=self.module)
 
 
 # ---------------------------------------------------------------------------
@@ -2855,6 +2986,13 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_symptoms'] = False
             df.at[person_id, 'tb_smear'] = False
 
+            # check that tb symptoms are present and caused by tb before resolving
+            if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
+                'Tb' in self.sim.modules['SymptomManager'].causes_of(person_id, 'respiratory_symptoms')):
+                # this will clear all tb symptoms
+                self.sim.modules['SymptomManager'].clear_symptoms(
+                    person_id=person_id,
+                    disease_module=self.module)
 
         else:
             df.at[person_id, 'tb_treatment_failure'] = True
@@ -2894,6 +3032,14 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_treatment_failure'] = False
             df.at[person_id, 'tb_symptoms'] = False
             df.at[person_id, 'tb_smear'] = False
+
+            # check that tb symptoms are present and caused by tb before resolving
+            if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
+                'Tb' in self.sim.modules['SymptomManager'].causes_of(person_id, 'respiratory_symptoms')):
+                # this will clear all tb symptoms
+                self.sim.modules['SymptomManager'].clear_symptoms(
+                    person_id=person_id,
+                    disease_module=self.module)
 
         else:
             df.at[person_id, 'tb_treatment_failure'] = True
