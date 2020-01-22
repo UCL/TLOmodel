@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
@@ -304,13 +305,6 @@ def test_logisitc_HSB_example():
     # 1) load a df from a csv file that has is a 'freeze-frame' of for sim.population.props
     #   (This has lots of randomly added symptoms)
     df_file = Path(os.path.dirname(__file__)) / 'resources' / 'df_at_healthcareseeking.csv'
-
-    # # to delete --- just for console running during development
-    import pandas as pd
-    import numpy as np
-    from tlo.lm import LinearModel, LinearModelType, Predictor
-    df_file = 'tests/resources/df_at_healthcareseeking.csv'
-    # # ----
 
     df = pd.read_csv(df_file)
     df.set_index('person', inplace=True, drop=True)
