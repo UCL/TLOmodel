@@ -134,6 +134,8 @@ class Hiv(Module):
     PROPERTIES = {
         'hv_inf': Property(Types.BOOL, 'hiv status'),
         'hv_date_inf': Property(Types.DATE, 'Date acquired hiv infection'),
+        'hv_date_symptoms': Property(
+            Types.DATE, 'Date of symptom start'),
         'hv_proj_date_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'hv_sexual_risk': Property(Types.CATEGORICAL, 'Sexual risk groups',
                                    categories=['low', 'sex_work']),
@@ -160,8 +162,8 @@ class Hiv(Module):
     }
 
     SYMPTOMS = {
-        'wasting',
-        'fatigue'
+        'hiv_symptoms',
+        'aids_symptoms'
     }
 
     def read_parameters(self, data_folder):
@@ -208,6 +210,7 @@ class Hiv(Module):
 
         df['hv_inf'] = False
         df['hv_date_inf'] = pd.NaT
+        df['hv_date_symptoms'] = pd.NaT
         df['hv_proj_date_death'] = pd.NaT
         df['hv_sexual_risk'].values[:] = 'low'
         df['hv_mother_inf_by_birth'] = False
@@ -645,6 +648,7 @@ class Hiv(Module):
         # default settings
         df.at[child_id, 'hv_inf'] = False
         df.at[child_id, 'hv_date_inf'] = pd.NaT
+        df.at[child_id, 'hv_date_symptoms'] = pd.NaT
         df.at[child_id, 'hv_proj_date_death'] = pd.NaT
         df.at[child_id, 'hv_sexual_risk'] = 'low'
         df.at[child_id, 'hv_mother_inf_by_birth'] = False
@@ -989,10 +993,16 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         # check they're not on art now
-        # TODO is on_art T/F or value=0?
-        if not df.at[person_id, 'hv_on_art']:
+        if df.at[person_id, 'hv_on_art'] == 0:
             logger.debug("Scheduling symptom onset for person %d", person_id)
             df.at[person_id, 'hv_specific_symptoms'] = 'symp'
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string='hiv_symptoms',
+                add_or_remove='+',
+                disease_module=self.module,
+                duration_in_days=None)
 
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
             prob = 1.0  # Do not use get_prob_seek_care()
@@ -1028,6 +1038,13 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
 
             df.at[person_id, 'hv_specific_symptoms'] = 'aids'
 
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string='aids_symptoms',
+                add_or_remove='+',
+                disease_module=self.sim.modules['Hiv'],
+                duration_in_days=None)
+
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
             prob = 0.5  # NB. Do not use get_prob_seek_care(). For non-generic symptoms do inside the module.
             seeks_care = self.module.rng.random_sample() < prob
@@ -1036,7 +1053,7 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
                 logger.debug(
                     'This is HivAidsEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
                     person_id)
-                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
+                event = HSI_Hiv_PresentsForCareWithSymptoms(self.sim.modules['Hiv'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=2,
                                                                     topen=self.sim.date,
@@ -1448,7 +1465,7 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
+class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)

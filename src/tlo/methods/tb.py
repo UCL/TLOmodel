@@ -826,17 +826,17 @@ class NonTbSymptomsEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[test_non_tb, 'tb_date_symptoms'] = self.sim.date
 
             self.sim.modules['SymptomManager'].change_symptom(
-                person_id=test_non_tb,
+                person_id=list(test_non_tb),
                 symptom_string='fever',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
                 duration_in_days=None)
 
             self.sim.modules['SymptomManager'].change_symptom(
-                person_id=test_non_tb,
+                person_id=list(test_non_tb),
                 symptom_string='respiratory_symptoms',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
                 duration_in_days=None)
 
             # ----------------------------------- SCHEDULE TB SCREENING -----------------------------------
@@ -871,9 +871,9 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
             # check if new infection or re-infection
             # latent_susc_new or latent_susc_tx
-            if (df.at[person_id, 'tb_inf'] == 'latent_susc_new'):
+            if df.at[person_id, 'tb_inf'] == 'latent_susc_new':
                 df.at[person_id, 'tb_inf'] = 'active_susc_new'
-            elif (df.at[person_id, 'tb_inf'] == 'latent_susc_tx'):
+            elif df.at[person_id, 'tb_inf'] == 'latent_susc_tx':
                 df.at[person_id, 'tb_inf'] = 'active_susc_tx'
 
             # decide smear positive / negative
@@ -893,28 +893,28 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
                 person_id=person_id,
                 symptom_string='fever',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
                 duration_in_days=None)
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=person_id,
                 symptom_string='respiratory_symptoms',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
                 duration_in_days=None)
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=person_id,
                 symptom_string='fatigue',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
                 duration_in_days=None)
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=person_id,
                 symptom_string='night_sweats',
                 add_or_remove='+',
-                disease_module=self,
+                disease_module=self.module,
                 duration_in_days=None)
 
             # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
@@ -1030,37 +1030,38 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'] = True
 
-        all_relapse = pd.concat(relapse_tx_complete, relapse_tx_incomplete, relapse_tx_2yrs)
+        all_relapse = relapse_tx_complete.append(relapse_tx_incomplete)
+        all_relapse = all_relapse.append(relapse_tx_2yrs)
 
         # ----------------------------------- SYMPTOMS -----------------------------------
         df.loc[all_relapse, 'tb_date_symptoms'] = now
 
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=all_relapse,
+            person_id=list(all_relapse),
             symptom_string='fever',
             add_or_remove='+',
-            disease_module=self,
+            disease_module=self.module,
             duration_in_days=None)
 
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=all_relapse,
+            person_id=list(all_relapse),
             symptom_string='respiratory_symptoms',
             add_or_remove='+',
-            disease_module=self,
+            disease_module=self.module,
             duration_in_days=None)
 
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=all_relapse,
+            person_id=list(all_relapse),
             symptom_string='fatigue',
             add_or_remove='+',
-            disease_module=self,
+            disease_module=self.module,
             duration_in_days=None)
 
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=all_relapse,
+            person_id=list(all_relapse),
             symptom_string='night_sweats',
             add_or_remove='+',
-            disease_module=self,
+            disease_module=self.module,
             duration_in_days=None)
 
         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
@@ -1260,7 +1261,9 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure_art, 'tb_symptoms'] = False
 
         # check that tb symptoms are present and caused by tb before resolving
-        all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
+        # all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
+        all_self_cure = self_cure + self_cure_hiv + self_cure_art
+
         for person_id in all_self_cure:
             if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
                 'Tb' in self.sim.modules['SymptomManager'].causes_of(person_id, 'respiratory_symptoms')):
@@ -1618,6 +1621,40 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'] = True
 
+        all_relapse = relapse_tx_complete.append(relapse_tx_incomplete)
+        all_relapse = all_relapse.append(relapse_tx_2yrs)
+
+        # ----------------------------------- SYMPTOMS -----------------------------------
+        df.loc[all_relapse, 'tb_date_symptoms'] = now
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=list(all_relapse),
+            symptom_string='fever',
+            add_or_remove='+',
+            disease_module=self.module,
+            duration_in_days=None)
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=list(all_relapse),
+            symptom_string='respiratory_symptoms',
+            add_or_remove='+',
+            disease_module=self.module,
+            duration_in_days=None)
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=list(all_relapse),
+            symptom_string='fatigue',
+            add_or_remove='+',
+            disease_module=self.module,
+            duration_in_days=None)
+
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=list(all_relapse),
+            symptom_string='night_sweats',
+            add_or_remove='+',
+            disease_module=self.module,
+            duration_in_days=None)
+
         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
 
         # relapse after complete treatment course - refer for xpert testing
@@ -1720,7 +1757,9 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure_art, 'tb_symptoms'] = False
 
         # check that tb symptoms are present and caused by tb before resolving
-        all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
+        # all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
+        all_self_cure = self_cure + self_cure_hiv + self_cure_art
+
         for person_id in all_self_cure:
             if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
                 'Tb' in self.sim.modules['SymptomManager'].causes_of(person_id, 'respiratory_symptoms')):
@@ -1755,7 +1794,7 @@ class HSI_Tb_Screening(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Screening'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = ['Hiv']
 
     def apply(self, person_id, squeeze_factor):
@@ -1836,7 +1875,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_SputumTest'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = ['Hiv']
 
     def apply(self, person_id, squeeze_factor):
@@ -2322,7 +2361,7 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_TreatmentInitiationAdult'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2457,7 +2496,7 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_TreatmentInitiationChild'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2682,7 +2721,7 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_RetreatmentAdult'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2772,7 +2811,7 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_RetreatmentChild'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2865,7 +2904,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_FollowUp'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -2876,7 +2915,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Tb_FollowUp_SputumTest(Event, IndividualScopeEventMixin):
+class HSI_Tb_FollowUp_SputumTest(HSI_Event, IndividualScopeEventMixin):
     """
     This is a follow-up sputum test for confirmed tb cases
     doesn't change any properties except for date latest sputum test
@@ -2894,7 +2933,7 @@ class HSI_Tb_FollowUp_SputumTest(Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_FollowUpSputumTest'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -3077,7 +3116,7 @@ class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Ipt'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -3129,7 +3168,7 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_IptHiv'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

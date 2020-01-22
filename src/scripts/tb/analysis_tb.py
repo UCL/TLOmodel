@@ -16,8 +16,11 @@ from tlo.methods import (
     hiv,
     enhanced_lifestyle,
     malecircumcision,
-    tb
+    tb,
+    symptommanager
 )
+
+# TODO: this sim includes symptom manager. Include dx_algorithm once it is updated by Tim
 
 start_time = time.time()
 
@@ -32,8 +35,8 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 12, 31)
-popsize = 5000
+end_date = Date(2025, 12, 31)
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -58,7 +61,11 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=0,
-                                       capabilities_coefficient=1.0))
+                                       ignore_cons_constraints=True,
+                                       ignore_priority=True,
+                                       capabilities_coefficient=1.0,
+                                       disable=True))  # disables the health system constraints so all HSI events run
+sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
@@ -76,7 +83,7 @@ logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
 # Run the simulation and flush the logger
-sim.seed_rngs(10)
+sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()

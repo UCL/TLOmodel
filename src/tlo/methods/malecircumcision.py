@@ -19,7 +19,7 @@ class MaleCircumcision(Module):
     male circumcision, without health system links
     """
 
-    def __init__(self, name=None, resourcefilepath=None, par_est5=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
@@ -53,9 +53,7 @@ class MaleCircumcision(Module):
         params = self.parameters
         params['circ_coverage'] = workbook['circumcision']
 
-        params['param_list'] = workbook['parameters']
-        self.param_list.set_index("Parameter", inplace=True)
-        params['prop_muslim'] = self.param_list.loc['prop_muslim', 'Value1']
+        params['prop_muslim'] = 0.15
 
         params['daly_wt_circumcision'] = 0
 
@@ -202,9 +200,6 @@ class HSI_Circumcision_PresentsForCare(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props  # shortcut to the dataframe
 
-        df.at[person_id, 'mc_is_circumcised'] = True
-        df.at[person_id, 'mc_date_circumcised'] = self.sim.date
-
         # log the consumbales being used:
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -216,7 +211,10 @@ class HSI_Circumcision_PresentsForCare(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=the_cons_footprint
         )
-        logger.warning(f'is_cons_available ({is_cons_available}) should be used in this method')
+
+        if is_cons_available:
+            df.at[person_id, 'mc_is_circumcised'] = True
+            df.at[person_id, 'mc_date_circumcised'] = self.sim.date
 
     def did_not_run(self):
         pass
