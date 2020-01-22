@@ -313,7 +313,7 @@ def test_logisitc_HSB_example():
     # nb. In the code this is done for one individual, so looping through individual to get a good range
     # f is the odds
 
-    prob_seeking_care = pd.Series(index = df.index)
+    prob_seeking_care = pd.Series(index=df.index)
     for i in df.index:
         person_profile = df.loc[i]
         f = 3.237729            # 'Constant' term from STATA is the baseline odds.
@@ -327,7 +327,7 @@ def test_logisitc_HSB_example():
             f *= 0.67
 
         # Urban/Rural residence
-        if person_profile['li_urban'] == False:
+        if not person_profile['li_urban']:
             f *= 1.00
         else:
             f *= 1.63
@@ -339,44 +339,44 @@ def test_logisitc_HSB_example():
             f *= 1.19
 
         # Age (NB. This is made to a continuous variable for the purposing of testing: do not use for sims!)
-        f *= (0.99 * (5 + np.power(person_profile['age_years'],2)))
+        f *= (0.99 * (5 + np.power(person_profile['age_years'], 2)))
 
         # Year (NB. This is included so as to test the use of external variables: do not use for sims!)
         year = 2015
         f *= (0.95 * (year - 2010))
 
         # Symptoms (testing for empty or non-empty set) - (can have more than one)
-        if person_profile['sy_fever']!='set()':
+        if person_profile['sy_fever'] != 'set()':
             f *= 1.86
 
-        if person_profile['sy_vomiting']!='set()':
+        if person_profile['sy_vomiting'] != 'set()':
             f *= 1.28
 
-        if (person_profile['sy_stomachache']!='set()') or (person_profile['sy_diarrhoea']!='set()'):
+        if (person_profile['sy_stomachache'] != 'set()') or (person_profile['sy_diarrhoea'] != 'set()'):
             f *= 0.76
 
-        if person_profile['sy_sore_throat']!='set()':
+        if person_profile['sy_sore_throat'] != 'set()':
             f *= 0.89
 
-        if person_profile['sy_respiratory_symptoms']!='set()':
+        if person_profile['sy_respiratory_symptoms'] != 'set()':
             f *= 0.71
 
-        if person_profile['sy_headache']!='set()':
+        if person_profile['sy_headache'] != 'set()':
             f *= 0.52
 
-        if person_profile['sy_skin_complaint']!='set()':
+        if person_profile['sy_skin_complaint'] != 'set()':
             f *= 2.31
 
-        if person_profile['sy_dental_complaint']!='set()':
+        if person_profile['sy_dental_complaint'] != 'set()':
             f *= 0.94
 
-        if person_profile['sy_backache']!='set()':
+        if person_profile['sy_backache'] != 'set()':
             f *= 1.01
 
-        if person_profile['sy_injury']!='set()':
+        if person_profile['sy_injury'] != 'set()':
             f *= 1.02
 
-        if person_profile['sy_eye_complaint']!='set()':
+        if person_profile['sy_eye_complaint'] != 'set()':
             f *= 1.33
         #
         # convert into a probability of seeking care:
@@ -393,20 +393,19 @@ def test_logisitc_HSB_example():
         Predictor('sex').when('F', 1.19),
         Predictor('age_years').apply(lambda age_years: (5 + np.power(age_years, 2)) * 0.99),
         Predictor('year', external=True).apply(lambda year: 0.95 * (year - 2010)),
-        Predictor().when('sy_fever!="set()"', 1.86),
-        Predictor().when('sy_vomiting!="set()"', 1.28),
-        Predictor().when('(sy_stomachache!="set()") or (sy_diarrhoea!="set()")', 0.76),
-        Predictor().when('sy_sore_throat!="set()"', 0.89),
-        Predictor().when('sy_respiratory_symptoms!="set()"', 0.71),
-        Predictor().when('sy_headache!="set()"', 0.52),
-        Predictor().when('sy_skin_complaint!="set()"', 2.31),
-        Predictor().when('sy_dental_complaint!="set()"', 0.94),
-        Predictor().when('sy_backache!="set()"', 1.01),
-        Predictor().when('sy_injury!="set()"', 1.02),
-        Predictor().when('sy_eye_complaint!="set()"', 1.33)
+        Predictor().when('sy_fever != "set()"', 1.86),
+        Predictor().when('sy_vomiting != "set()"', 1.28),
+        Predictor().when('(sy_stomachache != "set()") or (sy_diarrhoea != "set()")', 0.76),
+        Predictor().when('sy_sore_throat != "set()"', 0.89),
+        Predictor().when('sy_respiratory_symptoms != "set()"', 0.71),
+        Predictor().when('sy_headache != "set()"', 0.52),
+        Predictor().when('sy_skin_complaint != "set()"', 2.31),
+        Predictor().when('sy_dental_complaint != "set()"', 0.94),
+        Predictor().when('sy_backache != "set()"', 1.01),
+        Predictor().when('sy_injury != "set()"', 1.02),
+        Predictor().when('sy_eye_complaint != "set()"', 1.33)
     )
 
     prob_seeking_care_lm = lm.predict(df, year=2015)
 
     assert prob_seeking_care_lm.equals(prob_seeking_care)
-
