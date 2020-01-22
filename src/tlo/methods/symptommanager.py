@@ -68,8 +68,15 @@ class SymptomManager(Module):
         """
         Give all individuals the no symptoms (ie. an empty set)
         """
-        for symptom_var in self.symptom_column_names:
-            population.props[symptom_var].values[:] = set()
+        # for symptom_var in self.symptom_column_names:
+        #     population.props[symptom_var].values[:] = set()
+
+        # ** Doing it this way, leads to correct behaviour (see test)
+        # (The way above leads to incorrect behaviour because it seems to be pointers to the *same* set object that
+        #  is copied to all the columns)
+        for person_id in list(population.props.index):
+            for symptom_var in self.symptom_column_names:
+                population.props.at[person_id, symptom_var] = set()
 
     def initialise_simulation(self, sim):
         pass
@@ -140,7 +147,9 @@ class SymptomManager(Module):
         # Make the operation:
         if add_or_remove == '+':
             # Add this disease module as a cause of this symptom
-            df.loc[person_id, symptom_var_name].apply(lambda x: x.add(disease_module.name))
+
+            _ = df.loc[person_id, symptom_var_name].apply(lambda x: x.add(disease_module.name))
+
             self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
@@ -157,7 +166,7 @@ class SymptomManager(Module):
             assert df.loc[person_id, symptom_var_name].apply(lambda x: (disease_module.name in x)).all(), (
                 'Error - request from disease module to remove a symptom that it has not caused. ')
 
-            df.loc[person_id, symptom_var_name].apply(lambda x: x.remove(disease_module.name))
+            _ = df.loc[person_id, symptom_var_name].apply(lambda x: x.remove(disease_module.name))
 
     def who_has(self, list_of_symptoms):
         """
@@ -181,9 +190,9 @@ class SymptomManager(Module):
         # get the person_id for those who have each symptom
         df = self.sim.population.props
         symptom_columns = [f'sy_{col}' for col in list_of_symptoms]
-        people_with_all_symptoms = df.loc[df.is_alive, symptom_columns].applymap(lambda x: x != set()).all(axis=1).index
+        people_with_all_symptoms_mask = df.loc[df.is_alive, symptom_columns].applymap(lambda x: x != set()).all(axis=1)
 
-        return list(people_with_all_symptoms)
+        return list(people_with_all_symptoms_mask[people_with_all_symptoms_mask].index)
 
     def has_what(self, person_id, disease_module=None):
         """
@@ -229,6 +238,7 @@ class SymptomManager(Module):
         """
         df = self.sim.population.props
 
+        assert not isinstance(person_id, list), "person_id should be for one person only"
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert symptom_string in self.all_registered_symptoms
 
@@ -244,6 +254,7 @@ class SymptomManager(Module):
         """
         df = self.sim.population.props
 
+        assert not isinstance(person_id, list), "person_id should be for one person only"
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values(), \
             "Disease Module Name is not recognised"
