@@ -133,7 +133,7 @@ class ChronicSyndrome(Module):
                 self.rng.rand(len(person_id_all_with_cs)) < self.parameters['prob_of_symptoms'][symp]
             ]
 
-            self.sim.modules['SymptomManager'].chg_symptom(
+            self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(persons_id_with_symp),
                 symptom_string=symp,
                 add_or_remove='+',
@@ -303,7 +303,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                     self.module.rng.rand(len(newcases_idx)) < self.module.parameters['prob_of_symptoms'][symp]
                 ]
 
-                self.sim.modules['SymptomManager'].chg_symptom(
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(persons_id_with_symp),
                     symptom_string=symp,
                     add_or_remove='+',
@@ -319,7 +319,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             < p['prob_dev_severe_symptoms_per_year'] / 12
         become_severe_idx = np.array(curr_cs_but_not_craving_sandwiches)[become_severe]
 
-        self.sim.modules['SymptomManager'].chg_symptom(
+        self.sim.modules['SymptomManager'].change_symptom(
             person_id=list(become_severe_idx),
             symptom_string='em_craving_sandwiches',
             add_or_remove='+',

@@ -284,6 +284,15 @@ class Module:
         """
         raise NotImplementedError
 
+    def pre_initialise_population(self):
+        """Carry out any work before any populations have been initalised
+
+        This optional method allows access to all other registered modules, before any of
+        the modules have initialised a population. This is expected to be useful for
+        when a module's properties rely upon information from other modules.
+        """
+        pass
+
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
 

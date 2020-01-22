@@ -452,8 +452,9 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    # manually setting smaller values to decrease runtime (logfile size)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
     # read the results
