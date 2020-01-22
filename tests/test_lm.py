@@ -164,18 +164,19 @@ def test_multiple_external_variables():
         0.0,
         Predictor('region_of_residence').when('Northern', 100).otherwise(200),
         Predictor('tens_digit', external=True).when('a', 10).when('b', 20).otherwise(30),
-        Predictor('units_digit', external=True).when('x', 1).when('y', 2).otherwise(3)
+        Predictor('units_digit', external=True).when('x', 4).when('y', 5).otherwise(6)
     )
 
+    def get_digit(n, i):
+        return n // 10**i % 10
+
     output = eq.predict(EXAMPLE_DF, tens_digit='a', units_digit='z')
-    result = output.astype(int).astype(str)
-    assert (result.str.get(1) == '1').all()
-    assert (result.str.get(2) == '3').all()
+    assert (get_digit(output, 1) == 1).all()
+    assert (get_digit(output, 0) == 6).all()
 
     output = eq.predict(EXAMPLE_DF, tens_digit='b', units_digit='y')
-    result = output.astype(int).astype(str)
-    assert (result.str.get(1) == '2').all()
-    assert (result.str.get(2) == '2').all()
+    assert (get_digit(output, 1) == 2).all()
+    assert (get_digit(output, 0) == 5).all()
 
 
 def test_callback_value():
