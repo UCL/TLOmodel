@@ -338,7 +338,7 @@ def test_logisitc_HSB_example():
             f *= 1.19
 
         # Age (NB. This is made to a continuous variable for the purposing of testing: do not use for sims!)
-        f *= (0.99 * (5 + np.power(person_profile['age_years'], 2)))
+        f *= (0.99 * (5 + person_profile['age_years']**2))
 
         # Year (NB. This is included so as to test the use of external variables: do not use for sims!)
         year = 2015
@@ -390,7 +390,7 @@ def test_logisitc_HSB_example():
                                         .when('Southern', 0.67),
         Predictor('li_urban').when(True, 1.63),
         Predictor('sex').when('F', 1.19),
-        Predictor('age_years').apply(lambda age_years: (5 + np.power(age_years, 2)) * 0.99),
+        Predictor('age_years').apply(lambda age_years: (5 + age_years**2) * 0.99),
         Predictor('year', external=True).apply(lambda year: 0.95 * (year - 2010)),
         Predictor('sy_fever').when('!= "set()"', 1.86),
         Predictor('sy_vomiting').when('!= "set()"', 1.28),
