@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
@@ -393,17 +392,17 @@ def test_logisitc_HSB_example():
         Predictor('sex').when('F', 1.19),
         Predictor('age_years').apply(lambda age_years: (5 + np.power(age_years, 2)) * 0.99),
         Predictor('year', external=True).apply(lambda year: 0.95 * (year - 2010)),
-        Predictor().when('sy_fever != "set()"', 1.86),
-        Predictor().when('sy_vomiting != "set()"', 1.28),
-        Predictor().when('(sy_stomachache != "set()") or (sy_diarrhoea != "set()")', 0.76),
-        Predictor().when('sy_sore_throat != "set()"', 0.89),
-        Predictor().when('sy_respiratory_symptoms != "set()"', 0.71),
-        Predictor().when('sy_headache != "set()"', 0.52),
-        Predictor().when('sy_skin_complaint != "set()"', 2.31),
-        Predictor().when('sy_dental_complaint != "set()"', 0.94),
-        Predictor().when('sy_backache != "set()"', 1.01),
-        Predictor().when('sy_injury != "set()"', 1.02),
-        Predictor().when('sy_eye_complaint != "set()"', 1.33)
+        Predictor('sy_fever').when('!= "set()"', 1.86),
+        Predictor('sy_vomiting').when('!= "set()"', 1.28),
+        Predictor('sy_sore_throat').when('!= "set()"', 0.89),
+        Predictor('sy_respiratory_symptoms').when('!= "set()"', 0.71),
+        Predictor('sy_headache').when('!= "set()"', 0.52),
+        Predictor('sy_skin_complaint').when('!= "set()"', 2.31),
+        Predictor('sy_dental_complaint').when('!= "set()"', 0.94),
+        Predictor('sy_backache').when('!= "set()"', 1.01),
+        Predictor('sy_injury').when('!= "set()"', 1.02),
+        Predictor('sy_eye_complaint').when('!= "set()"', 1.33),
+        Predictor().when('(sy_stomachache != "set()") | (sy_diarrhoea != "set()")', 0.76)
     )
 
     prob_seeking_care_lm = lm.predict(df, year=2015)

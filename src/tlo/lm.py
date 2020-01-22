@@ -57,7 +57,7 @@ class Predictor(object):
         # Otherwise, the condition is applied on a specific property
         if isinstance(condition, str):
             # Handle either a complex condition (begins with an operator) or implicit equality
-            if condition[0] in ['=', '<', '>', '~', '(', '.']:
+            if condition[0] in ['!', '=', '<', '>', '~', '(', '.']:
                 parsed_condition = f'({self.property_name}{condition})'
             else:
                 # numeric values don't need to be quoted
