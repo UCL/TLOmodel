@@ -148,7 +148,7 @@ class LinearModel(object):
         assert lm_type in LinearModelType, 'Model should be one of the prescribed LinearModelTypes'
         self.lm_type = lm_type
 
-        assert isinstance(intercept, float) or isinstance(intercept, int), "Intercept is not specified or wrong type."
+        assert isinstance(intercept, (float, int)), "Intercept is not specified or wrong type."
         self.intercept = intercept
 
         self.predictors = list()
