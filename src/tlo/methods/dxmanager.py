@@ -8,15 +8,11 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 
-# ---------------------------------------------------------------------------------------------------------
-#   MODULE DEFINITIONS
-# ---------------------------------------------------------------------------------------------------------
-
 class DxManager:
     """
     The is the Diagnostic Tests Manager (DxManager).
     It simplifies the process of conducting diagnostic tests on a person.
-    It can store and then apply Diagnostic Tests (DxTest) and return the result
+    It can store and then apply Diagnostic Tests (DxTest) and return the result.
     """
 
     def __init__(self):
@@ -24,7 +20,6 @@ class DxManager:
         print()
         print('DxManager initiated')
         #TODO: should accept a rng
-
         pass
 
     def register_dx_test(self, **kwargs):
@@ -40,11 +35,9 @@ class DxManager:
             assert isinstance(value, DxTest), f'Object is not a DxTest object: {value}'
             self.dx_tests.update({key: value})
 
-
     def print_info_about_dx_test(self, name_of_dx_test):
         assert name_of_dx_test in self.dx_tests, f'This dx_test is not recognised: {name_of_dx_test}'
         the_dx_test = self.dx_tests[name_of_dx_test]
-
         print()
         print(f'----------------------')
         print(f'** {name_of_dx_test} **')
@@ -57,7 +50,6 @@ class DxManager:
     def print_info_about_all_dx_tests(self):
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
-
 
     def run_dx_test(self, name_of_dx_test: str, rng_of_module):
 
@@ -98,7 +90,6 @@ class DxTest:
 
         if specificity is not None:
             self.specificity = specificity
-
 
         # Store the property on which it acts:
         if property is not None:
