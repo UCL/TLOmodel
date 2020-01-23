@@ -10,17 +10,19 @@ def load_outputs(timestamp, infection):
     infection_outputs = pd.read_csv(load_path + "output_" + infection + '_'+ timestamp + ".csv")
     infection_outputs.date = pd.to_datetime(infection_outputs.date)
     # infection_outputs.date = infection_outputs.date - np.timedelta64(10, 'Y')
-    dalys = pd.read_csv(load_path + "output_daly_" + timestamp + ".csv")
-    dalys.date = pd.to_datetime(dalys.date)
+    #dalys = pd.read_csv(load_path + "output_daly_" + timestamp + ".csv")
+    #dalys.date = pd.to_datetime(dalys.date)
     # dalys.date = dalys.date - np.timedelta64(10, 'Y')
     prev_years = pd.read_csv(load_path + "output_prevalent_years_" + timestamp + ".csv")
     prev_years.date = pd.to_datetime(prev_years.date)
     # prev_years.date = prev_years.date - np.timedelta64(10, 'Y')
     if infection != 'Total':
         district_outputs = pd.read_csv(load_path + "output_districts_prev_" + infection + '_'+ timestamp + ".csv")
-        return infection_outputs, dalys, prev_years, district_outputs
+        # return infection_outputs, dalys, prev_years, district_outputs
+        return infection_outputs, prev_years, district_outputs
     else:
-        return infection_outputs, dalys, prev_years
+        # return infection_outputs, dalys, prev_years
+        return infection_outputs, prev_years
 
 def get_averages_prev(sims):
     list_of_dfs = []
@@ -41,7 +43,6 @@ def get_averages_dalys(sims, value):
     avg_df = big_df.groupby(['date'], as_index=False).agg({cols_of_interest[value]: 'mean'})
     return avg_df
 
-
 def get_averages_districts(sims):
     list_of_dfs = []
     for k in sims.keys():
@@ -51,17 +52,26 @@ def get_averages_districts(sims):
     avg_df = big_df.groupby(['District'], as_index=False).agg({'Prevalence': 'mean', 'MWB': 'mean'})
     return avg_df
 
+def add_average(sim):
+    avg_outputs = {'prev': get_averages_prev(sim),
+                          # 'dalys': get_averages_dalys(sim, 'dalys'),
+                           'prev_years': get_averages_dalys(sim, 'prev_years'),
+                           'distr': get_averages_districts(sim)}
+    sim.update({'avg': avg_outputs})
+    return sim
 
 def plot_per_age_group(sim_dict, age, infection, vals):
     assert vals in ['Prevalence', 'MeanWormBurden']
     fig, ax = plt.subplots(figsize=(9, 7))
     for k in sim_dict.keys():
-        ls=':'
+        ls = ':'
+        alpha = 0.5
         if k == 'avg':
-            ls='-'
+            ls = '-'
+            alpha = 1
         df = sim_dict[k]['prev']
         df = df[df['Age_group'] == age]
-        ax.plot(df.date, df[vals], label=k, linestyle=ls)
+        ax.plot(df.date, df[vals], label=k, linestyle=ls, alpha=alpha)
         ax.xaxis_date()
     ax.set(xlabel='logging date',
            ylabel=vals,
@@ -104,28 +114,33 @@ simulations_mansoni = {}
 simulations_total = {}
 
 load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
-timestamps =['2020-01-17_21-10-12', '2020-01-17_23-24-12', '2020-01-17_23-24-27']
-labels = ['sim1', 'sim2', 'sim3']
+# timestamps =['2020-01-17_21-10-12', '2020-01-17_23-24-12', '2020-01-17_23-24-27', '2020-01-19_15-02-43']
+timestamps =['2020-01-19_22-22-02', '2020-01-19_22-22-18', '2020-01-19_22-22-32', '2020-01-19_22-22-44', '2020-01-19_22-22-55']
+# timestamps = ['2020-01-20_09-03-54', '2020-01-20_09-07-28', '2020-01-20_09-10-23', '2020-01-20_09-10-28', '2020-01-20_09-10-23']
+# timestamps = ['2020-01-20_11-28-14', '2020-01-20_11-30-01', '2020-01-20_11-31-51']
+# timestamps = ['2020-01-20_11-43-24', '2020-01-20_11-43-55', '2020-01-20_11-44-07']
+# timestamps = ['2020-01-20_13-58-52', '2020-01-20_13-59-29', '2020-01-20_13-59-59']
+timestamps = ['2020-01-20_23-22-52', '2020-01-20_23-21-29', '2020-01-20_23-22-44']
+# timestamps = ['2020-01-20_17-04-45', '2020-01-20_17-05-07', '2020-01-20_17-05-23', '2020-01-20_19-37-43']
+labels = ['sim' + str(i) for i in range(1,len(timestamps))]
+
+
 
 sim_dict = dict(zip(timestamps, labels))
 
 for time, label in sim_dict.items():
-    prev, dalys, prev_years, distr = load_outputs(time, 'Haematobium')
-    outputs_haematobium = {'prev': prev, 'dalys': dalys, 'prev_years': prev_years, 'distr': distr}
+    prev, prev_years, distr = load_outputs(time, 'Haematobium')
+    outputs_haematobium = {'prev': prev, 'dalys': '', 'prev_years': prev_years, 'distr': distr}
     simulations_haematobium.update({label: outputs_haematobium})
-    prev, dalys, prev_years, distr = load_outputs(time, 'Mansoni')
-    outputs_mansoni = {'prev': prev, 'dalys': dalys, 'prev_years': prev_years, 'distr': distr}
+    prev, prev_years, distr = load_outputs(time, 'Mansoni')
+    outputs_mansoni = {'prev': prev, 'dalys': '', 'prev_years': prev_years, 'distr': distr}
     simulations_mansoni.update({label: outputs_mansoni})
-    prev, dalys, prev_years = load_outputs(time, 'Total')
-    outputs_total = {'prev': prev, 'dalys': dalys, 'prev_years': prev_years}
+    prev, prev_years = load_outputs(time, 'Total')
+    outputs_total = {'prev': prev, 'dalys': '', 'prev_years': prev_years}
     simulations_total.update({label: outputs_total})
 
-
-outputs_haematobium = {'prev': get_averages_prev(simulations_haematobium),
-                       'dalys': get_averages_dalys(simulations_haematobium, 'dalys'),
-                       'prev_years': get_averages_dalys(simulations_haematobium, 'prev_years'),
-                       'distr': get_averages_districts(simulations_haematobium)}
-simulations_haematobium.update({'avg': outputs_haematobium})
+simulations_haematobium = add_average(simulations_haematobium)
+simulations_mansoni = add_average(simulations_mansoni)
 
 # plots
 for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
@@ -137,5 +152,8 @@ for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
 plot_prevalence_per_district(simulations_haematobium, 'Haematobium')
 
 for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
+    plot_per_age_group(simulations_mansoni, age_group, 'mansoni', 'Prevalence')
+for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
     plot_per_age_group(simulations_mansoni, age_group, 'mansoni', 'MeanWormBurden')
+plot_prevalence_per_district(simulations_mansoni, 'Mansoni')
 
