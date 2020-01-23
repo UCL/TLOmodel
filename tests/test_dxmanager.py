@@ -5,7 +5,6 @@ from tlo.methods.dxmanager import DxManager, DxTest
 
 
 def test_create_dx_test():
-
     my_test = DxTest(
         consumable_code=100,
         sensitivity=0.98,
@@ -21,7 +20,6 @@ def test_create_dx_test():
 
 
 def test_create_dx_test_and_register():
-
     my_test1 = DxTest(
         consumable_code=100,
         sensitivity=0.98,
