@@ -23,6 +23,8 @@ class DxManager:
         self.dx_tests = dict()
         print()
         print('DxManager initiated')
+        #TODO: should accept a rng
+
         pass
 
     def register_dx_test(self, **kwargs):
