@@ -419,7 +419,7 @@ class Diarrhoea(Module):
         p['rr_bec_persistent_excl_breast'] = dfd.loc['rr_bec_persistent_excl_breast', 'value1']
         p['rr_bec_persistent_cont_breast'] = dfd.loc['rr_bec_persistent_cont_breast', 'value1']
 
-        # p['progression_persistent_equation'] = 0.2
+        p['progression_persistent_equation'] = float()
 
         # p['dhs_care_seeking_2010'] = 0.58
         # p['IMCI_effectiveness_2010'] = 0.6
@@ -428,11 +428,11 @@ class Diarrhoea(Module):
         # p['case_fatality_rate_AWD'] = dfd.loc['case_fatality_rate_AWD', 'value1']
         # p['case_fatality_rate_dysentery'] = dfd.loc['case_fatality_rate_dysentery', 'value1']
         # p['case_fatality_rate_persistent'] = dfd.loc['case_fatality_rate_persistent', 'value1']
-        # p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
-        # p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
-        # p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
-        # p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
-        # p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
+        p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
+        p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
+        p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
+        p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
+        p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
         # p['r_recovery_AWD'] = 0.8
         # p['r_recovery_dysentery'] = 0.5
         # p['rr_recovery_dehydration'] = 0.81
@@ -972,7 +972,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                         random_days1 = pd.to_timedelta(random_date1, unit='d')
                         self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
                                                 df.at[i, 'date_of_onset_diarrhoea'] + random_days1)
-                    if df.at[i, df.gi_diarrhoea_type == 'prolonged']:
+                    if df.at[i, df.gi_diarrhoea_type == 'persistent']:
                         random_date2 = rng.randint(low=14, high=21)
                         random_days2 = pd.to_timedelta(random_date2, unit='d')
                         self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
