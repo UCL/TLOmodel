@@ -415,3 +415,4 @@ def test_using_int_as_intercept():
         LinearModelType.ADDITIVE,
         0
     )
+    assert isinstance(eq, LinearModel)
