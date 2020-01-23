@@ -410,3 +410,9 @@ def test_logisitc_HSB_example():
 
     assert prob_seeking_care_lm.equals(prob_seeking_care)
 
+
+def test_using_int_as_intercept():
+    eq = LinearModel(
+        LinearModelType.ADDITIVE,
+        0
+    )
