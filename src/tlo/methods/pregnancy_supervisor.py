@@ -11,7 +11,6 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import antenatal_care
 
 
 logger = logging.getLogger(__name__)
@@ -325,8 +324,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        # todo: talk to programmers to shorten this code section
-
     # =========================== GESTATIONAL AGE UPDATE FOR ALL PREGNANT WOMEN ========================================
         # Here we update the gestational age in weeks of all currently pregnant women in the simulation
         gestation_in_days = self.sim.date - df.loc[df.is_pregnant, 'date_of_last_pregnancy']
@@ -350,7 +347,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ep, 'ps_ectopic_pregnancy'] = True
         df.loc[idx_ep, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[idx_ep, 'ps_ectopic_symptoms'].values[:] = 'none'
-        # Todo: we need to insure is_pregnant is turned off at treatment/death for these women
+        # Todo: we need to ensure is_pregnant is turned off at treatment for these women
 
     # =========================================  MULTIPLES =============================================================
 
@@ -431,7 +428,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         level_of_symptoms_ep = params['level_of_symptoms_ep']
         symptoms = self.module.rng.choice(level_of_symptoms_ep.level_of_symptoms_ep,
                                           size=len(ectopic_month_2),
-                                          p=[0.1, 0.2, 0.4, 0.3])  # todo: parameters for probabilties as per mockitis
+                                          p=[0.1, 0.2, 0.4, 0.3])  # todo: parameters for probabilities as per mockitis
         df.loc[ectopic_month_2, 'ps_ectopic_symptoms'].values[:] = symptoms
 
         # Here we apply to risk of adverse pregnancy outcomes for month 2 including miscarriage and induced abortion.
@@ -757,7 +754,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Todo: review lit in regards to onset date and potentially move this to earlier
 
     # =========================== MONTH 6 RISK APPLICATION =============================================================
-        #TODO: should this be 28 weeks to align with still birth definition
+        # TODO: should this be 28 weeks to align with still birth definition
 
         # From month 6 it is possible women could be in labour at the time of this event so we exclude them
         month_6_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
@@ -1183,6 +1180,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: Review if we should bother going up to month ten OR we start looking at women every week from week 40
         #  upwards to apply increased risk of stillbirth etc etc etc
 
+
 class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
     # TODO: consider renaming if only dealing with HTN diseases
     """ This event determines if women suffering from a disease of pregnancy will progress to a more severe stage
@@ -1196,7 +1194,6 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
 
         #Todo: could we progress ectopic pregnancy here?
-
         #todo: similarly should we progress potential complicated/late abortions, miscarriage, stillbirth here?
         # or too compliccated as we loose the index
 
@@ -1216,6 +1213,7 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
             eff_prob_next_stage = pd.Series(r_next_stage, index=index)
             selected = index[eff_prob_next_stage > self.module.rng.random_sample(size=len(eff_prob_next_stage))]
             df.loc[selected, 'ps_htn_disorder_preg'].values[:] = next_stage
+        # todo: tranistion states Util function
 
         progress_disease(current_ghtn, 'mild_pe', params['r_mild_pe_gest_htn'])
         progress_disease(current_mild_pe,  'severe_pe', params['r_severe_pe_mild_pe'])
@@ -1252,7 +1250,8 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         # pre-eclampsia
 #        for person in idx_care_seeker:  # todo: can we do this without a for loop
 #            care_seeking_date = self.sim.date
-#            event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
+#            event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module,
+        #            person_id=person)
 #            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
 #                                                                priority=1,  # ????
 #                                                                topen=care_seeking_date,
@@ -1268,7 +1267,8 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
 
 #        for person in idx_care_seeker:
 #                care_seeking_date = self.sim.date
-#                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
+#                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module,
+        #                person_id=person)
 #                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
 #                                                                priority=1,  # ????
 #                                                                topen=care_seeking_date,
@@ -1284,7 +1284,8 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
 
 #        for person in idx_care_seeker:
 #                care_seeking_date = self.sim.date
-#                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
+#                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module,
+#                person_id=person)
 #                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
 #                                                                    priority=1,  # ????
 #                                                                    topen=care_seeking_date,
