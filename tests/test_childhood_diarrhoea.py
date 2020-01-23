@@ -1,3 +1,11 @@
+
+#
+#  Ines -- whilst we work on this --- I recommend using the file 'diarrhoaea_run_me.py' in th sceipts/childhood_analysis.pu
+#
+#
+#
+
+
 import logging
 import os
 from pathlib import Path
@@ -28,7 +36,7 @@ def simulation():
     sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
+# NB - contraception is not registered here so there would be no births
     # sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
