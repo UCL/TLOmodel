@@ -8,6 +8,8 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, pregnancy_supervisor
 from tlo.methods.healthsystem import HSI_Event
+from tlo.lm import LinearModel, LinearModelType, Predictor
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -253,96 +255,6 @@ class Labour (Module):
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
 
-        # TODO: Discuss with Stef change to params- reading in from file
-    #    params['baseline_pregnancy_info'] = {'prob_pregnancy': 0.1,
-    #                                         'baseline_cs_prev': 0.1}
-
-    #    params['preterm_labour'] = {'prob_ptl': 0.1,
-    #                                'prob_early_ptb': 0.1,
-    #                                'rr_early_ptb_age<20': 1.5,
-    #                                'rr_early_ptb_prev_ptb': 1.5,
-    #                                'rr_early_ptb_anaemia': 1.5,
-    #                                'prob_late_ptb': 1.5,
-    #                                'rr_late_ptb_prev_ptb': 1.5}
-    #    params['postterm_labour'] = {'prob_potl': 0.1}
-
-    #    params['obstructed_labour'] = {'prob_pl_ol': 0.1,
-    #                                   'rr_PL_OL_nuliparity': 0.1,
-    #                                   'rr_PL_OL_para1<20': 1.5,
-    #                                   'rr_PL_OL_age_less20': 1.5,
-    #                                   'cfr_obstructed_labour': 0.1,
-    #                                   'prob_still_birth_obstructed_labour': 0.1,
-    #                                   'prob_still_birth_obstructed_labour_md': 0.1}
-
-    #    params['maternal_sepsis'] = {'prob_ip_sepsis': 0.1,
-    #                                 'rr_ip_sepsis_pl_ol': 0.1,
-    #                                 'rr_ip_sepsis_anc_4': 1.5,
-    #                                 'cfr_sepsis': 1.5,
-    #                                 'prob_still_birth_sepsis': 0.1,
-    #                                 'prob_still_birth_sepsis_md': 0.1,
-    #                                 'prob_pp_sepsis': 0.1,
-    #                                 'cfr_pp_sepsis': 0.1}
-
-    #    params['eclampsia'] = {'prob_ip_eclampsia': 0.1,
-    #                           'rr_ip_eclampsia_30_34': 0.1,
-    #                           'rr_ip_eclampsia_35': 1.5,
-    #                           'rr_ip_eclampsia_nullip': 1.5,
-    #                           'cfr_eclampsia': 0.1,
-    #                           'prob_still_birth_eclampsia': 0.1,
-    #                           'prob_still_birth_eclampsia_md': 0.1,
-    #                           'prob_pp_eclampsia': 0.1,
-    #                           'cfr_pp_eclampsia': 0.1}
-
-    #    params['antepartum_haemorrhage'] = {'prob_aph': 0.1,
-    #                                        'rr_aph_pl_ol': 0.1,
-    #                                        'cfr_aph<20': 1.5,
-    #                                        'prob_still_birth_aph': 1.5,
-    #                                        'prob_still_birth_aph_md': 1.5}
-
-    #    params['uterine_rupture'] = {'prob_uterine_rupture': 0.1,
-    #                                 'rr_ur_grand_multip': 0.1,
-    #                                 'rr_ur_prev_cs': 1.5,
-    #                                 'rr_ur_ref_ol': 1.5,
-    #                                 'cfr_uterine_rupture': 0.1,
-    #                                 'prob_still_birth_uterine_rupture': 0.1,
-    #                                 'prob_still_birth_uterine_rupture_md': 0.1}
-
-    #    params['postpartum_haemorrhage'] = {'prob_pph': 0.1,
-    #                                        'rr_pph_pl_ol': 0.1,
-    #                                        'cfr_pp_pph': 0.1}
-
-    #    params['neonatal_factors'] = {'prob_neonatal_sepsis': 0.1,
-    #                                  'prob_neonatal_birth_asphyxia': 0.1}
-
-    #    params['treatment_induction'] = {'prob_successful_induction': 0.1}
-
-    #    params['treatment_prevention'] = {'rr_maternal_sepsis_clean_delivery': 0.1,
-    #                                      'rr_newborn_sepsis_clean_delivery': 0.1,
-    #                                      'rr_sepsis_post_abx_prom': 1.5,
-    #                                      'rr_newborn_sepsis_proph_abx': 1.5,
-    #                                      'rr_pph_amtsl': 1.5}
-
-    #    params['treatment_obstructed_labour'] = {'prob_deliver_ventouse': 0.1,
-    #                                             'prob_deliver_forceps': 0.1}
-
-    #    params['treatment_sepsis'] = {'prob_cure_antibiotics': 0.1}
-
-    #    params['treatment_haemorrhage'] = {'prob_cure_blood_transfusion': 0.1,
-    #                                       'prob_cure_oxytocin': 0.1,
-    #                                       'prob_cure_misoprostol': 1.5,
-    #                                       'prob_cure_uterine_massage': 1.5,
-    #                                       'prob_cure_manual_removal': 1.5}
-
-    #    params['treatment_hypertension'] = {'prob_cure_mgso4': 0.1,
-    #                                        'prob_prevent_mgso4': 0.1,
-    #                                        'prob_cure_diazepam': 0.1}
-
-    #    params['treatment_surgical'] = {'prob_cure_uterine_tamponade': 0.1,
-    #                                    'prob_cure_uterine_ligation': 0.1,
-    #                                    'prob_cure_b_lynch': 1.5,
-    #                                    'prob_cure_hysterectomy': 1.5,
-    #                                    'prob_cure_uterine_repair': 1.5}
-
         # Here we will include DALY weights if applicable...
 
         if 'HealthBurden' in self.sim.modules.keys():
@@ -354,6 +266,87 @@ class Labour (Module):
                  'obstructed_labour': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)}
             # TODO: Eclampsia DALY weight is empty- this is htn disorders sequalae code
             # TODO: source DALY weight for Uterine Rupture
+
+# ======================================= LINEAR MODEL EQUATIONS ======================================================
+        eptb_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_early_ptb'],
+                Predictor('age_years').when('.between(15,20)', params['rr_early_ptb_age<20']),
+                Predictor('la_has_previously_delivered_preterm').when(True, params['rr_early_ptb_prev_ptb'])
+            )
+
+        lptb_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_late_ptb'],
+                Predictor('la_has_previously_delivered_preterm').when(True, params['rr_late_ptb_prev_ptb'])
+            )
+
+        ol_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_pl_ol'],
+                Predictor('la_parity').when('0', params['rr_PL_OL_nuliparity']),
+                Predictor('la_parity').when('1', params['rr_PL_OL_para1']),
+                Predictor('age_years').when('<20', params['rr_PL_OL_age_less20']),
+            )
+
+        sep_ip_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_ip_sepsis'],
+                Predictor('la_obstructed_labour').when(True, params['rr_ip_sepsis_pl_ol']),
+                # ISSUE: been using MNI in prediction models(may not work here)
+            )
+
+        sep_pp_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_pp_sepsis'],
+                Predictor('la_obstructed_labour').when(True, params['rr_ip_sepsis_pl_ol']),
+                # DUMMY, copy from above
+            )
+
+        ec_ip_eq =  LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_ip_eclampsia'],
+                Predictor('age_years').when('.between(30,34)', params['rr_ip_eclampsia_30_34']),
+                Predictor('age_years').when('>35', params['rr_ip_eclampsia_35']),
+                Predictor('la_parity').when('0', params['rr_ip_eclampsia_nullip']),
+            )
+
+        ec_pp_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_ip_eclampsia'],
+                Predictor('age_years').when('.between(30,34)', params['rr_ip_eclampsia_30_34']),
+                Predictor('age_years').when('>35', params['rr_ip_eclampsia_35']),
+                Predictor('la_parity').when('0', params['rr_ip_eclampsia_nullip']),
+            )
+
+        aph_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_aph'],
+                Predictor('la_obstructed_labour').when(True, params['rr_aph_pl_ol']),
+                # ISSUE: been using MNI in prediction models(may not work here)
+            )
+
+        ur_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_uterine_rupture'],
+                Predictor('la_parity').when('>4', params['rr_ur_grand_multip']),
+                Predictor('la_previous_cs_delivery').when(True, params['rr_ur_prev_cs']),
+                Predictor('la_obstructed_labour').when(True , params['rr_ur_ref_ol']),
+            )
+
+        pph_eq = LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_pph'],
+                Predictor('la_obstructed_labour').when(True, params['rr_pph_pl_ol']),
+                # ISSUE: been using MNI in prediction models(may not work here)
+            )
+
+        # list or dict?
+        params['la_labour_equations'] = {'early_preterm_birth': eptb_eq, 'late_preterm_birth': lptb_eq,
+                                         'obstructed_labour': ol_eq, 'intrapartum_sepsis': sep_ip_eq,
+                                         'postpartum_sepsis': sep_pp_eq, 'intrapartum_eclampsia': ec_ip_eq,
+                                         'postpartum_eclampsia': ec_pp_eq, 'antepartum_haem': aph_eq,
+                                         'postpartum_haem': pph_eq, 'uterine_rupture': ur_eq}
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -390,6 +383,9 @@ class Labour (Module):
         df.loc[df.sex == 'F', 'la_haemorrhage_disability'] = False
         df.loc[df.sex == 'F', 'la_maternal_death'] = False
         df.loc[df.sex == 'F', 'la_maternal_death_date'] = pd.NaT
+
+# ------------------------------------ REPACKAGE PARAMETERS------------------------------------------------------------
+        # todo: repackage paramters into dictionaries if worthwhile
 
 # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) --------------------------------
         # TODO: Discuss with Tim Colbourn if he still plans to assign pregnancy at baseline
@@ -611,7 +607,6 @@ class Labour (Module):
             # This property is then reset in case of future pregnancies/stillbirths
             df.loc[mother_id, 'la_intrapartum_still_birth'] = False
 
-
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -633,6 +628,11 @@ class Labour (Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
         p = self.parameters
+
+#        def get_health_values(sequence, cause):
+#            sequence = df.loc[df.is_alive, f'la_{cause}_disability'].map(
+#                {False: 0, True: p['daly_wts'][f'{cause}']})  # p['daly_wts']['obstructed_labour']# 0.324
+#            sequence.name = cause # this needs to change with
 
         health_values_1 = df.loc[df.is_alive, 'la_ol_disability'].map(
             {False: 0, True: 0.324})  # p['daly_wts']['obstructed_labour']
@@ -670,6 +670,16 @@ class Labour (Module):
 
         return health_values_df  # return the dataframe
 
+# ===================================== LINEAR EQUATION HELPER FUNCTION ===============================================
+
+        # in your module event:
+        # eq: the equation to evaluate
+        # outcome_for_this_person = self.module.eval(eq, person_id)
+        # in your module definition:
+
+    def eval(self, eq, person_id):
+        return self.rng.random_sample(size=1) < eq.predict(self.sim.population.props.loc[[person_id]]).values
+
 
 class LabourScheduler (Event, IndividualScopeEventMixin):
     """This event determines the gestation at which women will be scheduled to go into labour"""
@@ -684,7 +694,11 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
 
         logger.debug('person %d is having their labour scheduled on date %s', individual_id, self.sim.date)
 
-        # First we determine this woman's risk of early preterm birth based on independent risk factors
+        early_preterm_birth_outcome = self.module.eval(params['la_labour_equations']['early_preterm_birth'],
+           individual_id)
+        late_preterm_birth_outcome = self.module.eval(params['la_labour_equations']['late_preterm_birth'],
+           individual_id)
+
         if ~df.at[individual_id, 'la_has_previously_delivered_preterm'] & (df.at[individual_id, 'age_years'] < 20):
             rf1 = params['rr_early_ptb_age<20']
         else:
@@ -1605,6 +1619,7 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
         logger.debug('HSI_Labour_PresentsForInductionOfLabour: did not run')
         pass
 
+#TODO: 3 HSIs, for each facility level (interventions in functions)
 
 class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScopeEventMixin):
     """
