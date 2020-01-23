@@ -744,6 +744,50 @@ class Diarrhoea(Module):
                         when('False & age_exact_years < 0.5', m.rr_bec_persistent_excl_breast)
                         )
 
+        # # # # # # ASSIGN THE RATE OF DEATH # # # # # #
+        self.parameters['rate_death_diarrhoea'].update({
+            # Define the equation using LinearModel (note that this stage could be done in read_parms)
+            'AWD': LinearModel(LinearModelType.MULTIPLICATIVE,
+                               1,
+                               Predictor('age_years')
+                               .when('.between(1,1)', m.rr_diarr_death_age12to23mo)
+                               .when('.between(2,4)', m.rr_diarr_death_age24to59mo)
+                               .otherwise(0.0),
+                               Predictor('hv_inf').
+                               when('True', m.rr_gi_diarrhoea_HIV),
+                               Predictor('malnutrition').
+                               when('True', m.rr_gi_diarrhoea_SAM)
+                               )
+        })
+
+        self.parameters['incidence_equations_by_pathogen'].update({
+            'dysentery': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                     1,
+                                     Predictor('age_years')
+                                     .when('.between(1,1)', m.rr_diarr_death_age12to23mo)
+                                     .when('.between(2,4)', m.rr_diarr_death_age24to59mo)
+                                     .otherwise(0.0),
+                                     Predictor('hv_inf').
+                                     when('True', m.rr_gi_diarrhoea_HIV),
+                                     Predictor('malnutrition').
+                                     when('True', m.rr_gi_diarrhoea_SAM)
+                                     )
+        })
+
+        self.parameters['incidence_equations_by_pathogen'].update({
+            'persistent': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                     1,
+                                     Predictor('age_years')
+                                     .when('.between(1,1)', m.rr_diarr_death_age12to23mo)
+                                     .when('.between(2,4)', m.rr_diarr_death_age24to59mo)
+                                     .otherwise(0.0),
+                                     Predictor('hv_inf').
+                                     when('True', m.rr_gi_diarrhoea_HIV),
+                                     Predictor('malnutrition').
+                                     when('True', m.rr_gi_diarrhoea_SAM)
+                                     )
+        })
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
