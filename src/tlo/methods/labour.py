@@ -725,7 +725,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                     pd.Timedelta(random, unit='W')
 
-            # TODO: Anaemia/ Malaria
+            # TODO: Anaemia/ Malaria / Multiple gestation 
         # For women who will deliver after term we apply a risk of post term birth
         elif random_draw > eff_prob_late_ptb:
             random_draw_2 = self.module.rng.random_sample(size=1)
@@ -1689,7 +1689,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
             new_sepsis_risk = mni[person_id]['risk_ip_sepsis'] * treatment_effect
             mni[person_id]['risk_ip_sepsis'] = new_sepsis_risk
 
-        # ------------------------------------- PREMATURITY -----------------------------------------------------------
+        # ------------------------------------- PREMATURITY # TODO: care bundle for women in preterm labour (pg 49)----
         # Here we apply the effect of interventions to improve outcomes of neonates born preterm
 
         # Antibiotics for group b strep prophylaxsis: (are we going to apply this to all cause sepsis?)
