@@ -21,25 +21,139 @@ class Malnutrition(Module):
         # 'eq_for_alloc_shigella': Parameter(Types.Eq, 'the e.... '),
         # 'eq_for_alloc_rota': Parameter(Types.Eq), 'the XX...')
 
-        'base_incidence_diarrhoea_by_rotavirus':
-            Parameter(Types.LIST, 'incidence of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
+        'base_prevalence_MAM':
+            Parameter(Types.LIST, 'baseline prevalence of moderate acute malnutrition among children aged 6 months to'
+                                  ' 2 years'
                       ),
-        'base_incidence_diarrhoea_by_shigella':
+        'rp_MAM_HIV':
             Parameter(Types.LIST,
-                      'incidence of diarrhoea caused by shigella spp in age groups 0-11, 12-23, 24-59 months'
+                      'relative prevalence of MAM for HIV positive status'
                       ),
-        'base_incidence_diarrhoea_by_adenovirus':
+        'rp_MAM_wealth_level1':
             Parameter(Types.LIST,
-                      'incidence of diarrhoea caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months'
+                      'relative prevalence of MAM for wealth level 1'
                       ),
-        'base_incidence_diarrhoea_by_crypto':
+        'rp_MAM_excl_breast':
             Parameter(Types.LIST,
-                      'incidence of diarrhoea caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months'
+                      'relative prevalence of MAM for exclusively breastfeeding'
                       ),
-        'base_incidence_diarrhoea_by_campylo':
+        'rp_MAM_WASH':
             Parameter(Types.LIST,
-                      'incidence of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
+                      'relative prevalence of MAM for water, hygiene and sanitation conditions'
                       ),
+        'rp_MAM_lbw':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for low birth weight'
+                      ),
+
+        'base_incidence_MAM':
+            Parameter(Types.LIST, 'baseline incidence of moderate acute malnutrition among children aged 6 months to'
+                                  ' 2 years'
+                      ),
+
+        'rr_MAM_HIV':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for HIV positive status'
+                      ),
+        'rr_MAM_wealth_level1':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for wealth level 1'
+                      ),
+        'rr_MAM_excl_breast':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for exclusively breastfeeding'
+                      ),
+        'rr_MAM_diarrhoea':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for diarrhoeal episodes'
+                      ),
+        'rr_MAM_resp_infection':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for respiratory infections'
+                      ),
+        'rr_MAM_WASH':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for water, hygiene and sanitation conditions'
+                      ),
+        'rr_MAM_lbw':
+            Parameter(Types.LIST,
+                      'relative prevalence of MAM for low birth weight'
+                      ),
+
+        'base_prevalence_SAM':
+            Parameter(Types.LIST, 'baseline prevalence of moderate acute malnutrition among children aged 6 months to'
+                                  ' 2 years'
+                      ),
+        'rp_SAM_HIV':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for HIV positive status'
+                      ),
+        'rp_SAM_wealth_level1':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for wealth level 1'
+                      ),
+        'rp_SAM_excl_breast':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for exclusively breastfeeding'
+                      ),
+        'rp_SAM_diarrhoea':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for diarrhoea'
+                      ),
+        'rp_SAM_lbw':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for low birth weight'
+                      ),
+        'rr_SAM_HIV':
+            Parameter(Types.LIST,
+                      'relative prevalence of DAM for HIV positive status'
+                      ),
+        'rr_SAM_wealth_level1':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for wealth level 1'
+                      ),
+        'rr_SAM_excl_breast':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for exclusively breastfeeding'
+                      ),
+        'rr_SAM_diarrhoea':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for diarrhoeal episodes'
+                      ),
+        'rr_SAM_resp_infection':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for respiratory infections'
+                      ),
+        'rr_SAM_lbw':
+            Parameter(Types.LIST,
+                      'relative prevalence of SAM for low birth weight'
+                      ),
+
+        'r_death_SAM_marasmus':
+            Parameter(Types.LIST,
+                      'rate of death for SAM marasmus form'
+                      ),
+        'r_death_SAM_kwashiorkor':
+            Parameter(Types.LIST,
+                      'rate of death for SAM kwashiorkor form'
+                      ),
+        'rr_death_SAM_agecat':
+            Parameter(Types.LIST,
+                      'relative rate of death for ages 2-5 years'
+                      ),
+        'rr_death_SAM_HIV':
+            Parameter(Types.LIST,
+                      'relative rate of death for HIV status'
+                      ),
+        'rr_death_SAM_cinfections':
+            Parameter(Types.LIST,
+                      'relative rate of death for current infections'
+                      ),
+        'rr_death_SAM_lbw':
+            Parameter(Types.LIST,
+                      'relative rate of death for low birth weight'
+                      ),
+
     }
 
     PROPERTIES = {

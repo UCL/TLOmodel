@@ -28,6 +28,13 @@ class Diarrhoea(Module):
             Parameter(Types.DICT, 'dict that holds the equations governing the risk of incidence of each'
                                   ' type of pathogen'
                       ),
+        'prob_symptoms':
+            Parameter(Types.DICT, 'dict that holds the symptoms caused by each pathogen'
+                      ),
+        'progression_persistent_equation':
+            Parameter(Types.REAL, 'dict that holds the equations governing the risk of progression'
+                                  ' to persistent diarrhoea'
+                      ),
 
         'base_incidence_diarrhoea_by_rotavirus':
             Parameter(Types.LIST, 'incidence of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
@@ -259,7 +266,8 @@ class Diarrhoea(Module):
 
     # TODO: as an example, I am declaring some symptoms here that we are going to use in the symptom manager
     # Declares symptoms
-    SYMPTOMS = {'watery diarrhoea', 'bloody diarrhoea', 'fever', 'vomiting', 'dehydration', 'persistent diarrhoea', 'prolonged episode'}
+    SYMPTOMS = {'watery_diarrhoea', 'bloody_diarrhoea', 'fever', 'vomiting', 'dehydration',
+                'persistent_diarrhoea', 'prolonged_diarrhoea'}
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -410,6 +418,8 @@ class Diarrhoea(Module):
         p['rr_bec_persistent_SAM'] = dfd.loc['rr_bec_persistent_HIV', 'value1']
         p['rr_bec_persistent_excl_breast'] = dfd.loc['rr_bec_persistent_excl_breast', 'value1']
         p['rr_bec_persistent_cont_breast'] = dfd.loc['rr_bec_persistent_cont_breast', 'value1']
+
+        # p['progression_persistent_equation'] = 0.2
 
         # p['dhs_care_seeking_2010'] = 0.58
         # p['IMCI_effectiveness_2010'] = 0.6
@@ -688,40 +698,51 @@ class Diarrhoea(Module):
 
         # Organise probability of getting symptoms:
 
-        # INES -- you are now defined a parameter call 'prob_symptoms' -- don't forget that this needs to be defined above in the PARAMETERS = {} section
-
+        # INES -- you are now defined a parameter call 'prob_symptoms' --
+        # don't forget that this needs to be defined above in the PARAMETERS = {} section
 
         # @@ INES ___ EVERY SYPTOM HERE MUST BE DECLARED ABOVE IN SYMPTOMS = {}
-        # prolonged episode was not: ALSO -- is that the right name for a symptom -- perhaps it should be diarahhea_prolonged_episode
         # Please double check that all the symptos are declared.
 
-
         self.parameters['prob_symptoms'] = {
-            'rotavirus': {'watery diarrhoea': p['rp_acute_diarr_age12to23mo'],
-                          'bloody diarrhoea': dfd.loc['dehydration_by_ETEC', 'value1'],
-                          'fever': dfd.loc['dehydration_by_ETEC', 'value1'],
-                          'vomiting': dfd.loc['dehydration_by_ETEC', 'value1'],
-                          'dehydration': dfd.loc['dehydration_by_ETEC', 'value1'],
-                          'prolonged episode': dfd.loc['dehydration_by_ETEC', 'value1']},
-            'shigella': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                         'dehydration': 0.2, 'prolonged episode': 0.1},
-            'adenovirus': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                           'dehydration': 0.2, 'prolonged episode': 0.1},
-            'crypto': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                       'dehydration': 0.2, 'prolonged episode': 0.1},
-            'campylo': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                        'dehydration': 0.2, 'prolonged episode': 0.1},
-            'ST-ETEC': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                        'dehydration': 0.2, 'prolonged episode': 0.1},
-            'sapovirus': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                          'dehydration': 0.2, 'prolonged episode': 0.1},
-            'norovirus': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                          'dehydration': 0.2, 'prolonged episode': 0.1},
-            'astrovirus': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                           'dehydration': 0.2, 'prolonged episode': 0.1},
-            'tEPEC': {'watery diarrhoea': 0, 'bloody diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                      'dehydration': 0.2, 'prolonged episode': 0.1}
+            'rotavirus': {'watery_diarrhoea': 0.2, 'bloody_diarrhoea': 0.2, 'fever': 0.1, 'vomiting': 0,
+                          'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'shigella': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                         'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'adenovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                           'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'crypto': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                       'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'campylo': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                        'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'ST-ETEC': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                        'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'sapovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                          'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'norovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                          'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'astrovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                           'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'tEPEC': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+                      'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
         }
+
+        # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
+        # THIS EQUATION SHOULD ONLY WORK FOR THOSE WHO ARE IN THE PROLONGED DIARRHOEA PHASE
+        self.parameters['progression_persistent_equation'] = \
+            LinearModel(LinearModelType.MULTIPLICATIVE,
+                        1,
+                        Predictor('age_years')
+                        .when('.between(1,2)', m.rr_bec_persistent_age12to23)
+                        .when('.between(2,5)', m.rr_bec_persistent_age24to59)
+                        .otherwise(0.0),
+                        Predictor('hv_inf')
+                        .when('False', m.rr_bec_persistent_HIV),
+                        Predictor('malnutrition').
+                        when('False', m.rr_bec_persistent_SAM),
+                        Predictor('exclusive_breastfeeding').
+                        when('False & age_exact_years < 0.5', m.rr_bec_persistent_excl_breast)
+                        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -848,14 +869,11 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         for k, v in m.parameters['incidence_equations_by_pathogen'].items():
             probs[k] = v.predict(df.loc[df.is_alive & df.age_years < 5])
 
-        # THIS WAS FAILING BECAUSE OF TYPOS IN THE SPECIFIATION OF EQUATIONS - commented-out or fixed above.
-
         # Declare that pathogens are mutally exclusive and do the random choice for each person
         probs['none'] = 1 - probs.sum(axis=1)
         outcome = pd.Series(data='none', index=probs.index)
 
         for i in outcome.index:
-
             # the outcome - diarrhoea (and which pathogen...) to put in the df
             outcome_i = rng.choice(probs.columns, p=probs.loc[i].values)
 
@@ -864,91 +882,43 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                 df.at[i, 'gi_diarrhoea_status'] = True
                 df.at[i, 'gi_diarrhoea_type'] = 'acute'
                 df.at[i, 'gi_diarrhoea_count'] += 1
-                # @@@ INES --- is there a need for an else statement to set these variables to values consistent with no new diarrahea episode?
+                # @@@ INES --- is there a need for an else statement to set these variables to values consistent with
+                # no new diarrahea episode? --- @@ TIM: I dont think so, there will be default property values
 
                 # ----------------------- ALLOCATE A RANDOM DATE OF ONSET OF ACUTE DIARRHOEA ----------------------
-                # @@ INES --- Note that  i is the person_id of the person with diarahhea: no need for any more .loc
-
                 # does this need to be stored in the df?
-                df.at[i, 'date_of_onset_diarrhoea'] = self.sim.date + DateOffset(days = np.random.randint(0, 90))
+                # @@ TIM - not necessarily, but I want to scatter the occurrence of diarrhoea episodes like in real life??
+                df.at[i, 'date_of_onset_diarrhoea'] = self.sim.date + DateOffset(days=np.random.randint(0, 90))
 
-
-                # # # ASSIGN SOME OR SEVERE DEHYDRATION LEVELS FOR DIARRHOEA EPISODE # # #
-                # di_with_dehydration_idx = df.index[df.di_dehydration_present] & incident_acute_diarrhoea
-                # prob_some_dehydration = pd.Series(0.7, index=di_with_dehydration_idx)
-                # prob_severe_dehydration = pd.Series(0.3, index=di_with_dehydration_idx)
-                # random_draw = pd.Series(self.sim.rng.random_sample(size=len(di_with_dehydration_idx)),
-                #                         index=di_with_dehydration_idx)
-                # dfx = pd.concat([prob_some_dehydration, prob_severe_dehydration, random_draw], axis=1)
-                # dfx.columns = ['p_some_dehydration', 'p_severe_dehydration', 'random_draw']
-                # diarr_some_dehydration = dfx.index[dfx.p_some_dehydration > dfx.random_draw]
-                # diarr_severe_dehydration = \
-                #     dfx.index[
-                #         (dfx.p_some_dehydration < dfx.random_draw) & (dfx.p_some_dehydration + dfx.p_severe_dehydration)
-                #         > dfx.random_draw]
-                # df.loc[diarr_some_dehydration, 'gi_dehydration_status'] = 'some dehydration'
-                # df.loc[diarr_severe_dehydration, 'gi_dehydration_status'] = 'severe dehydration'
+                for sympt, sympt_prob in m.parameters['prob_symptoms'][outcome_i].items():
+                    if (sympt == 'watery_diarrhoea') & (rng.rand() < sympt_prob):
+                        df.at[i, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
+                    if (sympt == 'bloody_diarrhoea') & (rng.rand() < sympt_prob):
+                        df.at[i, 'gi_diarrhoea_acute_type'] = 'dysentery'
+                    if (sympt == 'dehydration') & (rng.rand() < sympt_prob):
+                        df.at[i, 'di_dehydration_present'] = True
+                        if rng.rand() < 0.7:
+                            df.at[i, 'gi_dehydration_status'] = 'some dehydration'
+                        else:
+                            df.at[i, 'gi_dehydration_status'] = 'severe dehydration'
+                    if (sympt == 'prolonged_diarrhoea') & (rng.rand() < sympt_prob):
+                        df.at[i, 'gi_diarrhoea_type'] = 'prolonged'
+                        # if rng.rand() < m.parameters['progression_persistent_equation']:
+                        #     df.at[i, 'gi_diarrhoea_type'] = 'persistent'
+                        #     if df.at[i, 'di_dehydration_present']:
+                        #         df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
+                        #     else:
+                        #         df.at[i, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
 
                 # @@ INES - not sure what the above paragraph is aiming to do. If it's about probabilisitically
                 # assigning a symptom, then can it not be handled in the part done with the prob_symptoms and SymptomManager ?
-
+                # @@ TIM -- it is after assigning dehydration as a symptom, I check to see the severity of that dehydration
 
                 # ----------------------------------------------------------------------------------------
-
-                # @@@ INES --- you're building an equation here... perhaps easier to use LinearModel again?
-
-                # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
-                ProD_idx = df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'prolonged') & df.is_alive &
-                                    (df.age_exact_years < 5)]
-
-                # **** is 'self.module.prob_prolonged_to_persistent_diarr' trying to access self.module.parameters['prob_prolonged_to_persistent_diarr'] ??
-                # It is not defined at the moment ;;. so I am commenting it out
-
-                # becoming_persistent = pd.Series(self.module.prob_prolonged_to_persistent_diarr, index=ProD_idx)
-                #
-                # becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)] \
-                #     *= m.rr_bec_persistent_age12to23
-                # becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 2) & (df.age_exact_years < 5)] \
-                #     *= m.rr_bec_persistent_age24to59
-                # becoming_persistent.loc[df.is_alive & (df.age_exact_years < 5) & df.has_hiv] \
-                #     *= m.rr_bec_persistent_HIV
-                # becoming_persistent.loc[df.is_alive & (df.age_exact_years < 5) & df.malnutrition == True] \
-                #     *= m.rr_bec_persistent_SAM
-                # becoming_persistent.loc[
-                #     df.is_alive & df.exclusive_breastfeeding == True & (df.age_exact_years <= 0.5)] \
-                #     *= m.rr_bec_persistent_excl_breast
-                # becoming_persistent.loc[
-                #     df.is_alive & df.continued_breastfeeding == True & (df.age_exact_years > 0.5) &
-                #     (df.age_exact_years < 2)] *= m.rr_bec_persistent_cont_breast
-                #
-                # random_draw = pd.Series(self.sim.rng.random_sample(size=len(becoming_persistent)),
-                #                         index=becoming_persistent.index)
-                # persistent_diarr = becoming_persistent > random_draw
-                #
-                # persistent_diarr_idx = becoming_persistent.index[persistent_diarr]
-                # df.loc[i, 'gi_diarrhoea_type'] = 'persistent'
-
-                # # # # # # PERSISTENT DIARRHOEA OR SEVERE PERSISTENT DIARRHOEA # # # # # #
-                # severe_persistent_diarr = \
-                    # df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'persistent') &
-                    #          (df.gi_dehydration_status != 'no dehydration')]
-
-                # i is the person who has just be given an outcome... so work out what to do with this one person
-
-                # Are these things not equal to symptoms?
-
-                # The underlying thing is the infection with the pthogen. The symptom it creates is a certain type of diarrahea, right?
-
-                df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
-                # or...
-                df.at[i, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
-                # -------------------------------------------------------------------------------------------------
-
-
                 # Then work out the symptoms for this person:
                 for symptom_string, prob in m.parameters['prob_symptoms'][outcome_i].items():
                     if rng.rand() < prob:
-                        self.sim.modules['SymptomManager'].chg_symptom(symptom_string=symptom_string,
+                        self.sim.modules['SymptomManager'].change_symptom(symptom_string=symptom_string,
                                                                        person_id=i,
                                                                        add_or_remove='+',
                                                                        disease_module=self.module,
@@ -956,7 +926,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                        duration_in_days=10
                                                                        )
 
-
+                # The underlying thing is the infection with the pthogen. The symptom it creates is a certain type of diarrahea, right?
+                # -------------------------------------------------------------------------------------------------
 
         # # # # # HEALTHCARE SEEKING BEHAVIOUR - INTERACTION WITH HSB MODULE # # # # #
         # TODO: when you declare the symptoms in the symptom manager, the health care seeking will follow automatically
@@ -981,8 +952,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'dysentery': len(dysentery_cases),
                      'persistent': len(persistent_diarr_cases)
                      })
-        #
-        # # --------------------------------------------------------------------------------------------------------
+
+        # --------------------------------------------------------------------------------------------------------
         # # # # # # ASSIGN DEATH PROBABILITIES BASED ON DEHYDRATION, CO-MORBIDITIES AND DIARRHOEA TYPE # # # # # #
         # mortality rates by diarrhoea clinical type
         cfr_AWD = \
@@ -999,7 +970,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_death_diarr.loc[df.is_alive & df.gi_diarrhoea_status & (df.age_exact_years >= 2) &
                                  (df.age_exact_years < 5)] *= m.rr_diarr_death_age24to59mo
         eff_prob_death_diarr.loc[df.is_alive & (df.gi_diarrhoea_status == True) & (df.age_exact_years < 5) &
-                                 (df.has_hiv == True)] *= m.rr_diarr_death_HIV
+                                 (df.hv_inf == True)] *= m.rr_diarr_death_HIV
         eff_prob_death_diarr.loc[df.is_alive & (df.gi_diarrhoea_status == True) & (df.age_exact_years < 5) &
                                  (df.malnutrition == True)] *= m.rr_diarr_death_SAM
         # TODO:add dehydration, add other co-morbidities
