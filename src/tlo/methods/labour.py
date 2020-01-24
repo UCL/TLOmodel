@@ -271,14 +271,14 @@ class Labour (Module):
             # TODO: source DALY weight for Uterine Rupture
 
 # ======================================= LINEAR MODEL EQUATIONS ======================================================
-        # TODO: we could hard code these predictors to reduce the number of actual parameters?
+        # Here we define the equations that will be used throughout this module using the linear model
+
         eptb_eq = LinearModel(
-                LinearModelType.MULTIPLICATIVE,
+                LinearModelType.MULTIPLICATIVE,  # TODO: Anaemia/ Malaria / Multiple gestation
                 params['prob_early_ptb'],
                 Predictor('age_years').when('.between(15,20)', params['rr_early_ptb_age<20']),
                 Predictor('la_has_previously_delivered_preterm').when(True, params['rr_early_ptb_prev_ptb'])
             )
-        # TODO: Anaemia/ Malaria / Multiple gestation
 
         lptb_eq = LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -286,14 +286,15 @@ class Labour (Module):
                 Predictor('la_has_previously_delivered_preterm').when(True, params['rr_late_ptb_prev_ptb'])
             )
 
+        # TODO: do we need an equation for post term labour
+
         ol_eq = LinearModel(
-                LinearModelType.MULTIPLICATIVE,
+                LinearModelType.MULTIPLICATIVE, # TODO: stunting/malnutrition
                 params['prob_pl_ol'],
                 Predictor('la_parity').when('0', params['rr_PL_OL_nuliparity']),
                 Predictor('la_parity').when('1', params['rr_PL_OL_para1']),
                 Predictor('age_years').when('<20', params['rr_PL_OL_age_less20']),
             )
-        # stunting/malnutrition
 
         sep_ip_eq = LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -326,13 +327,11 @@ class Labour (Module):
             )
 
         aph_eq = LinearModel(
-                LinearModelType.MULTIPLICATIVE,
+                LinearModelType.MULTIPLICATIVE, # TODO: seperate causal influence in praevia and abruption
                 params['prob_aph'],
                 Predictor('la_obstructed_labour').when(True, params['rr_aph_pl_ol']),
                 # ISSUE: been using MNI in prediction models(may not work here)
             )
-        # TODO: a/w review of evidence to determine strength of association between risk factors and
-        #  praevia/abruption
 
         ur_eq = LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -350,20 +349,21 @@ class Labour (Module):
             )
 
         care_seeking = LinearModel(
-                    LinearModelType.LOGISTIC,
-                    1.0,
+                    LinearModelType.LOGISTIC,  # TODO: rough cut paper, would seeking care be better than % homebirth?
+                    0.5,
                     Predictor('li_mar_stat').when('1', 1.83).when('3', 1.83),
-                    Predictor('li_wealth').when('.4', 0.51).when('5', 0.48), #not direct conversion
+                    Predictor('li_wealth').when('4', 0.51).when('5', 0.48), # wealth levels in the paper are different
                     Predictor('li_urban').when(True, 0.39),
             )
+        # TODO: we could hard code these predictors to reduce the number of actual parameters?
 
-        # list or dict?
+        # We store the equations within a dictionary parameter to be accessed later
         params['la_labour_equations'] = {'early_preterm_birth': eptb_eq, 'late_preterm_birth': lptb_eq,
                                          'obstructed_labour_ip': ol_eq, 'sepsis_ip': sep_ip_eq,
                                          'sepsis_pp': sep_pp_eq, 'eclampsia_ip': ec_ip_eq,
                                          'eclampsia_pp': ec_pp_eq, 'antepartum_haem_ip': aph_eq,
                                          'postpartum_haem_pp': pph_eq, 'uterine_rupture_ip': ur_eq,
-                                         care_seeking: 'care_seeking'}
+                                         'care_seeking': care_seeking}
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -403,10 +403,10 @@ class Labour (Module):
         df.loc[df.sex == 'F', 'la_maternal_death_date'] = pd.NaT
 
 # ------------------------------------ REPACKAGE PARAMETERS------------------------------------------------------------
-        # todo: repackage paramters into dictionaries if worthwhile
+        # todo: repackage paramters into dictionaries if worthwhile?
 
 # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) --------------------------------
-        # TODO: Discuss with Tim Colbourn if he still plans to assign pregnancy at baseline
+        # TODO: Tim colbourn will be applying pregnancy at baseline
 
         # !!!!!!!!!!!!!!!!(DUMMY CODE) THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -432,18 +432,23 @@ class Labour (Module):
         # TODO: random_intergers produces same random integer for each person needs a fix
         # TODO: consider re-writing using a function
 
-        # Get and hold all the women who are pregnant at baseline
+        # Here we apply prevalence of early preterm, late preterm, term and post term labour to all women pregnant at
+        # baseline
         pregnant_idx = df.index[df.is_pregnant & df.is_alive]
-        due_date_period = pd.Series(self.rng.choice(('early_preterm', 'late_preterm','term', 'post_term'), p=[0.04, 0.12,
-                                                                                                        0.80, 0.04],
-                                               size=len(pregnant_idx)), index=pregnant_idx)
+        due_date_period = pd.Series(self.rng.choice(('early_preterm', 'late_preterm', 'term', 'post_term'),
+                                                    p=[0.04, 0.12, 0.80, 0.04],size=len(pregnant_idx)),
+                                    index=pregnant_idx)
         # TODO: use parameter values for probabilities above
         simdate = pd.Series(self.sim.date, index=pregnant_idx)
         dfx = pd.concat((simdate, due_date_period), axis=1)
         dfx.columns = ['simdate', 'due_date_period']
 
-        # TODO: this is still applying the same random number to the index
+        # Then the following function is applied to each group, based on the catagories asigned above, to determine
+        # gestation and due date
         def gestation_and_due_date_setting(df, dfx, rng, gestation, upper_limit_gest, lower_rand, higher_rand, prob):
+            """This function sets a gestational age in weeks and future due date for all women pregnant at baseline"""
+            # TODO: this is still applying the same random number to the index
+
             index = dfx.index[dfx.due_date_period == f'{gestation}']
             df.loc[index, 'ps_gestational_age_in_weeks'] = (pd.Series(rng.random_integers(0, upper_limit_gest),
                                                                       index=index))
@@ -469,8 +474,7 @@ class Labour (Module):
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
-        # !!!!!!!!!!!!!!!!(DUMMY CODE) THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # TODO: just check that TC isnt just doing the analysis but is also applying the parity at baseline
+        # TODO: reformat with linear model? consider how best to to draw in real 2010 data
 
         # Get and hold all the women in the dataframe who between the ages of 15-24 years old
         women_parity_1524_idx = df.index[(df.age_years >= 15) & (df.age_years <= 24) & (df.is_alive == True)
@@ -634,8 +638,6 @@ class Labour (Module):
         logger.info('This is Labour, being alerted about a health system interaction '
                     'person %d for: %s', person_id, treatment_id)
 
-        # TODO: Confirm when this function should be utilised.
-
     def report_daly_values(self):
 
         # TODO: work out why values have to be hard coded, wont read parameters?
@@ -645,10 +647,10 @@ class Labour (Module):
 
         logger.debug('This is Labour reporting my health values')
 
-        df = self.sim.population.props  # shortcut to population properties dataframe
+        df = self.sim.population.props  # shortcut to population properties data frame
         p = self.parameters
 
-#        def get_health_values(sequence, cause):
+#        def get_health_values(sequence, cause): (use return)
 #            sequence = df.loc[df.is_alive, f'la_{cause}_disability'].map(
 #                {False: 0, True: p['daly_wts'][f'{cause}']})  # p['daly_wts']['obstructed_labour']# 0.324
 #            sequence.name = cause # this needs to change with
@@ -697,7 +699,7 @@ class Labour (Module):
         return self.rng.random_sample(size=1) < eq.predict(self.sim.population.props.loc[[person_id]]).values
 
     def complication_application(self, df, mni, individual_id, params, labour_stage, complication):
-        """Uses the result of a linear equation to determine the probablity of a certain complication, stores the
+        """Uses the result of a linear equation to determine the probability of a certain complication, stores the
         probability for women delivery in facility and applies the probability for women delivering at home.
         Sets complication properties according to the result"""
 
@@ -730,7 +732,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         m = self
 
         logger.debug('person %d is having their labour scheduled on date %s', individual_id, self.sim.date)
-        # Todo: could this be restructured to use 'eval' fucntion
+        # Todo: could this be restructured to use 'eval' function
 
         # Using the linear equations defined above we calculate this womans individual risk of early and late preterm
         # labour
@@ -742,30 +744,31 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         if (random_draw < lptb_prob) & (random_draw > eptb_prob):
             random = int(self.module.rng.random_integers(34, 36))
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
-                                                                    pd.Timedelta(random, unit='W')
+                pd.Timedelta(random, unit='W')
 
         elif random_draw < eptb_prob or ((random_draw < eptb_prob) & (random_draw < lptb_prob)):
             random = int(self.module.rng.random_integers(24, 33))
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
-                                                                    pd.Timedelta(random, unit='W')
+                pd.Timedelta(random, unit='W')
 
         # For women who will deliver after term we apply a risk of post term birth
         elif random_draw > lptb_prob:
             random_draw_2 = self.module.rng.random_sample(size=1)
             if random_draw_2 < params['prob_potl']:
-                # TODO: To explore causal influences on post term labour
                 random = int(self.module.rng.random_integers(42, 46))
-                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
-                                                                        pd.Timedelta(random, unit='W')
+                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] \
+                    + pd.Timedelta(random, unit='W')
 
             else:
                 random = int(self.module.rng.random_integers(37, 41))
-                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
-                                                                        pd.Timedelta(random, unit='W')
+                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] \
+                    + pd.Timedelta(random, unit='W')
 
+        # Here we check that no one can go into labour before 24 weeks gestation
         days_until_labour = df.at[individual_id, 'la_due_date_current_pregnancy'] - self.sim.date
         assert days_until_labour >= pd.Timedelta(168, unit='d')
 
+        # and then we schedule the labour for that womans due date
         self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'),
                                 df.at[individual_id, 'la_due_date_current_pregnancy'])
 
@@ -833,6 +836,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ===================================== LABOUR STATE  ==================================================================
         logger.debug('person %d has just reached LabourEvent on %s', individual_id, self.sim.date)
+
         # Debug logging to highlight the women who have miscarried/had an abortion/stillbirth who still come to the
         # event
         if ~df.at[individual_id, 'is_pregnant']:
@@ -878,42 +882,37 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 logger.debug(f'This is LabourEvent, person %d has now gone into {labour_state} on date %s',
                              individual_id, self.sim.date)
 
-# =============================== PLACE HOLDER CARE SEEKING AND SCHEDULING (DUMMY) =====================================
-        #       odds = params['la_labour_equations']['care_seeking'].predict(df.loc[[individual_id]]).values
+# ======================================= PROBABILITY OF HOME DELIVERY =====================================
+                facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabour(self.module,
+                                                                                    person_id=individual_id)
 
-                # TODO: We are awaiting the equation to determine how we deal with care seeking in labour
-                # Here we apply a probability that a woman will seek care in a facility as she is in labour
-                prob = 0 #0.73
-                random = self.module.rng.random_sample(size=1)
+                # n.b. current regression uses outcome of home delivery not facility delivery
 
-                # Again only women who have not undergone induction will be seeking care
-                if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random < prob):
+                # As women who have presented for induction are already in a facility we exclude them, then apply a
+                # probability of home birth
+                if self.module.eval(self, params['la_labour_equations']['care_seeking'], individual_id) & \
+                   (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced'):
+                    mni[individual_id]['delivery_setting'] = 'HB'
+                    logger.debug('This is LabourEvent, doing nothing as person %d will not seek care in labour and will'
+                                 'deliver at home', individual_id)
+
+                else:
                     mni[individual_id]['delivery_setting'] = 'FD'
                     logger.info(
                         'This is LabourEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour on date %s for'
                         ' person %d as they have chosen to seek care for delivery', self.sim.date, individual_id)
 
-                    event = HSI_Labour_PresentsForSkilledAttendanceInLabour(self.module, person_id=individual_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
                                                                         priority=0,
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=1)
                                                                         )
-                    # TODO: Issue of complications not being allocated if this HSI doesnt run- will be rectified with
-                    #  'does_not_run' function
-
-                elif (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random > prob):
-                    mni[individual_id]['delivery_setting'] = 'HB'
-                    logger.debug(
-                        'This is LabourEvent, doing nothing as person %d will not seek care in labour and will deliver '
-                        'at home', individual_id)
 
                 # Here we schedule delivery care for women who have already sought care for induction, whether or not
                 # that induction was successful
                 if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'failed_induction') or \
-                    (df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction'):
-                    event = HSI_Labour_PresentsForSkilledAttendanceInLabour(self.module, person_id=individual_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                   (df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction'):
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
                                                                         priority=0,
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=1)
@@ -921,10 +920,11 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ============================ INDIVIDUAL RISK OF COMPLICATIONS DURING LABOUR =========================================
 # DEAL WITH VERY EARLY PRETERM BIRTHS?!?!
+
 # ====================================== STATUS OF MEMBRANES ==========================================================
 
         # Here we apply a risk that this woman's labour was preceded by premature rupture of membranes, in preterm
-        # women this has likley predisposed their labour
+        # women this has likely predisposed their labour
                 if (mni[individual_id]['labour_state'] == 'EPTL') or (mni[individual_id]['labour_state'] == 'LPTL'):
                     random = self.module.rng.random_sample(size=1)
                     if random < params['prob_prom']:
