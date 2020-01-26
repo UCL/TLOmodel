@@ -85,7 +85,7 @@ class Simulation:
         self.rng.seed(seed)
         logger.info("Simulation RNG user seed %d", seed)
         for module in self.modules.values():
-            module_seed = self.rng.randint(2**31 - 1)
+            module_seed = self.rng.randint(2 ** 31 - 1)
             logger.info("%s RNG auto seed %d", module.name, module_seed)
             module.rng.seed(module_seed)
 
@@ -95,6 +95,12 @@ class Simulation:
         :param n: the number of individuals to create; must be given as
             a keyword parameter for clarity
         """
+
+        # Collect information from all modules, that is required the population dataframe
+        for module in self.modules.values():
+            module.pre_initialise_population()
+
+        # Make the initial population
         self.population = Population(self, n)
         for module in self.modules.values():
             module.initialise_population(self.population)
@@ -107,6 +113,7 @@ class Simulation:
             Must be given as a keyword parameter for clarity.
         """
         self.end_date = end_date  # store the end_date so that others can reference it
+
         for module in self.modules.values():
             module.initialise_simulation(self)
         while self.event_queue:
@@ -128,6 +135,7 @@ class Simulation:
 
         :param event: the Event to schedule
         :param date: when the event should happen
+        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
