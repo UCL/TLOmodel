@@ -702,7 +702,7 @@ class Diarrhoea(Module):
                            'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
             'cryptosporidium': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
                        'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'campylo': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
+            'campylobacter': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
                         'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
             'ST-ETEC': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
                         'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
@@ -765,7 +765,7 @@ class Diarrhoea(Module):
         # DEFAULTS
         df['gi_diarrhoea_status'] = False
         df['gi_diarrhoea_acute_type'] = 'none'          #@@@@ initliasing as np.nan makes it a float, so then cannot become a string or category
-        df['gi_diarrhoea_pathogen'] = 'none'
+        df['gi_diarrhoea_pathogen'].values[:] = 'none'
         df['gi_diarrhoea_type'] = ''     ## You can't make these nans as they are cateogrical. For now I am putting in str so we can use.
         df['gi_persistent_diarrhoea'] = ''      # same here
         df['gi_dehydration_status'] = 'no dehydration'
@@ -886,6 +886,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             outcome_i = rng.choice(probs.columns, p=probs.loc[i].values)
 
             if outcome_i != 'none':
+                assert outcome_i in self.module.PROPERTIES['gi_diarrhoea_pathogen'].categories, 'pathogen is being assigned that is not declared in properties'
                 df.at[i, 'gi_diarrhoea_pathogen'] = outcome_i
                 df.at[i, 'gi_diarrhoea_status'] = True
                 df.at[i, 'gi_diarrhoea_type'] = 'acute'
@@ -910,14 +911,15 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                         # determine the dehydration status
                         if symptom_string == 'dehydration':
                             df.at[i, 'di_dehydration_present'] = True
-                            if rng.rand() < 0.7:
+                            if rng.rand() < 0.7:   # @@@@ note to make this into a parameter
                                 df.at[i, 'gi_dehydration_status'] = 'some dehydration'
                             else:
                                 df.at[i, 'gi_dehydration_status'] = 'severe dehydration'
+
                         # determine the which phase in diarrhoea episode
                         if symptom_string == 'prolonged_diarrhoea':
                             df.at[i, 'gi_diarrhoea_type'] = 'prolonged'
-                            if rng.rand() < m.parameters['progression_persistent_equation']:
+                            if rng.rand() < m.parameters['progression_persistent_equation'].predict(df.loc[[i]]).values[0]:
                                 df.at[i, 'gi_diarrhoea_type'] = 'persistent'
                                 if df.at[i, 'di_dehydration_present']:
                                     df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
@@ -1000,7 +1002,7 @@ class SelfRecoverEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_recovered_date'] = pd.NaT
         df.at[person_id, 'gi_diarrhoea_death_date'] = pd.NaT
         df.at[person_id, 'gi_diarrhoea_death'] = False
-        df.at[person_id, 'gi_diarrhoea_pathogen'].values[:] = 'none'
+        df.at[person_id, 'gi_diarrhoea_pathogen'] = 'none'
 
 
 class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
@@ -1054,6 +1056,7 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
 
         # log information on attributable pathogens
         pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
+
         under5 = df[df.is_alive & df.age_years.between(0, 5)]
         # all_patho_counts = sum(pathogen_count)
         length_under5 = len(under5)
