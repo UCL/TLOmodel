@@ -15,10 +15,12 @@ logger.setLevel(logging.INFO)
 
 class Malaria(Module):
 
-    def __init__(self, name=None, resourcefilepath=None, level=None):
+    def __init__(self, name=None, resourcefilepath=None, level=None, testing=None):
+
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.level = level  # set to national or district-level malaria infection events
+        self.testing = testing
 
         logger.info(f'Malaria infection event running at level {self.level}')
 
@@ -50,6 +52,9 @@ class Malaria(Module):
             Types.REAL, 'probability of death from severe malaria if on treatment'),
         'p_sev_anaemia_preg': Parameter(
             Types.REAL, 'probability of severe anaemia in pregnant women with clinical malaria'),
+
+        'testing_adj': Parameter(
+            Types.REAL, 'additional malaria rdt to match reported coverage levels'),
     }
 
     PROPERTIES = {
@@ -124,6 +129,8 @@ class Malaria(Module):
             Path(self.resourcefilepath) / 'ResourceFile_malaria_SevInc.csv'
         )
 
+        p['testing_adj'] = self.testing
+
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
             p['daly_wt_none'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
@@ -157,14 +164,16 @@ class Malaria(Module):
         df['ma_clinical_preg_counter'] = 0
         df['ma_iptp'] = False
 
+        if now.year <= 2018:
+            current_year = now.year
+        else:
+            current_year = 2018  # fix values for 2018 onwards
+
         if self.level == 0:
             # ----------------------------------- INCIDENCE - NATIONAL -----------------------------------
-            # select incidence based on year
-            curr_year = now.year
-
             # these values are just clinical incidence
             inf_inc = p['mal_inc']
-            inf_inc_month = inf_inc.loc[(inf_inc.year == curr_year), 'monthly_inc_rate']
+            inf_inc_month = inf_inc.loc[(inf_inc.year == current_year), 'monthly_inc_rate']
 
             # ----------------------------------- NEW CLINICAL INFECTIONS -----------------------------------
             # new clinical infections
@@ -222,16 +231,14 @@ class Malaria(Module):
 
             # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
 
-            # get ITN usage rates for current year by district
-            itn = p['itn_district']
-            itn['itn_rates'] = itn['itn_rates'].round(decimals=1)
-            itn_curr = itn.loc[itn.Year == now.year]
+            itn_curr = p['itn_district']
+            itn_curr['itn_rates'] = itn_curr['itn_rates'].round(decimals=1)
+            itn_curr = itn_curr.loc[itn_curr.Year == current_year]
 
-            # IRS coverage rates, round to 0 or 0.8 to match lookup table
-            irs = p['irs_district']
-            irs = irs.loc[irs.Year == now.year]
-            irs.loc[(irs.irs_rates > 0.5), 'irs_rates_round'] = 0.8
-            irs.loc[(irs.irs_rates <= 0.5), 'irs_rates_round'] = 0
+            # IRS coverage rates
+            irs_curr = p['interv']
+            irs_curr = irs_curr.loc[irs_curr.Year == current_year, 'IRS_coverage'].values[0]
+            irs_curr = 0.8 if irs_curr > 0.5 else 0  # round to 0 or 0.8
 
             # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
             # inf_inc select current month and irs
@@ -257,13 +264,13 @@ class Malaria(Module):
                                                     how='inner')
 
             # merge incidence dataframes with irs_curr and keep only matching rows
-            inf_inc_month_irs = inf_inc_month_itn.merge(irs, left_on=['admin', 'irs'],
+            inf_inc_month_irs = inf_inc_month_itn.merge(irs_curr, left_on=['admin', 'irs'],
                                                         right_on=['District', 'irs_rates_round'],
                                                         how='inner')
-            clin_inc_month_irs = clin_inc_month_itn.merge(irs, left_on=['admin', 'irs'],
+            clin_inc_month_irs = clin_inc_month_itn.merge(irs_curr, left_on=['admin', 'irs'],
                                                           right_on=['District', 'irs_rates_round'],
                                                           how='inner')
-            sev_inc_month_irs = sev_inc_month_itn.merge(irs, left_on=['admin', 'irs'],
+            sev_inc_month_irs = sev_inc_month_itn.merge(irs_curr, left_on=['admin', 'irs'],
                                                         right_on=['District', 'irs_rates_round'],
                                                         how='inner')
 
@@ -711,9 +718,6 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
         else:
             current_year = 2018  # fix values for 2018 onwards
 
-        # select incidence based on year
-            current_year = now.year
-
         # these values are just clinical incidence
         inf_inc = p['mal_inc']
         inf_inc_month = inf_inc.loc[(inf_inc.year == current_year), 'monthly_inc_rate']
@@ -1051,13 +1055,13 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             current_year = 2018  # fix values for 2018 onwards
 
         # get ITN usage rates for current year by district
-        itn = p['itn_district']
-        itn['itn_rates'] = itn['itn_rates'].round(decimals=1)
-        itn_curr = itn.loc[itn.Year == current_year]
+        itn_curr = p['itn_district']
+        itn_curr['itn_rates'] = itn_curr['itn_rates'].round(decimals=1)
+        itn_curr = itn_curr.loc[itn_curr.Year == current_year]
 
         # IRS coverage rates
-        interv = p['interv']
-        irs_curr = interv.loc[interv.Year == current_year, 'IRS_coverage'].values[0]
+        irs_curr = p['interv']
+        irs_curr = irs_curr.loc[irs_curr.Year == current_year, 'IRS_coverage'].values[0]
         irs_curr = 0.8 if irs_curr > 0.5 else 0  # round to 0 or 0.8
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
@@ -1439,12 +1443,13 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
         now = self.sim.date
+        p = self.module.parameters
 
         # select people to go for testing (and subsequent tx)
         # random sample 0.4 to match clinical case tx coverage
         # this sample will include asymptomatic infections too to account for
         # unnecessary treatments (subclinical infection)
-        test = df.index[(self.module.rng.random_sample(size=len(df)) < 0.5)
+        test = df.index[(self.module.rng.random_sample(size=len(df)) < p['testing_adj'])
                         & df.is_alive
                         & df.ma_is_infected]
 
@@ -2172,13 +2177,13 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ PARASITE PREVALENCE BY AGE ------------------------------------
 
         # includes all parasite positive cases: some may have low parasitaemia (undetectable)
-        child2_10_clin = len(df[df.is_alive & df.ma_is_infected & (df.age_years.between(2, 10))])
+        child2_10_inf = len(df[df.is_alive & df.ma_is_infected & (df.age_years.between(2, 10))])
 
         # population size - children
         child2_10_pop = len(df[df.is_alive & (df.age_years.between(2, 10))])
 
         # prevalence in children aged 2-10
-        child_prev = child2_10_clin / child2_10_pop if child2_10_pop else 0
+        child_prev = child2_10_inf / child2_10_pop if child2_10_pop else 0
 
         # prevalence of clinical including severe in all ages
         total_clin = len(
