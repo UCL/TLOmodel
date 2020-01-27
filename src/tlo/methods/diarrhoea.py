@@ -71,7 +71,7 @@ class Diarrhoea(Module):
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_incidence_diarrhoea_by_tEPEC':
+        'base_incidence_diarrhoea_by_EPEC':
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
                       ),
@@ -87,7 +87,7 @@ class Diarrhoea(Module):
         'rr_gi_diarrhoea_HIV':
             Parameter(Types.REAL, 'relative rate of diarrhoea for HIV positive status'
                       ),
-        'rr_gi_diarrhoea_malnutrition':
+        'rr_gi_diarrhoea_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
                       ),
         'rr_gi_diarrhoea_excl_breast':
@@ -123,6 +123,9 @@ class Diarrhoea(Module):
         'proportion_AWD_by_norovirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused by norovirus'
                       ),
+        'proportion_AWD_by_astrovirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused by astrovirus'
+                      ),
         'proportion_AWD_by_EPEC':
             Parameter(Types.REAL, 'acute diarrhoea type caused by tEPEC'
                       ),
@@ -149,6 +152,9 @@ class Diarrhoea(Module):
                       ),
         'fever_by_norovirus':
             Parameter(Types.REAL, 'fever caused by norovirus'
+                      ),
+        'fever_by_astrovirus':
+            Parameter(Types.REAL, 'fever caused by astrovirus'
                       ),
         'fever_by_EPEC':
             Parameter(Types.REAL, 'fever caused by tEPEC'
@@ -177,6 +183,9 @@ class Diarrhoea(Module):
         'vomiting_by_norovirus':
             Parameter(Types.REAL, 'vomiting caused by norovirus'
                       ),
+        'vomiting_by_astrovirus':
+            Parameter(Types.REAL, 'vomiting caused by astrovirus'
+                      ),
         'vomiting_by_EPEC':
             Parameter(Types.REAL, 'vomiting caused by tEPEC'
                       ),
@@ -204,6 +213,9 @@ class Diarrhoea(Module):
         'dehydration_by_norovirus':
             Parameter(Types.REAL, 'any dehydration caused by norovirus'
                       ),
+        'dehydration_by_astrovirus':
+            Parameter(Types.REAL, 'any dehydration caused by astrovirus'
+                      ),
         'dehydration_by_EPEC':
             Parameter(Types.REAL, 'any dehydration caused by tEPEC'
                       ),
@@ -229,6 +241,9 @@ class Diarrhoea(Module):
             Parameter(Types.REAL, 'prolonged episode by sapovirus'
                       ),
         'prolonged_diarr_norovirus':
+            Parameter(Types.REAL, 'prolonged episode by norovirus'
+                      ),
+        'prolonged_diarr_astrovirus':
             Parameter(Types.REAL, 'prolonged episode by norovirus'
                       ),
         'prolonged_diarr_EPEC':
@@ -287,7 +302,7 @@ class Diarrhoea(Module):
         'rr_diarr_death_dehydration':
             Parameter(Types.REAL, 'relative rate of diarrhoea death for cases with dehyadration'
                       ),
-        'rr_diarr_death_HIB':
+        'rr_diarr_death_HIV':
             Parameter(Types.REAL, 'relative rate of diarrhoea death for HIV'
                       ),
         'rr_diarr_death_SAM':
@@ -336,41 +351,13 @@ class Diarrhoea(Module):
         'exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
         # symptoms of diarrhoea for care seeking
-        'di_diarrhoea_loose_watery_stools': Property(Types.BOOL, 'diarrhoea symptoms - loose or watery stools'),
-        'di_blood_in_stools': Property(Types.BOOL, 'dysentery symptoms - blood in the stools'),
-        'di_dehydration_present': Property(Types.BOOL, 'diarrhoea symptoms - dehydration'),
-        'di_sympt_fever': Property(Types.BOOL, 'diarrhoea symptoms - associated fever'),
-        'di_sympt_vomiting': Property(Types.BOOL, 'diarrhoea symptoms - associated vomoting'),
-        'di_diarrhoea_over14days': Property(Types.BOOL, 'persistent diarrhoea - diarrhoea for 14 days or more'),
-        'di_any_general_danger_sign': Property
-        (Types.BOOL,
-         'any danger sign - lethargic/uncounscious, not able to drink/breastfeed, convulsions and vomiting everything'),
-        'correctly_identified_danger_signs': Property
-        (Types.BOOL, 'HSA correctly identified at least one danger sign'
-         ),
-        'correctly_assessed_diarrhoea_and_dehydration': Property
-        (Types.BOOL, 'HSA correctly identified diarrhoea and dehydration'
-         ),
-        'correctly_classified_diarrhoea_with_danger_sign': Property
-        (Types.BOOL, 'HSA correctly classified as diarrhoea with danger sign or with signs of severe dehydration'
-         ),
-        'correctly_classified_persistent_or_bloody_diarrhoea': Property
-        (Types.BOOL, 'HSA correctly classified persistent diarrhoea or bloody diarrhoea'
-         ),
-        'correctly_classified_diarrhoea': Property
-        (Types.BOOL, 'HSA correctly classified diarrhoea without blood and less than 14 days'
-         ),
-        'referral_options': Property
-        (Types.CATEGORICAL,
-         'Referral decisions', categories=['refer immediately', 'refer to health facility', 'do not refer']),
-        'correct_referral_decision': Property
-        (Types.BOOL,
-         'HSA made the correct referral decision based on the assessment and classification process'
-         ),
-        'correct_treatment_and_advice_given': Property
-        (Types.BOOL,
-         'HSA has given the correct treatment for the classified condition'
-         ),
+        # 'di_diarrhoea_loose_watery_stools': Property(Types.BOOL, 'diarrhoea symptoms - loose or watery stools'),
+        # 'di_blood_in_stools': Property(Types.BOOL, 'dysentery symptoms - blood in the stools'),
+        # 'di_dehydration_present': Property(Types.BOOL, 'diarrhoea symptoms - dehydration'),
+        # 'di_sympt_fever': Property(Types.BOOL, 'diarrhoea symptoms - associated fever'),
+        # 'di_sympt_vomiting': Property(Types.BOOL, 'diarrhoea symptoms - associated vomoting'),
+        # 'di_diarrhoea_over14days': Property(Types.BOOL, 'persistent diarrhoea - diarrhoea for 14 days or more'),
+
     }
 
     # TODO: as an example, I am declaring some symptoms here that we are going to use in the symptom manager
@@ -391,157 +378,6 @@ class Diarrhoea(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
         # dfd.set_index("parameter_name", inplace=True)
         self.load_parameters_from_dataframe(dfd)
-
-        # all diarrhoea prevalence values:
-        # p['rp_acute_diarr_age12to23mo'] = dfd.loc['rp_acute_diarr_age12to23mo', 'value1']
-        # p['rp_acute_diarr_age24to59mo'] = dfd.loc['rp_acute_diarr_age24to59mo', 'value1']
-        # p['rp_acute_diarr_HIV'] = dfd.loc['rp_acute_diarr_HIV', 'value1']
-        # p['rp_acute_diarr_SAM'] = dfd.loc['rp_acute_diarr_SAM', 'value1']
-        # p['rp_acute_diarr_excl_breast'] = dfd.loc['rp_acute_diarr_excl_breast', 'value1']
-        # p['rp_acute_diarr_cont_breast'] = dfd.loc['rp_acute_diarr_cont_breast', 'value1']
-        # p['rp_acute_diarr_HHhandwashing'] = dfd.loc['rp_acute_diarr_HHhandwashing', 'value1']
-        # p['rp_acute_diarr_clean_water'] = dfd.loc['rp_acute_diarr_clean_water', 'value1']
-        # p['rp_acute_diarr_improved_sanitation'] = dfd.loc['rp_acute_diarr_improved_sanitation', 'value1']
-        # p['base_prev_persistent_diarrhoea'] = dfd.loc['base_prev_persistent_diarrhoea', 'value1']
-        # p['rp_persistent_diarrhoea_age12to23mo'] = dfd.loc['rp_persistent_diarrhoea_age12to23mo', 'value1']
-        # p['rp_persistent_diarrhoea_age24to59mo'] = dfd.loc['rp_persistent_diarrhoea_age24to59mo', 'value1']
-        # p['rp_persistent_diarrhoea_HIV'] = dfd.loc['rp_persistent_diarrhoea_HIV', 'value1']
-        # p['rp_persistent_diarrhoea_SAM'] = dfd.loc['rp_persistent_diarrhoea_SAM', 'value1']
-        # p['rp_persistent_diarrhoea_excl_breast'] = dfd.loc['rp_persistent_diarrhoea_excl_breast', 'value1']
-        # p['rp_persistent_diarrhoea_cont_breast'] = dfd.loc['rp_persistent_diarrhoea_cont_breast', 'value1']
-        # p['rp_persistent_diarrhoea_HHhandwashing'] = dfd.loc['rp_persistent_diarrhoea_HHhandwashing', 'value1']
-        # p['rp_persistent_diarrhoea_clean_water'] = dfd.loc['rp_persistent_diarrhoea_clean_water', 'value1']
-        # p['rp_persistent_diarrhoea_improved_sanitation'] = dfd.loc['rp_persistent_diarrhoea_improved_sanitation', 'value1']
-        # p['init_prop_diarrhoea_status'] = [
-        #     dfd.loc['init_prop_diarrhoea_status', 'value1'],
-        #     dfd.loc['init_prop_diarrhoea_status', 'value2'],
-        #     dfd.loc['init_prop_diarrhoea_status', 'value3']
-        # ]
-        # # diarrhoea incidence by pathogen and relative rates
-        # p['base_incidence_diarrhoea_by_rotavirus'] = [
-        #     dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value1'],
-        #     dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value2'],
-        #     dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value3']
-        # ]
-        # p['base_incidence_diarrhoea_by_shigella'] = [
-        #     dfd.loc['base_incidence_diarrhoea_by_shigella', 'value1'],
-        #     dfd.loc['base_incidence_diarrhoea_by_shigella', 'value2'],
-        #     dfd.loc['base_incidence_diarrhoea_by_shigella', 'value3']
-        #     ]
-        # p['base_incidence_diarrhoea_by_adenovirus'] = [
-        #     dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value1'],
-        #     dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value2'],
-        #     dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value3']
-        #     ]
-        # p['base_incidence_diarrhoea_by_crypto'] = [
-        #     dfd.loc['base_incidence_diarrhoea_by_crypto', 'value1'],
-        #     dfd.loc['base_incidence_diarrhoea_by_crypto', 'value2'],
-        #     dfd.loc['base_incidence_diarrhoea_by_crypto', 'value3']
-        # ]
-        # p['base_incidence_diarrhoea_by_campylo'] = [
-        #     dfd.loc['base_incidence_diarrhoea_by_campylo', 'value1'],
-        #     dfd.loc['base_incidence_diarrhoea_by_campylo', 'value2'],
-        #     dfd.loc['base_incidence_diarrhoea_by_campylo', 'value3']
-        #     ]
-        # p['base_incidence_diarrhoea_by_ETEC'] = [
-        #     dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value1'],
-        #     dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value2'],
-        #     dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value3']
-        #     ]
-        # p['base_incidence_diarrhoea_by_sapovirus'] = [0.005, 0.005, 0.005]
-        # p['base_incidence_diarrhoea_by_norovirus'] = [0.005, 0.005, 0.005]
-        # p['base_incidence_diarrhoea_by_astrovirus'] = [0.005, 0.005, 0.005]
-        # p['base_incidence_diarrhoea_by_EPEC'] = [0.005, 0.005, 0.005]
-        #
-        # p['rr_gi_diarrhoea_HHhandwashing'] = dfd.loc['rr_gi_diarrhoea_HHhandwashing', 'value1']
-        # p['rr_gi_diarrhoea_improved_sanitation'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
-        # p['rr_gi_diarrhoea_clean_water'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
-        # p['rr_gi_diarrhoea_HIV'] = dfd.loc['rr_gi_diarrhoea_HIV', 'value1']
-        # p['rr_gi_diarrhoea_SAM'] = dfd.loc['rr_gi_diarrhoea_malnutrition', 'value1']
-        # p['rr_gi_diarrhoea_excl_breast'] = dfd.loc['rr_gi_diarrhoea_excl_breastfeeding', 'value1']
-        # p['rr_gi_diarrhoea_cont_breast'] = dfd.loc['rr_gi_diarrhoea_excl_conti_breast', 'value1']
-        # # proportion of acute watery and dysentery by pathogen
-        # p['rotavirus_AWD'] = dfd.loc['proportion_AWD_by_rotavirus', 'value1']
-        # p['shigella_AWD'] = dfd.loc['proportion_AWD_by_shigella', 'value1']
-        # p['adenovirus_AWD'] = dfd.loc['proportion_AWD_by_adenovirus', 'value1']
-        # p['crypto_AWD'] = dfd.loc['proportion_AWD_by_crypto', 'value1']
-        # p['campylo_AWD'] = dfd.loc['proportion_AWD_by_campylo', 'value1']
-        # p['ETEC_AWD'] = dfd.loc['proportion_AWD_by_ETEC', 'value1']
-        # p['sapovirus_AWD'] = dfd.loc['proportion_AWD_by_sapovirus', 'value1']
-        # p['norovirus_AWD'] = dfd.loc['proportion_AWD_by_norovirus', 'value1']
-        # p['astrovirus_AWD'] = dfd.loc['proportion_AWD_by_astrovirus', 'value1']
-        # p['EPEC_AWD'] = dfd.loc['proportion_AWD_by_EPEC', 'value1']
-        # # pathogens causing fever
-        # p['rotavirus_fever'] = dfd.loc['fever_by_rotavirus', 'value1']
-        # p['shigella_fever'] = dfd.loc['fever_by_shigella', 'value1']
-        # p['adenovirus_fever'] = dfd.loc['fever_by_adenovirus', 'value1']
-        # p['crypto_fever'] = dfd.loc['fever_by_crypto', 'value1']
-        # p['campylo_fever'] = dfd.loc['fever_by_campylo', 'value1']
-        # p['ETEC_fever'] = dfd.loc['fever_by_ETEC', 'value1']
-        # p['sapovirus_fever'] = dfd.loc['fever_by_sapovirus', 'value1']
-        # p['norovirus_fever'] = dfd.loc['fever_by_norovirus', 'value1']
-        # p['astrovirus_fever'] = dfd.loc['fever_by_astrovirus', 'value1']
-        # p['EPEC_fever'] = dfd.loc['fever_by_EPEC', 'value1']
-        # # pathogens causing vomiting
-        # p['rotavirus_vomiting'] = dfd.loc['vomiting_by_rotavirus', 'value1']
-        # p['shigella_vomiting'] = dfd.loc['vomiting_by_shigella', 'value1']
-        # p['adenovirus_vomiting'] = dfd.loc['vomiting_by_adenovirus', 'value1']
-        # p['crypto_vomiting'] = dfd.loc['vomiting_by_crypto', 'value1']
-        # p['campylo_vomiting'] = dfd.loc['vomiting_by_campylo', 'value1']
-        # p['ETEC_vomiting'] = dfd.loc['vomiting_by_ETEC', 'value1']
-        # p['sapovirus_vomiting'] = dfd.loc['vomiting_by_sapovirus', 'value1']
-        # p['norovirus_vomiting'] = dfd.loc['vomiting_by_norovirus', 'value1']
-        # p['astrovirus_vomiting'] = dfd.loc['vomiting_by_astrovirus', 'value1']
-        # p['EPEC_vomiting'] = dfd.loc['vomiting_by_EPEC', 'value1']
-        # # pathogens causing dehydration
-        # p['rotavirus_dehydration'] = dfd.loc['dehydration_by_rotavirus', 'value1']
-        # p['shigella_dehydration'] = dfd.loc['dehydration_by_shigella', 'value1']
-        # p['adenovirus_dehydration'] = dfd.loc['dehydration_by_adenovirus', 'value1']
-        # p['crypto_dehydration'] = dfd.loc['dehydration_by_crypto', 'value1']
-        # p['campylo_dehydration'] = dfd.loc['dehydration_by_campylo', 'value1']
-        # p['ETEC_dehydration'] = dfd.loc['dehydration_by_ETEC', 'value1']
-        # p['sapovirus_dehydration'] = dfd.loc['dehydration_by_sapovirus', 'value1']
-        # p['norovirus_dehydration'] = dfd.loc['dehydration_by_norovirus', 'value1']
-        # p['astrovirus_dehydration'] = dfd.loc['dehydration_by_astrovirus', 'value1']
-        # p['EPEC_dehydration'] = dfd.loc['dehydration_by_EPEC', 'value1']
-        # # prolonged diarrhoea by pathogen
-        # p['rotavirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_rotavirus', 'value1']
-        # p['shigella_prolonged_diarr'] = dfd.loc['prolonged_diarr_shigella', 'value1']
-        # p['adenovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_adenovirus', 'value1']
-        # p['crypto_prolonged_diarr'] = dfd.loc['prolonged_diarr_crypto', 'value1']
-        # p['campylo_prolonged_diarr'] = dfd.loc['prolonged_diarr_campylo', 'value1']
-        # p['ETEC_prolonged_diarr'] = dfd.loc['prolonged_diarr_ETEC', 'value1']
-        # p['sapovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_sapovirus', 'value1']
-        # p['norovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_norovirus', 'value1']
-        # p['astrovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_astrovirus', 'value1']
-        # p['EPEC_prolonged_diarr'] = dfd.loc['prolonged_diarr_EPEC', 'value1']
-        # # parameters for acute diarrhoea becoming persistent
-        # p['prob_dysentery_become_persistent'] = dfd.loc['prob_dysentery_become_persistent', 'value1']
-        # p['prob_watery_diarr_become_persistent'] = dfd.loc['prob_watery_diarr_become_persistent', 'value1']
-        # p['rr_bec_persistent_age12to23'] = dfd.loc['rr_bec_persistent_age12to23', 'value1']
-        # p['rr_bec_persistent_age24to59'] = dfd.loc['rr_bec_persistent_age24to59', 'value1']
-        # p['rr_bec_persistent_HIV'] = dfd.loc['prob_dysentery_become_persistent', 'value1']
-        # p['rr_bec_persistent_SAM'] = dfd.loc['rr_bec_persistent_HIV', 'value1']
-        # p['rr_bec_persistent_excl_breast'] = dfd.loc['rr_bec_persistent_excl_breast', 'value1']
-        # p['rr_bec_persistent_cont_breast'] = dfd.loc['rr_bec_persistent_cont_breast', 'value1']
-        #
-        # p['progression_persistent_equation'] = float()
-        #
-        # # p['dhs_care_seeking_2010'] = 0.58
-        # # p['IMCI_effectiveness_2010'] = 0.6
-        # # p['r_death_diarrhoea'] = 0.3
-        # # p['prob_prolonged_to_persistent_diarr'] = 0.2866
-        # # p['case_fatality_rate_AWD'] = dfd.loc['case_fatality_rate_AWD', 'value1']
-        # # p['case_fatality_rate_dysentery'] = dfd.loc['case_fatality_rate_dysentery', 'value1']
-        # # p['case_fatality_rate_persistent'] = dfd.loc['case_fatality_rate_persistent', 'value1']
-        # p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
-        # p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
-        # p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
-        # p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
-        # p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
-        # # p['r_recovery_AWD'] = 0.8
-        # # p['r_recovery_dysentery'] = 0.5
-        # # p['rr_recovery_dehydration'] = 0.81
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -800,26 +636,54 @@ class Diarrhoea(Module):
         # Please double check that all the symptos are declared.
 
         self.parameters['prob_symptoms'] = {
-            'rotavirus': {'watery_diarrhoea': 0.2, 'bloody_diarrhoea': 0.2, 'fever': 0.1, 'vomiting': 0,
-                          'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'shigella': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                         'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'adenovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                           'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'cryptosporidium': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                       'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'campylobacter': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                        'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'ST-ETEC': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                        'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'sapovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                          'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'norovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                          'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'astrovirus': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                           'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
-            'tEPEC': {'watery_diarrhoea': 0, 'bloody_diarrhoea': 0, 'fever': 0.1, 'vomiting': 0,
-                      'dehydration': 0.2, 'prolonged_diarrhoea': 0.1},
+            'rotavirus': {'watery_diarrhoea': m.proportion_AWD_by_rotavirus,
+                          'bloody_diarrhoea': 1 - m.proportion_AWD_by_rotavirus,
+                          'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_rotavirus,
+                          'dehydration': m.dehydration_by_rotavirus,
+                          'prolonged_diarrhoea': m.prolonged_diarr_rotavirus},
+            'shigella': {'watery_diarrhoea': m.proportion_AWD_by_shigella,
+                         'bloody_diarrhoea': 1 - m.proportion_AWD_by_shigella,
+                         'fever': m.fever_by_shigella, 'vomiting': m.vomiting_by_shigella,
+                         'dehydration': m.dehydration_by_shigella,
+                         'prolonged_diarrhoea': m.prolonged_diarr_shigella},
+            'adenovirus': {'watery_diarrhoea': m.proportion_AWD_by_adenovirus,
+                           'bloody_diarrhoea': 1 - m.proportion_AWD_by_adenovirus,
+                           'fever': m.fever_by_adenovirus, 'vomiting': m.vomiting_by_adenovirus,
+                           'dehydration': m.dehydration_by_adenovirus,
+                           'prolonged_diarrhoea': m.prolonged_diarr_adenovirus},
+            'cryptosporidium': {'watery_diarrhoea': m.proportion_AWD_by_crypto,
+                                'bloody_diarrhoea': 1 - m.proportion_AWD_by_crypto,
+                                'fever': m.fever_by_crypto, 'vomiting': m.vomiting_by_crypto,
+                                'dehydration': m.dehydration_by_crypto,
+                                'prolonged_diarrhoea': m.prolonged_diarr_crypto},
+            'campylobacter': {'watery_diarrhoea': m.proportion_AWD_by_campylo,
+                              'bloody_diarrhoea': 1 - m.proportion_AWD_by_campylo,
+                              'fever': m.fever_by_campylo, 'vomiting': m.vomiting_by_campylo,
+                              'dehydration': m.dehydration_by_rotavirus,
+                              'prolonged_diarrhoea': m.prolonged_diarr_campylo},
+            'ST-ETEC': {'watery_diarrhoea': m.proportion_AWD_by_ETEC,
+                        'bloody_diarrhoea': 1 - m.proportion_AWD_by_ETEC,
+                        'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_ETEC,
+                        'dehydration': m.dehydration_by_ETEC, 'prolonged_diarrhoea': m.prolonged_diarr_ETEC},
+            'sapovirus': {'watery_diarrhoea': m.proportion_AWD_by_sapovirus,
+                          'bloody_diarrhoea': 1 - m.proportion_AWD_by_sapovirus,
+                          'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_sapovirus,
+                          'dehydration': m.dehydration_by_sapovirus,
+                          'prolonged_diarrhoea': m.prolonged_diarr_sapovirus},
+            'norovirus': {'watery_diarrhoea': m.proportion_AWD_by_norovirus,
+                          'bloody_diarrhoea': 1 - m.proportion_AWD_by_norovirus,
+                          'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_norovirus,
+                          'dehydration': m.dehydration_by_norovirus,
+                          'prolonged_diarrhoea': m.prolonged_diarr_norovirus},
+            'astrovirus': {'watery_diarrhoea': m.proportion_AWD_by_astrovirus,
+                           'bloody_diarrhoea': 1 - m.proportion_AWD_by_astrovirus,
+                           'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_astrovirus,
+                           'dehydration': m.dehydration_by_astrovirus,
+                           'prolonged_diarrhoea': m.prolonged_diarr_astrovirus},
+            'tEPEC': {'watery_diarrhoea': m.proportion_AWD_by_EPEC,
+                      'bloody_diarrhoea': 1 - m.proportion_AWD_by_EPEC,
+                      'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_EPEC,
+                      'dehydration': m.dehydration_by_EPEC, 'prolonged_diarrhoea': m.prolonged_diarr_EPEC},
         }
 
         # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
@@ -1008,29 +872,32 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                 # ----------------------------------------------------------------------------------------
                 # Then work out the symptoms for this person:
                 for symptom_string, prob in m.parameters['prob_symptoms'][outcome_i].items():
-                    if rng.rand() < prob:
-                        # determine the acute type of diarrhoea
-                        if symptom_string == 'watery_diarrhoea':
+                    if symptom_string == 'watery_diarrhoea':
+                        if rng.rand() < prob:
                             df.at[i, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
-                        if symptom_string == 'bloody_diarrhoea':
+                        else:
                             df.at[i, 'gi_diarrhoea_acute_type'] = 'dysentery'
-                        # determine the dehydration status
-                        if symptom_string == 'dehydration':
+                    # determine the dehydration status
+                    if symptom_string == 'dehydration':
+                        if rng.rand() < prob:
                             df.at[i, 'di_dehydration_present'] = True
-                            if rng.rand() < 0.7:   # @@@@ note to make this into a parameter
+                            if rng.rand() < 0.7:
                                 df.at[i, 'gi_dehydration_status'] = 'some dehydration'
                             else:
                                 df.at[i, 'gi_dehydration_status'] = 'severe dehydration'
+                        else:
+                            df.at[i, 'di_dehydration_present'] = False
 
-                        # determine the which phase in diarrhoea episode
-                        if symptom_string == 'prolonged_diarrhoea':
+                    # determine the which phase in diarrhoea episode
+                    if symptom_string == 'prolonged_diarrhoea':
+                        if rng.rand() < prob:
                             df.at[i, 'gi_diarrhoea_type'] = 'prolonged'
                             if rng.rand() < m.parameters['progression_persistent_equation'].predict(df.loc[[i]]).values[0]:
                                 df.at[i, 'gi_diarrhoea_type'] = 'persistent'
-                                if df.at[i, 'di_dehydration_present']:
-                                    df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
-                                else:
-                                    df.at[i, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
+                            if df.at[i, 'di_dehydration_present']:
+                                df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
+                            else:
+                                df.at[i, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
 
                     # determine the duration of the episode
                     if df.at[i, 'gi_diarrhoea_type'] == 'acute':
