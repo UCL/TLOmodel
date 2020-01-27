@@ -408,3 +408,11 @@ def test_logisitc_HSB_example():
     prob_seeking_care_lm = lm.predict(df, year=2015)
 
     assert prob_seeking_care_lm.equals(prob_seeking_care)
+
+
+def test_using_int_as_intercept():
+    eq = LinearModel(
+        LinearModelType.ADDITIVE,
+        0
+    )
+    assert isinstance(eq, LinearModel)
