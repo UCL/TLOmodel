@@ -230,7 +230,7 @@ class Malaria(Module):
             assert (not pd.isnull(df['ma_district_edited']).any())
 
             # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
-
+            # TODO add in district IRS
             itn_curr = p['itn_district']
             itn_curr['itn_rates'] = itn_curr['itn_rates'].round(decimals=1)
             itn_curr = itn_curr.loc[itn_curr.Year == current_year]
