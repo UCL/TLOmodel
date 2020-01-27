@@ -1,6 +1,5 @@
 import logging as _logging
 
-
 # logging functions ---
 
 
@@ -50,6 +49,7 @@ class Logger:
             self._std_logger = _logging.getLogger(name=name)
         self.name = name
         self.handlers = self._std_logger.handlers
+        self.filters = self._std_logger.filters
 
     def __repr__(self):
         return f'<tlo Logger containing {self._std_logger}>'
@@ -71,6 +71,12 @@ class Logger:
 
     def warning(self, msg, *args, **kwargs):
         self._std_logger.warning(msg, *args, **kwargs)
+
+    def removeFilter(self, filter):
+        self._std_logger.removeFilter(filter)
+
+    def removeHandler(self, hdlr):
+        self._std_logger.removeHandler(hdlr)
 
 
 # setup default logger
