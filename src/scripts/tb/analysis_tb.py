@@ -42,7 +42,7 @@ popsize = 1000
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + "LogFile" + datestamp + ".log"
+logfile = outputpath + "TbHiv_LogFile" + datestamp + ".log"
 
 if os.path.exists(logfile):
     os.remove(logfile)
