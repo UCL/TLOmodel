@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
+end_date = Date(2012, 12, 31)
 popsize = 1000
 
 # Establish the simulation object
@@ -166,7 +166,7 @@ plt.plot(m_hiv_years, m_hiv.hiv_adult_inc_percent)
 plt.title("HIV adult incidence (%)")
 plt.xlabel("Year")
 plt.ylabel("Incidence (%)")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 
 # TB incidence
@@ -176,7 +176,7 @@ plt.plot(m_tb_years, m_tb_inc.tbIncActive100k)
 plt.title("TB case incidence/100k")
 plt.xlabel("Year")
 plt.ylabel("Incidence (%)")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 
 # TB prevalence
@@ -186,7 +186,7 @@ plt.plot(m_tb_years, m_tb_prev.tbPropActive)
 plt.title("TB prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 
 # HIV treatment coverage
@@ -196,7 +196,7 @@ plt.plot(m_hiv_years, hiv_art_cov_percent)
 plt.title("ART coverage (%)")
 plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 
 # TB treatment coverage
@@ -206,7 +206,7 @@ plt.plot(m_tb_years, m_tb_treatment.tbTreat)
 plt.title("TB treatment coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Model"])
 
 # BCG coverage
@@ -216,7 +216,7 @@ plt.plot(m_tb_years, m_tb_bcg.tbBcgCoverage)
 plt.title("BCG coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 plt.show()
 # plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
