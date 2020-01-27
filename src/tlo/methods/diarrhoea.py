@@ -281,161 +281,158 @@ class Diarrhoea(Module):
         dfd = pd.read_excel(
             Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
         dfd.set_index("Parameter_name", inplace=True)
-        # self.load_parameters_from_dataframe(dfd)
-
-        #TODO: (@Ines - you might find it easier to use the utility function for importing long lists of parameters from excel files.)
-        # Cookbook! or ask Joe (or Tim will find it for you!)
+        self.load_parameters_from_dataframe(dfd)
 
         # all diarrhoea prevalence values:
-        p['rp_acute_diarr_age12to23mo'] = dfd.loc['rp_acute_diarr_age12to23mo', 'value1']
-        p['rp_acute_diarr_age24to59mo'] = dfd.loc['rp_acute_diarr_age24to59mo', 'value1']
-        p['rp_acute_diarr_HIV'] = dfd.loc['rp_acute_diarr_HIV', 'value1']
-        p['rp_acute_diarr_SAM'] = dfd.loc['rp_acute_diarr_SAM', 'value1']
-        p['rp_acute_diarr_excl_breast'] = dfd.loc['rp_acute_diarr_excl_breast', 'value1']
-        p['rp_acute_diarr_cont_breast'] = dfd.loc['rp_acute_diarr_cont_breast', 'value1']
-        p['rp_acute_diarr_HHhandwashing'] = dfd.loc['rp_acute_diarr_HHhandwashing', 'value1']
-        p['rp_acute_diarr_clean_water'] = dfd.loc['rp_acute_diarr_clean_water', 'value1']
-        p['rp_acute_diarr_improved_sanitation'] = dfd.loc['rp_acute_diarr_improved_sanitation', 'value1']
-        p['base_prev_persistent_diarrhoea'] = dfd.loc['base_prev_persistent_diarrhoea', 'value1']
-        p['rp_persistent_diarrhoea_age12to23mo'] = dfd.loc['rp_persistent_diarrhoea_age12to23mo', 'value1']
-        p['rp_persistent_diarrhoea_age24to59mo'] = dfd.loc['rp_persistent_diarrhoea_age24to59mo', 'value1']
-        p['rp_persistent_diarrhoea_HIV'] = dfd.loc['rp_persistent_diarrhoea_HIV', 'value1']
-        p['rp_persistent_diarrhoea_SAM'] = dfd.loc['rp_persistent_diarrhoea_SAM', 'value1']
-        p['rp_persistent_diarrhoea_excl_breast'] = dfd.loc['rp_persistent_diarrhoea_excl_breast', 'value1']
-        p['rp_persistent_diarrhoea_cont_breast'] = dfd.loc['rp_persistent_diarrhoea_cont_breast', 'value1']
-        p['rp_persistent_diarrhoea_HHhandwashing'] = dfd.loc['rp_persistent_diarrhoea_HHhandwashing', 'value1']
-        p['rp_persistent_diarrhoea_clean_water'] = dfd.loc['rp_persistent_diarrhoea_clean_water', 'value1']
-        p['rp_persistent_diarrhoea_improved_sanitation'] = dfd.loc['rp_persistent_diarrhoea_improved_sanitation', 'value1']
-        p['init_prop_diarrhoea_status'] = [
-            dfd.loc['init_prop_diarrhoea_status', 'value1'],
-            dfd.loc['init_prop_diarrhoea_status', 'value2'],
-            dfd.loc['init_prop_diarrhoea_status', 'value3']
-        ]
-        # diarrhoea incidence by pathogen and relative rates
-        p['base_incidence_diarrhoea_by_rotavirus'] = [
-            dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value1'],
-            dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value2'],
-            dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value3']
-        ]
-        p['base_incidence_diarrhoea_by_shigella'] = [
-            dfd.loc['base_incidence_diarrhoea_by_shigella', 'value1'],
-            dfd.loc['base_incidence_diarrhoea_by_shigella', 'value2'],
-            dfd.loc['base_incidence_diarrhoea_by_shigella', 'value3']
-            ]
-        p['base_incidence_diarrhoea_by_adenovirus'] = [
-            dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value1'],
-            dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value2'],
-            dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value3']
-            ]
-        p['base_incidence_diarrhoea_by_crypto'] = [
-            dfd.loc['base_incidence_diarrhoea_by_crypto', 'value1'],
-            dfd.loc['base_incidence_diarrhoea_by_crypto', 'value2'],
-            dfd.loc['base_incidence_diarrhoea_by_crypto', 'value3']
-        ]
-        p['base_incidence_diarrhoea_by_campylo'] = [
-            dfd.loc['base_incidence_diarrhoea_by_campylo', 'value1'],
-            dfd.loc['base_incidence_diarrhoea_by_campylo', 'value2'],
-            dfd.loc['base_incidence_diarrhoea_by_campylo', 'value3']
-            ]
-        p['base_incidence_diarrhoea_by_ETEC'] = [
-            dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value1'],
-            dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value2'],
-            dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value3']
-            ]
-        p['base_incidence_diarrhoea_by_sapovirus'] = [0.005, 0.005, 0.005]
-        p['base_incidence_diarrhoea_by_norovirus'] = [0.005, 0.005, 0.005]
-        p['base_incidence_diarrhoea_by_astrovirus'] = [0.005, 0.005, 0.005]
-        p['base_incidence_diarrhoea_by_EPEC'] = [0.005, 0.005, 0.005]
-
-        p['rr_gi_diarrhoea_HHhandwashing'] = dfd.loc['rr_gi_diarrhoea_HHhandwashing', 'value1']
-        p['rr_gi_diarrhoea_improved_sanitation'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
-        p['rr_gi_diarrhoea_clean_water'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
-        p['rr_gi_diarrhoea_HIV'] = dfd.loc['rr_gi_diarrhoea_HIV', 'value1']
-        p['rr_gi_diarrhoea_SAM'] = dfd.loc['rr_gi_diarrhoea_malnutrition', 'value1']
-        p['rr_gi_diarrhoea_excl_breast'] = dfd.loc['rr_gi_diarrhoea_excl_breastfeeding', 'value1']
-        p['rr_gi_diarrhoea_cont_breast'] = dfd.loc['rr_gi_diarrhoea_excl_conti_breast', 'value1']
-        # proportion of acute watery and dysentery by pathogen
-        p['rotavirus_AWD'] = dfd.loc['proportion_AWD_by_rotavirus', 'value1']
-        p['shigella_AWD'] = dfd.loc['proportion_AWD_by_shigella', 'value1']
-        p['adenovirus_AWD'] = dfd.loc['proportion_AWD_by_adenovirus', 'value1']
-        p['crypto_AWD'] = dfd.loc['proportion_AWD_by_crypto', 'value1']
-        p['campylo_AWD'] = dfd.loc['proportion_AWD_by_campylo', 'value1']
-        p['ETEC_AWD'] = dfd.loc['proportion_AWD_by_ETEC', 'value1']
-        p['sapovirus_AWD'] = dfd.loc['proportion_AWD_by_sapovirus', 'value1']
-        p['norovirus_AWD'] = dfd.loc['proportion_AWD_by_norovirus', 'value1']
-        p['astrovirus_AWD'] = dfd.loc['proportion_AWD_by_astrovirus', 'value1']
-        p['EPEC_AWD'] = dfd.loc['proportion_AWD_by_EPEC', 'value1']
-        # pathogens causing fever
-        p['rotavirus_fever'] = dfd.loc['fever_by_rotavirus', 'value1']
-        p['shigella_fever'] = dfd.loc['fever_by_shigella', 'value1']
-        p['adenovirus_fever'] = dfd.loc['fever_by_adenovirus', 'value1']
-        p['crypto_fever'] = dfd.loc['fever_by_crypto', 'value1']
-        p['campylo_fever'] = dfd.loc['fever_by_campylo', 'value1']
-        p['ETEC_fever'] = dfd.loc['fever_by_ETEC', 'value1']
-        p['sapovirus_fever'] = dfd.loc['fever_by_sapovirus', 'value1']
-        p['norovirus_fever'] = dfd.loc['fever_by_norovirus', 'value1']
-        p['astrovirus_fever'] = dfd.loc['fever_by_astrovirus', 'value1']
-        p['EPEC_fever'] = dfd.loc['fever_by_EPEC', 'value1']
-        # pathogens causing vomiting
-        p['rotavirus_vomiting'] = dfd.loc['vomiting_by_rotavirus', 'value1']
-        p['shigella_vomiting'] = dfd.loc['vomiting_by_shigella', 'value1']
-        p['adenovirus_vomiting'] = dfd.loc['vomiting_by_adenovirus', 'value1']
-        p['crypto_vomiting'] = dfd.loc['vomiting_by_crypto', 'value1']
-        p['campylo_vomiting'] = dfd.loc['vomiting_by_campylo', 'value1']
-        p['ETEC_vomiting'] = dfd.loc['vomiting_by_ETEC', 'value1']
-        p['sapovirus_vomiting'] = dfd.loc['vomiting_by_sapovirus', 'value1']
-        p['norovirus_vomiting'] = dfd.loc['vomiting_by_norovirus', 'value1']
-        p['astrovirus_vomiting'] = dfd.loc['vomiting_by_astrovirus', 'value1']
-        p['EPEC_vomiting'] = dfd.loc['vomiting_by_EPEC', 'value1']
-        # pathogens causing dehydration
-        p['rotavirus_dehydration'] = dfd.loc['dehydration_by_rotavirus', 'value1']
-        p['shigella_dehydration'] = dfd.loc['dehydration_by_shigella', 'value1']
-        p['adenovirus_dehydration'] = dfd.loc['dehydration_by_adenovirus', 'value1']
-        p['crypto_dehydration'] = dfd.loc['dehydration_by_crypto', 'value1']
-        p['campylo_dehydration'] = dfd.loc['dehydration_by_campylo', 'value1']
-        p['ETEC_dehydration'] = dfd.loc['dehydration_by_ETEC', 'value1']
-        p['sapovirus_dehydration'] = dfd.loc['dehydration_by_sapovirus', 'value1']
-        p['norovirus_dehydration'] = dfd.loc['dehydration_by_norovirus', 'value1']
-        p['astrovirus_dehydration'] = dfd.loc['dehydration_by_astrovirus', 'value1']
-        p['EPEC_dehydration'] = dfd.loc['dehydration_by_EPEC', 'value1']
-        # prolonged diarrhoea by pathogen
-        p['rotavirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_rotavirus', 'value1']
-        p['shigella_prolonged_diarr'] = dfd.loc['prolonged_diarr_shigella', 'value1']
-        p['adenovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_adenovirus', 'value1']
-        p['crypto_prolonged_diarr'] = dfd.loc['prolonged_diarr_crypto', 'value1']
-        p['campylo_prolonged_diarr'] = dfd.loc['prolonged_diarr_campylo', 'value1']
-        p['ETEC_prolonged_diarr'] = dfd.loc['prolonged_diarr_ETEC', 'value1']
-        p['sapovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_sapovirus', 'value1']
-        p['norovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_norovirus', 'value1']
-        p['astrovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_astrovirus', 'value1']
-        p['EPEC_prolonged_diarr'] = dfd.loc['prolonged_diarr_EPEC', 'value1']
-        # parameters for acute diarrhoea becoming persistent
-        p['prob_dysentery_become_persistent'] = dfd.loc['prob_dysentery_become_persistent', 'value1']
-        p['prob_watery_diarr_become_persistent'] = dfd.loc['prob_watery_diarr_become_persistent', 'value1']
-        p['rr_bec_persistent_age12to23'] = dfd.loc['rr_bec_persistent_age12to23', 'value1']
-        p['rr_bec_persistent_age24to59'] = dfd.loc['rr_bec_persistent_age24to59', 'value1']
-        p['rr_bec_persistent_HIV'] = dfd.loc['prob_dysentery_become_persistent', 'value1']
-        p['rr_bec_persistent_SAM'] = dfd.loc['rr_bec_persistent_HIV', 'value1']
-        p['rr_bec_persistent_excl_breast'] = dfd.loc['rr_bec_persistent_excl_breast', 'value1']
-        p['rr_bec_persistent_cont_breast'] = dfd.loc['rr_bec_persistent_cont_breast', 'value1']
-
-        p['progression_persistent_equation'] = float()
-
-        # p['dhs_care_seeking_2010'] = 0.58
-        # p['IMCI_effectiveness_2010'] = 0.6
-        # p['r_death_diarrhoea'] = 0.3
-        # p['prob_prolonged_to_persistent_diarr'] = 0.2866
-        # p['case_fatality_rate_AWD'] = dfd.loc['case_fatality_rate_AWD', 'value1']
-        # p['case_fatality_rate_dysentery'] = dfd.loc['case_fatality_rate_dysentery', 'value1']
-        # p['case_fatality_rate_persistent'] = dfd.loc['case_fatality_rate_persistent', 'value1']
-        p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
-        p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
-        p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
-        p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
-        p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
-        # p['r_recovery_AWD'] = 0.8
-        # p['r_recovery_dysentery'] = 0.5
-        # p['rr_recovery_dehydration'] = 0.81
+        # p['rp_acute_diarr_age12to23mo'] = dfd.loc['rp_acute_diarr_age12to23mo', 'value1']
+        # p['rp_acute_diarr_age24to59mo'] = dfd.loc['rp_acute_diarr_age24to59mo', 'value1']
+        # p['rp_acute_diarr_HIV'] = dfd.loc['rp_acute_diarr_HIV', 'value1']
+        # p['rp_acute_diarr_SAM'] = dfd.loc['rp_acute_diarr_SAM', 'value1']
+        # p['rp_acute_diarr_excl_breast'] = dfd.loc['rp_acute_diarr_excl_breast', 'value1']
+        # p['rp_acute_diarr_cont_breast'] = dfd.loc['rp_acute_diarr_cont_breast', 'value1']
+        # p['rp_acute_diarr_HHhandwashing'] = dfd.loc['rp_acute_diarr_HHhandwashing', 'value1']
+        # p['rp_acute_diarr_clean_water'] = dfd.loc['rp_acute_diarr_clean_water', 'value1']
+        # p['rp_acute_diarr_improved_sanitation'] = dfd.loc['rp_acute_diarr_improved_sanitation', 'value1']
+        # p['base_prev_persistent_diarrhoea'] = dfd.loc['base_prev_persistent_diarrhoea', 'value1']
+        # p['rp_persistent_diarrhoea_age12to23mo'] = dfd.loc['rp_persistent_diarrhoea_age12to23mo', 'value1']
+        # p['rp_persistent_diarrhoea_age24to59mo'] = dfd.loc['rp_persistent_diarrhoea_age24to59mo', 'value1']
+        # p['rp_persistent_diarrhoea_HIV'] = dfd.loc['rp_persistent_diarrhoea_HIV', 'value1']
+        # p['rp_persistent_diarrhoea_SAM'] = dfd.loc['rp_persistent_diarrhoea_SAM', 'value1']
+        # p['rp_persistent_diarrhoea_excl_breast'] = dfd.loc['rp_persistent_diarrhoea_excl_breast', 'value1']
+        # p['rp_persistent_diarrhoea_cont_breast'] = dfd.loc['rp_persistent_diarrhoea_cont_breast', 'value1']
+        # p['rp_persistent_diarrhoea_HHhandwashing'] = dfd.loc['rp_persistent_diarrhoea_HHhandwashing', 'value1']
+        # p['rp_persistent_diarrhoea_clean_water'] = dfd.loc['rp_persistent_diarrhoea_clean_water', 'value1']
+        # p['rp_persistent_diarrhoea_improved_sanitation'] = dfd.loc['rp_persistent_diarrhoea_improved_sanitation', 'value1']
+        # p['init_prop_diarrhoea_status'] = [
+        #     dfd.loc['init_prop_diarrhoea_status', 'value1'],
+        #     dfd.loc['init_prop_diarrhoea_status', 'value2'],
+        #     dfd.loc['init_prop_diarrhoea_status', 'value3']
+        # ]
+        # # diarrhoea incidence by pathogen and relative rates
+        # p['base_incidence_diarrhoea_by_rotavirus'] = [
+        #     dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value1'],
+        #     dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value2'],
+        #     dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value3']
+        # ]
+        # p['base_incidence_diarrhoea_by_shigella'] = [
+        #     dfd.loc['base_incidence_diarrhoea_by_shigella', 'value1'],
+        #     dfd.loc['base_incidence_diarrhoea_by_shigella', 'value2'],
+        #     dfd.loc['base_incidence_diarrhoea_by_shigella', 'value3']
+        #     ]
+        # p['base_incidence_diarrhoea_by_adenovirus'] = [
+        #     dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value1'],
+        #     dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value2'],
+        #     dfd.loc['base_incidence_diarrhoea_by_adenovirus', 'value3']
+        #     ]
+        # p['base_incidence_diarrhoea_by_crypto'] = [
+        #     dfd.loc['base_incidence_diarrhoea_by_crypto', 'value1'],
+        #     dfd.loc['base_incidence_diarrhoea_by_crypto', 'value2'],
+        #     dfd.loc['base_incidence_diarrhoea_by_crypto', 'value3']
+        # ]
+        # p['base_incidence_diarrhoea_by_campylo'] = [
+        #     dfd.loc['base_incidence_diarrhoea_by_campylo', 'value1'],
+        #     dfd.loc['base_incidence_diarrhoea_by_campylo', 'value2'],
+        #     dfd.loc['base_incidence_diarrhoea_by_campylo', 'value3']
+        #     ]
+        # p['base_incidence_diarrhoea_by_ETEC'] = [
+        #     dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value1'],
+        #     dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value2'],
+        #     dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value3']
+        #     ]
+        # p['base_incidence_diarrhoea_by_sapovirus'] = [0.005, 0.005, 0.005]
+        # p['base_incidence_diarrhoea_by_norovirus'] = [0.005, 0.005, 0.005]
+        # p['base_incidence_diarrhoea_by_astrovirus'] = [0.005, 0.005, 0.005]
+        # p['base_incidence_diarrhoea_by_EPEC'] = [0.005, 0.005, 0.005]
+        #
+        # p['rr_gi_diarrhoea_HHhandwashing'] = dfd.loc['rr_gi_diarrhoea_HHhandwashing', 'value1']
+        # p['rr_gi_diarrhoea_improved_sanitation'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
+        # p['rr_gi_diarrhoea_clean_water'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
+        # p['rr_gi_diarrhoea_HIV'] = dfd.loc['rr_gi_diarrhoea_HIV', 'value1']
+        # p['rr_gi_diarrhoea_SAM'] = dfd.loc['rr_gi_diarrhoea_malnutrition', 'value1']
+        # p['rr_gi_diarrhoea_excl_breast'] = dfd.loc['rr_gi_diarrhoea_excl_breastfeeding', 'value1']
+        # p['rr_gi_diarrhoea_cont_breast'] = dfd.loc['rr_gi_diarrhoea_excl_conti_breast', 'value1']
+        # # proportion of acute watery and dysentery by pathogen
+        # p['rotavirus_AWD'] = dfd.loc['proportion_AWD_by_rotavirus', 'value1']
+        # p['shigella_AWD'] = dfd.loc['proportion_AWD_by_shigella', 'value1']
+        # p['adenovirus_AWD'] = dfd.loc['proportion_AWD_by_adenovirus', 'value1']
+        # p['crypto_AWD'] = dfd.loc['proportion_AWD_by_crypto', 'value1']
+        # p['campylo_AWD'] = dfd.loc['proportion_AWD_by_campylo', 'value1']
+        # p['ETEC_AWD'] = dfd.loc['proportion_AWD_by_ETEC', 'value1']
+        # p['sapovirus_AWD'] = dfd.loc['proportion_AWD_by_sapovirus', 'value1']
+        # p['norovirus_AWD'] = dfd.loc['proportion_AWD_by_norovirus', 'value1']
+        # p['astrovirus_AWD'] = dfd.loc['proportion_AWD_by_astrovirus', 'value1']
+        # p['EPEC_AWD'] = dfd.loc['proportion_AWD_by_EPEC', 'value1']
+        # # pathogens causing fever
+        # p['rotavirus_fever'] = dfd.loc['fever_by_rotavirus', 'value1']
+        # p['shigella_fever'] = dfd.loc['fever_by_shigella', 'value1']
+        # p['adenovirus_fever'] = dfd.loc['fever_by_adenovirus', 'value1']
+        # p['crypto_fever'] = dfd.loc['fever_by_crypto', 'value1']
+        # p['campylo_fever'] = dfd.loc['fever_by_campylo', 'value1']
+        # p['ETEC_fever'] = dfd.loc['fever_by_ETEC', 'value1']
+        # p['sapovirus_fever'] = dfd.loc['fever_by_sapovirus', 'value1']
+        # p['norovirus_fever'] = dfd.loc['fever_by_norovirus', 'value1']
+        # p['astrovirus_fever'] = dfd.loc['fever_by_astrovirus', 'value1']
+        # p['EPEC_fever'] = dfd.loc['fever_by_EPEC', 'value1']
+        # # pathogens causing vomiting
+        # p['rotavirus_vomiting'] = dfd.loc['vomiting_by_rotavirus', 'value1']
+        # p['shigella_vomiting'] = dfd.loc['vomiting_by_shigella', 'value1']
+        # p['adenovirus_vomiting'] = dfd.loc['vomiting_by_adenovirus', 'value1']
+        # p['crypto_vomiting'] = dfd.loc['vomiting_by_crypto', 'value1']
+        # p['campylo_vomiting'] = dfd.loc['vomiting_by_campylo', 'value1']
+        # p['ETEC_vomiting'] = dfd.loc['vomiting_by_ETEC', 'value1']
+        # p['sapovirus_vomiting'] = dfd.loc['vomiting_by_sapovirus', 'value1']
+        # p['norovirus_vomiting'] = dfd.loc['vomiting_by_norovirus', 'value1']
+        # p['astrovirus_vomiting'] = dfd.loc['vomiting_by_astrovirus', 'value1']
+        # p['EPEC_vomiting'] = dfd.loc['vomiting_by_EPEC', 'value1']
+        # # pathogens causing dehydration
+        # p['rotavirus_dehydration'] = dfd.loc['dehydration_by_rotavirus', 'value1']
+        # p['shigella_dehydration'] = dfd.loc['dehydration_by_shigella', 'value1']
+        # p['adenovirus_dehydration'] = dfd.loc['dehydration_by_adenovirus', 'value1']
+        # p['crypto_dehydration'] = dfd.loc['dehydration_by_crypto', 'value1']
+        # p['campylo_dehydration'] = dfd.loc['dehydration_by_campylo', 'value1']
+        # p['ETEC_dehydration'] = dfd.loc['dehydration_by_ETEC', 'value1']
+        # p['sapovirus_dehydration'] = dfd.loc['dehydration_by_sapovirus', 'value1']
+        # p['norovirus_dehydration'] = dfd.loc['dehydration_by_norovirus', 'value1']
+        # p['astrovirus_dehydration'] = dfd.loc['dehydration_by_astrovirus', 'value1']
+        # p['EPEC_dehydration'] = dfd.loc['dehydration_by_EPEC', 'value1']
+        # # prolonged diarrhoea by pathogen
+        # p['rotavirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_rotavirus', 'value1']
+        # p['shigella_prolonged_diarr'] = dfd.loc['prolonged_diarr_shigella', 'value1']
+        # p['adenovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_adenovirus', 'value1']
+        # p['crypto_prolonged_diarr'] = dfd.loc['prolonged_diarr_crypto', 'value1']
+        # p['campylo_prolonged_diarr'] = dfd.loc['prolonged_diarr_campylo', 'value1']
+        # p['ETEC_prolonged_diarr'] = dfd.loc['prolonged_diarr_ETEC', 'value1']
+        # p['sapovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_sapovirus', 'value1']
+        # p['norovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_norovirus', 'value1']
+        # p['astrovirus_prolonged_diarr'] = dfd.loc['prolonged_diarr_astrovirus', 'value1']
+        # p['EPEC_prolonged_diarr'] = dfd.loc['prolonged_diarr_EPEC', 'value1']
+        # # parameters for acute diarrhoea becoming persistent
+        # p['prob_dysentery_become_persistent'] = dfd.loc['prob_dysentery_become_persistent', 'value1']
+        # p['prob_watery_diarr_become_persistent'] = dfd.loc['prob_watery_diarr_become_persistent', 'value1']
+        # p['rr_bec_persistent_age12to23'] = dfd.loc['rr_bec_persistent_age12to23', 'value1']
+        # p['rr_bec_persistent_age24to59'] = dfd.loc['rr_bec_persistent_age24to59', 'value1']
+        # p['rr_bec_persistent_HIV'] = dfd.loc['prob_dysentery_become_persistent', 'value1']
+        # p['rr_bec_persistent_SAM'] = dfd.loc['rr_bec_persistent_HIV', 'value1']
+        # p['rr_bec_persistent_excl_breast'] = dfd.loc['rr_bec_persistent_excl_breast', 'value1']
+        # p['rr_bec_persistent_cont_breast'] = dfd.loc['rr_bec_persistent_cont_breast', 'value1']
+        #
+        # p['progression_persistent_equation'] = float()
+        #
+        # # p['dhs_care_seeking_2010'] = 0.58
+        # # p['IMCI_effectiveness_2010'] = 0.6
+        # # p['r_death_diarrhoea'] = 0.3
+        # # p['prob_prolonged_to_persistent_diarr'] = 0.2866
+        # # p['case_fatality_rate_AWD'] = dfd.loc['case_fatality_rate_AWD', 'value1']
+        # # p['case_fatality_rate_dysentery'] = dfd.loc['case_fatality_rate_dysentery', 'value1']
+        # # p['case_fatality_rate_persistent'] = dfd.loc['case_fatality_rate_persistent', 'value1']
+        # p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
+        # p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
+        # p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
+        # p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
+        # p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
+        # # p['r_recovery_AWD'] = 0.8
+        # # p['r_recovery_dysentery'] = 0.5
+        # # p['rr_recovery_dehydration'] = 0.81
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -764,7 +761,7 @@ class Diarrhoea(Module):
 
         # DEFAULTS
         df['gi_diarrhoea_status'] = False
-        df['gi_diarrhoea_acute_type'] = 'none'          #@@@@ initliasing as np.nan makes it a float, so then cannot become a string or category
+        df['gi_diarrhoea_acute_type'] = ''          #@@@@ initliasing as np.nan makes it a float, so then cannot become a string or category
         df['gi_diarrhoea_pathogen'].values[:] = 'none'
         df['gi_diarrhoea_type'] = ''     ## You can't make these nans as they are cateogrical. For now I am putting in str so we can use.
         df['gi_persistent_diarrhoea'] = ''      # same here
@@ -928,11 +925,11 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
                     # determine the duration of the episode
                     if df.at[i, 'gi_diarrhoea_type'] == 'acute':
-                        duration = rng.randint(3,7)
+                        duration = rng.randint(3, 7)
                     if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
-                        duration = rng.randint(7,14)
+                        duration = rng.randint(7, 14)
                     if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
-                        duration = rng.randint(14,21)
+                        duration = rng.randint(14, 21)
 
                     # Send the symptoms to the SymptomManager
                     self.sim.modules['SymptomManager'].change_symptom(symptom_string=symptom_string,
@@ -947,9 +944,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                     # TODO: when you declare the symptoms in the symptom manager, the health care seeking will follow automatically
 
                 # # # # # # # # # # # SCHEDULE DEATH OR RECOVERY # # # # # # # # # # #
-
-
-                if rng.rand() < self.module.parameters['rate_death_diarrhoea'].predict(df.iloc[[i]]).values[0] :
+                if rng.rand() < self.module.parameters['rate_death_diarrhoea'].predict(df.iloc[[i]]).values[0]:
                     if df.at[i, 'gi_diarrhoea_type'] == 'acute':
                         random_date = rng.randint(low=4, high=6)
                         random_days = pd.to_timedelta(random_date, unit='d')
