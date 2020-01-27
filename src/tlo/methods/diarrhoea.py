@@ -726,8 +726,8 @@ class Diarrhoea(Module):
                         .when('.between(1,2)', m.rr_bec_persistent_age12to23)
                         .when('.between(2,5)', m.rr_bec_persistent_age24to59)
                         .otherwise(0.0),
-                        Predictor('hv_inf')
-                        .when(False, m.rr_bec_persistent_HIV),
+                        # Predictor('hv_inf')
+                        # .when(False, m.rr_bec_persistent_HIV),
                         Predictor('malnutrition').
                         when(False, m.rr_bec_persistent_SAM),
                         Predictor('exclusive_breastfeeding').
@@ -746,8 +746,8 @@ class Diarrhoea(Module):
                         # .when('.between(1,2)', m.rr_diarr_death_age12to23mo)
                         # .when('.between(2,4)', m.rr_diarr_death_age24to59mo)
                         .otherwise(0.0),
-                        Predictor('hv_inf').
-                        when(True, m.rr_gi_diarrhoea_HIV),
+                        # Predictor('hv_inf').
+                        # when(True, m.rr_gi_diarrhoea_HIV),
                         Predictor('malnutrition').
                         when(True, m.rr_gi_diarrhoea_SAM)
                         )
@@ -947,7 +947,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                 # # # # # # # # # # # SCHEDULE DEATH OR RECOVERY # # # # # # # # # # #
 
 
-                if self.module.parameters['rate_death_diarrhoea'] < rng.rand():
+                if rng.rand() < self.module.parameters['rate_death_diarrhoea'].predict(df.iloc[[i]]).values[0] :
                     if df.at[i, df.gi_diarrhoea_type == 'acute']:
                         random_date = rng.randint(low=4, high=6)
                         random_days = pd.to_timedelta(random_date, unit='d')
