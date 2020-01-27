@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
-popsize = 200000
+end_date = Date(2020, 12, 31)
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -108,6 +108,7 @@ import xlsxwriter
 outputpath = './src/scripts/outputs/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 logfile = outputpath + 'Malaria_LogFile' + datestamp + '.log'
+# logfile = outputpath + 'Malaria_LogFile__2020_01_22.log'
 output = parse_log_file(logfile)
 resourcefilepath = Path("./resources")
 
@@ -249,12 +250,12 @@ plt.gca().set_ylim(0.0, 0.005)
 plt.legend(["MAP", "WHO", "Model"])
 plt.tight_layout()
 
-if malaria_strat == 0:
-    figpath = out_path + "national_output_" + datestamp + ".png"
-else:
-    figpath = out_path + "district_output_" + datestamp + ".png"
-
-plt.savefig(figpath, bbox_inches='tight')
+# if malaria_strat == 0:
+#     figpath = out_path + "national_output_" + datestamp + ".png"
+# else:
+#     figpath = out_path + "district_output_" + datestamp + ".png"
+#
+# plt.savefig(figpath, bbox_inches='tight')
 plt.show()
 
 plt.close()
