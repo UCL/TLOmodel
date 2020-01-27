@@ -288,7 +288,7 @@ class Labour (Module):
         # TODO: do we need an equation for post term labour
 
         ol_eq = LinearModel(
-                LinearModelType.MULTIPLICATIVE, # TODO: stunting/malnutrition
+                LinearModelType.MULTIPLICATIVE,  # TODO: stunting/malnutrition
                 params['prob_pl_ol'],
                 Predictor('la_parity').when('0', params['rr_PL_OL_nuliparity']),
                 Predictor('la_parity').when('1', params['rr_PL_OL_para1']),
