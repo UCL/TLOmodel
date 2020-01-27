@@ -1,5 +1,6 @@
 import logging as _logging
 
+
 # logging functions ---
 
 
@@ -13,12 +14,13 @@ def disable(level):
 
 def getLogger(name=None):
     if name:
+        assert name.startswith("tlo"), "Only logging of tlo modules is allowed"
         # Singleton loggers
         if name not in _loggers.keys():
             _loggers[name] = Logger(name)
         return _loggers[name]
     else:
-        return _loggers['root']
+        return _loggers['tlo']
 
 
 # logging classes ---
@@ -41,39 +43,39 @@ class Logger:
     TLO logging facade so that logging can be intercepted and customised
     """
 
-    def __init__(self, name, level=_logging.NOTSET):
-        if name == 'root':
-            self._StdLogger = _logging.getLogger()
+    def __init__(self, name: str, level=_logging.NOTSET):
+        if name == 'tlo':
+            self._std_logger = _logging.getLogger()
         else:
-            self._StdLogger = _logging.getLogger(name=name)
+            self._std_logger = _logging.getLogger(name=name)
         self.name = name
-        self.handlers = self._StdLogger.handlers
+        self.handlers = self._std_logger.handlers
 
     def __repr__(self):
-        return f'<tlo Logger containing {self._StdLogger}>'
+        return f'<tlo Logger containing {self._std_logger}>'
 
     def addHandler(self, hdlr):
-        self._StdLogger.addHandler(hdlr=hdlr)
+        self._std_logger.addHandler(hdlr=hdlr)
 
     def setLevel(self, level):
-        self._StdLogger.setLevel(level)
+        self._std_logger.setLevel(level)
 
     def critical(self, msg, *args, **kwargs):
-        self._StdLogger.critical(msg, *args, **kwargs)
+        self._std_logger.critical(msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
-        self._StdLogger.debug(msg, *args, **kwargs)
+        self._std_logger.debug(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        self._StdLogger.info(msg, *args, **kwargs)
+        self._std_logger.info(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        self._StdLogger.warning(msg, *args, **kwargs)
+        self._std_logger.warning(msg, *args, **kwargs)
 
 
 # setup default logger
 
-_loggers = {'root': Logger('root', _logging.WARNING)}
+_loggers = {'tlo': Logger('tlo', _logging.WARNING)}
 
 # allow access to logging levels ---
 
