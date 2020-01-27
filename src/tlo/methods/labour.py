@@ -22,9 +22,7 @@ logging.basicConfig(filename=LOG_FILENAME,
 
 
 class Labour (Module):
-
-    """
-    This module models labour, delivery, immediate postpartum period and skilled birth attendance"""
+    """This module models labour, delivery, immediate postpartum period and skilled birth attendance"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -53,6 +51,8 @@ class Labour (Module):
                         'than 20 years'),
         'prob_ptl': Parameter(
             Types.REAL, 'baseline probability of a woman entering labour at less than 37 weeks gestation'),
+        'baseline_prev_labour_states': Parameter(
+            Types.LIST, 'baseline prevalence of early preterm, late preterm, term and postterm gestations at delivery'),
         'prob_early_ptb': Parameter(
             Types.REAL, 'probability of a woman going into preterm labour between 28-33 weeks gestation'),
         'rr_early_ptb_age<20': Parameter(
@@ -236,7 +236,7 @@ class Labour (Module):
         'la_sepsis_disab': Property(Types.BOOL, 'disability associated with maternal sepsis'),
         'la_eclampsia': Property(Types.BOOL, 'whether the woman has experienced an eclamptic seizure in this delivery'),
         'la_eclampsia_disab': Property(Types.BOOL, 'disability associated with maternal haemorrhage'),
-        'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this '
+        'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
                                                    'delivery'),
         'la_postpartum_haem_disab': Property(Types.BOOL, 'disability associated with postpartum haemorrhage'),
         # TODO: above property could be categorical to reflect severity of bleed and map better with DALY weights
@@ -259,7 +259,6 @@ class Labour (Module):
         params = self.parameters
 
         # Here we will include DALY weights if applicable...
-
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wts'] = \
                 {'hemorrhage_moderate': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339),
@@ -300,7 +299,6 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_ip_sepsis'],
                 Predictor('la_obstructed_labour').when(True, params['rr_ip_sepsis_pl_ol']),
-                # ISSUE: been using MNI in prediction models(may not work here)
             )
 
         sep_pp_eq = LinearModel(
@@ -310,7 +308,7 @@ class Labour (Module):
                 # DUMMY, copy from above
             )
 
-        ec_ip_eq =  LinearModel(
+        ec_ip_eq = LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_ip_eclampsia'],
                 Predictor('age_years').when('.between(30,34)', params['rr_ip_eclampsia_30_34']),
@@ -327,10 +325,9 @@ class Labour (Module):
             )
 
         aph_eq = LinearModel(
-                LinearModelType.MULTIPLICATIVE, # TODO: seperate causal influence in praevia and abruption
+                LinearModelType.MULTIPLICATIVE, # TODO: separate causal influence in praevia and abruption
                 params['prob_aph'],
                 Predictor('la_obstructed_labour').when(True, params['rr_aph_pl_ol']),
-                # ISSUE: been using MNI in prediction models(may not work here)
             )
 
         ur_eq = LinearModel(
@@ -345,11 +342,10 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_pph'],
                 Predictor('la_obstructed_labour').when(True, params['rr_pph_pl_ol']),
-                # ISSUE: been using MNI in prediction models(may not work here)
             )
 
         care_seeking = LinearModel(
-                    LinearModelType.LOGISTIC,  # TODO: rough cut paper, would seeking care be better than % homebirth?
+                    LinearModelType.LOGISTIC,  # TODO: rough cut paper, would seeking care be better than % home birth?
                     0.5,
                     Predictor('li_mar_stat').when('1', 1.83).when('3', 1.83),
                     Predictor('li_wealth').when('4', 0.51).when('5', 0.48), # wealth levels in the paper are different
@@ -374,13 +370,10 @@ class Labour (Module):
 
         :param population: the population of individuals
         """
-
         df = population.props
         m = self
         rng = m.rng
         params = self.parameters
-
-    # ----------------------------------------- DEFAULTS ---------------------------------------------------------------
 
         df.loc[df.sex == 'F', 'la_current_labour_successful_induction'] = 'not_induced'
         df.loc[df.sex == 'F', 'la_currently_in_labour'] = False
@@ -403,10 +396,10 @@ class Labour (Module):
         df.loc[df.sex == 'F', 'la_maternal_death_date'] = pd.NaT
 
 # ------------------------------------ REPACKAGE PARAMETERS------------------------------------------------------------
-        # todo: repackage paramters into dictionaries if worthwhile?
+        # TODO: repackage parameters into dictionaries if worthwhile?
 
 # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) --------------------------------
-        # TODO: Tim colbourn will be applying pregnancy at baseline
+        # TODO: (Update) Tim colbourn will be applying pregnancy at baseline
 
         # !!!!!!!!!!!!!!!!(DUMMY CODE) THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -424,26 +417,21 @@ class Labour (Module):
         dfx.columns = ['eff_prob_pregnancy', 'random_draw']
         idx_pregnant = dfx.index[dfx.eff_prob_pregnancy > dfx.random_draw]
         df.loc[idx_pregnant, 'is_pregnant'] = True
-
         logger.debug(idx_pregnant)
 
 # ---------------------------------    GESTATION AND SCHEDULING BIRTH BASELINE  ---------------------------------------
-
-        # TODO: random_intergers produces same random integer for each person needs a fix
-        # TODO: consider re-writing using a function
 
         # Here we apply prevalence of early preterm, late preterm, term and post term labour to all women pregnant at
         # baseline
         pregnant_idx = df.index[df.is_pregnant & df.is_alive]
         due_date_period = pd.Series(self.rng.choice(('early_preterm', 'late_preterm', 'term', 'post_term'),
-                                                    p=[0.04, 0.12, 0.80, 0.04],size=len(pregnant_idx)),
+                                                    p=params['baseline_prev_labour_states'], size=len(pregnant_idx)),
                                     index=pregnant_idx)
-        # TODO: use parameter values for probabilities above
         simdate = pd.Series(self.sim.date, index=pregnant_idx)
         dfx = pd.concat((simdate, due_date_period), axis=1)
         dfx.columns = ['simdate', 'due_date_period']
 
-        # Then the following function is applied to each group, based on the catagories asigned above, to determine
+        # Then the following function is applied to each group, based on the categories assigned above, to determine
         # gestation and due date
         def gestation_and_due_date_setting(df, dfx, rng, gestation, upper_limit_gest, lower_rand, higher_rand, prob):
             """This function sets a gestational age in weeks and future due date for all women pregnant at baseline"""
@@ -470,7 +458,7 @@ class Labour (Module):
             labour = LabourEvent(self, individual_id=person, cause='Labour')
             self.sim.schedule_event(labour, df.at[person, 'la_due_date_current_pregnancy'])
 
-        # Todo: consider if we should apply risk factors to women at baseline (anaemia and age)
+        # Todo: consider if we should apply risk factors for labour state to women at baseline (anaemia and age)
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
@@ -527,14 +515,17 @@ class Labour (Module):
         idx_parity = dfx.index[dfx.baseline_p < dfx.random_draw]
         df.loc[idx_parity, 'la_parity'] = dfx.random_draw
 
+    # TODO: What value do the next two sections really add to the simulation? (Review
+
     # ------------------------------ ASSIGN PREVIOUS CS AT BASELINE -----------------------------------------------
 
-        # First we get  and hold women who have delivered at least one child
+        # We get and hold women who have delivered at least one child
         women_para1_idx = df.index[(df.la_parity >= 1)]
         random_draw = pd.Series(self.rng.random_sample(size=len(women_para1_idx)),
                                 index=df.index[(df.la_parity >= 1)])
         prev_cs_baseline = pd.Series(params['baseline_prev_cs'], index=women_para1_idx)
 
+        # We apply the prevalence of caesarean delivery in 2010 to women at baseline as a proxy for previous CS delivery
         dfx = pd.concat([prev_cs_baseline, random_draw], axis=1)
         dfx.columns = ['prev_cs_baseline', 'random_draw']
         idx_cs = dfx.index[dfx.prev_cs_baseline < dfx.random_draw]
@@ -544,34 +535,19 @@ class Labour (Module):
         # TODO: Commented out whilst consider pulling in from another data source
 
         # Get and hold all women who have given birth previously, excluding those with previous caesarean section
-#        women_para1_nocs_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity == 1) &
-#                                        ~df.la_previous_cs_delivery]
+        women_para1_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 1)]
 
-        # Get and hold all women with greater than 2 deliveries excluding those in which both deliveries were by
-        # caesarean
-#        women_para2_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 2) &
-#                                   (df.la_total_deliveries_by_cs < 2)]
+        baseline_ptb = pd.Series(m.prob_ptl, index=women_para1_idx)
 
-#        baseline_ptb = pd.Series(m.prob_ptl, index=women_para1_nocs_idx)
-#        baseline_ptb_p2 = pd.Series(m.prob_ptl, index=women_para2_idx)
-
-#        random_draw = pd.Series(self.rng.random_sample(size=len(women_para1_nocs_idx)),
-#                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
-#                                               (df.la_parity == 1) & (df.la_total_deliveries_by_cs == 0)])
-#        random_draw2 = pd.Series(self.rng.random_sample(size=len(women_para2_idx)),
-#                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
-#                                               (df.la_parity >= 2) & (df.la_total_deliveries_by_cs < 2)])
+        random_draw = pd.Series(self.rng.random_sample(size=len(women_para1_idx)),
+                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
+                                               (df.la_parity >= 1)])
 
         # Use a random draw to determine if this woman's past deliveries have ever been preterm
-#        dfx = pd.concat([baseline_ptb, random_draw], axis=1)
-#        dfx.columns = ['baseline_ptb', 'random_draw']
-#        idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
-#        df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
-
-#        dfx = pd.concat([baseline_ptb_p2, random_draw2], axis=1)
-#        dfx.columns = ['baseline_ptb_p2', 'random_draw2']
-#        idx_prev_ptb = dfx.index[dfx.baseline_ptb_p2 > dfx.random_draw2]
-#        df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
+        dfx = pd.concat([baseline_ptb, random_draw], axis=1)
+        dfx.columns = ['baseline_ptb', 'random_draw']
+        idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
+        df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
 
     def initialise_simulation(self, sim):
 
@@ -650,10 +626,19 @@ class Labour (Module):
         df = self.sim.population.props  # shortcut to population properties data frame
         p = self.parameters
 
-#        def get_health_values(sequence, cause): (use return)
-#            sequence = df.loc[df.is_alive, f'la_{cause}_disability'].map(
-#                {False: 0, True: p['daly_wts'][f'{cause}']})  # p['daly_wts']['obstructed_labour']# 0.324
-#            sequence.name = cause # this needs to change with
+    # cant make this work for some reason...
+    #    def get_health_values_df(df, cause, name, df_name):
+    #        dalys_df = df.loc[df.is_alive, f'la_{cause}_disab'].map(
+    #            {False: 0, True: p['daly_wts'][f'{cause}']})
+    #        dalys_df.name = name
+    #        df_name = dalys_df
+
+    #    get_health_values_df(df, 'obstructed_labour', 'Obstructed Labour', ol_df)
+    #    get_health_values_df(df, 'eclampsia', 'Eclampsia')
+    #    get_health_values_df(df, 'sepsis', 'Maternal Sepsis')
+    #    get_health_values_df(df, 'antepartum_haem', 'Antepartum Haemorrhage')
+    #    get_health_values_df(df, 'postpartum_haem', 'Postpartum Haemorrhage')
+    #    get_health_values_df(df, 'uterine_rupture', 'Uterine Rupture')
 
         health_values_1 = df.loc[df.is_alive, 'la_obstructed_labour_disab'].map(
             {False: 0, True: 0.324})  # p['daly_wts']['obstructed_labour']
@@ -687,9 +672,9 @@ class Labour (Module):
         # Hot fix - scale such that sum does not exceed one.
         scaling_factor = (health_values_df.sum(axis=1).clip(lower=0, upper=1) /
                           health_values_df.sum(axis=1)).fillna(1.0)
-        health_values_df = health_values_df.multiply(scaling_factor,axis=0)
+        health_values_df = health_values_df.multiply(scaling_factor, axis=0)
 
-        return health_values_df  # return the dataframe
+        return health_values_df
 
 # ===================================== HELPER FUNCTIONS ===============================================================
 
@@ -732,7 +717,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         m = self
 
         logger.debug('person %d is having their labour scheduled on date %s', individual_id, self.sim.date)
-        # Todo: could this be restructured to use 'eval' function
+        # Todo: could this be restructured to use 'eval' function?
 
         # Using the linear equations defined above we calculate this womans individual risk of early and late preterm
         # labour
@@ -758,7 +743,6 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
                 random = int(self.module.rng.random_integers(42, 46))
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] \
                     + pd.Timedelta(random, unit='W')
-
             else:
                 random = int(self.module.rng.random_integers(37, 41))
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] \
@@ -882,7 +866,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 logger.debug(f'This is LabourEvent, person %d has now gone into {labour_state} on date %s',
                              individual_id, self.sim.date)
 
-# ================================================ PROBABILITY OF HOME DELIVERY =======================================
+# ======================================= PROBABILITY OF HOME DELIVERY =================================================
+
                 facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabour(self.module,
                                                                                     person_id=individual_id)
 
@@ -901,7 +886,6 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     logger.info(
                         'This is LabourEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour on date %s for'
                         ' person %d as they have chosen to seek care for delivery', self.sim.date, individual_id)
-
                     self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
                                                                         priority=0,
                                                                         topen=self.sim.date,
@@ -933,9 +917,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ===================================  APPLICATION OF COMPLICATIONS ====================================================
 
-        # Using the function generated at the beginning of labour we move through each complication in turn determining
-        # if a woman will experience any of these if she has delivered at home, and storing the risk so it can
-        # be modified by skilled birth attendance for women delivering in a facility
+        # Using the complication_application function we move through each complication in turn determining if a woman
+        # will experience any of these if she has delivered at home, and storing the risk so it can be modified by
+        # skilled birth attendance for women delivering in a facility
 
                 self.module.complication_application(df, mni, individual_id, params, 'ip', 'obstructed_labour')
                 if df.at[individual_id, 'la_obstructed_labour']:  # there's a neater way of doing this
@@ -1027,7 +1011,9 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
         mni = self.module.mother_and_newborn_info
-  
+
+        # Here we use the complication_application function to determine if a women who has survived labour will
+        # experience any further complications (risk is stored for facility deliveries)
         if df.at[individual_id, 'is_alive']:
             self.module.complication_application(df, mni, individual_id, params, 'pp', 'postpartum_haem')
             self.module.complication_application(df, mni, individual_id, params, 'pp', 'sepsis')
@@ -1312,7 +1298,7 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
         # TODO: review induction guidelines to confirm appropriate 1st line/2nd line consumable use
 
         consumables_needed = {'Intervention_Package_Code': [{pkg_code_induction: 1}],
-                                  'Item_Code': [], }
+                              'Item_Code': [], }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_needed
@@ -1348,7 +1334,8 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
         logger.debug('HSI_Labour_PresentsForInductionOfLabour: did not run')
         pass
 
-#TODO: 3 HSIs, for each facility level (interventions in functions)
+    #  TODO: 3 HSIs, for each facility level (interventions in functions)??
+
 
 class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1394,7 +1381,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
             logger.debug('PkgCode1 is available, so use it.')
         else:
             logger.debug('PkgCode1 is not available, so can' 't use it.')
-            # TODO: If delivery pack isnt availble then birth will still occur but should have risk of sepsis?
+            # TODO: If delivery pack isn't available then birth will still occur but should have risk of sepsis?
 
         df = self.sim.population.props
         params = self.module.parameters
@@ -1455,7 +1442,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
             if random < mni[person_id][f'risk_{labour_stage}_{complication}']:
                 df.at[person_id, f'la_{complication}'] = True
                 df.at[person_id, f'la_{complication}_disab'] = True
-                mni[person_id][f'{complication}'] = True  # TODO: do we ned seperate IP/PP variables
+                mni[person_id][f'{complication}'] = True  # TODO: do we ned separate IP/PP variables
                 logger.debug(f'person %d is experiencing {complication} in a health facility', person_id)
 
                 logger.info(f'%s|{complication}|%s', self.sim.date,
@@ -1471,28 +1458,28 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
                             f'treatment for {complication} for person %d', person_id)
 
         in_facility_complications(self.module.rng, df, person_id, 'obstructed_labour', 'ip',
-                                HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id))
+                                  HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id))
         if df.at[person_id, 'la_obstructed_labour']:
             mni[person_id]['labour_is_currently_obstructed'] = True
             mni[person_id]['labour_has_previously_been_obstructed'] = True
 
         in_facility_complications(self.module.rng, df, person_id, 'eclampsia', 'ip',
-                                HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module,
-                                                                                           person_id=person_id))
+                                  HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module,
+                                                                                             person_id=person_id))
 
         in_facility_complications(self.module.rng, df, person_id, 'antepartum_haem', 'ip',
-                                HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id))
+                                  HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id))
 
         in_facility_complications(self.module.rng, df, person_id, 'sepsis', 'ip',
                                   HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id))
 
         in_facility_complications(self.module.rng, df, person_id, 'uterine_rupture', 'ip',
-                                HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id))
+                                  HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id))
 
         # TODO: issue- if we apply risk of both UR and OL here then we will negate the effect of OL treatment on
         #  reduction of incidence of UR
 
-        # DUMMY ... (risk factors)
+        # DUMMY ... (risk factors?)
         random = self.module.rng.random_sample(size=1)
         if random < params['prob_cord_prolapse']:
             mni[person_id]['cord_prolapse'] = True
@@ -1548,9 +1535,9 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code_obst_lab = pd.unique(consumables.loc[consumables[
-                                                            'Intervention_Pkg'] ==
-                                                        'Antibiotics for pPRoM',  # TODO: Obs labour package not working
-                                                        'Intervention_Pkg_Code'])[0]
+                                                      'Intervention_Pkg'] ==
+                                                      'Antibiotics for pPRoM',  # TODO: Obs labour package not working
+                                                      'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {
             'Intervention_Package_Code': [{pkg_code_obst_lab: 1}],
@@ -1717,13 +1704,13 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
 
         logger.info('This is HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy, management of hypertensive '
                     'disorders of pregnancy for person %d on date %s',
-                             person_id, self.sim.date)
+                    person_id, self.sim.date)
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         pkg_code_eclampsia = pd.unique(consumables.loc[consumables[
                                                                'Intervention_Pkg'] ==
-                                                           'Management of eclampsia',
+                                                       'Management of eclampsia',
                                                        'Intervention_Pkg_Code'])[0]
 
         item_code_nf = pd.unique(
@@ -1742,7 +1729,7 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
         # )[0]
 
         item_code_hs = pd.unique(
-            consumables.loc[consumables['Items'] ==  "Ringer's lactate (Hartmann's solution), 500 ml_20_IDA",
+            consumables.loc[consumables['Items'] == "Ringer's lactate (Hartmann's solution), 500 ml_20_IDA",
                             'Item_Code']
         )[0]
 
@@ -1844,18 +1831,18 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
 
         pkg_code_pph = pd.unique(consumables.loc[consumables[
                                                          'Intervention_Pkg'] ==
-                                                     'Treatment of postpartum hemorrhage',
-                                                     'Intervention_Pkg_Code'])[0]
+                                                 'Treatment of postpartum hemorrhage',
+                                                 'Intervention_Pkg_Code'])[0]
 
         item_code_aph1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
         item_code_aph2 = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
         item_code_aph3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
         item_code_aph4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-                                                       'Item_Code'])[0]
+                                                   'Item_Code'])[0]
 
         consumables_needed = {
             'Intervention_Package_Code': [{pkg_code_pph: 1}],
-            'Item_Code': [{item_code_aph1: 2}, {item_code_aph2: 1}, {item_code_aph3: 1}, {item_code_aph4: 1},],
+            'Item_Code': [{item_code_aph1: 2}, {item_code_aph2: 1}, {item_code_aph3: 1}, {item_code_aph4: 1}],
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -1973,8 +1960,8 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code_am = pd.unique(consumables.loc[consumables[
                                                             'Intervention_Pkg'] ==
-                                                        'Active management of the 3rd stage of labour',
-                                                        'Intervention_Pkg_Code'])[0]
+                                                'Active management of the 3rd stage of labour',
+                                                'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {
             'Intervention_Package_Code': [{pkg_code_am: 1}],
@@ -2005,7 +1992,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
 
         # TODO: link eclampsia/sepsis diagnosis in SBA and PPC
 
-        # As with the SkilledBirthAttendance HSI we recalcualte risk of complications in light of preventative
+        # As with the SkilledBirthAttendance HSI we recalculate risk of complications in light of preventative
         # interventions
 
         self.module.in_facility_complications(self.module.rng, df, person_id, 'eclampsia', 'pp',
@@ -2020,8 +2007,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
                                               HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id
                                                                                        ))
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT #  TODO: modify based on complications?
-
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # TODO: modify based on complications?
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -2086,9 +2072,9 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
 
 # ====================================== EMERGENCY CAESAREAN SECTION ==================================================
 
-        if (mni[person_id]['uterine_rupture']) or (mni[person_id]['antepartum_haem']) or (mni[person_id]['eclampsia_ip']) or\
-            (mni[person_id]['labour_is_currently_obstructed']) or \
-            (df.at[person_id, 'la_current_labour_successful_induction'] == 'failed_induction'):
+        if (mni[person_id]['uterine_rupture']) or (mni[person_id]['antepartum_haem']) or \
+           (mni[person_id]['eclampsia_ip']) or (mni[person_id]['labour_is_currently_obstructed']) or \
+           (df.at[person_id, 'la_current_labour_successful_induction'] == 'failed_induction'):
             # Consider all indications (elective)
             mni[person_id]['antepartum_haem'] = False
             # reset eclampsia status?
