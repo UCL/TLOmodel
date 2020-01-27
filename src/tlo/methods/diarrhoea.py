@@ -764,7 +764,7 @@ class Diarrhoea(Module):
 
         # DEFAULTS
         df['gi_diarrhoea_status'] = False
-        df['gi_diarrhoea_acute_type'] = np.nan
+        df['gi_diarrhoea_acute_type'] = 'none'          #@@@@ initliasing as np.nan makes it a float, so then cannot become a string or category
         df['gi_diarrhoea_pathogen'] = 'none'
         df['gi_diarrhoea_type'] = ''     ## You can't make these nans as they are cateogrical. For now I am putting in str so we can use.
         df['gi_persistent_diarrhoea'] = ''      # same here
@@ -948,35 +948,35 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
 
                 if rng.rand() < self.module.parameters['rate_death_diarrhoea'].predict(df.iloc[[i]]).values[0] :
-                    if df.at[i, df.gi_diarrhoea_type == 'acute']:
+                    if df.at[i, 'gi_diarrhoea_type'] == 'acute':
                         random_date = rng.randint(low=4, high=6)
                         random_days = pd.to_timedelta(random_date, unit='d')
                         death_event = DeathDiarrhoeaEvent(self.module, person_id=i, cause='diarrhoea')
                         self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days)
-                    if df.at[i, df.gi_diarrhoea_type == 'prolonged']:
+                    if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
                         random_date1 = rng.randint(low=7, high=13)
                         random_days1 = pd.to_timedelta(random_date1, unit='d')
                         death_event = DeathDiarrhoeaEvent(self.module, person_id=i,
                                                           cause='diarrhoea')
                         self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days1)
-                    if df.at[i, df.gi_diarrhoea_type == 'persistent']:
+                    if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
                         random_date2 = rng.randint(low=14, high=30)
                         random_days2 = pd.to_timedelta(random_date2, unit='d')
                         death_event = DeathDiarrhoeaEvent(self.module, person_id=i,
                                                           cause='diarrhoea')
                         self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days2)
                 else:
-                    if df.at[i, df.gi_diarrhoea_type == 'acute']:
+                    if df.at[i, 'gi_diarrhoea_type'] == 'acute':
                         random_date = rng.randint(low=4, high=6)
                         random_days = pd.to_timedelta(random_date, unit='d')
                         self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
                                                 df.at[i, 'date_of_onset_diarrhoea'] + random_days)
-                    if df.at[i, df.gi_diarrhoea_type == 'prolonged']:
+                    if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
                         random_date1 = rng.randint(low=7, high=13)
                         random_days1 = pd.to_timedelta(random_date1, unit='d')
                         self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
                                                 df.at[i, 'date_of_onset_diarrhoea'] + random_days1)
-                    if df.at[i, df.gi_diarrhoea_type == 'persistent']:
+                    if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
                         random_date2 = rng.randint(low=14, high=21)
                         random_days2 = pd.to_timedelta(random_date2, unit='d')
                         self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
