@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
+end_date = Date(2025, 12, 31)
 popsize = 5000
 
 # Establish the simulation object
@@ -52,6 +52,7 @@ logging.getLogger().addHandler(fh)
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ['*']
 malaria_strat = 1  # levels: 0 = national; 1 = district
+malaria_testing = 0.4  # adjust this to match rdt/tx levels
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -70,7 +71,7 @@ sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(malaria.Malaria(resourcefilepath=resourcefilepath,
-                             level=malaria_strat))
+                             level=malaria_strat, testing=malaria_testing))
 
 for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
@@ -121,34 +122,34 @@ mort = output['tlo.methods.malaria']['ma_mortality']
 prev_district = output['tlo.methods.malaria']['prev_district']
 
 # ----------------------------------- SAVE OUTPUTS -----------------------------------
-out_path = '//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/'
-
-if malaria_strat == 0:
-    savepath = out_path + "national_output_" + datestamp + ".xlsx"
-else:
-    savepath = out_path + "district_output_" + datestamp + ".xlsx"
-
-writer = pd.ExcelWriter(savepath, engine='xlsxwriter')
-
-inc_df = pd.DataFrame(inc)
-inc_df.to_excel(writer, sheet_name='inc')
-
-pfpr_df = pd.DataFrame(pfpr)
-pfpr_df.to_excel(writer, sheet_name='pfpr')
-
-tx_df = pd.DataFrame(tx)
-tx_df.to_excel(writer, sheet_name='tx')
-
-mort_df = pd.DataFrame(mort)
-mort_df.to_excel(writer, sheet_name='mort')
-
-# symp_df = pd.DataFrame(symp)
-# symp_df.to_excel(writer, sheet_name='symp')
-
-prev_district_df = pd.DataFrame(prev_district)
-prev_district_df.to_excel(writer, sheet_name='prev_district')
-
-writer.save()
+# out_path = '//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/'
+#
+# if malaria_strat == 0:
+#     savepath = out_path + "national_output_" + datestamp + ".xlsx"
+# else:
+#     savepath = out_path + "district_output_" + datestamp + ".xlsx"
+#
+# writer = pd.ExcelWriter(savepath, engine='xlsxwriter')
+#
+# inc_df = pd.DataFrame(inc)
+# inc_df.to_excel(writer, sheet_name='inc')
+#
+# pfpr_df = pd.DataFrame(pfpr)
+# pfpr_df.to_excel(writer, sheet_name='pfpr')
+#
+# tx_df = pd.DataFrame(tx)
+# tx_df.to_excel(writer, sheet_name='tx')
+#
+# mort_df = pd.DataFrame(mort)
+# mort_df.to_excel(writer, sheet_name='mort')
+#
+# # symp_df = pd.DataFrame(symp)
+# # symp_df.to_excel(writer, sheet_name='symp')
+#
+# prev_district_df = pd.DataFrame(prev_district)
+# prev_district_df.to_excel(writer, sheet_name='prev_district')
+#
+# writer.save()
 
 # ----------------------------------- CREATE PLOTS-----------------------------------
 
