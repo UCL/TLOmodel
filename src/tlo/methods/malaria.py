@@ -77,7 +77,11 @@ class Malaria(Module):
             Types.INT, 'annual counter for malaria treatment episodes'),
         'ma_clinical_preg_counter': Property(
             Types.INT, 'annual counter for malaria clinical episodes in pregnant women'),
+        'ma_iptp': Property(
+            Types.BOOL, 'if woman has IPTp in current pregnancy'),
     }
+
+    # TODO reset ma_iptp after delivery
 
     # not generic symptoms here, only specific ones
     SYMPTOMS = {
@@ -151,6 +155,7 @@ class Malaria(Module):
         df['ma_clinical_counter'] = 0
         df['ma_tx_counter'] = 0
         df['ma_clinical_preg_counter'] = 0
+        df['ma_iptp'] = False
 
         if self.level == 0:
             # ----------------------------------- INCIDENCE - NATIONAL -----------------------------------
@@ -608,6 +613,9 @@ class Malaria(Module):
         else:
             sim.schedule_event(MalariaEventDistrict(self), sim.date + DateOffset(months=1))
 
+        sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
+        sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(months=1))
+
         sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(days=365))  # 01 jan each year
 
         # add an event to log to screen - 31st Dec each year
@@ -632,6 +640,7 @@ class Malaria(Module):
         df.at[child_id, 'ma_clinical_counter'] = 0
         df.at[child_id, 'ma_clinical_preg_counter'] = 0
         df.at[child_id, 'ma_tx_counter'] = 0
+        df.at[child_id, 'ma_iptp'] = False
 
         # ----------------------------------- RENAME DISTRICTS -----------------------------------
         # rename districts to match malaria data
@@ -696,12 +705,18 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # ----------------------------------- INCIDENCE - NATIONAL -----------------------------------
+
+        if now.year <= 2018:
+            current_year = now.year
+        else:
+            current_year = 2018  # fix values for 2018 onwards
+
         # select incidence based on year
-        curr_year = now.year
+            current_year = now.year
 
         # these values are just clinical incidence
         inf_inc = p['mal_inc']
-        inf_inc_month = inf_inc.loc[(inf_inc.year == curr_year), 'monthly_inc_rate']
+        inf_inc_month = inf_inc.loc[(inf_inc.year == current_year), 'monthly_inc_rate']
         # print('inf_inc_month', inf_inc_month.values[0])
         # print(self.sim.date)
 
@@ -1030,28 +1045,33 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
 
+        if now.year <= 2018:
+            current_year = now.year
+        else:
+            current_year = 2018  # fix values for 2018 onwards
+
         # get ITN usage rates for current year by district
         itn = p['itn_district']
         itn['itn_rates'] = itn['itn_rates'].round(decimals=1)
-        itn_curr = itn.loc[itn.Year == now.year]
+        itn_curr = itn.loc[itn.Year == current_year]
 
         # IRS coverage rates
         interv = p['interv']
-        irs_2010 = interv.loc[interv.Year == now.year, 'IRS_coverage'].values[0]
-        irs_2010 = 0.8 if irs_2010 > 0.5 else 0  # round to 0 or 0.8
+        irs_curr = interv.loc[interv.Year == current_year, 'IRS_coverage'].values[0]
+        irs_curr = 0.8 if irs_curr > 0.5 else 0  # round to 0 or 0.8
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # inf_inc select current month and irs
         month = now.month
 
         inf_inc = p['inf_inc']  # datasheet with infection incidence
-        inf_inc_month = inf_inc.loc[(inf_inc.month == month) & (inf_inc.irs == irs_2010)]
+        inf_inc_month = inf_inc.loc[(inf_inc.month == month) & (inf_inc.irs == irs_curr)]
         clin_inc = p['clin_inc']
         clin_inc_month = clin_inc.loc[
-            (clin_inc.month == month) & (clin_inc.irs == irs_2010)]
+            (clin_inc.month == month) & (clin_inc.irs == irs_curr)]
         sev_inc = p['sev_inc']
         sev_inc_month = sev_inc.loc[
-            (sev_inc.month == month) & (sev_inc.irs == irs_2010)]
+            (sev_inc.month == month) & (sev_inc.irs == irs_curr)]
 
         # merge incidence dataframes with itn_curr and keep only matching rows
         inf_inc_month_itn = inf_inc_month.merge(itn_curr, left_on=['admin', 'llin'],
@@ -1406,6 +1426,61 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         else:
             logger.debug('MalariaEvent: no one is newly infected.')
+
+
+class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
+    """ additional malaria testing happening outside the symptom-driven generic HSI event
+    to increase tx coverage up to reported levels
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+
+        # select people to go for testing (and subsequent tx)
+        # random sample 0.4 to match clinical case tx coverage
+        # this sample will include asymptomatic infections too to account for
+        # unnecessary treatments (subclinical infection)
+        test = df.index[(self.module.rng.random_sample(size=len(df)) < 0.5)
+                        & df.is_alive
+                        & df.ma_is_infected]
+
+        for person_index in test:
+            logger.debug(f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
+
+            event = HSI_Malaria_rdt(self.module, person_id=person_index)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=now,
+                                                                tclose=None)
+
+
+class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
+    """ malaria prophylaxis for pregnant women
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+
+        # select currently pregnant women without IPTp, malaria-negative
+        p1 = df.index[df.is_alive & df.is_pregnant & (df.ma_is_infected == False)]
+
+        for person_index in p1:
+            logger.debug(f'MalariaIPTp: scheduling HSI_Malaria_IPTp for person {person_index}')
+
+            event = HSI_MalariaIPTp(self.module, person_id=person_index)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=now,
+                                                                tclose=None)
+
 
 
 class MalariaDeathEvent(Event, IndividualScopeEventMixin):
@@ -1900,6 +1975,64 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
         logger.debug('HSI_Malaria_tx_compl_adult: did not run')
         pass
 
+
+class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is IPTp for pregnant women
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Malaria)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['AntenatalFirst'] = 0.25  # This requires part of an ANC appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_IPTp'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+        if not df.at[person_id, 'ma_tx'] and not df.at[person_id, 'ma_tx'] and df.at[person_id, 'is_alive']:
+
+            logger.debug('HSI_MalariaIPTp: requesting IPTp for person %d',
+                         person_id)
+
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            pkg_code1 = pd.unique(
+                consumables.loc[
+                    consumables['Intervention_Pkg'] == 'IPT (pregnant women)',
+                    'Intervention_Pkg_Code'])[0]
+
+            the_cons_footprint = {
+                'Intervention_Package_Code': [{pkg_code1: 1}],
+                'Item_Code': []
+            }
+
+            # request the treatment
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+            )
+
+            if outcome_of_request_for_consumables:
+                logger.debug('HSI_MalariaIPTp: giving IPTp for person %d',
+                             person_id)
+
+                df.at[person_id, 'ma_iptp'] = True
+
+                # log the consumables
+                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
+                )
+
+    def did_not_run(self):
+        logger.debug('HSI_MalariaIPTp: did not run')
+        pass
 
 # ---------------------------------------------------------------------------------
 # Recovery Events
