@@ -87,7 +87,7 @@ class Diarrhoea(Module):
         'rr_gi_diarrhoea_HIV':
             Parameter(Types.REAL, 'relative rate of diarrhoea for HIV positive status'
                       ),
-        'rr_gi_diarrhoea_SAM':
+        'rr_gi_diarrhoea_malnutrition':
             Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
                       ),
         'rr_gi_diarrhoea_excl_breast':
@@ -96,23 +96,146 @@ class Diarrhoea(Module):
         'rr_gi_diarrhoea_cont_breast':
             Parameter(Types.REAL, 'relative rate of diarrhoea for continued breastfeeding 6 months to 2 years'
                       ),
-        'rotavirus_AWD':
+        'rr_gi_diarrhoea_rotavirus_vaccination':
+            Parameter(Types.REAL, 'relative rate of diarrhoea for rotavirus vaccine'
+                      ),
+        'proportion_AWD_by_rotavirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused by rotavirus'
                       ),
-        'shigella_AWD':
+        'proportion_AWD_by_shigella':
             Parameter(Types.REAL, 'acute diarrhoea type caused by shigella'
                       ),
-        'adenovirus_AWD':
+        'proportion_AWD_by_adenovirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused by adenovirus'
                       ),
-        'crypto_AWD':
+        'proportion_AWD_by_crypto':
             Parameter(Types.REAL, 'acute diarrhoea type caused by cryptosporidium'
                       ),
-        'campylo_AWD':
+        'proportion_AWD_by_campylo':
             Parameter(Types.REAL, 'acute diarrhoea type caused by campylobacter'
                       ),
-        'ETEC_AWD':
+        'proportion_AWD_by_ETEC':
             Parameter(Types.REAL, 'acute diarrhoea type caused by ST-ETEC'
+                      ),
+        'proportion_AWD_by_sapovirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused by sapovirus'
+                      ),
+        'proportion_AWD_by_norovirus':
+            Parameter(Types.REAL, 'acute diarrhoea type caused by norovirus'
+                      ),
+        'proportion_AWD_by_EPEC':
+            Parameter(Types.REAL, 'acute diarrhoea type caused by tEPEC'
+                      ),
+        'fever_by_rotavirus':
+            Parameter(Types.REAL, 'fever caused by rotavirus'
+                      ),
+        'fever_by_shigella':
+            Parameter(Types.REAL, 'fever caused by shigella'
+                      ),
+        'fever_by_adenovirus':
+            Parameter(Types.REAL, 'fever caused by adenovirus'
+                      ),
+        'fever_by_crypto':
+            Parameter(Types.REAL, 'fever caused by cryptosporidium'
+                      ),
+        'fever_by_campylo':
+            Parameter(Types.REAL, 'fever caused by campylobacter'
+                      ),
+        'fever_by_ETEC':
+            Parameter(Types.REAL, 'fever caused by ST-ETEC'
+                      ),
+        'fever_by_sapovirus':
+            Parameter(Types.REAL, 'fever caused by sapovirus'
+                      ),
+        'fever_by_norovirus':
+            Parameter(Types.REAL, 'fever caused by norovirus'
+                      ),
+        'fever_by_EPEC':
+            Parameter(Types.REAL, 'fever caused by tEPEC'
+                      ),
+        'vomiting_by_rotavirus':
+            Parameter(Types.REAL, 'vomiting caused by rotavirus'
+                      ),
+        'vomiting_by_shigella':
+            Parameter(Types.REAL, 'vomiting caused by shigella'
+                      ),
+        'vomiting_by_adenovirus':
+            Parameter(Types.REAL, 'vomiting caused by adenovirus'
+                      ),
+        'vomiting_by_crypto':
+            Parameter(Types.REAL, 'vomiting caused by cryptosporidium'
+                      ),
+        'vomiting_by_campylo':
+            Parameter(Types.REAL, 'vomiting caused by campylobacter'
+                      ),
+        'vomiting_by_ETEC':
+            Parameter(Types.REAL, 'vomiting caused by ST-ETEC'
+                      ),
+        'vomiting_by_sapovirus':
+            Parameter(Types.REAL, 'vomiting caused by sapovirus'
+                      ),
+        'vomiting_by_norovirus':
+            Parameter(Types.REAL, 'vomiting caused by norovirus'
+                      ),
+        'vomiting_by_EPEC':
+            Parameter(Types.REAL, 'vomiting caused by tEPEC'
+                      ),
+        'dehydration_by_rotavirus':
+            Parameter(Types.REAL, 'any dehydration caused by rotavirus'
+                      ),
+        'dehydration_by_shigella':
+            Parameter(Types.REAL, 'any dehydration caused by shigella'
+                      ),
+        'dehydration_by_adenovirus':
+            Parameter(Types.REAL, 'any dehydration caused by adenovirus'
+                      ),
+        'dehydration_by_crypto':
+            Parameter(Types.REAL, 'any dehydration caused by cryptosporidium'
+                      ),
+        'dehydration_by_campylo':
+            Parameter(Types.REAL, 'any dehydration caused by campylobacter'
+                      ),
+        'dehydration_by_ETEC':
+            Parameter(Types.REAL, 'any dehydration caused by ST-ETEC'
+                      ),
+        'dehydration_by_sapovirus':
+            Parameter(Types.REAL, 'any dehydration caused by sapovirus'
+                      ),
+        'dehydration_by_norovirus':
+            Parameter(Types.REAL, 'any dehydration caused by norovirus'
+                      ),
+        'dehydration_by_EPEC':
+            Parameter(Types.REAL, 'any dehydration caused by tEPEC'
+                      ),
+        'prolonged_diarr_rotavirus':
+            Parameter(Types.REAL, 'prolonged episode by rotavirus'
+                      ),
+        'prolonged_diarr_shigella':
+            Parameter(Types.REAL, 'prolonged episode by shigella'
+                      ),
+        'prolonged_diarr_adenovirus':
+            Parameter(Types.REAL, 'prolonged episode by adenovirus'
+                      ),
+        'prolonged_diarr_crypto':
+            Parameter(Types.REAL, 'prolonged episode by cryptosporidium'
+                      ),
+        'prolonged_diarr_campylo':
+            Parameter(Types.REAL, 'prolonged episode by campylobacter'
+                      ),
+        'prolonged_diarr_ETEC':
+            Parameter(Types.REAL, 'prolonged episode by ST-ETEC'
+                      ),
+        'prolonged_diarr_sapovirus':
+            Parameter(Types.REAL, 'prolonged episode by sapovirus'
+                      ),
+        'prolonged_diarr_norovirus':
+            Parameter(Types.REAL, 'prolonged episode by norovirus'
+                      ),
+        'prolonged_diarr_EPEC':
+            Parameter(Types.REAL, 'prolonged episode by tEPEC'
+                      ),
+        'prob_prolonged_to_persistent_diarr':
+            Parameter(Types.REAL, 'probability of prolonged diarrhoea becoming persistent diarrhoea'
                       ),
         'prob_dysentery_become_persistent':
             Parameter(Types.REAL, 'probability of dysentery becoming persistent diarrhoea'
@@ -144,6 +267,15 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'relative rate of acute diarrhoea becoming persistent diarrhoea for continued breastfeeding'
                       ),
+        'case_fatality_rate_AWD':
+            Parameter(Types.REAL, 'case fatality rate for acute watery diarrhoea cases'
+                      ),
+        'case_fatality_rate_dysentery':
+            Parameter(Types.REAL, 'case fatality rate for dysentery cases'
+                      ),
+        'case_fatality_rate_persistent':
+            Parameter(Types.REAL, 'case fatality rate for persistent diarrhoea cases'
+                      ),
         'rr_diarr_death_age12to23mo':
             Parameter(Types.REAL,
                       'relative rate of diarrhoea death for ages 12 to 23 months'
@@ -152,6 +284,16 @@ class Diarrhoea(Module):
             Parameter(Types.REAL,
                       'relative rate of diarrhoea death for ages 24 to 59 months'
                       ),
+        'rr_diarr_death_dehydration':
+            Parameter(Types.REAL, 'relative rate of diarrhoea death for cases with dehyadration'
+                      ),
+        'rr_diarr_death_HIB':
+            Parameter(Types.REAL, 'relative rate of diarrhoea death for HIV'
+                      ),
+        'rr_diarr_death_SAM':
+            Parameter(Types.REAL, 'relative rate of diarrhoea death for severe acute malnutrition'
+                      ),
+
         'daly_mild_diarrhoea':
             Parameter(Types.REAL, 'DALY weight for diarrhoea with no dehydration'
                       ),
@@ -161,39 +303,6 @@ class Diarrhoea(Module):
         'daly_severe_diarrhoea':
             Parameter(Types.REAL, 'DALY weight for diarrhoea with severe dehydration'
                       ),
-
-        # PARAMETERS FOR THE ICCM ALGORITHM PERFORMED BY HSA
-        'prob_correct_id_danger_sign':
-            Parameter(Types.REAL, 'probability of HSA correctly identified a general danger sign'
-                      ),
-        'prob_correct_id_diarrhoea_dehydration':
-            Parameter(Types.REAL, 'probability of HSA correctly identified diarrhoea and dehydrayion'
-                      ),
-        'prob_correct_classified_diarrhoea_danger_sign':
-            Parameter(Types.REAL, 'probability of HSA correctly identified diarrhoea with a danger sign'
-                      ),
-        'prob_correct_identified_persist_or_bloody_diarrhoea':
-            Parameter(Types.REAL, 'probability of HSA correctly identified persistent diarrhoea or dysentery'
-                      ),
-        'prob_correct_classified_diarrhoea':
-            Parameter(Types.REAL, 'probability of HSA correctly classified diarrhoea'
-                      ),
-        'prob_correct_referral_decision':
-            Parameter(Types.REAL, 'probability of HSA correctly referred the case'
-                      ),
-        'prob_correct_treatment_advice_given':
-            Parameter(Types.REAL, 'probability of HSA correctly treated and advised caretaker'
-                      ),
-        'r_recovery_AWD':
-            Parameter(Types.REAL, 'baseline recovery rate for acute water diarrhoea'
-                      ),
-        'r_recovery_dysentery':
-            Parameter(Types.REAL, 'baseline recovery rate for acute bloody diarrhoea'
-                      ),
-        'rr_recovery_dehydration':
-            Parameter(Types.REAL, 'relative rate of recovery for diarrhoea with any dehydration'
-                      ),
-
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -280,7 +389,7 @@ class Diarrhoea(Module):
         m = self
         dfd = pd.read_excel(
             Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
-        dfd.set_index("Parameter_name", inplace=True)
+        # dfd.set_index("parameter_name", inplace=True)
         self.load_parameters_from_dataframe(dfd)
 
         # all diarrhoea prevalence values:
