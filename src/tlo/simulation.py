@@ -1,9 +1,12 @@
 """The main simulation controller."""
 
+import datetime
 import heapq
 import itertools
 import sys
 from collections import OrderedDict
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 
@@ -58,6 +61,30 @@ class Simulation:
         logging.getLogger().handlers.clear()
         logging.getLogger().addHandler(handler)
         logging.basicConfig(level=logging.DEBUG)
+        self.file_handler = None
+
+    def configure_logging(self, outputpath: Union[Path, str], custom_levels: dict = None):
+        """
+        Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
+        :param outputpath: The output path for the log file
+        :param custom_levels: dictionary in the format {logger_name: logging_level}.
+                              e.g. {"tlo.methods.hiv": logging.WARNING}
+        :return: Path of the log file.
+        """
+        log_path = Path(outputpath) / f"LogFile__{datetime.date.today().strftime('%Y_%m_%d')}.log"
+        if log_path.exists():
+            log_path.unlink()
+        fh = logging.FileHandler(log_path)
+        fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+        fh.setFormatter(fr)
+        logging.getLogger().addHandler(fh)
+
+        if custom_levels:
+            for key, value in custom_levels.items():
+                logging.getLogger(key).setLevel(value)
+
+        self.file_handler = fh
+        return log_path
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
@@ -128,6 +155,8 @@ class Simulation:
                 module.on_simulation_end()
             except AttributeError:
                 pass
+        if self.file_handler:
+            self.file_handler.flush()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
