@@ -10,6 +10,7 @@ import logging
 import os
 from pathlib import Path
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -78,10 +79,9 @@ output = parse_log_file(logfile)
 # %% -----------------------------------------------------------------------------------
 # %% Plot Incidence of Diarrhoea Over time:
 
-
-# years = mdates.YearLocator()   # every year
-# months = mdates.MonthLocator()  # every month
-# years_fmt = mdates.DateFormatter('%Y')
+years = mdates.YearLocator()   # every year
+months = mdates.MonthLocator()  # every month
+years_fmt = mdates.DateFormatter('%Y')
 
 # Load Model Results on clinical types of diarrhoea
 clinical_type_df = output['tlo.methods.diarrhoea']['clinical_diarrhoea_type']
@@ -95,8 +95,8 @@ ax.plot(np.asarray(Model_Years), Model_AWD)
 ax.plot(np.asarray(Model_Years), Model_dysentery)
 ax.plot(np.asarray(Model_Years), Model_persistent)
 
-# ax.xaxis.set_major_locator(years)
-# ax.xaxis.set_major_formatter(years_fmt)
+ax.xaxis.set_major_locator(years)
+ax.xaxis.set_major_formatter(years_fmt)
 
 plt.title("Total clinical diarrhoea")
 plt.xlabel("Year")
