@@ -11,6 +11,7 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.lm import LinearModel, LinearModelType, Predictor
 
 
 logger = logging.getLogger(__name__)
@@ -163,6 +164,50 @@ class PregnancySupervisor(Module):
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
+
+# ==================================== LINEAR MODEL EQUATIONS ==========================================================
+
+        ectopic_eq = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            params[''],
+            Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+            Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+        )
+
+    #    miscarriage_eq = LinearModel(
+    #        LinearModelType.MULTIPLICATIVE,
+    #        0.02,
+    #        Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+    #        Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+    #    )
+
+    #    abortion_eq = LinearModel(
+    #        LinearModelType.MULTIPLICATIVE,
+    #        0.02,
+    #        Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+    #        Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+    #    )
+
+    #    pre_eclamps_eq = LinearModel(
+    #        LinearModelType.MULTIPLICATIVE,
+    #        0.02,
+    #        Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+    #        Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+    #    )
+
+    #    gest_htn_eq = LinearModel(
+    #        LinearModelType.MULTIPLICATIVE,
+    #        0.02,
+    #        Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+    #        Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+    #    )
+
+    #    gest_diab_eq = LinearModel(
+    #        LinearModelType.MULTIPLICATIVE,
+    #        0.02,
+    #        Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.1).when('Southern', 0.8),
+    #        Predictor('sy_vomiting').when(True, 2.5).otherwise(1.0)
+    #    )
 
     def initialise_population(self, population):
 
