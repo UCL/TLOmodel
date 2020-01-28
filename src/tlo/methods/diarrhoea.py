@@ -13,7 +13,8 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
 
 
 class Diarrhoea(Module):
