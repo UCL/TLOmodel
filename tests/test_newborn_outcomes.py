@@ -13,7 +13,7 @@ workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 10000
+popsize = 100
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
