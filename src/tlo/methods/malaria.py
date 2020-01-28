@@ -1542,7 +1542,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
             # use random number generator - currently param treatment_adjustment set to 0.5
             if df.at[individual_id, 'ma_tx']:
                 prob = self.module.rng.random_sample(size=1)
-
+                # TODO reset treatment_adjustment to 0.5
                 if prob < self.module.parameters['treatment_adjustment']:
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='malaria'),
                                             self.sim.date)
@@ -2234,10 +2234,10 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
         # ------------------------------------ MORTALITY ------------------------------------
-        # deaths reported in the last 12 months / pop size
+        # deaths reported in the last 12 months per person
         deaths = len(df[(df.ma_date_death > (now - DateOffset(months=self.repeat)))])
 
-        mort_rate = deaths / len(df[df.is_alive])
+        mort_rate = (deaths / pop)
 
         logger.info('%s|ma_mortality|%s', now,
                     {
