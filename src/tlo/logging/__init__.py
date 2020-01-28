@@ -86,7 +86,7 @@ WARNING = _logging.WARNING
 # custom logging ---
 
 
-def add_filehandler(log_path: Path) -> _logging.Formatter:
+def add_filehandler(log_path: Path) -> _logging.FileHandler:
     """Add filehandler to logger
 
     :param log_path: path for file
@@ -113,7 +113,7 @@ def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
 
 
 def init_logging():
-    """Initisalise default logging with stdout stream"""
+    """Initialise default logging with stdout stream"""
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
     handler.setFormatter(formatter)
