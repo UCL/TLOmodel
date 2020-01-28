@@ -59,6 +59,8 @@ class Malaria(Module):
             Types.REAL, 'additional malaria rdt to match reported coverage levels'),
         'itn_proj': Parameter(
             Types.REAL, 'coverage of ITN for projections 2020 onwards'),
+        'mortality_adjust': Parameter(
+            Types.REAL, 'adjustment of case-fatality rate to match WHO/MAP'),
     }
 
     PROPERTIES = {
@@ -605,7 +607,8 @@ class Malaria(Module):
 
         # the cfr applies to all severe malaria
         death = df.index[
-            (df.ma_inf_type == 'severe') & (df.ma_date_infected == now) & (random_draw < p['cfr'])]
+            (df.ma_inf_type == 'severe') & (df.ma_date_infected == now) &
+            (random_draw < (p['cfr'] * p['mortality_adjust']))]
 
         for person in death:
             logger.debug(
@@ -1021,7 +1024,8 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
 
             # the cfr applies to all severe cases
             death = df.index[
-                (df.ma_inf_type == 'severe') & (df.ma_date_infected == now) & (random_draw < p['cfr'])]
+                (df.ma_inf_type == 'severe') & (df.ma_date_infected == now) &
+                (random_draw < (p['cfr'] * p['mortality_adjust']))]
 
             for person in death:
                 logger.debug(
@@ -1445,7 +1449,8 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
             # the cfr applies to all severe malaria cases
             death = df.index[
-                (df.ma_inf_type == 'severe') & (df.ma_date_infected == now) & (random_draw < p['cfr'])]
+                (df.ma_inf_type == 'severe') & (df.ma_date_infected == now) &
+                (random_draw < (p['cfr'] * p['mortality_adjust']))]
 
             for person in death:
                 logger.debug(

@@ -31,14 +31,16 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
-popsize = 100000
+end_date = Date(2012, 12, 31)
+popsize = 50000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
 
-# Establish the logger
-logfile = outputpath + 'Malaria_Baseline' + datestamp + '.log'
+# TODO change the seed and filepath for each simulation
+sim.seed_rngs(15)
+logfile = outputpath + 'Malaria_Baseline_test6' + datestamp + '.log'
+
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -85,7 +87,6 @@ logging.getLogger('tlo.methods.malaria').setLevel(logging.INFO)
 # logging.getLogger('tlo.methods.healthseekingbehaviour').setLevel(logging.DEBUG)
 
 # Run the simulation and flush the logger
-sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
@@ -106,10 +107,10 @@ from pathlib import Path
 import xlsxwriter
 
 # model outputs
-outputpath = './src/scripts/outputs/'
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath + 'Malaria_Baseline' + datestamp + '.log'
-# logfile = outputpath + 'Malaria_LogFile__2020_01_22.log'
+# outputpath = './src/scripts/outputs/'
+# datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+# logfile = outputpath + 'Malaria_Baseline' + datestamp + '.log'
+# logfile = outputpath + 'Malaria_Baseline_test5__2020_01_28.log'
 output = parse_log_file(logfile)
 resourcefilepath = Path("./resources")
 
@@ -120,6 +121,40 @@ mort = output['tlo.methods.malaria']['ma_mortality']
 # symp = output['tlo.methods.malaria']['symptoms']
 
 prev_district = output['tlo.methods.malaria']['prev_district']
+
+# ----------------------------------- AVERAGE OUTPUTS -----------------------------------
+# logfile1 = outputpath + 'Malaria_Baseline1__2020_01_28.log'
+# output1 = parse_log_file(logfile1)
+#
+# logfile2 = outputpath + 'Malaria_Baseline2__2020_01_28.log'
+# output2 = parse_log_file(logfile2)
+#
+# logfile3 = outputpath + 'Malaria_Baseline3__2020_01_28.log'
+# output3 = parse_log_file(logfile3)
+#
+# inc1 = output1['tlo.methods.malaria']['incidence']
+# pfpr1 = output1['tlo.methods.malaria']['prevalence']
+# tx1 = output1['tlo.methods.malaria']['tx_coverage']
+# mort1 = output1['tlo.methods.malaria']['ma_mortality']
+#
+# inc2 = output2['tlo.methods.malaria']['incidence']
+# pfpr2 = output2['tlo.methods.malaria']['prevalence']
+# tx2 = output2['tlo.methods.malaria']['tx_coverage']
+# mort2 = output2['tlo.methods.malaria']['ma_mortality']
+#
+# inc3 = output3['tlo.methods.malaria']['incidence']
+# pfpr3 = output3['tlo.methods.malaria']['prevalence']
+# tx3 = output3['tlo.methods.malaria']['tx_coverage']
+# mort3 = output3['tlo.methods.malaria']['ma_mortality']
+#
+# # take average of incidence clinical counter
+# inc_clin = np.mean([inc1.inc_clin_counter, inc2.inc_clin_counter, inc3.inc_clin_counter], axis=0)
+# pfpr_clin = np.mean([pfpr1.inc_clin_counter, pfpr2.inc_clin_counter, pfpr3.inc_clin_counter], axis=0)
+# mort_clin = np.mean([mort1.inc_clin_counter, mort2.inc_clin_counter, mort3.inc_clin_counter], axis=0)
+#
+#
+#
+
 
 # ----------------------------------- SAVE OUTPUTS -----------------------------------
 # out_path = '//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/'
@@ -247,7 +282,7 @@ plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("Mortality rate")
 plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0.0, 0.005)
+plt.gca().set_ylim(0.0, 0.0015)
 plt.legend(["MAP", "WHO", "Model"])
 plt.tight_layout()
 
