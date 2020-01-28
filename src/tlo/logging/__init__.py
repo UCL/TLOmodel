@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-
 # stdlib logging functions ---
 
 
@@ -99,12 +98,11 @@ def add_filehandler(log_path: Path) -> _logging.Formatter:
     return fh
 
 
-def set_custom_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
-    """Set custom levels for modules
+def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
+    """Set custom logging levels for disease modules
 
-    :param custom_levels:
-    :param modules:
-    :return:
+    :param custom_levels: Dictionary of modules and their level, '*' can be used as a key for all modules
+    :param modules: string values of all registered modules
     """
     for key, value in custom_levels.items():
         if key == '*':
@@ -115,9 +113,7 @@ def set_custom_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
 
 
 def init_logging():
-    """Initisalise default logging with stdout stream
-
-    """
+    """Initisalise default logging with stdout stream"""
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
     handler.setFormatter(formatter)

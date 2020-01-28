@@ -58,7 +58,8 @@ class Simulation:
         Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
         :param logfile_prefix: Prefix for logfile name, final logfile will have a datetime appended
         :param output_dir: Path to output directory, default value is the outputs folder.
-        :param custom_levels: dictionary in the format {logger_name: logging_level}.
+        :param custom_levels: dictionary to set logging levels, '*' can be used as a key for all registered modules.
+                              This is likely to be used to disable all disease modules, and then enable one of interest
                               e.g. {'*': logging.CRITICAL
                                     'tlo.methods.hiv': logging.INFO}
         :return: Path of the log file.
@@ -68,9 +69,9 @@ class Simulation:
 
         if custom_levels:
             if not self.modules:
-                raise ValueError("You must register modules before adding custom logging levels")
+                raise ValueError("You must register disease modules before adding custom logging levels")
             module_paths = (module.__module__ for module in self.modules.values())
-            logging.set_custom_levels(custom_levels, module_paths)
+            logging.set_logging_levels(custom_levels, module_paths)
 
         return log_path
 
