@@ -906,15 +906,15 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                     if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
                         duration = rng.randint(14, 21)
 
-                    # # Send the symptoms to the SymptomManager
-                    # self.sim.modules['SymptomManager'].change_symptom(symptom_string=symptom_string,
-                    #                                                   person_id=i,
-                    #                                                   add_or_remove='+',
-                    #                                                   disease_module=self.module,
-                    #                                                   date_of_onset=df.at[i, 'date_of_onset_diarrhoea'],
-                    #                                                   duration_in_days=duration
-                    #                                                   )
-                    #
+                    # Send the symptoms to the SymptomManager
+                    self.sim.modules['SymptomManager'].change_symptom(symptom_string=symptom_string,
+                                                                      person_id=i,
+                                                                      add_or_remove='+',
+                                                                      disease_module=self.module,
+                                                                      date_of_onset=df.at[i, 'date_of_onset_diarrhoea'],
+                                                                      duration_in_days=duration
+                                                                      )
+
                     # # # # # # HEALTH CARE SEEKING BEHAVIOUR - INTERACTION WITH HSB MODULE # # # # #
                     # # TODO: when you declare the symptoms in the symptom manager, the health care seeking will follow automatically
 
@@ -1042,7 +1042,6 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                         'dysentery': len(dysentery_cases),
                         'persistent': len(persistent_diarr_cases)
                     })
-
 
         # log information on attributable pathogens
         pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()

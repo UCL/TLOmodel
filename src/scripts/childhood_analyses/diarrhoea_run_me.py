@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, diarrhoea, symptommanager, healthburden, healthsystem, \
+from tlo.methods import demography, enhanced_lifestyle, diarrhoea, symptommanager, healthsystem, \
     childhood_management, contraception, healthseekingbehaviour
 
 resourcefilepath = Path('./resources')
@@ -45,7 +45,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
