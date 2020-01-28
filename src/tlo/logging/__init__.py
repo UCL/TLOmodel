@@ -1,6 +1,10 @@
 import logging as _logging
+import sys
+from pathlib import Path
+from typing import Dict, Iterable
 
-# logging functions ---
+
+# stdlib logging functions ---
 
 
 def basicConfig(**kwargs):
@@ -22,20 +26,7 @@ def getLogger(name=None):
         return _loggers['tlo']
 
 
-# logging classes ---
-
-
-class FileHandler(_logging.FileHandler):
-    pass
-
-
-class Formatter(_logging.Formatter):
-    pass
-
-
-class StreamHandler(_logging.StreamHandler):
-    pass
-
+# stdlib logging classes ---
 
 class Logger:
     """
@@ -82,6 +73,7 @@ class Logger:
 # setup default logger
 
 _loggers = {'tlo': Logger('tlo', _logging.WARNING)}
+formatter = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
 
 # allow access to logging levels ---
 
@@ -90,3 +82,48 @@ DEBUG = _logging.DEBUG
 FATAL = _logging.FATAL
 INFO = _logging.INFO
 WARNING = _logging.WARNING
+
+
+# custom logging ---
+
+
+def add_filehandler(log_path: Path) -> _logging.Formatter:
+    """Add filehandler to logger
+
+    :param log_path: path for file
+    :return: filehandler object
+    """
+    fh = _logging.FileHandler(log_path)
+    fh.setFormatter(formatter)
+    getLogger().addHandler(fh)
+    return fh
+
+
+def set_custom_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
+    """Set custom levels for modules
+
+    :param custom_levels:
+    :param modules:
+    :return:
+    """
+    for key, value in custom_levels.items():
+        if key == '*':
+            for module in modules:
+                getLogger(module).setLevel(value)
+        else:
+            getLogger(key).setLevel(value)
+
+
+def init_logging():
+    """Initisalise default logging with stdout stream
+
+    """
+    handler = _logging.StreamHandler(sys.stdout)
+    handler.setLevel(DEBUG)
+    handler.setFormatter(formatter)
+    getLogger().handlers.clear()
+    getLogger().addHandler(handler)
+    _logging.basicConfig(level=DEBUG)
+
+
+init_logging()

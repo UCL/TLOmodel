@@ -3,10 +3,9 @@
 import datetime
 import heapq
 import itertools
-import sys
 from collections import OrderedDict
 from pathlib import Path
-from typing import Union
+from typing import Dict, Union
 
 import numpy as np
 
@@ -50,40 +49,29 @@ class Simulation:
         self.modules = OrderedDict()
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
-
         self.end_date = None
-
-        # TODO: allow override of logging
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(levelname)s|%(name)s|%(message)s')
-        handler.setFormatter(formatter)
-        logging.getLogger().handlers.clear()
-        logging.getLogger().addHandler(handler)
-        logging.basicConfig(level=logging.DEBUG)
         self.file_handler = None
 
-    def configure_logging(self, outputpath: Union[Path, str], custom_levels: dict = None):
+    def configure_logging(self, logfile_prefix: str, output_dir: Union[Path, str] = "./outputs",
+                          custom_levels: Dict[str, int] = None):
         """
         Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
-        :param outputpath: The output path for the log file
+        :param logfile_prefix: Prefix for logfile name, final logfile will have a datetime appended
+        :param output_dir: Path to output directory, default value is the outputs folder.
         :param custom_levels: dictionary in the format {logger_name: logging_level}.
-                              e.g. {"tlo.methods.hiv": logging.WARNING}
+                              e.g. {'*': logging.CRITICAL
+                                    'tlo.methods.hiv': logging.INFO}
         :return: Path of the log file.
         """
-        log_path = Path(outputpath) / f"LogFile__{datetime.date.today().strftime('%Y_%m_%d')}.log"
-        if log_path.exists():
-            log_path.unlink()
-        fh = logging.FileHandler(log_path)
-        fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-        fh.setFormatter(fr)
-        logging.getLogger().addHandler(fh)
+        log_path = Path(output_dir) / f"{logfile_prefix}__{datetime.datetime.now().strftime('%Y-%m-%d_%X')}.log"
+        self.file_handler = logging.add_filehandler(log_path)
 
         if custom_levels:
-            for key, value in custom_levels.items():
-                logging.getLogger(key).setLevel(value)
+            if not self.modules:
+                raise ValueError("You must register modules before adding custom logging levels")
+            module_paths = (module.__module__ for module in self.modules.values())
+            logging.set_custom_levels(custom_levels, module_paths)
 
-        self.file_handler = fh
         return log_path
 
     def register(self, *modules):
