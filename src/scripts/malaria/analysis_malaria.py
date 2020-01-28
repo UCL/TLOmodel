@@ -32,13 +32,13 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 12, 31)
-popsize = 5000
+popsize = 100000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + 'Malaria_LogFile' + datestamp + '.log'
+logfile = outputpath + 'Malaria_Baseline' + datestamp + '.log'
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -52,7 +52,7 @@ logging.getLogger().addHandler(fh)
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ['*']
 malaria_strat = 1  # levels: 0 = national; 1 = district
-malaria_testing = 0.4  # adjust this to match rdt/tx levels
+malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -71,7 +71,7 @@ sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(malaria.Malaria(resourcefilepath=resourcefilepath,
-                             level=malaria_strat, testing=malaria_testing))
+                             level=malaria_strat, testing=malaria_testing, itn=None))
 
 for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
@@ -108,7 +108,7 @@ import xlsxwriter
 # model outputs
 outputpath = './src/scripts/outputs/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath + 'Malaria_LogFile' + datestamp + '.log'
+logfile = outputpath + 'Malaria_Baseline' + datestamp + '.log'
 # logfile = outputpath + 'Malaria_LogFile__2020_01_22.log'
 output = parse_log_file(logfile)
 resourcefilepath = Path("./resources")
@@ -217,7 +217,7 @@ plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("PfPR (%)")
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Data", "Model"])
+plt.legend(["MAP", "Model"])
 plt.tight_layout()
 
 # Malaria treatment coverage - all ages with MAP model estimates
@@ -230,7 +230,7 @@ plt.xticks(rotation=90)
 plt.ylabel("Treatment coverage (%)")
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0.0, 1.0)
-plt.legend(["Data", "Model"])
+plt.legend(["MAP", "Model"])
 plt.tight_layout()
 
 # Malaria mortality rate - all ages with MAP model estimates
