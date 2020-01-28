@@ -23,14 +23,12 @@ outputpath = Path('./outputs/')
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2019, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 1000
 
 # Set up the logger:
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 logfile = outputpath / ("LogFile" + datestamp + ".log")
-# Set up the logger:
-# logfile = outputpath / ("LogFile.log")
 
 
 if os.path.exists(logfile):
@@ -45,9 +43,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))  ## NB --- this is commented out -- so no health burden information wil come at the moment.
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
+# sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
 

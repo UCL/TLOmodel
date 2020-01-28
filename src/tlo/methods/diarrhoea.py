@@ -379,7 +379,7 @@ class Diarrhoea(Module):
         self.load_parameters_from_dataframe(dfd)
 
         # Register this disease module with the health system
-        # self.sim.modules['HealthSystem'].register_disease_module(self)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # DALY weights
         if 'HealthBurden' in self.sim.modules.keys():

@@ -113,7 +113,7 @@ class SymptomManager(Module):
         person_id = list(df.index[df.is_alive & (df.index.isin(person_id))])
 
         # Check that the symptom_string is legitimate
-        assert symptom_string in self.all_registered_symptoms, 'Symptom is not recognised'
+        assert symptom_string in self.all_registered_symptoms, f'Symptom is not recognised {symptom_string}'
         symptom_var_name = 'sy_' + symptom_string
         assert symptom_var_name in df.columns, 'Symptom has not been declared'
 
