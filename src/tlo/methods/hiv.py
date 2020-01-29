@@ -113,6 +113,8 @@ class Hiv(Module):
             Parameter(Types.REAL, 'change in force of infection with behaviour modification'),
         'testing_adj':
             Parameter(Types.REAL, 'additional HIV testing outside generic appts'),
+        'treatment_prob':
+            Parameter(Types.REAL, 'probability of requesting ART following positive HIV test'),
 
         # daly weights
         'daly_wt_chronic':
@@ -296,7 +298,7 @@ class Hiv(Module):
         risk_hiv.loc[(df.li_ed_lev == '3')] *= params['rr_edlevel_secondary']  # li_ed_lev=3 secondary and higher
 
         # sample 10% prev, weight the likelihood of being sampled by the relative risk
-        eligible = df.index[df.is_alive & df.age_years.between(15, 55)]
+        eligible = df.index[df.is_alive & df.age_years.between(15, 80)]
         norm_p = pd.Series(risk_hiv[eligible])
         norm_p /= norm_p.sum()  # normalise
         infected_idx = self.rng.choice(eligible, size=int(prevalence * (len(eligible))), replace=False,
@@ -606,7 +608,7 @@ class Hiv(Module):
 
         sim.schedule_event(HivScheduleTesting(self), sim.date + DateOffset(days=1))
 
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # Schedule the event that will launch the Outreach event
         outreach_event = HivLaunchOutreachEvent(self)
@@ -801,7 +803,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
 
         #  relative risk of acquisition
         risk_hiv = pd.Series(0, index=df.index)
-        risk_hiv.loc[df.is_alive & df.age_years.between(15, 55)] = 1  # applied to all adults
+        risk_hiv.loc[df.is_alive & df.age_years.between(15, 80)] = 1  # applied to all adults
         risk_hiv.loc[(df.hv_sexual_risk == 'sex_work')] *= params['rr_fsw']
         risk_hiv.loc[df.mc_is_circumcised] *= params['rr_circumcision']
         # risk_hiv.loc[(df.contraception == 'condom')] *= params['rr_condom']
@@ -1252,8 +1254,8 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_date_tested'] = self.sim.date
             df.at[person_id, 'hv_number_tests'] = df.at[person_id, 'hv_number_tests'] + 1
 
-            # if hiv+ schedule treatment
-            if df.at[person_id, 'hv_inf']:
+            # if hiv+ schedule treatment and not already on treatment
+            if df.at[person_id, 'hv_inf'] and (df.at[person_id, 'hv_on_art'] == 0):
                 df.at[person_id, 'hv_diagnosed'] = True
 
                 # request treatment
@@ -1291,18 +1293,19 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
                                                                                 tclose=None
                                                                                 )
 
-                # post-2012, treat all
+                # post-2012, treat all with some probability
                 else:
-                    logger.debug(
-                        'HSI_Hiv_PresentsForCareWithSymptoms: scheduling art for person %d on date %s',
-                        person_id, self.sim.date)
-                    treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+                    if self.module.rng.random_sample(size=1) < params['treatment_prob']:
+                        logger.debug(
+                            'HSI_Hiv_PresentsForCareWithSymptoms: scheduling art for person %d on date %s',
+                            person_id, self.sim.date)
+                        treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
 
-                    # Request the health system to start treatment
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                        priority=1,
-                                                                        topen=self.sim.date,
-                                                                        tclose=None)
+                        # Request the health system to start treatment
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                            priority=1,
+                                                                            topen=self.sim.date,
+                                                                            tclose=None)
 
     def did_not_run(self):
         logger.debug('HSI_Hiv_PresentsForCareWithSymptoms: did not run')
@@ -1310,6 +1313,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
         return True
 
 
+# TODO infant screening needs to be linked up to ANC/delivery
 class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - testing of infants exposed to hiv
