@@ -20,7 +20,8 @@ from tlo.analysis.utils import (
     make_calendar_period_type,
     parse_log_file,
 )
-from tlo.methods import contraception, demography
+from tlo.methods import contraception, demography, diarrhoea, childhood_management, healthsystem, enhanced_lifestyle, \
+    symptommanager
 from tlo.util import create_age_range_lookup
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -38,8 +39,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 2)
-popsize = 1000
+end_date = Date(2012, 1, 2)
+popsize = 200
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -55,8 +56,16 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.seed_rngs(1)
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))  ## NB --- this is commented out -- so no health burden information wil come at the moment.
+sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+# sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
+sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
+sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
+
+sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
