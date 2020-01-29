@@ -9,6 +9,7 @@ import pandas as pd
 import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
+from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,6 +21,34 @@ class HealthSystem(Module):
     Version: September 2019
     The execution of all health systems interactions are controlled through this module.
     """
+
+    PARAMETERS = {
+        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
+        'Daily_Capabilities': Parameter(
+            Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
+        ),
+        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
+        'Appt_Time_Table': Parameter(
+            Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
+        ),
+        'ApptType_By_FacLevel': Parameter(
+            Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
+        ),
+        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
+        'Facilities_For_Each_District': Parameter(
+            Types.DATA_FRAME,
+            'Mapping between a district and all of the health facilities to which its \
+                      population have access.',
+        ),
+        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
+        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+    }
+
+    PROPERTIES = {
+        'hs_dist_to_facility': Property(
+            Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
+        )
+    }
 
     def __init__(
         self,
@@ -78,33 +107,8 @@ class HealthSystem(Module):
         logger.info(self.service_availability)
         logger.info('----------------------------------------------------------------------')
 
-    PARAMETERS = {
-        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
-        'Daily_Capabilities': Parameter(
-            Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
-        ),
-        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
-        'Appt_Time_Table': Parameter(
-            Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
-        ),
-        'ApptType_By_FacLevel': Parameter(
-            Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
-        ),
-        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
-        'Facilities_For_Each_District': Parameter(
-            Types.DATA_FRAME,
-            'Mapping between a district and all of the health facilities to which its \
-                      population have access.',
-        ),
-        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
-        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
-    }
-
-    PROPERTIES = {
-        'hs_dist_to_facility': Property(
-            Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
-        )
-    }
+        # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
+        self.dx_manager = DxManager(self)
 
     def read_parameters(self, data_folder):
 
