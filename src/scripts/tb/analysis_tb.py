@@ -36,7 +36,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 12, 31)
-popsize = 5000
+popsize = 15000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -78,7 +78,7 @@ for name in logging.root.manager.loggerDict:
         logging.getLogger(name).setLevel(logging.WARNING)
 
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-# logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
 # logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
