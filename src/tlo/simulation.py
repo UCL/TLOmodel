@@ -52,7 +52,7 @@ class Simulation:
         self.end_date = None
         self.file_handler = None
 
-    def configure_logging(self, filename: str= None, directory: Union[Path, str] = "./outputs",
+    def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
         """
         Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
