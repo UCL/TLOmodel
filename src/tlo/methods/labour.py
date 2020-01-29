@@ -435,7 +435,7 @@ class Labour (Module):
         # gestation and due date
         def gestation_and_due_date_setting(df, dfx, rng, gestation, upper_limit_gest, lower_rand, higher_rand, prob):
             """This function sets a gestational age in weeks and future due date for all women pregnant at baseline"""
-            # TODO: this is still applying the same random number to the index
+            # TODO: fix needed, this is still applying the same random number to the index
 
             index = dfx.index[dfx.due_date_period == f'{gestation}']
             df.loc[index, 'ps_gestational_age_in_weeks'] = (pd.Series(rng.random_integers(0, upper_limit_gest),
@@ -447,18 +447,19 @@ class Labour (Module):
             due_on = weeks_till_due - df.loc[index, 'ps_gestational_age_in_weeks']
             df.loc[index, 'la_due_date_current_pregnancy'] = self.sim.date + pd.to_timedelta(due_on, unit='w')
 
+        # We then apply this function to each subset of women based on their predicted gestation
         gestation_and_due_date_setting(df, dfx, self.rng, 'term', 36, 37, 42, 5)
         gestation_and_due_date_setting(df, dfx, self.rng, 'post_term', 41, 42, 47, 5)
         gestation_and_due_date_setting(df, dfx, self.rng, 'early_preterm', 23, 24, 33, 9)
         gestation_and_due_date_setting(df, dfx, self.rng, 'late_preterm', 32, 33, 37, 4)
 
-        # Then all women are scheduled to go into labour on this due date
+        # Finally all women are scheduled to go into labour on this due date
         for person in pregnant_idx:
             assert df.at[person, 'la_due_date_current_pregnancy'] > self.sim.date
             labour = LabourEvent(self, individual_id=person, cause='Labour')
             self.sim.schedule_event(labour, df.at[person, 'la_due_date_current_pregnancy'])
 
-        # Todo: consider if we should apply risk factors for labour state to women at baseline (anaemia and age)
+        # Todo: Do we need to use predictors when assigning likelihood of labour state at baseline
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
