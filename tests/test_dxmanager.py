@@ -82,15 +82,14 @@ assert sim.modules['HealthSystem'].cons_item_code_availability_today.loc[item_co
 assert not sim.modules['HealthSystem'].cons_item_code_availability_today.loc[item_code_for_consumable_that_is_not_available ].any()
 
 cons_req_as_footprint_for_consumable_that_is_not_available = consumables_needed = {
-                                                    'Intervention_Package_Code': [],
-                                                    'Item_Code': [{item_code_for_consumable_that_is_not_available: 1}],
+                                                    'Intervention_Package_Code': {},
+                                                    'Item_Code': {item_code_for_consumable_that_is_not_available: 1},
                                                 }
 
 cons_req_as_footprint_for_consumable_that_is_available = consumables_needed = {
-                                                    'Intervention_Package_Code': [],
-                                                    'Item_Code': [{item_code_for_consumable_that_is_available: 1}],
+                                                    'Intervention_Package_Code': {},
+                                                    'Item_Code': {item_code_for_consumable_that_is_available: 1},
                                                 }
-
 
 # --------------------------------------------------------------------------
 
@@ -100,12 +99,11 @@ def test_create_dx_test():
         property='mi_status'
     )
 
-    print(f'my_test: consumable code = {my_test.consumable_code}')
-    print(f'my_test: sensitivity = {my_test.sensitivity}')
-    print(f'my_test: specificity = {my_test.specificity}')
-    print(f'my_test: property = {my_test.property}')
+    assert isinstance(my_test, DxTest)
 
-
+    # Check hash
+    hashed = hash(my_test)
+    assert isinstance(hashed, int)
 
 def test_create_dx_test_and_register():
     my_test1 = DxTest(
@@ -116,7 +114,6 @@ def test_create_dx_test_and_register():
         property='cs_status'
     )
 
-    # Initialise the DxManager using a dummy for the healthsystem manager (will be OK, because the result is not run)
     my_dx_manager = DxManager('dummy')
 
     my_dx_manager.register_dx_test(
@@ -124,11 +121,56 @@ def test_create_dx_test_and_register():
         my_test2=my_test2
     )
 
+    my_dx_manager.register_dx_test(
+        my_compound_test=[my_test1, my_test2]
+    )
+
     my_dx_manager.print_info_about_all_dx_tests()
 
 
-# def TODO test_create_duplicate_test_to_be_ignored_by_DxManager():
+def test_create_duplicate_test_that_should_be_ignored():
+    my_test1_property_only = DxTest(
+        property='mi_status'
+    )
 
+    my_test1_property_and_consumable = DxTest(
+        property='mi_status',
+        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
+    )
+
+    my_test1_property_and_consumable_and_sensspec = DxTest(
+        property='mi_status',
+        cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
+        sensitivity=0.99,
+        specificity=0.95
+    )
+
+
+    # Give the same test but under a different name: name only
+    my_dx_manager = DxManager('dummy') # get new DxManager
+    my_dx_manager.register_dx_test(
+        my_test1=my_test1_property_only,
+        my_test1_copy=my_test1_property_only
+    )
+    assert len(my_dx_manager.dx_tests) == 1
+
+    # Give the same test but under a different name: name and consumbales provided
+    my_dx_manager = DxManager('dummy') # get new DxManager
+    my_dx_manager.register_dx_test(
+        my_test1=my_test1_property_and_consumable,
+        my_test1_copy=my_test1_property_and_consumable
+    )
+    assert len(my_dx_manager.dx_tests) == 1
+
+    # Give the same test but under a different name: name and consumbales provided and sens/spec provided
+    my_dx_manager = DxManager('dummy') # get new DxManager
+    my_dx_manager.register_dx_test(
+        my_test1=my_test1_property_and_consumable_and_sensspec,
+        my_test1_copy=my_test1_property_and_consumable_and_sensspec
+    )
+    assert len(my_dx_manager.dx_tests) == 1
+
+    #TODO: check this work when registering list of dx_test - checking for hashed_combination
 
 def test_create_dx_test_and_run():
 
@@ -137,13 +179,16 @@ def test_create_dx_test_and_run():
         property='mi_status'
     )
 
-    # Register it with DxManager:
+    # Create new DxManager
+    sim.modules['HealthSystem'].dx_manager = DxManager(sim.modules['HealthSystem'])
+
+    # Register DxTest with DxManager:
     sim.modules['HealthSystem'].dx_manager.register_dx_test(my_test1 = my_test1)
 
     # Run it and check the result:
     df = sim.population.props
     for person_id in df.loc[df.is_alive].index:
-        hsi_event.person_id = person_id
+        hsi_event.target = person_id
         result_for_dx_manager = sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='my_test1',
                                                                                    hsi_event=hsi_event)
         assert result_for_dx_manager == df.at[person_id, 'mi_status']
@@ -166,6 +211,9 @@ def test_create_dx_tests_with_consumable_useage():
         cons_req_as_footprint=None,  # No consumable code: means that the consumable will not be
         property='mi_status'
     )
+
+    # Create new DxManager
+    sim.modules['HealthSystem'].dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register the single and the compound tests with DxManager:
     sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -190,7 +238,40 @@ def test_create_dx_tests_with_consumable_useage():
     assert None is not sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='my_test3',
                                                                           hsi_event=hsi_event)
 
-# TODO def allow input to be just on consumable code
+
+def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
+
+    # Create the test:
+    my_test1_not_available = DxTest(
+        cons_req_as_item_code=item_code_for_consumable_that_is_not_available,
+        property='mi_status'
+    )
+
+    my_test2_is_available = DxTest(
+        cons_req_as_item_code=item_code_for_consumable_that_is_available,
+        property='mi_status'
+    )
+
+    # Create new DxManager
+    sim.modules['HealthSystem'].dx_manager = DxManager(sim.modules['HealthSystem'])
+
+    # Register the single and the compound tests with DxManager:
+    sim.modules['HealthSystem'].dx_manager.register_dx_test(
+        my_test1=my_test1_not_available,
+        my_test2=my_test2_is_available,
+    )
+
+    # pick a person
+    person_id = 0
+    hsi_event.target = person_id
+
+    # Confirm the my_test1 does not give result
+    assert None is sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='my_test1',
+                                                                      hsi_event=hsi_event)
+
+    # Confirm that my_test2 does give result
+    assert None is not sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='my_test2',
+                                                                          hsi_event=hsi_event)
 
 
 def test_create_set_of_dx_tests_which_fail_and_require_chain_execution():
@@ -206,8 +287,10 @@ def test_create_set_of_dx_tests_which_fail_and_require_chain_execution():
         property='mi_status'
     )
 
-    # Register compound tests with DxManager:
+    # Create new DxManager
+    sim.modules['HealthSystem'].dx_manager = DxManager(sim.modules['HealthSystem'])
 
+    # Register compound tests with DxManager:
     sim.modules['HealthSystem'].dx_manager.register_dx_test(single_test_not_available=
                                                             [
                                                                 my_test1_not_available
@@ -247,6 +330,8 @@ def test_create_set_of_dx_tests_which_fail_and_require_chain_execution():
                                                                 hsi_event=hsi_event)
     assert None is not result
     assert result == sim.population.props.at[person_id, 'mi_status']
+
+
 
 
     # TODO: report which test provided the result

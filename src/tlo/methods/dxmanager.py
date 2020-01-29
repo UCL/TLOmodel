@@ -3,6 +3,11 @@ The is the Diagnostic Tests Manager (DxManager). It simplifies the process of co
 
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 class DxManager:
     """
     The is the Diagnostic Tests Manager (DxManager).
@@ -13,6 +18,7 @@ class DxManager:
     def __init__(self, healthsystem_module):
         self.dx_tests = dict()
         self.healthsystem_module = healthsystem_module
+        self.dx_test_hash = set()
 
     def register_dx_test(self, **kwargs):
         """
@@ -24,16 +30,28 @@ class DxManager:
         :param kwargs:
         :return:
         """
-        for key, value in kwargs.items():
-            assert isinstance(key, str), f'Name is not a string: {key}'
+        for name, dx_test in kwargs.items():
+            # Examine the proposed name of the dx_test
+            assert isinstance(name, str), f'Name is not a string: {name}'
+            assert name not in self.dx_tests, 'Test name already in use'
 
-            # Make each test provded into a list of test
-            if not isinstance(value, list):
-                value = [value]
+            # Examine the proposed dx_test
+            # Make each test provided into a list of test
+            if not isinstance(dx_test, list):
+                dx_test= [dx_test]
 
-            assert all([isinstance(v, DxTest) for v in value]), f'Object is not a DxTest object: {value}'
+            assert all([isinstance(d, DxTest) for d in dx_test]), f'Object is not a DxTest object: {d}'
 
-            self.dx_tests.update({key: value})
+            # Check if this is a duplicate dx_test
+            hash_of_dx_test = hash(tuple([hash(d) for d in dx_test]))
+
+            if hash_of_dx_test in self.dx_test_hash:
+                logger.warning('This exact same dx_test has already been registered.')
+            else:
+                # Add the test the dict of registered dx_tests
+                self.dx_tests.update({name: dx_test})
+                self.dx_test_hash.add(hash_of_dx_test)
+
 
     def print_info_about_dx_test(self, name_of_dx_test):
         assert name_of_dx_test in self.dx_tests, f'This dx_test is not recognised: {name_of_dx_test}'
@@ -41,11 +59,13 @@ class DxManager:
         print()
         print(f'----------------------')
         print(f'** {name_of_dx_test} **')
-        print(f'consumbale_code: {the_dx_test.consumable_code}')
-        print(f'sensitivity: {the_dx_test.sensitivity}')
-        print(f'specificity: {the_dx_test.specificity}')
-        print(f'property: {the_dx_test.property}')
-        print(f'----------------------')
+        for n, t in enumerate(the_dx_test):
+            print(f'   Line #{n}')
+            print(f'consumbales: {t.cons_req_as_footprint}')
+            print(f'sensitivity: {t.sensitivity}')
+            print(f'specificity: {t.specificity}')
+            print(f'property: {t.property}')
+            print(f'----------------------')
 
     def print_info_about_all_dx_tests(self):
         for dx_test in self.dx_tests:
@@ -57,6 +77,7 @@ class DxManager:
 
         list_of_tests = self.dx_tests[name_of_dx_test]
 
+        result = None
         for test in list_of_tests:
             result = test.apply(hsi_event, self.healthsystem_module)
             if result is not None:
@@ -68,6 +89,7 @@ class DxTest:
     def __init__(self,
                  property: str,
                  cons_req_as_footprint = None,
+                 cons_req_as_item_code = None,
                  sensitivity: float = None,
                  specificity: float = None
                  ):
@@ -77,8 +99,17 @@ class DxTest:
             self.property = property
 
         # Store consumable code (None means that no consumables are required)
-        self.cons_req_as_footprint = cons_req_as_footprint
-
+        if (cons_req_as_footprint is not None) and (cons_req_as_item_code is not None):
+            raise ValueError('Consumable requirement was provided as both item code and footprint.')
+        elif (cons_req_as_footprint is not None) and (cons_req_as_item_code is None):
+            self.cons_req_as_footprint = cons_req_as_footprint
+        elif (cons_req_as_footprint is None) and (cons_req_as_item_code is not None):
+            self.cons_req_as_footprint = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {cons_req_as_item_code: 1},
+            }
+        else:
+            self.cons_req_as_footprint = None
 
         # Store performance characteristics (if sensitivity and specifity are not supplied than assume perfect)
         if sensitivity is not None:
@@ -90,6 +121,25 @@ class DxTest:
             self.specificity = specificity
         else:
             self.specificity = 1.0
+
+    def __hash__(self):
+
+        if self.cons_req_as_footprint is not None:
+            string_of_reqs = ''
+            for t in self.cons_req_as_footprint.values():
+                for k, v in t.items():
+                    string_of_reqs = string_of_reqs + f'{k}_{v}'
+            hash_of_cons_req_as_footprint = hash(string_of_reqs)
+        else:
+            hash_of_cons_req_as_footprint = hash(None)
+
+
+        return hash((
+            hash(self.property),
+            hash_of_cons_req_as_footprint,
+            hash(self.sensitivity),
+            hash(self.specificity)
+        ))
 
 
     def apply(self, hsi_event, health_system_module):
@@ -118,9 +168,11 @@ class DxTest:
         test_value = true_value
         #TODO: insert logic about erroneous tests.
 
+
+
         if cons_available:
             # Consumables available, return test value
-            return true_value
+            return test_value
         else:
             # Consumabls not available, return test value
             return None
