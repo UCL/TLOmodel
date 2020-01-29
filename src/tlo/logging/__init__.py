@@ -110,8 +110,11 @@ def init_logging():
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
     handler.setFormatter(_FORMATTER)
-    getLogger().handlers.clear()
-    getLogger().addHandler(handler)
+    logger = getLogger()
+    logger.handlers.clear()
+    logger.filters.clear()
+    logger.addHandler(handler)
+
     _logging.basicConfig(level=DEBUG)
 
 

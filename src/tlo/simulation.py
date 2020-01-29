@@ -52,19 +52,26 @@ class Simulation:
         self.end_date = None
         self.file_handler = None
 
-    def configure_logging(self, logfile_prefix: str, output_dir: Union[Path, str] = "./outputs",
+    def configure_logging(self, filename: str= None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
         """
         Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
-        :param logfile_prefix: Prefix for logfile name, final logfile will have a datetime appended
-        :param output_dir: Path to output directory, default value is the outputs folder.
+        If no filename is given, configuration is set up writing to stdout.
+
+        :param filename: Prefix for logfile name, final logfile will have a datetime appended
+        :param directory: Path to output directory, default value is the outputs folder.
         :param custom_levels: dictionary to set logging levels, '*' can be used as a key for all registered modules.
                               This is likely to be used to disable all disease modules, and then enable one of interest
                               e.g. {'*': logging.CRITICAL
                                     'tlo.methods.hiv': logging.INFO}
         :return: Path of the log file.
         """
-        log_path = Path(output_dir) / f"{logfile_prefix}__{datetime.datetime.now().strftime('%Y-%m-%d_%X')}.log"
+        if not filename:
+            # no filename given, clear setup and initialise writing to stdout
+            logging.init_logging()
+            return
+
+        log_path = Path(directory) / f"{filename}__{datetime.datetime.now().strftime('%Y-%m-%d_%X')}.log"
         self.file_handler = logging.add_filehandler(log_path)
 
         if custom_levels:
