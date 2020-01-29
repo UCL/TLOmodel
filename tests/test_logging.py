@@ -1,5 +1,3 @@
-import sys
-
 import pytest
 
 from tlo import logging
@@ -7,22 +5,10 @@ from tlo import logging
 
 @pytest.fixture(scope='function')
 def basic_configuration(tmpdir):
-    """Uses all helper functions and classes from logging"""
-    # simulation config
-    formatter = logging.Formatter('%(levelname)s|%(name)s|%(message)s')
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setLevel(logging.DEBUG)
-    stream_handler.setFormatter(formatter)
-
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(stream_handler)
-    logging.basicConfig(level=logging.DEBUG)
-
+    """Setup basic file handler configuration"""
     # tlo module config
     file_name = tmpdir.join('test.log')
-    file_handler = logging.FileHandler(file_name)
-    file_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(file_handler)
+    file_handler = logging.add_filehandler(file_name)
 
     yield file_handler, file_name
 
