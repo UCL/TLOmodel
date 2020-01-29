@@ -78,8 +78,8 @@ for name in logging.root.manager.loggerDict:
         logging.getLogger(name).setLevel(logging.WARNING)
 
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-# logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
-# logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
+logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
 # Run the simulation and flush the logger
@@ -107,6 +107,27 @@ logfile = outputpath + "TbHiv_LogFile" + datestamp + ".log"
 output = parse_log_file(logfile)
 
 # output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
+
+# ------------------------------------- DEMOGRAPHY OUTPUTS ------------------------------------- #
+
+# get deaths from demography
+deaths = output['tlo.methods.demography']['death']
+
+deaths['date'] = pd.to_datetime(deaths['date'])
+deaths['year'] = deaths.date.dt.year.astype(int)
+
+# select only hiv deaths
+deaths_hiv = deaths.loc[(deaths.cause == 'hiv')]
+agg_deaths = deaths_hiv.groupby(['year'])['person_id'].count()
+
+pop = output['tlo.methods.demography']['population']
+pop['date'] = pd.to_datetime(pop['date'])
+pop['year'] = pop.date.dt.year.astype(int)
+pop['total'] = pop['total'].astype('int64')
+
+mortality_rate = [(x / y) * 1000 for x, y in zip(agg_deaths, pop['total'])]
+
+# ------------------------------------- MODEL OUTPUTS AND DATA ------------------------------------- #
 
 ## HIV
 # model outputs
@@ -190,7 +211,7 @@ plt.legend(["Data", "Model"],
 # AIDS mortality
 plt.subplot(224)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.AIDS_mortality_per_1000adults)
-plt.plot(m_hiv_years, m_hiv_mort.hiv_MortRate1000_adults)
+plt.plot(m_hiv_years, mortality_rate)
 plt.title("Mortality rates per 100k")
 plt.xlabel("Year")
 plt.ylabel("Mortality rate per 100k")
