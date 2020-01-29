@@ -837,7 +837,8 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
 
         #  sample using the prob_inf scaled by relative susceptibility
         newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (prob_inf * risk_hiv))]
-        # print('newly_infected_index', newly_infected_index)
+        print('newly_infected', len(newly_infected_index))
+        print('inc_rate', (len(newly_infected_index) / susceptible) * 100)
 
         # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
         # random draw of days 0-365

@@ -140,6 +140,8 @@ m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
 m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
 
 m_hiv_years = pd.to_datetime(m_hiv.date)
+m_hiv_years = m_hiv_years.dt.year
+
 hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
 
 # import HIV data
@@ -148,7 +150,8 @@ hiv_data = pd.read_excel(
     sheet_name="unaids_estimates",
 )
 
-data_years = pd.to_datetime(hiv_data.year, format="%Y")
+data_years = pd.to_datetime(hiv_data.year, format='%Y')
+data_years = data_years.dt.year
 
 # TB
 m_tb_inc = output['tlo.methods.tb']['tb_incidence']
@@ -211,7 +214,7 @@ plt.legend(["Data", "Model"],
 # AIDS mortality
 plt.subplot(224)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.AIDS_mortality_per_1000adults)
-plt.plot(m_hiv_years, mortality_rate)
+plt.plot(pop['year'], mortality_rate)
 plt.title("Mortality rates per 100k")
 plt.xlabel("Year")
 plt.ylabel("Mortality rate per 100k")
@@ -222,6 +225,7 @@ plt.legend(["Data", "Model"],
 
 plt.show()
 
+# plt.close()
 # ------------------------------------- TB FIGURES ------------------------------------- #
 #
 # plt.style.use('ggplot')
