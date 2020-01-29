@@ -36,7 +36,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 12, 31)
-popsize = 15000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -79,7 +79,7 @@ for name in logging.root.manager.loggerDict:
 
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
 logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
-# logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
+logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
 # Run the simulation and flush the logger
@@ -108,6 +108,27 @@ output = parse_log_file(logfile)
 
 # output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
 
+# ------------------------------------- DEMOGRAPHY OUTPUTS ------------------------------------- #
+
+# get deaths from demography
+deaths = output['tlo.methods.demography']['death']
+
+deaths['date'] = pd.to_datetime(deaths['date'])
+deaths['year'] = deaths.date.dt.year.astype(int)
+
+# select only hiv deaths
+deaths_hiv = deaths.loc[(deaths.cause == 'hiv')]
+agg_deaths = deaths_hiv.groupby(['year'])['person_id'].count()
+
+pop = output['tlo.methods.demography']['population']
+pop['date'] = pd.to_datetime(pop['date'])
+pop['year'] = pop.date.dt.year.astype(int)
+pop['total'] = pop['total'].astype('int64')
+
+mortality_rate = [(x / y) * 1000 for x, y in zip(agg_deaths, pop['total'])]
+
+# ------------------------------------- MODEL OUTPUTS AND DATA ------------------------------------- #
+
 ## HIV
 # model outputs
 m_hiv = output['tlo.methods.hiv']['hiv_infected']
@@ -119,6 +140,8 @@ m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
 m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
 
 m_hiv_years = pd.to_datetime(m_hiv.date)
+m_hiv_years = m_hiv_years.dt.year
+
 hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
 
 # import HIV data
@@ -127,7 +150,8 @@ hiv_data = pd.read_excel(
     sheet_name="unaids_estimates",
 )
 
-data_years = pd.to_datetime(hiv_data.year, format="%Y")
+data_years = pd.to_datetime(hiv_data.year, format='%Y')
+data_years = data_years.dt.year
 
 # TB
 m_tb_inc = output['tlo.methods.tb']['tb_incidence']
@@ -190,7 +214,7 @@ plt.legend(["Data", "Model"],
 # AIDS mortality
 plt.subplot(224)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.AIDS_mortality_per_1000adults)
-plt.plot(m_hiv_years, m_hiv_mort.hiv_MortRate1000_adults)
+plt.plot(pop['year'], mortality_rate)
 plt.title("Mortality rates per 100k")
 plt.xlabel("Year")
 plt.ylabel("Mortality rate per 100k")
@@ -201,6 +225,7 @@ plt.legend(["Data", "Model"],
 
 plt.show()
 
+# plt.close()
 # ------------------------------------- TB FIGURES ------------------------------------- #
 #
 # plt.style.use('ggplot')
