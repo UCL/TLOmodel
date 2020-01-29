@@ -125,8 +125,12 @@ def test_create_dx_test_and_register():
         my_compound_test=[my_test1, my_test2]
     )
 
-    my_dx_manager.print_info_about_all_dx_tests()
+    my_dx_manager.register_dx_test(
+        my_test2_diff_name_should_not_be_added=my_test2
+    )
 
+    my_dx_manager.print_info_about_all_dx_tests()
+    assert 3 == len(my_dx_manager.dx_tests)
 
 def test_create_duplicate_test_that_should_be_ignored():
     my_test1_property_only = DxTest(
@@ -144,7 +148,6 @@ def test_create_duplicate_test_that_should_be_ignored():
         sensitivity=0.99,
         specificity=0.95
     )
-
 
     # Give the same test but under a different name: name only
     my_dx_manager = DxManager('dummy') # get new DxManager
@@ -170,7 +173,23 @@ def test_create_duplicate_test_that_should_be_ignored():
     )
     assert len(my_dx_manager.dx_tests) == 1
 
-    #TODO: check this work when registering list of dx_test - checking for hashed_combination
+    # Give duplicated compound tests under different name: only one should be added
+    my_dx_manager = DxManager('dummy') # get new DxManager
+    my_dx_manager.register_dx_test(
+        my_compound_test1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
+        my_compound_test1_copy=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only]
+    )
+    assert len(my_dx_manager.dx_tests) == 1
+
+    # Give compound test that use the same test components but in different order: both should be added
+    my_dx_manager = DxManager('dummy') # get new DxManager
+    my_dx_manager.register_dx_test(
+        my_compound_test1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
+        my_compound_test1_copy=[my_test1_property_only, my_test1_property_and_consumable_and_sensspec]
+    )
+    my_dx_manager.print_info_about_all_dx_tests()
+    assert len(my_dx_manager.dx_tests) == 2
+
 
 def test_create_dx_test_and_run():
 
