@@ -5,11 +5,6 @@ from typing import Dict, Iterable
 
 # stdlib logging functions ---
 
-
-def basicConfig(**kwargs):
-    _logging.basicConfig(**kwargs)
-
-
 def disable(level):
     _logging.disable(level=level)
 
@@ -69,10 +64,8 @@ class Logger:
         self._std_logger.removeHandler(hdlr)
 
 
-# setup default logger
-
 _loggers = {'tlo': Logger('tlo', _logging.WARNING)}
-formatter = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
+_FORMATTER = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
 
 # allow access to logging levels ---
 
@@ -93,7 +86,7 @@ def add_filehandler(log_path: Path) -> _logging.FileHandler:
     :return: filehandler object
     """
     fh = _logging.FileHandler(log_path)
-    fh.setFormatter(formatter)
+    fh.setFormatter(_FORMATTER)
     getLogger().addHandler(fh)
     return fh
 
@@ -116,7 +109,7 @@ def init_logging():
     """Initialise default logging with stdout stream"""
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
-    handler.setFormatter(formatter)
+    handler.setFormatter(_FORMATTER)
     getLogger().handlers.clear()
     getLogger().addHandler(handler)
     _logging.basicConfig(level=DEBUG)
