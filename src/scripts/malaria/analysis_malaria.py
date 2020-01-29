@@ -38,7 +38,7 @@ popsize = 50000
 sim = Simulation(start_date=start_date)
 
 # TODO change the seed and filepath for each simulation
-sim.seed_rngs(424)
+sim.seed_rngs(25)
 logfile = outputpath + 'Malaria_Baseline3' + datestamp + '.log'
 
 
