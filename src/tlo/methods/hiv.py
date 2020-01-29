@@ -111,6 +111,8 @@ class Hiv(Module):
             Parameter(Types.REAL, 'relative risk of hiv with higher education'),
         'hv_behav_mod':
             Parameter(Types.REAL, 'change in force of infection with behaviour modification'),
+        'testing_adj':
+            Parameter(Types.REAL, 'additional HIV testing outside generic appts'),
 
         # daly weights
         'daly_wt_chronic':
@@ -601,6 +603,9 @@ class Hiv(Module):
         sim.schedule_event(HivArtPoorToGoodAdherenceEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivTransitionOffArtEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
+
+        sim.schedule_event(HivScheduleTesting(self), sim.date + DateOffset(days=1))
+
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # Schedule the event that will launch the Outreach event
@@ -1062,6 +1067,35 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
         else:
             logger.debug("This is HivAidsEvent doing nothing because person %d is on art", person_id)
 
+
+class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
+    """ additional HIV testing happening outside the symptom-driven generic HSI event
+    to increase tx coverage up to reported levels
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+        p = self.module.parameters
+
+        # select people to go for testing (and subsequent tx)
+        # random sample 0.4 to match clinical case tx coverage
+        test = df.index[(self.module.rng.random_sample(size=len(df)) < p['testing_adj'])
+                        & df.is_alive
+                        & df.hv_inf]
+
+        for person_index in test:
+            logger.debug(
+                f'HivScheduleTesting: scheduling HSI_Hiv_PresentsForCareWithSymptoms for person {person_index}')
+
+            event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=now,
+                                                                tclose=None)
 
 # ---------------------------------------------------------------------------
 #   Launch outreach events
@@ -2311,8 +2345,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         assert child_inc_percent <= 100
 
         # adult prevalence
-        ad_prev = len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 65))]) / len(
-            df[df.is_alive & (df.age_years.between(15, 65))])
+        ad_prev = len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 80))]) / len(
+            df[df.is_alive & (df.age_years.between(15, 80))])
 
         assert ad_prev <= 1
 
@@ -2423,13 +2457,27 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
         # ------------------------------------ MORTALITY ------------------------------------
-        # hiv deaths (incl tb) reported in the last 12 months / pop size
-        tmp3 = len(
+        # aids deaths (incl tb) reported in the last 12 months per 1000
+        deaths_hiv = len(
             df.loc[(df.hv_date_death_occurred > (now - DateOffset(months=self.repeat)))])
+
+        deaths_tb_hiv = len(df[df.hv_inf & (df.tb_date_death > (now - DateOffset(months=self.repeat)))])
+
         pop_alive = len(df[df.is_alive])
-        mort_rate1000 = (tmp3 / pop_alive) * 1000
+        mort_rate1000 = ((deaths_hiv + deaths_tb_hiv) / pop_alive) * 1000
+
+        # adults
+        deaths_hiv_adults = len(
+            df.loc[(df.hv_date_death_occurred > (now - DateOffset(months=self.repeat))) & (df.age_years >= 15)])
+
+        deaths_tb_hiv_adults = len(
+            df[df.hv_inf & (df.tb_date_death > (now - DateOffset(months=self.repeat))) & (df.age_years >= 15)])
+
+        pop_alive_adults = len(df[df.is_alive & (df.age_years >= 15)])
+        mort_rate1000_adults = ((deaths_hiv_adults + deaths_tb_hiv_adults) / pop_alive_adults) * 1000
 
         logger.info('%s|hiv_mortality|%s', now,
                     {
                         'hiv_MortRate1000': mort_rate1000,
+                        'hiv_MortRate1000_adults': mort_rate1000_adults,
                     })
