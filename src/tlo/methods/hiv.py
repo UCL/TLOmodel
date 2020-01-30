@@ -608,7 +608,7 @@ class Hiv(Module):
 
         sim.schedule_event(HivScheduleTesting(self), sim.date + DateOffset(days=1))
 
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # Schedule the event that will launch the Outreach event
         outreach_event = HivLaunchOutreachEvent(self)
@@ -2341,9 +2341,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ INC / PREV ------------------------------------
         # adult incidence
         tmp = len(
-            df.loc[(df.age_years.between(15, 80)) & df.is_alive & (
+            df.loc[(df.age_years.between(15, 49)) & df.is_alive & (
                 df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
-        pop = len(df[df.is_alive & (df.age_years.between(15, 80))])
+        pop = len(df[df.is_alive & (df.age_years.between(15, 49))])
         adult_inc_percent = (tmp / pop) * 100
 
         assert adult_inc_percent <= 100
@@ -2357,14 +2357,14 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         assert child_inc_percent <= 100
 
         # adult prevalence
-        ad_prev = len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 80))]) / len(
-            df[df.is_alive & (df.age_years.between(15, 80))])
+        ad_prev = (len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 49))]) / len(
+            df[df.is_alive & (df.age_years.between(15, 49))])) * 100
 
         assert ad_prev <= 1
 
         # child prevalence
-        child_prev = len(df[df.hv_inf & df.is_alive & (df.age_years.between(0, 14))]) / len(
-            df[df.is_alive & (df.age_years.between(0, 14))])
+        child_prev = (len(df[df.hv_inf & df.is_alive & (df.age_years.between(0, 14))]) / len(
+            df[df.is_alive & (df.age_years.between(0, 14))])) * 100
 
         assert child_prev <= 1
 
@@ -2388,14 +2388,14 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         m_adult_hiv = df[df.is_alive & (df.sex == 'M') & df.hv_inf & (df.age_years.between(15, 65))].groupby(
             'age_range').size()
         m_adult_pop = df[df.is_alive & (df.sex == 'M') & (df.age_years.between(15, 65))].groupby('age_range').size()
-        m_adult_prev = m_adult_hiv / m_adult_pop
+        m_adult_prev = (m_adult_hiv / m_adult_pop) * 100
         m_adult_prev_out = m_adult_prev.fillna(0)
         # m_adult_prev_out = [x if x < 1 else 1 for x in m_adult_prev_out]
 
         f_adult_hiv = df[df.is_alive & (df.sex == 'F') & df.hv_inf & (df.age_years.between(15, 65))].groupby(
             'age_range').size()
         f_adult_pop = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 65))].groupby('age_range').size()
-        f_adult_prev = f_adult_hiv / f_adult_pop
+        f_adult_prev = (f_adult_hiv / f_adult_pop) * 100
         f_adult_prev_out = f_adult_prev.fillna(0)
         # f_adult_prev_out = [x if x < 1 else 1 for x in f_adult_prev_out]
 

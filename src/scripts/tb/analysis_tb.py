@@ -142,12 +142,12 @@ m_hiv_years = pd.to_datetime(m_hiv.date)
 hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
 
 # import HIV data
-hiv_data = pd.read_excel(
+aidsInfo_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_HIV.xlsx",
-    sheet_name="unaids_estimates",
+    sheet_name="aids_info",
 )
 
-data_years = pd.to_datetime(hiv_data.year, format="%Y")
+data_years = pd.to_datetime(aidsInfo_data.year, format="%Y")
 
 # TB
 m_tb_inc = output['tlo.methods.tb']['tb_incidence']
@@ -173,49 +173,61 @@ plt.figure(4, figsize=(15, 10))
 
 # HIV prevalence
 plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(data_years, hiv_data.prevalence_adults)
+plt.plot(data_years, aidsInfo_data.prev_15_49)
+plt.fill_between(data_years, aidsInfo_data.prev_15_49_lower,
+                 aidsInfo_data.prev_15_49_upper, alpha=.5)
 plt.plot(m_hiv_years, m_hiv.hiv_prev_adult)
 plt.title("HIV adult prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Data", "Model"],
+plt.gca().set_ylim(0, 15)
+plt.legend(["UNAIDS", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # HIV incidence
 plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(data_years, hiv_data.incidence_adults_percent)
+plt.plot(data_years, aidsInfo_data.inc_15_49_percent)
+plt.fill_between(data_years, aidsInfo_data.inc_15_49_percent_lower,
+                 aidsInfo_data.inc_15_49_percent_upper, alpha=.5)
 plt.plot(m_hiv_years, m_hiv.hiv_adult_inc_percent)
 plt.title("HIV adult incidence (%)")
 plt.xlabel("Year")
 plt.ylabel("Incidence (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0, 1.0)
 plt.legend(["Data", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # HIV treatment coverage
 plt.subplot(223)  # numrows, numcols, fignum
-plt.plot(data_years, hiv_data.art_coverage_adult)
+plt.plot(data_years, aidsInfo_data.percent15plus_on_art)
+plt.fill_between(data_years, aidsInfo_data.percent15plus_on_art_lower,
+                 aidsInfo_data.percent15plus_on_art_upper, alpha=.5)
 plt.plot(m_hiv_years, hiv_art_cov_percent)
 plt.title("ART adult coverage (%)")
 plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0, 100)
 plt.legend(["Data", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # AIDS mortality
 plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(data_years, hiv_data.AIDS_mortality_per_1000adults)
+plt.plot(data_years, aidsInfo_data.mort_rate100k)
+plt.fill_between(data_years, aidsInfo_data.mort_rate100k_lower,
+                 aidsInfo_data.mort_rate100k_upper, alpha=.5)
 plt.plot(pop['date'], mortality_rate)
 plt.title("Mortality rates per 100k")
 plt.xlabel("Year")
 plt.ylabel("Mortality rate per 100k")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0, 15)
 plt.legend(["Data", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
