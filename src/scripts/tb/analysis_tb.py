@@ -36,7 +36,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 12, 31)
-popsize = 10000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -124,7 +124,7 @@ pop['date'] = pd.to_datetime(pop['date'])
 
 mortality_rate = [(x / y) * 100000 for x, y in zip(death_counts, pop['total'])]
 
-# ------------------------------------- MODEL OUTPUTS AND DATA ------------------------------------- #
+# ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
 
 ## HIV
 # model outputs
@@ -141,17 +141,6 @@ m_hiv_years = pd.to_datetime(m_hiv.date)
 
 hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
 
-# import HIV data
-aidsInfo_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_HIV.xlsx",
-    sheet_name="aids_info",
-)
-
-data_years = pd.to_datetime(aidsInfo_data.year, format="%Y")
-d = data_years.values  # for fill_between command
-
-
-
 # TB
 m_tb_inc = output['tlo.methods.tb']['tb_incidence']
 m_tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
@@ -163,6 +152,17 @@ m_tb_bcg = output['tlo.methods.tb']['tb_bcg']
 
 m_tb_years = pd.to_datetime(m_tb_inc.date)
 
+# ------------------------------------- DATA  ------------------------------------- #
+# import HIV data
+aidsInfo_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_HIV.xlsx",
+    sheet_name="aids_info",
+)
+
+data_years = pd.to_datetime(aidsInfo_data.year, format="%Y")
+d = data_years.values  # for fill_between command
+
+# import TB data
 tb_WHO = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_TB.xlsx",
     sheet_name="WHO_estimates",
@@ -270,7 +270,7 @@ plt.subplot(222)  # numrows, numcols, fignum
 plt.plot(tb_data_years[0:18], tb_WHO.prevalence_all_ages[0:18])
 plt.fill_between(dtb, tb_WHO.prevalence_all_ages_low,
                  tb_WHO.prevalence_all_ages_high, alpha=.5)
-plt.plot(m_tb_years, m_tb_prev.prop_active)
+plt.plot(m_tb_years, m_tb_prev.tbPropActive)
 plt.title("TB prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence")
