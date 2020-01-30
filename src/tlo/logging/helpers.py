@@ -16,7 +16,7 @@ def add_filehandler(log_path: Path) -> _logging.FileHandler:
     """
     fh = _logging.FileHandler(log_path)
     fh.setFormatter(_FORMATTER)
-    getLogger().addHandler(fh)
+    getLogger('tlo').addHandler(fh)
     return fh
 
 
@@ -39,7 +39,7 @@ def init_logging():
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
     handler.setFormatter(_FORMATTER)
-    logger = getLogger()
+    logger = getLogger('tlo')
     logger.handlers.clear()
     logger.filters.clear()
     logger.addHandler(handler)

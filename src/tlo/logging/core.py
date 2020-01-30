@@ -5,15 +5,12 @@ def disable(level):
     _logging.disable(level=level)
 
 
-def getLogger(name=None):
-    if name:
-        assert name.startswith("tlo"), "Only logging of tlo modules is allowed"
-        # Singleton loggers
-        if name not in _loggers.keys():
-            _loggers[name] = Logger(name)
-        return _loggers[name]
-    else:
-        return _loggers['tlo']
+def getLogger(name='tlo'):
+    assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
+    # Singleton loggers
+    if name not in _loggers.keys():
+        _loggers[name] = Logger(name)
+    return _loggers[name]
 
 
 class Logger:
