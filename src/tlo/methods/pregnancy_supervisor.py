@@ -254,54 +254,6 @@ class PregnancySupervisor(Module):
         df.loc[df.sex == 'F', 'ps_gest_diab'] = False
         df.loc[df.sex == 'F', 'ps_prev_gest_diab'] = False
 
-        # DISEASES OF PREGNANCY AT BASELINE:
-        # Here we apply the prevalence of gestational diabetes and the hypertensive disorders of pregnancy to woman who
-        # are pregnant at baseline
-
-        # ============================= PRE-ECLAMPSIA/SUPER IMPOSED PE (at baseline) ===================================
-
-        # First we apply the baseline prevalence of pre-eclampsia to women who are pregnant at baseline
-        preg_women = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F') & (df.ps_gestational_age_in_weeks > 20)]
-        random_draw = pd.Series(self.rng.random_sample(size=len(preg_women)), index=preg_women)
-
-        eff_prob_pe = pd.Series(params['base_prev_pe'], index=preg_women)
-        dfx = pd.concat((random_draw, eff_prob_pe), axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_pe']
-        idx_pe = dfx.index[dfx.eff_prob_pe > dfx.random_draw]
-
-        df.loc[idx_pe, 'ps_htn_disorder_preg'].values[:] = 'mild_pe'
-        df.loc[idx_pe, 'ps_prev_pre_eclamp'] = True
-
-        # TODO: Review symptoms of mild-pe, may not apply
-        # TODO: consider applying prevalance of severe PE
-
-        # ============================= GESTATIONAL HYPERTENSION (at baseline) ========================================
-
-        # Next we apply the baseline prevalence of gestational hypertension to women who are pregnant at baseline and
-        # have not developed pre-eclampsia
-
-        preg_women_no_pe = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F') & (df.ps_htn_disorder_preg=='none') &
-                                    (df.ps_gestational_age_in_weeks > 20)]
-        random_draw = pd.Series(self.rng.random_sample(size=len(preg_women_no_pe)), index=preg_women_no_pe)
-
-        eff_prob_gh = pd.Series(params['base_prev_gest_htn'], index=preg_women_no_pe)
-        dfx = pd.concat((random_draw, eff_prob_gh), axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_gh']
-        idx_pe = dfx.index[dfx.eff_prob_gh > dfx.random_draw]
-        df.loc[idx_pe, 'ps_htn_disorder_preg'].values[:] = 'gest_htn'
-
-        # ============================= GESTATIONAL DIABETES (at baseline) ========================================
-        # Finally we apply the prevalence of gestational diabetes in the pregnant population
-
-        random_draw = pd.Series(self.rng.random_sample(size=len(preg_women)), index=preg_women)
-
-        eff_prob_gd = pd.Series(params['base_prev_gest_diab'], index=preg_women)
-        dfx = pd.concat((random_draw, eff_prob_gd), axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_gd']
-        idx_gd = dfx.index[dfx.eff_prob_gd > dfx.random_draw]
-        df.loc[idx_gd, 'ps_gest_diab'] = True
-        df.loc[idx_gd, 'ps_prev_gest_diab'] = True
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """

@@ -439,8 +439,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             df.at[woman, 'is_pregnant'] = True
             df.at[woman, 'date_of_last_pregnancy'] = self.sim.date
             df.at[woman, 'co_unintended_preg'] = True
-            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], woman, cause='pregnancy')
-                                    , self.sim.date)
+            self.sim.modules['Labour'].set_date_of_labour(woman)
 
             # outputs some logging if any pregnancy (contraception failure)
             logger.info('%s|fail_contraception|%s',
@@ -507,8 +506,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # loop through each newly pregnant women in order to schedule them to have labour sheduled
         for female_id in newly_pregnant_ids:
-            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], female_id, cause='pregnancy')
-                                    , self.sim.date)
+            self.sim.modules['Labour'].set_date_of_labour(female_id)
 
             logger.info('%s|pregnant_at_age|%s',
                         self.sim.date,
