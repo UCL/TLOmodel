@@ -22,19 +22,16 @@ from tlo.methods.healthsystem import HSI_Event
 
 
 # --------------------------------------------------------------------------
-# Create a simulation object for next batch of tests
+# Create a very short-run simulation for use in the tests
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 except NameError:
     # running interactively
-    resourcefilepath = 'resources'
+    resourcefilepath = Path('./resources')
 
-start_date = Date(year=2010, month=1, day=1)
-end_date = Date(year=2010, month=1, day=31)
-popsize = 200
 
 # Establish the simulation object
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -50,15 +47,13 @@ sim.register(chronicsyndrome.ChronicSyndrome())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
-sim.make_initial_population(n=popsize)
-sim.simulate(end_date=end_date)
+sim.make_initial_population(n=2000)
+sim.simulate(end_date=Date(year=2010, month=1, day=31))
 
 # Create a dummy HSI event from which the use of diagnostics can be tested
 class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Dummy'
         self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
         self.ACCEPTED_FACILITY_LEVEL = 0
@@ -78,8 +73,10 @@ item_code_for_consumable_that_is_available = 1
 cons.loc[item_code_for_consumable_that_is_not_available, cons.columns] = False
 cons.loc[item_code_for_consumable_that_is_available, cons.columns] = True
 
-assert sim.modules['HealthSystem'].cons_item_code_availability_today.loc[item_code_for_consumable_that_is_available ].all()
-assert not sim.modules['HealthSystem'].cons_item_code_availability_today.loc[item_code_for_consumable_that_is_not_available ].any()
+assert sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
+    item_code_for_consumable_that_is_available].all()
+assert not sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
+    item_code_for_consumable_that_is_not_available].any()
 
 cons_req_as_footprint_for_consumable_that_is_not_available = consumables_needed = {
                                                     'Intervention_Package_Code': {},
