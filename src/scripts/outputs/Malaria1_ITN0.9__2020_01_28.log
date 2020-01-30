@@ -1,6 +1,7 @@
 INFO|tlo.methods.healthsystem|----------------------------------------------------------------------
 INFO|tlo.methods.healthsystem|Setting up the Health System With the Following Service Availability:
 INFO|tlo.methods.healthsystem|['*']
+
 INFO|tlo.methods.healthsystem|----------------------------------------------------------------------
 INFO|tlo.methods.malaria|Malaria infection event running at level 1
 INFO|tlo.methods.malaria|Malaria infection event running with projected ITN 0.9
