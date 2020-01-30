@@ -455,7 +455,7 @@ class Tb(Module):
         sim.schedule_event(TbMdrDeathEvent(self), sim.date + DateOffset(months=1))
 
         # Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
