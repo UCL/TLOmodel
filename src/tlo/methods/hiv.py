@@ -957,7 +957,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
 
             # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
             for person_index in new_inf:
-                df.at[person_index, 'hv_proj_date_symp'] = df.loc[person_index, 'hv_proj_date_death'] - DateOffset(
+                df.at[person_index, 'hv_proj_date_symp'] = df.at[person_index, 'hv_proj_date_death'] - DateOffset(
                     days=732.5)
 
                 if df.at[person_index, 'hv_proj_date_symp'] < self.sim.date:
@@ -968,7 +968,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.schedule_event(symp_event, df.at[person_index, 'hv_proj_date_symp'])
 
                 # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
-                df.at[person_index, 'hv_proj_date_aids'] = df.loc[new_inf, 'hv_proj_date_death'] - DateOffset(
+                df.at[person_index, 'hv_proj_date_aids'] = df.at[person_index, 'hv_proj_date_death'] - DateOffset(
                     days=365.25)
 
                 if df.at[person_index, 'hv_proj_date_aids'] < self.sim.date:
