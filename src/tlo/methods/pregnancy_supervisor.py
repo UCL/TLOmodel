@@ -20,8 +20,8 @@ logger.setLevel(logging.DEBUG)
 
 class PregnancySupervisor(Module):
     """
-    This module is responsible for supervision of pregnancy in the population including miscarriage, abortion, onset of labour and
-    onset of antenatal complications """
+    This module is responsible for supervision of pregnancy in the population including miscarriage, abortion, onset of
+     labour and onset of antenatal complications """
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
