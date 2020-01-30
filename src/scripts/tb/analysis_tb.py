@@ -35,8 +35,8 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 12, 31)
-popsize = 5000
+end_date = Date(2025, 12, 31)
+popsize = 50000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -140,7 +140,7 @@ m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
 m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
 
 m_hiv_years = pd.to_datetime(m_hiv.date)
-m_hiv_years = m_hiv_years.dt.year
+# m_hiv_years = m_hiv_years.dt.year
 
 hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
 
@@ -150,8 +150,8 @@ hiv_data = pd.read_excel(
     sheet_name="unaids_estimates",
 )
 
-data_years = pd.to_datetime(hiv_data.year, format='%Y')
-data_years = data_years.dt.year
+data_years = pd.to_datetime(hiv_data.year, format="%Y")
+
 
 # TB
 m_tb_inc = output['tlo.methods.tb']['tb_incidence']
@@ -173,7 +173,7 @@ tb_data_years = pd.to_datetime(tb_data.year, format="%Y")
 # ------------------------------------- HIV FIGURES ------------------------------------- #
 
 plt.style.use('ggplot')
-plt.figure(1, figsize=(15, 10))
+plt.figure(4, figsize=(15, 10))
 
 # HIV prevalence
 plt.subplot(221)  # numrows, numcols, fignum
@@ -227,61 +227,60 @@ plt.show()
 
 # plt.close()
 # ------------------------------------- TB FIGURES ------------------------------------- #
-#
-# plt.style.use('ggplot')
-# plt.figure(2, figsize=(15, 10))
-#
-# # TB incidence
-# plt.subplot(221)  # numrows, numcols, fignum
-# plt.plot(tb_data_years, tb_data.incidence_per_100k)
-# plt.plot(m_tb_years, m_tb_inc.tbIncActive100k)
-# plt.title("TB case incidence/100k")
-# plt.xlabel("Year")
-# plt.ylabel("Incidence (%)")
-# plt.xticks(rotation=90)
-# plt.gca().set_xlim(start_date, end_date)
-# plt.legend(["Data", "Model"],
-#            bbox_to_anchor=(1.04, 1), loc="upper left")
-#
-# # TB prevalence
-# plt.subplot(222)  # numrows, numcols, fignum
+
+plt.style.use('ggplot')
+plt.figure(2, figsize=(15, 10))
+
+# TB incidence
+plt.subplot(221)  # numrows, numcols, fignum
+plt.plot(tb_data_years, tb_data.incidence_per_100k)
+plt.plot(m_tb_years, m_tb_inc.tbIncActive100k)
+plt.title("TB case incidence/100k")
+plt.xlabel("Year")
+plt.ylabel("Incidence (%)")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Data", "Model"],
+           bbox_to_anchor=(1.04, 1), loc="upper left")
+
+# TB prevalence
+plt.subplot(222)  # numrows, numcols, fignum
+plt.plot(tb_data_years, tb_data.prevalence_all_ages)
+plt.plot(m_tb_years, m_tb_prev.tbPropActive)
+plt.title("TB prevalence")
+plt.xlabel("Year")
+plt.ylabel("Prevalence")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Data", "Model"],
+           bbox_to_anchor=(1.04, 1), loc="upper left")
+
+# TB treatment coverage
+plt.subplot(223)  # numrows, numcols, fignum
 # plt.plot(tb_data_years, tb_data.prevalence_all_ages)
-# plt.plot(m_tb_years, m_tb_prev.tbPropActive)
-# plt.title("TB prevalence")
-# plt.xlabel("Year")
-# plt.ylabel("Prevalence")
-# plt.xticks(rotation=90)
-# plt.gca().set_xlim(start_date, end_date)
-# plt.legend(["Data", "Model"],
-#            bbox_to_anchor=(1.04, 1), loc="upper left")
-#
-#
-# # TB treatment coverage
-# plt.subplot(223)  # numrows, numcols, fignum
-# # plt.plot(tb_data_years, tb_data.prevalence_all_ages)
-# plt.plot(m_tb_years, m_tb_treatment.tbTreat)
-# plt.title("TB treatment coverage")
-# plt.xlabel("Year")
-# plt.ylabel("Coverage (%)")
-# plt.xticks(rotation=90)
-# plt.gca().set_xlim(start_date, end_date)
-# plt.legend(["Model"],
-#            bbox_to_anchor=(1.04, 1), loc="upper left")
-#
-# # BCG coverage
-# plt.subplot(224)  # numrows, numcols, fignum
-# plt.plot(tb_data_years, tb_data.bcg_coverage)
-# plt.plot(m_tb_years, m_tb_bcg.tbBcgCoverage)
-# plt.title("BCG coverage")
-# plt.xlabel("Year")
-# plt.ylabel("Coverage (%)")
-# plt.xticks(rotation=90)
-# plt.gca().set_xlim(start_date, end_date)
-# plt.legend(["Data", "Model"],
-#            bbox_to_anchor=(1.04, 1), loc="upper left")
-# plt.show()
-# # plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
-#
+plt.plot(m_tb_years, m_tb_treatment.tbTreat)
+plt.title("TB treatment coverage")
+plt.xlabel("Year")
+plt.ylabel("Coverage (%)")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Model"],
+           bbox_to_anchor=(1.04, 1), loc="upper left")
+
+# BCG coverage
+plt.subplot(224)  # numrows, numcols, fignum
+plt.plot(tb_data_years, tb_data.bcg_coverage)
+plt.plot(m_tb_years, m_tb_bcg.tbBcgCoverage)
+plt.title("BCG coverage")
+plt.xlabel("Year")
+plt.ylabel("Coverage (%)")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Data", "Model"],
+           bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.show()
+# plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
+
 
 
 ##########################################################################################################
