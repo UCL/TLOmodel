@@ -25,7 +25,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True, mda
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2035, 2, 1)
+    end_date = Date(2045, 2, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -72,8 +72,9 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True, mda
 
 # sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_sheet='MDA_prognosed_Coverage_zero')
 # sim, output = run_simulation(popsize=10000, haem=True, mansoni=True, mda_sheet='MDA_prognosed_Coverage_once')
-sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False, mda_sheet='MDA_prognosed_Coverage_twice')
 # sim, output = run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=False, mda_sheet='MDA_prognosed_Coverage_twice')
+# sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=True, mda_sheet='MDA_prognosed_Coverage_3_years')
+sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=True, mda_sheet='MDA_prognosed_Coverage_once')
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
@@ -95,6 +96,7 @@ def save_inf_outputs(infection, save_the_districts=False):
     output_states = pd.DataFrame([])
     for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
         output['tlo.methods.schisto'][age_group + '_' + infection]['Age_group'] = age_group
+        # output['tlo.methods.schisto'][age_group + '_' + infection].rename(columns={"Prevalence": "High-inf_Prevalence'", "High-inf_Prevalence'": "Prevalence"})
         output_states = output_states.append(output['tlo.methods.schisto'][age_group + '_' + infection], ignore_index=True)
     output_states.to_csv(savepath, index=False)
 
@@ -194,7 +196,7 @@ def get_logger(infection, cut_off_left=False):
 
 # Prevalence
 def plot_prevalence(loger_inf, infection):
-    fig, ax = plt.subplots(figsize=(9, 7))
+    fig1, ax = plt.subplots(figsize=(9, 7))
     for log in loger_inf.keys():
         ax.plot(loger_inf[log].date, loger_inf[log].Prevalence, label=log[6:])
         ax.xaxis_date()
@@ -221,7 +223,7 @@ def plot_prevalence_high_inf(loger_inf, infection):
 plot_prevalence(get_logger('Haematobium', False), 'Haematobium')
 # plot_prevalence(get_logger('Mansoni', True), 'Mansoni')
 # plot_prevalence(get_logger('Total'), 'Total')
-# plot_prevalence_high_inf(get_logger('Total'), 'Total')
+# plot_prevalence_high_inf(get_logger('Haematobium'), 'Total')
 
 # Final prevalence for every district
 def get_values_per_district(infection):
@@ -296,7 +298,7 @@ def plot_mwb_monthly(loger_inf, infection):
         ax.plot(loger_inf[log].date, loger_inf[log].MeanWormBurden, label=log[6:])
         ax.xaxis_date()
     plt.xticks(rotation='vertical')
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=12))
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=36))
     ax.xaxis.set_major_formatter(DateFormatter("%Y"))
     plt.legend()
     # plt.ylim([0, 20])

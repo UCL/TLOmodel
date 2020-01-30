@@ -1120,7 +1120,7 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
         if isinstance(symptoms, list):
             df.at[person_id, self.module.prefix + '_symptoms'] = symptoms
             df.loc[person_id, self.module.prefix + '_onset_of_symptoms_date'] = self.sim.date
-            # schedule Healthcare Seeking
+            # # schedule Healthcare Seeking
             # p = params_hsi['prob_seeking_healthcare']
             # will_seek_treatment = self.module.rng.choice(['True', 'False'], size=1, p=[p, 1-p])
             # if will_seek_treatment:
@@ -1661,6 +1661,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'High_infections': count_states['High-infection'],
                         'Infected': count_states['infected_any'],
                         'Prevalence': count_states['Prevalence'],
+                        'High-inf_Prevalence': count_states['High-inf_Prevalence'],
                         'MeanWormBurden': count_states['MeanWormBurden'],
                         'NegBinClumpingParam': count_states['NegBinClumpingParam']
                     })
@@ -1677,17 +1678,19 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         age_range = map_age_groups(age_group)  # returns a tuple
 
         # this is not ideal bc we're making a copy but it's for clearer code below
-        df_age = df[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])))].copy()
-        df_age = df_age[df_age['district_of_residence'].isin(districts)]
+        # df_age = df[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])))].copy()
+        # df_age = df_age[df_age['district_of_residence'].isin(districts)]
+        idx = df.index[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])) & (df['district_of_residence'].isin(districts)))].copy()
 
         count_states = {'Non-infected': 0, 'Low-infection': 0, 'High-infection': 0}
-        count_states.update(df_age[self.module.prefix + '_infection_status'].value_counts().to_dict())
+        count_states.update(df.loc[idx, self.module.prefix + '_infection_status'].value_counts().to_dict())
         count_states.update({'infected_any': count_states['Low-infection']
                                                        + count_states['High-infection']})
         count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['Non-infected']})
         count_states.update({'Prevalence': count_states['infected_any'] / count_states['total_pop_alive']})
-        mean = df_age[self.module.prefix + '_aggregate_worm_burden'].values.mean()
-        var = df_age[self.module.prefix + '_aggregate_worm_burden'].values.var()
+        count_states.update({'High-inf_Prevalence': count_states['High-infection'] / count_states['total_pop_alive']})
+        mean = df.loc[idx, self.module.prefix + '_aggregate_worm_burden'].values.mean()
+        var = df.loc[idx, self.module.prefix + '_aggregate_worm_burden'].values.var()
         count_states.update({'MeanWormBurden': mean})
         if mean != 0:
             k = (1 + mean) / (var * mean * mean)  # clumping param, see parametrisation of neg bin via mean

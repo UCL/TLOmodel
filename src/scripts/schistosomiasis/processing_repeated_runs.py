@@ -90,6 +90,8 @@ def plot_per_age_group(sim_dict, age, infection, vals):
 def get_expected_prevalence(infection):
     expected_district_prevalence = pd.read_excel(Path("./resources") / 'ResourceFile_Schisto.xlsx',
                                                  sheet_name='District_Params_' + infection.lower())
+    districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
+    expected_district_prevalence = expected_district_prevalence[expected_district_prevalence['District'].isin(districts)]
     expected_district_prevalence.set_index("District", inplace=True)
     expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
     return expected_district_prevalence
@@ -97,6 +99,8 @@ def get_expected_prevalence(infection):
 def plot_prevalence_per_district(sims, infection):
     expected_prev = get_expected_prevalence(infection)
     df = sims['avg']['distr'].copy()
+    districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
+    df = df[df['District'].isin(districts)]
     df.set_index("District", inplace=True)
     dict_dstr = df.loc[:, 'Prevalence'].to_dict()
     plt.bar(*zip(*dict_dstr.items()), alpha=0.5, label='simulations avg')
@@ -105,7 +109,7 @@ def plot_prevalence_per_district(sims, infection):
     plt.xlabel('District')
     plt.ylabel('Prevalence')
     plt.legend()
-    plt.title('Prevalence per district, S.' + infection)
+    plt.title('Prevalence per district, S.' + infection + ', TreatmentSeeking On')
     plt.show()
 
 # Load the simulations you want to compare
@@ -115,16 +119,13 @@ simulations_total = {}
 
 load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
 # timestamps =['2020-01-17_21-10-12', '2020-01-17_23-24-12', '2020-01-17_23-24-27', '2020-01-19_15-02-43']
-timestamps =['2020-01-19_22-22-02', '2020-01-19_22-22-18', '2020-01-19_22-22-32', '2020-01-19_22-22-44', '2020-01-19_22-22-55']
+# timestamps = ['2020-01-19_22-22-02', '2020-01-19_22-22-18', '2020-01-19_22-22-32', '2020-01-19_22-22-44', '2020-01-19_22-22-55']
 # timestamps = ['2020-01-20_09-03-54', '2020-01-20_09-07-28', '2020-01-20_09-10-23', '2020-01-20_09-10-28', '2020-01-20_09-10-23']
-# timestamps = ['2020-01-20_11-28-14', '2020-01-20_11-30-01', '2020-01-20_11-31-51']
-# timestamps = ['2020-01-20_11-43-24', '2020-01-20_11-43-55', '2020-01-20_11-44-07']
-# timestamps = ['2020-01-20_13-58-52', '2020-01-20_13-59-29', '2020-01-20_13-59-59']
-timestamps = ['2020-01-20_23-22-52', '2020-01-20_23-21-29', '2020-01-20_23-22-44']
 # timestamps = ['2020-01-20_17-04-45', '2020-01-20_17-05-07', '2020-01-20_17-05-23', '2020-01-20_19-37-43']
+timestamps = ['2020-01-24_12-02-31', '2020-01-24_12-02-55', '2020-01-24_12-03-06']
+timestamps = ['2020-01-26_21-34-32', '2020-01-26_21-37-27', '2020-01-26_21-36-24']
+
 labels = ['sim' + str(i) for i in range(1,len(timestamps))]
-
-
 
 sim_dict = dict(zip(timestamps, labels))
 
@@ -132,15 +133,15 @@ for time, label in sim_dict.items():
     prev, prev_years, distr = load_outputs(time, 'Haematobium')
     outputs_haematobium = {'prev': prev, 'dalys': '', 'prev_years': prev_years, 'distr': distr}
     simulations_haematobium.update({label: outputs_haematobium})
-    prev, prev_years, distr = load_outputs(time, 'Mansoni')
-    outputs_mansoni = {'prev': prev, 'dalys': '', 'prev_years': prev_years, 'distr': distr}
-    simulations_mansoni.update({label: outputs_mansoni})
-    prev, prev_years = load_outputs(time, 'Total')
-    outputs_total = {'prev': prev, 'dalys': '', 'prev_years': prev_years}
-    simulations_total.update({label: outputs_total})
+    # prev, prev_years, distr = load_outputs(time, 'Mansoni')
+    # outputs_mansoni = {'prev': prev, 'dalys': '', 'prev_years': prev_years, 'distr': distr}
+    # simulations_mansoni.update({label: outputs_mansoni})
+    # prev, prev_years = load_outputs(time, 'Total')
+    # outputs_total = {'prev': prev, 'dalys': '', 'prev_years': prev_years}
+    # simulations_total.update({label: outputs_total})
 
 simulations_haematobium = add_average(simulations_haematobium)
-simulations_mansoni = add_average(simulations_mansoni)
+# simulations_mansoni = add_average(simulations_mansoni)
 
 # plots
 for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
