@@ -8,6 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class DxManager:
     """
     The is the Diagnostic Tests Manager (DxManager).
@@ -38,7 +39,7 @@ class DxManager:
             # Examine the proposed dx_test
             # Make each test provided into a list of test
             if not isinstance(dx_test, list):
-                dx_test= [dx_test]
+                dx_test = [dx_test]
 
             assert all([isinstance(d, DxTest) for d in dx_test]), f'Object is not a DxTest object: {d}'
 
@@ -51,7 +52,6 @@ class DxManager:
                 # Add the test the dict of registered dx_tests
                 self.dx_tests.update({name: dx_test})
                 self.dx_test_hash.add(hash_of_dx_test)
-
 
     def print_info_about_dx_test(self, name_of_dx_test):
         assert name_of_dx_test in self.dx_tests, f'This dx_test is not recognised: {name_of_dx_test}'
@@ -73,23 +73,34 @@ class DxManager:
 
     def run_dx_test(self, name_of_dx_test, hsi_event):
 
-        assert name_of_dx_test in self.dx_tests, f'This dx_test is not recognised: {name_of_dx_test}'
+        # Make the name_of_dx_test into list if it is not already
+        if not isinstance(name_of_dx_test, list):
+            name_of_dx_test = list(name_of_dx_test)
 
-        list_of_tests = self.dx_tests[name_of_dx_test]
+        assert all(
+            [name in self.dx_tests for name in name_of_dx_test]), f'This dx_test is not recognised: {name_of_dx_test}'
 
-        result = None
-        for test in list_of_tests:
-            result = test.apply(hsi_event, self.healthsystem_module)
-            if result is not None:
-                break
+        result_for_alg = dict()
 
-        return result
+        for dx_test in name_of_dx_test:
+
+            list_of_tests = self.dx_tests[dx_test]
+
+            result_for_this_dx_test = None
+            for test in list_of_tests:
+                result_for_this_dx_test = test.apply(hsi_event, self.healthsystem_module)
+                if result_for_this_dx_test is not None:
+                    break
+            result_for_alg[dx_test] = result_for_this_dx_test
+
+        return result_for_alg
+
 
 class DxTest:
     def __init__(self,
                  property: str,
-                 cons_req_as_footprint = None,
-                 cons_req_as_item_code = None,
+                 cons_req_as_footprint=None,
+                 cons_req_as_item_code=None,
                  sensitivity: float = None,
                  specificity: float = None
                  ):
@@ -111,7 +122,7 @@ class DxTest:
         else:
             self.cons_req_as_footprint = None
 
-        # Store performance characteristics (if sensitivity and specifity are not supplied than assume perfect)
+        # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         if sensitivity is not None:
             self.sensitivity = sensitivity
         else:
@@ -123,7 +134,6 @@ class DxTest:
             self.specificity = 1.0
 
     def __hash__(self):
-
         if self.cons_req_as_footprint is not None:
             string_of_reqs = ''
             for t in self.cons_req_as_footprint.values():
@@ -133,14 +143,12 @@ class DxTest:
         else:
             hash_of_cons_req_as_footprint = hash(None)
 
-
         return hash((
             hash(self.property),
             hash_of_cons_req_as_footprint,
             hash(self.sensitivity),
             hash(self.specificity)
         ))
-
 
     def apply(self, hsi_event, health_system_module):
 
@@ -155,29 +163,23 @@ class DxTest:
 
         # Check for the availability of the consumable code
         if self.cons_req_as_footprint is not None:
-            rtn_from_health_system = health_system_module.request_consumables(hsi_event, self.cons_req_as_footprint, to_log=True)
+            rtn_from_health_system = health_system_module.request_consumables(hsi_event, self.cons_req_as_footprint,
+                                                                              to_log=True)
 
             cons_available = all(rtn_from_health_system['Intervention_Package_Code'].values()) \
-                                                and all(rtn_from_health_system['Item_Code'].values())
+                             and all(rtn_from_health_system['Item_Code'].values())
         else:
             cons_available = True
 
-
-
         # Apply the test:
         test_value = true_value
-        #TODO: insert logic about erroneous tests.
-
-
+        # TODO: insert logic about erroneous tests.
 
         if cons_available:
             # Consumables available, return test value
             return test_value
         else:
-            # Consumabls not available, return test value
+            # Consumables not available, return test value
             return None
 
-
-
-        # TODO: check that the symptom is in the SymtomManager
         # TODO: elaborate for continuous tests
