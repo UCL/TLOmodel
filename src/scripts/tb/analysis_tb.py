@@ -121,8 +121,6 @@ death_counts = agg_deaths.iloc[agg_deaths.index.get_level_values('cause') == 'hi
 
 pop = output['tlo.methods.demography']['population']
 pop['date'] = pd.to_datetime(pop['date'])
-# pop['year'] = pop.date.dt.year.astype(int)
-# pop['total'] = pop['total'].astype('int64')
 
 mortality_rate = [(x / y) * 1000 for x, y in zip(death_counts, pop['total'])]
 
