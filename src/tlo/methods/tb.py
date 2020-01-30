@@ -345,11 +345,11 @@ class Tb(Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ACTIVE ~~~~~~~~~~~~~~~~~~~~~~~~~~
         # prob of active case by district
         df_active_prob = df.merge(active_tb_data, left_on=['district_of_residence'], right_on=['district'], how='left')
-        assert df_active_prob.proportion_active.isna().sum() == 0  # check there is a probability for every individual
+        assert df_active_prob.general_prob.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_active_prob))
-        active_idx = df_active_prob.index[df.is_alive & (random_draw < df_active_prob.proportion_active)]
+        active_idx = df_active_prob.index[df.is_alive & (random_draw < df_active_prob.general_prob)]
 
         # if >10 active cases, sample some mdr cases
         if len(active_idx) > 10:
@@ -449,6 +449,8 @@ class Tb(Module):
         sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=1))
+
+        sim.schedule_event(TbScheduleTesting(self), sim.date + DateOffset(days=1))
 
         sim.schedule_event(NonTbSymptomsEvent(self), sim.date + DateOffset(months=1))
 
@@ -1169,11 +1171,12 @@ class TbScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         p = self.module.parameters
 
-        # select people to go for testing (and subsequent tx)
+        # select symptomatic people to go for testing (and subsequent tx)
         # random sample to match clinical case tx coverage
         test = df.index[(self.module.rng.random_sample(size=len(df)) < p['rate_testing_tb'])
                         & df.is_alive
-                        & df.tb_inf.startswith("active")
+                        & ((df.tb_inf == 'active_susc_new') | (df.tb_inf == 'active_susc_tx') | (
+            df.tb_inf == 'active_mdr_new') | (df.tb_inf == 'active_mdr_tx'))
                         & ~(df.tb_diagnosed | df.tb_mdr_diagnosed)]
 
         for person_index in test:
@@ -1298,7 +1301,8 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
         # check that tb symptoms are present and caused by tb before resolving
         # all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
-        all_self_cure = self_cure + self_cure_hiv + self_cure_art
+        # all_self_cure = self_cure + self_cure_hiv + self_cure_art
+        all_self_cure = [*self_cure, *self_cure_hiv, *self_cure_art]
 
         for person_id in all_self_cure:
             if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
@@ -1794,7 +1798,8 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
         # check that tb symptoms are present and caused by tb before resolving
         # all_self_cure = pd.concat(self_cure, self_cure_hiv, self_cure_art)
-        all_self_cure = self_cure + self_cure_hiv + self_cure_art
+        # all_self_cure = self_cure + self_cure_hiv + self_cure_art
+        all_self_cure = [*self_cure, *self_cure_hiv, *self_cure_art]
 
         for person_id in all_self_cure:
             if ('respiratory_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)) & (
@@ -3513,13 +3518,17 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
         # ------------------------------------ PREVALENCE ------------------------------------
-
+        # prevalence should be the number of clinically active cases that occurred in the past year
         # ACTIVE
-        num_active = len(df[(df.tb_inf.str.contains('active')) & df.is_alive])
-        prop_active = num_active / len(df[df.is_alive])
+        new_tb_cases = len(
+            df[(df.tb_date_active < (now - DateOffset(months=self.repeat)))])
+
+        # num_active = len(df[(df.tb_inf.str.contains('active')) & df.is_alive])
+        prop_active = new_tb_cases / len(df[df.is_alive])
 
         assert prop_active <= 1
 
+        # todo: change to adjusted prevalence counting # episodes / pop
         # proportion of adults with active tb
         num_active_adult = len(df[(df.tb_inf.str.contains('active')) & (df.age_years >= 15) & df.is_alive])
         prop_active_adult = num_active_adult / len(df[(df.age_years >= 15) & df.is_alive])
