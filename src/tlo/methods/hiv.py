@@ -608,7 +608,7 @@ class Hiv(Module):
 
         sim.schedule_event(HivScheduleTesting(self), sim.date + DateOffset(days=1))
 
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # Schedule the event that will launch the Outreach event
         outreach_event = HivLaunchOutreachEvent(self)
