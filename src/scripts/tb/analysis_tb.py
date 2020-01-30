@@ -198,7 +198,7 @@ plt.ylabel("Incidence (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0, 1.0)
-plt.legend(["Data", "Model"],
+plt.legend(["UNAIDS", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # HIV treatment coverage
@@ -213,7 +213,7 @@ plt.ylabel("Coverage (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0, 100)
-plt.legend(["Data", "Model"],
+plt.legend(["UNAIDS", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # AIDS mortality
@@ -228,7 +228,7 @@ plt.ylabel("Mortality rate per 100k")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0, 15)
-plt.legend(["Data", "Model"],
+plt.legend(["UNAIDS", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 plt.show()
