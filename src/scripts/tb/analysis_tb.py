@@ -35,8 +35,8 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 12, 31)
-popsize = 5000
+end_date = Date(2025, 12, 31)
+popsize = 75000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -83,7 +83,7 @@ logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get dea
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
 # Run the simulation and flush the logger
-sim.seed_rngs(0)
+sim.seed_rngs(10)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
