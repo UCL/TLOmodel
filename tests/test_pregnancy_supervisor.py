@@ -18,7 +18,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 @pytest.fixture(autouse=True)
 def disable_logging():
-    logging.disable(logging.INFO)
+    logging.disable(logging.DEBUG)
 
 
 @pytest.fixture(scope='module')

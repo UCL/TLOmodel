@@ -440,7 +440,7 @@ class NewbornOutcomes(Module):
                 eff_prob_enceph = params['nb_newborn_equations']['encephalopathy'].predict(df.loc[[child_id]]).values
                 random = self.rng.random_sample(size=1)
                 if random < eff_prob_enceph:
-                    random2 = self.rng.choice(('mild', 'moderate', 'severe'), p=params['prob_severity_enceph'])
+                    random2 = self.rng.choice(('mild', 'moderate', 'severe'), p=params['prob_enceph_severity'])
                     if random2 == 'mild':
                         df.at[child_id, 'nb_encephalopathy'] = 'mild_enceph'
                     elif random2 == 'moderate':
@@ -457,18 +457,18 @@ class NewbornOutcomes(Module):
                 #  different comps?
 
                 if df.at[child_id, 'nb_early_preterm'] & (df.at[mother_id, 'ps_gestational_age_in_weeks'] < 32):
-                    if self.module.eval(params['nb_newborn_equations']['ivh'], child_id):
+                    if self.eval(params['nb_newborn_equations']['ivh'], child_id):
                         df.at[child_id, 'nb_intravascular_haem'] = True
                         logger.debug('Neonate %d has developed intravascular haemorrhage secondary to prematurity',
                                      child_id)
 
                 if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
-                    if self.module.eval(params['nb_newborn_equations']['nec'], child_id):
+                    if self.eval(params['nb_newborn_equations']['nec'], child_id):
                         df.at[child_id, 'nb_necrotising_entero'] = True
                         logger.debug('Neonate %d has developed necrotising enterocolitis secondary to prematurity',
                                      child_id)
 
-                    if self.module.eval(params['nb_newborn_equations']['resp_distress_synd'], child_id):
+                    if self.eval(params['nb_newborn_equations']['resp_distress_synd'], child_id):
                         df.at[child_id, 'nb_resp_distress_synd'] = True
                         logger.debug(
                             'Neonate %d has developed newborn respiratory distress syndrome secondary to prematurity',
@@ -478,7 +478,7 @@ class NewbornOutcomes(Module):
                     #  with oxygen administration? therefore is there reduced likelihood in the community?
                     if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
                         # to review lit r.e. retinopathy
-                       if self.module.eval(params['nb_newborn_equations']['retinopathy'], child_id):
+                       if self.eval(params['nb_newborn_equations']['retinopathy'], child_id):
                             random_draw = self.rng.choice(('mild', 'moderate', 'severe', 'blindness'),
                                                              p=params['prob_retinopathy_severity'])
                             df.at[child_id, 'nb_retinopathy_prem'] = random_draw
