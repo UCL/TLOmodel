@@ -837,8 +837,8 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
 
         #  sample using the prob_inf scaled by relative susceptibility
         newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (prob_inf * risk_hiv))]
-        print('newly_infected', len(newly_infected_index))
-        print('inc_rate', (len(newly_infected_index) / susceptible) * 100)
+        # print('newly_infected', len(newly_infected_index))
+        # print('inc_rate', (len(newly_infected_index) / susceptible) * 100)
 
         # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
         # random draw of days 0-365
@@ -1091,21 +1091,25 @@ class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         p = self.module.parameters
 
-        # select people to go for testing (and subsequent tx)
-        # random sample 0.4 to match clinical case tx coverage
-        test = df.index[(self.module.rng.random_sample(size=len(df)) < p['testing_adj'])
-                        & df.is_alive
-                        & df.hv_inf]
+        # TODO this fixes the current ART coverage for projections
+        # otherwise ART coverage reaches 95% in 2025
+        if self.sim.date.year <= 2018:
 
-        for person_index in test:
-            logger.debug(
-                f'HivScheduleTesting: scheduling HSI_Hiv_PresentsForCareWithSymptoms for person {person_index}')
+            # select people to go for testing (and subsequent tx)
+            # random sample 0.4 to match clinical case tx coverage
+            test = df.index[(self.module.rng.random_sample(size=len(df)) < p['testing_adj'])
+                            & df.is_alive
+                            & df.hv_inf]
 
-            event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=1,
-                                                                topen=now,
-                                                                tclose=None)
+            for person_index in test:
+                logger.debug(
+                    f'HivScheduleTesting: scheduling HSI_Hiv_PresentsForCareWithSymptoms for person {person_index}')
+
+                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=1,
+                                                                    topen=now,
+                                                                    tclose=None)
 
 # ---------------------------------------------------------------------------
 #   Launch outreach events
@@ -2360,13 +2364,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ad_prev = (len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 49))]) / len(
             df[df.is_alive & (df.age_years.between(15, 49))])) * 100
 
-        assert ad_prev <= 1
+        assert ad_prev <= 100
 
         # child prevalence
         child_prev = (len(df[df.hv_inf & df.is_alive & (df.age_years.between(0, 14))]) / len(
             df[df.is_alive & (df.age_years.between(0, 14))])) * 100
 
-        assert child_prev <= 1
+        assert child_prev <= 100
 
         # proportion exposed to behaviour change
         prop_behav = len(df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]) / len(
@@ -2476,7 +2480,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         deaths_tb_hiv = len(df[df.hv_inf & (df.tb_date_death > (now - DateOffset(months=self.repeat)))])
 
         pop_alive = len(df[df.is_alive])
-        mort_rate1000 = ((deaths_hiv + deaths_tb_hiv) / pop_alive) * 1000
+        mort_rate1000 = ((deaths_hiv + deaths_tb_hiv) / pop_alive) * 100000
 
         # adults
         deaths_hiv_adults = len(
@@ -2486,10 +2490,10 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.hv_inf & (df.tb_date_death > (now - DateOffset(months=self.repeat))) & (df.age_years >= 15)])
 
         pop_alive_adults = len(df[df.is_alive & (df.age_years >= 15)])
-        mort_rate1000_adults = ((deaths_hiv_adults + deaths_tb_hiv_adults) / pop_alive_adults) * 1000
+        mort_rate1000_adults = ((deaths_hiv_adults + deaths_tb_hiv_adults) / pop_alive_adults) * 100000
 
         logger.info('%s|hiv_mortality|%s', now,
                     {
-                        'hiv_MortRate1000': mort_rate1000,
-                        'hiv_MortRate1000_adults': mort_rate1000_adults,
+                        'hiv_MortRate100k': mort_rate1000,
+                        'hiv_MortRate100k_adults': mort_rate1000_adults,
                     })

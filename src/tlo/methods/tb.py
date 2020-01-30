@@ -319,15 +319,16 @@ class Tb(Module):
 
         # assign risk of latent tb
         risk_tb = pd.Series(1, index=df.index)
-        risk_tb.loc[df.is_alive & df.tb_bcg & df.age_years < 10] *= params['rr_bcg_inf']
+        risk_tb.loc[df.is_alive & df.tb_bcg & (df.age_years < 10)] *= params['rr_bcg_inf']
 
         # weight the likelihood of being sampled by the relative risk
-        norm_p = pd.Series(risk_tb)
-        norm_p /= norm_p.sum()  # normalise
+        # norm_p = pd.Series(risk_tb)
+        # norm_p /= norm_p.sum()  # normalise
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_tbprob))
-        tb_idx = df_tbprob.index[df.is_alive & (random_draw < (df_tbprob.prob_latent_tb * norm_p))]
+        tb_idx = df_tbprob.index[df.is_alive & (random_draw < df_tbprob.prob_latent_tb)]
+        # tb_idx = df_tbprob.index[df.is_alive & (random_draw < (df_tbprob.prob_latent_tb * norm_p))]
 
         df.loc[tb_idx, 'tb_inf'] = 'latent_susc_new'
         df.loc[tb_idx, 'tb_date_latent'] = now
@@ -1149,6 +1150,37 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             logger.debug(
                 'This is TbRelapseEvent, there are no new relapse cases seeking care')
+
+
+class TbScheduleTesting(RegularEvent, PopulationScopeEventMixin):
+    """ additional TB testing happening outside the symptom-driven generic HSI event
+    to increase tx coverage up to reported levels
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+        p = self.module.parameters
+
+        # select people to go for testing (and subsequent tx)
+        # random sample to match clinical case tx coverage
+        test = df.index[(self.module.rng.random_sample(size=len(df)) < p['rate_testing_tb'])
+                        & df.is_alive
+                        & df.tb_inf.startswith("active")
+                        & ~(df.tb_diagnosed | df.tb_mdr_diagnosed)]
+
+        for person_index in test:
+            logger.debug(
+                f'TbScheduleTesting: scheduling HSI_Tb_Screening for person {person_index}')
+
+            event = HSI_Tb_Screening(self.module, person_id=person_index)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=now,
+                                                                tclose=None)
 
 
 class TbCheckXpert(Event, IndividualScopeEventMixin):

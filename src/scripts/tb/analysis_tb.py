@@ -35,8 +35,8 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 12, 31)
-popsize = 1000
+end_date = Date(2020, 12, 31)
+popsize = 10000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -122,7 +122,7 @@ death_counts = agg_deaths.iloc[agg_deaths.index.get_level_values('cause') == 'hi
 pop = output['tlo.methods.demography']['population']
 pop['date'] = pd.to_datetime(pop['date'])
 
-mortality_rate = [(x / y) * 1000 for x, y in zip(death_counts, pop['total'])]
+mortality_rate = [(x / y) * 100000 for x, y in zip(death_counts, pop['total'])]
 
 # ------------------------------------- MODEL OUTPUTS AND DATA ------------------------------------- #
 
@@ -148,6 +148,9 @@ aidsInfo_data = pd.read_excel(
 )
 
 data_years = pd.to_datetime(aidsInfo_data.year, format="%Y")
+d = data_years.values  # for fill_between command
+
+
 
 # TB
 m_tb_inc = output['tlo.methods.tb']['tb_incidence']
@@ -160,11 +163,20 @@ m_tb_bcg = output['tlo.methods.tb']['tb_bcg']
 
 m_tb_years = pd.to_datetime(m_tb_inc.date)
 
-tb_data = pd.read_excel(
+tb_WHO = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_TB.xlsx",
     sheet_name="WHO_estimates",
 )
-tb_data_years = pd.to_datetime(tb_data.year, format="%Y")
+
+tb_NTP = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_TB.xlsx",
+    sheet_name="TB_program",
+)
+tb_data_years = pd.to_datetime(tb_WHO.year, format="%Y")
+dtb = tb_data_years.values  # for fill_between command
+
+tb_ntp_years = pd.to_datetime(tb_NTP.year, format="%Y")
+dtb_ntp = tb_ntp_years.values  # for fill_between command
 
 # ------------------------------------- HIV FIGURES ------------------------------------- #
 
@@ -174,7 +186,7 @@ plt.figure(4, figsize=(15, 10))
 # HIV prevalence
 plt.subplot(221)  # numrows, numcols, fignum
 plt.plot(data_years, aidsInfo_data.prev_15_49)
-plt.fill_between(data_years, aidsInfo_data.prev_15_49_lower,
+plt.fill_between(d, aidsInfo_data.prev_15_49_lower,
                  aidsInfo_data.prev_15_49_upper, alpha=.5)
 plt.plot(m_hiv_years, m_hiv.hiv_prev_adult)
 plt.title("HIV adult prevalence")
@@ -189,7 +201,7 @@ plt.legend(["UNAIDS", "Model"],
 # HIV incidence
 plt.subplot(222)  # numrows, numcols, fignum
 plt.plot(data_years, aidsInfo_data.inc_15_49_percent)
-plt.fill_between(data_years, aidsInfo_data.inc_15_49_percent_lower,
+plt.fill_between(d, aidsInfo_data.inc_15_49_percent_lower,
                  aidsInfo_data.inc_15_49_percent_upper, alpha=.5)
 plt.plot(m_hiv_years, m_hiv.hiv_adult_inc_percent)
 plt.title("HIV adult incidence (%)")
@@ -204,7 +216,7 @@ plt.legend(["UNAIDS", "Model"],
 # HIV treatment coverage
 plt.subplot(223)  # numrows, numcols, fignum
 plt.plot(data_years, aidsInfo_data.percent15plus_on_art)
-plt.fill_between(data_years, aidsInfo_data.percent15plus_on_art_lower,
+plt.fill_between(d, aidsInfo_data.percent15plus_on_art_lower,
                  aidsInfo_data.percent15plus_on_art_upper, alpha=.5)
 plt.plot(m_hiv_years, hiv_art_cov_percent)
 plt.title("ART adult coverage (%)")
@@ -219,7 +231,7 @@ plt.legend(["UNAIDS", "Model"],
 # AIDS mortality
 plt.subplot(224)  # numrows, numcols, fignum
 plt.plot(data_years, aidsInfo_data.mort_rate100k)
-plt.fill_between(data_years, aidsInfo_data.mort_rate100k_lower,
+plt.fill_between(d, aidsInfo_data.mort_rate100k_lower,
                  aidsInfo_data.mort_rate100k_upper, alpha=.5)
 plt.plot(pop['date'], mortality_rate)
 plt.title("Mortality rates per 100k")
@@ -227,7 +239,7 @@ plt.xlabel("Year")
 plt.ylabel("Mortality rate per 100k")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0, 15)
+plt.gca().set_ylim(0, 500)
 plt.legend(["UNAIDS", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
@@ -241,50 +253,56 @@ plt.figure(2, figsize=(15, 10))
 
 # TB incidence
 plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(tb_data_years, tb_data.incidence_per_100k)
+plt.plot(tb_data_years[0:18], tb_WHO.incidence_per_100k[0:18])
+plt.fill_between(dtb, tb_WHO.incidence_per_100k_low,
+                 tb_WHO.incidence_per_100k_high, alpha=.5)
 plt.plot(m_tb_years, m_tb_inc.tbIncActive100k)
 plt.title("TB case incidence/100k")
 plt.xlabel("Year")
 plt.ylabel("Incidence (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Data", "Model"],
+plt.legend(["WHO", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # TB prevalence
 plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(tb_data_years, tb_data.prevalence_all_ages)
-plt.plot(m_tb_years, m_tb_prev.tbPropActive)
+plt.plot(tb_data_years[0:18], tb_WHO.prevalence_all_ages[0:18])
+plt.fill_between(dtb, tb_WHO.prevalence_all_ages_low,
+                 tb_WHO.prevalence_all_ages_high, alpha=.5)
+plt.plot(m_tb_years, m_tb_prev.prop_active)
 plt.title("TB prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Data", "Model"],
+plt.legend(["WHO", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # TB treatment coverage
 plt.subplot(223)  # numrows, numcols, fignum
-# plt.plot(tb_data_years, tb_data.prevalence_all_ages)
+plt.plot(tb_data_years[0:18], tb_WHO.case_detection_rate[0:18])
+plt.fill_between(dtb, tb_WHO.case_detection_rate_lower,
+                 tb_WHO.case_detection_rate_upper, alpha=.5)
 plt.plot(m_tb_years, m_tb_treatment.tbTreat)
 plt.title("TB treatment coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Model"],
+plt.legend(["WHO", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # BCG coverage
 plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(tb_data_years, tb_data.bcg_coverage)
+plt.plot(tb_data_years, tb_WHO.bcg_coverage)
 plt.plot(m_tb_years, m_tb_bcg.tbBcgCoverage)
 plt.title("BCG coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Data", "Model"],
+plt.legend(["WHO", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.show()
 # plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")

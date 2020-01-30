@@ -189,13 +189,13 @@ class Demography(Module):
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
         # Log the birth:
-        logger.info('%s|on_birth|%s',
-                    self.sim.date,
-                    {
-                        'mother': mother_id,
-                        'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years']
-                    })
+        # logger.info('%s|on_birth|%s',
+        #             self.sim.date,
+        #             {
+        #                 'mother': mother_id,
+        #                 'child': child_id,
+        #                 'mother_age': df.at[mother_id, 'age_years']
+        #             })
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
