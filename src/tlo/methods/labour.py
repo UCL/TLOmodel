@@ -1,24 +1,17 @@
 import logging
 
 import pandas as pd
-import numpy as np
 from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, pregnancy_supervisor
+from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-LOG_FILENAME = 'labour.log'
-logging.basicConfig(filename=LOG_FILENAME,
-                            filemode='w',
-                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                            datefmt='%H:%M:%S',
-                            level=logging.DEBUG)
 
 
 class Labour (Module):
@@ -28,11 +21,10 @@ class Labour (Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # Here we create a dictionary to store additional information around delivery and birth
+        # This dictionary will store additional information around delivery and birth
         self.mother_and_newborn_info = dict()
 
     PARAMETERS = {
-
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================
         'prob_pregnancy': Parameter(
             Types.REAL, 'baseline probability of pregnancy - currently included as a dummy parameter'),
@@ -159,7 +151,6 @@ class Labour (Module):
             Types.REAL, 'baseline probability of a child developing neonatal encephalopathy following delivery'),
 
         # ================================= TREATMENT PARAMETERS =====================================================
-
         'prob_successful_induction': Parameter(
             Types.REAL, 'probability of that induction of labour will be successful'),
         'rr_maternal_sepsis_clean_delivery': Parameter(
@@ -210,7 +201,6 @@ class Labour (Module):
     }
 
     PROPERTIES = {
-
         'la_due_date_current_pregnancy': Property(Types.DATE, 'The date on which a newly pregnant woman is scheduled to'
                                                               ' go into labour'),
         'la_currently_in_labour': Property(Types.BOOL, 'whether this woman is currently in labour'),
