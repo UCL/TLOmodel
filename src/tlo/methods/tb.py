@@ -178,7 +178,7 @@ class Tb(Module):
                                        'latent_mdr_tx', 'active_mdr_tx'],
                            description='tb status'),
         'tb_date_active': Property(Types.DATE, 'Date active tb started'),
-        'tb_date_symptoms': Property(
+        'tb_any_resp_symptoms': Property(
             Types.DATE, 'Date of symptom start'),
         'tb_smear': Property(Types.BOOL, 'smear positivity with active infection'),
         'tb_date_latent': Property(Types.DATE, 'Date acquired tb infection (latent stage)'),
@@ -268,7 +268,7 @@ class Tb(Module):
         # set-up baseline population
         df['tb_inf'].values[:] = 'uninfected'
         df['tb_date_active'] = pd.NaT
-        df['tb_date_symptoms'] = pd.NaT
+        df['tb_any_resp_symptoms'] = pd.NaT
         df['tb_smear'] = False
         df['tb_date_latent'] = pd.NaT
 
@@ -466,7 +466,7 @@ class Tb(Module):
 
         df.at[child_id, 'tb_inf'] = 'uninfected'
         df.at[child_id, 'tb_date_active'] = pd.NaT
-        df.at[child_id, 'tb_date_symptoms'] = pd.NaT
+        df.at[child_id, 'tb_any_resp_symptoms'] = pd.NaT
         df.at[child_id, 'tb_smear'] = False
         df.at[child_id, 'tb_date_latent'] = pd.NaT
         df.at[child_id, 'tb_ever_tb'] = False
@@ -619,6 +619,10 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         # calculate foi by district
         districts = (df['district_of_residence'].unique())
         foi = pd.Series(0, index=districts)
+
+        # if any smear_pos or smear_neg are 0 they will return foi=0
+        smear_pos[smear_pos == 0] = 1
+        smear_neg[smear_neg == 0] = 1
 
         foi = (params['transmission_rate'] * smear_pos *
                (smear_neg * params['rel_inf_smear_ng']) *
@@ -824,7 +828,7 @@ class NonTbSymptomsEvent(RegularEvent, PopulationScopeEventMixin):
             # ----------------------------------- SYMPTOMS -----------------------------------
             # ACTIVE CASES - smear positive and smear negative
 
-            df.loc[test_non_tb, 'tb_date_symptoms'] = self.sim.date
+            df.loc[test_non_tb, 'tb_any_resp_symptoms'] = self.sim.date
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(test_non_tb),
@@ -888,7 +892,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
             # ----------------------------------- SYMPTOMS -----------------------------------
             # ACTIVE CASES - smear positive and smear negative
 
-            df.at[person_id, 'tb_date_symptoms'] = now
+            df.at[person_id, 'tb_any_resp_symptoms'] = now
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=person_id,
@@ -1035,7 +1039,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         all_relapse = all_relapse.append(relapse_tx_2yrs)
 
         # ----------------------------------- SYMPTOMS -----------------------------------
-        df.loc[all_relapse, 'tb_date_symptoms'] = now
+        df.loc[all_relapse, 'tb_any_resp_symptoms'] = now
 
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=list(all_relapse),
@@ -1308,10 +1312,10 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   TB MDR infection event
 # ---------------------------------------------------------------------------
-# TODO should transmission be limited within each district?
+# TODO should transmission be limited within each district? background foi for transmission risk between districts
 # TODO add relative infectiousness for those on poor tx [prop tx failure]
 # TODO rel inf for smear negative - weight inf by prop smear negative
-# TODO age/sex distribution for new cases?
+# TODO age/sex distribution for new active cases? may emerge through rr active
 class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb-mdr infection events
     """
@@ -1657,7 +1661,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         all_relapse = all_relapse.append(relapse_tx_2yrs)
 
         # ----------------------------------- SYMPTOMS -----------------------------------
-        df.loc[all_relapse, 'tb_date_symptoms'] = now
+        df.loc[all_relapse, 'tb_any_resp_symptoms'] = now
 
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=list(all_relapse),
