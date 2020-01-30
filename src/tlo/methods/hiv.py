@@ -956,18 +956,25 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(death, time_death)  # schedule the death
 
             # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
-            df.loc[new_inf, 'hv_proj_date_symp'] = df.loc[new_inf, 'hv_proj_date_death'] - DateOffset(days=732.5)
-
-            # schedule the symptom update event for each person
             for person_index in new_inf:
-                symp_event = HivSymptomaticEvent(self.module, person_index)
-                self.sim.schedule_event(symp_event, df.at[person_index, 'hv_proj_date_symp'])
+                df.at[person_index, 'hv_proj_date_symp'] = df.loc[person_index, 'hv_proj_date_death'] - DateOffset(
+                    days=732.5)
 
-            # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
-            df.loc[new_inf, 'hv_proj_date_aids'] = df.loc[new_inf, 'hv_proj_date_death'] - DateOffset(days=365.25)
+                if df.at[person_index, 'hv_proj_date_symp'] < self.sim.date:
+                    df.at[person_index, 'hv_proj_date_symp'] = self.sim.date + DateOffset(days=1)
 
-            # schedule the symptom update event for each person
-            for person_index in new_inf:
+                    # schedule the symptom update event for each person
+                    symp_event = HivSymptomaticEvent(self.module, person_index)
+                    self.sim.schedule_event(symp_event, df.at[person_index, 'hv_proj_date_symp'])
+
+                # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
+                df.at[person_index, 'hv_proj_date_aids'] = df.loc[new_inf, 'hv_proj_date_death'] - DateOffset(
+                    days=365.25)
+
+                if df.at[person_index, 'hv_proj_date_aids'] < self.sim.date:
+                    df.at[person_index, 'hv_proj_date_aids'] = self.sim.date + DateOffset(days=1)
+
+                # schedule the symptom update event for each person
                 aids_event = HivAidsEvent(self.module, person_index)
                 self.sim.schedule_event(aids_event, df.at[person_index, 'hv_proj_date_aids'])
 
