@@ -268,7 +268,14 @@ class Labour (Module):
         # as a paramter
 
         params['la_labour_equations'] =\
-            {'early_preterm_birth': LinearModel(
+            {'parity': LinearModel(
+                LinearModelType.ADDITIVE, # TODO: first stage dummy- needs to come from data
+                0.0,
+                Predictor('age_years').when('.between(15,24)', self.rng.choice(range(0, 3)))
+                                      .when('.between(24,40)', self.rng.choice(range(0, 5)))
+                                      .when(' > 40', self.rng.choice(range(0, 7)))),
+
+                'early_preterm_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,  # TODO: Anaemia/ Malaria / Multiple gestation
                 params['prob_early_ptb'],
                 Predictor('age_years').when('.between(15,20)', params['rr_early_ptb_age<20']),
@@ -337,13 +344,14 @@ class Labour (Module):
                                                                                        params['or_homebirth_wealth_5']),
                  # wealth levels in the paper are different
                 Predictor('li_urban').when(True, params['or_homebirth_urban']))
-            }
+             }
 
         # TODO: do we need an equation for post term labour
         # TODO: we could hard code these predictors to reduce the number of actual parameters?
 
     def initialise_population(self, population):
         df = population.props
+        params= self.parameters
 
         df.loc[df.sex == 'F', 'la_current_labour_successful_induction'] = 'not_induced'
         df.loc[df.sex == 'F', 'la_currently_in_labour'] = False
@@ -365,59 +373,12 @@ class Labour (Module):
         df.loc[df.sex == 'F', 'la_maternal_death'] = False
         df.loc[df.sex == 'F', 'la_maternal_death_date'] = pd.NaT
 
-#  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
+#  ----------------------------ASSIGNING PARITY AT BASELINE ----------------------------------------------------------
+
         # TODO: reformat with linear model? consider how best to to draw in real 2010 data
+        # Current equation is an unweighted draw that just gives the same parity to every age group
 
-        # Get and hold all the women in the dataframe who between the ages of 15-24 years old
-        women_parity_1524_idx = df.index[(df.age_years >= 15) & (df.age_years <= 24) & (df.is_alive == True)
-                                         & (df.sex == 'F')]
-
-        baseline_p = pd.Series(0, index=women_parity_1524_idx)
-
-        # Probability weighted random draw is applied to each women to determine how many previous deliveries she has
-        # had
-        random_draw2 = pd.Series(self.rng.choice(range(0, 5), p=[0.40, 0.35, 0.15, 0.06, 0.04],
-                                                 size=len(women_parity_1524_idx)),
-                                 index=df.index[(df.age_years >= 15) & (df.age_years <= 24)
-                                                & df.is_alive & (df.sex == 'F')])
-
-        dfx = pd.concat([baseline_p, random_draw2], axis=1)
-        dfx.columns = ['baseline_p', 'random_draw2']
-        idx_parity = dfx.index[dfx.baseline_p < dfx.random_draw2]
-        df.loc[idx_parity, 'la_parity'] = dfx.random_draw2
-
-        # These steps are repeated with different weightings for the next two older age groups
-        women_parity_2540_idx = df.index[(df.age_years >= 25) & (df.age_years <= 40) & (df.is_alive == True)
-                                         & (df.sex == 'F')]
-
-        baseline_p = pd.Series(0, index=women_parity_2540_idx)
-
-        random_draw = pd.Series(self.rng.choice(range(0, 6), p=[0.05, 0.15, 0.30, 0.20, 0.2, 0.1],
-                                                size=len(women_parity_2540_idx)), index=df.index[(df.age_years >= 25) &
-                                                                                                 (df.age_years <= 40)
-                                                                                                 & (df.is_alive == True)
-                                                                                                 & (df.sex == 'F')])
-
-        dfx = pd.concat([baseline_p, random_draw], axis=1)
-        dfx.columns = ['baseline_p', 'random_draw']
-        idx_parity = dfx.index[dfx.baseline_p < dfx.random_draw]
-        df.loc[idx_parity, 'la_parity'] = dfx.random_draw
-
-        women_parity_4149_idx = df.index[(df.age_years >= 41) & (df.age_years <= 49) & (df.is_alive == True)
-                                         & (df.sex == 'F')]
-
-        baseline_p = pd.Series(0, index=women_parity_4149_idx)
-
-        random_draw = pd.Series(self.rng.choice(range(0, 7), p=[0.05, 0.10, 0.25, 0.30, 0.25, 0.03, 0.02],
-                                                size=len(women_parity_4149_idx)), index=df.index[(df.age_years >= 41)
-                                                                                                 & (df.age_years <= 49)
-                                                                                                 & df.is_alive
-                                                                                                 & (df.sex == 'F')])
-
-        dfx = pd.concat([baseline_p, random_draw], axis=1)
-        dfx.columns = ['baseline_p', 'random_draw']
-        idx_parity = dfx.index[dfx.baseline_p < dfx.random_draw]
-        df.loc[idx_parity, 'la_parity'] = dfx.random_draw
+        df.la_parity = params['la_labour_equations']['parity'].predict(df.loc[df.is_alive & (df.sex == 'F')])
 
     def initialise_simulation(self, sim):
 
