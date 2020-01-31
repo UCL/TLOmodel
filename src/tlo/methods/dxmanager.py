@@ -4,6 +4,7 @@ See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagn
 """
 
 import logging
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ class DxManager:
             result_dict_for_list_of_dx_tests[dx_test] = t_res
 
         # Decide on type of return:
-        if (len(dx_tests_to_run)==1) and use_dict_for_single:
+        if (len(dx_tests_to_run) == 1) and use_dict_for_single:
             return result_dict_for_list_of_dx_tests[dx_tests_to_run[0]]
         else:
             return result_dict_for_list_of_dx_tests
@@ -168,10 +169,11 @@ class DxTest:
         :param health_system_module:
         :return: value of test or None.
         """
-        print('Apply the diagnostic test and return the result')
 
         # Must be an individual level HSI and not a population level HSI
-        assert not isinstance(hsi_event.target, health_system_module.sim.population.__class__), 'HSI_Event is not individual level but it must be to use the DxManager'
+        assert not isinstance(hsi_event.target,
+                              health_system_module.sim.population.__class__),\
+            'HSI_Event is not individual level but it must be to use the DxManager'
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined
@@ -193,13 +195,12 @@ class DxTest:
         if isinstance(true_value, np.bool_):
             if true_value:
                 # Apply the sensitivity:
-                test_value = health_system_module.rng.choice([True, False], p=[self.sensitivity, 1-self.sensitivity])
+                test_value = health_system_module.rng.choice([True, False], p=[self.sensitivity, 1 - self.sensitivity])
             else:
                 # Apply the specificity:
-                test_value = health_system_module.rng.choice([False, True], p=[self.specificity, 1-self.specificity])
+                test_value = health_system_module.rng.choice([False, True], p=[self.specificity, 1 - self.specificity])
         else:
             test_value = true_value
-
 
         # TODO: insert logic about erroneous tests.
 
