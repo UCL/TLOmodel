@@ -16,7 +16,7 @@ def set_output_file(log_path: Path) -> _logging.FileHandler:
     """
     fh = _logging.FileHandler(log_path)
     fh.setFormatter(_FORMATTER)
-    getLogger('tlo').handlers.clear()
+    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers if not isinstance(h, _logging.StreamHandler)]
     getLogger('tlo').addHandler(fh)
     return fh
 
