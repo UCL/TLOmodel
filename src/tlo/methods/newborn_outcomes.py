@@ -160,36 +160,36 @@ class NewbornOutcomes(Module):
         params['cfr_enceph_mild_mod'] = dfd.loc['cfr_enceph_mild_mod', 'value']
         params['cfr_enceph_severe'] = dfd.loc['cfr_enceph_severe', 'value']
 
-        if 'HealthBurden' in self.sim.modules.keys():
-            # TODO: Discuss with team the best way to organise and apply DALY weights for newborns
-            params['nb_daly_wts'] = {
-                'mild_motor_cognitive_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(357),
-                'mild_motor_cognitive_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(359),
-                'mild_motor_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(371),
-                'moderate_motor_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(378),
-                'severe_motor_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(383),
-                'mild_motor_28_32wks': self.sim.modules['HealthBurden'].get_daly_weight(372),
-                'moderate_motor_28_32wks': self.sim.modules['HealthBurden'].get_daly_weight(377),
-                'severe_motor_28_32wks': self.sim.modules['HealthBurden'].get_daly_weight(375),
-                'mild_motor_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(373),
-                'moderate_motor_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(379),
-                'severe_motor_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(366),
-                'mild_vision_rptb': self.sim.modules['HealthBurden'].get_daly_weight(404),
-                'moderate_vision_rptb': self.sim.modules['HealthBurden'].get_daly_weight(405),
-                'severe_vision_rptb': self.sim.modules['HealthBurden'].get_daly_weight(402),
-                'blindness_rptb': self.sim.modules['HealthBurden'].get_daly_weight(386),
-                'mild_motor_enceph': self.sim.modules['HealthBurden'].get_daly_weight(416),
-                'moderate_motor_enceph': self.sim.modules['HealthBurden'].get_daly_weight(411),
-                'severe_motor_enceph': self.sim.modules['HealthBurden'].get_daly_weight(410),
-                'mild_motor_cognitive_enceph': self.sim.modules['HealthBurden'].get_daly_weight(419),
-                'severe_motor_cognitive_enceph': self.sim.modules['HealthBurden'].get_daly_weight(420),
-                'mild_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(431),
-                'moderate_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(438),
-                'severe_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(435),
-                'severe_infection_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(436),
-                'mild_motor_cognitive_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(441),
-                'mild_motor_cognitive_haemolytic': self.sim.modules['HealthBurden'].get_daly_weight(457),
-                'severe_motor_cognitive_haemolytic': self.sim.modules['HealthBurden'].get_daly_weight(455)}
+#        if 'HealthBurden' in self.sim.modules.keys():
+#            # TODO: Discuss with team the best way to organise and apply DALY weights for newborns
+#            params['nb_daly_wts'] = {
+#                'mild_motor_cognitive_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(357),
+#                'mild_motor_cognitive_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(359),
+#                'mild_motor_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(371),
+#                'moderate_motor_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(378),
+#                'severe_motor_<28wks': self.sim.modules['HealthBurden'].get_daly_weight(383),
+#                'mild_motor_28_32wks': self.sim.modules['HealthBurden'].get_daly_weight(372),
+#                'moderate_motor_28_32wks': self.sim.modules['HealthBurden'].get_daly_weight(377),
+#                'severe_motor_28_32wks': self.sim.modules['HealthBurden'].get_daly_weight(375),
+#                'mild_motor_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(373),
+#                'moderate_motor_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(379),
+#                'severe_motor_32_36wks': self.sim.modules['HealthBurden'].get_daly_weight(366),
+#                'mild_vision_rptb': self.sim.modules['HealthBurden'].get_daly_weight(404),
+#                'moderate_vision_rptb': self.sim.modules['HealthBurden'].get_daly_weight(405),
+#                'severe_vision_rptb': self.sim.modules['HealthBurden'].get_daly_weight(402),
+#                'blindness_rptb': self.sim.modules['HealthBurden'].get_daly_weight(386),
+#                'mild_motor_enceph': self.sim.modules['HealthBurden'].get_daly_weight(416),
+#                'moderate_motor_enceph': self.sim.modules['HealthBurden'].get_daly_weight(411),
+#                'severe_motor_enceph': self.sim.modules['HealthBurden'].get_daly_weight(410),
+#                'mild_motor_cognitive_enceph': self.sim.modules['HealthBurden'].get_daly_weight(419),
+#                'severe_motor_cognitive_enceph': self.sim.modules['HealthBurden'].get_daly_weight(420),
+#                'mild_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(431),
+#                'moderate_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(438),
+#                'severe_motor_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(435),
+#                'severe_infection_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(436),
+#                'mild_motor_cognitive_sepsis': self.sim.modules['HealthBurden'].get_daly_weight(441),
+#                'mild_motor_cognitive_haemolytic': self.sim.modules['HealthBurden'].get_daly_weight(457),
+#                'severe_motor_cognitive_haemolytic': self.sim.modules['HealthBurden'].get_daly_weight(455)}
 
 # ======================================= LINEAR MODEL EQUATIONS ======================================================
     # Here we define the equations that will be used throughout this module using the linear model

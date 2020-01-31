@@ -27,6 +27,7 @@ resourcefilepath = Path("./resources/")
 
 
 # %% Run the Simulation
+# TODO: need to read from demography instantaneous death to avoid double logging
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
