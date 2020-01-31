@@ -12,7 +12,7 @@ from tlo.methods import demography, enhanced_lifestyle, labour, newborn_outcomes
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
-popsize = 200
+popsize = 100
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -27,6 +27,7 @@ def simulation():
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
@@ -38,7 +39,6 @@ def simulation():
 
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(1)
     return sim

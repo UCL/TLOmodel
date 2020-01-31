@@ -333,7 +333,7 @@ class PregnancySupervisor(Module):
 
     # Todo: Have yet to confirm this runs as HealthBurden is not registered presently
 
-    def evaluate_eq_results(self, params, index, complication):
+    def set_pregnancy_complications(self, params, index, complication):
         df = self.sim.population.props
         result = params['ps_linear_equations'][f'{complication}'].predict(index)
         random_draw = pd.Series(self.rng.random_sample(size=len(index)), index=index.index)
@@ -420,13 +420,13 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # draw and edit relevant properties defined above
 
         newly_pregnant_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 1)]
-        self.module.evaluate_eq_results(params, newly_pregnant_idx, 'ectopic')
+        self.module.set_pregnancy_complications(params, newly_pregnant_idx, 'ectopic')
 
         # For women who don't experience and ectopic pregnancy we use the same function to assess risk of multiple
         # pregnancy
         np_no_ectopic = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 1) &
                                ~df.ps_ectopic_pregnancy]
-        self.module.evaluate_eq_results(params, np_no_ectopic, 'multiples')
+        self.module.set_pregnancy_complications(params, np_no_ectopic, 'multiples')
 
         # TODO: Link with Asif for generation of 2 newborns for multiples mother
 
@@ -447,7 +447,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         month_1_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                              (df.ps_gestational_age_in_weeks == 4)]
-        self.module.evaluate_eq_results(params, month_1_idx, 'miscarriage')
+        self.module.set_pregnancy_complications(params, month_1_idx, 'miscarriage')
 
     # ============================= MONTH 2 ECTOPIC PREGNANCY SYMPTOMS/CARE SEEKING ===================================
         #  we look at all women whose pregnancy is ectopic and determine if they will experience symptoms
@@ -466,14 +466,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         month_2_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                              (df.ps_gestational_age_in_weeks == 8)]
-        self.module.evaluate_eq_results(params, month_2_idx, 'miscarriage')
+        self.module.set_pregnancy_complications(params, month_2_idx, 'miscarriage')
 
         # ABORTION:
         # Here we use the an index of women who will not miscarry to determine who will seek an abortion
 
         month_2_no_miscarriage = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 8)]
-        self.module.evaluate_eq_results(params, month_2_no_miscarriage, 'abortion')
+        self.module.set_pregnancy_complications(params, month_2_no_miscarriage, 'abortion')
 
         # TODO: need to know the incidence of induced abortion for GA 8 weeks to determine if its worth while
 
@@ -502,12 +502,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                              (df.ps_gestational_age_in_weeks == 13)]
 
         # MISCARRIAGE
-        self.module.evaluate_eq_results(params, month_3_idx, 'miscarriage')
+        self.module.set_pregnancy_complications(params, month_3_idx, 'miscarriage')
 
         # ABORTION:
         month_3_no_miscarriage = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 13)]
-        self.module.evaluate_eq_results(params, month_3_no_miscarriage, 'abortion')
+        self.module.set_pregnancy_complications(params, month_3_no_miscarriage, 'abortion')
 
     #    type_pa_complication = params['type_pa_complication']
     #    random_comp_type = self.module.rng.choice(type_pa_complication.type_pa_complication,
@@ -520,13 +520,13 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                              (df.ps_gestational_age_in_weeks == 17)]
 
         # MISCARRIAGE
-        self.module.evaluate_eq_results(params, month_4_idx, 'miscarriage')
+        self.module.set_pregnancy_complications(params, month_4_idx, 'miscarriage')
 
         month_4_no_miscarriage = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 17)]
 
         # ABORTION:
-        self.module.evaluate_eq_results(params, month_4_no_miscarriage, 'abortion')
+        self.module.set_pregnancy_complications(params, month_4_no_miscarriage, 'abortion')
 
     #    type_pa_complication = params['type_pa_complication']
     #    random_comp_type = self.module.rng.choice(type_pa_complication.type_pa_complication,
@@ -542,12 +542,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                              (df.ps_gestational_age_in_weeks == 22)]
 
         # MISCARRIAGE
-        self.module.evaluate_eq_results(params, month_5_idx, 'miscarriage')
+        self.module.set_pregnancy_complications(params, month_5_idx, 'miscarriage')
 
         # ABORTION:
         month_5_no_miscarriage = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 22)]
-        self.module.evaluate_eq_results(params, month_5_no_miscarriage, 'abortion')
+        self.module.set_pregnancy_complications(params, month_5_no_miscarriage, 'abortion')
 
     #    type_pa_complication = params['type_pa_complication']
     #    random_comp_type = self.module.rng.choice(type_pa_complication.type_pa_complication,
@@ -559,17 +559,17 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Only women without pre-existing hypertensive disorders of pregnancy are can develop the disease now
         month_5_preg_continues = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 22)]
-        self.module.evaluate_eq_results(params, month_5_preg_continues, 'pre_eclampsia')
+        self.module.set_pregnancy_complications(params, month_5_preg_continues, 'pre_eclampsia')
 
         month_5_no_pe = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                (df.ps_gestational_age_in_weeks == 22) & (df.ps_htn_disorder_preg.values[:] == 'none')]
 
         # GESTATIONAL HYPERTENSION
         # Similarly only those women who dont develop pre-eclampsia are able to develop gestational hypertension
-        self.module.evaluate_eq_results(params, month_5_no_pe, 'gest_htn')
+        self.module.set_pregnancy_complications(params, month_5_no_pe, 'gest_htn')
 
         # GESTATIONAL DIABETES
-        self.module.evaluate_eq_results(params, month_5_preg_continues, 'gest_diab')
+        self.module.set_pregnancy_complications(params, month_5_preg_continues, 'gest_diab')
         # TODO: Exclude current diabetics
         # TODO: review lit in regards to onset date and potentially move this to earlier
 
@@ -581,7 +581,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                              (df.ps_gestational_age_in_weeks == 27) & ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
-        self.module.evaluate_eq_results(params, month_6_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(params, month_6_idx, 'stillbirth')
         # Todo: also consider separating early and late still births (causation is different)
         # TODO: (risk factors) this will require close work, impact of conditions, on top of baseline risk etc etc
         # TODO: still birth should turn off any gestational diseases (if the evidence supports this)
@@ -592,82 +592,82 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                         (df.ps_gestational_age_in_weeks == 27) & ~df.la_currently_in_labour]
 
         # PRE ECLAMPSIA
-        self.module.evaluate_eq_results(params, month_6_preg_continues, 'pre_eclampsia')
+        self.module.set_pregnancy_complications(params, month_6_preg_continues, 'pre_eclampsia')
 
         month_6_no_pe = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                (df.ps_gestational_age_in_weeks == 27) & (df.ps_htn_disorder_preg.values[:] == 'none')]
 
         # GESTATIONAL HYPERTENSION
-        self.module.evaluate_eq_results(params, month_6_no_pe, 'gest_htn')
+        self.module.set_pregnancy_complications(params, month_6_no_pe, 'gest_htn')
 
         # GESTATIONAL DIABETES
-        self.module.evaluate_eq_results(params, month_6_preg_continues, 'gest_diab')
+        self.module.set_pregnancy_complications(params, month_6_preg_continues, 'gest_diab')
 
     # =========================== MONTH 7 RISK APPLICATION ===========================================================
         month_7_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                              (df.ps_gestational_age_in_weeks == 31) & ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
-        self.module.evaluate_eq_results(params, month_7_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(params, month_7_idx, 'stillbirth')
 
         month_7_preg_continues = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 31) & ~df.la_currently_in_labour]
 
         # PRE ECLAMPSIA
-        self.module.evaluate_eq_results(params, month_7_preg_continues, 'pre_eclampsia')
+        self.module.set_pregnancy_complications(params, month_7_preg_continues, 'pre_eclampsia')
 
         month_7_no_pe = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                (df.ps_gestational_age_in_weeks == 31) & (df.ps_htn_disorder_preg.values[:] == 'none')]
 
         # GESTATIONAL HYPERTENSION
-        self.module.evaluate_eq_results(params, month_7_no_pe, 'gest_htn')
+        self.module.set_pregnancy_complications(params, month_7_no_pe, 'gest_htn')
 
         # GESTATIONAL DIABETES
-        self.module.evaluate_eq_results(params, month_7_preg_continues, 'gest_diab')
+        self.module.set_pregnancy_complications(params, month_7_preg_continues, 'gest_diab')
 
     # =========================== MONTH 8 RISK APPLICATION =============================================================
         month_8_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                              (df.ps_gestational_age_in_weeks == 35) & ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
-        self.module.evaluate_eq_results(params, month_8_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(params, month_8_idx, 'stillbirth')
 
         month_8_preg_continues = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 35) & ~df.la_currently_in_labour]
 
         # PRE ECLAMPSIA
-        self.module.evaluate_eq_results(params, month_8_preg_continues, 'pre_eclampsia')
+        self.module.set_pregnancy_complications(params, month_8_preg_continues, 'pre_eclampsia')
 
         month_8_no_pe = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                (df.ps_gestational_age_in_weeks == 35) & (df.ps_htn_disorder_preg.values[:] == 'none')]
 
         # GESTATIONAL HYPERTENSION
-        self.module.evaluate_eq_results(params, month_8_no_pe, 'gest_htn')
+        self.module.set_pregnancy_complications(params, month_8_no_pe, 'gest_htn')
 
         # GESTATIONAL DIABETES
-        self.module.evaluate_eq_results(params, month_8_preg_continues, 'gest_diab')
+        self.module.set_pregnancy_complications(params, month_8_preg_continues, 'gest_diab')
 
     # =========================== MONTH 9 RISK APPLICATION ============================================================
         month_9_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                (df.ps_gestational_age_in_weeks == 40) & ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
-        self.module.evaluate_eq_results(params, month_9_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(params, month_9_idx, 'stillbirth')
 
         month_9_preg_continues = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 40) & ~df.la_currently_in_labour]
 
         # PRE ECLAMPSIA
-        self.module.evaluate_eq_results(params, month_9_preg_continues, 'pre_eclampsia')
+        self.module.set_pregnancy_complications(params, month_9_preg_continues, 'pre_eclampsia')
 
         month_9_no_pe = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                (df.ps_gestational_age_in_weeks == 40) & (df.ps_htn_disorder_preg.values[:] == 'none')]
 
         # GESTATIONAL HYPERTENSION
-        self.module.evaluate_eq_results(params, month_9_no_pe, 'gest_htn')
+        self.module.set_pregnancy_complications(params, month_9_no_pe, 'gest_htn')
 
         # GESTATIONAL DIABETES
-        self.module.evaluate_eq_results(params, month_9_preg_continues, 'gest_diab')
+        self.module.set_pregnancy_complications(params, month_9_preg_continues, 'gest_diab')
 
     # =========================== MONTH 10 RISK APPLICATION ===========================================================
         # TODO: Change to weekly evaluation at the from 41 weeks+
@@ -675,20 +675,20 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                               (df.ps_gestational_age_in_weeks == 44) & ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
-        self.module.evaluate_eq_results(params, month_10_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(params, month_10_idx, 'stillbirth')
         month_10_preg_continues = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 44) & ~df.la_currently_in_labour]
 
         # PRE ECLAMPSIA
-        self.module.evaluate_eq_results(params, month_10_preg_continues, 'pre_eclampsia')
+        self.module.set_pregnancy_complications(params, month_10_preg_continues, 'pre_eclampsia')
         month_10_no_pe = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                (df.ps_gestational_age_in_weeks == 44) & (df.ps_htn_disorder_preg.values[:] == 'none')]
 
         # GESTATIONAL HYPERTENSION
-        self.module.evaluate_eq_results(params, month_10_no_pe, 'gest_htn')
+        self.module.set_pregnancy_complications(params, month_10_no_pe, 'gest_htn')
 
         # GESTATIONAL DIABETES
-        self.module.evaluate_eq_results(params, month_10_preg_continues, 'gest_diab')
+        self.module.set_pregnancy_complications(params, month_10_preg_continues, 'gest_diab')
 
 
 class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
