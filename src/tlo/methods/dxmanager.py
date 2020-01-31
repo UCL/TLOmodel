@@ -69,7 +69,7 @@ class DxManager:
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
 
-    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False):
+    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=True):
 
         # Make dx_tests_to_run into a list if it is not already one
         if not isinstance(dx_tests_to_run, list):
@@ -109,7 +109,7 @@ class DxTest:
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
-        if property is not None:
+        if (property is not None) and isinstance(property, str):
             self.property = property
 
         # Store consumable code (None means that no consumables are required)
@@ -125,8 +125,13 @@ class DxTest:
         else:
             self.cons_req_as_footprint = None
 
+        # TODO; format checking on consumable footprint
+
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
-        if sensitivity is not None:
+        assert (sensitivity is None) or isinstance(sensitivity, float), 'Sensitivity is given in incorrect format.'
+        assert (specificity is None) or isinstance(specificity, float), 'Sensitivity is given in incorrect format.'
+
+        if (sensitivity is not None):
             self.sensitivity = sensitivity
         else:
             self.sensitivity = 1.0
@@ -165,7 +170,7 @@ class DxTest:
         print('Apply the diagnostic test and return the result')
 
         # Must be an individual level HSI and not a population level HSI
-        # assert not isinstance(hsi_event.target, tlo.population.Population), 'HSI_Event is not individual level but it must be to use the DxManager'
+        assert not isinstance(hsi_event.target, health_system_module.sim.population.__class__), 'HSI_Event is not individual level but it must be to use the DxManager'
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined
