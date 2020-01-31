@@ -1,6 +1,6 @@
 """
 The is the Diagnostic Tests Manager (DxManager). It simplifies the process of conducting diagnostic tests on a person.
-
+See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager)
 """
 
 import logging
@@ -18,49 +18,47 @@ class DxManager:
 
     def __init__(self, healthsystem_module):
         self.dx_tests = dict()
-        self.healthsystem_module = healthsystem_module
         self.dx_test_hash = set()
 
-    def register_dx_test(self, **kwargs):
-        """
-        Diagnostics tests are registerd in the DxManager by pass key-word arguements:
-        e.g. register_dx_test(name_to_use_for_a_test = my_dx_test)
-        MUST BE A LIST OF TESTS
-        #TODO: make this into passing a dictionary in
+        # Check that the HealthSystem module has passed itself correctly
+        assert 'HealthSystem' == healthsystem_module.name
+        self.healthsystem_module = healthsystem_module
 
-        :param kwargs:
-        :return:
+    def register_dx_test(self, **dict_of_tests_to_register):
         """
-        for name, dx_test in kwargs.items():
-            # Examine the proposed name of the dx_test
+        Diagnostics tests are registered in the DxManager by passing in a dictionary of one of more DxTests:
+        """
+
+        for name, dx_test in dict_of_tests_to_register.items():
+            # Examine the proposed name of the dx_test:
             assert isinstance(name, str), f'Name is not a string: {name}'
             assert name not in self.dx_tests, 'Test name already in use'
 
-            # Examine the proposed dx_test
-            # Make each test provided into a list of test
+            # Examine the proposed dx_test:
+            # Make each item provided into a list of DxTest objects.
             if not isinstance(dx_test, list):
                 dx_test = [dx_test]
 
+            # Check that the objects given are each a DxTest object
             assert all([isinstance(d, DxTest) for d in dx_test]), f'Object is not a DxTest object: {d}'
 
-            # Check if this is a duplicate dx_test
+            # Check if this List of DxTests is a duplicate
             hash_of_dx_test = hash(tuple([hash(d) for d in dx_test]))
-
             if hash_of_dx_test in self.dx_test_hash:
-                logger.warning('This exact same dx_test has already been registered.')
+                logger.warning('This exact same DxTest or list of DxTests has already been registered.')
             else:
-                # Add the test the dict of registered dx_tests
+                # Add the list of DxTests to the dict of registered DxTests
                 self.dx_tests.update({name: dx_test})
                 self.dx_test_hash.add(hash_of_dx_test)
 
     def print_info_about_dx_test(self, name_of_dx_test):
-        assert name_of_dx_test in self.dx_tests, f'This dx_test is not recognised: {name_of_dx_test}'
+        assert name_of_dx_test in self.dx_tests, f'This DxTest is not recognised: {name_of_dx_test}'
         the_dx_test = self.dx_tests[name_of_dx_test]
         print()
         print(f'----------------------')
         print(f'** {name_of_dx_test} **')
         for n, t in enumerate(the_dx_test):
-            print(f'   Line #{n}')
+            print(f'   Position in List #{n}')
             print(f'consumbales: {t.cons_req_as_footprint}')
             print(f'sensitivity: {t.sensitivity}')
             print(f'specificity: {t.specificity}')
@@ -71,29 +69,34 @@ class DxManager:
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
 
-    def run_dx_test(self, name_of_dx_test, hsi_event):
+    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False):
 
-        # Make the name_of_dx_test into list if it is not already
-        if not isinstance(name_of_dx_test, list):
-            name_of_dx_test = list(name_of_dx_test)
+        # Make dx_tests_to_run into a list if it is not already one
+        if not isinstance(dx_tests_to_run, list):
+            dx_tests_to_run = [dx_tests_to_run]
 
         assert all(
-            [name in self.dx_tests for name in name_of_dx_test]), f'This dx_test is not recognised: {name_of_dx_test}'
+            [name in self.dx_tests for name in dx_tests_to_run]
+        ), f'A DxTest name is not recognised.'
 
-        result_for_alg = dict()
+        # Create the dict() that will be returned
+        result_dict_for_list_of_dx_tests = dict()
 
-        for dx_test in name_of_dx_test:
+        for dx_test in dx_tests_to_run:
 
-            list_of_tests = self.dx_tests[dx_test]
-
-            result_for_this_dx_test = None
-            for test in list_of_tests:
-                result_for_this_dx_test = test.apply(hsi_event, self.healthsystem_module)
-                if result_for_this_dx_test is not None:
+            # Loop through the list of DxTests that are registered under this name:
+            for t in self.dx_tests[dx_test]:
+                t_res = t.apply(hsi_event, self.healthsystem_module)
+                if t_res is not None:
                     break
-            result_for_alg[dx_test] = result_for_this_dx_test
 
-        return result_for_alg
+            result_dict_for_list_of_dx_tests[dx_test] = t_res
+
+        # Decide on type of return:
+        if (len(dx_tests_to_run)==1) and use_dict_for_single:
+            return result_dict_for_list_of_dx_tests[dx_tests_to_run[0]]
+        else:
+            return result_dict_for_list_of_dx_tests
 
 
 class DxTest:
@@ -151,10 +154,18 @@ class DxTest:
         ))
 
     def apply(self, hsi_event, health_system_module):
+        """
+        This is where the test is applied.
+        If this test returns None this means the test has failed due to there not being the required consumables.
 
+        :param hsi_event:
+        :param health_system_module:
+        :return: value of test or None.
+        """
         print('Apply the diagnostic test and return the result')
 
-        # assuming its an individual level HSI (TODO)
+        # Must be an individual level HSI and not a population level HSI
+        # assert not isinstance(hsi_event.target, tlo.population.Population), 'HSI_Event is not individual level but it must be to use the DxManager'
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined

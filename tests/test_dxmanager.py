@@ -119,9 +119,10 @@ def test_create_dx_test_and_register():
     )
 
     dx_manager.register_dx_test(
-        my_compound_test=[my_test1, my_test2]
+        my_list_of_tests=[my_test1, my_test2]
     )
 
+    # create duplicate- should issue warning and not be added
     dx_manager.register_dx_test(
         my_test2_diff_name_should_not_be_added=my_test2
     )
@@ -170,20 +171,21 @@ def test_create_duplicate_test_that_should_be_ignored():
     )
     assert len(dx_manager.dx_tests) == 1
 
-    # Give duplicated compound tests under different name: only one should be added
+    # Give duplicated list of tests under different name: only one should be added
     dx_manager = DxManager(sim.modules['HealthSystem']) # get new DxManager
     dx_manager.register_dx_test(
-        my_compound_test1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
-        my_compound_test1_copy=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only]
+        my_list_of_tests1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
+        my_list_of_tests1_copy=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only]
     )
     assert len(dx_manager.dx_tests) == 1
 
-    # Give compound test that use the same test components but in different order: both should be added
+    # Give list of test that use the same test components but in different order: both should be added
     dx_manager = DxManager(sim.modules['HealthSystem']) # get new DxManager
     dx_manager.register_dx_test(
-        my_compound_test1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
-        my_compound_test1_copy=[my_test1_property_only, my_test1_property_and_consumable_and_sensspec]
+        my_list_of_tests1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
+        my_list_of_tests1_copy=[my_test1_property_only, my_test1_property_and_consumable_and_sensspec]
     )
+
     dx_manager.print_info_about_all_dx_tests()
     assert len(dx_manager.dx_tests) == 2
 
@@ -199,18 +201,17 @@ def test_create_dx_test_and_run():
     dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register DxTest with DxManager:
-    dx_manager.register_dx_test(my_test1 = my_test1)
+    dx_manager.register_dx_test(my_test1=my_test1)
 
     # Run it and check the result:
     df = sim.population.props
     for person_id in df.loc[df.is_alive].index:
         hsi_event.target = person_id
-        result_for_dx_manager = sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='my_test1',
-                                                                                   hsi_event=hsi_event)
+        result_for_dx_manager = dx_manager.run_dx_test(dx_tests_to_run='my_test1', hsi_event=hsi_event)
         assert result_for_dx_manager == df.at[person_id, 'mi_status']
 
 
-def test_create_dx_tests_with_consumable_useage():
+def test_create_dx_tests_with_consumable_usage():
 
     # Create the test:
     my_test1_not_available = DxTest(
@@ -302,7 +303,7 @@ def test_hash_from_footprint_and_hash_from_item_code():
 
     assert hash(my_test_using_item_code) == hash(my_test_using_footprint)
 
-def test_run_batch_of_dx_test():
+def test_run_batch_of_dx_test_in_one_call():
 
     # Create the dx_test
     my_test1 = DxTest(
@@ -341,7 +342,9 @@ def test_run_batch_of_dx_test():
     # Batch - composed of one of more DxProcedures
 
 
-def test_create_set_of_dx_tests_which_fail_and_require_chain_execution():
+# def check the types of return
+
+def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
 
     # Create the test:
     my_test1_not_available = DxTest(
@@ -363,13 +366,13 @@ def test_create_set_of_dx_tests_which_fail_and_require_chain_execution():
                                                                 my_test1_not_available
                                                             ])
 
-    dx_manager.register_dx_test(compound_test_with_first_not_available=
+    dx_manager.register_dx_test(list_of_test_swith_first_not_available=
                                                             [
                                                                 my_test1_not_available,
                                                                 my_test2_is_available,
                                                             ])
 
-    dx_manager.register_dx_test(compound_test_with_first_available=
+    dx_manager.register_dx_test(list_of_tests_with_first_available=
                                                             [
                                                                 my_test2_is_available,
                                                                 my_test1_not_available,
@@ -387,13 +390,13 @@ def test_create_set_of_dx_tests_which_fail_and_require_chain_execution():
     assert result is None
 
     # Run the compound test (when the first test fails): should return a result having run test2
-    result = sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='compound_test_with_first_not_available',
+    result = sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='list_of_tests_with_first_not_available',
                                                                 hsi_event=hsi_event)
     assert None is not result
     assert result == sim.population.props.at[person_id, 'mi_status']
 
     # Run the compound test (when the first test fails): should return a result having run test2 and not tried test1
-    result = dx_manager.run_dx_test(name_of_dx_test='compound_test_with_first_available',
+    result = dx_manager.run_dx_test(name_of_dx_test='list_of_tests_with_first_available',
                                                                 hsi_event=hsi_event)
     assert None is not result
     assert result == sim.population.props.at[person_id, 'mi_status']
