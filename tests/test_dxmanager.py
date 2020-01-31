@@ -109,7 +109,7 @@ def test_create_dx_test_and_register():
         property='cs_status'
     )
 
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager()  # get new DxManager
 
     dx_manager.register_dx_test(
         my_test1=my_test1,
@@ -147,7 +147,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     )
 
     # Give the same test but under a different name: name only
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager()  # get new DxManager
     dx_manager.register_dx_test(
         my_test1=my_test1_property_only,
         my_test1_copy=my_test1_property_only
@@ -155,7 +155,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     assert len(dx_manager.dx_tests) == 1
 
     # Give the same test but under a different name: name and consumbales provided
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager()  # get new DxManager
     dx_manager.register_dx_test(
         my_test1=my_test1_property_and_consumable,
         my_test1_copy=my_test1_property_and_consumable
@@ -163,7 +163,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     assert len(dx_manager.dx_tests) == 1
 
     # Give the same test but under a different name: name and consumbales provided and sens/spec provided
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager()  # get new DxManager
     dx_manager.register_dx_test(
         my_test1=my_test1_property_and_consumable_and_sensspec,
         my_test1_copy=my_test1_property_and_consumable_and_sensspec
@@ -171,7 +171,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     assert len(dx_manager.dx_tests) == 1
 
     # Give duplicated list of tests under different name: only one should be added
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager()  # get new DxManager
     dx_manager.register_dx_test(
         my_list_of_tests1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
         my_list_of_tests1_copy=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only]
@@ -179,7 +179,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     assert len(dx_manager.dx_tests) == 1
 
     # Give list of test that use the same test components but in different order: both should be added
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager()  # get new DxManager
     dx_manager.register_dx_test(
         my_list_of_tests1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
         my_list_of_tests1_copy=[my_test1_property_only, my_test1_property_and_consumable_and_sensspec]
@@ -196,7 +196,7 @@ def test_create_dx_test_and_run():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager()
 
     # Register DxTest with DxManager:
     dx_manager.register_dx_test(my_test1=my_test1)
@@ -242,7 +242,7 @@ def test_create_dx_tests_with_consumable_usage():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager()
 
     # Register the single and the compound tests with DxManager:
     dx_manager.register_dx_test(
@@ -283,7 +283,7 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager()
 
     # Register the single and the compound tests with DxManager:
     dx_manager.register_dx_test(
@@ -333,7 +333,7 @@ def test_run_batch_of_dx_test_in_one_call():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager()
 
     # Register compound tests with DxManager:
     dx_manager.register_dx_test(my_test1=my_test1, my_test2=my_test2)
@@ -365,7 +365,7 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager()
 
     # Register list of tests with DxManager:
     dx_manager.register_dx_test(single_test_not_available=my_test1_not_available)
@@ -424,7 +424,7 @@ def test_create_dx_test_and_run_with_imperfect_sensitivity():
         )
 
         # Register DxTest with DxManager:
-        dx_manager = DxManager(sim.modules['HealthSystem'])
+        dx_manager = DxManager()
         dx_manager.register_dx_test(my_test=my_test)
 
         # Run it on all people and get a list of the results
@@ -468,7 +468,7 @@ def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity():
         )
 
         # Register DxTest with DxManager:
-        dx_manager = DxManager(sim.modules['HealthSystem'])
+        dx_manager = DxManager()
         dx_manager.register_dx_test(my_test=my_test)
 
         # Run it on all people and get a list of the results
@@ -516,7 +516,7 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager()
 
     # Register DxTest with DxManager:
     dx_manager.register_dx_test(
