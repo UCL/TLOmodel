@@ -22,7 +22,7 @@ from tlo.methods import (
 t0 = time.time()
 
 # Where will output go
-outputpath = './src/scripts/outputs/'
+outputpath = './outputs/malaria/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -32,7 +32,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 12, 31)
-popsize = 50000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)

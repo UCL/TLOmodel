@@ -25,7 +25,7 @@ from tlo.methods import (
 start_time = time.time()
 
 # Where will output go
-outputpath = './src/scripts/tb/'
+outputpath = './outputs/hiv_tb/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
+end_date = Date(2016, 12, 31)
 popsize = 5000
 
 # Establish the simulation object
@@ -77,9 +77,9 @@ for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
-logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
+# logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
 logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
+# logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
 # Run the simulation and flush the logger
@@ -100,7 +100,7 @@ from tlo import Date
 
 from tlo.analysis.utils import parse_log_file
 
-outputpath = './src/scripts/tb/'
+outputpath = './outputs/hiv_tb/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 logfile = outputpath + "TbHiv_LogFile" + datestamp + ".log"
 output = parse_log_file(logfile)
@@ -108,38 +108,38 @@ output = parse_log_file(logfile)
 # output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
 
 # ------------------------------------- DEMOGRAPHY OUTPUTS ------------------------------------- #
-
-# get deaths from demography
-deaths = output['tlo.methods.demography']['death']
-
-deaths['date'] = pd.to_datetime(deaths['date'])
-deaths['year'] = deaths.date.dt.year.astype(int)
-
-# select only hiv deaths
-agg_deaths = deaths.groupby(['year', 'cause']).count().unstack(fill_value=0).stack()
-death_counts = agg_deaths.iloc[agg_deaths.index.get_level_values('cause') == 'hiv'].person_id
-
-pop = output['tlo.methods.demography']['population']
-pop['date'] = pd.to_datetime(pop['date'])
-
-mortality_rate = [(x / y) * 100000 for x, y in zip(death_counts, pop['total'])]
-
-# ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
-
-## HIV
-# model outputs
-m_hiv = output['tlo.methods.hiv']['hiv_infected']
-m_hiv_prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
-m_hiv_prev_f = output['tlo.methods.hiv']['hiv_adult_prev_f']
-m_hiv_prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
-m_hiv_tx = output['tlo.methods.hiv']['hiv_treatment']
-m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
-m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
-
-m_hiv_years = pd.to_datetime(m_hiv.date)
-# m_hiv_years = m_hiv_years.dt.year
-
-hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
+#
+# # get deaths from demography
+# deaths = output['tlo.methods.demography']['death']
+#
+# deaths['date'] = pd.to_datetime(deaths['date'])
+# deaths['year'] = deaths.date.dt.year.astype(int)
+#
+# # select only hiv deaths
+# agg_deaths = deaths.groupby(['year', 'cause']).count().unstack(fill_value=0).stack()
+# death_counts = agg_deaths.iloc[agg_deaths.index.get_level_values('cause') == 'hiv'].person_id
+#
+# pop = output['tlo.methods.demography']['population']
+# pop['date'] = pd.to_datetime(pop['date'])
+#
+# mortality_rate = [(x / y) * 100000 for x, y in zip(death_counts, pop['total'])]
+#
+# # ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
+#
+# ## HIV
+# # model outputs
+# m_hiv = output['tlo.methods.hiv']['hiv_infected']
+# m_hiv_prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
+# m_hiv_prev_f = output['tlo.methods.hiv']['hiv_adult_prev_f']
+# m_hiv_prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
+# m_hiv_tx = output['tlo.methods.hiv']['hiv_treatment']
+# m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
+# m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
+#
+# m_hiv_years = pd.to_datetime(m_hiv.date)
+# # m_hiv_years = m_hiv_years.dt.year
+#
+# hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
 
 # TB
 m_tb_inc = output['tlo.methods.tb']['tb_incidence']
@@ -179,73 +179,73 @@ tb_ntp_years = pd.to_datetime(tb_NTP.year, format="%Y")
 dtb_ntp = tb_ntp_years.values  # for fill_between command
 
 # ------------------------------------- HIV FIGURES ------------------------------------- #
-
-plt.style.use('ggplot')
-plt.figure(4, figsize=(15, 10))
-
-# HIV prevalence
-plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(data_years, aidsInfo_data.prev_15_49)
-plt.fill_between(d, aidsInfo_data.prev_15_49_lower,
-                 aidsInfo_data.prev_15_49_upper, alpha=.5)
-plt.plot(m_hiv_years, m_hiv.hiv_prev_adult)
-plt.title("HIV adult prevalence")
-plt.xlabel("Year")
-plt.ylabel("Prevalence (%)")
-plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0, 15)
-plt.legend(["UNAIDS", "Model"],
-           bbox_to_anchor=(1.04, 1), loc="upper left")
-
-# HIV incidence
-plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(data_years, aidsInfo_data.inc_15_49_percent)
-plt.fill_between(d, aidsInfo_data.inc_15_49_percent_lower,
-                 aidsInfo_data.inc_15_49_percent_upper, alpha=.5)
-plt.plot(m_hiv_years, m_hiv.hiv_adult_inc_percent)
-plt.title("HIV adult incidence (%)")
-plt.xlabel("Year")
-plt.ylabel("Incidence (%)")
-plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0, 1.0)
-plt.legend(["UNAIDS", "Model"],
-           bbox_to_anchor=(1.04, 1), loc="upper left")
-
-# HIV treatment coverage
-plt.subplot(223)  # numrows, numcols, fignum
-plt.plot(data_years, aidsInfo_data.percent15plus_on_art)
-plt.fill_between(d, aidsInfo_data.percent15plus_on_art_lower,
-                 aidsInfo_data.percent15plus_on_art_upper, alpha=.5)
-plt.plot(m_hiv_years, hiv_art_cov_percent)
-plt.title("ART adult coverage (%)")
-plt.xlabel("Year")
-plt.ylabel("Coverage (%)")
-plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0, 100)
-plt.legend(["UNAIDS", "Model"],
-           bbox_to_anchor=(1.04, 1), loc="upper left")
-
-# AIDS mortality
-plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(data_years, aidsInfo_data.mort_rate100k)
-plt.fill_between(d, aidsInfo_data.mort_rate100k_lower,
-                 aidsInfo_data.mort_rate100k_upper, alpha=.5)
-plt.plot(pop['date'], mortality_rate)
-plt.title("Mortality rates per 100k")
-plt.xlabel("Year")
-plt.ylabel("Mortality rate per 100k")
-plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0, 500)
-plt.legend(["UNAIDS", "Model"],
-           bbox_to_anchor=(1.04, 1), loc="upper left")
-
-plt.show()
-
-# plt.close()
+#
+# plt.style.use('ggplot')
+# plt.figure(4, figsize=(15, 10))
+#
+# # HIV prevalence
+# plt.subplot(221)  # numrows, numcols, fignum
+# plt.plot(data_years, aidsInfo_data.prev_15_49)
+# plt.fill_between(d, aidsInfo_data.prev_15_49_lower,
+#                  aidsInfo_data.prev_15_49_upper, alpha=.5)
+# plt.plot(m_hiv_years, m_hiv.hiv_prev_adult)
+# plt.title("HIV adult prevalence")
+# plt.xlabel("Year")
+# plt.ylabel("Prevalence (%)")
+# plt.xticks(rotation=90)
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0, 15)
+# plt.legend(["UNAIDS", "Model"],
+#            bbox_to_anchor=(1.04, 1), loc="upper left")
+#
+# # HIV incidence
+# plt.subplot(222)  # numrows, numcols, fignum
+# plt.plot(data_years, aidsInfo_data.inc_15_49_percent)
+# plt.fill_between(d, aidsInfo_data.inc_15_49_percent_lower,
+#                  aidsInfo_data.inc_15_49_percent_upper, alpha=.5)
+# plt.plot(m_hiv_years, m_hiv.hiv_adult_inc_percent)
+# plt.title("HIV adult incidence (%)")
+# plt.xlabel("Year")
+# plt.ylabel("Incidence (%)")
+# plt.xticks(rotation=90)
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0, 1.0)
+# plt.legend(["UNAIDS", "Model"],
+#            bbox_to_anchor=(1.04, 1), loc="upper left")
+#
+# # HIV treatment coverage
+# plt.subplot(223)  # numrows, numcols, fignum
+# plt.plot(data_years, aidsInfo_data.percent15plus_on_art)
+# plt.fill_between(d, aidsInfo_data.percent15plus_on_art_lower,
+#                  aidsInfo_data.percent15plus_on_art_upper, alpha=.5)
+# plt.plot(m_hiv_years, hiv_art_cov_percent)
+# plt.title("ART adult coverage (%)")
+# plt.xlabel("Year")
+# plt.ylabel("Coverage (%)")
+# plt.xticks(rotation=90)
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0, 100)
+# plt.legend(["UNAIDS", "Model"],
+#            bbox_to_anchor=(1.04, 1), loc="upper left")
+#
+# # AIDS mortality
+# plt.subplot(224)  # numrows, numcols, fignum
+# plt.plot(data_years, aidsInfo_data.mort_rate100k)
+# plt.fill_between(d, aidsInfo_data.mort_rate100k_lower,
+#                  aidsInfo_data.mort_rate100k_upper, alpha=.5)
+# plt.plot(pop['date'], mortality_rate)
+# plt.title("Mortality rates per 100k")
+# plt.xlabel("Year")
+# plt.ylabel("Mortality rate per 100k")
+# plt.xticks(rotation=90)
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0, 500)
+# plt.legend(["UNAIDS", "Model"],
+#            bbox_to_anchor=(1.04, 1), loc="upper left")
+#
+# plt.show()
+#
+# # plt.close()
 # ------------------------------------- TB FIGURES ------------------------------------- #
 
 plt.style.use('ggplot')
@@ -302,6 +302,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"],
            bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.show()
