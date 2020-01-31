@@ -8,7 +8,7 @@ def basic_configuration(tmpdir):
     """Setup basic file handler configuration"""
     # tlo module config
     file_name = tmpdir.join('test.log')
-    file_handler = logging.add_filehandler(file_name)
+    file_handler = logging.set_output_file(file_name)
 
     yield file_handler, file_name
 

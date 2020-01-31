@@ -50,7 +50,10 @@ class Simulation:
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
         self.end_date = None
-        self.file_handler = None
+        self.output_file = None
+
+        # clear entire logging environment for this new simulation
+        logging.init_logging()
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
@@ -71,8 +74,8 @@ class Simulation:
             logging.init_logging()
             return
 
-        log_path = Path(directory) / f"{filename}__{datetime.datetime.now().strftime('%Y-%m-%d_%X')}.log"
-        self.file_handler = logging.add_filehandler(log_path)
+        log_path = Path(directory) / f"{filename}__{datetime.datetime.now().isoformat()}.log"
+        self.output_file = logging.set_output_file(log_path)
 
         if custom_levels:
             if not self.modules:
@@ -151,8 +154,11 @@ class Simulation:
                 module.on_simulation_end()
             except AttributeError:
                 pass
-        if self.file_handler:
-            self.file_handler.flush()
+
+        # complete logging
+        if self.output_file:
+            self.output_file.flush()
+            self.output_file.close()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.

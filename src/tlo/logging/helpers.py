@@ -8,7 +8,7 @@ from tlo.logging import getLogger
 from .core import _FORMATTER, DEBUG
 
 
-def add_filehandler(log_path: Path) -> _logging.FileHandler:
+def set_output_file(log_path: Path) -> _logging.FileHandler:
     """Add filehandler to logger
 
     :param log_path: path for file
