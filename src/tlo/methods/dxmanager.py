@@ -42,7 +42,7 @@ class DxManager:
                 dx_test = [dx_test]
 
             # Check that the objects given are each a DxTest object
-            assert all([isinstance(d, DxTest) for d in dx_test]), f'Object is not a DxTest object: {d}'
+            assert all([isinstance(d, DxTest) for d in dx_test]), f'One of the passed objects is not a DxTest object.'
 
             # Check if this List of DxTests is a duplicate
             hash_of_dx_test = hash(tuple([hash(d) for d in dx_test]))
@@ -107,7 +107,8 @@ class DxTest:
                  cons_req_as_footprint=None,
                  cons_req_as_item_code=None,
                  sensitivity: float = None,
-                 specificity: float = None
+                 specificity: float = None,
+                 measure_error_stdev: float = None
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
@@ -132,6 +133,8 @@ class DxTest:
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         assert (sensitivity is None) or isinstance(sensitivity, float), 'Sensitivity is given in incorrect format.'
         assert (specificity is None) or isinstance(specificity, float), 'Sensitivity is given in incorrect format.'
+        assert (measure_error_stdev is None) or isinstance(measure_error_stdev, float), \
+            'measure_error_stdev is given in incorrect format.'
 
         if (sensitivity is not None):
             self.sensitivity = sensitivity
@@ -142,6 +145,11 @@ class DxTest:
             self.specificity = specificity
         else:
             self.specificity = 1.0
+
+        if measure_error_stdev is not None:
+            self.measure_error_stdev = measure_error_stdev
+        else:
+            self.measure_error_stdev = 0.0
 
     def __hash__(self):
         if self.cons_req_as_footprint is not None:
@@ -157,7 +165,8 @@ class DxTest:
             hash(self.property),
             hash_of_cons_req_as_footprint,
             hash(self.sensitivity),
-            hash(self.specificity)
+            hash(self.specificity),
+            hash(self.measure_error_stdev)
         ))
 
     def apply(self, hsi_event, health_system_module):
@@ -172,7 +181,7 @@ class DxTest:
 
         # Must be an individual level HSI and not a population level HSI
         assert not isinstance(hsi_event.target,
-                              health_system_module.sim.population.__class__),\
+                              health_system_module.sim.population.__class__), \
             'HSI_Event is not individual level but it must be to use the DxManager'
         person_id = hsi_event.target
 
@@ -187,7 +196,7 @@ class DxTest:
                                                                               to_log=True)
 
             cons_available = all(rtn_from_health_system['Intervention_Package_Code'].values()) \
-                             and all(rtn_from_health_system['Item_Code'].values())
+                                    and all(rtn_from_health_system['Item_Code'].values())
         else:
             cons_available = True
 
@@ -199,10 +208,11 @@ class DxTest:
             else:
                 # Apply the specificity:
                 test_value = health_system_module.rng.choice([False, True], p=[self.specificity, 1 - self.specificity])
+        elif isinstance(true_value, np.float_):
+            # Apply the normally distributed zero-mean error
+            test_value = true_value + health_system_module.rng.normal(0.0, self.measure_error_stdev)
         else:
             test_value = true_value
-
-        # TODO: insert logic about erroneous tests.
 
         if cons_available:
             # Consumables available, return test value
@@ -210,5 +220,3 @@ class DxTest:
         else:
             # Consumables not available, return test value
             return None
-
-        # TODO: elaborate for continuous tests
