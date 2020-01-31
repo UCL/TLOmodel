@@ -4,6 +4,7 @@ See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagn
 """
 
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -125,7 +126,7 @@ class DxTest:
         else:
             self.cons_req_as_footprint = None
 
-        # TODO; format checking on consumable footprint
+        # TODO: format checking on consumable footprint
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         assert (sensitivity is None) or isinstance(sensitivity, float), 'Sensitivity is given in incorrect format.'
@@ -175,7 +176,8 @@ class DxTest:
 
         # Get the "true value" of the property being examined
         df = health_system_module.sim.population.props
-        true_value = df.at[person_id, self.property]
+        assert self.property in df.columns, 'The property is not found in the sim.population.props dataframe'
+        true_value = df.loc[person_id, self.property]
 
         # Check for the availability of the consumable code
         if self.cons_req_as_footprint is not None:
@@ -188,7 +190,17 @@ class DxTest:
             cons_available = True
 
         # Apply the test:
-        test_value = true_value
+        if isinstance(true_value, np.bool_):
+            if true_value:
+                # Apply the sensitivity:
+                test_value = health_system_module.rng.choice([True, False], p=[self.sensitivity, 1-self.sensitivity])
+            else:
+                # Apply the specificity:
+                test_value = health_system_module.rng.choice([False, True], p=[self.specificity, 1-self.specificity])
+        else:
+            test_value = true_value
+
+
         # TODO: insert logic about erroneous tests.
 
         if cons_available:

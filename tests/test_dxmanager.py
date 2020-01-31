@@ -226,8 +226,6 @@ def test_create_dx_test_and_run():
         assert result_from_dx_manager['my_test1'] == df.at[person_id, 'mi_status']
 
 
-
-
 def test_create_dx_tests_with_consumable_usage():
 
     # Create the test:
@@ -419,3 +417,107 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
 
     # TODO: report which test provided the result
     # TODO: check that a second test is not run if the first provides result.
+
+
+def test_create_dx_test_and_run_with_imperfect_sensitivity():
+
+    # Create a property in the sim.population.props dataframe for testing
+    df = sim.population.props
+    df['AllTrue'] = True
+
+    # Create the tests and determine performance
+    def run_test_sensitivity_and_specificty(sens=1.0, spec=1.0):
+        my_test = DxTest(
+            property='AllTrue',
+            sensitivity=sens,
+            specificity=spec
+        )
+
+        # Register DxTest with DxManager:
+        dx_manager = DxManager(sim.modules['HealthSystem'])
+        dx_manager.register_dx_test(my_test=my_test)
+
+        # Run it on all people and get a list of the results
+        results = list()
+        for person_id in df.index:
+            hsi_event.target = person_id
+            result_from_dx_manager = dx_manager.run_dx_test(
+                dx_tests_to_run='my_test',
+                hsi_event=hsi_event
+            )
+
+            results.append(result_from_dx_manager)
+
+        return results
+
+    # Test sensitivity:
+    # 0% sensitivity and perfect specificity: no positive results
+    results = run_test_sensitivity_and_specificty(sens=0.0)
+    assert sum(results) == 0.0
+
+    # 100% sensitivity and perfect specificity: all positive results
+    results = run_test_sensitivity_and_specificty(sens=1.0)
+    assert sum(results) == len(results)
+
+    # 50% sensitivity and perfect specificity: some (but not all) positive results
+    results = run_test_sensitivity_and_specificty(sens=0.5)
+    assert 0.0 < sum(results) < len(results)
+
+
+def test_create_dx_test_and_run_with_imperfect_specificity():
+
+    # Create a property in the sim.population.props dataframe for testing
+    df = sim.population.props
+    df['AllFalse'] = False
+
+    # Create the tests and determine performance
+    def run_test_sensitivity_and_specificty(sens=1.0, spec=1.0):
+        my_test = DxTest(
+            property='AllFalse',
+            sensitivity=sens,
+            specificity=spec
+        )
+
+        # Register DxTest with DxManager:
+        dx_manager = DxManager(sim.modules['HealthSystem'])
+        dx_manager.register_dx_test(my_test=my_test)
+
+        # Run it on all people and get a list of the results
+        results = list()
+        for person_id in df.index:
+            hsi_event.target = person_id
+            result_from_dx_manager = dx_manager.run_dx_test(
+                dx_tests_to_run='my_test',
+                hsi_event=hsi_event
+            )
+
+            results.append(result_from_dx_manager)
+
+        return results
+
+    # Test specificity:
+    # 100% specificity: no positive results
+    results = run_test_sensitivity_and_specificty(spec=1.0)
+    assert sum(results) == 0.0
+
+    # 0% specificity: all positive results
+    results = run_test_sensitivity_and_specificty(spec=0.0)
+    assert sum(results) == len(results)
+
+    # 50% sensitivity and perfect specificity: some (but not all) positive results
+    results = run_test_sensitivity_and_specificty(spec=0.5)
+    assert 0.0 < sum(results) < len(results)
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TODO: continuous error mode
