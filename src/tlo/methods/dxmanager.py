@@ -71,7 +71,7 @@ class DxManager:
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
 
-    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=True):
+    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False):
 
         # Make dx_tests_to_run into a list if it is not already one
         if not isinstance(dx_tests_to_run, list):
@@ -95,7 +95,7 @@ class DxManager:
             result_dict_for_list_of_dx_tests[dx_test] = t_res
 
         # Decide on type of return:
-        if (len(dx_tests_to_run) == 1) and use_dict_for_single:
+        if (len(dx_tests_to_run) == 1) and use_dict_for_single==False:
             return result_dict_for_list_of_dx_tests[dx_tests_to_run[0]]
         else:
             return result_dict_for_list_of_dx_tests
@@ -127,7 +127,6 @@ class DxTest:
             }
         else:
             self.cons_req_as_footprint = None
-
         # TODO: format checking on consumable footprint
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
