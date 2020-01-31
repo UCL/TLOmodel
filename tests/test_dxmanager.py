@@ -207,8 +207,25 @@ def test_create_dx_test_and_run():
     df = sim.population.props
     for person_id in df.loc[df.is_alive].index:
         hsi_event.target = person_id
-        result_for_dx_manager = dx_manager.run_dx_test(dx_tests_to_run='my_test1', hsi_event=hsi_event)
-        assert result_for_dx_manager == df.at[person_id, 'mi_status']
+        result_from_dx_manager = dx_manager.run_dx_test(
+            dx_tests_to_run='my_test1',
+            hsi_event=hsi_event,
+        )
+        assert result_from_dx_manager == df.at[person_id, 'mi_status']
+
+    # Run it and check the result - getting a dict returned rather than a single value
+    df = sim.population.props
+    for person_id in df.loc[df.is_alive].index:
+        hsi_event.target = person_id
+        result_from_dx_manager = dx_manager.run_dx_test(
+            dx_tests_to_run='my_test1',
+            hsi_event=hsi_event,
+            use_dict_for_single=False
+        )
+        assert isinstance(result_from_dx_manager, dict)
+        assert result_from_dx_manager['my_test1'] == df.at[person_id, 'mi_status']
+
+
 
 
 def test_create_dx_tests_with_consumable_usage():
@@ -233,11 +250,10 @@ def test_create_dx_tests_with_consumable_usage():
     dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register the single and the compound tests with DxManager:
-    sim.modules['HealthSystem'].dx_manager.register_dx_test(
+    dx_manager.register_dx_test(
         my_test1=my_test1_not_available,
         my_test2=my_test2_is_available,
         my_test3=my_test3_is_no_consumable_needed,
-
     )
 
     # pick a person
@@ -245,15 +261,18 @@ def test_create_dx_tests_with_consumable_usage():
     hsi_event.target = person_id
 
     # Confirm the my_test1 does not give result
-    assert None is dx_manager.run_dx_test(name_of_dx_test='my_test1',
-                                                                      hsi_event=hsi_event)
+    assert None is dx_manager.run_dx_test(dx_tests_to_run='my_test1',
+                                          hsi_event=hsi_event,
+                                          )
 
     # Confirm that my_test2 and my_test3 does give result
-    assert None is not dx_manager.run_dx_test(name_of_dx_test='my_test2',
-                                                                          hsi_event=hsi_event)
+    assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test2',
+                                              hsi_event=hsi_event,
+                                              )
 
-    assert None is not dx_manager.run_dx_test(name_of_dx_test='my_test3',
-                                                                          hsi_event=hsi_event)
+    assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test3',
+                                              hsi_event=hsi_event,
+                                              )
 
 
 def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
@@ -273,7 +292,7 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
     dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register the single and the compound tests with DxManager:
-    sim.modules['HealthSystem'].dx_manager.register_dx_test(
+    dx_manager.register_dx_test(
         my_test1=my_test1_not_available,
         my_test2=my_test2_is_available,
     )
@@ -283,12 +302,14 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
     hsi_event.target = person_id
 
     # Confirm the my_test1 does not give result
-    assert None is dx_manager.run_dx_test(name_of_dx_test='my_test1',
-                                                                      hsi_event=hsi_event)
+    assert None is dx_manager.run_dx_test(dx_tests_to_run='my_test1',
+                                          hsi_event=hsi_event,
+                                          )
 
     # Confirm that my_test2 does give result
-    assert None is not dx_manager.run_dx_test(name_of_dx_test='my_test2',
-                                                                          hsi_event=hsi_event)
+    assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test2',
+                                              hsi_event=hsi_event,
+                                              )
 
 def test_hash_from_footprint_and_hash_from_item_code():
     my_test_using_item_code = DxTest(
@@ -326,7 +347,7 @@ def test_run_batch_of_dx_test_in_one_call():
     person_id = 0
     hsi_event.target = person_id
 
-    result = dx_manager.run_dx_test(hsi_event=hsi_event, name_of_dx_test=['my_test1','my_test2'])
+    result = dx_manager.run_dx_test(hsi_event=hsi_event, dx_tests_to_run=['my_test1','my_test2'])
 
     assert isinstance(result, dict)
     assert list(result.keys()) == ['my_test1','my_test2']
@@ -335,14 +356,6 @@ def test_run_batch_of_dx_test_in_one_call():
     assert result['my_test1'] == df.at[person_id, 'mi_status']
     assert result['my_test2'] == df.at[person_id, 'cs_has_cs']
 
-
-    # TODO: ***** Start wiki and sort out naming conventions and commenting *****
-    # DxTest - individual unit: one test, one consumable and one result
-    # DxProcedure - composed of one of more 'DxTest's
-    # Batch - composed of one of more DxProcedures
-
-
-# def check the types of return
 
 def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
 
@@ -360,13 +373,13 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     # Create new DxManager
     dx_manager = DxManager(sim.modules['HealthSystem'])
 
-    # Register compound tests with DxManager:
+    # Register list of tests with DxManager:
     dx_manager.register_dx_test(single_test_not_available=
                                                             [
                                                                 my_test1_not_available
                                                             ])
 
-    dx_manager.register_dx_test(list_of_test_swith_first_not_available=
+    dx_manager.register_dx_test(list_of_tests_with_first_not_available=
                                                             [
                                                                 my_test1_not_available,
                                                                 my_test2_is_available,
@@ -382,23 +395,27 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     person_id = 0
     hsi_event.target = person_id
 
-
-    # Run the non-compound test with a test that is not available: should not return result
+    # Run the single test which requires a consumable that is not available: should not return result
     result = dx_manager.run_dx_test(
-        name_of_dx_test='single_test_not_available',
-        hsi_event=hsi_event)
+        dx_tests_to_run='single_test_not_available',
+        hsi_event=hsi_event
+    )
+
     assert result is None
 
-    # Run the compound test (when the first test fails): should return a result having run test2
-    result = sim.modules['HealthSystem'].dx_manager.run_dx_test(name_of_dx_test='list_of_tests_with_first_not_available',
-                                                                hsi_event=hsi_event)
+    # Run the list of test (when the first test fails): should return a result having run test2
+    result = dx_manager.run_dx_test(dx_tests_to_run='list_of_tests_with_first_not_available',
+                                    hsi_event=hsi_event
+                                    )
     assert None is not result
     assert result == sim.population.props.at[person_id, 'mi_status']
 
-    # Run the compound test (when the first test fails): should return a result having run test2 and not tried test1
-    result = dx_manager.run_dx_test(name_of_dx_test='list_of_tests_with_first_available',
-                                                                hsi_event=hsi_event)
+    # Run the list of tests (when the first test fails): should return a result having run test2 and not tried test1
+    result = dx_manager.run_dx_test(dx_tests_to_run='list_of_tests_with_first_available',
+                                    hsi_event=hsi_event
+                                    )
     assert None is not result
     assert result == sim.population.props.at[person_id, 'mi_status']
+
     # TODO: report which test provided the result
-    # TODO; check that a second test is not run if the first proviedes result.
+    # TODO: check that a second test is not run if the first provides result.
