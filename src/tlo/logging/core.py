@@ -6,7 +6,6 @@ def disable(level):
 
 
 def getLogger(name='tlo'):
-    assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
     # Singleton loggers
     if name not in _loggers.keys():
         _loggers[name] = Logger(name)
@@ -17,13 +16,13 @@ class Logger:
     """
     TLO logging facade so that logging can be intercepted and customised
     """
-
     def __init__(self, name: str, level=_logging.NOTSET):
+        assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
+        self._std_logger = _logging.getLogger(name=name)
+        self._std_logger.setLevel(level)
         if name == 'tlo':
-            self._std_logger = _logging.getLogger()
-        else:
-            self._std_logger = _logging.getLogger(name=name)
-        self.name = name
+            self._std_logger.propagate = False
+        self.name = self._std_logger.name
         self.handlers = self._std_logger.handlers
         self.filters = self._std_logger.filters
 
