@@ -218,7 +218,7 @@ def test_create_dx_test_and_run():
         result_from_dx_manager = dx_manager.run_dx_test(
             dx_tests_to_run='my_test1',
             hsi_event=hsi_event,
-            use_dict_for_single=False
+            use_dict_for_single=True
         )
         assert isinstance(result_from_dx_manager, dict)
         assert result_from_dx_manager['my_test1'] == df.at[person_id, 'mi_status']
@@ -541,3 +541,5 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
 
     assert all([0.0 == e for e in result_from_test_with_zero_stdev])
     assert sum([abs(e) for e in result_from_test_with_nonzero_stdev]) > 0
+
+# TODO: REMOVE THE NEED TO PASS IN HEALTHSYSTEM
