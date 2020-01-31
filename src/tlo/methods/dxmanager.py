@@ -18,13 +18,9 @@ class DxManager:
     It can store and then apply Diagnostic Tests (DxTest) and return the result.
     """
 
-    def __init__(self, healthsystem_module):
+    def __init__(self):
         self.dx_tests = dict()
         self.dx_test_hash = set()
-
-        # Check that the HealthSystem module has passed itself correctly
-        assert 'HealthSystem' == healthsystem_module.name
-        self.healthsystem_module = healthsystem_module
 
     def register_dx_test(self, **dict_of_tests_to_register):
         """
@@ -73,6 +69,8 @@ class DxManager:
 
     def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False):
 
+        # TODO: check that hsi_event is really an hsi_event
+
         # Make dx_tests_to_run into a list if it is not already one
         if not isinstance(dx_tests_to_run, list):
             dx_tests_to_run = [dx_tests_to_run]
@@ -88,7 +86,8 @@ class DxManager:
 
             # Loop through the list of DxTests that are registered under this name:
             for t in self.dx_tests[dx_test]:
-                t_res = t.apply(hsi_event, self.healthsystem_module)
+                t_res = t.apply(hsi_event)
+
                 if t_res is not None:
                     break
 
@@ -168,15 +167,16 @@ class DxTest:
             hash(self.measure_error_stdev)
         ))
 
-    def apply(self, hsi_event, health_system_module):
+    def apply(self, hsi_event):
         """
         This is where the test is applied.
         If this test returns None this means the test has failed due to there not being the required consumables.
 
         :param hsi_event:
-        :param health_system_module:
         :return: value of test or None.
         """
+
+        health_system_module=hsi_event.module.sim.modules['HealthSystem']
 
         # Must be an individual level HSI and not a population level HSI
         assert not isinstance(hsi_event.target,
