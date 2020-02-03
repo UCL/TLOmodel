@@ -1,5 +1,8 @@
 """
-This script is used in development. It will become the test script for diraahoea module.
+This will run the Diarrhoea Module and plot the incidence rate of each pathogen by each age group.
+This will then be compared with:
+    * The input incidence rate for each pathogen
+    * The desired incidence rate for each pathogen
 """
 
 # %% Import Statements and initial declarations
@@ -30,8 +33,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 2)
-popsize = 200
+end_date = Date(2020, 1, 2)
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -67,6 +70,3 @@ sim.simulate(end_date=end_date)
 # this will make sure that the logging file is complete
 fh.flush()
 output = parse_log_file(logfile)
-
-
-
