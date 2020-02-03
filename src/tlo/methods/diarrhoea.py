@@ -312,27 +312,29 @@ class Diarrhoea(Module):
 
     PROPERTIES = {
         # ---- The pathogen which is caused the diarrhoea  ----
-        'gi_diarrhoea_pathogen': Property(Types.CATEGORICAL, 'attributable pathogen for diarrhoea',
-                                          categories=list(pathogens) + ['none']),
+        'gi_last_diarrhoea_pathogen': Property(Types.CATEGORICAL,
+                                               'Attributable pathogen for the last episode of diarrhoea',
+                                               categories=list(pathogens) + ['none']),
 
         # ---- Classification of the type of diarrhoaea that is caused  ----
-        'gi_diarrhoea_type': Property(Types.CATEGORICAL, 'progression of diarrhoea type',
-                                      categories=['none',
-                                                  'acute',
-                                                  'prolonged',
-                                                  'persistent',
-                                                  'severe_persistent']),
+        'gi_last_diarrhoea_type': Property(Types.CATEGORICAL, 'Type of the last episode of diarrhoaea',
+                                           categories=['none',
+                                                       'acute',
+                                                       'prolonged',
+                                                       'persistent',
+                                                       'severe_persistent']),
 
-        'gi_dehydration_status': Property(Types.CATEGORICAL, 'dehydration status',
-                                          categories=['no dehydration',
-                                                      'some dehydration',
-                                                      'severe dehydration']),
+        'gi_last_dehydration_status': Property(Types.CATEGORICAL,
+                                               'Dehydration status during the last episode of diarrhoaea',
+                                               categories=['no dehydration',
+                                                           'some dehydration',
+                                                           'severe dehydration']),
 
-        # ---- Internal variables to schedule onset and deaths due to diarrhoaea  ----
-        'gi_date_of_last_onset_diarrhoea': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
-        'gi_diarrhoea_ep_duration': Property(Types.REAL, 'duration of diarrhoea last episode of diarrhoea'),
-        'gi_recovered_date': Property(Types.DATE, 'date of recovery from last episode of dirrhoea'),
-        'gi_diarrhoea_death_date': Property(Types.DATE, 'date of death from enteric infection'),
+        # ---- Internal variables to schedule onset and deaths due to diarhoaea  ----
+        'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
+        'gi_last_diarrhoea_ep_duration': Property(Types.REAL, 'duration of diarrhoea last episode of diarrhoea'),
+        'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of dirrhoea'),
+        'gi_last_diarrhoea_death_date': Property(Types.DATE, 'date of death caused by last episode of diarrhoea'),
 
         # ---- Temporary Variables: To be replaced with the properites of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
@@ -455,10 +457,10 @@ class Diarrhoea(Module):
             'cryptosporidium': LinearModel(LinearModelType.MULTIPLICATIVE,
                                            1.0,
                                            Predictor('age_years')
-                                               .when('.between(0,0)', p['base_incidence_diarrhoea_by_crypto'][0])
-                                               .when('.between(1,1)', p['base_incidence_diarrhoea_by_crypto'][1])
-                                               .when('.between(2,4)', p['base_incidence_diarrhoea_by_crypto'][2])
-                                               .otherwise(0.0),
+                                           .when('.between(0,0)', p['base_incidence_diarrhoea_by_crypto'][0])
+                                           .when('.between(1,1)', p['base_incidence_diarrhoea_by_crypto'][1])
+                                           .when('.between(2,4)', p['base_incidence_diarrhoea_by_crypto'][2])
+                                           .otherwise(0.0),
                                            # Predictor('li_no_access_handwashing')
                                            # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                            # Predictor('li_no_clean_drinking_water').
@@ -478,10 +480,10 @@ class Diarrhoea(Module):
             'campylobacter': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('age_years')
-                                             .when('.between(0,0)', p['base_incidence_diarrhoea_by_campylo'][0])
-                                             .when('.between(1,1)', p['base_incidence_diarrhoea_by_campylo'][1])
-                                             .when('.between(2,4)', p['base_incidence_diarrhoea_by_campylo'][2])
-                                             .otherwise(0.0),
+                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_campylo'][0])
+                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_campylo'][1])
+                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_campylo'][2])
+                                         .otherwise(0.0),
                                          # Predictor('li_no_access_handwashing')
                                          # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                          # Predictor('li_no_clean_drinking_water').
@@ -501,10 +503,10 @@ class Diarrhoea(Module):
             'ST-ETEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                    1.0,
                                    Predictor('age_years')
-                                       .when('.between(0,0)', p['base_incidence_diarrhoea_by_ETEC'][0])
-                                       .when('.between(1,1)', p['base_incidence_diarrhoea_by_ETEC'][1])
-                                       .when('.between(2,4)', p['base_incidence_diarrhoea_by_ETEC'][2])
-                                       .otherwise(0.0),
+                                   .when('.between(0,0)', p['base_incidence_diarrhoea_by_ETEC'][0])
+                                   .when('.between(1,1)', p['base_incidence_diarrhoea_by_ETEC'][1])
+                                   .when('.between(2,4)', p['base_incidence_diarrhoea_by_ETEC'][2])
+                                   .otherwise(0.0),
                                    # Predictor('li_no_access_handwashing')
                                    # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                    # Predictor('li_no_clean_drinking_water').
@@ -524,10 +526,10 @@ class Diarrhoea(Module):
             'sapovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_sapovirus'][0])
-                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_sapovirus'][1])
-                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_sapovirus'][2])
-                                         .otherwise(0.0),
+                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_sapovirus'][0])
+                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_sapovirus'][1])
+                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_sapovirus'][2])
+                                     .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                      # Predictor('li_no_clean_drinking_water').
@@ -547,10 +549,10 @@ class Diarrhoea(Module):
             'norovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_norovirus'][0])
-                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_norovirus'][1])
-                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_norovirus'][2])
-                                         .otherwise(0.0),
+                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_norovirus'][0])
+                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_norovirus'][1])
+                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_norovirus'][2])
+                                     .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                      # Predictor('li_no_clean_drinking_water').
@@ -570,10 +572,10 @@ class Diarrhoea(Module):
             'astrovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                          .when('.between(0,0)', p['base_incidence_diarrhoea_by_astrovirus'][0])
-                                          .when('.between(1,1)', p['base_incidence_diarrhoea_by_astrovirus'][1])
-                                          .when('.between(2,4)', p['base_incidence_diarrhoea_by_astrovirus'][2])
-                                          .otherwise(0.0),
+                                      .when('.between(0,0)', p['base_incidence_diarrhoea_by_astrovirus'][0])
+                                      .when('.between(1,1)', p['base_incidence_diarrhoea_by_astrovirus'][1])
+                                      .when('.between(2,4)', p['base_incidence_diarrhoea_by_astrovirus'][2])
+                                      .otherwise(0.0),
                                       # Predictor('li_no_access_handwashing')
                                       # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                       # Predictor('li_no_clean_drinking_water').
@@ -593,10 +595,10 @@ class Diarrhoea(Module):
             'tEPEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                  1.0,
                                  Predictor('age_years')
-                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_EPEC'][0])
-                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_EPEC'][1])
-                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_EPEC'][2])
-                                     .otherwise(0.0),
+                                 .when('.between(0,0)', p['base_incidence_diarrhoea_by_EPEC'][0])
+                                 .when('.between(1,1)', p['base_incidence_diarrhoea_by_EPEC'][1])
+                                 .when('.between(2,4)', p['base_incidence_diarrhoea_by_EPEC'][2])
+                                 .otherwise(0.0),
                                  # Predictor('li_no_access_handwashing')
                                  # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                  # Predictor('li_no_clean_drinking_water').
@@ -716,14 +718,13 @@ class Diarrhoea(Module):
 
         assert all(
             [
-                self.SYMPTOMS == set(list(self.prob_symptoms[pathogen].keys()))\
+                self.SYMPTOMS == set(list(self.prob_symptoms[pathogen].keys())) \
                 for pathogen in self.prob_symptoms.keys()
             ]
         )
 
         # --------------------------------------------------------------------------------------------
         # Asssign the probability of becoming persisent
-
 
         # # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
         # self.parameters['progression_persistent_equation'] = \
@@ -747,15 +748,15 @@ class Diarrhoea(Module):
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
                         Predictor('gi_diarrhoea_type')
-                            .when('none', 1.0)   # -- to fill in !
-                            .when('acute', 1.0)  # -- to fill in !
-                            .when('prolonged', 1.0)  # -- to fill in !
-                            .when('persistent', 1.0)  # -- to fill in !
-                            .when('severe_persistent', 1.0), # -- to fill in !
+                        .when('none', 1.0)  # -- to fill in !
+                        .when('acute', 1.0)  # -- to fill in !
+                        .when('prolonged', 1.0)  # -- to fill in !
+                        .when('persistent', 1.0)  # -- to fill in !
+                        .when('severe_persistent', 1.0),  # -- to fill in !
                         Predictor('age_years')
-                            .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
-                            .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
-                            .otherwise(0.0)
+                        .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
+                        .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
+                        .otherwise(0.0)
                         # # Predictor('hv_inf').
                         # # when(True, m.rr_gi_diarrhoea_HIV),
                         # Predictor('malnutrition').
@@ -774,24 +775,22 @@ class Diarrhoea(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
         # ---- Key Current Status Classification Properties ----
-        df['gi_diarrhoea_pathogen'].values[:] = 'none'
-        df['gi_diarrhoea_type'].values[:] = 'none'
-        df['gi_dehydration_status'].values[:] = 'no dehydration'
+        df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
+        df['gi_last_diarrhoea_type'].values[:] = 'none'
+        df['gi_last_dehydration_status'].values[:] = 'no dehydration'
 
         # ---- Internal values ----
-        df['gi_date_of_last_onset_diarrhoea'] = pd.NaT
-        df['gi_diarrhoea_ep_duration'] = pd.NaT
-        df['gi_recovered_date'] = pd.NaT
-        df['gi_diarrhoea_death_date'] = pd.NaT
+        df['gi_last_diarrhoead_date_of_onset'] = pd.NaT
+        df['gi_last_diarrhoea_ep_duration'] = pd.NaT
+        df['gi_last_diarrhoea_recovered_date'] = pd.NaT
+        df['gi_last_diarrhoea_death_date'] = pd.NaT
 
         # ---- Temporary values ----
         df['tmp_malnutrition'] = False
         df['tmp_exclusive_breastfeeding'] = False
         df['tmp_continued_breastfeeding'] = False
 
-
     def initialise_simulation(self, sim):
-
         # Schedule the main event:
         sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date + DateOffset(months=0))
 
@@ -805,21 +804,20 @@ class Diarrhoea(Module):
         df = self.sim.population.props
 
         # ---- Key Current Status Classification Properties ----
-        df.at[child_id, 'gi_diarrhoea_pathogen'] = 'none'
-        df.at[child_id, 'gi_diarrhoea_type'] = 'none'
-        df.at[child_id, 'gi_dehydration_status'] = 'no dehydration'
+        df.at[child_id, 'gi_last_diarrhoea_pathogen'] = 'none'
+        df.at[child_id, 'gi_last_diarrhoea_type'] = 'none'
+        df.at[child_id, 'gi_last_dehydration_status'] = 'no dehydration'
 
         # ---- Internal values ----
-        df.at[child_id, 'gi_date_of_last_onset_diarrhoea'] = pd.NaT
-        df.at[child_id, 'gi_diarrhoea_ep_duration'] = pd.NaT
-        df.at[child_id, 'gi_recovered_date'] = pd.NaT
-        df.at[child_id, 'gi_diarrhoea_death_date'] = pd.NaT
+        df.at[child_id, 'gi_last_diarrhoea_date_of_onset'] = pd.NaT
+        df.at[child_id, 'gi_last_diarrhoea_ep_duration'] = pd.NaT
+        df.at[child_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
+        df.at[child_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
-        df.at[child_id,'tmp_continued_breastfeeding'] = False
-
+        df.at[child_id, 'tmp_continued_breastfeeding'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -832,21 +830,25 @@ class Diarrhoea(Module):
 
     def report_daly_values(self):
         """
-        This returns DALYS values relating to the current status of dehydration
+        This returns DALYS values relating to the current status of persons
         """
         df = self.sim.population.props
         p = self.parameters
 
-        # Map the current status of diarrahoe_type to a daly value:
-        daly_values = df.loc[df.is_alive, 'gi_diarrhoea_type'].map({
+        # Map the status during last episode to a daly value and zero-out if the last episode is not current
+        daly_values = df.loc[df['is_alive'], 'gi_last_diarrhoea_type'].map({
             'none': 0.0,
             'acute': p['daly_wts']['mild_diarrhoea'],
             'prolonged': p['daly_wts']['moderate_diarrhoea'],
             'persistent': p['daly_wts']['moderate_diarrhoea'],
             'severe_persistent': p['daly_wts']['severe_diarrhoea']
         })
-        daly_values.name = ''
 
+        mask_currently_has_diarrhoaea = (df['gi_last_diarrhoea_date_of_onset'] <= self.sim.date)\
+                                        & (df['gi_last_diarrhoea_recovered_date'] >= self.sim.date)
+        daly_values.loc[~mask_currently_has_diarrhoaea] = 0.0
+
+        daly_values.name = ''
         return daly_values
 
 
@@ -856,174 +858,154 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=3))
 
     def apply(self, population):
-        # TODO: Say what this event is for and what it will do.
-        """Apply this event to the population.
-        :param population: the current population
+        """
+        This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
         """
 
         df = population.props
+        rng = self.module.rng
         m = self.module
-        rng = m.rng
         now = self.sim.date
 
-        # self.module.properties['gi_pathogen_count'] = dict()
+        # Compute the probabilities of each person getting diarrhoea within the next three months
+        mask_could_get_new_diarrhoea_episode = df['is_alive'] \
+                                              & (df['age_years'] < 5) \
+                                              & (
+                                                  (df['gi_last_diarrhoea_recovered_date'] <= self.sim.date) |
+                                                  pd.isnull(df['gi_last_diarrhoea_recovered_date'])
+                                              )
 
-        # and now, this is what goes here in the apply() of the event --->>
-        # Compute probabilities and organise in a dataframe
-        probs = pd.DataFrame()
-        for k, v in m.parameters['incidence_equations_by_pathogen'].items():
-            probs[k] = v.predict(df.loc[df.is_alive & df.age_years < 5])
+        probs_of_aquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_diarrhoea_episode].index)
+        for pathogen in m.pathogens:
+            probs_of_aquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
+                .predict(df.loc[mask_could_get_new_diarrhoea_episode])
 
-        # Declare that pathogens are mutally exclusive and do the random choice for each person
-        probs['none'] = 1 - probs.sum(axis=1)
-        outcome = pd.Series(data='none', index=probs.index)
+        # Create the probability of getting 'none' pathogen:
+        # (Assumes that pathogens are mutually exclusive)
+        probs_of_aquiring_pathogen['none'] = 1 - probs_of_aquiring_pathogen.sum(axis=1)
 
-        for i in outcome.index:
-            # the outcome - diarrhoea (and which pathogen...) to put in the df
-            outcome_i = rng.choice(probs.columns, p=probs.loc[i].values)
+        # Determine which pathogen (if any) each person will acquire                   # TODO: This should be vectorized
+        for person_id in probs_of_aquiring_pathogen.index:
+            # ----------------------- Allocate a pathogen (or none) to each person ----------------------
+            pathogen = rng.choice(probs_of_aquiring_pathogen.columns, p=probs_of_aquiring_pathogen.loc[i].values)
+            df.at[person_id, 'gi_last_diarrhoea_pathogen'] = pathogen
 
-            if outcome_i != 'none':
-                assert outcome_i in self.module.PROPERTIES[
-                    'gi_diarrhoea_pathogen'].categories, 'pathogen is being assigned that is not declared in properties'
-                df.at[i, 'gi_diarrhoea_pathogen'] = outcome_i
-                df.at[i, 'gi_diarrhoea_status'] = True
-                df.at[i, 'gi_diarrhoea_type'] = 'acute'
-                df.at[i, 'gi_diarrhoea_count'] += 1
-                if outcome_i == 'rotavirus':
-                    df.at[i, 'gi_pathogen_count_rota'] += 1
-                if outcome_i == 'shigella':
-                    df.at[i, 'gi_pathogen_count_shig'] += 1
-                if outcome_i == 'adenovirus':
-                    df.at[i, 'gi_pathogen_count_adeno'] += 1
-                if outcome_i == 'cryptosporidium':
-                    df.at[i, 'gi_pathogen_count_crypto'] += 1
-                if outcome_i == 'campylobacter':
-                    df.at[i, 'gi_pathogen_count_campylo'] += 1
-                if outcome_i == 'ST-ETEC':
-                    df.at[i, 'gi_pathogen_count_ETEC'] += 1
-                if outcome_i == 'sapovirus':
-                    df.at[i, 'gi_pathogen_count_sapo'] += 1
-                if outcome_i == 'norovirus':
-                    df.at[i, 'gi_pathogen_count_noro'] += 1
-                if outcome_i == 'astrovirus':
-                    df.at[i, 'gi_pathogen_count_astro'] += 1
-                if outcome_i == 'tEPEC':
-                    df.at[i, 'gi_pathogen_count_EPEC'] += 1
-                # df.at[i, 'gi_pathogen_count'].update({'%s' % [outcome_i], + 1})
-                # @@@ INES --- is there a need for an else statement to set these variables to values consistent with
-                # no new diarrahea episode? --- @@ TIM: I dont think so, there will be default property values
+            if pathogen != 'none':
+                # ----------------------- Allocate a date of onset and recovery of diarrhoaea ----------------------
+                date_onset = self.sim.date + DateOffset(days=np.random.randint(0, 90))
+                duration_in_days = 2
 
-                # ----------------------- ALLOCATE A RANDOM DATE OF ONSET OF ACUTE DIARRHOEA ----------------------
-                df.at[i, 'date_of_onset_diarrhoea'] = self.sim.date + DateOffset(days=np.random.randint(0, 90))
-                # does this need to be stored in the df?
-                # @@ TIM - not necessarily, but I want to scatter the occurrence of diarrhoea episodes like in real life??
+                df.at[person_id, 'gi_last_diarrhoea_date_of_onset'] = date_onset
+                df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_onset + DateOffset(days=duration_in_days)
 
-                # ----------------------------------------------------------------------------------------
-                # Then work out the symptoms for this person:
-                for symptom_string, prob in m.parameters['prob_symptoms'][outcome_i].items():
-                    if symptom_string == 'watery_diarrhoea':
-                        if rng.rand() < prob:
-                            df.at[i, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
-                        else:
-                            df.at[i, 'gi_diarrhoea_acute_type'] = 'dysentery'
-                    # determine the dehydration status
-                    if symptom_string == 'dehydration':
-                        if rng.rand() < prob:
-                            df.at[i, 'di_dehydration_present'] = True
-                            if rng.rand() < 0.7:
-                                df.at[i, 'gi_dehydration_status'] = 'some dehydration'
-                            else:
-                                df.at[i, 'gi_dehydration_status'] = 'severe dehydration'
-                        else:
-                            df.at[i, 'di_dehydration_present'] = False
+                # ----------------------- Allocate symptoms to onset of diarrhoaea ----------------------
+                possible_symptoms_for_this_pathogen = m.prob_symptoms[pathogen]
+                for symptom, prob in possible_symptoms_for_this_pathogen.items():
+                    if rng.rand() < prob:
+                        self.sim.modules['SymptomManager'].change_symptom(
+                            person_id=person_id,
+                            symptom_string=symptom,
+                            add_or_remove='+',
+                            disease_module=self.module,
+                            date_of_onset=date_onset,
+                            duration_in_days=duration_in_days
+                        )
 
-                    # determine the which phase in diarrhoea episode
-                    if symptom_string == 'prolonged_diarrhoea':
-                        if rng.rand() < prob:
-                            df.at[i, 'gi_diarrhoea_type'] = 'prolonged'
-                            if rng.rand() < m.parameters['progression_persistent_equation'].predict(df.loc[[i]]).values[
-                                0]:
-                                df.at[i, 'gi_diarrhoea_type'] = 'persistent'
-                            if df.at[i, 'di_dehydration_present']:
-                                df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
-                            else:
-                                df.at[i, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
-
-                    # determine the duration of the episode
-                    if df.at[i, 'gi_diarrhoea_type'] == 'acute':
-                        duration = rng.randint(3, 7)
-                    if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
-                        duration = rng.randint(7, 14)
-                    if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
-                        duration = rng.randint(14, 21)
-
-                    # # Send the symptoms to the SymptomManager
-                    # self.sim.modules['SymptomManager'].change_symptom(symptom_string=symptom_string,
-                    #                                                   person_id=i,
-                    #                                                   add_or_remove='+',
-                    #                                                   disease_module=self.module,
-                    #                                                   date_of_onset=df.at[i, 'date_of_onset_diarrhoea'],
-                    #                                                   duration_in_days=duration
-                    #                                                   )
-
-                    # # # # # # HEALTH CARE SEEKING BEHAVIOUR - INTERACTION WITH HSB MODULE # # # # #
-                    # # TODO: when you declare the symptoms in the symptom manager, the health care seeking will follow automatically
-
-                # # # # # # # # # # # SCHEDULE DEATH OR RECOVERY # # # # # # # # # # #
-                if rng.rand() < self.module.parameters['rate_death_diarrhoea'].predict(df.iloc[[i]]).values[0]:
-                    if df.at[i, 'gi_diarrhoea_type'] == 'acute':
-                        random_date = rng.randint(low=4, high=6)
-                        random_days = pd.to_timedelta(random_date, unit='d')
-                        death_event = DeathDiarrhoeaEvent(self.module, person_id=i, cause='diarrhoea')
-                        self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days)
-                    if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
-                        random_date1 = rng.randint(low=7, high=13)
-                        random_days1 = pd.to_timedelta(random_date1, unit='d')
-                        death_event = DeathDiarrhoeaEvent(self.module, person_id=i,
-                                                          cause='diarrhoea')
-                        self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days1)
-                    if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
-                        random_date2 = rng.randint(low=14, high=30)
-                        random_days2 = pd.to_timedelta(random_date2, unit='d')
-                        death_event = DeathDiarrhoeaEvent(self.module, person_id=i,
-                                                          cause='diarrhoea')
-                        self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days2)
-                else:
-                    if df.at[i, 'gi_diarrhoea_type'] == 'acute':
-                        random_date = rng.randint(low=4, high=6)
-                        random_days = pd.to_timedelta(random_date, unit='d')
-                        self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
-                                                df.at[i, 'date_of_onset_diarrhoea'] + random_days)
-                    if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
-                        random_date1 = rng.randint(low=7, high=13)
-                        random_days1 = pd.to_timedelta(random_date1, unit='d')
-                        self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
-                                                df.at[i, 'date_of_onset_diarrhoea'] + random_days1)
-                    if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
-                        random_date2 = rng.randint(low=14, high=21)
-                        random_days2 = pd.to_timedelta(random_date2, unit='d')
-                        self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
-                                                df.at[i, 'date_of_onset_diarrhoea'] + random_days2)
+                # ----------------------- Determine if / when the person will die  ----------------------
 
 
-class SelfRecoverEvent(Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
 
-    def apply(self, person_id):
-        df = self.sim.population.props  # shortcut to the dataframe
-        # set everything back to default
-        df.at[person_id, 'gi_recovered_date'] = pd.NaT
-        df.at[person_id, 'gi_diarrhoea_status'] = False
-        df.at[person_id, 'gi_diarrhoea_acute_type'] = np.nan
-        df.at[person_id, 'gi_diarrhoea_type'] = np.nan
-        df.at[person_id, 'gi_persistent_diarrhoea'] = np.nan
-        df.at[person_id, 'gi_dehydration_status'] = 'no dehydration'
-        df.at[person_id, 'date_of_onset_diarrhoea'] = pd.NaT
-        df.at[person_id, 'gi_recovered_date'] = pd.NaT
-        df.at[person_id, 'gi_diarrhoea_death_date'] = pd.NaT
-        df.at[person_id, 'gi_diarrhoea_death'] = False
-        df.at[person_id, 'gi_diarrhoea_pathogen'] = 'none'
+
+
+            # # ----------------------------------------------------------------------------------------
+            # # Then work out the symptoms for this person:
+            # for symptom_string, prob in m.parameters['prob_symptoms'][outcome_i].items():
+            #     if symptom_string == 'watery_diarrhoea':
+            #         if rng.rand() < prob:
+            #             df.at[i, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
+            #         else:
+            #             df.at[i, 'gi_diarrhoea_acute_type'] = 'dysentery'
+            #     # determine the dehydration status
+            #     if symptom_string == 'dehydration':
+            #         if rng.rand() < prob:
+            #             df.at[i, 'di_dehydration_present'] = True
+            #             if rng.rand() < 0.7:
+            #                 df.at[i, 'gi_dehydration_status'] = 'some dehydration'
+            #             else:
+            #                 df.at[i, 'gi_dehydration_status'] = 'severe dehydration'
+            #         else:
+            #             df.at[i, 'di_dehydration_present'] = False
+            #
+            #     # determine the which phase in diarrhoea episode
+            #     if symptom_string == 'prolonged_diarrhoea':
+            #         if rng.rand() < prob:
+            #             df.at[i, 'gi_diarrhoea_type'] = 'prolonged'
+            #             if rng.rand() < m.parameters['progression_persistent_equation'].predict(df.loc[[i]]).values[
+            #                 0]:
+            #                 df.at[i, 'gi_diarrhoea_type'] = 'persistent'
+            #             if df.at[i, 'di_dehydration_present']:
+            #                 df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
+            #             else:
+            #                 df.at[i, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
+            #
+            #     # determine the duration of the episode
+            #     if df.at[i, 'gi_diarrhoea_type'] == 'acute':
+            #         duration = rng.randint(3, 7)
+            #     if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
+            #         duration = rng.randint(7, 14)
+            #     if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
+            #         duration = rng.randint(14, 21)
+            #
+            #     # # Send the symptoms to the SymptomManager
+            #     # self.sim.modules['SymptomManager'].change_symptom(symptom_string=symptom_string,
+            #     #                                                   person_id=i,
+            #     #                                                   add_or_remove='+',
+            #     #                                                   disease_module=self.module,
+            #     #                                                   date_of_onset=df.at[i, 'date_of_onset_diarrhoea'],
+            #     #                                                   duration_in_days=duration
+            #     #                                                   )
+            #
+            #     # # # # # # HEALTH CARE SEEKING BEHAVIOUR - INTERACTION WITH HSB MODULE # # # # #
+            #     # # TODO: when you declare the symptoms in the symptom manager, the health care seeking will follow automatically
+            #
+            #     # # # # # # # # # # # SCHEDULE DEATH OR RECOVERY # # # # # # # # # # #
+            #     if rng.rand() < self.module.parameters['rate_death_diarrhoea'].predict(df.iloc[[i]]).values[0]:
+            #         if df.at[i, 'gi_diarrhoea_type'] == 'acute':
+            #             random_date = rng.randint(low=4, high=6)
+            #             random_days = pd.to_timedelta(random_date, unit='d')
+            #             death_event = DeathDiarrhoeaEvent(self.module, person_id=i, cause='diarrhoea')
+            #             self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days)
+            #         if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
+            #             random_date1 = rng.randint(low=7, high=13)
+            #             random_days1 = pd.to_timedelta(random_date1, unit='d')
+            #             death_event = DeathDiarrhoeaEvent(self.module, person_id=i,
+            #                                               cause='diarrhoea')
+            #             self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days1)
+            #         if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
+            #             random_date2 = rng.randint(low=14, high=30)
+            #             random_days2 = pd.to_timedelta(random_date2, unit='d')
+            #             death_event = DeathDiarrhoeaEvent(self.module, person_id=i,
+            #                                               cause='diarrhoea')
+            #             self.sim.schedule_event(death_event, df.at[i, 'date_of_onset_diarrhoea'] + random_days2)
+            #     else:
+            #         if df.at[i, 'gi_diarrhoea_type'] == 'acute':
+            #             random_date = rng.randint(low=4, high=6)
+            #             random_days = pd.to_timedelta(random_date, unit='d')
+            #             self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
+            #                                     df.at[i, 'date_of_onset_diarrhoea'] + random_days)
+            #         if df.at[i, 'gi_diarrhoea_type'] == 'prolonged':
+            #             random_date1 = rng.randint(low=7, high=13)
+            #             random_days1 = pd.to_timedelta(random_date1, unit='d')
+            #             self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
+            #                                     df.at[i, 'date_of_onset_diarrhoea'] + random_days1)
+            #         if df.at[i, 'gi_diarrhoea_type'] == 'persistent':
+            #             random_date2 = rng.randint(low=14, high=21)
+            #             random_days2 = pd.to_timedelta(random_date2, unit='d')
+            #             self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=i),
+            #                                     df.at[i, 'date_of_onset_diarrhoea'] + random_days2)
+
+
+
 
 
 class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
@@ -1050,29 +1032,6 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
             #              })
 
 
-class DiarrhoeaResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        # reset all the counters to zero each year
-        df = population.props
-        now = self.sim.date
-        logger.info(f'Resetting the diarrhoea episodes counter {now}')
-        df['gi_diarrhoea_count'] = 0
-        df['gi_pathogen_count_rota'] = 0
-        df['gi_pathogen_count_shig'] = 0
-        df['gi_pathogen_count_adeno'] = 0
-        df['gi_pathogen_count_crypto'] = 0
-        df['gi_pathogen_count_campylo'] = 0
-        df['gi_pathogen_count_ETEC'] = 0
-        df['gi_pathogen_count_sapo'] = 0
-        df['gi_pathogen_count_noro'] = 0
-        df['gi_pathogen_count_astro'] = 0
-        df['gi_pathogen_count_EPEC'] = 0
-
-
 class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.repeat = 12
@@ -1085,280 +1044,280 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -----------------------------------------------------------------------------------------------------
         # sum all the counters for previous year
-        count_episodes = df['gi_diarrhoea_count'].sum()
-        pop_under5 = len(df[df.is_alive & (df.age_exact_years < 5)])
-        # overall incidence rate in under 5
-        inc_100cy = (count_episodes / pop_under5) * 100
-        logger.info('%s|episodes_counts|%s', now, {'incidence_per100cy': inc_100cy})
-        logger.info('%s|pop_counts|%s', now, {'pop_len': pop_under5})
-
-        len_under12mo = len(df[df.is_alive & (df.age_exact_years < 1)])
-        len_11to23mo = len(df[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)])
-        len_24to59mo = len(df[df.is_alive & (df.age_exact_years >= 2) & (df.age_exact_years < 5)])
-
-        # counts for diarrhoeal episodes cause by Rotavirus
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_rota'].sum():
-            count_rota_episodes0 = df['gi_pathogen_count_rota'].sum()
-            inc_100cy_rota_under1 = (count_rota_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'rotavirus': inc_100cy_rota_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_rota'].sum():
-            count_rota_episodes1 = df['gi_pathogen_count_rota'].sum()
-            inc_100cy_rota_1to2yo = (count_rota_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_rota'].sum():
-            count_rota_episodes2 = df['gi_pathogen_count_rota'].sum()
-            inc_100cy_rota_2to5yo = (count_rota_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by Shigella
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_shig'].sum():
-            count_shig_episodes0 = df['gi_pathogen_count_shig'].sum()
-            inc_100cy_shig_under1 = (count_shig_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'shigella': inc_100cy_shig_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_shig'].sum():
-            count_shig_episodes1 = df['gi_pathogen_count_shig'].sum()
-            inc_100cy_shig_1to2yo = (count_shig_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_shig'].sum():
-            count_shig_episodes2 = df['gi_pathogen_count_shig'].sum()
-            inc_100cy_shig_2to5yo = (count_shig_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by Adenovirus
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_adeno'].sum():
-            count_adeno_episodes0 = df['gi_pathogen_count_adeno'].sum()
-            inc_100cy_adeno_under1 = (count_adeno_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'adenovirus': inc_100cy_adeno_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_adeno'].sum():
-            count_adeno_episodes1 = df['gi_pathogen_count_adeno'].sum()
-            inc_100cy_adeno_1to2yo = (count_adeno_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_adeno'].sum():
-            count_adeno_episodes2 = df['gi_pathogen_count_adeno'].sum()
-            inc_100cy_adeno_2to5yo = (count_adeno_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by Cryptosporidium
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_crypto'].sum():
-            count_crypto_episodes0 = df['gi_pathogen_count_crypto'].sum()
-            inc_100cy_crypto_under1 = (count_crypto_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'cryptosporidium': inc_100cy_crypto_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_crypto'].sum():
-            count_crypto_episodes1 = df['gi_pathogen_count_crypto'].sum()
-            inc_100cy_crypto_1to2yo = (count_crypto_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_crypto'].sum():
-            count_crypto_episodes2 = df['gi_pathogen_count_crypto'].sum()
-            inc_100cy_crypto_2to5yo = (count_crypto_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by Campylobacter
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_campylo'].sum():
-            count_campylo_episodes0 = df['gi_pathogen_count_campylo'].sum()
-            inc_100cy_campylo_under1 = (count_campylo_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'campylobacter': inc_100cy_campylo_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_campylo'].sum():
-            count_campylo_episodes1 = df['gi_pathogen_count_campylo'].sum()
-            inc_100cy_campylo_1to2yo = (count_campylo_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_campylo'].sum():
-            count_campylo_episodes2 = df['gi_pathogen_count_campylo'].sum()
-            inc_100cy_campylo_2to5yo = (count_campylo_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by ST-ETEC
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_ETEC'].sum():
-            count_ETEC_episodes0 = df['gi_pathogen_count_ETEC'].sum()
-            inc_100cy_ETEC_under1 = (count_ETEC_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'ETEC': inc_100cy_ETEC_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_ETEC'].sum():
-            count_ETEC_episodes1 = df['gi_pathogen_count_ETEC'].sum()
-            inc_100cy_ETEC_1to2yo = (count_ETEC_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_ETEC'].sum():
-            count_ETEC_episodes2 = df['gi_pathogen_count_ETEC'].sum()
-            inc_100cy_ETEC_2to5yo = (count_ETEC_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by Sapovirus
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_sapo'].sum():
-            count_sapo_episodes0 = df['gi_pathogen_count_sapo'].sum()
-            inc_100cy_sapo_under1 = (count_sapo_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'sapovirus': inc_100cy_sapo_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_sapo'].sum():
-            count_sapo_episodes1 = df['gi_pathogen_count_sapo'].sum()
-            inc_100cy_sapo_1to2yo = (count_sapo_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_sapo'].sum():
-            count_sapo_episodes2 = df['gi_pathogen_count_sapo'].sum()
-            inc_100cy_sapo_2to5yo = (count_sapo_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by Norovirus
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_noro'].sum():
-            count_noro_episodes0 = df['gi_pathogen_count_noro'].sum()
-            inc_100cy_noro_under1 = (count_noro_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'norovirus': inc_100cy_noro_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_noro'].sum():
-            count_noro_episodes1 = df['gi_pathogen_count_noro'].sum()
-            inc_100cy_noro_1to2yo = (count_noro_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_noro'].sum():
-            count_noro_episodes2 = df['gi_pathogen_count_noro'].sum()
-            inc_100cy_noro_2to5yo = (count_noro_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by Astrovirus
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_astro'].sum():
-            count_astro_episodes0 = df['gi_pathogen_count_astro'].sum()
-            inc_100cy_astro_under1 = (count_astro_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'astrovirus': inc_100cy_astro_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_astro'].sum():
-            count_astro_episodes1 = df['gi_pathogen_count_astro'].sum()
-            inc_100cy_astro_1to2yo = (count_astro_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_astro'].sum():
-            count_astro_episodes2 = df['gi_pathogen_count_astro'].sum()
-            inc_100cy_astro_2to5yo = (count_astro_episodes2 / len_24to59mo) * 100
-
-        # counts for diarrhoeal episodes cause by tEPEC
-        if df.loc[df.age_years < 1, 'gi_pathogen_count_EPEC'].sum():
-            count_EPEC_episodes0 = df['gi_pathogen_count_EPEC'].sum()
-            inc_100cy_EPEC_under1 = (count_EPEC_episodes0 / len_under12mo) * 100
-            logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
-                        {'EPEC': inc_100cy_EPEC_under1})
-        if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_EPEC'].sum():
-            count_EPEC_episodes1 = df['gi_pathogen_count_EPEC'].sum()
-            inc_100cy_EPEC_1to2yo = (count_EPEC_episodes1 / len_11to23mo) * 100
-        if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_EPEC'].sum():
-            count_EPEC_episodes2 = df['gi_pathogen_count_EPEC'].sum()
-            inc_100cy_EPEC_2to5yo = (count_EPEC_episodes2 / len_24to59mo) * 100
-
-        # TODO: I think it's easier to output the number of events in the logger and work out the incidence afterwards.
-        # So, I would propose just logging value counts.
-
-        # log the clinical cases
-        AWD_cases = \
-            df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
-                   (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea') & (df.gi_diarrhoea_type != 'persistent')]
-        dysentery_cases = \
-            df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
-                   (df.gi_diarrhoea_acute_type == 'dysentery') & (df.gi_diarrhoea_type != 'persistent')]
-        persistent_diarr_cases = \
-            df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
-                   (df.gi_diarrhoea_type == 'persistent')]
-
-        clinical_types = pd.concat([AWD_cases, dysentery_cases, persistent_diarr_cases], axis=0).sort_index()
-
-        logger.info('%s|clinical_diarrhoea_type|%s', self.sim.date,
-                    {  # 'total': len(clinical_types),
-                        'AWD': len(AWD_cases),
-                        'dysentery': len(dysentery_cases),
-                        'persistent': len(persistent_diarr_cases)
-                    })
-
-        # log information on attributable pathogens
-        pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
-
-        under5 = df[df.is_alive & df.age_years.between(0, 5)]
-        # all_patho_counts = sum(pathogen_count)
-        length_under5 = len(under5)
-        # total_inc = all_patho_counts * 4 * 100 / length_under5
-        rota_inc = (pathogen_count['rotavirus'] / length_under5) * 100 * 4
-        shigella_inc = (pathogen_count['shigella'] / length_under5) * 100 * 4
-        adeno_inc = (pathogen_count['adenovirus'] / length_under5) * 100 * 4
-        crypto_inc = (pathogen_count['cryptosporidium'] * 4 / length_under5) * 100 * 4
-        campylo_inc = (pathogen_count['campylobacter'] * 4 / length_under5) * 100 * 4
-        ETEC_inc = (pathogen_count['ST-ETEC'] / length_under5) * 100 * 4
-        sapo_inc = (pathogen_count['sapovirus'] / length_under5) * 100 * 4
-        noro_inc = (pathogen_count['norovirus'] / length_under5) * 100 * 4
-        astro_inc = (pathogen_count['astrovirus'] / length_under5) * 100 * 4
-        tEPEC_inc = (pathogen_count['tEPEC'] / length_under5) * 100 * 4
-
-        # incidence rate by pathogen
-        logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
-                    {  # 'total': total_inc,
-                        'rotavirus': rota_inc,
-                        'shigella': shigella_inc,
-                        'adenovirus': adeno_inc,
-                        'cryptosporidium': crypto_inc,
-                        'campylobacter': campylo_inc,
-                        'ETEC': ETEC_inc,
-                        'sapovirus': sapo_inc,
-                        'norovirus': noro_inc,
-                        'astrovirus': astro_inc,
-                        'tEPEC': tEPEC_inc
-                    })
-
-        # incidence rate per age group by pathogen
-        pathogen_0to11mo = df[df.is_alive & (df.age_years < 1)].groupby('gi_diarrhoea_pathogen').size()
-        len_under12mo = df[df.is_alive & (df.age_years < 1)]
-        pathogen_12to23mo = df[df.is_alive & (df.age_years >= 1) & (df.age_years < 2)].groupby(
-            'gi_diarrhoea_pathogen').size()
-        len_11to23mo = df[df.is_alive & (df.age_years >= 1) & (df.age_years < 2)]
-        pathogen_24to59mo = df[df.is_alive & (df.age_years >= 2) & (df.age_years < 5)].groupby(
-            'gi_diarrhoea_pathogen').size()
-        len_24to59mo = df[df.is_alive & (df.age_years >= 2) & (df.age_years < 5)]
-
-        rota_inc_by_age = [((pathogen_0to11mo['rotavirus'] * 4 * 100) / len(len_under12mo)),
-                           ((pathogen_12to23mo['rotavirus'] * 4 * 100) / len(len_11to23mo)),
-                           ((pathogen_24to59mo['rotavirus'] * 4 * 100) / len(len_24to59mo))]
-        shig_inc_by_age = [(pathogen_0to11mo['shigella'] * 4 * 100) / len(len_under12mo),
-                           (pathogen_12to23mo['shigella'] * 4 * 100) / len(len_11to23mo),
-                           (pathogen_24to59mo['shigella'] * 4 * 100) / len(len_24to59mo)]
-        adeno_inc_by_age = [(pathogen_0to11mo['adenovirus'] * 4 * 100) / len(len_under12mo),
-                            (pathogen_12to23mo['adenovirus'] * 4 * 100) / len(len_11to23mo),
-                            (pathogen_24to59mo['adenovirus'] * 4 * 100) / len(len_24to59mo)]
-        crypto_inc_by_age = [(pathogen_0to11mo['cryptosporidium'] * 4 * 100) / len(len_under12mo),
-                             (pathogen_12to23mo['cryptosporidium'] * 4 * 100) / len(len_11to23mo),
-                             (pathogen_24to59mo['cryptosporidium'] * 4 * 100) / len(len_24to59mo)]
-        campylo_inc_by_age = [(pathogen_0to11mo['campylobacter'] * 4 * 100) / len(len_under12mo),
-                              (pathogen_12to23mo['campylobacter'] * 4 * 100) / len(len_11to23mo),
-                              (pathogen_24to59mo['campylobacter'] * 4 * 100) / len(len_24to59mo)]
-        etec_inc_by_age = [(pathogen_0to11mo['ST-ETEC'] * 4 * 100) / len(len_under12mo),
-                           (pathogen_12to23mo['ST-ETEC'] * 4 * 100) / len(len_11to23mo),
-                           (pathogen_24to59mo['ST-ETEC'] * 4 * 100) / len(len_24to59mo)]
-        sapo_inc_by_age = [(pathogen_0to11mo['sapovirus'] * 4 * 100) / len(len_under12mo),
-                           (pathogen_12to23mo['sapovirus'] * 4 * 100) / len(len_11to23mo),
-                           (pathogen_24to59mo['sapovirus'] * 4 * 100) / len(len_24to59mo)]
-        noro_inc_by_age = [(pathogen_0to11mo['norovirus'] * 4 * 100) / len(len_under12mo),
-                           (pathogen_12to23mo['norovirus'] * 4 * 100) / len(len_11to23mo),
-                           (pathogen_24to59mo['norovirus'] * 4 * 100) / len(len_24to59mo)]
-        astro_inc_by_age = [(pathogen_0to11mo['astrovirus'] * 4 * 100) / len(len_under12mo),
-                            (pathogen_12to23mo['astrovirus'] * 4 * 100) / len(len_11to23mo),
-                            (pathogen_24to59mo['astrovirus'] * 4 * 100) / len(len_24to59mo)]
-        epec_inc_by_age = [(pathogen_0to11mo['tEPEC'] * 4 * 100) / len(len_under12mo),
-                           (pathogen_12to23mo['tEPEC'] * 4 * 100) / len(len_11to23mo),
-                           (pathogen_24to59mo['tEPEC'] * 4 * 100) / len(len_24to59mo)]
-
-        logger.info('%s|diarr_incidence_age0_11|%s', self.sim.date,
-                    {'total': (sum(pathogen_0to11mo) * 4 * 100) / len_under12mo.size,
-                     'rotavirus': rota_inc_by_age[0],
-                     'shigella': shig_inc_by_age[0],
-                     'adenovirus': adeno_inc_by_age[0],
-                     'cryptosporidium': crypto_inc_by_age[0],
-                     'campylobacter': campylo_inc_by_age[0],
-                     'ETEC': etec_inc_by_age[0],
-                     'sapovirus': sapo_inc_by_age[0],
-                     'norovirus': noro_inc_by_age[0],
-                     'astrovirus': astro_inc_by_age[0],
-                     'tEPEC': epec_inc_by_age[0]
-                     })
-        logger.info('%s|diarr_incidence_age12_23|%s', self.sim.date,
-                    {'total': (sum(pathogen_0to11mo) * 4 * 100) / len_11to23mo.size,
-                     'rotavirus': rota_inc_by_age[1],
-                     'shigella': shig_inc_by_age[1],
-                     'adenovirus': adeno_inc_by_age[1],
-                     'cryptosporidium': crypto_inc_by_age[1],
-                     'campylobacter': campylo_inc_by_age[1],
-                     'ETEC': etec_inc_by_age[1],
-                     'sapovirus': sapo_inc_by_age[1],
-                     'norovirus': noro_inc_by_age[1],
-                     'astrovirus': astro_inc_by_age[1],
-                     'tEPEC': epec_inc_by_age[1]
-                     })
-        logger.info('%s|diarr_incidence_age24_59|%s', self.sim.date,
-                    {'total': (sum(pathogen_0to11mo) * 4 * 100) / pathogen_24to59mo.size,
-                     'rotavirus': rota_inc_by_age[2],
-                     'shigella': shig_inc_by_age[2],
-                     'adenovirus': adeno_inc_by_age[2],
-                     'cryptosporidium': crypto_inc_by_age[2],
-                     'campylobacter': campylo_inc_by_age[2],
-                     'ETEC': etec_inc_by_age[2],
-                     'sapovirus': sapo_inc_by_age[2],
-                     'norovirus': noro_inc_by_age[2],
-                     'astrovirus': astro_inc_by_age[2],
-                     'tEPEC': epec_inc_by_age[2]
-                     })
+        # count_episodes = df['gi_diarrhoea_count'].sum()
+        # pop_under5 = len(df[df.is_alive & (df.age_exact_years < 5)])
+        # # overall incidence rate in under 5
+        # inc_100cy = (count_episodes / pop_under5) * 100
+        # logger.info('%s|episodes_counts|%s', now, {'incidence_per100cy': inc_100cy})
+        # logger.info('%s|pop_counts|%s', now, {'pop_len': pop_under5})
+        #
+        # len_under12mo = len(df[df.is_alive & (df.age_exact_years < 1)])
+        # len_11to23mo = len(df[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)])
+        # len_24to59mo = len(df[df.is_alive & (df.age_exact_years >= 2) & (df.age_exact_years < 5)])
+        #
+        # # counts for diarrhoeal episodes cause by Rotavirus
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_rota'].sum():
+        #     count_rota_episodes0 = df['gi_pathogen_count_rota'].sum()
+        #     inc_100cy_rota_under1 = (count_rota_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'rotavirus': inc_100cy_rota_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_rota'].sum():
+        #     count_rota_episodes1 = df['gi_pathogen_count_rota'].sum()
+        #     inc_100cy_rota_1to2yo = (count_rota_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_rota'].sum():
+        #     count_rota_episodes2 = df['gi_pathogen_count_rota'].sum()
+        #     inc_100cy_rota_2to5yo = (count_rota_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by Shigella
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_shig'].sum():
+        #     count_shig_episodes0 = df['gi_pathogen_count_shig'].sum()
+        #     inc_100cy_shig_under1 = (count_shig_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'shigella': inc_100cy_shig_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_shig'].sum():
+        #     count_shig_episodes1 = df['gi_pathogen_count_shig'].sum()
+        #     inc_100cy_shig_1to2yo = (count_shig_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_shig'].sum():
+        #     count_shig_episodes2 = df['gi_pathogen_count_shig'].sum()
+        #     inc_100cy_shig_2to5yo = (count_shig_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by Adenovirus
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_adeno'].sum():
+        #     count_adeno_episodes0 = df['gi_pathogen_count_adeno'].sum()
+        #     inc_100cy_adeno_under1 = (count_adeno_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'adenovirus': inc_100cy_adeno_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_adeno'].sum():
+        #     count_adeno_episodes1 = df['gi_pathogen_count_adeno'].sum()
+        #     inc_100cy_adeno_1to2yo = (count_adeno_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_adeno'].sum():
+        #     count_adeno_episodes2 = df['gi_pathogen_count_adeno'].sum()
+        #     inc_100cy_adeno_2to5yo = (count_adeno_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by Cryptosporidium
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_crypto'].sum():
+        #     count_crypto_episodes0 = df['gi_pathogen_count_crypto'].sum()
+        #     inc_100cy_crypto_under1 = (count_crypto_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'cryptosporidium': inc_100cy_crypto_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_crypto'].sum():
+        #     count_crypto_episodes1 = df['gi_pathogen_count_crypto'].sum()
+        #     inc_100cy_crypto_1to2yo = (count_crypto_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_crypto'].sum():
+        #     count_crypto_episodes2 = df['gi_pathogen_count_crypto'].sum()
+        #     inc_100cy_crypto_2to5yo = (count_crypto_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by Campylobacter
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_campylo'].sum():
+        #     count_campylo_episodes0 = df['gi_pathogen_count_campylo'].sum()
+        #     inc_100cy_campylo_under1 = (count_campylo_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'campylobacter': inc_100cy_campylo_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_campylo'].sum():
+        #     count_campylo_episodes1 = df['gi_pathogen_count_campylo'].sum()
+        #     inc_100cy_campylo_1to2yo = (count_campylo_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_campylo'].sum():
+        #     count_campylo_episodes2 = df['gi_pathogen_count_campylo'].sum()
+        #     inc_100cy_campylo_2to5yo = (count_campylo_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by ST-ETEC
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_ETEC'].sum():
+        #     count_ETEC_episodes0 = df['gi_pathogen_count_ETEC'].sum()
+        #     inc_100cy_ETEC_under1 = (count_ETEC_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'ETEC': inc_100cy_ETEC_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_ETEC'].sum():
+        #     count_ETEC_episodes1 = df['gi_pathogen_count_ETEC'].sum()
+        #     inc_100cy_ETEC_1to2yo = (count_ETEC_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_ETEC'].sum():
+        #     count_ETEC_episodes2 = df['gi_pathogen_count_ETEC'].sum()
+        #     inc_100cy_ETEC_2to5yo = (count_ETEC_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by Sapovirus
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_sapo'].sum():
+        #     count_sapo_episodes0 = df['gi_pathogen_count_sapo'].sum()
+        #     inc_100cy_sapo_under1 = (count_sapo_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'sapovirus': inc_100cy_sapo_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_sapo'].sum():
+        #     count_sapo_episodes1 = df['gi_pathogen_count_sapo'].sum()
+        #     inc_100cy_sapo_1to2yo = (count_sapo_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_sapo'].sum():
+        #     count_sapo_episodes2 = df['gi_pathogen_count_sapo'].sum()
+        #     inc_100cy_sapo_2to5yo = (count_sapo_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by Norovirus
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_noro'].sum():
+        #     count_noro_episodes0 = df['gi_pathogen_count_noro'].sum()
+        #     inc_100cy_noro_under1 = (count_noro_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'norovirus': inc_100cy_noro_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_noro'].sum():
+        #     count_noro_episodes1 = df['gi_pathogen_count_noro'].sum()
+        #     inc_100cy_noro_1to2yo = (count_noro_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_noro'].sum():
+        #     count_noro_episodes2 = df['gi_pathogen_count_noro'].sum()
+        #     inc_100cy_noro_2to5yo = (count_noro_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by Astrovirus
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_astro'].sum():
+        #     count_astro_episodes0 = df['gi_pathogen_count_astro'].sum()
+        #     inc_100cy_astro_under1 = (count_astro_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'astrovirus': inc_100cy_astro_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_astro'].sum():
+        #     count_astro_episodes1 = df['gi_pathogen_count_astro'].sum()
+        #     inc_100cy_astro_1to2yo = (count_astro_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_astro'].sum():
+        #     count_astro_episodes2 = df['gi_pathogen_count_astro'].sum()
+        #     inc_100cy_astro_2to5yo = (count_astro_episodes2 / len_24to59mo) * 100
+        #
+        # # counts for diarrhoeal episodes cause by tEPEC
+        # if df.loc[df.age_years < 1, 'gi_pathogen_count_EPEC'].sum():
+        #     count_EPEC_episodes0 = df['gi_pathogen_count_EPEC'].sum()
+        #     inc_100cy_EPEC_under1 = (count_EPEC_episodes0 / len_under12mo) * 100
+        #     logger.info('%s|episodes_pathogen_counts_0to11mo|%s', now,
+        #                 {'EPEC': inc_100cy_EPEC_under1})
+        # if df.loc[(df.age_years >= 1) & (df.age_years < 2), 'gi_pathogen_count_EPEC'].sum():
+        #     count_EPEC_episodes1 = df['gi_pathogen_count_EPEC'].sum()
+        #     inc_100cy_EPEC_1to2yo = (count_EPEC_episodes1 / len_11to23mo) * 100
+        # if df.loc[(df.age_years >= 2) & (df.age_years < 5), 'gi_pathogen_count_EPEC'].sum():
+        #     count_EPEC_episodes2 = df['gi_pathogen_count_EPEC'].sum()
+        #     inc_100cy_EPEC_2to5yo = (count_EPEC_episodes2 / len_24to59mo) * 100
+        #
+        # # TODO: I think it's easier to output the number of events in the logger and work out the incidence afterwards.
+        # # So, I would propose just logging value counts.
+        #
+        # # log the clinical cases
+        # AWD_cases = \
+        #     df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+        #            (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea') & (df.gi_diarrhoea_type != 'persistent')]
+        # dysentery_cases = \
+        #     df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+        #            (df.gi_diarrhoea_acute_type == 'dysentery') & (df.gi_diarrhoea_type != 'persistent')]
+        # persistent_diarr_cases = \
+        #     df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+        #            (df.gi_diarrhoea_type == 'persistent')]
+        #
+        # clinical_types = pd.concat([AWD_cases, dysentery_cases, persistent_diarr_cases], axis=0).sort_index()
+        #
+        # logger.info('%s|clinical_diarrhoea_type|%s', self.sim.date,
+        #             {  # 'total': len(clinical_types),
+        #                 'AWD': len(AWD_cases),
+        #                 'dysentery': len(dysentery_cases),
+        #                 'persistent': len(persistent_diarr_cases)
+        #             })
+        #
+        # # log information on attributable pathogens
+        # pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
+        #
+        # under5 = df[df.is_alive & df.age_years.between(0, 5)]
+        # # all_patho_counts = sum(pathogen_count)
+        # length_under5 = len(under5)
+        # # total_inc = all_patho_counts * 4 * 100 / length_under5
+        # rota_inc = (pathogen_count['rotavirus'] / length_under5) * 100 * 4
+        # shigella_inc = (pathogen_count['shigella'] / length_under5) * 100 * 4
+        # adeno_inc = (pathogen_count['adenovirus'] / length_under5) * 100 * 4
+        # crypto_inc = (pathogen_count['cryptosporidium'] * 4 / length_under5) * 100 * 4
+        # campylo_inc = (pathogen_count['campylobacter'] * 4 / length_under5) * 100 * 4
+        # ETEC_inc = (pathogen_count['ST-ETEC'] / length_under5) * 100 * 4
+        # sapo_inc = (pathogen_count['sapovirus'] / length_under5) * 100 * 4
+        # noro_inc = (pathogen_count['norovirus'] / length_under5) * 100 * 4
+        # astro_inc = (pathogen_count['astrovirus'] / length_under5) * 100 * 4
+        # tEPEC_inc = (pathogen_count['tEPEC'] / length_under5) * 100 * 4
+        #
+        # # incidence rate by pathogen
+        # logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
+        #             {  # 'total': total_inc,
+        #                 'rotavirus': rota_inc,
+        #                 'shigella': shigella_inc,
+        #                 'adenovirus': adeno_inc,
+        #                 'cryptosporidium': crypto_inc,
+        #                 'campylobacter': campylo_inc,
+        #                 'ETEC': ETEC_inc,
+        #                 'sapovirus': sapo_inc,
+        #                 'norovirus': noro_inc,
+        #                 'astrovirus': astro_inc,
+        #                 'tEPEC': tEPEC_inc
+        #             })
+        #
+        # # incidence rate per age group by pathogen
+        # pathogen_0to11mo = df[df.is_alive & (df.age_years < 1)].groupby('gi_diarrhoea_pathogen').size()
+        # len_under12mo = df[df.is_alive & (df.age_years < 1)]
+        # pathogen_12to23mo = df[df.is_alive & (df.age_years >= 1) & (df.age_years < 2)].groupby(
+        #     'gi_diarrhoea_pathogen').size()
+        # len_11to23mo = df[df.is_alive & (df.age_years >= 1) & (df.age_years < 2)]
+        # pathogen_24to59mo = df[df.is_alive & (df.age_years >= 2) & (df.age_years < 5)].groupby(
+        #     'gi_diarrhoea_pathogen').size()
+        # len_24to59mo = df[df.is_alive & (df.age_years >= 2) & (df.age_years < 5)]
+        #
+        # rota_inc_by_age = [((pathogen_0to11mo['rotavirus'] * 4 * 100) / len(len_under12mo)),
+        #                    ((pathogen_12to23mo['rotavirus'] * 4 * 100) / len(len_11to23mo)),
+        #                    ((pathogen_24to59mo['rotavirus'] * 4 * 100) / len(len_24to59mo))]
+        # shig_inc_by_age = [(pathogen_0to11mo['shigella'] * 4 * 100) / len(len_under12mo),
+        #                    (pathogen_12to23mo['shigella'] * 4 * 100) / len(len_11to23mo),
+        #                    (pathogen_24to59mo['shigella'] * 4 * 100) / len(len_24to59mo)]
+        # adeno_inc_by_age = [(pathogen_0to11mo['adenovirus'] * 4 * 100) / len(len_under12mo),
+        #                     (pathogen_12to23mo['adenovirus'] * 4 * 100) / len(len_11to23mo),
+        #                     (pathogen_24to59mo['adenovirus'] * 4 * 100) / len(len_24to59mo)]
+        # crypto_inc_by_age = [(pathogen_0to11mo['cryptosporidium'] * 4 * 100) / len(len_under12mo),
+        #                      (pathogen_12to23mo['cryptosporidium'] * 4 * 100) / len(len_11to23mo),
+        #                      (pathogen_24to59mo['cryptosporidium'] * 4 * 100) / len(len_24to59mo)]
+        # campylo_inc_by_age = [(pathogen_0to11mo['campylobacter'] * 4 * 100) / len(len_under12mo),
+        #                       (pathogen_12to23mo['campylobacter'] * 4 * 100) / len(len_11to23mo),
+        #                       (pathogen_24to59mo['campylobacter'] * 4 * 100) / len(len_24to59mo)]
+        # etec_inc_by_age = [(pathogen_0to11mo['ST-ETEC'] * 4 * 100) / len(len_under12mo),
+        #                    (pathogen_12to23mo['ST-ETEC'] * 4 * 100) / len(len_11to23mo),
+        #                    (pathogen_24to59mo['ST-ETEC'] * 4 * 100) / len(len_24to59mo)]
+        # sapo_inc_by_age = [(pathogen_0to11mo['sapovirus'] * 4 * 100) / len(len_under12mo),
+        #                    (pathogen_12to23mo['sapovirus'] * 4 * 100) / len(len_11to23mo),
+        #                    (pathogen_24to59mo['sapovirus'] * 4 * 100) / len(len_24to59mo)]
+        # noro_inc_by_age = [(pathogen_0to11mo['norovirus'] * 4 * 100) / len(len_under12mo),
+        #                    (pathogen_12to23mo['norovirus'] * 4 * 100) / len(len_11to23mo),
+        #                    (pathogen_24to59mo['norovirus'] * 4 * 100) / len(len_24to59mo)]
+        # astro_inc_by_age = [(pathogen_0to11mo['astrovirus'] * 4 * 100) / len(len_under12mo),
+        #                     (pathogen_12to23mo['astrovirus'] * 4 * 100) / len(len_11to23mo),
+        #                     (pathogen_24to59mo['astrovirus'] * 4 * 100) / len(len_24to59mo)]
+        # epec_inc_by_age = [(pathogen_0to11mo['tEPEC'] * 4 * 100) / len(len_under12mo),
+        #                    (pathogen_12to23mo['tEPEC'] * 4 * 100) / len(len_11to23mo),
+        #                    (pathogen_24to59mo['tEPEC'] * 4 * 100) / len(len_24to59mo)]
+        #
+        # logger.info('%s|diarr_incidence_age0_11|%s', self.sim.date,
+        #             {'total': (sum(pathogen_0to11mo) * 4 * 100) / len_under12mo.size,
+        #              'rotavirus': rota_inc_by_age[0],
+        #              'shigella': shig_inc_by_age[0],
+        #              'adenovirus': adeno_inc_by_age[0],
+        #              'cryptosporidium': crypto_inc_by_age[0],
+        #              'campylobacter': campylo_inc_by_age[0],
+        #              'ETEC': etec_inc_by_age[0],
+        #              'sapovirus': sapo_inc_by_age[0],
+        #              'norovirus': noro_inc_by_age[0],
+        #              'astrovirus': astro_inc_by_age[0],
+        #              'tEPEC': epec_inc_by_age[0]
+        #              })
+        # logger.info('%s|diarr_incidence_age12_23|%s', self.sim.date,
+        #             {'total': (sum(pathogen_0to11mo) * 4 * 100) / len_11to23mo.size,
+        #              'rotavirus': rota_inc_by_age[1],
+        #              'shigella': shig_inc_by_age[1],
+        #              'adenovirus': adeno_inc_by_age[1],
+        #              'cryptosporidium': crypto_inc_by_age[1],
+        #              'campylobacter': campylo_inc_by_age[1],
+        #              'ETEC': etec_inc_by_age[1],
+        #              'sapovirus': sapo_inc_by_age[1],
+        #              'norovirus': noro_inc_by_age[1],
+        #              'astrovirus': astro_inc_by_age[1],
+        #              'tEPEC': epec_inc_by_age[1]
+        #              })
+        # logger.info('%s|diarr_incidence_age24_59|%s', self.sim.date,
+        #             {'total': (sum(pathogen_0to11mo) * 4 * 100) / pathogen_24to59mo.size,
+        #              'rotavirus': rota_inc_by_age[2],
+        #              'shigella': shig_inc_by_age[2],
+        #              'adenovirus': adeno_inc_by_age[2],
+        #              'cryptosporidium': crypto_inc_by_age[2],
+        #              'campylobacter': campylo_inc_by_age[2],
+        #              'ETEC': etec_inc_by_age[2],
+        #              'sapovirus': sapo_inc_by_age[2],
+        #              'norovirus': noro_inc_by_age[2],
+        #              'astrovirus': astro_inc_by_age[2],
+        #              'tEPEC': epec_inc_by_age[2]
+        #              })
