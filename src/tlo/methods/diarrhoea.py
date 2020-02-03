@@ -42,11 +42,11 @@ class Diarrhoea(Module):
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_incidence_diarrhoea_by_crypto':
+        'base_incidence_diarrhoea_by_cryptosporidium':
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_incidence_diarrhoea_by_campylo':
+        'base_incidence_diarrhoea_by_campylobacter':
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
                       ),
@@ -66,7 +66,7 @@ class Diarrhoea(Module):
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_incidence_diarrhoea_by_EPEC':
+        'base_incidence_diarrhoea_by_tEPEC':
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
                       ),
@@ -103,10 +103,10 @@ class Diarrhoea(Module):
         'proportion_AWD_by_adenovirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused by adenovirus'
                       ),
-        'proportion_AWD_by_crypto':
+        'proportion_AWD_by_cryptosporidium':
             Parameter(Types.REAL, 'acute diarrhoea type caused by cryptosporidium'
                       ),
-        'proportion_AWD_by_campylo':
+        'proportion_AWD_by_campylobacter':
             Parameter(Types.REAL, 'acute diarrhoea type caused by campylobacter'
                       ),
         'proportion_AWD_by_ST-ETEC':
@@ -121,7 +121,7 @@ class Diarrhoea(Module):
         'proportion_AWD_by_astrovirus':
             Parameter(Types.REAL, 'acute diarrhoea type caused by astrovirus'
                       ),
-        'proportion_AWD_by_EPEC':
+        'proportion_AWD_by_tEPEC':
             Parameter(Types.REAL, 'acute diarrhoea type caused by tEPEC'
                       ),
         'fever_by_rotavirus':
@@ -133,10 +133,10 @@ class Diarrhoea(Module):
         'fever_by_adenovirus':
             Parameter(Types.REAL, 'fever caused by adenovirus'
                       ),
-        'fever_by_crypto':
+        'fever_by_cryptosporidium':
             Parameter(Types.REAL, 'fever caused by cryptosporidium'
                       ),
-        'fever_by_campylo':
+        'fever_by_campylobacter':
             Parameter(Types.REAL, 'fever caused by campylobacter'
                       ),
         'fever_by_ST-ETEC':
@@ -151,7 +151,7 @@ class Diarrhoea(Module):
         'fever_by_astrovirus':
             Parameter(Types.REAL, 'fever caused by astrovirus'
                       ),
-        'fever_by_EPEC':
+        'fever_by_tEPEC':
             Parameter(Types.REAL, 'fever caused by tEPEC'
                       ),
         'vomiting_by_rotavirus':
@@ -163,10 +163,10 @@ class Diarrhoea(Module):
         'vomiting_by_adenovirus':
             Parameter(Types.REAL, 'vomiting caused by adenovirus'
                       ),
-        'vomiting_by_crypto':
+        'vomiting_by_cryptosporidium':
             Parameter(Types.REAL, 'vomiting caused by cryptosporidium'
                       ),
-        'vomiting_by_campylo':
+        'vomiting_by_campylobacter':
             Parameter(Types.REAL, 'vomiting caused by campylobacter'
                       ),
         'vomiting_by_ST-ETEC':
@@ -181,7 +181,7 @@ class Diarrhoea(Module):
         'vomiting_by_astrovirus':
             Parameter(Types.REAL, 'vomiting caused by astrovirus'
                       ),
-        'vomiting_by_EPEC':
+        'vomiting_by_tEPEC':
             Parameter(Types.REAL, 'vomiting caused by tEPEC'
                       ),
         'dehydration_by_rotavirus':
@@ -193,10 +193,10 @@ class Diarrhoea(Module):
         'dehydration_by_adenovirus':
             Parameter(Types.REAL, 'any dehydration caused by adenovirus'
                       ),
-        'dehydration_by_crypto':
+        'dehydration_by_cryptosporidium':
             Parameter(Types.REAL, 'any dehydration caused by cryptosporidium'
                       ),
-        'dehydration_by_campylo':
+        'dehydration_by_campylobacter':
             Parameter(Types.REAL, 'any dehydration caused by campylobacter'
                       ),
         'dehydration_by_ST-ETEC':
@@ -211,7 +211,7 @@ class Diarrhoea(Module):
         'dehydration_by_astrovirus':
             Parameter(Types.REAL, 'any dehydration caused by astrovirus'
                       ),
-        'dehydration_by_EPEC':
+        'dehydration_by_tEPEC':
             Parameter(Types.REAL, 'any dehydration caused by tEPEC'
                       ),
         'prolonged_diarr_rotavirus':
@@ -223,10 +223,10 @@ class Diarrhoea(Module):
         'prolonged_diarr_adenovirus':
             Parameter(Types.REAL, 'prolonged episode by adenovirus'
                       ),
-        'prolonged_diarr_crypto':
+        'prolonged_diarr_cryptosporidium':
             Parameter(Types.REAL, 'prolonged episode by cryptosporidium'
                       ),
-        'prolonged_diarr_campylo':
+        'prolonged_diarr_campylobacter':
             Parameter(Types.REAL, 'prolonged episode by campylobacter'
                       ),
         'prolonged_diarr_ST-ETEC':
@@ -241,7 +241,7 @@ class Diarrhoea(Module):
         'prolonged_diarr_astrovirus':
             Parameter(Types.REAL, 'prolonged episode by norovirus'
                       ),
-        'prolonged_diarr_EPEC':
+        'prolonged_diarr_tEPEC':
             Parameter(Types.REAL, 'prolonged episode by tEPEC'
                       ),
         'prob_prolonged_to_persistent_diarr':
@@ -303,10 +303,7 @@ class Diarrhoea(Module):
                       ),
         'rr_diarr_death_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea death for severe acute malnutrition'
-                      ),
-        'daly_wts':
-            Parameter(Types.DICT, 'DALY weights for diarrhoea'
-                      ),
+                      )
     }
 
     PROPERTIES = {
@@ -354,6 +351,9 @@ class Diarrhoea(Module):
         # dict to hold the probability of onset of different types of symptom given a pathgoen:
         self.prob_symptoms = dict()
 
+        # dict to hold the DALY weights
+        self.daly_wts = dict()
+
         # dict to hold counters for the number of episodes of diarrhoea by pathogen-type and age-group
         # (0yrs, 1yrs, 2-4yrs)
         blank_counter = dict(zip(self.pathogens, [0]*len(self.pathogens)))
@@ -381,13 +381,12 @@ class Diarrhoea(Module):
             assert isinstance(self.parameters[param_name], type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
         # Get DALY weights
-        p['daly_wts'] = dict()
         if 'HealthBurden' in self.sim.modules.keys():
-            p['daly_wts']['mild_diarrhoea'] = \
+            self.daly_wts['mild_diarrhoea'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=32)
-            p['daly_wts']['moderate_diarrhoea'] = \
+            self.daly_wts['moderate_diarrhoea'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=35)
-            p['daly_wts']['severe_diarrhoea'] = \
+            self.daly_wts['severe_diarrhoea'] = \
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=34)
 
         # --------------------------------------------------------------------------------------------
@@ -398,10 +397,10 @@ class Diarrhoea(Module):
             'rotavirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_rotavirus'][0])
-                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_rotavirus'][1])
-                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_rotavirus'][2])
-                                     .otherwise(0.0),
+                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_rotavirus'][0])
+                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_rotavirus'][1])
+                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_rotavirus'][2])
+                                         .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                      # Predictor('li_no_clean_drinking_water').
@@ -421,10 +420,10 @@ class Diarrhoea(Module):
             'shigella': LinearModel(LinearModelType.MULTIPLICATIVE,
                                     1.0,
                                     Predictor('age_years')
-                                    .when('.between(0,0)', p['base_incidence_diarrhoea_by_shigella'][0])
-                                    .when('.between(1,1)', p['base_incidence_diarrhoea_by_shigella'][1])
-                                    .when('.between(2,4)', p['base_incidence_diarrhoea_by_shigella'][2])
-                                    .otherwise(0.0),
+                                        .when('.between(0,0)', p['base_incidence_diarrhoea_by_shigella'][0])
+                                        .when('.between(1,1)', p['base_incidence_diarrhoea_by_shigella'][1])
+                                        .when('.between(2,4)', p['base_incidence_diarrhoea_by_shigella'][2])
+                                        .otherwise(0.0),
                                     # Predictor('li_no_access_handwashing')
                                     # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                     # Predictor('li_no_clean_drinking_water').
@@ -444,10 +443,10 @@ class Diarrhoea(Module):
             'adenovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', p['base_incidence_diarrhoea_by_adenovirus'][0])
-                                      .when('.between(1,1)', p['base_incidence_diarrhoea_by_adenovirus'][1])
-                                      .when('.between(2,4)', p['base_incidence_diarrhoea_by_adenovirus'][2])
-                                      .otherwise(0.0),
+                                          .when('.between(0,0)', p['base_incidence_diarrhoea_by_adenovirus'][0])
+                                          .when('.between(1,1)', p['base_incidence_diarrhoea_by_adenovirus'][1])
+                                          .when('.between(2,4)', p['base_incidence_diarrhoea_by_adenovirus'][2])
+                                          .otherwise(0.0),
                                       # Predictor('li_no_access_handwashing')
                                       # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                       # Predictor('li_no_clean_drinking_water').
@@ -467,10 +466,10 @@ class Diarrhoea(Module):
             'cryptosporidium': LinearModel(LinearModelType.MULTIPLICATIVE,
                                            1.0,
                                            Predictor('age_years')
-                                           .when('.between(0,0)', p['base_incidence_diarrhoea_by_crypto'][0])
-                                           .when('.between(1,1)', p['base_incidence_diarrhoea_by_crypto'][1])
-                                           .when('.between(2,4)', p['base_incidence_diarrhoea_by_crypto'][2])
-                                           .otherwise(0.0),
+                                               .when('.between(0,0)', p['base_incidence_diarrhoea_by_cryptosporidium'][0])
+                                               .when('.between(1,1)', p['base_incidence_diarrhoea_by_cryptosporidium'][1])
+                                               .when('.between(2,4)', p['base_incidence_diarrhoea_by_cryptosporidium'][2])
+                                               .otherwise(0.0),
                                            # Predictor('li_no_access_handwashing')
                                            # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                            # Predictor('li_no_clean_drinking_water').
@@ -490,10 +489,10 @@ class Diarrhoea(Module):
             'campylobacter': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('age_years')
-                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_campylo'][0])
-                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_campylo'][1])
-                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_campylo'][2])
-                                         .otherwise(0.0),
+                                             .when('.between(0,0)', p['base_incidence_diarrhoea_by_campylobacter'][0])
+                                             .when('.between(1,1)', p['base_incidence_diarrhoea_by_campylobacter'][1])
+                                             .when('.between(2,4)', p['base_incidence_diarrhoea_by_campylobacter'][2])
+                                             .otherwise(0.0),
                                          # Predictor('li_no_access_handwashing')
                                          # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                          # Predictor('li_no_clean_drinking_water').
@@ -513,10 +512,10 @@ class Diarrhoea(Module):
             'ST-ETEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                    1.0,
                                    Predictor('age_years')
-                                   .when('.between(0,0)', p['base_incidence_diarrhoea_by_ST-ETEC'][0])
-                                   .when('.between(1,1)', p['base_incidence_diarrhoea_by_ST-ETEC'][1])
-                                   .when('.between(2,4)', p['base_incidence_diarrhoea_by_ST-ETEC'][2])
-                                   .otherwise(0.0),
+                                       .when('.between(0,0)', p['base_incidence_diarrhoea_by_ST-ETEC'][0])
+                                       .when('.between(1,1)', p['base_incidence_diarrhoea_by_ST-ETEC'][1])
+                                       .when('.between(2,4)', p['base_incidence_diarrhoea_by_ST-ETEC'][2])
+                                       .otherwise(0.0),
                                    # Predictor('li_no_access_handwashing')
                                    # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                    # Predictor('li_no_clean_drinking_water').
@@ -536,10 +535,10 @@ class Diarrhoea(Module):
             'sapovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_sapovirus'][0])
-                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_sapovirus'][1])
-                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_sapovirus'][2])
-                                     .otherwise(0.0),
+                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_sapovirus'][0])
+                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_sapovirus'][1])
+                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_sapovirus'][2])
+                                         .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                      # Predictor('li_no_clean_drinking_water').
@@ -559,10 +558,10 @@ class Diarrhoea(Module):
             'norovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_norovirus'][0])
-                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_norovirus'][1])
-                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_norovirus'][2])
-                                     .otherwise(0.0),
+                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_norovirus'][0])
+                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_norovirus'][1])
+                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_norovirus'][2])
+                                         .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                      # Predictor('li_no_clean_drinking_water').
@@ -582,10 +581,10 @@ class Diarrhoea(Module):
             'astrovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', p['base_incidence_diarrhoea_by_astrovirus'][0])
-                                      .when('.between(1,1)', p['base_incidence_diarrhoea_by_astrovirus'][1])
-                                      .when('.between(2,4)', p['base_incidence_diarrhoea_by_astrovirus'][2])
-                                      .otherwise(0.0),
+                                          .when('.between(0,0)', p['base_incidence_diarrhoea_by_astrovirus'][0])
+                                          .when('.between(1,1)', p['base_incidence_diarrhoea_by_astrovirus'][1])
+                                          .when('.between(2,4)', p['base_incidence_diarrhoea_by_astrovirus'][2])
+                                          .otherwise(0.0),
                                       # Predictor('li_no_access_handwashing')
                                       # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                       # Predictor('li_no_clean_drinking_water').
@@ -605,10 +604,10 @@ class Diarrhoea(Module):
             'tEPEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                  1.0,
                                  Predictor('age_years')
-                                 .when('.between(0,0)', p['base_incidence_diarrhoea_by_EPEC'][0])
-                                 .when('.between(1,1)', p['base_incidence_diarrhoea_by_EPEC'][1])
-                                 .when('.between(2,4)', p['base_incidence_diarrhoea_by_EPEC'][2])
-                                 .otherwise(0.0),
+                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_tEPEC'][0])
+                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_tEPEC'][1])
+                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_tEPEC'][2])
+                                     .otherwise(0.0),
                                  # Predictor('li_no_access_handwashing')
                                  # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                  # Predictor('li_no_clean_drinking_water').
@@ -660,21 +659,21 @@ class Diarrhoea(Module):
             },
 
             'cryptosporidium': {
-                'watery_diarrhoea': p['proportion_AWD_by_crypto'],
-                'bloody_diarrhoea': 1 - p['proportion_AWD_by_crypto'],
-                'fever': p['fever_by_crypto'],
-                'vomiting': p['vomiting_by_crypto'],
-                'dehydration': p['dehydration_by_crypto'],
-                'prolonged_diarrhoea': p['prolonged_diarr_crypto']
+                'watery_diarrhoea': p['proportion_AWD_by_cryptosporidium'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_cryptosporidium'],
+                'fever': p['fever_by_cryptosporidium'],
+                'vomiting': p['vomiting_by_cryptosporidium'],
+                'dehydration': p['dehydration_by_cryptosporidium'],
+                'prolonged_diarrhoea': p['prolonged_diarr_cryptosporidium']
             },
 
             'campylobacter': {
-                'watery_diarrhoea': p['proportion_AWD_by_campylo'],
-                'bloody_diarrhoea': 1 - p['proportion_AWD_by_campylo'],
-                'fever': p['fever_by_campylo'],
-                'vomiting': p['vomiting_by_campylo'],
-                'dehydration': p['dehydration_by_campylo'],
-                'prolonged_diarrhoea': p['prolonged_diarr_campylo']
+                'watery_diarrhoea': p['proportion_AWD_by_campylobacter'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_campylobacter'],
+                'fever': p['fever_by_campylobacter'],
+                'vomiting': p['vomiting_by_campylobacter'],
+                'dehydration': p['dehydration_by_campylobacter'],
+                'prolonged_diarrhoea': p['prolonged_diarr_campylobacter']
             },
 
             'ST-ETEC': {
@@ -714,12 +713,12 @@ class Diarrhoea(Module):
             },
 
             'tEPEC': {
-                'watery_diarrhoea': p['proportion_AWD_by_EPEC'],
-                'bloody_diarrhoea': 1 - p['proportion_AWD_by_EPEC'],
+                'watery_diarrhoea': p['proportion_AWD_by_tEPEC'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_tEPEC'],
                 'fever': p['fever_by_rotavirus'],
-                'vomiting': p['vomiting_by_EPEC'],
-                'dehydration': p['dehydration_by_EPEC'],
-                'prolonged_diarrhoea': p['prolonged_diarr_EPEC']
+                'vomiting': p['vomiting_by_tEPEC'],
+                'dehydration': p['dehydration_by_tEPEC'],
+                'prolonged_diarrhoea': p['prolonged_diarr_tEPEC']
             },
         })
 
@@ -734,39 +733,20 @@ class Diarrhoea(Module):
         )
 
         # --------------------------------------------------------------------------------------------
-        # Asssign the probability of becoming persisent
-
-        # # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
-        # self.parameters['progression_persistent_equation'] = \
-        #     LinearModel(LinearModelType.MULTIPLICATIVE,
-        #                 0.2,
-        #                 Predictor('age_years')
-        #                 .when('.between(0,0)', 1)
-        #                 .when('.between(1,1)', m.rr_bec_persistent_age12to23)
-        #                 .when('.between(2,4)', m.rr_bec_persistent_age24to59)
-        #                 .otherwise(0.0),
-        #                 # # Predictor('hv_inf')
-        #                 # # .when(False, m.rr_bec_persistent_HIV),
-        #                 # Predictor('malnutrition').
-        #                 # when(False, m.rr_bec_persistent_SAM),
-        #                 # Predictor('exclusive_breastfeeding').
-        #                 # when(False, m.rr_bec_persistent_excl_breast)
-        #                 )
-
-        # # # # # # # # # # # # ASSIGN THE RATE OF DEATH # # # # # # # # # # # #
+        # Creat the linear model for the risk of dying due to diarrhoea
         self.risk_of_death_diarrhoea = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
                         Predictor('gi_last_diarrhoea_type')
-                        .when('none', 1.0)  # -- to fill in !
-                        .when('acute', 1.0)  # -- to fill in !
-                        .when('prolonged', 1.0)  # -- to fill in !
-                        .when('persistent', 1.0)  # -- to fill in !
-                        .when('severe_persistent', 1.0),  # -- to fill in !
+                            .when('none', 1.0)  # -- to fill in !
+                            .when('acute', 1.0)  # -- to fill in !
+                            .when('prolonged', 1.0)  # -- to fill in !
+                            .when('persistent', 1.0)  # -- to fill in !
+                            .when('severe_persistent', 1.0),  # -- to fill in !
                         Predictor('age_years')
-                        .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
-                        .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
-                        .otherwise(0.0)
+                            .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
+                            .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
+                            .otherwise(0.0)
                         # # Predictor('hv_inf').
                         # # when(True, m.rr_gi_diarrhoea_HIV),
                         # Predictor('malnutrition').
@@ -779,8 +759,6 @@ class Diarrhoea(Module):
     def initialise_population(self, population):
         """
         Sets that there is no one with diarrahoea at initiation.
-        :param population:
-        :return:
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
@@ -845,10 +823,10 @@ class Diarrhoea(Module):
         # Map the status during last episode to a daly value and zero-out if the last episode is not current
         daly_values = df.loc[df['is_alive'], 'gi_last_diarrhoea_type'].map({
             'none': 0.0,
-            'acute': p['daly_wts']['mild_diarrhoea'],
-            'prolonged': p['daly_wts']['moderate_diarrhoea'],
-            'persistent': p['daly_wts']['moderate_diarrhoea'],
-            'severe_persistent': p['daly_wts']['severe_diarrhoea']
+            'acute': self.daly_wts['mild_diarrhoea'],
+            'prolonged':self.daly_wts['moderate_diarrhoea'],
+            'persistent': self.daly_wts['moderate_diarrhoea'],
+            'severe_persistent': self.daly_wts['severe_diarrhoea']
         })
 
         mask_currently_has_diarrhoaea = (df['gi_last_diarrhoea_date_of_onset'] <= self.sim.date)\
@@ -979,7 +957,5 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.module.incident_cases_counter
                     )
 
-
         # Reset the counters
         self.module.incident_cases_counter = self.module.incident_cases_counter_blank
-
