@@ -188,7 +188,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             if diagnosis == "severe_malaria":
 
                 logger.debug(
-                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
+                    "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_adult person %d date %s",
                     person_id,
                     (self.sim.date + DateOffset(days=1)),
                 )
