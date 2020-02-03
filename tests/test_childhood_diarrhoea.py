@@ -1,10 +1,19 @@
+
+#
+#  Ines -- whilst we work on this --- I recommend using the file 'diarrhoaea_run_me.py' in th sceipts/childhood_analysis.pu
+#
+#
+#
+
+
 import logging
 import os
 from pathlib import Path
 
 import pytest
 from tlo import Date, Simulation
-from tlo.methods import demography, enhanced_lifestyle, diarrhoea, healthsystem
+from tlo.methods import demography, enhanced_lifestyle, diarrhoea, healthsystem, symptommanager, healthburden, \
+    childhood_management, healthseekingbehaviour, contraception
 
 workbook_name = 'demography.xlsx'
 
@@ -24,8 +33,13 @@ def simulation():
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
+    sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
     # sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)

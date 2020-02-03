@@ -65,7 +65,6 @@ years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
-
 # %% -----------------------------------------------------------------------------------
 # Load Model Results on attributable pathogens
 incidence_by_patho_df = output['tlo.methods.new_diarrhoea']['diarr_incidence_by_patho']
