@@ -35,7 +35,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 200
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -157,8 +157,10 @@ for pathogen in sim.modules['Diarrhoea'].pathogens:
         calibration_incidence_rate_1_year_olds[pathogen],
         calibration_incidence_rate_2_to_4_year_olds[pathogen]
     ]
+    print(abs(np.array(input) * 4 / np.array(calibration)))
+
     # assert all((abs(np.array(input)*4 / np.array(calibration))- 1) < 1e-2)
-    # Not all of these are correct - but they are mostly roughly right.
+    # Not all of these are correct - but they are mostly roughly right.                         <---- Check this!
 
 
 # Produce a set of line plot comparing to the calibration data
@@ -205,9 +207,6 @@ plt.show()
 
 
 # %%
-# Calibration to the incidence rate at older ages?
-
-# Plots for older ages?
 
 # Look at deaths arising?
 

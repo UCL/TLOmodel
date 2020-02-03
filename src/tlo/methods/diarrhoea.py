@@ -829,6 +829,7 @@ class Diarrhoea(Module):
             'severe_persistent': self.daly_wts['severe_diarrhoea']
         })
 
+        #TODO; split this out by pathogen
         mask_currently_has_diarrhoaea = (df['gi_last_diarrhoea_date_of_onset'] <= self.sim.date)\
                                         & (df['gi_last_diarrhoea_recovered_date'] >= self.sim.date)
         daly_values.loc[~mask_currently_has_diarrhoaea] = 0.0
@@ -868,6 +869,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Create the probability of getting 'none' pathogen:
         # (Assumes that pathogens are mutually exclusive)
         probs_of_aquiring_pathogen['none'] = 1 - probs_of_aquiring_pathogen.sum(axis=1)
+        assert all(1.00 == probs_of_aquiring_pathogen.sum(axis=1))
 
         # TODO: could vectorize this: perhaps just looping through those that do get a pathogen
         # Determine which pathogen (if any) each person will acquire
@@ -932,7 +934,8 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'is_alive']) and (df.at[person_id, 'gi_last_diarrhoea_death_date']==self.sim.date):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
-                                                                  cause='diarrhoea'),
+                                                                  cause=df.at[person_id, 'gi_last_diarrhoea_pathogen']
+                                                                  ),
                                     self.sim.date)
 
 
