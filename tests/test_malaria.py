@@ -23,10 +23,10 @@ end_date = Date(2014, 1, 1)
 popsize = 100
 
 try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
 except NameError:
     # running interactively
-    resourcefilepath = 'resources'
+    resourcefilepath = "resources"
 
 
 @pytest.fixture(autouse=True)
@@ -43,19 +43,23 @@ def check_dtypes(simulation):
 
 # @pytest.fixture(scope='module')
 def test_sims(tmpdir):
-    service_availability = list(['malaria*'])
+    service_availability = list(["malaria*"])
     malaria_strat = 1  # levels: 0 = national; 1 = district
     malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
     sim = Simulation(start_date=start_date)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability,
-                                           mode_appt_constraints=0,
-                                           ignore_cons_constraints=True,
-                                           ignore_priority=True,
-                                           capabilities_coefficient=1.0))
+    sim.register(
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=service_availability,
+            mode_appt_constraints=0,
+            ignore_cons_constraints=True,
+            ignore_priority=True,
+            capabilities_coefficient=1.0,
+        )
+    )
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
@@ -63,8 +67,14 @@ def test_sims(tmpdir):
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(malaria.Malaria(resourcefilepath=resourcefilepath,
-                                 level=malaria_strat, testing=malaria_testing, itn=None))
+    sim.register(
+        malaria.Malaria(
+            resourcefilepath=resourcefilepath,
+            level=malaria_strat,
+            testing=malaria_testing,
+            itn=None,
+        )
+    )
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -74,11 +84,12 @@ def test_sims(tmpdir):
     # check scheduled malaria deaths occurring only due to severe malaria (not clinical or asym)
     df = sim.population.props
     assert not (
-        df.ma_date_death & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'none'))).any()
+        df.ma_date_death & ((df.ma_inf_type == "clinical") | (df.ma_inf_type == "none"))
+    ).any()
 
     # check cases /  treatment are occurring
     assert not (df.ma_clinical_counter == 0).all()
     assert not (df.ma_date_tx == pd.NaT).all()
 
     # check clinical malaria in pregnancy counter not including males
-    assert not any((df.sex == 'M') & (df.ma_clinical_preg_counter > 0))
+    assert not any((df.sex == "M") & (df.ma_clinical_preg_counter > 0))
