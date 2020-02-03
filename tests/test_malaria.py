@@ -22,7 +22,7 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+end_date = Date(2014, 1, 1)
 popsize = 100
 
 try:
@@ -45,10 +45,10 @@ def check_dtypes(simulation):
 
 
 # @pytest.fixture(scope='module')
-def test_no_hsi(tmpdir):
-
-    service_availability = ["*"]
+def test_sims(tmpdir):
+    service_availability = list(['malaria*'])
     malaria_strat = 1  # levels: 0 = national; 1 = district
+    malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
     sim = Simulation(start_date=start_date)
 
@@ -67,7 +67,7 @@ def test_no_hsi(tmpdir):
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(malaria.Malaria(resourcefilepath=resourcefilepath,
-                                 level=malaria_strat))
+                                 level=malaria_strat, testing=malaria_testing, itn=None))
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -79,10 +79,9 @@ def test_no_hsi(tmpdir):
     assert not (
         (df.ma_date_death) & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'none'))).any()
 
-    # check no treatment occurred
-    assert (df.ma_clinical_counter == 0).all()
-    assert (df.ma_tx == False).all()
-    assert (df.ma_date_tx == pd.NaT).all()
+    # check cases /  treatment are occurring
+    assert not (df.ma_clinical_counter == 0).all()
+    assert not (df.ma_date_tx == pd.NaT).all()
 
     # check clinical malaria in pregnancy counter not including males
-    assert ((df.sex == 'M') & (df.ma_clinical_preg_counter == 0)).all()
+    assert not any((df.sex == 'M') & (df.ma_clinical_preg_counter > 0))

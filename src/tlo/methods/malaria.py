@@ -1194,7 +1194,9 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         inf_preg = df.index[(df.ma_date_infected == now) & (df.ma_inf_type == 'clinical')
                             & df.is_pregnant]
-        df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
+
+        if len(inf_preg) > 0:
+            df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
 
         df.loc[sev_idx, 'ma_inf_type'] = 'severe'
 
