@@ -2240,9 +2240,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                         )
 
             # log the consumables used
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
+            self.sim.modules["HealthSystem"].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_needed, to_log=True
             )
 
@@ -2320,9 +2318,7 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
                     )
 
                     # log the consumables
-                    outcome_of_request_for_consumables = self.sim.modules[
-                        "HealthSystem"
-                    ].request_consumables(
+                    self.sim.modules["HealthSystem"].request_consumables(
                         hsi_event=self,
                         cons_req_as_footprint=the_cons_footprint,
                         to_log=True,
@@ -2402,9 +2398,7 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
                     )
 
                     # log the consumables
-                    outcome_of_request_for_consumables = self.sim.modules[
-                        "HealthSystem"
-                    ].request_consumables(
+                    self.sim.modules["HealthSystem"].request_consumables(
                         hsi_event=self,
                         cons_req_as_footprint=the_cons_footprint,
                         to_log=True,
@@ -2483,9 +2477,7 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
                     )
 
                     # log the consumables
-                    outcome_of_request_for_consumables = self.sim.modules[
-                        "HealthSystem"
-                    ].request_consumables(
+                    self.sim.modules["HealthSystem"].request_consumables(
                         hsi_event=self,
                         cons_req_as_footprint=the_cons_footprint,
                         to_log=True,
@@ -2563,9 +2555,7 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
                     )
 
                     # log the consumables
-                    outcome_of_request_for_consumables = self.sim.modules[
-                        "HealthSystem"
-                    ].request_consumables(
+                    self.sim.modules["HealthSystem"].request_consumables(
                         hsi_event=self,
                         cons_req_as_footprint=the_cons_footprint,
                         to_log=True,
@@ -2643,9 +2633,7 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
                     )
 
                     # log the consumables
-                    outcome_of_request_for_consumables = self.sim.modules[
-                        "HealthSystem"
-                    ].request_consumables(
+                    self.sim.modules["HealthSystem"].request_consumables(
                         hsi_event=self,
                         cons_req_as_footprint=the_cons_footprint,
                         to_log=True,
@@ -2712,9 +2700,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, "ma_iptp"] = True
 
                 # log the consumables
-                outcome_of_request_for_consumables = self.sim.modules[
-                    "HealthSystem"
-                ].request_consumables(
+                self.sim.modules["HealthSystem"].request_consumables(
                     hsi_event=self,
                     cons_req_as_footprint=the_cons_footprint,
                     to_log=True,
@@ -2849,7 +2835,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         clin_episodes = df[
             "ma_clinical_counter"
         ].sum()  # clinical episodes (inc severe)
-        incCounter_1000py = (clin_episodes / pop) * 1000
+        inc_counter_1000py = (clin_episodes / pop) * 1000
 
         clin_preg_episodes = df[
             "ma_clinical_preg_counter"
@@ -2866,7 +2852,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "new_cases_2_10": tmp2,
                 "population2_10": pop2_10,
                 "inc_1000py_2_10": inc_1000py_2_10,
-                "inc_clin_counter": incCounter_1000py,
+                "inc_clin_counter": inc_counter_1000py,
                 "clinical_preg_counter": clin_preg_episodes,
             },
         )
@@ -2904,7 +2890,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(
             "%s|prevalence|%s",
             now,
-            {"child2_10_prev": child_prev, "clinical_prev": prev_clin, },
+            {"child2_10_prev": child_prev, "clinical_prev": prev_clin},
         )
 
         # ------------------------------------ MORTALITY ------------------------------------
@@ -2913,7 +2899,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         mort_rate = deaths / pop
 
-        logger.info("%s|ma_mortality|%s", now, {"mort_rate": mort_rate, })
+        logger.info("%s|ma_mortality|%s", now, {"mort_rate": mort_rate})
 
 
 class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
