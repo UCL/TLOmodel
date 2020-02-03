@@ -50,7 +50,7 @@ class Specifiable:
         Types.SERIES: object,
         Types.DATA_FRAME: object,
         Types.STRING: object,
-        Types.DICT: dict
+        Types.DICT: object
     }
 
     """Map our Types to Python types."""
