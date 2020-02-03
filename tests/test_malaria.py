@@ -1,9 +1,6 @@
 import logging
 import os
-import time
 from pathlib import Path
-import datetime
-from tlo.analysis.utils import parse_log_file
 import pandas as pd
 import pytest
 
@@ -77,7 +74,7 @@ def test_sims(tmpdir):
     # check scheduled malaria deaths occurring only due to severe malaria (not clinical or asym)
     df = sim.population.props
     assert not (
-        (df.ma_date_death) & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'none'))).any()
+        df.ma_date_death & ((df.ma_inf_type == 'clinical') | (df.ma_inf_type == 'none'))).any()
 
     # check cases /  treatment are occurring
     assert not (df.ma_clinical_counter == 0).all()

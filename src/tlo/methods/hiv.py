@@ -514,7 +514,6 @@ class Hiv(Module):
 
         df.loc[hiv_ad, 'hv_proj_date_death'] = df.loc[hiv_ad, 'hv_date_inf'] + time_of_death
 
-
     def assign_symptom_level(self, population):
         """ assign level of symptoms to infected people: chronic or aids
         only for untreated people
@@ -1110,6 +1109,7 @@ class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
                                                                     priority=1,
                                                                     topen=now,
                                                                     tclose=None)
+
 
 # ---------------------------------------------------------------------------
 #   Launch outreach events
@@ -1991,9 +1991,9 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
             'Item_Code': []
         }
 
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+        request_cons = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
-            cons_req_as_footprint=the_cons_footprint
+            cons_req_as_footprint=the_cons_footprint, to_log=True
         )
 
     def did_not_run(self):
@@ -2035,9 +2035,9 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
             'Item_Code': [{item_code1: 1}]
         }
 
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+        request_cons = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
-            cons_req_as_footprint=the_cons_footprint
+            cons_req_as_footprint=the_cons_footprint, to_log=True
         )
 
         date_repeat_prescription = self.sim.date + DateOffset(months=3)

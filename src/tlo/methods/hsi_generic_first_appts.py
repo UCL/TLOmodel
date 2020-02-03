@@ -9,16 +9,7 @@ from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAn
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods import malaria
 from tlo.methods.malaria import HSI_Malaria_tx_compl_child, HSI_Malaria_tx_compl_adult
-from tlo.population import logger
 from tlo import DateOffset
-
-# ---------------------------------------------------------------------------------------------------------
-#
-#    ** NON-EMERGENCY APPOINTMENTS **
-#
-# ---------------------------------------------------------------------------------------------------------
-
-from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

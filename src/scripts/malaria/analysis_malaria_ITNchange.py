@@ -1,8 +1,12 @@
-import datetime
 import logging
 import os
 import time
 from pathlib import Path
+from tlo.analysis.utils import parse_log_file
+import datetime
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -92,12 +96,6 @@ print('Time taken', t1 - t0)
 
 # ---------------------------------------- PLOTS ---------------------------------------- #
 # %% read the results
-from tlo.analysis.utils import parse_log_file
-import datetime
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # --------------------------------------- import files --------------------------------------- #
@@ -192,7 +190,7 @@ model_years = model_years.dt.year
 start_date = 2010
 end_date = 2025
 
-# # --------------------------------------- get averages --------------------------------------- #
+# --------------------------------------- get averages --------------------------------------- #
 # INCIDENCE
 inc_baseline = np.mean(
     [inc_baseline1.inc_clin_counter,
@@ -267,8 +265,8 @@ mort_itn09 = np.mean(
      mort_itn092.mort_rate,
      mort_itn093.mort_rate],
     axis=0)
-# # --------------------------------------- create plots --------------------------------------- #
-## FIGURES
+# --------------------------------------- create plots --------------------------------------- #
+# FIGURES
 plt.style.use('ggplot')
 plt.figure(1, figsize=(8, 10))
 

@@ -896,10 +896,11 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
             # decide smear positive / negative
             # depends on HIV status
-            if (df.at[person_id, 'hv_inf'] == True) & (rng.rand() < params['prop_smear_positive_hiv']):
+            if df.at[person_id, 'hv_inf'] & (rng.rand() < params['prop_smear_positive_hiv']):
                 df.at[person_id, 'tb_smear'] = True
 
-            elif (df.at[person_id, 'hv_inf'] == False) & (rng.rand() < params['prop_smear_positive']):
+            # hiv-negative
+            elif rng.rand() < params['prop_smear_positive']:
                 df.at[person_id, 'tb_smear'] = True
 
             # ----------------------------------- SYMPTOMS -----------------------------------
@@ -1546,7 +1547,7 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         params = self.sim.modules['Tb'].parameters
-        prob_pulm = params['pulm_tb']
+        # prob_pulm = params['pulm_tb']
         rng = self.module.rng
         now = self.sim.date
 
@@ -1570,10 +1571,10 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
 
             # decide smear positive / negative
             # depends on HIV status
-            if (df.at[person_id, 'hv_inf'] == True) & (rng.rand() < params['prop_smear_positive_hiv']):
+            if df.at[person_id, 'hv_inf'] & (rng.rand() < params['prop_smear_positive_hiv']):
                 df.at[person_id, 'tb_smear'] = True
 
-            elif (df.at[person_id, 'hv_inf'] == False) & (rng.rand() < params['prop_smear_positive']):
+            elif rng.rand() < params['prop_smear_positive']:
                 df.at[person_id, 'tb_smear'] = True
 
             # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
@@ -2289,7 +2290,6 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         params = self.module.parameters
-        now = self.sim.date
 
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']

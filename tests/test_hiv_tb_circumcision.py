@@ -1,9 +1,6 @@
 import logging
 import os
-import time
 from pathlib import Path
-import pandas as pd
-
 import pytest
 
 from tlo import Date, Simulation
@@ -49,7 +46,7 @@ def test_simulation():
                                            ignore_cons_constraints=True,
                                            ignore_priority=True,
                                            capabilities_coefficient=1.0,
-                                           disable=True))  # disables the health system constraints so all HSI events run
+                                           disable=True))  # disables the health system constraints
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))

@@ -4,8 +4,7 @@ An example of a diagnostic algorithm that is called during an HSI Event.
 import pandas as pd
 import logging
 
-from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.methods import malaria
+from tlo import Module
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -70,7 +69,7 @@ class DxAlgorithmChild(Module):
 
         # get the symptoms of the person:
         symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
-        num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
+        # num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
         # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
         if 'fever' in self.sim.modules['SymptomManager'].has_what(person_id):
