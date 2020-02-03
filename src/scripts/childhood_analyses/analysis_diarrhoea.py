@@ -3,6 +3,7 @@ This will run the Diarrhoea Module and plot the incidence rate of each pathogen 
 This will then be compared with:
     * The input incidence rate for each pathogen
     * The desired incidence rate for each pathogen
+There is no treatment.
 """
 
 # %% Import Statements and initial declarations
@@ -34,7 +35,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 100
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -59,7 +60,6 @@ sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-# sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
 
@@ -97,30 +97,58 @@ pop.drop(columns=[x for x in range(5)], inplace=True)
 inc_rate = dict()
 for age_grp in counts.columns:
     c = counts[age_grp].apply(pd.Series)
-    inc_rate[age_grp] = c.div(pop[age_grp], axis=0).dropna()
+    i = c.div(pop[age_grp], axis=0).dropna()
+    i['year'] = pd.to_datetime(i.index).year
+    i.set_index('year', drop=True, inplace=True)
+    inc_rate[age_grp] = i
 
 # Get the incidence rates that were input:
 base_incidence_rate = dict()
 for pathogen in sim.modules['Diarrhoea'].pathogens:
     base_incidence_rate[pathogen] = \
         sim.modules['Diarrhoea'].parameters[f'base_incidence_diarrhoea_by_{pathogen}']
-# TODO: finish this when can rely on the name of the parameters
 
-
-# Compare this with the desried outputs.
-
-
-
-# TODO: look at deaths
-
-
-
-
-
-
-
-
-# Produce a plot:
-inc_rate['0y'].plot()
-
+# Produce a set of line plot:
+fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
+for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
+    ax = fig.axes[ax_num]
+    inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
+    ax.hlines(y=base_incidence_rate[pathogen][0],
+                     xmin=min(inc_rate['0y'].index),
+                     xmax=max(inc_rate['0y'].index),
+                     label='Parameter'
+            )
+    ax.set_title(f'{pathogen}')
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Incidence Rate")
+    ax.legend()
 plt.show()
+
+
+# Produce a bar plot:
+
+
+# %%
+# Compare this with the desired incidence level.
+
+# Get the incidence rates that were input:
+calibration_incidence_rate_0_year_olds= {
+        'rotavirus' : 5.0 ,
+        'shigella' : 5.0 ,
+        'adenovirus' : 5.0 ,
+        'cryptosporidium' : 5.0 ,
+        'campylobacter' : 5.0 ,
+        'ST-ETEC' : 5.0 ,
+        'sapovirus' : 5.0 ,
+        'norovirus' : 5.0 ,
+        'astrovirus' : 5.0 ,
+        'tEPEC' : 5.0
+}
+
+# TODO: this plot!
+
+
+
+
+
+
