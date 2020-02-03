@@ -1,9 +1,13 @@
-import datetime
 import logging
-import os
-from pathlib import Path
-import pandas as pd
 import time
+from tlo.analysis.utils import parse_log_file
+import datetime
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from pathlib import Path
+# import xlsxwriter
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -40,7 +44,6 @@ sim = Simulation(start_date=start_date)
 # TODO change the seed and filepath for each simulation
 sim.seed_rngs(25)
 logfile = outputpath + 'Malaria_Baseline3' + datestamp + '.log'
-
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -96,16 +99,6 @@ t1 = time.time()
 print('Time taken', t1 - t0)
 
 # %% read the results
-from tlo.analysis.utils import parse_log_file
-import datetime
-import os
-import matplotlib.pyplot as plt
-import numpy as np
-from tlo import Date
-import pandas as pd
-from pathlib import Path
-import xlsxwriter
-
 # model outputs
 # outputpath = './src/scripts/outputs/'
 # datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -152,10 +145,6 @@ inc_av = np.mean([inc1.inc_clin_counter, inc2.inc_clin_counter, inc3.inc_clin_co
 pfpr_av = np.mean([pfpr1.child2_10_prev, pfpr2.child2_10_prev, pfpr3.child2_10_prev], axis=0)
 tx_av = np.mean([tx1.treatment_coverage, tx2.treatment_coverage, tx3.treatment_coverage], axis=0)
 mort_av = np.mean([mort2.mort_rate, mort2.mort_rate, mort2.mort_rate], axis=0)
-
-
-
-
 
 # ----------------------------------- SAVE OUTPUTS -----------------------------------
 # out_path = '//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/'
@@ -221,7 +210,7 @@ WHO_data = pd.read_excel(
 )
 
 # ------------------------------------- SINGLE RUN FIGURES -----------------------------------------#
-## FIGURES
+# FIGURES
 # plt.figure(1, figsize=(10, 10))
 #
 # # Malaria incidence per 1000py - all ages with MAP model estimates
@@ -300,7 +289,7 @@ WHO_data = pd.read_excel(
 #
 
 # ------------------------------------- MULTIPLE RUN FIGURES -----------------------------------------#
-## FIGURES
+# FIGURES
 
 plt.style.use('ggplot')
 plt.figure(1, figsize=(10, 10))
@@ -407,7 +396,7 @@ plt.close()
 # plt.close()
 
 
-########### symptom plots ###########################
+# ---------------------------- symptom plots ------------------------------#
 # get model output dates in correct format
 # model_years = pd.to_datetime(symp.date)
 # model_years = model_years.dt.year

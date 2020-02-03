@@ -206,7 +206,7 @@ class Malaria(Module):
                                     & df.is_pregnant]
                 df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
 
-                ## severe - subset of newly clinical
+                # severe - subset of newly clinical
                 prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
 
                 new_inf = df.index[
@@ -320,7 +320,7 @@ class Malaria(Module):
 
             # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
 
-            ## infected
+            # infected
             risk_ml = pd.Series(0, index=df.index)
             risk_ml.loc[df.is_alive] = 1  # applied to everyone
             # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
@@ -335,7 +335,7 @@ class Malaria(Module):
             df_ml.loc[ml_idx, 'ma_inf_type'] = 'clinical'
             # print('len ml_idx', len(ml_idx))
 
-            ## clinical - subset of anyone currently infected
+            # clinical - subset of anyone currently infected
             random_draw = rng.random_sample(size=len(df_ml))
             clin_idx = df_ml[
                 df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_inf_type == 'asym') & (
@@ -343,7 +343,7 @@ class Malaria(Module):
             df_ml.loc[clin_idx, 'ma_inf_type'] = 'clinical'
             # print('len clin_idx', len(clin_idx))
 
-            ## severe - subset of anyone currently clinical
+            # severe - subset of anyone currently clinical
             random_draw = rng.random_sample(size=len(df_ml))
             sev_idx = df_ml[
                 df_ml.is_alive & df_ml.ma_is_infected & (
@@ -366,7 +366,7 @@ class Malaria(Module):
 
             df.loc[sev_idx, 'ma_inf_type'] = 'severe'
 
-            ## tidy up
+            # tidy up
             del df_ml
 
         # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
@@ -638,7 +638,6 @@ class Malaria(Module):
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(MalariaSymptomsLoggingEvent(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
 
@@ -758,7 +757,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                                 & df.is_pregnant]
             df.loc[inf_preg, 'ma_clinical_preg_counter'] += 1  # counter only for pregnant women
 
-            ## severe - subset of newly clinical
+            # severe - subset of newly clinical
             prob_sev = 0.05  # tmp value for prob of clinical case becoming severe
 
             new_inf = df.index[
@@ -1152,7 +1151,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
 
-        ## infected
+        # infected
         risk_ml = pd.Series(0, index=df.index)
         risk_ml.loc[df.is_alive] = 1  # applied to everyone
         # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
@@ -1166,7 +1165,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         df_ml.loc[ml_idx, 'ma_inf_type'] = 'asym'
         # print('len ml_idx', len(ml_idx))
 
-        ## clinical - subset of anyone currently infected
+        # clinical - subset of anyone currently infected
         random_draw = rng.random_sample(size=len(df_ml))
         clin_idx = df_ml[
             df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_inf_type == 'asym') & (
@@ -1174,7 +1173,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         df_ml.loc[clin_idx, 'ma_inf_type'] = 'clinical'
         # print('len clin_idx', len(clin_idx))
 
-        ## severe - subset of anyone currently clinical
+        # severe - subset of anyone currently clinical
         random_draw = rng.random_sample(size=len(df_ml))
         sev_idx = df_ml[
             df_ml.is_alive & df_ml.ma_is_infected & (
@@ -1200,7 +1199,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[sev_idx, 'ma_inf_type'] = 'severe'
 
-        ## tidy up
+        # tidy up
         del df_ml
 
         # if any are infected
@@ -1513,7 +1512,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # select currently pregnant women without IPTp, malaria-negative
-        p1 = df.index[df.is_alive & df.is_pregnant & (df.ma_is_infected == False)]
+        p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected]
 
         for person_index in p1:
             logger.debug(f'MalariaIPTp: scheduling HSI_Malaria_IPTp for person {person_index}')
@@ -1523,7 +1522,6 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
                                                                 priority=1,
                                                                 topen=now,
                                                                 tclose=None)
-
 
 
 class MalariaDeathEvent(Event, IndividualScopeEventMixin):
@@ -2077,6 +2075,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         logger.debug('HSI_MalariaIPTp: did not run')
         pass
 
+
 # ---------------------------------------------------------------------------------
 # Recovery Events
 # ---------------------------------------------------------------------------------
@@ -2298,38 +2297,6 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     prev_ed.to_dict())
         logger.info('%s|pop_district|%s', self.sim.date,
                     pop.to_dict())
-
-
-class MalariaSymptomsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-
-    def __init__(self, module):
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        df = population.props
-        # print('symptoms logger')
-
-        # ------------------------------------ PREVALENCE OF SYMPTOMS ------------------------------------
-        # fever = df['sy_fever'].sum()  # number of fever episodes - maybe >1 per person (other causes)
-        # headache = df['sy_headache'].sum()
-        # vomiting = df['sy_vomiting'].sum()
-        # stomachache = df['sy_stomachache'].sum()
-        #
-        # pop = len(df[df.is_alive])
-        #
-        # fever_prev = (fever / pop) if pop else 0
-        # headache_prev = (headache / pop) if pop else 0
-        # vomiting_prev = (vomiting / pop) if pop else 0
-        # stomachache_prev = (stomachache / pop) if pop else 0
-        #
-        # logger.info('%s|symptoms|%s', self.sim.date,
-        #             {
-        #                 'fever_prev': fever_prev,
-        #                 'headache_prev': headache_prev,
-        #                 'vomiting_prev': vomiting_prev,
-        #                 'stomachache_prev': stomachache_prev
-        #             })
 
 
 # ---------------------------------------------------------------------------------

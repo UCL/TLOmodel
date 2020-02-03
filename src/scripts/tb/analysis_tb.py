@@ -1,10 +1,10 @@
-import datetime
 import logging
-import os
 from pathlib import Path
 import pandas as pd
-import numpy as np
 import time
+import datetime
+import os
+import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -92,14 +92,6 @@ fh.flush()
 print("--- %s seconds ---" % (time.time() - start_time))
 
 # %% read the results
-import datetime
-import os
-import matplotlib.pyplot as plt
-import numpy as np
-from tlo import Date
-
-from tlo.analysis.utils import parse_log_file
-
 outputpath = './outputs/hiv_tb/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 logfile = outputpath + "TbHiv_LogFile" + datestamp + ".log"
@@ -126,7 +118,7 @@ mortality_rate = [(x / y) * 100000 for x, y in zip(death_counts, pop['total'])]
 
 # ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
 
-## HIV
+# HIV
 # model outputs
 m_hiv = output['tlo.methods.hiv']['hiv_infected']
 m_hiv_prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
@@ -310,7 +302,7 @@ plt.show()
 
 
 ##########################################################################################################
-## send outputs to csv files
+# send outputs to csv files
 ##########################################################################################################
 
 # create new folder with today's date
