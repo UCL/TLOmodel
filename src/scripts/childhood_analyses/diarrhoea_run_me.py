@@ -23,10 +23,8 @@ from tlo.methods import contraception, demography, diarrhoea, childhood_manageme
 outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
 
-# date-stamp to label log files and any other outputs
+# Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
-
 logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 # %% Run the Simulation
