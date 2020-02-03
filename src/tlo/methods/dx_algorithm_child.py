@@ -68,9 +68,6 @@ class DxAlgorithmChild(Module):
         # we end up with lots of repeated code in this case
 
         # get the symptoms of the person:
-        symptoms = self.sim.population.props.loc[
-            person_id, self.sim.population.props.columns.str.startswith("sy_")
-        ]
         # num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
         # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
