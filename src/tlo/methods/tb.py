@@ -267,7 +267,7 @@ class Tb(Module):
         ),
         "rr_testing_non_tb": Parameter(
             Types.REAL,
-            "rate ratio of presenting for TB screening and testing for people without active TB compared with ative TB cases",
+            "rate ratio for TB testing without active TB compared with ative TB cases",
         ),
         "rate_testing_hiv": Parameter(
             Types.REAL,
@@ -530,8 +530,8 @@ class Tb(Module):
         if len(df[df.is_alive & (df.tb_inf == "latent_susc_new")]) > 10:
             idx_c = (
                 df[df.is_alive & (df.tb_inf == "latent_susc_new")]
-                    .sample(frac=self.parameters["prop_mdr2010"])
-                    .index
+                .sample(frac=self.parameters["prop_mdr2010"])
+                .index
             )
 
             df.loc[idx_c, "tb_inf"] = "latent_mdr_new"  # change to mdr-tb
@@ -553,7 +553,7 @@ class Tb(Module):
         random_draw = self.rng.random_sample(size=len(df_active_prob))
         active_idx = df_active_prob.index[
             df.is_alive & (random_draw < df_active_prob.general_prob)
-            ]
+        ]
 
         # if >10 active cases, sample some mdr cases
         if len(active_idx) > 10:
@@ -723,8 +723,8 @@ class Tb(Module):
         bcg_cov_yr = self.parameters["bcg_coverage_year"]
 
         bcg_curr_yr = (
-                          bcg_cov_yr.loc[bcg_cov_yr.Year == now.year, ["bcg_coverage"]]
-                      ).values[0] / 100
+            bcg_cov_yr.loc[bcg_cov_yr.Year == now.year, ["bcg_coverage"]]
+        ).values[0] / 100
 
         if self.rng.random_sample(size=1) < bcg_curr_yr:
             df.at[child_id, "tb_bcg"] = True
@@ -778,17 +778,17 @@ class Tb(Module):
 
         health_values.loc[
             df["tb_inf"].str.contains("active_susc") & ~df.hv_inf & df.is_alive
-            ] = params["daly_wt_susc_tb"]
+        ] = params["daly_wt_susc_tb"]
         health_values.loc[
             df["tb_inf"].str.contains("active_mdr") & ~df.hv_inf & df.is_alive
-            ] = params["daly_wt_resistant_tb"]
+        ] = params["daly_wt_resistant_tb"]
 
         health_values.loc[
             df["tb_inf"].str.contains("active_susc") & df.hv_inf & df.is_alive
-            ] = params["daly_wt_susc_tb_hiv"]
+        ] = params["daly_wt_susc_tb_hiv"]
         health_values.loc[
             df["tb_inf"].str.contains("active_mdr") & df.hv_inf & df.is_alive
-            ] = params["daly_wt_resistant_tb_hiv"]
+        ] = params["daly_wt_resistant_tb_hiv"]
 
         health_values.name = "tb Symptoms"  # label the cause of this disability
 
@@ -856,18 +856,18 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # calculate foi by district
         districts = df["district_of_residence"].unique()
-        foi = pd.Series(0, index=districts)
 
         # if any smear_pos or smear_neg are 0 they will return foi=0
         smear_pos[smear_pos == 0] = 1
         smear_neg[smear_neg == 0] = 1
 
+        foi = pd.Series(0, index=districts)
         foi = (
-                  params["transmission_rate"]
-                  * smear_pos
-                  * (smear_neg * params["rel_inf_smear_ng"])
-                  * uninfected
-              ) / pop
+            params["transmission_rate"]
+            * smear_pos
+            * (smear_neg * params["rel_inf_smear_ng"])
+            * uninfected
+        ) / pop
 
         assert foi.isna().sum() == 0  # check there is a foi for every district
 
@@ -891,7 +891,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         tb_idx = df.index[
             df.is_alive & (df.tb_inf == "uninfected") & (random_draw < risk_tb)
-            ]
+        ]
 
         df.loc[tb_idx, "tb_inf"] = "latent_susc_new"
         df.loc[tb_idx, "tb_date_latent"] = now
@@ -905,7 +905,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         repeat_case = df.index[
             df.is_alive & (df.tb_inf == "latent_susc_tx")
             | df["tb_inf"].str.contains("latent_mdr") & (random_draw < risk_tb)
-            ]
+        ]
 
         # unchanged status, high risk of relapse as if just recovered
         df.loc[repeat_case, "tb_inf"] = "latent_susc_tx"
@@ -946,10 +946,10 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         ]
         prob_prog.loc[
             (df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art != 2)
-            ] *= params["rr_ipt_adult_hiv"]
+        ] *= params["rr_ipt_adult_hiv"]
         prob_prog.loc[
             (df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art == 2)
-            ] *= params["rr_ipt_art_adult"]
+        ] *= params["rr_ipt_art_adult"]
 
         # new latent cases including repeat infections
         new_latent = len(
@@ -961,7 +961,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
             # index of all new susc cases
             idx = df[
                 (df.tb_date_latent == now) & (df.age_years >= 15) & df.is_alive
-                ].index
+            ].index
 
             # for each person determine if fast progressor and schedule onset of active disease
             fast = pd.Series(data=False, index=df.loc[idx].index)
@@ -1040,13 +1040,13 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         prob_prog_child.loc[
             (df.tb_date_ipt < (now - dur_ipt_inf)) & ~df.hv_inf
-            ] *= params["rr_ipt_child"]
+        ] *= params["rr_ipt_child"]
         prob_prog_child.loc[
             (df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art != 2)
-            ] *= params["rr_ipt_child_hiv"]
+        ] *= params["rr_ipt_child_hiv"]
         prob_prog_child.loc[
             (df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art == 2)
-            ] *= params["rr_ipt_art_child"]
+        ] *= params["rr_ipt_art_child"]
 
         # no direct progression
         # progression within 1 year
@@ -1059,7 +1059,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent_child:
             prog = df[
                 (df.tb_date_latent == now) & (df.age_years < 15) & df.is_alive
-                ].index
+            ].index
 
             for person_id in prog:
                 # decide if person will develop active tb
@@ -1104,7 +1104,7 @@ class NonTbSymptomsEvent(RegularEvent, PopulationScopeEventMixin):
             (rng.random_sample(size=len(df)) < params["presump_testing"])
             & df.is_alive
             & ~(df.tb_inf.str.contains("active"))
-            ]
+        ]
 
         df.loc[test_non_tb, "tb_symptoms"] = True
 
@@ -1303,7 +1303,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit="d"))
             & ~df.tb_treatment_failure
             & (random_draw < params["monthly_prob_relapse_tx_complete"])
-            ].index
+        ].index
 
         # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
         relapse_tx_incomplete = df[
@@ -1315,7 +1315,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
             & (self.sim.date - df.tb_date_treated > pd.to_timedelta(182.625, unit="d"))
             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit="d"))
             & (random_draw < params["monthly_prob_relapse_tx_incomplete"])
-            ].index
+        ].index
 
         # relapse after >2 years following completion of treatment (or default)
         # use tb_date_treated + 2 years + 6 months of treatment
@@ -1326,7 +1326,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (self.sim.date - df.tb_date_treated >= pd.to_timedelta(913.125, unit="d"))
             & (random_draw < params["monthly_prob_relapse_2yrs"])
-            ].index
+        ].index
 
         df.loc[
             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, "tb_inf"
@@ -1360,7 +1360,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                     * params["rr_relapse_hiv"]
                 )
             )
-            ].index
+        ].index
 
         # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
         relapse_tx_incomplete = df[
@@ -1378,7 +1378,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                     * params["rr_relapse_hiv"]
                 )
             )
-            ].index
+        ].index
 
         # relapse after >2 years following completion of treatment (or default)
         # use tb_date_treated + 2 years + 6 months of treatment
@@ -1395,7 +1395,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                     * params["rr_relapse_hiv"]
                 )
             )
-            ].index
+        ].index
 
         df.loc[
             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, "tb_inf"
@@ -1505,9 +1505,9 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                 if df.at[person_index, "age_years"] < 15:
 
                     logger.debug(
-                        f"This is TbRelapseEvent, scheduling HSI_Tb_StartTreatmentChild for relapsed child {person_index}",
-                        person_index,
+                        f"TbRelapseEvent, scheduling HSI_Tb_StartTreatmentChild for relapsed child {person_index}"
                     )
+
                     event = HSI_Tb_StartTreatmentChild(
                         self.module, person_id=person_index
                     )
@@ -1519,8 +1519,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                     )
                 else:
                     logger.debug(
-                        f"This is TbRelapseEvent, scheduling HSI_Tb_StartTreatmentAdult for relapsed adult {person_index}",
-                        person_index,
+                        f"TbRelapseEvent, scheduling HSI_Tb_StartTreatmentAdult for relapsed adult {person_index}"
                     )
                     event = HSI_Tb_StartTreatmentAdult(
                         self.module, person_id=person_index
@@ -1558,7 +1557,7 @@ class TbScheduleTesting(RegularEvent, PopulationScopeEventMixin):
                 | (df.tb_inf == "active_mdr_tx")
             )
             & ~(df.tb_diagnosed | df.tb_mdr_diagnosed)
-            ]
+        ]
 
         for person_index in test:
             logger.debug(
@@ -1676,7 +1675,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (df.tb_date_active < now)
             & (random_draw < params["monthly_prob_self_cure"])
-            ].index
+        ].index
         df.loc[self_cure, "tb_inf"] = "latent_susc_new"
         df.loc[self_cure, "tb_stage"] = "latent"
         df.loc[self_cure, "tb_symptoms"] = False
@@ -1690,7 +1689,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.hv_on_art != 2)
             & (df.tb_date_active < now)
             & (random_draw < params["monthly_prob_self_cure_hiv"])
-            ].index
+        ].index
         df.loc[self_cure_hiv, "tb_inf"] = "latent_susc_new"
         df.loc[self_cure_hiv, "tb_stage"] = "latent"
         df.loc[self_cure_hiv, "tb_symptoms"] = False
@@ -1704,7 +1703,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.hv_on_art == 2)
             & (df.tb_date_active < now)
             & (random_draw < params["monthly_prob_self_cure"])
-            ].index
+        ].index
         df.loc[self_cure_art, "tb_inf"] = "latent_susc_new"
         df.loc[self_cure_art, "tb_stage"] = "latent"
         df.loc[self_cure_art, "tb_symptoms"] = False
@@ -1722,8 +1721,8 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             ) & (
                 "Tb"
                 in self.sim.modules["SymptomManager"].causes_of(
-                person_id, "respiratory_symptoms"
-            )
+                    person_id, "respiratory_symptoms"
+                )
             ):
                 # this will clear all tb symptoms
                 self.sim.modules["SymptomManager"].clear_symptoms(
@@ -1765,7 +1764,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                     df["tb_inf"].str.contains("active_mdr")
                     & (df.tb_stage == "active_pulm")
                     & df.is_alive
-                    ]
+                ]
             )
             * params["prop_smear_positive"]
         )
@@ -1776,7 +1775,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                     df["tb_inf"].str.contains("active_mdr")
                     & (df.tb_stage == "active_pulm")
                     & df.is_alive
-                    ]
+                ]
             )
             * (1 - params["prop_smear_positive"])
         )
@@ -1793,11 +1792,11 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
             active_sm_neg = 1
 
         force_of_infection = (
-                                 params["transmission_rate"]
-                                 * active_sm_pos
-                                 * (active_sm_neg * params["rel_inf_smear_ng"])
-                                 * uninfected_total
-                             ) / total_population
+            params["transmission_rate"]
+            * active_sm_pos
+            * (active_sm_neg * params["rel_inf_smear_ng"])
+            * uninfected_total
+        ) / total_population
         # print('force_of_infection: ', force_of_infection)
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
@@ -1807,7 +1806,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_tb_new = pd.Series(0, index=df.index)
         prob_tb_new.loc[
             df.is_alive & (df.tb_inf == "uninfected")
-            ] = force_of_infection  # print('prob_tb_new: ', prob_tb_new)
+        ] = force_of_infection  # print('prob_tb_new: ', prob_tb_new)
 
         # assign risk of latent tb
         risk_tb = pd.Series(1, index=df.index)
@@ -1833,7 +1832,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_tb_reinf.loc[
             (df.tb_inf == "latent_mdr_tx")
             | df["tb_inf"].str.contains("latent_susc") & df.is_alive
-            ] = force_of_infection
+        ] = force_of_infection
 
         repeat_case = df.index[df.is_alive & (random_draw < (prob_tb_reinf * norm_p))]
 
@@ -1871,10 +1870,10 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         ]
         prob_prog.loc[
             (df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art != 2)
-            ] *= params["rr_ipt_adult_hiv"]
+        ] *= params["rr_ipt_adult_hiv"]
         prob_prog.loc[
             (df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art == 2)
-            ] *= params["rr_ipt_art_adult"]
+        ] *= params["rr_ipt_art_adult"]
 
         # scale probability of progression to match overall population values
         mean = sum(prob_prog[df.is_alive & df.age_years.between(15, 100)]) / len(
@@ -1892,7 +1891,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_date_latent == now)
                 & (df.age_years >= 15)
                 & df.is_alive
-                ].index
+            ].index
         )
         # print(new_latent)
 
@@ -1905,7 +1904,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_date_latent == now)
                 & (df.age_years >= 15)
                 & df.is_alive
-                ].index
+            ].index
 
             # for each person determine if fast progressor and schedule onset of active disease
             fast = pd.Series(data=False, index=df.loc[idx].index)
@@ -1975,13 +1974,13 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
         prob_prog_child.loc[
             (df.tb_date_ipt < (now - dur_ipt_inf)) & ~df.hv_inf
-            ] *= params["rr_ipt_child"]
+        ] *= params["rr_ipt_child"]
         prob_prog_child.loc[
             (df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art != 2)
-            ] *= params["rr_ipt_child_hiv"]
+        ] *= params["rr_ipt_child_hiv"]
         prob_prog_child.loc[
             (df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art == 2)
-            ] *= params["rr_ipt_art_child"]
+        ] *= params["rr_ipt_art_child"]
 
         # no direct progression
         # progression within 1 year
@@ -1990,7 +1989,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.tb_date_latent == now)
             & (df.age_years < 15)
             & df.is_alive
-            ].sum()
+        ].sum()
         # print(new_latent)
 
         # some proportion schedule active now, else schedule active at random date
@@ -2000,7 +1999,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                 & (df.tb_date_latent == now)
                 & (df.age_years < 15)
                 & df.is_alive
-                ].index
+            ].index
 
             for person_id in prog:
                 # decide if person will develop active tb
@@ -2141,7 +2140,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit="d"))
             & ~df.tb_treatment_failure
             & (random_draw < params["monthly_prob_relapse_tx_complete"])
-            ].index
+        ].index
 
         # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
         relapse_tx_incomplete = df[
@@ -2152,7 +2151,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
             & (self.sim.date - df.tb_date_treated > pd.to_timedelta(182.625, unit="d"))
             & (self.sim.date - df.tb_date_treated < pd.to_timedelta(732.5, unit="d"))
             & (random_draw < params["monthly_prob_relapse_tx_incomplete"])
-            ].index
+        ].index
 
         # relapse after >2 years following completion of treatment (or default)
         # use tb_date_treated + 2 years + 6 months of treatment
@@ -2162,7 +2161,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
             & df.is_alive
             & (self.sim.date - df.tb_date_treated >= pd.to_timedelta(732.5, unit="d"))
             & (random_draw < params["monthly_prob_relapse_2yrs"])
-            ].index
+        ].index
 
         df.loc[
             relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, "tb_inf"
@@ -2323,7 +2322,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (df.tb_date_active < now)
             & (random_draw < params["monthly_prob_self_cure"])
-            ].index
+        ].index
         df.loc[self_cure, "tb_inf"] = "latent_susc_new"
         df.loc[self_cure, "tb_stage"] = "latent"
         df.loc[self_cure, "tb_symptoms"] = False
@@ -2337,7 +2336,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.hv_on_art != 2)
             & (df.tb_date_active < now)
             & (random_draw < params["monthly_prob_self_cure_hiv"])
-            ].index
+        ].index
         df.loc[self_cure_hiv, "tb_inf"] = "latent_susc_new"
         df.loc[self_cure_hiv, "tb_stage"] = "latent"
         df.loc[self_cure_hiv, "tb_symptoms"] = False
@@ -2351,7 +2350,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.hv_on_art == 2)
             & (df.tb_date_active < now)
             & (random_draw < params["monthly_prob_self_cure"])
-            ].index
+        ].index
         df.loc[self_cure_art, "tb_inf"] = "latent_susc_new"
         df.loc[self_cure_art, "tb_stage"] = "latent"
         df.loc[self_cure_art, "tb_symptoms"] = False
@@ -2369,8 +2368,8 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
             ) & (
                 "Tb"
                 in self.sim.modules["SymptomManager"].causes_of(
-                person_id, "respiratory_symptoms"
-            )
+                    person_id, "respiratory_symptoms"
+                )
             ):
                 # this will clear all tb symptoms
                 self.sim.modules["SymptomManager"].clear_symptoms(
@@ -2644,7 +2643,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                     ipt_cov = params["ipt_contact_cov"]
                     ipt_cov_year = ipt_cov.loc[
                         ipt_cov.year == self.sim.date.year
-                        ].coverage.values
+                    ].coverage.values
 
                     if (district in params["tb_high_risk_distr"].values) & (
                         self.module.rng.rand() < ipt_cov_year
@@ -2672,9 +2671,9 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                                     & ~df.tb_ever_tb_mdr
                                     & df.is_alive
                                     & (df.district_of_residence == district)
-                                    ]
-                                    .sample(n=5, replace=False)
-                                    .index
+                                ]
+                                .sample(n=5, replace=False)
+                                .index
                             )
 
                             for person_id in ipt_sample:
@@ -2771,7 +2770,7 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                         ipt_cov = params["ipt_contact_cov"]
                         ipt_cov_year = ipt_cov.loc[
                             ipt_cov.year == self.sim.date.year
-                            ].coverage.values
+                        ].coverage.values
 
                         if (district in params["tb_high_risk_distr"].values) & (
                             self.module.rng.rand() < ipt_cov_year
@@ -2799,9 +2798,9 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                                         & ~df.tb_ever_tb_mdr
                                         & df.is_alive
                                         & (df.district_of_residence == district)
-                                        ]
-                                        .sample(n=5, replace=False)
-                                        .index
+                                    ]
+                                    .sample(n=5, replace=False)
+                                    .index
                                 )
 
                                 for person_id in ipt_sample:
@@ -2927,7 +2926,7 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                     ipt_cov = params["ipt_contact_cov"]
                     ipt_cov_year = ipt_cov.loc[
                         ipt_cov.year == self.sim.date.year
-                        ].coverage.values
+                    ].coverage.values
 
                     if (district in params["tb_high_risk_distr"].values) & (
                         self.module.rng.rand() < ipt_cov_year
@@ -2952,9 +2951,9 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                                     & ~(df.tb_inf.str.contains("active"))
                                     & df.is_alive
                                     & (df.district_of_residence == district)
-                                    ]
-                                    .sample(n=5, replace=False)
-                                    .index
+                                ]
+                                .sample(n=5, replace=False)
+                                .index
                             )
 
                             for person_id in ipt_sample:
@@ -3076,7 +3075,7 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
                     ipt_cov = params["ipt_contact_cov"]
                     ipt_cov_year = ipt_cov.loc[
                         ipt_cov.year == self.sim.date.year
-                        ].coverage.values
+                    ].coverage.values
 
                     if (district in params["tb_high_risk_distr"].values) & (
                         self.module.rng.rand() < ipt_cov_year
@@ -3104,9 +3103,9 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
                                     & ~df.tb_ever_tb_mdr
                                     & df.is_alive
                                     & (df.district_of_residence == district)
-                                    ]
-                                    .sample(n=5, replace=False)
-                                    .index
+                                ]
+                                .sample(n=5, replace=False)
+                                .index
                             )
 
                             for person_id in ipt_sample:
@@ -3208,11 +3207,11 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_clinical"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_clin,
@@ -3228,11 +3227,11 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_sputum"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_smear,
@@ -3268,11 +3267,11 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_extrapulm"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_clin,
@@ -3288,11 +3287,11 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_sputum"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_smear,
@@ -3378,11 +3377,11 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_clinical"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_clin,
@@ -3398,11 +3397,11 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_sputum"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_smear,
@@ -3437,11 +3436,11 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_extrapulm"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_clin,
@@ -3457,11 +3456,11 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["treatment_sputum"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_smear,
@@ -3541,10 +3540,10 @@ class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
 
             # Request the health system to have this follow-up appointment
             weeks = params["followup_times"]["mdr_clinical"]
-            cleanedList = [x for x in weeks if x == x]  # remove nan
+            cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-            for i in range(0, len(cleanedList)):
-                followup_appt_date = self.sim.date + DateOffset(months=cleanedList[i])
+            for i in range(0, len(cleaned_list)):
+                followup_appt_date = self.sim.date + DateOffset(months=cleaned_list[i])
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     followup_clin,
                     priority=1,
@@ -3559,10 +3558,10 @@ class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
 
             # Request the health system to have this follow-up appointment
             weeks = params["followup_times"]["mdr_sputum"]
-            cleanedList = [x for x in weeks if x == x]  # remove nan
+            cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-            for i in range(0, len(cleanedList)):
-                followup_appt_date = self.sim.date + DateOffset(months=cleanedList[i])
+            for i in range(0, len(cleaned_list)):
+                followup_appt_date = self.sim.date + DateOffset(months=cleaned_list[i])
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     followup_smear,
                     priority=1,
@@ -3642,11 +3641,11 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["retreatment_clinical"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_clin,
@@ -3662,11 +3661,11 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["retreatment_sputum"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_smear,
@@ -3747,11 +3746,11 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["retreatment_clinical"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_clin,
@@ -3767,11 +3766,11 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
                 # Request the health system to have this follow-up appointment
                 weeks = params["followup_times"]["retreatment_sputum"]
-                cleanedList = [x for x in weeks if x == x]  # remove nan
+                cleaned_list = [x for x in weeks if x == x]  # remove nan
 
-                for i in range(0, len(cleanedList)):
+                for i in range(0, len(cleaned_list)):
                     followup_appt_date = self.sim.date + DateOffset(
-                        months=cleanedList[i]
+                        months=cleaned_list[i]
                     )
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         followup_smear,
@@ -3966,8 +3965,8 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
                 ) & (
                     "Tb"
                     in self.sim.modules["SymptomManager"].causes_of(
-                    person_id, "respiratory_symptoms"
-                )
+                        person_id, "respiratory_symptoms"
+                    )
                 ):
                     # this will clear all tb symptoms
                     self.sim.modules["SymptomManager"].clear_symptoms(
@@ -4022,8 +4021,8 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
             ) & (
                 "Tb"
                 in self.sim.modules["SymptomManager"].causes_of(
-                person_id, "respiratory_symptoms"
-            )
+                    person_id, "respiratory_symptoms"
+                )
             ):
                 # this will clear all tb symptoms
                 self.sim.modules["SymptomManager"].clear_symptoms(
@@ -4233,7 +4232,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & ~df.hv_on_cotrim
-            ] = params["monthly_prob_tb_mortality"]
+        ] = params["monthly_prob_tb_mortality"]
 
         # hiv-negative on cotrim - shouldn't be any, tb untreated
         mortality_rate.loc[
@@ -4241,7 +4240,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & df.hv_on_cotrim
-            ] = (params["monthly_prob_tb_mortality"] * params["mort_cotrim"])
+        ] = (params["monthly_prob_tb_mortality"] * params["mort_cotrim"])
 
         # hiv-negative, tb treated
         mortality_rate.loc[
@@ -4249,7 +4248,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & (df.tb_on_treatment | df.tb_treated_mdr)
             & ~df.hv_on_cotrim
-            ] = params["monthly_prob_tb_mortality"]
+        ] = params["monthly_prob_tb_mortality"]
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -4281,7 +4280,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & (df.hv_on_art != 2)
             & ~df.hv_on_cotrim
-            ] = params["monthly_prob_tb_mortality_hiv"]
+        ] = params["monthly_prob_tb_mortality_hiv"]
 
         # hiv-positive, on ART
         mort_hiv.loc[
@@ -4290,7 +4289,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & (df.hv_on_art == 2)
             & ~df.hv_on_cotrim
-            ] = params["monthly_prob_tb_mortality"]
+        ] = params["monthly_prob_tb_mortality"]
 
         # hiv-positive on cotrim and not ART - shouldn't happen
         mort_hiv.loc[
@@ -4299,7 +4298,7 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & (df.hv_on_art != 2)
             & df.hv_on_cotrim
-            ] = (params["monthly_prob_tb_mortality_hiv"] * params["mort_cotrim"])
+        ] = (params["monthly_prob_tb_mortality_hiv"] * params["mort_cotrim"])
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -4344,7 +4343,7 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & ~df.tb_treated_mdr
             & ~df.hv_on_cotrim
-            ] = params["monthly_prob_tb_mortality"]
+        ] = params["monthly_prob_tb_mortality"]
 
         # hiv-negative on cotrim - shouldn't be any, tb untreated
         mortality_rate.loc[
@@ -4352,7 +4351,7 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & ~df.tb_treated_mdr
             & df.hv_on_cotrim
-            ] = (params["monthly_prob_tb_mortality"] * params["mort_cotrim"])
+        ] = (params["monthly_prob_tb_mortality"] * params["mort_cotrim"])
 
         # hiv-negative, tb treated
         mortality_rate.loc[
@@ -4360,7 +4359,7 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & ~df.hv_inf
             & df.tb_treated_mdr
             & ~df.hv_on_cotrim
-            ] = (params["monthly_prob_tb_mortality"] * params["mort_tx"])
+        ] = (params["monthly_prob_tb_mortality"] * params["mort_tx"])
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -4392,7 +4391,7 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & (df.hv_on_art != 2)
             & ~df.hv_on_cotrim
-            ] = params["monthly_prob_tb_mortality_hiv"]
+        ] = params["monthly_prob_tb_mortality_hiv"]
 
         # hiv-positive on ART, tb untreated
         mort_hiv.loc[
@@ -4401,7 +4400,7 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & (df.hv_on_art == 2)
             & ~df.hv_on_cotrim
-            ] = params["monthly_prob_tb_mortality"]
+        ] = params["monthly_prob_tb_mortality"]
 
         # hiv-positive on cotrim and ART, tb untreated
         mort_hiv.loc[
@@ -4410,7 +4409,7 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & (~df.tb_on_treatment | ~df.tb_treated_mdr)
             & (df.hv_on_art == 2)
             & df.hv_on_cotrim
-            ] = (params["monthly_prob_tb_mortality_hiv"] * params["mort_cotrim"])
+        ] = (params["monthly_prob_tb_mortality_hiv"] * params["mort_cotrim"])
 
         # hiv-positive no ART, tb treated
         mort_hiv.loc[
@@ -4419,7 +4418,7 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
             & df.tb_treated_mdr
             & (df.hv_on_art == 2)
             & ~df.hv_on_cotrim
-            ] = (params["monthly_prob_tb_mortality"] * params["mort_tx"])
+        ] = (params["monthly_prob_tb_mortality"] * params["mort_tx"])
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -4489,7 +4488,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 df.tb_ever_tb_mdr
                 & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
-                ]
+            ]
         )
 
         if new_tb_cases > 0:
@@ -4556,13 +4555,13 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # proportion of population with active TB by age/sex - compare to WHO 2018
         m_num_cases = (
             df[df.is_alive & (df.sex == "M") & (df.tb_inf.str.contains("active"))]
-                .groupby("age_range")
-                .size()
+            .groupby("age_range")
+            .size()
         )
         f_num_cases = (
             df[df.is_alive & (df.sex == "F") & (df.tb_inf.str.contains("active"))]
-                .groupby("age_range")
-                .size()
+            .groupby("age_range")
+            .size()
         )
 
         m_pop = df[df.is_alive & (df.sex == "M")].groupby("age_range").size()
@@ -4632,14 +4631,14 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.age_years >= 15)
                 & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
-                ]
+            ]
         )
 
         new_tb_tx_adult = len(
             df[
                 (df.age_years >= 15)
                 & (df.tb_date_treated > (now - DateOffset(months=self.repeat)))
-                ]
+            ]
         )
 
         percent_treated_adult = (
@@ -4652,14 +4651,14 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[
                 (df.age_years < 15)
                 & (df.tb_date_active > (now - DateOffset(months=self.repeat)))
-                ]
+            ]
         )
 
         new_tb_tx_child = len(
             df[
                 (df.age_years < 15)
                 & (df.tb_date_treated > (now - DateOffset(months=self.repeat)))
-                ]
+            ]
         )
 
         percent_treated_child = (
