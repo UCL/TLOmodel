@@ -350,6 +350,11 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|age_range_f|%s', self.sim.date,
                     f_age_counts.to_dict())
 
+        # Output by single year of age for under-fives
+        num_children = df[df.is_alive & (df.age_years < 5)].groupby('age_years').size()
+
+        logger.info('%s|num_children|%s', self.sim.date,
+                    num_children.to_dict())
 
 def scale_to_population(parsed_output, resourcefilepath):
     """

@@ -33,8 +33,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 2)
-popsize = 10000
+end_date = Date(2015, 1, 2)
+popsize = 100
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -70,3 +70,57 @@ sim.simulate(end_date=end_date)
 # this will make sure that the logging file is complete
 fh.flush()
 output = parse_log_file(logfile)
+
+# %%
+# Calculate the "incidence rate" from the output counts of incidence
+
+counts = output['tlo.methods.diarrhoea']['incidence_count_by_patho']
+counts.set_index(
+    'date',
+    drop=True,
+    inplace=True
+)
+
+# get population size to make a comparison
+pop = output['tlo.methods.demography']['num_children']
+pop.set_index(
+    'date',
+    drop=True,
+    inplace=True
+)
+pop['0y']=pop[0]
+pop['1y']=pop[1]
+pop['2-4y']=pop[2]+pop[3]+pop[4]
+pop.drop(columns=[x for x in range(5)], inplace=True)
+
+# Incidence rate among 0 year-olds
+inc_rate = dict()
+for age_grp in counts.columns:
+    c = counts[age_grp].apply(pd.Series)
+    inc_rate[age_grp] = c.div(pop[age_grp], axis=0).dropna()
+
+# Get the incidence rates that were input:
+base_incidence_rate = dict()
+for pathogen in sim.modules['Diarrhoea'].pathogens:
+    base_incidence_rate[pathogen] = \
+        sim.modules['Diarrhoea'].parameters[f'base_incidence_diarrhoea_by_{pathogen}']
+# TODO: finish this when can rely on the name of the parameters
+
+
+# Compare this with the desried outputs.
+
+
+
+# TODO: look at deaths
+
+
+
+
+
+
+
+
+# Produce a plot:
+inc_rate['0y'].plot()
+
+plt.show()

@@ -50,7 +50,7 @@ class Diarrhoea(Module):
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_incidence_diarrhoea_by_ETEC':
+        'base_incidence_diarrhoea_by_ST-ETEC':
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
                       ),
@@ -109,7 +109,7 @@ class Diarrhoea(Module):
         'proportion_AWD_by_campylo':
             Parameter(Types.REAL, 'acute diarrhoea type caused by campylobacter'
                       ),
-        'proportion_AWD_by_ETEC':
+        'proportion_AWD_by_ST-ETEC':
             Parameter(Types.REAL, 'acute diarrhoea type caused by ST-ETEC'
                       ),
         'proportion_AWD_by_sapovirus':
@@ -139,7 +139,7 @@ class Diarrhoea(Module):
         'fever_by_campylo':
             Parameter(Types.REAL, 'fever caused by campylobacter'
                       ),
-        'fever_by_ETEC':
+        'fever_by_ST-ETEC':
             Parameter(Types.REAL, 'fever caused by ST-ETEC'
                       ),
         'fever_by_sapovirus':
@@ -169,7 +169,7 @@ class Diarrhoea(Module):
         'vomiting_by_campylo':
             Parameter(Types.REAL, 'vomiting caused by campylobacter'
                       ),
-        'vomiting_by_ETEC':
+        'vomiting_by_ST-ETEC':
             Parameter(Types.REAL, 'vomiting caused by ST-ETEC'
                       ),
         'vomiting_by_sapovirus':
@@ -199,7 +199,7 @@ class Diarrhoea(Module):
         'dehydration_by_campylo':
             Parameter(Types.REAL, 'any dehydration caused by campylobacter'
                       ),
-        'dehydration_by_ETEC':
+        'dehydration_by_ST-ETEC':
             Parameter(Types.REAL, 'any dehydration caused by ST-ETEC'
                       ),
         'dehydration_by_sapovirus':
@@ -229,7 +229,7 @@ class Diarrhoea(Module):
         'prolonged_diarr_campylo':
             Parameter(Types.REAL, 'prolonged episode by campylobacter'
                       ),
-        'prolonged_diarr_ETEC':
+        'prolonged_diarr_ST-ETEC':
             Parameter(Types.REAL, 'prolonged episode by ST-ETEC'
                       ),
         'prolonged_diarr_sapovirus':
@@ -316,7 +316,8 @@ class Diarrhoea(Module):
                                                categories=list(pathogens) + ['none']),
 
         # ---- Classification of the type of diarrhoaea that is caused  ----
-        'gi_last_diarrhoea_type': Property(Types.CATEGORICAL, 'Type of the last episode of diarrhoaea',
+        'gi_last_diarrhoea_type': Property(Types.CATEGORICAL,
+                                           'Type of the last episode of diarrhoea',
                                            categories=['none',
                                                        'acute',
                                                        'prolonged',
@@ -324,14 +325,14 @@ class Diarrhoea(Module):
                                                        'severe_persistent']),
 
         'gi_last_dehydration_status': Property(Types.CATEGORICAL,
-                                               'Dehydration status during the last episode of diarrhoaea',
+                                               'Dehydration status during the last episode of diarrhoea',
                                                categories=['no dehydration',
                                                            'some dehydration',
                                                            'severe dehydration']),
 
         # ---- Internal variables to schedule onset and deaths due to diarhoaea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
-        'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of dirrhoea'),
+        'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of diarrhoea'),
         'gi_last_diarrhoea_death_date': Property(Types.DATE, 'date of death caused by last episode of diarrhoea'),
 
         # ---- Temporary Variables: To be replaced with the properites of other modules ----
@@ -366,17 +367,18 @@ class Diarrhoea(Module):
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module """
         p = self.parameters
-        #
-        # 'progression_persistent_equation':
-        #     Parameter(Types.REAL, 'dict that holds the equations governing the risk of progression'
-        #                           ' to persistent diarrhoea'
-        #               ),
 
         # Read parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(
                 Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
         )
+
+        # Check that every value has been succesfully read
+        for param_name, type in self.PARAMETERS.items():
+            assert param_name in self.parameters, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+            assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+            assert isinstance(self.parameters[param_name], type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
         # Get DALY weights
         p['daly_wts'] = dict()
@@ -511,9 +513,9 @@ class Diarrhoea(Module):
             'ST-ETEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                    1.0,
                                    Predictor('age_years')
-                                   .when('.between(0,0)', p['base_incidence_diarrhoea_by_ETEC'][0])
-                                   .when('.between(1,1)', p['base_incidence_diarrhoea_by_ETEC'][1])
-                                   .when('.between(2,4)', p['base_incidence_diarrhoea_by_ETEC'][2])
+                                   .when('.between(0,0)', p['base_incidence_diarrhoea_by_ST-ETEC'][0])
+                                   .when('.between(1,1)', p['base_incidence_diarrhoea_by_ST-ETEC'][1])
+                                   .when('.between(2,4)', p['base_incidence_diarrhoea_by_ST-ETEC'][2])
                                    .otherwise(0.0),
                                    # Predictor('li_no_access_handwashing')
                                    # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -676,12 +678,12 @@ class Diarrhoea(Module):
             },
 
             'ST-ETEC': {
-                'watery_diarrhoea': p['proportion_AWD_by_ETEC'],
-                'bloody_diarrhoea': 1 - p['proportion_AWD_by_ETEC'],
-                'fever': p['fever_by_ETEC'],
-                'vomiting': p['vomiting_by_ETEC'],
-                'dehydration': p['dehydration_by_ETEC'],
-                'prolonged_diarrhoea': p['prolonged_diarr_ETEC']
+                'watery_diarrhoea': p['proportion_AWD_by_ST-ETEC'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_ST-ETEC'],
+                'fever': p['fever_by_ST-ETEC'],
+                'vomiting': p['vomiting_by_ST-ETEC'],
+                'dehydration': p['dehydration_by_ST-ETEC'],
+                'prolonged_diarrhoea': p['prolonged_diarr_ST-ETEC']
             },
 
             'sapovirus': {
@@ -801,7 +803,7 @@ class Diarrhoea(Module):
         # Schedule the main event:
         sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date + DateOffset(months=0))
 
-        # Schedule logging event to every now and and then to repeat
+        # Schedule logging event to occur at the end of each year of the simulation
         sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother_id, child_id):
@@ -972,10 +974,11 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # Log the current status of the counters
-        logger.info('%s|diarr_incidence_by_patho|%s',
+        logger.info('%s|incidence_count_by_patho|%s',
                     self.sim.date,
                     self.module.incident_cases_counter
                     )
+
 
         # Reset the counters
         self.module.incident_cases_counter = self.module.incident_cases_counter_blank
