@@ -1,8 +1,9 @@
 import os
-from tlo.events import IndividualScopeEventMixin
-from tlo.methods.dxmanager import DxManager, DxTest
 from pathlib import Path
+
 from tlo import Date, Simulation
+from tlo.events import IndividualScopeEventMixin
+
 from tlo.methods import (
     chronicsyndrome,
     contraception,
@@ -15,6 +16,7 @@ from tlo.methods import (
     mockitis,
     symptommanager,
 )
+from tlo.methods.dxmanager import DxManager, DxTest
 from tlo.methods.healthsystem import HSI_Event
 
 # --------------------------------------------------------------------------
