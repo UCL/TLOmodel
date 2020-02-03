@@ -821,7 +821,7 @@ class Diarrhoea(Module):
         p = self.parameters
 
         # Map the status during last episode to a daly value and zero-out if the last episode is not current
-        daly_values = df.loc[df['is_alive'], 'gi_last_diarrhoea_type'].map({
+        total_daly_values = df.loc[df['is_alive'], 'gi_last_diarrhoea_type'].map({
             'none': 0.0,
             'acute': self.daly_wts['mild_diarrhoea'],
             'prolonged':self.daly_wts['moderate_diarrhoea'],
@@ -829,13 +829,18 @@ class Diarrhoea(Module):
             'severe_persistent': self.daly_wts['severe_diarrhoea']
         })
 
-        #TODO; split this out by pathogen
         mask_currently_has_diarrhoaea = (df['gi_last_diarrhoea_date_of_onset'] <= self.sim.date)\
                                         & (df['gi_last_diarrhoea_recovered_date'] >= self.sim.date)
-        daly_values.loc[~mask_currently_has_diarrhoaea] = 0.0
+        total_daly_values.loc[~mask_currently_has_diarrhoaea] = 0.0
 
-        daly_values.name = ''
-        return daly_values
+        # Split out by pathogen that causes the diarrahoea
+        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
+                                                     'gi_last_diarrhoea_pathogen'],
+                                              dtype='float')
+
+        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values)
+
+        return daly_values_by_pathogen
 
 
 class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -851,7 +856,6 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         rng = self.module.rng
         m = self.module
-        now = self.sim.date
 
         # Compute the probabilities of each person getting diarrhoea within the next three months
         mask_could_get_new_diarrhoea_episode = df['is_alive'] \
@@ -931,7 +935,7 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
 
         # Check if person should still die of diarahaoea
-        if (df.at[person_id, 'is_alive']) and (df.at[person_id, 'gi_last_diarrhoea_death_date']==self.sim.date):
+        if (df.at[person_id, 'is_alive']) and (df.at[person_id, 'gi_last_diarrhoea_death_date'] == self.sim.date):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
                                                                   cause=df.at[person_id, 'gi_last_diarrhoea_pathogen']
@@ -942,18 +946,14 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
 
 class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    The event runs every 12 months and log the number of incident cases of dirarrhoea by each pathogen and among the
-    special age-groups (0 years, 1 years, 2-4 years).
+    The event runs every 12 months and logs the number of incident cases of dirarrhoea caused by each pathogen in the
+    previous 12 months, among the special age-groups (0 years, 1 years, 2-4 years).
     """
     def __init__(self, module):
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
-        df = population.props
-        now = self.sim.date
-
         # Log the current status of the counters
         logger.info('%s|incidence_count_by_patho|%s',
                     self.sim.date,
