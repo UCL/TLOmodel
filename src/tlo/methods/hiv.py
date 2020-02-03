@@ -1981,6 +1981,11 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
                     to_log=True,
                 )
 
+                if cons_logged:
+                    logger.debug(
+                        f"HSI_Hiv_Prep: {person_id} is HIV+, requesting treatment"
+                    )
+
             # if HIV-, check PREP available, give PREP and assume good adherence
             else:
                 if is_cons_available["Item_Code"][item_code1]:
@@ -1992,6 +1997,9 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
                         cons_req_as_footprint=the_cons_footprint,
                         to_log=True,
                     )
+
+                    if cons_logged:
+                        logger.debug(f"HSI_Hiv_Prep: {person_id} is HIV-, giving PrEP")
 
         else:
             logger.debug("HSI_Hiv_Prep: testing is not available")
@@ -2454,7 +2462,7 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
             "Item_Code": [],
         }
 
-        request_cons = self.sim.modules["HealthSystem"].request_consumables(
+        self.sim.modules["HealthSystem"].request_consumables(
             hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
         )
 
