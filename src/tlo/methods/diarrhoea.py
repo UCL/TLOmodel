@@ -2,6 +2,7 @@
 Childhood diarrhoea module
 Documentation: 04 - Methods Repository/Method_Child_EntericInfection.xlsx
 """
+
 import logging
 from pathlib import Path
 
@@ -17,25 +18,20 @@ logger.setLevel(logging.INFO)
 
 
 class Diarrhoea(Module):
+    # Declare the pathogens that this module will simulate:
+    pathogens = {
+        'rotavirus',
+        'shigella',
+        'adenovirus',
+        'cryptosporidium',
+        'campylobacter',
+        'ST-ETEC',
+        'sapovirus',
+        'norovirus',
+        'astrovirus',
+        'tEPEC'}
 
     PARAMETERS = {
-        #
-        # 'eq_for_alloc_shigella': Parameter(Types.Eq, 'the e.... '),
-        # 'eq_for_alloc_rota': Parameter(Types.Eq), 'the XX...')
-
-        # @@ INES --- defining a parameter which is a dict that will hold the equations
-        'incidence_equations_by_pathogen':
-            Parameter(Types.DICT, 'dict that holds the equations governing the risk of incidence of each'
-                                  ' type of pathogen'
-                      ),
-        'prob_symptoms':
-            Parameter(Types.DICT, 'dict that holds the symptoms caused by each pathogen'
-                      ),
-        'progression_persistent_equation':
-            Parameter(Types.REAL, 'dict that holds the equations governing the risk of progression'
-                                  ' to persistent diarrhoea'
-                      ),
-
         'base_incidence_diarrhoea_by_rotavirus':
             Parameter(Types.LIST, 'incidence of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
                       ),
@@ -260,7 +256,8 @@ class Diarrhoea(Module):
                                   'for children under 11 months, no SAM, no HIV'
                       ),
         'rr_bec_persistent_age12to23':
-            Parameter(Types.REAL, 'relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months'
+            Parameter(Types.REAL,
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months'
                       ),
         'rr_bec_persistent_age24to59':
             Parameter(Types.REAL,
@@ -308,117 +305,90 @@ class Diarrhoea(Module):
         'rr_diarr_death_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea death for severe acute malnutrition'
                       ),
-
-        'daly_mild_diarrhoea':
-            Parameter(Types.REAL, 'DALY weight for diarrhoea with no dehydration'
-                      ),
-        'daly_moderate_diarrhoea':
-            Parameter(Types.REAL, 'DALY weight for diarrhoea with some dehydration'
-                      ),
-        'daly_severe_diarrhoea':
-            Parameter(Types.REAL, 'DALY weight for diarrhoea with severe dehydration'
+        'daly_wts':
+            Parameter(Types.DICT, 'DALY weights for diarrhoea'
                       ),
     }
 
-    # Next we declare the properties of individuals that this module provides.
-    # Again each has a name, type and description. In addition, properties may be marked
-    # as optional if they can be undefined for a given individual.
-
-    # TODO: why do some have gi_ and some have di_ as the prefix?
-    # TODO: Take out the symptoms from here-- these can tracked in the symptom manager
     PROPERTIES = {
-        'gi_diarrhoea_status': Property(Types.BOOL, 'symptomatic infection - diarrhoea disease'),
+        # ---- The pathogen which is caused the diarrhoea  ----
         'gi_diarrhoea_pathogen': Property(Types.CATEGORICAL, 'attributable pathogen for diarrhoea',
-                                          categories=['rotavirus', 'shigella', 'adenovirus', 'cryptosporidium',
-                                                      'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus',
-                                                      'astrovirus', 'tEPEC', 'none']),
+                                          categories=list(pathogens) + ['none']),
+
+        # ---- Classification of the type of diarrhoaea that is caused  ----
         'gi_diarrhoea_type': Property(Types.CATEGORICAL, 'progression of diarrhoea type',
-                                      categories=['acute', 'prolonged', 'persistent']),
-        'gi_diarrhoea_acute_type': Property(Types.CATEGORICAL, 'clinical acute diarrhoea type',
-                                            categories=['dysentery', 'acute watery diarrhoea']),
+                                      categories=['none',
+                                                  'acute',
+                                                  'prolonged',
+                                                  'persistent',
+                                                  'severe_persistent']),
+
         'gi_dehydration_status': Property(Types.CATEGORICAL, 'dehydration status',
-                                          categories=['no dehydration', 'some dehydration', 'severe dehydration']),
-        'gi_persistent_diarrhoea': Property(Types.CATEGORICAL,
-                                            'diarrhoea episode longer than 14 days with or without dehydration',
-                                            categories=['persistent diarrhoea', 'severe persistent diarrhoea']),
-        'gi_diarrhoea_death': Property(Types.BOOL, 'death caused by diarrhoea'),
-        'date_of_onset_diarrhoea': Property(Types.DATE, 'date of onset of diarrhoea'),
-        'diarrhoea_ep_duration': Property(Types.REAL, 'duration of diarrhoea episode'),
-        'gi_recovered_date': Property(Types.DATE, 'date of recovery from enteric infection'),
+                                          categories=['no dehydration',
+                                                      'some dehydration',
+                                                      'severe dehydration']),
+
+        # ---- Internal variables to schedule onset and deaths due to diarrhoaea  ----
+        'gi_date_of_last_onset_diarrhoea': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
+        'gi_diarrhoea_ep_duration': Property(Types.REAL, 'duration of diarrhoea last episode of diarrhoea'),
+        'gi_recovered_date': Property(Types.DATE, 'date of recovery from last episode of dirrhoea'),
         'gi_diarrhoea_death_date': Property(Types.DATE, 'date of death from enteric infection'),
-        'gi_diarrhoea_count': Property(Types.INT, 'annual counter for diarrhoea episodes'),
-        'gi_pathogen_count_rota': Property(Types.INT, 'annual counter of rotavirus in diarrhoeal episodes'),
-        'gi_pathogen_count_shig': Property(Types.INT, 'annual counter of shigella in diarrhoeal episodes'),
-        'gi_pathogen_count_adeno': Property(Types.INT, 'annual counter of adenovirus in diarrhoeal episodes'),
-        'gi_pathogen_count_crypto': Property(Types.INT, 'annual counter of cryptosporidium in diarrhoeal episodes'),
-        'gi_pathogen_count_campylo': Property(Types.INT, 'annual counter of campylobacter in diarrhoeal episodes'),
-        'gi_pathogen_count_ETEC': Property(Types.INT, 'annual counter of ST-ETEC in diarrhoeal episodes'),
-        'gi_pathogen_count_sapo': Property(Types.INT, 'annual counter of sapovirus in diarrhoeal episodes'),
-        'gi_pathogen_count_noro': Property(Types.INT, 'annual counter of norovirus in diarrhoeal episodes'),
-        'gi_pathogen_count_astro': Property(Types.INT, 'annual counter of astrovirus in diarrhoeal episodes'),
-        'gi_pathogen_count_EPEC': Property(Types.INT, 'annual counter of tEPEC in diarrhoeal episodes'),
 
-        'malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
-        'exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
-        'continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
-        # symptoms of diarrhoea for care seeking
-        # 'di_diarrhoea_loose_watery_stools': Property(Types.BOOL, 'diarrhoea symptoms - loose or watery stools'),
-        # 'di_blood_in_stools': Property(Types.BOOL, 'dysentery symptoms - blood in the stools'),
-        'di_dehydration_present': Property(Types.BOOL, 'diarrhoea symptoms - dehydration'),
-        # 'di_sympt_fever': Property(Types.BOOL, 'diarrhoea symptoms - associated fever'),
-        # 'di_sympt_vomiting': Property(Types.BOOL, 'diarrhoea symptoms - associated vomoting'),
-        # 'di_diarrhoea_over14days': Property(Types.BOOL, 'persistent diarrhoea - diarrhoea for 14 days or more'),
-
+        # ---- Temporary Variables: To be replaced with the properites of other modules ----
+        'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
+        'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
+        'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
     }
 
-    # TODO: as an example, I am declaring some symptoms here that we are going to use in the symptom manager
-    # Declares symptoms
+    # Declare symptoms
     SYMPTOMS = {'watery_diarrhoea', 'bloody_diarrhoea', 'fever', 'vomiting', 'dehydration', 'prolonged_diarrhoea'}
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+        # dict to hold equations in for the incidence of pathogens:
+        self.incidence_equations_by_pathogen = dict()
+
+        # dict to hold the probability of onset of different types of symptom given a pathgoen:
+        self.prob_symptoms = dict()
+
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module """
-
         p = self.parameters
-        m = self
-        dfd = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
-        # dfd.set_index("parameter_name", inplace=True)
-        self.load_parameters_from_dataframe(dfd)
+        #
+        # 'progression_persistent_equation':
+        #     Parameter(Types.REAL, 'dict that holds the equations governing the risk of progression'
+        #                           ' to persistent diarrhoea'
+        #               ),
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+        # Read parameters from the resourcefile
+        self.load_parameters_from_dataframe(
+            pd.read_excel(
+                Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
+        )
 
-        # DALY weights
+        # Get DALY weights
+        p['daly_wts'] = dict()
         if 'HealthBurden' in self.sim.modules.keys():
-            p['daly_mild_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=32)
-            p['daly_moderate_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=35)
-            p['daly_severe_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=34)
+            p['daly_wts']['mild_diarrhoea'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=32)
+            p['daly_wts']['moderate_diarrhoea'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=35)
+            p['daly_wts']['severe_diarrhoea'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=34)
 
         # --------------------------------------------------------------------------------------------
-        # Make a dict to hold the equations that govern the probability that a person gets a pathogen
+        # Make a dict to hold the equations that govern the probability that a person acquires diarrhaoe
+        # that is caused (primarily) by a pathogen
 
-        # @@ INES ---PUTTIG A BLANK DICT INTO THE PARAMETERS FOR THIS MODULE
-        self.parameters['incidence_equations_by_pathogen'] = dict()
-
-        # @@ INES --- AND NOW ADDING THE EQUATIONS TO IT
-
-        # @@ Ines -- not the usual formatting conventions here for using the Predictors, which is meant to help readability :-)
-
-        # @@ Also note I how we specify things like 0<x<=1 --> .between(0,0)  for age-years
-        # because age_years are whole numbers of years and .between(a,b) is true for a, b and all values inbetween
-
-        self.parameters['incidence_equations_by_pathogen'].update({
-            # Define the equation using LinearModel (note that this stage could be done in read_parms)
+        self.incidence_equations_by_pathogen.update({
             'rotavirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', m.base_incidence_diarrhoea_by_rotavirus[0])
-                                     .when('.between(1,1)', m.base_incidence_diarrhoea_by_rotavirus[1])
-                                     .when('.between(2,4)', m.base_incidence_diarrhoea_by_rotavirus[2])
+                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_rotavirus'][0])
+                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_rotavirus'][1])
+                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_rotavirus'][2])
                                      .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -435,13 +405,13 @@ class Diarrhoea(Module):
                                      )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'shigella': LinearModel(LinearModelType.MULTIPLICATIVE,
                                     1.0,
                                     Predictor('age_years')
-                                    .when('.between(0,0)', m.base_incidence_diarrhoea_by_shigella[0])
-                                    .when('.between(1,1)', m.base_incidence_diarrhoea_by_shigella[1])
-                                    .when('.between(2,4)', m.base_incidence_diarrhoea_by_shigella[2])
+                                    .when('.between(0,0)', p['base_incidence_diarrhoea_by_shigella'][0])
+                                    .when('.between(1,1)', p['base_incidence_diarrhoea_by_shigella'][1])
+                                    .when('.between(2,4)', p['base_incidence_diarrhoea_by_shigella'][2])
                                     .otherwise(0.0),
                                     # Predictor('li_no_access_handwashing')
                                     # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -458,13 +428,13 @@ class Diarrhoea(Module):
                                     )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'adenovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', m.base_incidence_diarrhoea_by_adenovirus[0])
-                                      .when('.between(1,1)', m.base_incidence_diarrhoea_by_adenovirus[1])
-                                      .when('.between(2,4)', m.base_incidence_diarrhoea_by_adenovirus[2])
+                                      .when('.between(0,0)', p['base_incidence_diarrhoea_by_adenovirus'][0])
+                                      .when('.between(1,1)', p['base_incidence_diarrhoea_by_adenovirus'][1])
+                                      .when('.between(2,4)', p['base_incidence_diarrhoea_by_adenovirus'][2])
                                       .otherwise(0.0),
                                       # Predictor('li_no_access_handwashing')
                                       # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -481,14 +451,14 @@ class Diarrhoea(Module):
                                       )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'cryptosporidium': LinearModel(LinearModelType.MULTIPLICATIVE,
                                            1.0,
                                            Predictor('age_years')
-                                           .when('.between(0,0)', m.base_incidence_diarrhoea_by_crypto[0])
-                                           .when('.between(1,1)', m.base_incidence_diarrhoea_by_crypto[1])
-                                           .when('.between(2,4)', m.base_incidence_diarrhoea_by_crypto[2])
-                                           .otherwise(0.0),
+                                               .when('.between(0,0)', p['base_incidence_diarrhoea_by_crypto'][0])
+                                               .when('.between(1,1)', p['base_incidence_diarrhoea_by_crypto'][1])
+                                               .when('.between(2,4)', p['base_incidence_diarrhoea_by_crypto'][2])
+                                               .otherwise(0.0),
                                            # Predictor('li_no_access_handwashing')
                                            # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                            # Predictor('li_no_clean_drinking_water').
@@ -504,14 +474,14 @@ class Diarrhoea(Module):
                                            )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'campylobacter': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('age_years')
-                                         .when('.between(0,0)', m.base_incidence_diarrhoea_by_campylo[0])
-                                         .when('.between(1,1)', m.base_incidence_diarrhoea_by_campylo[1])
-                                         .when('.between(2,4)', m.base_incidence_diarrhoea_by_campylo[2])
-                                         .otherwise(0.0),
+                                             .when('.between(0,0)', p['base_incidence_diarrhoea_by_campylo'][0])
+                                             .when('.between(1,1)', p['base_incidence_diarrhoea_by_campylo'][1])
+                                             .when('.between(2,4)', p['base_incidence_diarrhoea_by_campylo'][2])
+                                             .otherwise(0.0),
                                          # Predictor('li_no_access_handwashing')
                                          # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                          # Predictor('li_no_clean_drinking_water').
@@ -527,14 +497,14 @@ class Diarrhoea(Module):
                                          )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'ST-ETEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                    1.0,
                                    Predictor('age_years')
-                                   .when('.between(0,0)', m.base_incidence_diarrhoea_by_ETEC[0])
-                                   .when('.between(1,1)', m.base_incidence_diarrhoea_by_ETEC[1])
-                                   .when('.between(2,4)', m.base_incidence_diarrhoea_by_ETEC[2])
-                                   .otherwise(0.0),
+                                       .when('.between(0,0)', p['base_incidence_diarrhoea_by_ETEC'][0])
+                                       .when('.between(1,1)', p['base_incidence_diarrhoea_by_ETEC'][1])
+                                       .when('.between(2,4)', p['base_incidence_diarrhoea_by_ETEC'][2])
+                                       .otherwise(0.0),
                                    # Predictor('li_no_access_handwashing')
                                    # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                    # Predictor('li_no_clean_drinking_water').
@@ -550,14 +520,14 @@ class Diarrhoea(Module):
                                    )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'sapovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', m.base_incidence_diarrhoea_by_sapovirus[0])
-                                     .when('.between(1,1)', m.base_incidence_diarrhoea_by_sapovirus[1])
-                                     .when('.between(2,4)', m.base_incidence_diarrhoea_by_sapovirus[2])
-                                     .otherwise(0.0),
+                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_sapovirus'][0])
+                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_sapovirus'][1])
+                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_sapovirus'][2])
+                                         .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                      # Predictor('li_no_clean_drinking_water').
@@ -573,14 +543,14 @@ class Diarrhoea(Module):
                                      )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'norovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', m.base_incidence_diarrhoea_by_norovirus[0])
-                                     .when('.between(1,1)', m.base_incidence_diarrhoea_by_norovirus[1])
-                                     .when('.between(2,4)', m.base_incidence_diarrhoea_by_norovirus[2])
-                                     .otherwise(0.0),
+                                         .when('.between(0,0)', p['base_incidence_diarrhoea_by_norovirus'][0])
+                                         .when('.between(1,1)', p['base_incidence_diarrhoea_by_norovirus'][1])
+                                         .when('.between(2,4)', p['base_incidence_diarrhoea_by_norovirus'][2])
+                                         .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                      # Predictor('li_no_clean_drinking_water').
@@ -596,14 +566,14 @@ class Diarrhoea(Module):
                                      )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'astrovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', m.base_incidence_diarrhoea_by_astrovirus[0])
-                                      .when('.between(1,1)', m.base_incidence_diarrhoea_by_astrovirus[1])
-                                      .when('.between(2,4)', m.base_incidence_diarrhoea_by_astrovirus[2])
-                                      .otherwise(0.0),
+                                          .when('.between(0,0)', p['base_incidence_diarrhoea_by_astrovirus'][0])
+                                          .when('.between(1,1)', p['base_incidence_diarrhoea_by_astrovirus'][1])
+                                          .when('.between(2,4)', p['base_incidence_diarrhoea_by_astrovirus'][2])
+                                          .otherwise(0.0),
                                       # Predictor('li_no_access_handwashing')
                                       # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                       # Predictor('li_no_clean_drinking_water').
@@ -619,14 +589,14 @@ class Diarrhoea(Module):
                                       )
         })
 
-        self.parameters['incidence_equations_by_pathogen'].update({
+        self.incidence_equations_by_pathogen.update({
             'tEPEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                  1.0,
                                  Predictor('age_years')
-                                 .when('.between(0,0)', m.base_incidence_diarrhoea_by_EPEC[0])
-                                 .when('.between(1,1)', m.base_incidence_diarrhoea_by_EPEC[1])
-                                 .when('.between(2,4)', m.base_incidence_diarrhoea_by_EPEC[2])
-                                 .otherwise(0.0),
+                                     .when('.between(0,0)', p['base_incidence_diarrhoea_by_EPEC'][0])
+                                     .when('.between(1,1)', p['base_incidence_diarrhoea_by_EPEC'][1])
+                                     .when('.between(2,4)', p['base_incidence_diarrhoea_by_EPEC'][2])
+                                     .otherwise(0.0),
                                  # Predictor('li_no_access_handwashing')
                                  # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
                                  # Predictor('li_no_clean_drinking_water').
@@ -642,177 +612,214 @@ class Diarrhoea(Module):
                                  )
         })
 
-        # @@ INES ___ EVERY SYPTOM HERE MUST BE DECLARED ABOVE IN SYMPTOMS = {}
-        # Please double check that all the symptos are declared.
+        # Check that equations have been declared for each of the pathogens
+        assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
 
-        self.parameters['prob_symptoms'] = {
-            'rotavirus': {'watery_diarrhoea': m.proportion_AWD_by_rotavirus,
-                          'bloody_diarrhoea': 1 - m.proportion_AWD_by_rotavirus,
-                          'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_rotavirus,
-                          'dehydration': m.dehydration_by_rotavirus,
-                          'prolonged_diarrhoea': m.prolonged_diarr_rotavirus},
-            'shigella': {'watery_diarrhoea': m.proportion_AWD_by_shigella,
-                         'bloody_diarrhoea': 1 - m.proportion_AWD_by_shigella,
-                         'fever': m.fever_by_shigella, 'vomiting': m.vomiting_by_shigella,
-                         'dehydration': m.dehydration_by_shigella,
-                         'prolonged_diarrhoea': m.prolonged_diarr_shigella},
-            'adenovirus': {'watery_diarrhoea': m.proportion_AWD_by_adenovirus,
-                           'bloody_diarrhoea': 1 - m.proportion_AWD_by_adenovirus,
-                           'fever': m.fever_by_adenovirus, 'vomiting': m.vomiting_by_adenovirus,
-                           'dehydration': m.dehydration_by_adenovirus,
-                           'prolonged_diarrhoea': m.prolonged_diarr_adenovirus},
-            'cryptosporidium': {'watery_diarrhoea': m.proportion_AWD_by_crypto,
-                                'bloody_diarrhoea': 1 - m.proportion_AWD_by_crypto,
-                                'fever': m.fever_by_crypto, 'vomiting': m.vomiting_by_crypto,
-                                'dehydration': m.dehydration_by_crypto,
-                                'prolonged_diarrhoea': m.prolonged_diarr_crypto},
-            'campylobacter': {'watery_diarrhoea': m.proportion_AWD_by_campylo,
-                              'bloody_diarrhoea': 1 - m.proportion_AWD_by_campylo,
-                              'fever': m.fever_by_campylo, 'vomiting': m.vomiting_by_campylo,
-                              'dehydration': m.dehydration_by_rotavirus,
-                              'prolonged_diarrhoea': m.prolonged_diarr_campylo},
-            'ST-ETEC': {'watery_diarrhoea': m.proportion_AWD_by_ETEC,
-                        'bloody_diarrhoea': 1 - m.proportion_AWD_by_ETEC,
-                        'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_ETEC,
-                        'dehydration': m.dehydration_by_ETEC, 'prolonged_diarrhoea': m.prolonged_diarr_ETEC},
-            'sapovirus': {'watery_diarrhoea': m.proportion_AWD_by_sapovirus,
-                          'bloody_diarrhoea': 1 - m.proportion_AWD_by_sapovirus,
-                          'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_sapovirus,
-                          'dehydration': m.dehydration_by_sapovirus,
-                          'prolonged_diarrhoea': m.prolonged_diarr_sapovirus},
-            'norovirus': {'watery_diarrhoea': m.proportion_AWD_by_norovirus,
-                          'bloody_diarrhoea': 1 - m.proportion_AWD_by_norovirus,
-                          'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_norovirus,
-                          'dehydration': m.dehydration_by_norovirus,
-                          'prolonged_diarrhoea': m.prolonged_diarr_norovirus},
-            'astrovirus': {'watery_diarrhoea': m.proportion_AWD_by_astrovirus,
-                           'bloody_diarrhoea': 1 - m.proportion_AWD_by_astrovirus,
-                           'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_astrovirus,
-                           'dehydration': m.dehydration_by_astrovirus,
-                           'prolonged_diarrhoea': m.prolonged_diarr_astrovirus},
-            'tEPEC': {'watery_diarrhoea': m.proportion_AWD_by_EPEC,
-                      'bloody_diarrhoea': 1 - m.proportion_AWD_by_EPEC,
-                      'fever': m.fever_by_rotavirus, 'vomiting': m.vomiting_by_EPEC,
-                      'dehydration': m.dehydration_by_EPEC, 'prolonged_diarrhoea': m.prolonged_diarr_EPEC},
-        }
+        # --------------------------------------------------------------------------------------------
+        # Make a dict containing the probability of symptoms onset given acquistion of diarrhoaea caused
+        # by a particular pathogen
 
-        # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
-        # THIS EQUATION SHOULD ONLY WORK FOR THOSE WHO ARE IN THE PROLONGED DIARRHOEA PHASE
-        self.parameters['progression_persistent_equation'] = \
-            LinearModel(LinearModelType.MULTIPLICATIVE,
-                        0.2,
-                        Predictor('age_years')
-                        .when('.between(0,0)', 1)
-                        .when('.between(1,1)', m.rr_bec_persistent_age12to23)
-                        .when('.between(2,4)', m.rr_bec_persistent_age24to59)
-                        .otherwise(0.0),
-                        # # Predictor('hv_inf')
-                        # # .when(False, m.rr_bec_persistent_HIV),
-                        # Predictor('malnutrition').
-                        # when(False, m.rr_bec_persistent_SAM),
-                        # Predictor('exclusive_breastfeeding').
-                        # when(False, m.rr_bec_persistent_excl_breast)
-                        )
+        self.prob_symptoms.update({
+            'rotavirus': {
+                'watery_diarrhoea': p['proportion_AWD_by_rotavirus'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_rotavirus'],
+                'fever': p['fever_by_rotavirus'],
+                'vomiting': p['vomiting_by_rotavirus'],
+                'dehydration': p['dehydration_by_rotavirus'],
+                'prolonged_diarrhoea': p['prolonged_diarr_rotavirus']
+            },
+
+            'shigella': {
+                'watery_diarrhoea': p['proportion_AWD_by_shigella'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_shigella'],
+                'fever': p['fever_by_shigella'],
+                'vomiting': p['vomiting_by_shigella'],
+                'dehydration': p['dehydration_by_shigella'],
+                'prolonged_diarrhoea': p['prolonged_diarr_shigella']
+            },
+
+            'adenovirus': {
+                'watery_diarrhoea': p['proportion_AWD_by_adenovirus'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_adenovirus'],
+                'fever': p['fever_by_adenovirus'],
+                'vomiting': p['vomiting_by_adenovirus'],
+                'dehydration': p['dehydration_by_adenovirus'],
+                'prolonged_diarrhoea': p['prolonged_diarr_adenovirus']
+            },
+
+            'cryptosporidium': {
+                'watery_diarrhoea': p['proportion_AWD_by_crypto'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_crypto'],
+                'fever': p['fever_by_crypto'],
+                'vomiting': p['vomiting_by_crypto'],
+                'dehydration': p['dehydration_by_crypto'],
+                'prolonged_diarrhoea': p['prolonged_diarr_crypto']
+            },
+
+            'campylobacter': {
+                'watery_diarrhoea': p['proportion_AWD_by_campylo'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_campylo'],
+                'fever': p['fever_by_campylo'],
+                'vomiting': p['vomiting_by_campylo'],
+                'dehydration': p['dehydration_by_campylo'],
+                'prolonged_diarrhoea': p['prolonged_diarr_campylo']
+            },
+
+            'ST-ETEC': {
+                'watery_diarrhoea': p['proportion_AWD_by_ETEC'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_ETEC'],
+                'fever': p['fever_by_ETEC'],
+                'vomiting': p['vomiting_by_ETEC'],
+                'dehydration': p['dehydration_by_ETEC'],
+                'prolonged_diarrhoea': p['prolonged_diarr_ETEC']
+            },
+
+            'sapovirus': {
+                'watery_diarrhoea': p['proportion_AWD_by_sapovirus'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_sapovirus'],
+                'fever': p['fever_by_sapovirus'],
+                'vomiting': p['vomiting_by_sapovirus'],
+                'dehydration': p['dehydration_by_sapovirus'],
+                'prolonged_diarrhoea': p['prolonged_diarr_sapovirus']
+            },
+
+            'norovirus': {
+                'watery_diarrhoea': p['proportion_AWD_by_norovirus'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_norovirus'],
+                'fever': p['fever_by_norovirus'],
+                'vomiting': p['vomiting_by_norovirus'],
+                'dehydration': p['dehydration_by_norovirus'],
+                'prolonged_diarrhoea': p['prolonged_diarr_norovirus']
+            },
+
+            'astrovirus': {
+                'watery_diarrhoea': p['proportion_AWD_by_astrovirus'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_astrovirus'],
+                'fever': p['fever_by_astrovirus'],
+                'vomiting': p['vomiting_by_astrovirus'],
+                'dehydration': p['dehydration_by_astrovirus'],
+                'prolonged_diarrhoea': p['prolonged_diarr_astrovirus']
+            },
+
+            'tEPEC': {
+                'watery_diarrhoea': p['proportion_AWD_by_EPEC'],
+                'bloody_diarrhoea': 1 - p['proportion_AWD_by_EPEC'],
+                'fever': p['fever_by_rotavirus'],
+                'vomiting': p['vomiting_by_EPEC'],
+                'dehydration': p['dehydration_by_EPEC'],
+                'prolonged_diarrhoea': p['prolonged_diarr_EPEC']
+            },
+        })
+
+        # Check that each pathogen has a risk of developing each symptom
+        assert self.pathogens == set(list(self.prob_symptoms.keys()))
+
+        assert all(
+            [
+                self.SYMPTOMS == set(list(self.prob_symptoms[pathogen].keys()))\
+                for pathogen in self.prob_symptoms.keys()
+            ]
+        )
+
+        # --------------------------------------------------------------------------------------------
+        # Asssign the probability of becoming persisent
+
+
+        # # # # # # # ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
+        # self.parameters['progression_persistent_equation'] = \
+        #     LinearModel(LinearModelType.MULTIPLICATIVE,
+        #                 0.2,
+        #                 Predictor('age_years')
+        #                 .when('.between(0,0)', 1)
+        #                 .when('.between(1,1)', m.rr_bec_persistent_age12to23)
+        #                 .when('.between(2,4)', m.rr_bec_persistent_age24to59)
+        #                 .otherwise(0.0),
+        #                 # # Predictor('hv_inf')
+        #                 # # .when(False, m.rr_bec_persistent_HIV),
+        #                 # Predictor('malnutrition').
+        #                 # when(False, m.rr_bec_persistent_SAM),
+        #                 # Predictor('exclusive_breastfeeding').
+        #                 # when(False, m.rr_bec_persistent_excl_breast)
+        #                 )
 
         # # # # # # # # # # # # ASSIGN THE RATE OF DEATH # # # # # # # # # # # #
-        self.parameters['rate_death_diarrhoea'] = \
+        self.risk_of_death_diarrhoea = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
-                        Predictor('gi_diarrhoea_acute_type')
-                        .when('acute watery diarrhoea', 0.0056)
-                        .when('dysentery', 0.0427),
-                        Predictor('gi_diarrhoea_type').when('persistent', 0.1395),
+                        Predictor('gi_diarrhoea_type')
+                            .when('none', 1.0)   # -- to fill in !
+                            .when('acute', 1.0)  # -- to fill in !
+                            .when('prolonged', 1.0)  # -- to fill in !
+                            .when('persistent', 1.0)  # -- to fill in !
+                            .when('severe_persistent', 1.0), # -- to fill in !
                         Predictor('age_years')
-                        # # .when('.between(1,2)', m.rr_diarr_death_age12to23mo)
-                        # # .when('.between(2,4)', m.rr_diarr_death_age24to59mo)
-                        # .otherwise(0.0),
+                            .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
+                            .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
+                            .otherwise(0.0)
                         # # Predictor('hv_inf').
                         # # when(True, m.rr_gi_diarrhoea_HIV),
                         # Predictor('malnutrition').
                         # when(True, m.rr_gi_diarrhoea_SAM)
                         )
 
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
     def initialise_population(self, population):
-        """Set our property values for the initial population.
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-        :param population: the population of individuals
+        """
+        Sets that there is no one with diarrahoea at initiation.
+        :param population:
+        :return:
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
-        rng = self.rng
 
-        # DEFAULTS
-        df['gi_diarrhoea_status'] = False
-        df['gi_diarrhoea_acute_type'] = ''          #@@@@ initliasing as np.nan makes it a float, so then cannot become a string or category
+        # ---- Key Current Status Classification Properties ----
         df['gi_diarrhoea_pathogen'].values[:] = 'none'
-        df['gi_diarrhoea_type'] = ''     ## You can't make these nans as they are cateogrical. For now I am putting in str so we can use.
-        df['gi_persistent_diarrhoea'] = ''      # same here
-        df['gi_dehydration_status'] = 'no dehydration'
-        df['date_of_onset_diarrhoea'] = pd.NaT
+        df['gi_diarrhoea_type'].values[:] = 'none'
+        df['gi_dehydration_status'].values[:] = 'no dehydration'
+
+        # ---- Internal values ----
+        df['gi_date_of_last_onset_diarrhoea'] = pd.NaT
+        df['gi_diarrhoea_ep_duration'] = pd.NaT
         df['gi_recovered_date'] = pd.NaT
         df['gi_diarrhoea_death_date'] = pd.NaT
-        df['diarrhoea_ep_duration'] = np.nan
-        df['gi_diarrhoea_count'] = 0
-        df['gi_pathogen_count_rota'] = 0
-        df['gi_pathogen_count_shig'] = 0
-        df['gi_pathogen_count_adeno'] = 0
-        df['gi_pathogen_count_crypto'] = 0
-        df['gi_pathogen_count_campylo'] = 0
-        df['gi_pathogen_count_ETEC'] = 0
-        df['gi_pathogen_count_sapo'] = 0
-        df['gi_pathogen_count_noro'] = 0
-        df['gi_pathogen_count_astro'] = 0
-        df['gi_pathogen_count_EPEC'] = 0
 
-        # df['gi_diarrhoea_count'].values[:] = dict()
-        # df['gi_diarrhoea_count'].values[:] = [dict() for x in range(len(df.gi_diarrhoea_pathogen))]
-        df['gi_diarrhoea_death'] = False
-        df['malnutrition'] = False
-        df['exclusive_breastfeeding'] = False
-        df['continued_breastfeeding'] = False
+        # ---- Temporary values ----
+        df['tmp_malnutrition'] = False
+        df['tmp_exclusive_breastfeeding'] = False
+        df['tmp_continued_breastfeeding'] = False
 
-        # TODO: looks like some properties not defined here? - all properties initialised
-
-        # TODO: Assuming zero prevalence initially - fine
 
     def initialise_simulation(self, sim):
-        """
-        Get ready for simulation start.
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-        """
 
-        # add the basic event for acute diarrhoea ---------------------------------------------------
-        sim.schedule_event(AcuteDiarrhoeaEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(DiarrhoeaResetCounterEvent(self), sim.date + DateOffset(days=365))  # 01 jan each year
+        # Schedule the main event:
+        sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date + DateOffset(months=0))
 
-        # add an event to log to screen
-        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=1))
+        # Schedule logging event to every now and and then to repeat
+        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
-        """Initialise properties for a newborn individual.
-        This is called by the simulation whenever a new person is born.
-        :param mother_id: the mother for this child
-        :param child_id: the new child
+        """
+        On birth, all children will have no dirrhoea
         """
         df = self.sim.population.props
 
-        df.at[child_id, 'gi_recovered_date'] = pd.NaT
-        df.at[child_id, 'gi_diarrhoea_status'] = False
-        df.at[child_id, 'gi_diarrhoea_acute_type'] = np.nan
-        df.at[child_id, 'gi_diarrhoea_type'] = ''
-        df.at[child_id, 'gi_persistent_diarrhoea'] = np.nan
+        # ---- Key Current Status Classification Properties ----
+        df.at[child_id, 'gi_diarrhoea_pathogen'] = 'none'
+        df.at[child_id, 'gi_diarrhoea_type'] = 'none'
         df.at[child_id, 'gi_dehydration_status'] = 'no dehydration'
-        df.at[child_id, 'date_of_onset_diarrhoea'] = pd.NaT
+
+        # ---- Internal values ----
+        df.at[child_id, 'gi_date_of_last_onset_diarrhoea'] = pd.NaT
+        df.at[child_id, 'gi_diarrhoea_ep_duration'] = pd.NaT
         df.at[child_id, 'gi_recovered_date'] = pd.NaT
         df.at[child_id, 'gi_diarrhoea_death_date'] = pd.NaT
-        df.at[child_id, 'gi_diarrhoea_death'] = False
-        df.at[child_id, 'gi_diarrhoea_pathogen'] = 'none'
-        df.at[child_id, 'gi_diarrhoea_count'] = 0
 
-        # todo; make sure all properties intiialised for the child
+        # ---- Temporary values ----
+        df.at[child_id, 'tmp_malnutrition'] = False
+        df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
+        df.at[child_id,'tmp_continued_breastfeeding'] = False
+
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -824,32 +831,26 @@ class Diarrhoea(Module):
         pass
 
     def report_daly_values(self):
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
-        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-
-        logger.debug('This is diarrhoea reporting my health values')
-
+        """
+        This returns DALYS values relating to the current status of dehydration
+        """
         df = self.sim.population.props
         p = self.parameters
 
-        health_values = df.loc[df.is_alive, 'gi_dehydration_status'].map({
-            'none': 0,
-            'no dehydration': p['daly_mild_diarrhoea'],     # TODO; maybe rename and checkdaly_mild_dehydration_due_to_diarrahea
-            'some dehydration': p['daly_moderate_diarrhoea'],
-            'severe dehydration': p['daly_severe_diarrhoea']
+        # Map the current status of diarrahoe_type to a daly value:
+        daly_values = df.loc[df.is_alive, 'gi_diarrhoea_type'].map({
+            'none': 0.0,
+            'acute': p['daly_wts']['mild_diarrhoea'],
+            'prolonged': p['daly_wts']['moderate_diarrhoea'],
+            'persistent': p['daly_wts']['moderate_diarrhoea'],
+            'severe_persistent': p['daly_wts']['severe_diarrhoea']
         })
-        health_values.name = 'dehydration'    # label the cause of this disability
+        daly_values.name = ''
 
-        #TODO: is it right that the only thing causing lays from diarrhoa is the dehydration
-        #TODO: are these dalys for the episode of diarrhoa of for an amount of time?
-        #TODO; nb that this will change when symtoms tracked in SymptomManager
-
-        return health_values.loc[df.is_alive]   # returns the series
+        return daly_values
 
 
-class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
+class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=3))
@@ -882,7 +883,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             outcome_i = rng.choice(probs.columns, p=probs.loc[i].values)
 
             if outcome_i != 'none':
-                assert outcome_i in self.module.PROPERTIES['gi_diarrhoea_pathogen'].categories, 'pathogen is being assigned that is not declared in properties'
+                assert outcome_i in self.module.PROPERTIES[
+                    'gi_diarrhoea_pathogen'].categories, 'pathogen is being assigned that is not declared in properties'
                 df.at[i, 'gi_diarrhoea_pathogen'] = outcome_i
                 df.at[i, 'gi_diarrhoea_status'] = True
                 df.at[i, 'gi_diarrhoea_type'] = 'acute'
@@ -939,7 +941,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                     if symptom_string == 'prolonged_diarrhoea':
                         if rng.rand() < prob:
                             df.at[i, 'gi_diarrhoea_type'] = 'prolonged'
-                            if rng.rand() < m.parameters['progression_persistent_equation'].predict(df.loc[[i]]).values[0]:
+                            if rng.rand() < m.parameters['progression_persistent_equation'].predict(df.loc[[i]]).values[
+                                0]:
                                 df.at[i, 'gi_diarrhoea_type'] = 'persistent'
                             if df.at[i, 'di_dehydration_present']:
                                 df.at[i, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
@@ -1070,7 +1073,7 @@ class DiarrhoeaResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
         df['gi_pathogen_count_EPEC'] = 0
 
 
-class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
+class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
@@ -1266,18 +1269,18 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
 
         # incidence rate by pathogen
         logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
-                    {#'total': total_inc,
-                     'rotavirus': rota_inc,
-                     'shigella': shigella_inc,
-                     'adenovirus': adeno_inc,
-                     'cryptosporidium': crypto_inc,
-                     'campylobacter': campylo_inc,
-                     'ETEC': ETEC_inc,
-                     'sapovirus': sapo_inc,
-                     'norovirus': noro_inc,
-                     'astrovirus': astro_inc,
-                     'tEPEC': tEPEC_inc
-                     })
+                    {  # 'total': total_inc,
+                        'rotavirus': rota_inc,
+                        'shigella': shigella_inc,
+                        'adenovirus': adeno_inc,
+                        'cryptosporidium': crypto_inc,
+                        'campylobacter': campylo_inc,
+                        'ETEC': ETEC_inc,
+                        'sapovirus': sapo_inc,
+                        'norovirus': noro_inc,
+                        'astrovirus': astro_inc,
+                        'tEPEC': tEPEC_inc
+                    })
 
         # incidence rate per age group by pathogen
         pathogen_0to11mo = df[df.is_alive & (df.age_years < 1)].groupby('gi_diarrhoea_pathogen').size()
@@ -1359,4 +1362,3 @@ class DiarrhoeaLoggingEvent (RegularEvent, PopulationScopeEventMixin):
                      'astrovirus': astro_inc_by_age[2],
                      'tEPEC': epec_inc_by_age[2]
                      })
-
