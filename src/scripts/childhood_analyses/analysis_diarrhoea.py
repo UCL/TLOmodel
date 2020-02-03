@@ -35,7 +35,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 10000
+popsize = 200
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -108,12 +108,65 @@ for pathogen in sim.modules['Diarrhoea'].pathogens:
     base_incidence_rate[pathogen] = \
         sim.modules['Diarrhoea'].parameters[f'base_incidence_diarrhoea_by_{pathogen}']
 
-# Produce a set of line plot:
+
+calibration_incidence_rate_0_year_olds = {
+        'rotavirus': 17.5245863/100.0,
+        'shigella': 11.7936462/100.0,
+        'adenovirus': 5.866180/100.0,
+        'cryptosporidium': 3.0886699/100.0,
+        'campylobacter': 9.8663257/100.0,
+        'ST-ETEC': 27.925146/100.0,
+        'sapovirus': 10.0972179/100.0,
+        'norovirus': 20.4864004/100.0,
+        'astrovirus': 5.4208352/100.0,
+        'tEPEC': 6.0822457/100.0
+}
+
+calibration_incidence_rate_1_year_olds = {
+        'rotavirus': 9.7007598/100.0,
+        'shigella': 7.8794104/100.0,
+        'adenovirus': 5.8661803/100.0,
+        'cryptosporidium': 1.1792363/100.0,
+        'campylobacter': 2.7915478/100.0,
+        'ST-ETEC': 17.0477152/100.0,
+        'sapovirus': 13.2603114/100.0,
+        'norovirus': 6.6146727/100.0,
+        'astrovirus': 3.5974076/100.0,
+        'tEPEC': 2.2716889/100.0
+}
+
+calibration_incidence_rate_2_to_4_year_olds = {
+        'rotavirus': 0.9324/100.0,
+        'shigella': 9.3018/100.0,
+        'adenovirus': 0.6438/100.0,
+        'cryptosporidium': 0.4662/100.0,
+        'campylobacter': 0.4884/100.0,
+        'ST-ETEC': 1.9758/100.0,
+        'sapovirus': 0.555/100.0,
+        'norovirus': 0.0888/100.0,
+        'astrovirus': 0.1332/100.0,
+        'tEPEC': 0.1998/100.0
+}
+
+# Confirm relationship between the input parameter and the target calibrations
+# (The input baseline incidence rate should be about 1/4 of the total incidence as the polling event runs every 3mo)
+for pathogen in sim.modules['Diarrhoea'].pathogens:
+    input = base_incidence_rate[pathogen]
+    calibration = [
+        calibration_incidence_rate_0_year_olds[pathogen],
+        calibration_incidence_rate_1_year_olds[pathogen],
+        calibration_incidence_rate_2_to_4_year_olds[pathogen]
+    ]
+    # assert all((abs(np.array(input)*4 / np.array(calibration))- 1) < 1e-2)
+    # Not all of these are correct - but they are mostly roughly right.
+
+
+# Produce a set of line plot comparing to the calibration data
 fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
 for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
-    ax.hlines(y=base_incidence_rate[pathogen][0],
+    ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],
                      xmin=min(inc_rate['0y'].index),
                      xmax=max(inc_rate['0y'].index),
                      label='Parameter'
@@ -124,28 +177,42 @@ for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
     ax.legend()
 plt.show()
 
+# Produce a bar plot for means of incidence rate during the simulation:
+inc_mean = pd.DataFrame()
+inc_mean['0y_model_output'] = inc_rate['0y'].mean()
+inc_mean['1y_model_output'] = inc_rate['1y'].mean()
+inc_mean['2-4y_model_output'] = inc_rate['2-4y'].mean()
 
-# Produce a bar plot:
+# put in the inputs:
+inc_mean['0y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_0_year_olds)
+inc_mean['1y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_1_year_olds)
+inc_mean['2-4y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_2_to_4_year_olds)
+
+# 0 year-olds
+inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
+plt.title('O year-olds')
+plt.show()
+
+# 1 year-olds
+inc_mean.plot.bar(y=['1y_model_output', '1y_calibrating_data'])
+plt.title('1 year-olds')
+plt.show()
+
+# 2-4 year-olds
+inc_mean.plot.bar(y=['2-4y_model_output', '2-4y_calibrating_data'])
+plt.title('2-4 year-olds')
+plt.show()
 
 
 # %%
-# Compare this with the desired incidence level.
+# Calibration to the incidence rate at older ages?
 
-# Get the incidence rates that were input:
-calibration_incidence_rate_0_year_olds= {
-        'rotavirus' : 5.0 ,
-        'shigella' : 5.0 ,
-        'adenovirus' : 5.0 ,
-        'cryptosporidium' : 5.0 ,
-        'campylobacter' : 5.0 ,
-        'ST-ETEC' : 5.0 ,
-        'sapovirus' : 5.0 ,
-        'norovirus' : 5.0 ,
-        'astrovirus' : 5.0 ,
-        'tEPEC' : 5.0
-}
+# Plots for older ages?
 
-# TODO: this plot!
+# Look at deaths arising?
+
+
+
 
 
 

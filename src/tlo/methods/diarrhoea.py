@@ -2,7 +2,7 @@
 Childhood Diarrhoea Module
 Documentation: '04 - Methods Repository/Childhood Disease Methods.docx'
 """
-
+import copy
 import logging
 from pathlib import Path
 
@@ -362,7 +362,7 @@ class Diarrhoea(Module):
             '1y': blank_counter,
             '2-4y': blank_counter
         }
-        self.incident_cases_counter = self.incident_cases_counter_blank
+        self.incident_cases_counter = copy.deepcopy(self.incident_cases_counter_blank)
 
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module """
@@ -374,7 +374,7 @@ class Diarrhoea(Module):
                 Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
         )
 
-        # Check that every value has been succesfully read
+        # Check that every value has been read-in successfully
         for param_name, type in self.PARAMETERS.items():
             assert param_name in self.parameters, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
             assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
