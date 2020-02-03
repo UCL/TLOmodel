@@ -2513,12 +2513,13 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
         )
 
+        if request_cons:
+            logger.debug(f"HSI_Hiv_RepeatPrescription: giving ARVs to {person_id}")
+
         date_repeat_prescription = self.sim.date + DateOffset(months=3)
 
         logger.debug(
-            "HSI_Hiv_RepeatPrescription: scheduling a repeat prescription for person %d on date %s",
-            person_id,
-            date_repeat_prescription,
+            f"HSI_Hiv_RepeatPrescription: repeat prescription for{person_id} on {date_repeat_prescription}"
         )
 
         followup_appt = HSI_Hiv_RepeatARV(self.module, person_id=person_id)
