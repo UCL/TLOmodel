@@ -23,10 +23,10 @@ from tlo.analysis.utils import (
 from tlo.methods import (
     contraception,
     demography,
+    enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    enhanced_lifestyle,
     symptommanager,
 )
 from tlo.util import create_age_range_lookup
