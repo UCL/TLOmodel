@@ -884,7 +884,8 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # (Assumes that pathogens are mutually exclusive)
         probs_of_aquiring_pathogen['none'] = 1 - probs_of_aquiring_pathogen.sum(axis=1)
 
-        # Determine which pathogen (if any) each person will acquire                   # TODO: This should be vectorized
+        # TODO: could vectorize this: perhaps just looping through those that do get a pathogen
+        # Determine which pathogen (if any) each person will acquire
         for person_id in probs_of_aquiring_pathogen.index:
             # ----------------------- Allocate a pathogen (or none) to each person ----------------------
             pathogen = rng.choice(probs_of_aquiring_pathogen.columns, p=probs_of_aquiring_pathogen.loc[i].values)
