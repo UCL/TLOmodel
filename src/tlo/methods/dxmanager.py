@@ -94,7 +94,7 @@ class DxManager:
             result_dict_for_list_of_dx_tests[dx_test] = t_res
 
         # Decide on type of return:
-        if (len(dx_tests_to_run) == 1) and use_dict_for_single==False:
+        if (len(dx_tests_to_run) == 1) and use_dict_for_single is False:
             return result_dict_for_list_of_dx_tests[dx_tests_to_run[0]]
         else:
             return result_dict_for_list_of_dx_tests
@@ -195,7 +195,7 @@ class DxTest:
                                                                               to_log=True)
 
             cons_available = all(rtn_from_health_system['Intervention_Package_Code'].values()) \
-                                    and all(rtn_from_health_system['Item_Code'].values())
+                and all(rtn_from_health_system['Item_Code'].values())
         else:
             cons_available = True
 
