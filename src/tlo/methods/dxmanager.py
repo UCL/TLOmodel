@@ -176,7 +176,7 @@ class DxTest:
         :return: value of test or None.
         """
 
-        health_system_module=hsi_event.module.sim.modules['HealthSystem']
+        health_system_module = hsi_event.module.sim.modules['HealthSystem']
 
         # Must be an individual level HSI and not a population level HSI
         assert not isinstance(hsi_event.target,

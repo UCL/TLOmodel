@@ -69,8 +69,6 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disabl
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
-sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
