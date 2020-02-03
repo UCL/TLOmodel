@@ -13,7 +13,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     malecircumcision,
     tb,
-    symptommanager
+    symptommanager,
 )
 
 start_date = Date(2010, 1, 1)
@@ -34,19 +34,23 @@ def check_dtypes(simulation):
 
 
 def test_simulation():
-    service_availability = list(['hiv*', 'tb*', 'male_circumcision*'])
+    service_availability = list(["hiv*", "tb*", "male_circumcision*"])
 
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
     sim = Simulation(start_date=start_date)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability,
-                                           mode_appt_constraints=0,
-                                           ignore_cons_constraints=True,
-                                           ignore_priority=True,
-                                           capabilities_coefficient=1.0,
-                                           disable=True))  # disables the health system constraints
+    sim.register(
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=service_availability,
+            mode_appt_constraints=0,
+            ignore_cons_constraints=True,
+            ignore_priority=True,
+            capabilities_coefficient=1.0,
+            disable=True,
+        )
+    )  # disables the health system constraints
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
@@ -65,14 +69,14 @@ def test_simulation():
 
     # check properties
     # assert ((df.sex == 'M') & (df.hv_sexual_risk == 'low')).all()  # no sex work
-    assert not any((df.sex == 'M') & (df.hv_sexual_risk == 'sex_work'))
+    assert not any((df.sex == "M") & (df.hv_sexual_risk == "sex_work"))
 
     assert not ((df.hv_number_tests >= 1) & ~df.hv_ever_tested).any()
 
-    assert not (df.mc_is_circumcised & (df.sex == 'F')).any()
+    assert not (df.mc_is_circumcised & (df.sex == "F")).any()
 
     # check if HIV-TB co-infected, hv_specific_symptoms=aids
-    assert not any(df.tb_diagnosed & df.hv_inf & (df.hv_specific_symptoms == 'none'))
+    assert not any(df.tb_diagnosed & df.hv_inf & (df.hv_specific_symptoms == "none"))
 
     # only on cotrim if hiv is diagnosed [hv_date_cotrim = DATE and hv_diagnosed = True]
     assert not any(df.hv_date_cotrim.notnull() & ~df.hv_diagnosed)
