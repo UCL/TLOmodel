@@ -340,6 +340,7 @@ class Diarrhoea(Module):
 
     # Declare symptoms
     SYMPTOMS = {'watery_diarrhoea', 'bloody_diarrhoea', 'fever', 'vomiting', 'dehydration', 'prolonged_diarrhoea'}
+    # TODLO; take out prolonged symptom
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
