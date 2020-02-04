@@ -1,5 +1,5 @@
 """
-Basic tests for the Diarrhoea Modul
+Basic tests for the Diarrhoea Module
 """
 import os
 from pathlib import Path
@@ -22,6 +22,13 @@ except NameError:
     # running interactively
     resourcefilepath = 'resources'
 
+def check_dtypes(simulation):
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+
 def test_basic_run_of_diarhoea_module_no_health_care():
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 1, 2)
@@ -42,6 +49,7 @@ def test_basic_run_of_diarhoea_module_no_health_care():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
+    check_dtypes(sim)
 
 #def that there is some diarrhaea
 # that some people die and that the date of death tallies with the reported date of death

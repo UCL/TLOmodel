@@ -768,7 +768,7 @@ class Diarrhoea(Module):
         df['gi_last_dehydration_status'].values[:] = 'no dehydration'
 
         # ---- Internal values ----
-        df['gi_last_diarrhoead_date_of_onset'] = pd.NaT
+        df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
         df['gi_last_diarrhoea_recovered_date'] = pd.NaT
         df['gi_last_diarrhoea_death_date'] = pd.NaT
 
