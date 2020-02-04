@@ -6,10 +6,10 @@ def disable(level):
 
 
 def getLogger(name='tlo'):
-    # Singleton loggers
-    if name not in _loggers.keys():
-        _loggers[name] = Logger(name)
-    return _loggers[name]
+    """Returns a TLO logger of the specified name"""
+    if name not in _LOGGERS.keys():
+        _LOGGERS[name] = Logger(name)
+    return _LOGGERS[name]
 
 
 class Logger:
@@ -23,11 +23,29 @@ class Logger:
         if name == 'tlo':
             self._std_logger.propagate = False
         self.name = self._std_logger.name
-        self.handlers = self._std_logger.handlers
-        self.filters = self._std_logger.filters
 
     def __repr__(self):
         return f'<tlo Logger containing {self._std_logger}>'
+
+    @property
+    def handlers(self):
+        return self._std_logger.handlers
+
+    @handlers.setter
+    def handlers(self, handlers):
+        self._std_logger.handlers.clear()
+        for handler in handlers:
+            self._std_logger.handlers.append(handler)
+
+    @property
+    def filters(self):
+        return self._std_logger.filters
+
+    @filters.setter
+    def filters(self, filters):
+        self._std_logger.filters.clear()
+        for filter in filters:
+            self._std_logger.filters.append(filter)
 
     def addHandler(self, hdlr):
         self._std_logger.addHandler(hdlr=hdlr)
@@ -47,8 +65,8 @@ class Logger:
     def warning(self, msg, *args, **kwargs):
         self._std_logger.warning(msg, *args, **kwargs)
 
-    def removeFilter(self, filter):
-        self._std_logger.removeFilter(filter)
+    def removeFilter(self, fltr):
+        self._std_logger.removeFilter(fltr)
 
     def removeHandler(self, hdlr):
         self._std_logger.removeHandler(hdlr)
@@ -61,4 +79,4 @@ INFO = _logging.INFO
 WARNING = _logging.WARNING
 
 _FORMATTER = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
-_loggers = {'tlo': Logger('tlo', WARNING)}
+_LOGGERS = {'tlo': Logger('tlo', WARNING)}

@@ -2,9 +2,8 @@ import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     chronicsyndrome,
@@ -31,11 +30,6 @@ popsize = 200
 
 # Simply test whether the system runs under multiple configurations of the healthsystem
 # NB. Running the dummy Mockitits and ChronicSyndrome modules test all aspects of the healthsystem module.
-
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.DEBUG)
-
 
 def check_dtypes(simulation):
     # check types of columns

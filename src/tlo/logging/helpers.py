@@ -3,9 +3,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-from tlo.logging import getLogger
-
-from .core import _FORMATTER, DEBUG
+from .core import _FORMATTER, DEBUG, getLogger
 
 
 def set_output_file(log_path: Path) -> _logging.FileHandler:
@@ -14,17 +12,19 @@ def set_output_file(log_path: Path) -> _logging.FileHandler:
     :param log_path: path for file
     :return: filehandler object
     """
-    fh = _logging.FileHandler(log_path)
-    fh.setFormatter(_FORMATTER)
-    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers if not isinstance(h, _logging.StreamHandler)]
-    getLogger('tlo').addHandler(fh)
-    return fh
+    file_handler = _logging.FileHandler(log_path)
+    file_handler.setFormatter(_FORMATTER)
+    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers
+                                 if not isinstance(h, _logging.FileHandler)]
+    getLogger('tlo').addHandler(file_handler)
+    return file_handler
 
 
 def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
     """Set custom logging levels for disease modules
 
-    :param custom_levels: Dictionary of modules and their level, '*' can be used as a key for all modules
+    :param custom_levels: Dictionary of modules and their level, '*' can be used
+    as a key for all modules
     :param modules: string values of all registered modules
     """
     for key, value in custom_levels.items():
