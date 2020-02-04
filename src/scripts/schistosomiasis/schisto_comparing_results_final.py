@@ -6,20 +6,21 @@ import matplotlib.ticker as mtick
 from datetime import date
 import numpy as np
 from pathlib import Path
-
+load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
+save_path = 'C:/Users/ieh19/Desktop/Project 1/result_tables/'
 
 def load_outputs(timestamp, infection):
     infection_outputs = pd.read_csv(load_path + "output_" + infection + '_'+ timestamp + ".csv")
     infection_outputs.date = pd.to_datetime(infection_outputs.date)
     infection_outputs.date = infection_outputs.date - np.timedelta64(20, 'Y')
-    if 'High-inf_Prevalence' not in list(infection_outputs.columns):
-        # infection_outputs['High-inf_Prevalence'] = infection_outputs.apply(lambda row: row.High_infections / (row.Infected + row.Non_infected))
-        infection_outputs['High-inf_Prevalence'] = infection_outputs['High_infections']/(infection_outputs['Infected'] + infection_outputs['Non_infected'])
+    # if 'High-inf_Prevalence' not in list(infection_outputs.columns):
+    #     # infection_outputs['High-inf_Prevalence'] = infection_outputs.apply(lambda row: row.High_infections / (row.Infected + row.Non_infected))
+    #     infection_outputs['High-inf_Prevalence'] = infection_outputs['High_infections']/(infection_outputs['Infected'] + infection_outputs['Non_infected'])
 
-    dalys = pd.read_csv(load_path + "output_daly_" + timestamp + ".csv")
-    dalys.date = pd.to_datetime(dalys.date)
-    dalys.date = dalys.date - np.timedelta64(20, 'Y')
-    dalys = dalys.groupby(['date'], as_index=False).agg({'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms': 'sum'})
+    # dalys = pd.read_csv(load_path + "output_daly_" + timestamp + ".csv")
+    # dalys.date = pd.to_datetime(dalys.date)
+    # dalys.date = dalys.date - np.timedelta64(20, 'Y')
+    # dalys = dalys.groupby(['date'], as_index=False).agg({'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms': 'sum'})
 
     prev_years = pd.read_csv(load_path + "output_prevalent_years_" + timestamp + ".csv")
     prev_years.date = pd.to_datetime(prev_years.date)
@@ -34,15 +35,24 @@ def get_averages_prev(all_sims_outputs):
     avg_df = big_df.groupby(['date', 'Age_group'], as_index=False).agg({'Prevalence': 'mean', 'MeanWormBurden': 'mean', 'High-inf_Prevalence': 'mean'})
     return avg_df
 
-def get_averages_dalys_or_prev_years(all_sims_outputs, vals):
-    cols_of_interest = {'dalys': 'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms',
-                        'prev_years': 'Prevalent_years_this_year_total'}
+def get_averages_dalys(all_sims_outputs):
     list_of_dfs = []
     for df in all_sims_outputs:
         list_of_dfs.append(df)
     big_df = pd.concat(list_of_dfs, ignore_index=True)
-    big_df = big_df[['date', cols_of_interest[vals]]]
-    avg_df = big_df.groupby(['date'], as_index=False).agg({cols_of_interest[vals]: 'mean'})
+    big_df = big_df[['date', 'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms']]
+    avg_df = big_df.groupby(['date'], as_index=False).agg({'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms': 'mean'})
+    return avg_df
+
+def get_averages_prev_and_high_inf_years(all_sims_outputs):
+    cols_of_interest = ['Prevalent_years_per_100', 'High_infection_years_per_100']
+    list_of_dfs = []
+    for df in all_sims_outputs:
+        list_of_dfs.append(df)
+    big_df = pd.concat(list_of_dfs, ignore_index=True)
+    # big_df = big_df[['date', cols_of_interest]]
+    avg_df = big_df.groupby(['date', 'Age_group'], as_index=False).agg({cols_of_interest[0]: 'mean', cols_of_interest[1]: 'mean'})
+
     return avg_df
 
 def get_averages_districts(sims):
@@ -54,30 +64,21 @@ def get_averages_districts(sims):
     avg_df = big_df.groupby(['District'], as_index=False).agg({'Prevalence': 'mean', 'MWB': 'mean'})
     return avg_df
 
-def add_average(sim):
-    avg_outputs = {'prev': get_averages_prev(sim),
-                          # 'dalys': get_averages_dalys(sim, 'dalys'),
-                           'prev_years': get_averages_dalys(sim, 'prev_years'),
-                           'distr': get_averages_districts(sim)}
-    sim.update({'avg': avg_outputs})
-    return sim
-
 def plot_per_age_group(scenarios_list, age, infection, vals):
     assert vals in ['Prevalence', 'High-inf_Prevalence', 'MeanWormBurden']
     fig, ax = plt.subplots(figsize=(9, 7))
     colours = ['b', 'm', 'y', 'g', 'k', 'c', 'r', 'lawngreen', 'purple', 'orange', 'maroon', 'navy']
     colour_counter = 0
     for k in scenarios_list.keys():
-        print(k)
         c = colours[colour_counter]
         # c = 'b'
         for ii in range(len(scenarios_list[k]['prev'])):
             df = scenarios_list[k]['prev'][ii]
             df = df[df['Age_group'] == age]
-            # df = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
+            df = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
             # df.date = df.date - np.timedelta64(2000, 'Y')
             # df = df[(df.date < pd.Timestamp(date(2019, 7, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
-            df = df[df.date >= pd.Timestamp(date(2014, 1, 1))]
+            # df = df[df.date >= pd.Timestamp(date(2014, 1, 1))]
             if ii < len(scenarios_list[k]['prev']) - 1:
                 ax.plot(df.date, df[vals], color=c, label='_nolegend_', linestyle=':', alpha=0.5)
             # last one is an average of the previous scenarios
@@ -107,11 +108,6 @@ def plot_per_age_group(scenarios_list, age, infection, vals):
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.show()
-
-plot_per_age_group(scenarios, 'All', 'haematobium', 'Prevalence')
-plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'High-inf_Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'High-inf_Prevalence')
 
 def plot_all_age_groups_same_plot(scenarios_list, infection, vals):
     assert vals in ['Prevalence', 'High-inf_Prevalence', 'MeanWormBurden']
@@ -160,23 +156,26 @@ def plot_all_age_groups_same_plot(scenarios_list, infection, vals):
     plt.legend()
     plt.show()
 
-plot_all_age_groups_same_plot(scenarios, 'haematobium', 'Prevalence')
-
-def plot_measure(scenarios_list, measure_type):
-    assert measure_type in ['dalys', 'prev_years']
+def plot_measure(scenarios_list, age, measure_type):
+    assert measure_type in ['dalys', 'prev_years', 'high_inf']
     if measure_type == 'dalys':
         value_col = 'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms'
         title = 'DALYs per year per 10.000 ppl'
+    elif measure_type == 'prev_years':
+        value_col = 'Prevalent_years_per_100'
+        title = 'Prevalent years per year per 100 ppl, ' + age
     else:
-        value_col = 'Prevalent_years_this_year_total'
-        title = 'Prevalent years per year per 10.000 ppl'
+        measure_type = 'prev_years'
+        value_col = 'High_infection_years_per_100'
+        title = 'High-infection years per year per 100 ppl, ' + age
     fig, ax = plt.subplots(figsize=(9, 7))
-    colours = ['b', 'm', 'y', 'g', 'k', 'c', 'r']
+    colours = ['b', 'm', 'y', 'g', 'k', 'c', 'r', 'lawngreen', 'purple', 'orange', 'maroon', 'navy']
     colour_counter = 0
     for k in scenarios_list.keys():
         c = colours[colour_counter]
         for ii in range(len(scenarios_list[k]['prev'])):
             df = scenarios_list[k][measure_type][ii]
+            df = df[df['Age_group'] == age]
             # df_before_2019 = df[(df.date <= pd.Timestamp(date(2019, 1, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
             df = df[df.date >= pd.Timestamp(date(2018, 12, 30))]
             # ax.plot(df_after_2019.date, df_after_2019[value_col], label=k, linestyle=':')
@@ -184,23 +183,21 @@ def plot_measure(scenarios_list, measure_type):
 
             # df = df[df.date >= pd.Timestamp(date(2014, 1, 1))]
             if ii < len(scenarios_list[k]['prev']) - 1:
-                ax.plot(df.date, df[value_col], color=c, label='_nolegend_', linestyle=':', alpha=0.5)
+                ()
+                # ax.plot(df.date, df[value_col], color=c, label='_nolegend_', linestyle=':', alpha=0.5)
             # last one is an average of the previous scenarios
             else:
-                ax.plot(df.date, df[value_col], color=c, label=k, linestyle='-')
+                plt.plot(df.date, df[value_col], color=c, label=k)
         colour_counter += 1
         ax.xaxis_date()
     plt.yscale('log')
     ax.set(xlabel='logging date',
-           ylabel=measure_type,
+           ylabel='years',
            title=title)
     ax.xaxis.set_major_formatter(DateFormatter("%Y"))
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.show()
-
-plot_measure(scenarios, 'dalys')
-plot_measure(scenarios, 'prev_years')
 
 def get_expected_prevalence(infection):
     expected_district_prevalence = pd.read_excel(Path("./resources") / 'ResourceFile_Schisto.xlsx',
@@ -241,28 +238,50 @@ def find_year_of_elimination(scenarios_list, age_group, level):
             # years_till_elimination = (date_of_elimination - pd.Timestamp(year=2019, month=7, day=1) / np.timedelta64(1, 'Y'))
         print(k, date_of_elimination, treatment_rounds)
 
-find_year_of_elimination(scenarios, 'PSAC', 0.01)
-find_year_of_elimination(scenarios, 'PSAC', 0.00)
-
-def get_average_final(scenarios_list):
+def get_average_final(scenarios_list, vals):
+    assert vals in ['prev', 'prev_years']
     output_dict = {}
     for k in scenarios_list.keys():
-        df = scenarios_list[k]['prev'][-1]  # take the last dataframe which contains averages
-        df = df.iloc[-4:]  # last 4 rows will contain the final averages for each age group
+        df = scenarios_list[k][vals][-1]  # take the last dataframe which contains averages
+        if vals == 'prev':
+            df_before = df[df.date == pd.Timestamp(2019, 6, 1, 3, 36)]
+        else:
+            df_before = df[df.date == pd.Timestamp(2018, 12, 31, 3, 36)]
+        df_after = df.iloc[-4:]  # last 4 rows will contain the final averages for each age group
+        df = pd.concat([df_before, df_after])
         df['Scenario'] = k
         df.set_index('Age_group', inplace=True)
         output_dict.update({k: df})
     return output_dict
 
-def save_averages_final_in_csv(scenarios_list):
-    avg_dict = get_average_final(scenarios_list)
+def save_averages_final_in_csv(scenarios_list, measure):
+    assert measure in ['prev', 'prev_years']
+    avg_dict = get_average_final(scenarios_list, measure)
     df_list = [df for df in avg_dict.values()]
     avg_df = pd.concat(df_list)
-
-    avg_df.to_csv(load_path + 'average_finals.csv')
-
-# od = get_average_final(scenarios, 'Prevalence')
-save_averages_final_in_csv(scenarios)
+    avg_df.date = avg_df.date.map({pd.Timestamp(2019, 6, 1, 3, 36): 'before', pd.Timestamp(2018, 12, 31, 3, 36): 'before'})
+    avg_df.date.fillna('after', inplace=True)
+    avg_df_before = avg_df[avg_df['date'] == 'before']
+    # first we save the 'before' values
+    if measure == 'prev':
+        avg_df_before = avg_df_before.groupby(level=0).agg(
+            {'Prevalence': 'mean', 'MeanWormBurden': 'mean', 'High-inf_Prevalence': 'mean'})
+        columns = ['Prevalence', 'MeanWormBurden', 'High-inf_Prevalence']
+    else:
+        avg_df_before = avg_df_before.groupby(level=0).agg(
+            {'Prevalent_years_per_100': 'mean', 'High_infection_years_per_100': 'mean'})
+        columns = ['Prevalent_years_per_100', 'High_infection_years_per_100']
+    writer = pd.ExcelWriter(save_path + measure + '_before_and_after.xlsx')
+    for vals in columns:
+        avg_df_val = avg_df[avg_df['date'] == 'after']
+        avg_df_val = avg_df_val[[vals, 'Scenario']]
+        avg_df_val['Age'] = avg_df_val.index
+        pivot = avg_df_val.pivot(index='Age', columns='Scenario', values=vals)
+        before_dict = avg_df_before[vals].to_dict()
+        pivot['before'] = pivot.index.map(before_dict)
+        # pivot.to_csv(save_path + vals + '_average_finals.csv')
+        pivot.to_excel(writer, sheet_name=vals)
+    writer.save()
 
 # def plot_dalys_age_group(sim_dict, age):
 #     fig, ax = plt.subplots(figsize=(9, 7))
@@ -285,52 +304,38 @@ save_averages_final_in_csv(scenarios)
 #########################################################################################################
 
 # Load the simulations you want to compare
-load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
-timestamps1 = ['2020-01-24_17-05-00', '2020-01-24_17-05-28', '2020-01-24_17-05-41']
-timestamps2 = ['2020-01-24_19-36-24', '2020-01-24_19-37-08', '2020-01-24_19-37-18']
-timestamps22 = ['2020-01-28_18-15-26', '2020-01-28_18-16-42', '2020-01-28_18-16-57']
-timestamps3 = ['2020-01-24_15-37-04', '2020-01-24_15-37-24', '2020-01-24_15-37-40']
-timestamps4 = ['2020-01-26_14-21-57', '2020-01-26_14-22-20', '2020-01-26_14-22-43']
-timestamps5 = ['2020-01-24_14-38-32', '2020-01-24_14-38-55', '2020-01-24_14-38-45']
-timestamps6 = ['2020-01-28_18-15-26', '2020-01-28_18-16-42', '2020-01-28_18-16-57']
-timestamps = [timestamps1, timestamps2, timestamps22, timestamps3, timestamps4, timestamps5, timestamps6]
-labels = ['No MDA after 2019',
-          'MDA once per year, PSAC = 0%',
-          'MDA once per year, PSAC = 25%',
-          'MDA once per year, PSAC = 50%',
-          'MDA twice per year, PSAC = 0%',
-          'MDA twice per year, PSAC = 50%',
-          'MDA once per year, PSAC = 25%']
+#
+# timestamps1 = ['2020-01-24_17-05-00', '2020-01-24_17-05-28', '2020-01-24_17-05-41']
+# timestamps2 = ['2020-01-24_19-36-24', '2020-01-24_19-37-08', '2020-01-24_19-37-18']
+# timestamps22 = ['2020-01-28_18-15-26', '2020-01-28_18-16-42', '2020-01-28_18-16-57']
+# timestamps3 = ['2020-01-24_15-37-04', '2020-01-24_15-37-24', '2020-01-24_15-37-40']
+# timestamps4 = ['2020-01-26_14-21-57', '2020-01-26_14-22-20', '2020-01-26_14-22-43']
+# timestamps5 = ['2020-01-24_14-38-32', '2020-01-24_14-38-55', '2020-01-24_14-38-45']
+# timestamps6 = ['2020-01-28_18-15-26', '2020-01-28_18-16-42', '2020-01-28_18-16-57']
+# timestamps = [timestamps1, timestamps2, timestamps22, timestamps3, timestamps4, timestamps5, timestamps6]
+# labels = ['No MDA after 2019',
+#           'MDA once per year, PSAC = 0%',
+#           'MDA once per year, PSAC = 25%',
+#           'MDA once per year, PSAC = 50%',
+#           'MDA twice per year, PSAC = 0%',
+#           'MDA twice per year, PSAC = 50%',
+#           'MDA once per year, PSAC = 25%']
 
 # these are with varying the worm threshold for high-intensity infections among PSAC
-timestamps1 = ['2020-01-29_00-08-43', '2020-01-29_00-11-27', '2020-01-29_00-11-48']
-timestamps2 = ['2020-01-29_19-56-19', '2020-01-29_19-56-55', '2020-01-29_20-04-17']
-timestamps22 = ['2020-01-29_10-15-44', '2020-01-29_10-17-43', '2020-01-29_10-18-24']
-timestamps3 = ['2020-01-24_19-36-24', '2020-01-24_19-37-08', '2020-01-24_19-37-18']
-timestamps4 = ['2020-01-29_00-07-40', '2020-01-29_00-06-18', '2020-01-29_00-10-17']
-timestamps5 = ['2020-01-28_21-19-00', '2020-01-28_21-20-01', '2020-01-28_21-19-30']
-timestamps55 = ['2020-01-29_10-22-42', '2020-01-29_10-23-09', '2020-01-29_11-07-02']
-timestamps6 = ['2020-01-28_18-15-26', '2020-01-28_18-16-42', '2020-01-28_18-16-57']
-timestamps66 = ['2020-01-29_21-59-21', '2020-01-29_22-09-25', '2020-01-29_22-27-23']
-timestamps7 = ['2020-01-28_17-05-34', '2020-01-28_17-06-44', '2020-01-28_17-06-53']
-timestamps77 = ['2020-01-29_22-54-31', '2020-01-29_22-54-49', '2020-01-29_22-55-02']
-timestamps8 = ['2020-01-24_15-37-04', '2020-01-24_15-37-24', '2020-01-24_15-37-40']
-timestamps = [timestamps1, timestamps2, timestamps22, timestamps3, timestamps4, timestamps5,
-              timestamps55, timestamps6, timestamps66, timestamps7, timestamps77, timestamps8]
-labels = ['PSAC 0%, 5 worms', 'PSAC 0% 10 worms', 'PSAC 0% 15 worms', 'PSAC 0% 20 worms',
-          'PSAC 25% 5 worms', 'PSAC 25% 10 worms', 'PSAC 25% 15 worms', 'PSAC 25% 20 worms',
-          'PSAC 50% 5 worms', 'PSAC 50% 10 worms', 'PSAC 50% 15 worms', 'PSAC 50% 20 worms']
-
-labels = ['25 years, no MDA', '25 years, no MDA, TreatmentSeeking on']
-timestamps = [['2020-01-24_12-02-31', '2020-01-24_12-02-55', '2020-01-24_12-03-06'],
-              ['2020-01-26_21-34-32', '2020-01-26_21-37-27', '2020-01-26_21-36-24']]
-
-# timestamps = timestamps[1:]
-# labels = labels[1:]
-# timestamps = [timestamps[0]]
-# labels = [labels[0]]
-
-scenarios = dict((labels[i], timestamps[i]) for i in range(len(labels)))
+scenarios = {
+    'PSAC 0%, 5 worms': ['2020-02-03_11-42-43', '2020-02-03_11-45-12', '2020-02-03_11-48-26'],
+    'PSAC 0% 10 worms': ['2020-02-02_22-45-31', '2020-02-02_22-45-10', '2020-02-02_22-46-06'],
+    'PSAC 0% 15 worms': ['2020-02-03_13-44-24', '2020-02-03_13-43-11', '2020-02-03_13-47-27'],
+    'PSAC 0% 20 worms': ['2020-02-03_09-28-23', '2020-02-03_09-29-35', '2020-02-03_09-34-40'],
+    'PSAC 25% 5 worms': ['2020-02-03_11-51-32', '2020-02-03_11-51-16', '2020-02-03_11-50-14'],
+    'PSAC 25% 10 worms': ['2020-02-02_22-40-56', '2020-02-02_22-43-14', '2020-02-02_22-45-18'],
+    'PSAC 25% 15 worms': ['2020-02-03_13-46-28', '2020-02-03_13-47-34', '2020-02-03_13-47-50'],
+    'PSAC 25% 20 worms': ['2020-02-03_09-40-34', '2020-02-03_09-38-36', '2020-02-03_09-41-49'],
+    'PSAC 50% 5 worms': ['2020-02-03_11-51-57', '2020-02-03_11-52-36', '2020-02-03_11-51-07'],
+    'PSAC 50% 10 worms': ['2020-02-02_22-38-14', '2020-02-02_22-39-27', '2020-02-02_22-43-19'],
+    'PSAC 50% 15 worms': ['2020-02-03_14-40-06', '2020-02-03_14-40-33', '2020-02-03_14-42-50'],
+    'PSAC 50% 20 worms': ['2020-02-03_09-41-29', '2020-02-03_09-42-35', '2020-02-03_09-41-31']
+}
 
 for label, timestamps in scenarios.items():
     # load all results for the given scenario
@@ -340,40 +345,50 @@ for label, timestamps in scenarios.items():
     for time in timestamps:
         prev_t, dalys_t, prev_years_t = load_outputs(time, 'Haematobium')
         prev.append(prev_t)
-        dalys.append(dalys_t)
+        # dalys.append(dalys_t)
         prev_years.append(prev_years_t)
 
     prev.append(get_averages_prev(prev))
-    dalys.append(get_averages_dalys_or_prev_years(dalys, 'dalys'))
-    prev_years.append(get_averages_dalys_or_prev_years(prev_years, 'prev_years'))
-    scenario_outputs = {'prev': prev, 'dalys': dalys, 'prev_years': prev_years }
+    # dalys.append(get_averages_dalys(dalys))
+    prev_years.append(get_averages_prev_and_high_inf_years(prev_years))
+    scenario_outputs = {'prev': prev, 'dalys': dalys, 'prev_years': prev_years}
     scenarios.update({label: scenario_outputs})
 
 
+# labels = ['25 years, no MDA', '25 years, no MDA, TreatmentSeeking on']
+# timestamps = [['2020-01-24_12-02-31', '2020-01-24_12-02-55', '2020-01-24_12-03-06'],
+#               ['2020-01-26_21-34-32', '2020-01-26_21-37-27', '2020-01-26_21-36-24']]
+
+# timestamps = timestamps[1:]
+# labels = labels[1:]
+# timestamps = [timestamps[0]]
+# labels = [labels[0]]
+
+# scenarios = dict((labels[i], timestamps[i]) for i in range(len(labels)))
+
+
 # plots
-# for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
-#     plot_per_age_group(scenarios, age_group, 'haematobium', 'Prevalence')
 for age_group in ['PSAC', 'SAC']:
     plot_per_age_group(scenarios, age_group, 'haematobium', 'Prevalence')
 
-plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'High-inf_Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'High-inf_Prevalence')
+for age_group in ['PSAC', 'SAC']:
+    plot_per_age_group(scenarios, age_group, 'haematobium', 'High-inf_Prevalence')
+
 
 plot_all_age_groups_same_plot(scenarios, 'haematobium', 'Prevalence')
 
 for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
     plot_per_age_group(scenarios, age_group, 'haematobium', 'MeanWormBurden')
 
-plot_measure(scenarios, 'dalys')
 plot_measure(scenarios, 'prev_years')
+plot_measure(scenarios, 'PSAC', 'high_inf')
 
-# for testing
-plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'MeanWormBurden')
+plot_all_age_groups_same_plot(scenarios, 'haematobium', 'Prevalence')
 
-plot_per_age_group(simulations_total, 'Adults', 'Prevalence')
-plot_per_age_group(simulations_total, 'All', 'Prevalence')
-df = simulations_total['MDA twice per year, PSAC coverage 50%']['dalys']
+find_year_of_elimination(scenarios, 'PSAC', 0.01)
+find_year_of_elimination(scenarios, 'PSAC', 0.00)
+save_averages_final_in_csv(scenarios, 'prev')
+save_averages_final_in_csv(scenarios, 'prev_years')
 
 
 def plot_subset_of_worms(scenarios_list, labels_list, age, vals, title):

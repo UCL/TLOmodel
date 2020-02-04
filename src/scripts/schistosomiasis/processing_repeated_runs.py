@@ -105,11 +105,11 @@ def plot_prevalence_per_district(sims, infection):
     dict_dstr = df.loc[:, 'Prevalence'].to_dict()
     plt.bar(*zip(*dict_dstr.items()), alpha=0.5, label='simulations avg')
     plt.scatter(*zip(*expected_prev.items()), label='data')
-    plt.xticks(rotation=90)
+    plt.xticks(rotation=45)
     plt.xlabel('District')
     plt.ylabel('Prevalence')
     plt.legend()
-    plt.title('Prevalence per district, S.' + infection + ', TreatmentSeeking On')
+    plt.title('Prevalence per district, S.' + infection)
     plt.show()
 
 # Load the simulations you want to compare
@@ -124,7 +124,7 @@ load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
 # timestamps = ['2020-01-20_17-04-45', '2020-01-20_17-05-07', '2020-01-20_17-05-23', '2020-01-20_19-37-43']
 timestamps = ['2020-01-24_12-02-31', '2020-01-24_12-02-55', '2020-01-24_12-03-06']
 timestamps = ['2020-01-26_21-34-32', '2020-01-26_21-37-27', '2020-01-26_21-36-24']
-
+timestamps = ['2020-01-24_12-02-31', '2020-01-24_12-02-55', '2020-01-24_12-03-06']
 labels = ['sim' + str(i) for i in range(1,len(timestamps))]
 
 sim_dict = dict(zip(timestamps, labels))
