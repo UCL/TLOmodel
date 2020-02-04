@@ -895,6 +895,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
                 # ----------------------- Determine outcomes for this case ----------------------
                 risk_of_death = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
+                risk_of_death = 0                                                               # <--- TODO No deaths
                 duration_in_days_of_diarrhoea = 2                                               # <--- To Fill In.
 
                 if rng.rand() < risk_of_death:
