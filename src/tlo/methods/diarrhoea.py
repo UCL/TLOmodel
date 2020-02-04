@@ -838,7 +838,7 @@ class Diarrhoea(Module):
                                                      'gi_last_diarrhoea_pathogen'],
                                               dtype='float')
 
-        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values)
+        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0).drop(columns='none')
 
         return daly_values_by_pathogen
 
