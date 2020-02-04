@@ -35,7 +35,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 10000
+popsize = 500
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -75,13 +75,30 @@ output = parse_log_file(logfile)
 # Calculate the "incidence rate" from the output counts of incidence
 
 counts = output['tlo.methods.diarrhoea']['incidence_count_by_patho']
+counts['year'] = pd.to_datetime(counts['date']).dt.year
+counts.drop(columns='date', inplace=True)
 counts.set_index(
-    'date',
+    'year',
     drop=True,
     inplace=True
 )
 
-# get population size to make a comparison
+# get person-years of 0 year-old, 1 year-olds and 2-4 year-old
+py_ = output['tlo.methods.demography']['person_years']
+years = pd.to_datetime(py_['date']).dt.year
+py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
+for year in years:
+    tot_py = (
+        (py_.loc[pd.to_datetime(py_['date']).dt.year==year]['M']).apply(pd.Series) + \
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
+    ).transpose()
+
+    py.loc[year, '0y'] = tot_py.loc[0].values[0]
+    py.loc[year, '1y'] = tot_py.loc[1].values[0]
+    py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
+
+
+# # get population size to make a comparison
 pop = output['tlo.methods.demography']['num_children']
 pop.set_index(
     'date',
@@ -93,14 +110,10 @@ pop['1y']=pop[1]
 pop['2-4y']=pop[2]+pop[3]+pop[4]
 pop.drop(columns=[x for x in range(5)], inplace=True)
 
-# Incidence rate among 0 year-olds
+# Incidence rate among 0, 1, 2-4 year-olds
 inc_rate = dict()
 for age_grp in counts.columns:
-    c = counts[age_grp].apply(pd.Series)
-    i = c.div(pop[age_grp], axis=0).dropna()
-    i['year'] = pd.to_datetime(i.index).year
-    i.set_index('year', drop=True, inplace=True)
-    inc_rate[age_grp] = i
+    inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
 # Get the incidence rates that were input:
 base_incidence_rate = dict()
