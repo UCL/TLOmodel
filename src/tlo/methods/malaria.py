@@ -1072,47 +1072,21 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 adults = df.index[df.index.isin(severe) & (df.age_exact_years >= 5)]
 
                 jaundice_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                        .sample(frac=symp_prob_adult_series.jaundice, replace=False)
-                        .index
-                    if adults.any()
-                    else []
-                )
+                    df[df.index.isin(severe) & (df.age_exact_years >= 5)].sample(frac=symp_prob_adult_series.jaundice,
+                                                                                 replace=False).index if adults.any() else [])
                 acidosis_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                        .sample(frac=symp_prob_adult_series.acidosis, replace=False)
-                        .index
-                    if adults.any()
-                    else []
-                )
-                coma_convulsions_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                        .sample(frac=symp_prob_adult_series.coma_convulsions, replace=False)
-                        .index
-                    if adults.any()
-                    else []
-                )
-                renal_failure_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                        .sample(frac=symp_prob_adult_series.renal_failure, replace=False)
-                        .index
-                    if adults.any()
-                    else []
-                )
+                    df[df.index.isin(severe) & (df.age_exact_years >= 5)].sample(frac=symp_prob_adult_series.acidosis,
+                                                                                 replace=False).index if adults.any() else [])
+                coma_convulsions_ad = (df[df.index.isin(severe) & (df.age_exact_years >= 5)].sample(
+                    frac=symp_prob_adult_series.coma_convulsions, replace=False).index if adults.any() else [])
+                renal_failure_ad = (df[df.index.isin(severe) & (df.age_exact_years >= 5)].sample(
+                    frac=symp_prob_adult_series.renal_failure, replace=False).index if adults.any() else [])
                 anaemia_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                        .sample(frac=symp_prob_adult_series.anaemia, replace=False)
-                        .index
-                    if adults.any()
-                    else []
-                )
+                    df[df.index.isin(severe) & (df.age_exact_years >= 5)].sample(frac=symp_prob_adult_series.anaemia,
+                                                                                 replace=False).index if adults.any() else [])
                 shock_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                        .sample(frac=symp_prob_adult_series.shock, replace=False)
-                        .index
-                    if adults.any()
-                    else []
-                )
+                    df[df.index.isin(severe) & (df.age_exact_years >= 5)].sample(frac=symp_prob_adult_series.shock,
+                                                                                 replace=False).index if adults.any() else [])
 
                 # join the two sets of indices together ready to call the symptom manager
                 jaundice = jaundice_ch.append(jaundice_ad)
