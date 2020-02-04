@@ -28,7 +28,6 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-
 def test_basic_run_of_diarhoea_module_no_health_care():
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 1, 2)

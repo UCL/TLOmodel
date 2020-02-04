@@ -197,6 +197,43 @@ class Demography(Module):
                         'mother_age': df.at[mother_id, 'age_years']
                     })
 
+    def calc_py_lived_in_last_year(self):
+        """
+        This is a helper method to compute the person-years that were lived in the previous year.
+        It outputs a pd.DataFrame with the index being single year of age
+        """
+
+        df = self.sim.population.props
+
+        # Making a working dataframe that is limited to those who were alive one year ago
+        df_calc = df.loc[~(df['date_of_death'] < (self.sim.date - DateOffset(years=1))), \
+                         ['date_of_death','age_years','age_exact_years']].copy()
+
+
+        # Define the window in time of interest
+        df_calc['year_start'] = self.sim.date - DateOffset(years=1)
+        df_calc['year_end'] = self.sim.date
+
+        # Define each person's entry and exit to the window
+        entry_to_window = pd.concat([df['date_of_birth'], year_start], axis=1).max(axis=1)
+        exit_to_window = pd.concat([df['date_of_death'], year_end], axis=1).min(axis=1)
+
+        years_in_window = ((exit_to_window - entry_to_window).dt.days)/365.0
+
+        years_since_last_birthday = df['age_exact_years'] - df['age_years']
+
+
+
+        py = pd.DataFrame(
+            index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name='age_years'),
+            columns=['M', 'F'],
+            data=0.0
+        )
+
+
+
+        return py
+
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -355,6 +392,21 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|num_children|%s', self.sim.date,
                     num_children.to_dict())
+
+
+        # Output the person-years lived by single year of age in the past year
+        py = self.module.calc_py_lived_in_last_year()
+        logger.info('%s|person_years|%s', self.sim.date,
+                   py.to_dict())
+
+        # # Output one line at a time:
+        # for age_years in py.index:
+        #     line_as_dict = py.loc[age_years].to_dict()
+        #     line_as_dict.update({'age_years': age_years})
+        #     logger.info('%s|person_years|%s',
+        #                 self.sim.date,
+        #                 line_as_dict
+        #                 )
 
 def scale_to_population(parsed_output, resourcefilepath):
     """
