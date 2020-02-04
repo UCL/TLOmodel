@@ -1,8 +1,5 @@
-import logging
-import time
 from tlo.analysis.utils import parse_log_file
 import datetime
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
