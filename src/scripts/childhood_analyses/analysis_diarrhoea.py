@@ -161,6 +161,18 @@ calibration_incidence_rate_2_to_4_year_olds = {
         'tEPEC': 0.1998/100.0
 }
 
+
+paths = list(calibration_incidence_rate_0_year_olds.keys())
+ex = dict()
+for p in paths:
+    ex[p]=[
+        calibration_incidence_rate_0_year_olds[p],
+        calibration_incidence_rate_1_year_olds[p],
+        calibration_incidence_rate_2_to_4_year_olds[p]
+    ]
+
+tab = pd.DataFrame(ex).transpose().to_csv('dump.csv')
+
 # Confirm relationship between the input parameter and the target calibrations
 # (The input baseline incidence rate should be about 1/4 of the total incidence as the polling event runs every 3mo)
 for pathogen in sim.modules['Diarrhoea'].pathogens:
@@ -205,7 +217,7 @@ inc_mean['2-4y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_2_
 
 # 0 year-olds
 inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
-plt.title('O year-olds')
+plt.title('0 year-olds')
 plt.show()
 
 # 1 year-olds
