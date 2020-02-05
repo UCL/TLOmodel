@@ -203,10 +203,12 @@ inc_mean.plot.bar(y=['2-4y_model_output', '2-4y_calibrating_data'])
 plt.title('2-4 year-olds')
 plt.show()
 
-
 # %%
 
 # Look at deaths arising?
+
+# Or anything else?
+
 
 
 
