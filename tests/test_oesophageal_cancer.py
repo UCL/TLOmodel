@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 from pathlib import Path
@@ -17,11 +16,6 @@ from tlo.methods import (
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 1000
-
-
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.INFO)
 
 
 @pytest.fixture(scope='module')
