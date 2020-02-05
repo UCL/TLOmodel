@@ -143,7 +143,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         # can be repeat tested
         testing_index = df.index[
             (random_draw < params["tb_testing_coverage"]) & df.is_alive
-            ]
+        ]
         # print('testing_index', testing_index)
         df.loc[testing_index, "tb_ever_tested"] = True
         df.loc[testing_index, "tb_smear_test"] = True
@@ -156,7 +156,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
             & df.is_alive
             & (df.tb_inf == "active_susc")
             & ~df.hiv_inf
-            ]
+        ]
         diagnosed_idx = pd.Series(
             np.random.choice(
                 [True, False],
@@ -172,7 +172,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
             & df.is_alive
             & (df.tb_inf == "active_susc")
             & df.hiv_inf
-            ]
+        ]
 
         diagnosed_idx_hiv = pd.Series(
             np.random.choice(
@@ -203,7 +203,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         # random draw approx 2 months?
         undiagnosed_idx = df.index[
             (df.tb_date_smear_test == now) & df.is_alive & ~df.tb_diagnosed
-            ]
+        ]
 
         for person in undiagnosed_idx:
             refer_xpert = tbXpertTest(self.module, individual_id=person)
@@ -235,12 +235,12 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
             df.at[individual_id, "is_alive"]
             and not df.at[individual_id, "tb_diagnosed"]
             and (
-            np.random.choice(
-                [True, False],
-                size=1,
-                p=[params["testing_prob_xpert"], 1 - params["testing_prob_xpert"]],
+                np.random.choice(
+                    [True, False],
+                    size=1,
+                    p=[params["testing_prob_xpert"], 1 - params["testing_prob_xpert"]],
+                )
             )
-        )
         ):
             # print('xpert test happening')
 
@@ -273,7 +273,7 @@ class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of treatment
         treat_idx = df.index[
             (random_draw < params["prob_tb_treatment"]) & ~df.tb_diagnosed & df.is_alive
-            ]
+        ]
 
         df.loc[treat_idx, "tb_treated"] = True
         df.loc[treat_idx, "date_tb_treated"] = now
@@ -284,7 +284,7 @@ class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             df.tb_treated
             & (((now - df.date_tb_treated) / np.timedelta64(1, "M")) >= 6)
             & (random_draw2 < (1 - params["prob_mdr"]))
-            ]
+        ]
         df.loc[cure_idx, "tb_treated"] = False
         df.loc[cure_idx, "tb_inf"] = "latent_susc"
 
@@ -294,7 +294,7 @@ class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             df.tb_treated
             & (((now - df.date_tb_treated) / np.timedelta64(1, "M")) >= 6)
             & (random_draw3 < params["prob_mdr"])
-            ]
+        ]
         df.loc[mdr_idx, "tb_treated"] = False
         df.loc[mdr_idx, "request_mdr_regimen"] = True
 
@@ -316,7 +316,7 @@ class tbTreatmentMDREvent(RegularEvent, PopulationScopeEventMixin):
             (random_draw < params["prob_tb_mdr_treatment"])
             & ~df.request_mdr_regimen
             & df.is_alive
-            ]
+        ]
 
         df.loc[mdr_treated_idx, "request_mdr_regimen"] = False  # switch off this flag
         df.loc[mdr_treated_idx, "tb_treatedMDR"] = True
@@ -327,7 +327,7 @@ class tbTreatmentMDREvent(RegularEvent, PopulationScopeEventMixin):
         cure_idx = df.index[
             df.tb_treatedMDR
             & (((now - df.tb_date_treatedMDR) / np.timedelta64(1, "M")) >= 6)
-            ]
+        ]
         df.loc[cure_idx, "tb_treated"] = False
         df.loc[cure_idx, "tb_inf"] = "latent_susc"
 
@@ -349,8 +349,8 @@ class TbIPTEvent(RegularEvent, PopulationScopeEventMixin):
         # randomly sample from <5 yr olds
         ipt_sample = (
             df[(df.age_years <= 5) & (~df.tb_inf == "active_susc")]
-                .sample(n=ipt_needed, replace=False)
-                .index
+            .sample(n=ipt_needed, replace=False)
+            .index
         )
 
         df.loc[ipt_sample, "on_ipt"] = True
@@ -373,8 +373,8 @@ class TbExpandedIPTEvent(RegularEvent, PopulationScopeEventMixin):
         # randomly sample from >=15 yrs with HIV
         ipt_sample = (
             df[(df.age_years >= 15) & (~df.hiv_inf)]
-                .sample(frac=0.5, replace=False)
-                .index
+            .sample(frac=0.5, replace=False)
+            .index
         )
 
         df.loc[ipt_sample, "on_ipt"] = True

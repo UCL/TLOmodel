@@ -55,8 +55,12 @@ class Simulation:
         # clear entire logging environment for this new simulation
         logging.init_logging()
 
-    def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
-                          custom_levels: Dict[str, int] = None):
+    def configure_logging(
+        self,
+        filename: str = None,
+        directory: Union[Path, str] = "./outputs",
+        custom_levels: Dict[str, int] = None,
+    ):
         """
         Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
         If no filename is given, configuration is set up writing to stdout.
@@ -80,7 +84,9 @@ class Simulation:
 
         if custom_levels:
             if not self.modules:
-                raise ValueError("You must register disease modules before adding custom logging levels")
+                raise ValueError(
+                    "You must register disease modules before adding custom logging levels"
+                )
             module_paths = (module.__module__ for module in self.modules.values())
             logging.set_logging_levels(custom_levels, module_paths)
 
@@ -93,11 +99,14 @@ class Simulation:
             Multiple modules may be given as separate arguments to one call.
         """
         for module in modules:
-            assert module.name not in self.modules, (
-                'A module named {} has already been registered'.format(module.name))
+            assert (
+                module.name not in self.modules
+            ), "A module named {} has already been registered".format(module.name)
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters('')  # TODO: Use a proper data_folder - or remove the 'data_folder' as not used
+            module.read_parameters(
+                ""
+            )  # TODO: Use a proper data_folder - or remove the 'data_folder' as not used
 
     def seed_rngs(self, seed):
         """Seed the random number generator (RNG) for the Simulation instance and registered modules
@@ -168,12 +177,14 @@ class Simulation:
         :param date: when the event should happen
         :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
         """
-        assert date >= self.date, 'Cannot schedule events in the past'
+        assert date >= self.date, "Cannot schedule events in the past"
 
-        assert 'TREATMENT_ID' not in dir(event), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
-        assert (event.__str__().find('HSI_') < 0), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert "TREATMENT_ID" not in dir(
+            event
+        ), "This looks like an HSI event. It should be handed to the healthsystem scheduler"
+        assert (
+            event.__str__().find("HSI_") < 0
+        ), "This looks like an HSI event. It should be handed to the healthsystem scheduler"
 
         self.event_queue.schedule(event, date)
 
