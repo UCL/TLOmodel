@@ -1,27 +1,21 @@
-"""
-Module responsible for supervision of pregnancy in the population including miscarriage, abortion, onset of labour and
-onset of antenatal complications .
-"""
-
-import logging
-
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
 class PregnancySupervisor(Module):
-    """
-    This module is responsible for supervision of pregnancy in the population including miscarriage, abortion, onset of
-     labour and onset of antenatal complications """
+    """This module is responsible for supervision of pregnancy in the population including incidence of ectopic
+    pregnancy, multiple pregnancy, miscarriage, abortion, and onset of antenatal complications. This module is
+    incomplete, currently antenatal death has not been coded. Similarly antenatal care seeking will be house hear, for
+    both routine treatment and in emergencies"""
+
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -81,12 +75,11 @@ class PregnancySupervisor(Module):
     }
 
     PROPERTIES = {
-        'ps_gestational_age_in_weeks': Property(Types.INT, 'current gestational age, in weeks, of this womans pregnancy'),
+        'ps_gestational_age_in_weeks': Property(Types.INT, 'current gestational age, in weeks, of this womans '
+                                                           'pregnancy'),
         'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether this womans pregnancy is ectopic'),
-        'ps_ectopic_symptoms': Property(
-            Types.CATEGORICAL, 'Level of symptoms for ectopic pregnancy',
-            categories=['none', 'abdominal pain', 'abdominal pain plus bleeding', 'shock']),
-        # TODO: review in light of new symptom tracker
+        'ps_ectopic_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for ectopic pregnancy',
+                                        categories=['none', 'abdominal pain', 'abdominal pain plus bleeding', 'shock']),
         'ps_ep_unified_symptom_code': Property(
             Types.CATEGORICAL,
             'Level of symptoms on the standardised scale (governing health-care seeking): '
@@ -97,7 +90,7 @@ class PregnancySupervisor(Module):
         'ps_total_induced_abortion': Property(Types.INT, 'the number of induced abortions a woman has experienced'),
         'ps_abortion_complication': Property(Types.CATEGORICAL, 'Type of complication following an induced abortion: '
                                                                 'None; Sepsis; Haemorrhage; Sepsis and Haemorrhage',
-                                            categories=['none','haem','sepsis', 'haem_sepsis']),
+                                             categories=['none', 'haem', 'sepsis', 'haem_sepsis']),
         'ps_antepartum_still_birth': Property(Types.BOOL, 'whether this woman has experienced an antepartum still birth'
                                                           'of her current pregnancy'),
         'ps_previous_stillbirth': Property(Types.BOOL, 'whether this woman has had any previous pregnancies end in '
@@ -106,138 +99,96 @@ class PregnancySupervisor(Module):
                                                              'gestational hypertension, mild pre-eclampsia,'
                                                              'severe pre-eclampsia, eclampsia,'
                                                              ' HELLP syndrome',
-                 categories=['none', 'gest_htn', 'mild_pe', 'severe_pe', 'eclampsia', 'HELLP']),  # ??superimposed
-        'ps_prev_pre_eclamp': Property(Types.BOOL,'whether this woman has experienced pre-eclampsia in a previous '
-                                                  'pregnancy'),
+                                         categories=['none', 'gest_htn', 'mild_pe', 'severe_pe', 'eclampsia', 'HELLP']),
+        'ps_prev_pre_eclamp': Property(Types.BOOL, 'whether this woman has experienced pre-eclampsia in a previous '
+                                                   'pregnancy'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
                                                   'during a previous pregnancy')
     }
 
     def read_parameters(self, data_folder):
-        """
-        """
         params = self.parameters
-
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
-                            sheet_name=None)
+                            sheet_name='parameter_values')
+        self.load_parameters_from_dataframe(dfd)
 
-        params['prob_pregnancy_factors'] = dfd['prob_pregnancy_factors']
-        dfd['prob_pregnancy_factors'].set_index('index', inplace=True)
-
-        dfd['parameter_values'].set_index('parameter_name', inplace=True)
-        params['base_prev_pe'] = dfd['parameter_values'].loc['base_prev_pe', 'value']
-        params['base_prev_gest_htn'] = dfd['parameter_values'].loc['base_prev_gest_htn', 'value']
-        params['base_prev_gest_diab'] = dfd['parameter_values'].loc['base_prev_gest_diab', 'value']
-        params['rr_miscarriage_prevmiscarriage'] = dfd['parameter_values'].loc['rr_miscarriage_prevmiscarriage',
-                                                                               'value']
-        params['rr_miscarriage_35'] = dfd['parameter_values'].loc['rr_miscarriage_35', 'value']
-        params['rr_miscarriage_3134'] = dfd['parameter_values'].loc['rr_miscarriage_3134', 'value']
-        params['rr_miscarriage_grav4'] = dfd['parameter_values'].loc['rr_miscarriage_grav4', 'value']
-        params['rr_pre_eclamp_nulip'] = dfd['parameter_values'].loc['rr_pre_eclamp_nulip', 'value']
-        params['rr_pre_eclamp_prev_pe'] = dfd['parameter_values'].loc['rr_pre_eclamp_prev_pe', 'value']
-        params['rr_gest_diab_overweight'] = dfd['parameter_values'].loc['rr_gest_diab_overweight', 'value']
-        params['rr_gest_diab_stillbirth'] = dfd['parameter_values'].loc['rr_gest_diab_stillbirth', 'value']
-        params['rr_gest_diab_prevdiab'] = dfd['parameter_values'].loc['rr_gest_diab_prevdiab', 'value']
-        params['rr_gest_diab_chron_htn'] = dfd['parameter_values'].loc['rr_gest_diab_chron_htn', 'value']
-        params['prob_ectopic_pregnancy'] = dfd['parameter_values'].loc['prob_ectopic_pregnancy', 'value']
+        # These parameters presently hard coded for ease. Both may be deleted following epi review.
         params['level_of_symptoms_ep'] = pd.DataFrame(
-            data={
-                'level_of_symptoms_ep': ['none',
-                                         'abdominal pain',
-                                         'abdominal pain plus bleeding',
-                                         'shock'],
-                'probability': [0.25, 0.25, 0.25, 0.25]  # DUMMY
-            })
-        params['prob_multiples'] = dfd['parameter_values'].loc['prob_multiples', 'value']
-        params['prob_pa_complications'] = dfd['parameter_values'].loc['prob_pa_complications', 'value']
+            data={'level_of_symptoms_ep': ['none',
+                                           'abdominal pain',
+                                           'abdominal pain plus bleeding',
+                                           'shock'], 'probability': [0.25, 0.25, 0.25, 0.25]})  # DUMMY
+
         params['type_pa_complication'] = pd.DataFrame(
-            data={
-                'type_pa_complication': ['haem',
-                                         'sepsis',
-                                         'haem_sepsis'],
-                'probability': [0.5, 0.3, 0.2]})
-        params['r_mild_pe_gest_htn'] = dfd['parameter_values'].loc['r_mild_pe_gest_htn', 'value']
-        params['r_severe_pe_mild_pe'] = dfd['parameter_values'].loc['r_severe_pe_mild_pe', 'value']
-        params['r_eclampsia_severe_pe'] = dfd['parameter_values'].loc['r_eclampsia_severe_pe', 'value']
-        params['r_hellp_severe_pe'] = dfd['parameter_values'].loc['r_hellp_severe_pe', 'value']
+            data={'type_pa_complication': ['haem',
+                                           'sepsis',
+                                           'haem_sepsis'], 'probability': [0.5, 0.3, 0.2]})
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
 
 # ==================================== LINEAR MODEL EQUATIONS ==========================================================
+        # All linear equations used in this module are stored within the ps_linear_equations parameter below
 
-        ectopic_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            params['prob_ectopic_pregnancy'],
-            Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.0).when('Southern', 1.0), # DUMMY
-        )
+        params['ps_linear_equations'] = {
+            'ectopic': LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             params['prob_ectopic_pregnancy'],
+             Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.0).when('Southern', 1.0)),
+            # DUMMY
 
-        multiples_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            params['prob_ectopic_pregnancy'],
-            Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.0).when('Southern', 1.0),  # DUMMY
-        )
+            'multiples': LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             params['prob_ectopic_pregnancy'],
+             Predictor('region_of_residence').when('Northern', 1.0).when('Central', 1.0).when('Southern', 1.0)),
+            # DUMMY
 
-        miscarriage_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            0.02,  # DUMMY VALUE- doesnt exist as parameter
-            Predictor('ps_gestational_age_in_weeks').when('4', 1.0).when('8', 1.1).when('13', 0.8).when('17', 0.8)
+            'miscarriage':LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             0.02,  # DUMMY VALUE- doesnt exist as parameter
+             Predictor('ps_gestational_age_in_weeks').when('4', 1.0).when('8', 1.1).when('13', 0.8).when('17', 0.8)
                 .when('22', 0.8),
-            Predictor('ps_total_miscarriages').when(' >1 ', params['rr_miscarriage_prevmiscarriage']),
-            Predictor('age_years').when('.between(30,35)', params['rr_miscarriage_3134']).when(' > 34',
-                                                                                               params
-                                                                                               ['rr_miscarriage_35'])
-            # Gravidity?
-        )
+             Predictor('ps_total_miscarriages').when(' >1 ', params['rr_miscarriage_prevmiscarriage']),
+             Predictor('age_years').when('.between(30,35)', params['rr_miscarriage_3134']).when(' > 34',
+                                                                                                params
+                                                                                                ['rr_miscarriage_35'])),
+            'abortion': LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             0.02,  # DUMMY VALUE- doesnt exist as parameter
+             Predictor('ps_gestational_age_in_weeks').when('8', 1.1).when('13', 0.8).when('17', 0.8).when('22', 0.8)),
 
-        abortion_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            0.02,  # DUMMY VALUE- doesnt exist as parameter
-            Predictor('ps_gestational_age_in_weeks').when('8', 1.1).when('13', 0.8).when('17', 0.8).when('22', 0.8),
-        )
-
-        pre_eclamps_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            0.02,
-            Predictor('ps_gestational_age_in_weeks').when('22', 1.1).when('27', 0.8).when('31', 0.8).when('35', 0.8)
+            'pre_eclampsia': LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             0.02,  # DUMMY VALUE- doesnt exist as parameter
+             Predictor('ps_gestational_age_in_weeks').when('22', 1.1).when('27', 0.8).when('31', 0.8).when('35', 0.8)
                 .when('40', 0.8).when('46', 0.8),
-            Predictor('la_parity').when('0', params['rr_pre_eclamp_nulip']),
-            Predictor('ps_prev_pre_eclamp').when(True , params['rr_pre_eclamp_prev_pe']),
-        )
+             Predictor('la_parity').when('0', params['rr_pre_eclamp_nulip']),
+             Predictor('ps_prev_pre_eclamp').when(True , params['rr_pre_eclamp_prev_pe'])),
 
-        gest_htn_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            0.02,
-            Predictor('ps_gestational_age_in_weeks').when('22', 1.1).when('27', 0.8).when('31', 0.8).when('35', 0.8)
+            'gest_htn': LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             0.02,  # DUMMY VALUE- doesnt exist as parameter
+             Predictor('ps_gestational_age_in_weeks').when('22', 1.1).when('27', 0.8).when('31', 0.8).when('35', 0.8)
+                .when('40', 0.8).when('46', 0.8)),
+
+            'gest_diab': LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             0.02,  # DUMMY VALUE- doesnt exist as parameter
+             Predictor('ps_gestational_age_in_weeks').when('22', 1.1).when('27', 0.8).when('31', 0.8).when('35', 0.8)
                 .when('40', 0.8).when('46', 0.8),
-        )
+             Predictor('ps_previous_stillbirth').when(True, params['rr_gest_diab_stillbirth']),
+             Predictor('ps_prev_gest_diab').when(True, params['rr_gest_diab_prevdiab'])),
 
-        gest_diab_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            0.02,
-            Predictor('ps_gestational_age_in_weeks').when('22', 1.1).when('27', 0.8).when('31', 0.8).when('35', 0.8)
-                .when('40', 0.8).when('46', 0.8),
-            Predictor('ps_previous_stillbirth').when(True, params['rr_gest_diab_stillbirth']),
-            Predictor('ps_prev_gest_diab').when(True, params['rr_gest_diab_prevdiab']),
-        )
-
-        stillbirth_eq = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            0.02,  # DUMMY VALUE- doesnt exist as parameter
-            Predictor('ps_gestational_age_in_weeks').when('27', 1.0).when('31', 1.1).when('35', 0.8).when('40', 0.8)
-                .when('46', 0.8)
-        )
-
-        params['ps_linear_equations'] = {'ectopic': ectopic_eq, 'multiples': multiples_eq,
-                                         'miscarriage': miscarriage_eq, 'abortion': abortion_eq,
-                                         'pre_eclampsia': pre_eclamps_eq, 'gest_htn': gest_htn_eq,
-                                         'gest_diab': gest_diab_eq, 'stillbirth': stillbirth_eq}
+            'stillbirth':LinearModel(
+             LinearModelType.MULTIPLICATIVE,
+             0.02,  # DUMMY VALUE- doesnt exist as parameter
+             Predictor('ps_gestational_age_in_weeks').when('27', 1.0).when('31', 1.1).when('35', 0.8).when('40', 0.8)
+                .when('46', 0.8))}
 
     def initialise_population(self, population):
 
         df = population.props
-        params = self.parameters
 
         df.loc[df.sex == 'F', 'ps_gestational_age_in_weeks'] = 0
         df.loc[df.sex == 'F', 'ps_ectopic_pregnancy'] = False
@@ -271,13 +222,6 @@ class PregnancySupervisor(Module):
 #        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
         df = self.sim.population.props
 
         if df.at[child_id, 'sex'] == 'F':
@@ -297,43 +241,21 @@ class PregnancySupervisor(Module):
             df.at[child_id, 'ps_prev_gest_diab'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
 
         logger.debug('This is PregnancySupervisor, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
     def report_daly_values(self):
 
-        #  TODO: this is copied from old module will need reviewing
-        logger.debug('This is Abortion and Miscarriage reporting my health values')
         df = self.sim.population.props
-        params = self.parameters
 
-#        one_month_prior = self.sim.date - pd.to_timedelta(1, unit='m')
-
-#        recent_abortion = df.index[df.is_alive & (df.ps_total_induced_abortion == 1) &
-#                               (df.ps_date_most_recent_abortion > one_month_prior)]
-
-#        recent_miscarriage = df.index[df.is_alive & (df.ps_total_miscarriages == 1) &
-#                                  (df.ps_date_most_recent_miscarriage > one_month_prior)]
-
-#        health_values_1 = df.loc[recent_abortion, 'ps_total_induced_abortion'].map(
-#            {0: 0, 1: params['daly_wt_abortive_outcome']})
-#        health_values_1.name = 'Induced Abortion'
-
-#        health_values_2 = df.loc[recent_miscarriage, 'ps_total_miscarriages'].map(
-#            {0: 0, 1: params['daly_wt_abortive_outcome']})
-#        health_values_2.name = 'Spontaneous Miscarriage '
-
-#        health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
-
-#        return health_values_df
-
-    # Todo: Have yet to confirm this runs as HealthBurden is not registered presently
+    # TODO: Antenatal DALYs
 
     def set_pregnancy_complications(self, params, index, complication):
+        """This function is called from within the PregnancySupervisorEvent. It calculates risk of a number of pregnancy
+        outcomes/ complications for pregnant women in the data frame using the linear model equations defined above.
+        Properties are modified depending on the  complication passed to the function and the result of a random draw"""
+
         df = self.sim.population.props
         result = params['ps_linear_equations'][f'{complication}'].predict(index)
         random_draw = pd.Series(self.rng.random_sample(size=len(index)), index=index.index)
@@ -394,11 +316,13 @@ class PregnancySupervisor(Module):
             if not positive_index.empty:
                 logger.debug(f'The following women have have experienced an antepartum stillbirth,{positive_index}')
 
+        # TODO: consider using return function to produce negative index which could be used for the chain of functions
+
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This event updates the gestational age of each pregnant woman every week and applies the risk of her developing
-    any complications during her pregnancy
-    """
+    """ This is the PregnancySupervisorEvent. It runs weekly. It updates gestational age of pregnancy in weeks and uses
+    set_pregnancy_complications function to determine if women will experience complication. This event is incomplete
+     and will eventually apply risk of antenatal death and handle antenatal care seeking. """
 
     def __init__(self, module,):
         super().__init__(module, frequency=DateOffset(weeks=1))
@@ -416,8 +340,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[pregnant_idx, 'ps_gestational_age_in_weeks'] = gestation_in_weeks.astype('int64')
 
     # ===================================== ECTOPIC PREGNANCY & MULTIPLES =============================================
-        # Here we use the evaluate_eq_results function to calculate each womans risk of ectopic pregnancy, conduct a
-        # draw and edit relevant properties defined above
+        # Here we use the set_pregnancy_complications function to calculate each womans risk of ectopic pregnancy,
+        # conduct a draw and edit relevant properties defined above
 
         newly_pregnant_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 1)]
         self.module.set_pregnancy_complications(params, newly_pregnant_idx, 'ectopic')
@@ -450,7 +374,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.set_pregnancy_complications(params, month_1_idx, 'miscarriage')
 
     # ============================= MONTH 2 ECTOPIC PREGNANCY SYMPTOMS/CARE SEEKING ===================================
-        #  we look at all women whose pregnancy is ectopic and determine if they will experience symptoms
+        # We now move on to look at women who are 2 months pregnant, For those whose pregnancy is ectopic we determine
+        # if they will experience symptoms
 
         ectopic_month_2 = df.index[df.is_alive & df.ps_ectopic_pregnancy & (df.ps_gestational_age_in_weeks == 8) &
                                    (df.ps_ectopic_symptoms == 'none')]
@@ -462,15 +387,16 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[ectopic_month_2, 'ps_ectopic_symptoms'].values[:] = symptoms
 
     # ========================================== MONTH 2 PREGNANCY RISKS ==============================================
-        # MISCARRIAGE:
+        # Now we use the set_pregnancy_complications function to calculate risk and set properties for women whose
+        # pregnancy is not ectopic
 
+        # First MISCARRIAGE:
         month_2_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                              (df.ps_gestational_age_in_weeks == 8)]
         self.module.set_pregnancy_complications(params, month_2_idx, 'miscarriage')
 
-        # ABORTION:
         # Here we use the an index of women who will not miscarry to determine who will seek an abortion
-
+        # ABORTION:
         month_2_no_miscarriage = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 8)]
         self.module.set_pregnancy_complications(params, month_2_no_miscarriage, 'abortion')
@@ -692,9 +618,10 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This is the PregnancyDiseaseProgressionEvent. It runs every 4 weeks and determines if women who have a disease
+    of pregnancy will undergo progression to the next stage. This event will need to be recoded using the
+    progression_matrix function """
     # TODO: consider renaming if only dealing with HTN diseases
-    """ This event determines if women suffering from a disease of pregnancy will progress to a more severe stage
-    """
 
     def __init__(self, module,):
         super().__init__(module, frequency=DateOffset(weeks=4)) # are we happy with this frequency
