@@ -1,9 +1,7 @@
-import logging
 import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -35,11 +33,6 @@ popsize = 200
 # Simply test whether the system runs under multiple configurations of the healthsystem
 # NB. Running the dummy Mockitits and ChronicSyndrome modules test all aspects of the healthsystem module.
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.DEBUG)
-
-
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
@@ -49,9 +42,6 @@ def check_dtypes(simulation):
 
 def test_run_with_healthsystem_no_disease_modules_defined():
     sim = Simulation(start_date=start_date)
-
-    # disable logging to stdout
-    logging.getLogger().handlers.clear()
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -70,7 +60,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
@@ -84,13 +74,6 @@ def test_run_no_interventions_allowed(tmpdir):
     sim = Simulation(start_date=start_date)
 
     # Get ready for temporary log-file
-    f = tmpdir.mkdir("healthsystem").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
-
     # Define the service availability as null
     service_availability = []
 
@@ -114,15 +97,14 @@ def test_run_no_interventions_allowed(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks for the healthsystem
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
@@ -144,14 +126,6 @@ def test_run_in_mode_0_with_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("healthsystem").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability
     service_availability = ['*']
@@ -176,15 +150,14 @@ def test_run_in_mode_0_with_capacity(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks for health system apppts
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -208,14 +181,6 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("mode_0_no_capacity").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
-
     # Define the service availability
     service_availability = ['*']
 
@@ -239,15 +204,14 @@ def test_run_in_mode_0_no_capacity(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -264,14 +228,6 @@ def test_run_in_mode_1_with_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("mode_1_with_capacity").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability
     service_availability = ['*']
@@ -296,15 +252,14 @@ def test_run_in_mode_1_with_capacity(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -321,14 +276,6 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("mode_1_with_no_capacit").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability
     service_availability = ['*']
@@ -353,15 +300,14 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -381,14 +327,6 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("mode_2_with_capacity").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
-
     # Define the service availability
     service_availability = ['*']
 
@@ -412,15 +350,14 @@ def test_run_in_mode_2_with_capacity(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -438,14 +375,6 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("mode_2_with_no_capacity").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability
     service_availability = ['*']
@@ -470,16 +399,14 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
-    # manually setting smaller values to decrease runtime (logfile size)
+    # Run the simulation, manually setting smaller values to decrease runtime (logfile size)
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
@@ -499,14 +426,6 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("healthsystem").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability
     service_availability = ['*']
@@ -532,15 +451,14 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks for the consumables: all requests granted
     for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
@@ -555,14 +473,6 @@ def test_run_in_with_hs_disabled(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("healthsystem").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability
     service_availability = ['*']
@@ -588,15 +498,14 @@ def test_run_in_with_hs_disabled(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
@@ -614,14 +523,6 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("mode_2_with_capacity").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability
     service_availability = ['*']
@@ -646,15 +547,14 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the check for the occurance of the GenericFirstAppt which is created by the HSB module
     assert 'GenericFirstApptAtFacilityLevel1' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
