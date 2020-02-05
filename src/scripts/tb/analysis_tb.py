@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 import pandas as pd
 import time
@@ -6,7 +5,7 @@ import datetime
 import os
 import matplotlib.pyplot as plt
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
@@ -41,16 +40,6 @@ popsize = 500
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
 
-# Establish the logger
-logfile = outputpath + "TbHiv_LogFile" + datestamp + ".log"
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
-
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
@@ -77,28 +66,24 @@ sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.Tb(resourcefilepath=resourcefilepath))
 sim.register(malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath))
 
-for name in logging.root.manager.loggerDict:
-    if name.startswith("tlo"):
-        logging.getLogger(name).setLevel(logging.WARNING)
-
-logging.getLogger("tlo.methods.hiv").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
-# logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
+# Sets all modules to WARNING threshold, then alters hiv and tb to INFO
+custom_levels = {
+    "*": logging.WARNING,
+    "tlo.methods.hiv": logging.INFO,
+    "tlo.methods.tb": logging.INFO,
+    "tlo.methods.demography": logging.INFO,
+}
+# configure_logging automatically appends datetime
+logfile = sim.configure_logging(filename="HivTb_LogFile", custom_levels=custom_levels)
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-fh.flush()
-# fh.close()
 
 print("--- %s seconds ---" % (time.time() - start_time))
 
 # %% read the results
-outputpath = "./outputs/hiv_tb/"
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath + "TbHiv_LogFile" + datestamp + ".log"
 output = parse_log_file(logfile)
 
 # output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
