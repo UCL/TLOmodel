@@ -78,9 +78,8 @@ class Simulation:
             logging.init_logging()
             return
 
-        log_path = (
-            Path(directory) / f"{filename}__{datetime.datetime.now().isoformat()}.log"
-        )
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+        log_path = Path(directory) / f"{filename}__{timestamp}.log"
         self.output_file = logging.set_output_file(log_path)
 
         if custom_levels:
