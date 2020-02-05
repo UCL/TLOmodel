@@ -1,13 +1,11 @@
 """
 TB infections
 """
-
-import logging
 import os
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import (
     Event,
     IndividualScopeEventMixin,

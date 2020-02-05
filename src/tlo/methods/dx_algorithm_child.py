@@ -2,9 +2,8 @@
 An example of a diagnostic algorithm that is called during an HSI Event.
 """
 import pandas as pd
-import logging
 
-from tlo import Module
+from tlo import Module, logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

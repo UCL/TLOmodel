@@ -1,13 +1,12 @@
 import heapq as hp
 import inspect
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 import tlo
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)

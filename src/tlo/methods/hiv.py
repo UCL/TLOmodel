@@ -2,14 +2,13 @@
 HIV infection event
 """
 import datetime
-import logging
 import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import (
     Event,
     IndividualScopeEventMixin,

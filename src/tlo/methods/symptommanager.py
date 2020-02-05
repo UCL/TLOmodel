@@ -2,9 +2,8 @@
 The Symptom Manager
 """
 import pandas as pd
-import logging
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin
 
 logger = logging.getLogger(__name__)

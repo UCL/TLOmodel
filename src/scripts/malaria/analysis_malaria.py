@@ -1,4 +1,3 @@
-import logging
 import time
 from tlo.analysis.utils import parse_log_file
 import datetime
@@ -9,7 +8,7 @@ from pathlib import Path
 
 # import xlsxwriter
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     demography,
     contraception,
@@ -25,8 +24,8 @@ from tlo.methods import (
 
 t0 = time.time()
 
-# Where will output go
-outputpath = "./outputs/malaria/"
+# Where will outputs go - by default, wherever this script is run
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -43,14 +42,6 @@ sim = Simulation(start_date=start_date)
 
 # TODO change the seed and filepath for each simulation
 sim.seed_rngs(25)
-logfile = outputpath + "malaria_test" + datestamp + ".log"
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -88,31 +79,20 @@ sim.register(
     )
 )
 
-for name in logging.root.manager.loggerDict:
-    if name.startswith("tlo"):
-        logging.getLogger(name).setLevel(logging.WARNING)
-
-logging.getLogger("tlo.methods.malaria").setLevel(logging.INFO)
-# logging.getLogger('tlo.methods.symptommanager').setLevel(logging.DEBUG)
-# logging.getLogger('tlo.methods.healthsystem').setLevel(logging.DEBUG)
-# logging.getLogger('tlo.methods.dx_algorithm_child').setLevel(logging.DEBUG)
-# logging.getLogger('tlo.methods.dx_algorithm_adult').setLevel(logging.DEBUG)
-# logging.getLogger('tlo.methods.healthseekingbehaviour').setLevel(logging.DEBUG)
+# Sets all modules to WARNING threshold, then alters hiv, tb and male_circumcision to INFO
+custom_levels = {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
+# configure_logging automatically appends datetime
+logfile = sim.configure_logging(filename="Malaria_LogFile")
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-fh.flush()
-# fh.close()
 
 t1 = time.time()
 print("Time taken", t1 - t0)
 
 # %% read the results
 # model outputs
-outputpath = "./outputs/malaria/"
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath + "malaria_test" + datestamp + ".log"
 output = parse_log_file(logfile)
 resourcefilepath = Path("./resources")
 
