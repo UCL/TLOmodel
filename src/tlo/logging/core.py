@@ -5,7 +5,7 @@ def disable(level):
     _logging.disable(level=level)
 
 
-def getLogger(name='tlo'):
+def getLogger(name="tlo"):
     """Returns a TLO logger of the specified name"""
     if name not in _LOGGERS.keys():
         _LOGGERS[name] = Logger(name)
@@ -16,16 +16,17 @@ class Logger:
     """
     TLO logging facade so that logging can be intercepted and customised
     """
+
     def __init__(self, name: str, level=_logging.NOTSET):
-        assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
+        assert name.startswith("tlo"), "Only logging of tlo modules is allowed"
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)
-        if name == 'tlo':
+        if name == "tlo":
             self._std_logger.propagate = False
         self.name = self._std_logger.name
 
     def __repr__(self):
-        return f'<tlo Logger containing {self._std_logger}>'
+        return f"<tlo Logger containing {self._std_logger}>"
 
     @property
     def handlers(self):
@@ -78,5 +79,5 @@ FATAL = _logging.FATAL
 INFO = _logging.INFO
 WARNING = _logging.WARNING
 
-_FORMATTER = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
-_LOGGERS = {'tlo': Logger('tlo', WARNING)}
+_FORMATTER = _logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+_LOGGERS = {"tlo": Logger("tlo", WARNING)}

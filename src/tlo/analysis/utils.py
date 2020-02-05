@@ -27,17 +27,17 @@ def parse_line(line):
     :param line: the full line from log file
     :return: a dictionary with parsed line
     """
-    parts = line.split('|')
+    parts = line.split("|")
     if len(parts) != 5:
         return None
-    logger.debug('%s', line)
+    logger.debug("%s", line)
     info = {
-        'logger': parts[1],
-        'sim_date': parts[2],
-        'key': parts[3],
-        'object': literal_eval(parts[4])
+        "logger": parts[1],
+        "sim_date": parts[2],
+        "key": parts[3],
+        "object": literal_eval(parts[4]),
     }
-    logger.debug('%s', info)
+    logger.debug("%s", info)
     return info
 
 
@@ -95,43 +95,45 @@ def parse_output(list_of_log_lines):
     # for each logged line
     for line in list_of_log_lines:
         # we only parse 'INFO' lines that have 5 parts
-        if line.startswith('INFO'):
+        if line.startswith("INFO"):
             i = parse_line(line.strip())
             # if this line isn't in the right format
             if not i:
                 continue
             # add a dictionary for the logger name, if required
-            if i['logger'] not in o:
-                o[i['logger']] = dict()
+            if i["logger"] not in o:
+                o[i["logger"]] = dict()
             # add a dataframe for the name/key of this log entry, if required
-            if i['key'] not in o[i['logger']]:
+            if i["key"] not in o[i["logger"]]:
                 # if the logged data is a list, it doesn't have column names
-                if isinstance(i['object'], list):
+                if isinstance(i["object"], list):
                     # create column names for each entry in the list
-                    columns = ['col_%d' % x for x in range(0, len(i['object']))]
+                    columns = ["col_%d" % x for x in range(0, len(i["object"]))]
                 else:
                     # create column names from the keys of the dictionary
-                    columns = list(i['object'].keys())
-                columns.insert(0, 'date')
-                o[i['logger']][i['key']] = pd.DataFrame(columns=columns)
+                    columns = list(i["object"].keys())
+                columns.insert(0, "date")
+                o[i["logger"]][i["key"]] = pd.DataFrame(columns=columns)
 
-            df = o[i['logger']][i['key']]
+            df = o[i["logger"]][i["key"]]
 
             # create a new row to append to the dataframe, add the simulation date
-            if isinstance(i['object'], dict):
-                row = i['object']
-                row['date'] = i['sim_date']
-            elif isinstance(i['object'], list):
-                if len(df.columns) - 1 != len(i['object']):
-                    logger.warning('List to dataframe %s, number of columns do not match', i['key'])
+            if isinstance(i["object"], dict):
+                row = i["object"]
+                row["date"] = i["sim_date"]
+            elif isinstance(i["object"], list):
+                if len(df.columns) - 1 != len(i["object"]):
+                    logger.warning(
+                        "List to dataframe %s, number of columns do not match", i["key"]
+                    )
                 # add list to columns (skip first column, which is date)
-                row = dict(zip(df.columns[1:], i['object']))
-                row['date'] = i['sim_date']
+                row = dict(zip(df.columns[1:], i["object"]))
+                row["date"] = i["sim_date"]
             else:
-                print('Could not parse line: %s' % line)
+                print("Could not parse line: %s" % line)
                 continue
             # append the new row to the dataframe for this logger & log name
-            o[i['logger']][i['key']] = df.append(row, ignore_index=True)
+            o[i["logger"]][i["key"]] = df.append(row, ignore_index=True)
     return o
 
 
@@ -144,7 +146,7 @@ def make_calendar_period_lookup():
     ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
 
     # Removes the '1950-' category
-    ranges.remove('0-1950')
+    ranges.remove("0-1950")
     for year in range(1950):
         lookup.pop(year)
 

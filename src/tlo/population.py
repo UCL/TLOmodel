@@ -19,7 +19,7 @@ class Population:
         A pandas DataFrame with the properties of all individuals as columns.
     """
 
-    __slots__ = ('props', 'sim', 'initial_size', 'new_row')
+    __slots__ = ("props", "sim", "initial_size", "new_row")
 
     def __init__(self, sim, initial_size):
         """Create a new population.
@@ -36,7 +36,7 @@ class Population:
 
         # Create empty property arrays
         self.props = self._create_props(initial_size)
-        self.props.index.name = 'person'
+        self.props.index.name = "person"
 
         # keep a copy of a new row, so we can quickly append as population grows
         self.new_row = self.props[self.props.index == 0].copy()
@@ -60,10 +60,12 @@ class Population:
         :return: id of the new person
         """
         new_index = len(self.props)
-        logger.debug('do_birth:%s', new_index)
+        logger.debug("do_birth:%s", new_index)
 
-        self.props = self.props.append(self.new_row.copy(), ignore_index=True, sort=False)
-        self.props.index.name = 'person'
+        self.props = self.props.append(
+            self.new_row.copy(), ignore_index=True, sort=False
+        )
+        self.props.index.name = "person"
 
         return new_index
 
@@ -82,6 +84,7 @@ class Population:
             the property
         """
         from tlo import Property
-        prop = Property(type_, 'A test property')
+
+        prop = Property(type_, "A test property")
         size = self.initial_size if self.props.empty else len(self.props)
         self.props[name] = prop.create_series(name, size)

@@ -30,18 +30,25 @@ class HealthBurden(Module):
         self.YearsLivedWithDisability = None
 
     PARAMETERS = {
-        'DALY_Weight_Database': Property(Types.DATA_FRAME, 'DALY Weight Database from GBD'),
-
-        'Age_Limit_For_YLL': Property(Types.REAL,
-                                      'The age up to which deaths are recorded as having induced a lost of life years')
+        "DALY_Weight_Database": Property(
+            Types.DATA_FRAME, "DALY Weight Database from GBD"
+        ),
+        "Age_Limit_For_YLL": Property(
+            Types.REAL,
+            "The age up to which deaths are recorded as having induced a lost of life years",
+        ),
     }
 
     PROPERTIES = {}
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        p['DALY_Weight_Database'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_DALY_Weights.csv')
-        p['Age_Limit_For_YLL'] = 70.0  # Assumption that deaths younger than 70y incur years of lost life
+        p["DALY_Weight_Database"] = pd.read_csv(
+            Path(self.resourcefilepath) / "ResourceFile_DALY_Weights.csv"
+        )
+        p[
+            "Age_Limit_For_YLL"
+        ] = 70.0  # Assumption that deaths younger than 70y incur years of lost life
 
     def initialise_population(self, population):
         pass
@@ -52,10 +59,12 @@ class HealthBurden(Module):
         first_year = self.sim.start_date.year
         last_year = self.sim.end_date.year
 
-        sex_index = ['M', 'F']
+        sex_index = ["M", "F"]
         year_index = list(range(first_year, last_year + 1))
-        age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-        multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index], names=['sex', 'age_range', 'year'])
+        age_index = self.sim.modules["Demography"].AGE_RANGE_CATEGORIES
+        multi_index = pd.MultiIndex.from_product(
+            [sex_index, age_index, year_index], names=["sex", "age_range", "year"]
+        )
         self.multi_index = multi_index
 
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
@@ -63,10 +72,16 @@ class HealthBurden(Module):
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
         # Check that all registered disease modules have the report_daly_values() function
-        assert 'HealthSystem' in self.sim.modules.keys(), "HealthBurden module is dependent on HealthSystem module."
+        assert (
+            "HealthSystem" in self.sim.modules.keys()
+        ), "HealthBurden module is dependent on HealthSystem module."
 
-        for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
-            assert 'report_daly_values' in dir(self.sim.modules['HealthSystem'].registered_disease_modules[module_name])
+        for module_name in self.sim.modules[
+            "HealthSystem"
+        ].registered_disease_modules.keys():
+            assert "report_daly_values" in dir(
+                self.sim.modules["HealthSystem"].registered_disease_modules[module_name]
+            )
 
         # Launch the DALY Logger to run every month
         sim.schedule_event(Get_Current_DALYS(self), sim.date)
@@ -75,14 +90,16 @@ class HealthBurden(Module):
         pass
 
     def on_simulation_end(self):
-        logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
+        logger.debug(
+            "This is being called at the end of the simulation. Time to output to the logs...."
+        )
 
         # Label and concantenate YLL and YLD dataframes
         assert self.YearsLifeLost.index.equals(self.multi_index)
         assert self.YearsLivedWithDisability.index.equals(self.multi_index)
 
-        self.YearsLifeLost = self.YearsLifeLost.add_prefix('YLL_')
-        self.YearsLivedWithDisability = self.YearsLivedWithDisability.add_prefix('YLD_')
+        self.YearsLifeLost = self.YearsLifeLost.add_prefix("YLL_")
+        self.YearsLivedWithDisability = self.YearsLivedWithDisability.add_prefix("YLD_")
 
         dalys = self.YearsLifeLost.join(self.YearsLivedWithDisability)
 
@@ -94,9 +111,11 @@ class HealthBurden(Module):
         # 2) Go line-by-line and dump to the log
         for line_num in range(len(dalys)):
             line_as_dict = dalys.loc[line_num].to_dict()
-            year = line_as_dict.pop('year')
-            year_as_date = pd.Timestamp(year=year, month=12, day=31)  # log output for the year on 31st December
-            logger.info('%s|DALYS|%s', year_as_date, line_as_dict)
+            year = line_as_dict.pop("year")
+            year_as_date = pd.Timestamp(
+                year=year, month=12, day=31
+            )  # log output for the year on 31st December
+            logger.info("%s|DALYS|%s", year_as_date, line_as_dict)
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -105,11 +124,13 @@ class HealthBurden(Module):
         :param sequlae_code:
         :return: the daly weight associated with that sequalae code
         """
-        w = self.parameters['DALY_Weight_Database']
-        daly_wt = w.loc[w['TLO_Sequela_Code'] == sequlae_code, 'disability weight'].values[0]
+        w = self.parameters["DALY_Weight_Database"]
+        daly_wt = w.loc[
+            w["TLO_Sequela_Code"] == sequlae_code, "disability weight"
+        ].values[0]
 
         # Check that the sequalae code was found
-        assert (not pd.isnull(daly_wt))
+        assert not pd.isnull(daly_wt)
 
         # Check that the value is within bounds [0,1]
         assert (daly_wt >= 0) & (daly_wt <= 1)
@@ -130,15 +151,20 @@ class HealthBurden(Module):
         start_date = self.sim.date
 
         # data to count up to for years of life lost (the earliest of the age_limit or end of simulation)
-        end_date = min(self.sim.end_date, (date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL'])))
+        end_date = min(
+            self.sim.end_date,
+            (date_of_birth + pd.DateOffset(years=self.parameters["Age_Limit_For_YLL"])),
+        )
 
         # get the years of life lost split out by year and age-group
-        yll = self.decompose_yll_by_age_and_time(start_date=start_date, end_date=end_date, date_of_birth=date_of_birth)
+        yll = self.decompose_yll_by_age_and_time(
+            start_date=start_date, end_date=end_date, date_of_birth=date_of_birth
+        )
 
         # augment the multi-index of yll with sex so that it is sex/age_range/year
-        yll['sex'] = sex
-        yll.set_index('sex', append=True, inplace=True)
-        yll = yll.reorder_levels(['sex', 'age_range', 'year'])
+        yll["sex"] = sex
+        yll.set_index("sex", append=True, inplace=True)
+        yll = yll.reorder_levels(["sex", "age_range", "year"])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if label not in self.YearsLifeLost.columns:
@@ -147,7 +173,9 @@ class HealthBurden(Module):
 
         # Add the life-years-lost from this death to the running total in LifeYearsLost dataframe
         indx_before = self.YearsLifeLost.index
-        self.YearsLifeLost[label] = self.YearsLifeLost[label].add(yll['person_years'], fill_value=0)
+        self.YearsLifeLost[label] = self.YearsLifeLost[label].add(
+            yll["person_years"], fill_value=0
+        )
         indx_after = self.YearsLifeLost.index
 
         # check that the index of the YLL dataframe is not changed
@@ -164,19 +192,23 @@ class HealthBurden(Module):
         df = pd.DataFrame()
 
         # Get all the days between start and end
-        df['days'] = pd.date_range(start=start_date, end=end_date, freq='D')
-        df['year'] = df['days'].dt.year
+        df["days"] = pd.date_range(start=start_date, end=end_date, freq="D")
+        df["year"] = df["days"].dt.year
 
         # Get the age that this person will be on each day
-        df['age_in_years'] = ((df['days'] - date_of_birth).dt.days.values / 365).astype(int)
+        df["age_in_years"] = ((df["days"] - date_of_birth).dt.days.values / 365).astype(
+            int
+        )
 
-        age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
-        df['age_range'] = df['age_in_years'].map(age_range_lookup)
+        age_range_lookup = self.sim.modules[
+            "Demography"
+        ].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
+        df["age_range"] = df["age_in_years"].map(age_range_lookup)
 
-        period = pd.DataFrame(df.groupby(by=['year', 'age_range'])['days'].count())
-        period['person_years'] = (period['days'] / 365).clip(lower=0.0, upper=1.0)
+        period = pd.DataFrame(df.groupby(by=["year", "age_range"])["days"].count())
+        period["person_years"] = (period["days"] / 365).clip(lower=0.0, upper=1.0)
 
-        period = period.drop(columns=['days'], axis=1)
+        period = period.drop(columns=["days"], axis=1)
 
         return period
 
@@ -194,20 +226,26 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         # Running the DALY Logger
-        logger.debug('The DALY Logger is occuring now! %s', self.sim.date)
+        logger.debug("The DALY Logger is occuring now! %s", self.sim.date)
 
         # Get the population dataframe
         df = self.sim.population.props
 
         # Create temporary dataframe for the reporting of daly weights from all disease modules for the previous month
         # (Each column of this dataframe gives the reports from each module.)
-        disease_specific_daly_values_this_month = pd.DataFrame(index=df.index[df.is_alive])
+        disease_specific_daly_values_this_month = pd.DataFrame(
+            index=df.index[df.is_alive]
+        )
 
         # 1) Ask each disease module to log the DALYS for the previous month
 
-        for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
+        for disease_module_name in self.sim.modules[
+            "HealthSystem"
+        ].registered_disease_modules.keys():
 
-            disease_module = self.sim.modules['HealthSystem'].registered_disease_modules[disease_module_name]
+            disease_module = self.sim.modules[
+                "HealthSystem"
+            ].registered_disease_modules[disease_module_name]
 
             dalys_from_disease_module = disease_module.report_daly_values()
 
@@ -222,61 +260,89 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
             assert len(dalys_from_disease_module) == df.is_alive.sum()
             assert df.is_alive[dalys_from_disease_module.index].all()
             assert (~pd.isnull(dalys_from_disease_module)).all().all()
-            assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
+            assert (
+                ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1))
+                .all()
+                .all()
+            )
             assert (dalys_from_disease_module.sum(axis=1) <= 1).all()
 
             # Label with the name of the disease module
-            dalys_from_disease_module = dalys_from_disease_module.add_prefix(disease_module_name + '_')
+            dalys_from_disease_module = dalys_from_disease_module.add_prefix(
+                disease_module_name + "_"
+            )
 
             # Add to overall data-frame for this month of report dalys
-            disease_specific_daly_values_this_month = pd.concat([disease_specific_daly_values_this_month,
-                                                                 dalys_from_disease_module],
-                                                                axis=1)
+            disease_specific_daly_values_this_month = pd.concat(
+                [disease_specific_daly_values_this_month, dalys_from_disease_module],
+                axis=1,
+            )
 
         # 2) Rescale the DALY weights
 
         # Create a scaling-factor (if total DALYS for one person is more than 1, all DALYS weights are scaled so that
         #   their sum equals one).
-        scaling_factor = (disease_specific_daly_values_this_month.sum(axis=1).clip(lower=0, upper=1) /
-                          disease_specific_daly_values_this_month.sum(axis=1)).fillna(1.0)
+        scaling_factor = (
+            disease_specific_daly_values_this_month.sum(axis=1).clip(lower=0, upper=1)
+            / disease_specific_daly_values_this_month.sum(axis=1)
+        ).fillna(1.0)
 
-        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.multiply(scaling_factor,
-                                                                                                   axis=0)
+        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.multiply(
+            scaling_factor, axis=0
+        )
 
         # Multiply 1/12 as these weights are for one month only
-        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month * (1 / 12)
+        disease_specific_daly_values_this_month = (
+            disease_specific_daly_values_this_month * (1 / 12)
+        )
 
         # 3) Summarise the results for this month wrt age and sex
 
         # merge in age/sex information
         disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.merge(
-            df.loc[df.is_alive, ['sex', 'age_range']], left_index=True, right_index=True, how='left')
+            df.loc[df.is_alive, ["sex", "age_range"]],
+            left_index=True,
+            right_index=True,
+            how="left",
+        )
 
         # Sum of daly_weight, by sex and age
         disability_monthly_summary = pd.DataFrame(
-            disease_specific_daly_values_this_month.groupby(['sex', 'age_range']).sum().fillna(0))
+            disease_specific_daly_values_this_month.groupby(["sex", "age_range"])
+            .sum()
+            .fillna(0)
+        )
 
         # Add the year into the multi-index
-        disability_monthly_summary['year'] = self.sim.date.year
-        disability_monthly_summary.set_index('year', append=True, inplace=True)
-        disability_monthly_summary = disability_monthly_summary.reorder_levels(['sex', 'age_range', 'year'])
+        disability_monthly_summary["year"] = self.sim.date.year
+        disability_monthly_summary.set_index("year", append=True, inplace=True)
+        disability_monthly_summary = disability_monthly_summary.reorder_levels(
+            ["sex", "age_range", "year"]
+        )
 
         # 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
 
-        dalys_to_add = disability_monthly_summary.sum().sum()     # for checking
+        dalys_to_add = disability_monthly_summary.sum().sum()  # for checking
         dalys_current = self.module.YearsLivedWithDisability.sum().sum()
 
         # This will add columns that are not otherwise present and add values to columns where they are
         combined = self.module.YearsLivedWithDisability.combine(
-            disability_monthly_summary,
-            fill_value=0.0,
-            func=np.add,
-            overwrite=False)
+            disability_monthly_summary, fill_value=0.0, func=np.add, overwrite=False
+        )
 
         # merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)
-        self.module.YearsLivedWithDisability = pd.DataFrame(index=self.module.multi_index).merge(
-            combined, left_index=True, right_index=True, how='left')
+        self.module.YearsLivedWithDisability = pd.DataFrame(
+            index=self.module.multi_index
+        ).merge(combined, left_index=True, right_index=True, how="left")
 
         # check multi-index is in check and that the addition of DALYS has worked
-        assert self.module.YearsLivedWithDisability.index.equals(self.module.multi_index)
-        assert abs(self.module.YearsLivedWithDisability.sum().sum() - (dalys_to_add + dalys_current)) < 1e-5
+        assert self.module.YearsLivedWithDisability.index.equals(
+            self.module.multi_index
+        )
+        assert (
+            abs(
+                self.module.YearsLivedWithDisability.sum().sum()
+                - (dalys_to_add + dalys_current)
+            )
+            < 1e-5
+        )

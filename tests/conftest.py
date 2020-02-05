@@ -8,6 +8,6 @@ from tlo import logging
 def reset_logging():
     """Remove all tlo handlers and filters during teardown of test"""
     yield
-    logger = logging.getLogger('tlo')
+    logger = logging.getLogger("tlo")
     logger.handlers.clear()
     logger.filters.clear()
