@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 from pathlib import Path
@@ -13,14 +12,9 @@ end_date = Date(2015, 1, 1)
 popsize = 500
 
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.INFO)
-
-
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def simulation():
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(core_module)
@@ -43,14 +37,14 @@ def test_dypes(simulation):
 def test_mothers_female(simulation):
     # check all mothers are female
     df = simulation.population.props
-    mothers = df.loc[df.mother_id >= 0, 'mother_id']
-    is_female = mothers.apply(lambda mother_id: df.at[mother_id, 'sex'] == 'F')
+    mothers = df.loc[df.mother_id >= 0, "mother_id"]
+    is_female = mothers.apply(lambda mother_id: df.at[mother_id, "sex"] == "F")
     assert is_female.all()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     t0 = time.time()
     simulation = simulation()
     test_run(simulation)
     t1 = time.time()
-    print('Time taken', t1 - t0)
+    print("Time taken", t1 - t0)

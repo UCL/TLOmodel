@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 from pathlib import Path
@@ -19,23 +18,23 @@ end_date = Date(2012, 1, 1)
 popsize = 1000
 
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.INFO)
-
-
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def simulation():
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
     sim = Simulation(start_date=start_date)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
+    sim.register(
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath, mode_appt_constraints=0
+        )
+    )
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
-    sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
+    sim.register(
+        oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath)
+    )
 
     sim.seed_rngs(0)
     return sim
@@ -53,9 +52,9 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     t0 = time.time()
     simulation = simulation()
     test_run(simulation)
     t1 = time.time()
-    print('Time taken', t1 - t0)
+    print("Time taken", t1 - t0)
