@@ -1,9 +1,7 @@
-import logging
-
 import pandas as pd
 from pathlib import Path
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
@@ -269,7 +267,7 @@ class Labour (Module):
 
         params['la_labour_equations'] =\
             {'parity': LinearModel(
-                LinearModelType.ADDITIVE, # TODO: first stage dummy- needs to come from data
+                LinearModelType.ADDITIVE,   # TODO: first stage dummy- needs to come from data
                 0.0,
                 Predictor('age_years').when('.between(15,24)', self.rng.choice(range(0, 3)))
                                       .when('.between(24,40)', self.rng.choice(range(0, 5)))
@@ -319,7 +317,7 @@ class Labour (Module):
                 Predictor('la_parity').when('0', params['rr_ip_eclampsia_nullip'])),
 
              'antepartum_haem_ip': LinearModel(
-                LinearModelType.MULTIPLICATIVE, # TODO: separate causal influence in praevia and abruption
+                LinearModelType.MULTIPLICATIVE,  # TODO: separate causal influence in praevia and abruption
                 params['prob_aph'],
                 Predictor('la_obstructed_labour').when(True, params['rr_aph_pl_ol'])),
 
@@ -337,21 +335,20 @@ class Labour (Module):
 
              'care_seeking': LinearModel(
                 LinearModelType.LOGISTIC,  # TODO: rough cut paper, would seeking care be better than % home birth?
-                params['odds_homebirth'],  # TODO: need to make these paramters
+                params['odds_homebirth'],  # TODO: need to make these parameters
                 Predictor('li_mar_stat').when('1', params['or_homebirth_unmarried']).when('3',
-                                                                                    params['or_homebirth_unmarried']),
+                                                                                     params['or_homebirth_unmarried']),
                 Predictor('li_wealth').when('4', params['or_homebirth_wealth_4']).when('5',
                                                                                        params['or_homebirth_wealth_5']),
                  # wealth levels in the paper are different
                 Predictor('li_urban').when(True, params['or_homebirth_urban']))
              }
 
-        # TODO: do we need an equation for post term labour
-        # TODO: we could hard code these predictors to reduce the number of actual parameters?
+        # TODO: do we need an equation for post term labour?
 
     def initialise_population(self, population):
         df = population.props
-        params= self.parameters
+        params = self.parameters
 
         df.loc[df.sex == 'F', 'la_current_labour_successful_induction'] = 'not_induced'
         df.loc[df.sex == 'F', 'la_currently_in_labour'] = False
@@ -375,7 +372,7 @@ class Labour (Module):
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE ----------------------------------------------------------
 
-        # TODO: reformat with linear model? consider how best to to draw in real 2010 data
+        # TODO: This is a dummy- need to fully review DHS data 2010
         # Current equation is an unweighted draw that just gives the same parity to every age group
 
         df.la_parity = params['la_labour_equations']['parity'].predict(df.loc[df.is_alive & (df.sex == 'F')])
@@ -446,8 +443,7 @@ class Labour (Module):
     def report_daly_values(self):
 
         # TODO: Refine disability levels (could include severity) and explore a more elegant solution involving less
-        #  properties
-        # TODO: Make sure that value >1.0 is being reported as current fix is temp
+        #  properties (& Make sure that value >1.0 is being reported as current fix is temp)
 
         logger.debug('This is Labour reporting my health values')
 
@@ -554,7 +550,7 @@ class Labour (Module):
         mni = self.mother_and_newborn_info
         params = self.parameters
 
-        if mni[individual_id]['delivery_setting'] == 'FD':
+        if mni[individual_id]['delivery_setting'] == 'facility_delivery':
             mni[individual_id][f'risk_{labour_stage}_{complication}'] = \
                 params['la_labour_equations'][f'{complication}_{labour_stage}'].predict(df.loc[[individual_id]]).values
         else:
@@ -680,7 +676,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # setting is set to facility
             if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'failed_induction') or \
                 (df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction'):
-                mni[individual_id]['delivery_setting'] = 'FD'
+                mni[individual_id]['delivery_setting'] = 'facility_delivery'
             # We then store her induction status if successful
             if df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction':
                 mni[individual_id]['induced_labour'] = True
@@ -716,12 +712,12 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 # probability of home birth
                 if self.module.eval(params['la_labour_equations']['care_seeking'], individual_id) & \
                    (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced'):
-                    mni[individual_id]['delivery_setting'] = 'HB'
+                    mni[individual_id]['delivery_setting'] = 'home_birth'
                     self.sim.schedule_event(LabourAtHomeEvent(self.module, individual_id), self.sim.date)
                     logger.debug('This is LabourEvent,  person %d will not seek care in labour and will deliver at home'
                                  , individual_id)
                 else:
-                    mni[individual_id]['delivery_setting'] = 'FD'
+                    mni[individual_id]['delivery_setting'] = 'facility_delivery'
                     logger.info(
                         'This is LabourOnsetEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour on date'
                         ' %s for person %d as they have chosen to seek care for delivery', self.sim.date, individual_id)
@@ -803,13 +799,10 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
         # TODO: As OL is a contraindication of induction, should we skip it here for induced women?
         #  late diagnosis of obstruction is possible surely
 
-        self.module.set_home_birth_complications(individual_id, params, labour_stage='ip',
-                                                 complication='antepartum_haem')
-        self.module.set_home_birth_complications(individual_id, params, labour_stage='ip', complication='sepsis')
-        self.module.set_home_birth_complications(individual_id, params, labour_stage='ip', complication='eclampsia')
-        self.module.set_home_birth_complications(individual_id, params, labour_stage='ip',
-                                                 complication='uterine_rupture')
-
+        self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='antepartum_haem')
+        self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='sepsis')
+        self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='eclampsia')
+        self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='uterine_rupture')
 
     # TODO: here we need to use the symptom manager to determine if women who are delivering at home with comps
     #  will seek care
@@ -876,13 +869,12 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         # Here we use the complication_application function to determine if a women who has survived labour will
         # experience any further complications (risk is stored for facility deliveries)
         if df.at[individual_id, 'is_alive']:
-            self.module.set_home_birth_complications(individual_id, params, labour_stage='pp',
-                                                     complication='postpartum_haem')
-            self.module.set_home_birth_complications(individual_id, params, labour_stage='pp', complication='sepsis')
-            self.module.set_home_birth_complications(individual_id, params, labour_stage='pp', complication='eclampsia')
+            self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='postpartum_haem')
+            self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='sepsis')
+            self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='eclampsia')
 
         # If a woman has delivered in a facility we schedule her to now receive additional care following birth
-            if mni[individual_id]['delivery_setting'] == 'FD':
+            if mni[individual_id]['delivery_setting'] == 'facility_delivery':
                 logger.info('This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartumPeriod for person '
                             '%d on date %s', individual_id, self.sim.date)
                 
@@ -1206,7 +1198,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         mni = self.module.mother_and_newborn_info
         logger.debug('person %d sought care for a facility delivery but HSI_Labour_PresentsForSkilledAttendanceInLabour'
                      'could not run, they will now deliver at home', person_id)
-        mni[person_id]['delivery_setting'] = 'HB'
+        mni[person_id]['delivery_setting'] = 'home_birth'
         self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
 
     def apply(self, person_id, squeeze_factor):
