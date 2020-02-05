@@ -44,4 +44,4 @@ def init_logging():
     logger.handlers.clear()
     logger.filters.clear()
     logger.addHandler(handler)
-    _logging.basicConfig(level=DEBUG)
+    _logging.basicConfig(level=_logging.WARNING)
