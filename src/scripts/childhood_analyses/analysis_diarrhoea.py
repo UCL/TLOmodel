@@ -115,13 +115,13 @@ inc_rate = dict()
 for age_grp in counts.columns:
     inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
-# Get the incidence rates that were input:
-base_incidence_rate = dict()
+# Get the 3 month risk parameters that were input:
+base_riskper3mo = dict()
 for pathogen in sim.modules['Diarrhoea'].pathogens:
-    base_incidence_rate[pathogen] = \
-        sim.modules['Diarrhoea'].parameters[f'base_incidence_diarrhoea_by_{pathogen}']
+    base_riskper3mo[pathogen] = \
+        sim.modules['Diarrhoea'].parameters[f'base_riskper3mo_diarrhoea_by_{pathogen}']
 
-
+# Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
         'rotavirus': 17.5245863/100.0,
         'shigella': 11.7936462/100.0,
@@ -161,33 +161,6 @@ calibration_incidence_rate_2_to_4_year_olds = {
         'tEPEC': 0.1998/100.0
 }
 
-
-paths = list(calibration_incidence_rate_0_year_olds.keys())
-ex = dict()
-for p in paths:
-    ex[p]=[
-        calibration_incidence_rate_0_year_olds[p],
-        calibration_incidence_rate_1_year_olds[p],
-        calibration_incidence_rate_2_to_4_year_olds[p]
-    ]
-
-tab = pd.DataFrame(ex).transpose().to_csv('dump.csv')
-
-# Confirm relationship between the input parameter and the target calibrations
-# (The input baseline incidence rate should be about 1/4 of the total incidence as the polling event runs every 3mo)
-for pathogen in sim.modules['Diarrhoea'].pathogens:
-    input = base_incidence_rate[pathogen]
-    calibration = [
-        calibration_incidence_rate_0_year_olds[pathogen],
-        calibration_incidence_rate_1_year_olds[pathogen],
-        calibration_incidence_rate_2_to_4_year_olds[pathogen]
-    ]
-    print(abs(np.array(input) * 4 / np.array(calibration)))
-
-    # assert all((abs(np.array(input)*4 / np.array(calibration))- 1) < 1e-2)
-    # Not all of these are correct - but they are mostly roughly right.                         <---- Check this!
-
-
 # Produce a set of line plot comparing to the calibration data
 fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
 for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
@@ -196,7 +169,7 @@ for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
     ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],
                      xmin=min(inc_rate['0y'].index),
                      xmax=max(inc_rate['0y'].index),
-                     label='Parameter'
+                     label='calibrating_data'
             )
     ax.set_title(f'{pathogen}')
     ax.set_xlabel("Year")
