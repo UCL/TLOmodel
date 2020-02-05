@@ -1101,6 +1101,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         death_date = rng.weibull(
             a=params["weibull_shape_mort_adult"], size=len(newly_infected_index)
         ) * np.exp(self.module.log_scale(df.loc[newly_infected_index, "age_years"]))
+
         death_date = pd.to_timedelta(death_date * 365.25, unit="d")
 
         death_date = pd.Series(death_date).dt.floor("S")  # remove microseconds
