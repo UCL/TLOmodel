@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -218,8 +219,8 @@ class Labour (Module):
                                                                        'failed_induction']),
         'la_intrapartum_still_birth': Property(Types.BOOL, 'whether this womans most recent pregnancy has ended '
                                                            'in a stillbirth'),
-        'la_parity': Property(Types.INT, 'total number of previous deliveries'),
-
+        'la_parity': Property(Types.REAL, 'total number of previous deliveries'),
+        # TODO: This should be an integer but could force inf value to int from LM output
         'la_previous_cs_delivery': Property(Types.BOOL, 'whether this woman has ever delivered via caesarean section'),
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
@@ -263,17 +264,19 @@ class Labour (Module):
 
 # ======================================= LINEAR MODEL EQUATIONS ======================================================
         # Here we define the equations that will be used throughout this module using the linear model and stored them
-        # as a paramter
+        # as a parameter
 
         params['la_labour_equations'] =\
             {'parity': LinearModel(
-                LinearModelType.ADDITIVE,   # TODO: first stage dummy- needs to come from data
-                0.0,
-                Predictor('age_years').when('.between(15,24)', self.rng.choice(range(0, 3)))
-                                      .when('.between(24,40)', self.rng.choice(range(0, 5)))
-                                      .when(' > 40', self.rng.choice(range(0, 7)))),
+                LinearModelType.ADDITIVE,
+                -3,
+                Predictor('age_years').apply(lambda age_years: (age_years * 0.22)),
+                Predictor('li_mar_stat').when('2', 0.91).when('3', 0.16),
+                Predictor('li_wealth').when('5'or '4', -0.13).when('3', -0.26).when('2', -0.37).when('1', -0.9),
+                ),
+                # TODO: first draft from rough regression of 2010 DHS data, rounded in code to ensure whole numbers
 
-                'early_preterm_birth': LinearModel(
+             'early_preterm_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,  # TODO: Anaemia/ Malaria / Multiple gestation
                 params['prob_early_ptb'],
                 Predictor('age_years').when('.between(15,20)', params['rr_early_ptb_age<20']),
@@ -372,10 +375,12 @@ class Labour (Module):
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE ----------------------------------------------------------
 
-        # TODO: This is a dummy- need to fully review DHS data 2010
-        # Current equation is an unweighted draw that just gives the same parity to every age group
+        # TODO: This linear equation is from a very rough regression of DHS 2010 parity (not all predictors fully
+        #  explored)
 
-        df.la_parity = params['la_labour_equations']['parity'].predict(df.loc[df.is_alive & (df.sex == 'F')])
+        df.la_parity = np.around(params['la_labour_equations']['parity'].predict(df.loc[df.is_alive & (df.sex == 'F')
+                                                                                        & (df.age_years > 14)]))
+        df.la_parity.astype(float)
 
     def initialise_simulation(self, sim):
 
@@ -799,6 +804,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
         # TODO: As OL is a contraindication of induction, should we skip it here for induced women?
         #  late diagnosis of obstruction is possible surely
 
+        # Here labour_stage 'ip' means intrapartum
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='antepartum_haem')
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='sepsis')
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='eclampsia')
@@ -869,6 +875,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         # Here we use the complication_application function to determine if a women who has survived labour will
         # experience any further complications (risk is stored for facility deliveries)
         if df.at[individual_id, 'is_alive']:
+            # Here labour_stage 'pp' means postpartum
             self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='postpartum_haem')
             self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='sepsis')
             self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='eclampsia')
@@ -1145,7 +1152,7 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
             logger.debug('PkgCode1 is not available, so can' 't use it.')
 
         # We use a random draw to determine if this womans labour will be successfully induced
-        # Indications: Post term, eclampsia, severe preeclampsia, mild preeclampsia at term, PROM > 24 hrs at term
+        # Indications: Post term, eclampsia, severe pre-eclampsia, mild pre-eclampsia at term, PROM > 24 hrs at term
         # or PPROM > 34 weeks EGA, and IUFD.
 
         if self.module.rng.random_sample() < params['prob_successful_induction']:
@@ -1194,17 +1201,16 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
 
-    def did_not_run(self, person_id):
-        mni = self.module.mother_and_newborn_info
-        logger.debug('person %d sought care for a facility delivery but HSI_Labour_PresentsForSkilledAttendanceInLabour'
-                     'could not run, they will now deliver at home', person_id)
-        mni[person_id]['delivery_setting'] = 'home_birth'
-        self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
-
     def apply(self, person_id, squeeze_factor):
+        mni = self.module.mother_and_newborn_info
 
         if squeeze_factor > 0.8:  # TODO: confirm
-            self.module.did_not_run(person_id)
+            self.did_not_run()
+            logger.debug(
+                'person %d sought care for a facility delivery but HSI_Labour_PresentsForSkilledAttendanceInLabour'
+                'could not run, they will now deliver at home', person_id)
+            mni[person_id]['delivery_setting'] = 'home_birth'
+            self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
 
         logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
                     'at birth for person %d on date %s', person_id, self.sim.date)
@@ -1321,6 +1327,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
             actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery'] * 1
 
         return actual_appt_footprint
+
+    def did_not_run(self):
+        return True
 
 
 class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEventMixin):

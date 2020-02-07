@@ -6,8 +6,8 @@ import pytest
 from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import demography,enhanced_lifestyle, labour, newborn_outcomes, healthburden, healthsystem, antenatal_care,\
-    pregnancy_supervisor, contraception
+from tlo.methods import demography, enhanced_lifestyle, labour, newborn_outcomes, healthburden, healthsystem, \
+    antenatal_care, pregnancy_supervisor, contraception
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -25,6 +25,7 @@ def disable_logging():
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
@@ -36,7 +37,7 @@ def simulation():
 
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
 
     sim.seed_rngs(1)
     return sim

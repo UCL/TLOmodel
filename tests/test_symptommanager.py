@@ -6,6 +6,8 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    labour,
+    pregnancy_supervisor,
     contraception,
     demography,
     dx_algorithm_child,
@@ -37,12 +39,15 @@ def test_no_symptoms_if_no_diseases():
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2))
+    # sim.register(labour.Labour(resourcefilepath=resourcefilepath))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
@@ -64,7 +69,9 @@ def test_adding_symptoms():
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
