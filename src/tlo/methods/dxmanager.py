@@ -67,9 +67,12 @@ class DxManager:
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
 
-    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False):
+    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False, report_DxTest_tried=False):
 
-        # TODO: check that hsi_event is really an hsi_event
+        # Check that the thing passed to hsi_event is usable as an hsi_event
+        assert 'TREATMENT_ID' in dir(hsi_event)
+        assert 'rng' in dir(hsi_event.module)
+        assert 'HSI_' in str(hsi_event.__class__)
 
         # Make dx_tests_to_run into a list if it is not already one
         if not isinstance(dx_tests_to_run, list):
@@ -79,8 +82,11 @@ class DxManager:
             [name in self.dx_tests for name in dx_tests_to_run]
         ), f'A DxTest name is not recognised.'
 
-        # Create the dict() that will be returned
+        # Create the dict() of results that will be returned
         result_dict_for_list_of_dx_tests = dict()
+
+        # Create the dict of test that were tried (True for worked, False for failed)
+        the_dxtests_tried = dict()
 
         for dx_test in dx_tests_to_run:
 
@@ -89,15 +95,25 @@ class DxManager:
                 t_res = t.apply(hsi_event)
 
                 if t_res is not None:
+                    # The DxTest was successful. Log the use of that DxTest
+                    the_dxtests_tried[t] = True
                     break
+                else:
+                    # The DxTest was not successful. Log the use of that DxTest
+                    the_dxtests_tried[t] = False
 
             result_dict_for_list_of_dx_tests[dx_test] = t_res
 
         # Decide on type of return:
-        if (len(dx_tests_to_run) == 1) and use_dict_for_single is False:
-            return result_dict_for_list_of_dx_tests[dx_tests_to_run[0]]
+        if (len(dx_tests_to_run) == 1) and (use_dict_for_single is False):
+            result = result_dict_for_list_of_dx_tests[dx_tests_to_run[0]]
         else:
-            return result_dict_for_list_of_dx_tests
+            result = result_dict_for_list_of_dx_tests
+
+        if report_DxTest_tried:
+            return result, the_dxtests_tried
+        else:
+            return result
 
 
 class DxTest:
@@ -107,7 +123,8 @@ class DxTest:
                  cons_req_as_item_code=None,
                  sensitivity: float = None,
                  specificity: float = None,
-                 measure_error_stdev: float = None
+                 measure_error_stdev: float = None,
+                 threshold: float = None
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
@@ -126,13 +143,14 @@ class DxTest:
             }
         else:
             self.cons_req_as_footprint = None
-        # TODO: format checking on consumable footprint
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         assert (sensitivity is None) or isinstance(sensitivity, float), 'Sensitivity is given in incorrect format.'
         assert (specificity is None) or isinstance(specificity, float), 'Sensitivity is given in incorrect format.'
         assert (measure_error_stdev is None) or isinstance(measure_error_stdev, float), \
             'measure_error_stdev is given in incorrect format.'
+        assert (threshold is None) or isinstance(threshold, float), \
+            'threshold is given in incorrect format.'
 
         if (sensitivity is not None):
             self.sensitivity = sensitivity
@@ -148,6 +166,8 @@ class DxTest:
             self.measure_error_stdev = measure_error_stdev
         else:
             self.measure_error_stdev = 0.0
+
+        self.threshold = threshold  # store the value of threshold (could be None or a float)
 
     def __hash__(self):
         if self.cons_req_as_footprint is not None:
@@ -189,15 +209,16 @@ class DxTest:
         assert self.property in df.columns, 'The property is not found in the sim.population.props dataframe'
         true_value = df.loc[person_id, self.property]
 
-        # Check for the availability of the consumable code
+        # If a consumable is required and it is not available, return None
         if self.cons_req_as_footprint is not None:
-            rtn_from_health_system = health_system_module.request_consumables(hsi_event, self.cons_req_as_footprint,
+            # check availability of consumable
+            rtn_from_health_system = health_system_module.request_consumables(hsi_event,
+                                                                              self.cons_req_as_footprint,
                                                                               to_log=True)
 
-            cons_available = all(rtn_from_health_system['Intervention_Package_Code'].values()) \
-                and all(rtn_from_health_system['Item_Code'].values())
-        else:
-            cons_available = True
+            if not (all(rtn_from_health_system['Intervention_Package_Code'].values()) and
+                    all(rtn_from_health_system['Item_Code'].values())):
+                return None
 
         # Apply the test:
         if isinstance(true_value, np.bool_):
@@ -207,15 +228,19 @@ class DxTest:
             else:
                 # Apply the specificity:
                 test_value = health_system_module.rng.choice([False, True], p=[self.specificity, 1 - self.specificity])
+
         elif isinstance(true_value, np.float_):
             # Apply the normally distributed zero-mean error
-            test_value = true_value + health_system_module.rng.normal(0.0, self.measure_error_stdev)
+            reading = true_value + health_system_module.rng.normal(0.0, self.measure_error_stdev)
+
+            # If no threshold value is provided, then return the reading; otherwise apply the threshold
+            if self.threshold is None:
+                test_value = float(reading)
+            else:
+                test_value = bool(reading >= self.threshold)
+
         else:
             test_value = true_value
 
-        if cons_available:
-            # Consumables available, return test value
-            return test_value
-        else:
-            # Consumables not available, return test value
-            return None
+        # Return test_value
+        return test_value

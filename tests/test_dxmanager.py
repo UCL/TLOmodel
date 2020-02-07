@@ -84,8 +84,6 @@ cons_req_as_footprint_for_consumable_that_is_available = consumables_needed = {
     'Intervention_Package_Code': {},
     'Item_Code': {item_code_for_consumable_that_is_available: 1},
 }
-
-
 # --------------------------------------------------------------------------
 
 
@@ -354,7 +352,7 @@ def test_run_batch_of_dx_test_in_one_call():
 
 
 def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
-    # Create the test:
+    # Create the tests:
     my_test1_not_available = DxTest(
         cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_not_available,
         property='mi_status'
@@ -390,25 +388,31 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
         dx_tests_to_run='single_test_not_available',
         hsi_event=hsi_event
     )
-
     assert result is None
 
-    # Run the list of test (when the first test fails): should return a result having run test2
-    result = dx_manager.run_dx_test(dx_tests_to_run='list_of_tests_with_first_not_available',
-                                    hsi_event=hsi_event
+    # Run the list of test (when the first test fails): should return a result having run test1 and test2
+    result, tests_tried = dx_manager.run_dx_test(
+                                    dx_tests_to_run='list_of_tests_with_first_not_available',
+                                    hsi_event=hsi_event,
+                                    report_DxTest_tried=True
                                     )
-    assert None is not result
+    assert result is not None
     assert result == sim.population.props.at[person_id, 'mi_status']
+    assert len(tests_tried) == 2
+    assert tests_tried[my_test1_not_available] is False
+    assert tests_tried[my_test2_is_available] is True
 
     # Run the list of tests (when the first test fails): should return a result having run test2 and not tried test1
-    result = dx_manager.run_dx_test(dx_tests_to_run='list_of_tests_with_first_available',
-                                    hsi_event=hsi_event
+    result, tests_tried = dx_manager.run_dx_test(
+                                    dx_tests_to_run='list_of_tests_with_first_available',
+                                    hsi_event=hsi_event,
+                                    report_DxTest_tried=True
                                     )
-    assert None is not result
-    assert result == sim.population.props.at[person_id, 'mi_status']
-
-    # TODO: report which test provided the result
-    # TODO: check that a second test is not run if the first provides result.
+    assert result is not None
+    assert result, tests_tried == sim.population.props.at[person_id, 'mi_status']
+    assert len(tests_tried) == 1
+    assert tests_tried[my_test2_is_available] is True
+    assert my_test1_not_available not in tests_tried
 
 
 def test_create_dx_test_and_run_with_imperfect_sensitivity():
@@ -436,7 +440,6 @@ def test_create_dx_test_and_run_with_imperfect_sensitivity():
                 dx_tests_to_run='my_test',
                 hsi_event=hsi_event
             )
-
             results.append(result_from_dx_manager)
 
         return results
@@ -499,6 +502,47 @@ def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity():
     assert 0.0 < sum(results) < len(results)
 
 
+def test_create_dx_test_and_run_with_cont_value_and_cutoff():
+    # This test is for a property represented by a continuous variable and the DxTest should return True if the value
+    # is above a certain threshold.
+
+    # Create a dataframe that has values known to be above or below the threshold (=0.0)
+    df = sim.population.props
+    df['AboveThreshold'] = 1.0
+    df['BelowThreshold'] = -1.0
+
+    my_test_on_above_threshold = DxTest(
+        property='AboveThreshold',
+        threshold=0.0
+    )
+
+    my_test_on_below_threshold = DxTest(
+        property='BelowThreshold',
+        threshold=0.0
+    )
+
+    # Register DxTest with DxManager:
+    dx_manager = DxManager()
+    dx_manager.register_dx_test(my_test_on_above_threshold=my_test_on_above_threshold,
+                                my_test_on_below_threshold=my_test_on_below_threshold
+                                )
+
+    # Run it on one person and confirm the result is as expected
+    person_id = 0
+    hsi_event.target = person_id
+    result = dx_manager.run_dx_test(
+        dx_tests_to_run='my_test_on_above_threshold',
+        hsi_event=hsi_event
+    )
+    assert result is True
+
+    result = dx_manager.run_dx_test(
+        dx_tests_to_run='my_test_on_below_threshold',
+        hsi_event=hsi_event
+    )
+    assert result is False
+
+
 def test_create_dx_test_and_run_with_cont_dx_and_error():
     # Create a property in the sim.population.props dataframe for testing.
     # Make it zero for everyone
@@ -542,5 +586,3 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
 
     assert all([0.0 == e for e in result_from_test_with_zero_stdev])
     assert sum([abs(e) for e in result_from_test_with_nonzero_stdev]) > 0
-
-# TODO: REMOVE THE NEED TO PASS IN HEALTHSYSTEM
