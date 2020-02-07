@@ -439,7 +439,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             df.at[woman, 'is_pregnant'] = True
             df.at[woman, 'date_of_last_pregnancy'] = self.sim.date
             df.at[woman, 'co_unintended_preg'] = True
-            self.sim.modules['Labour'].set_date_of_labour(woman)
+            self.sim.modules['Labour'].set_date_of_labour(self, woman)
 
             # outputs some logging if any pregnancy (contraception failure)
             logger.info('%s|fail_contraception|%s',
