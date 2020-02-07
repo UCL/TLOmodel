@@ -3,7 +3,6 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
-
 from tlo.methods import (
     chronicsyndrome,
     contraception,
