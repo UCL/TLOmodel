@@ -204,17 +204,7 @@ plt.title('2-4 year-olds')
 plt.show()
 
 # %%
-
 # Look at deaths arising?
 
 # Or anything else?
-
-
-
-
-
-
-
-
-
 

@@ -877,25 +877,25 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             probs_of_aquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_diarrhoea_episode])
 
-        # # --- ** DEBUG ** ---
-        # # removing the risk of any pathogen apart from 'rotavirus' in 1 year-olds
-        # set_of_pathogens_excluding_rotavirus = m.pathogens - {'rotavirus'}
-        # for pathogen in set_of_pathogens_excluding_rotavirus:
-        #     probs_of_aquiring_pathogen[pathogen] = 0.0
-        #
-        # probs_of_aquiring_pathogen.loc[self.sim.population.props['age_years']!=1 ,'rotavirus'] = 0.0
-        # assert all(
-        #     probs_of_aquiring_pathogen.loc[
-        #     self.sim.population.props['age_years']==1,
-        #     'rotavirus'].values == m.parameters[f'base_riskper3mo_diarrhoea_by_rotavirus'][1]
-        # )
-        #
-        # assert all(
-        #     probs_of_aquiring_pathogen.loc[
-        #         (self.sim.population.props['age_years']<1) | (self.sim.population.props['age_years']>1),
-        #     'rotavirus'].values == 0.0
-        # )
-        # # -------------------
+        # --- ** DEBUG ** ---
+        # removing the risk of any pathogen apart from 'rotavirus' in 1 year-olds
+        set_of_pathogens_excluding_rotavirus = m.pathogens - {'rotavirus'}
+        for pathogen in set_of_pathogens_excluding_rotavirus:
+            probs_of_aquiring_pathogen[pathogen] = 0.0
+
+        probs_of_aquiring_pathogen.loc[self.sim.population.props['age_years']!=1 ,'rotavirus'] = 0.0
+        assert all(
+            probs_of_aquiring_pathogen.loc[
+            self.sim.population.props['age_years']==1,
+            'rotavirus'].values == m.parameters[f'base_riskper3mo_diarrhoea_by_rotavirus'][1]
+        )
+
+        assert all(
+            probs_of_aquiring_pathogen.loc[
+                (self.sim.population.props['age_years']<1) | (self.sim.population.props['age_years']>1),
+            'rotavirus'].values == 0.0
+        )
+        # -------------------
 
         # Create the probability of getting 'any' pathogen:
         # (Assumes that pathogens are mutually exclusive)
@@ -927,7 +927,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # ----------------------- Determine outcomes for this case ----------------------
             duration_in_days_of_diarrhoea = int(
-                m.mean_duration_in_days_of_diarrhoea(df.loc[[person_id]]).values[0] + \
+                m.mean_duration_in_days_of_diarrhoea.predict(df.loc[[person_id]]).values[0] + \
                 (-2 + 4 * rng.rand())
             )
 
@@ -939,7 +939,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             risk_of_death = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
             if rng.rand() < risk_of_death:
                 # This person is expected to die
-                date_of_death = self.sim.date + DateOffset(days=duration_in_days_of_diarrhoea)
+                date_of_death = date_onset + DateOffset(days=duration_in_days_of_diarrhoea)
 
                 # Set the date of death in the dataframe.
                 # (Nb. This will be reset to pd.NaT if the death should not to occur due to treatment.)
@@ -951,7 +951,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             else:
                 df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = \
-                    self.sim.date + DateOffset(days=duration_in_days_of_diarrhoea)
+                    date_onset + DateOffset(days=duration_in_days_of_diarrhoea)
                 df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
             # ----------------------- Allocate symptoms to onset of diarrhoea ----------------------
