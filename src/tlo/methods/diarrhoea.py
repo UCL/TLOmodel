@@ -351,13 +351,22 @@ class Diarrhoea(Module):
 
         # dict to hold counters for the number of episodes of diarrhoea by pathogen-type and age-group
         # (0yrs, 1yrs, 2-4yrs)
-        blank_counter = dict(zip(self.pathogens, len(self.pathogens)*[list()]))
-        self.incident_cases_counter_blank = {
+        blank_counter = dict(zip(self.pathogens, [list() for _ in self.pathogens]))
+        self.incident_case_tracker_blank = {
             '0y': copy.deepcopy(blank_counter),
             '1y': copy.deepcopy(blank_counter),
-            '2-4y': copy.deepcopy(blank_counter)
+            '2-4y': copy.deepcopy(blank_counter),
+            '5+y': copy.deepcopy(blank_counter)
         }
-        self.incident_cases_counter = copy.deepcopy(self.incident_cases_counter_blank)
+        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
+
+        zeros_counter = dict(zip(self.pathogens, [0] * len(self.pathogens)))
+        self.incident_case_tracker_zeros = {
+            '0y': copy.deepcopy(zeros_counter),
+            '1y': copy.deepcopy(zeros_counter),
+            '2-4y': copy.deepcopy(zeros_counter),
+            '5+y': copy.deepcopy(zeros_counter)
+        }
 
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module """
@@ -825,12 +834,9 @@ class Diarrhoea(Module):
         df = self.sim.population.props
         p = self.parameters
 
-        # Assume that the current DALY loading is linked to *current* symptomatic experience of
-        # symptoms diarrahoea and dehyrdration
-        # **
-        # Need to check if the DALY weights are 'per time' with those symptoms,
-        # in which case will need to link to duration
-        # **
+        # Assume that the current DALY loading is linked to current symptomatic experience of
+        # symptoms diarrhoea and dehyrdration
+        # Check this!
 
         total_daly_values = pd.Series(data=0.0, index=df.loc[df['is_alive']].index)
         total_daly_values.loc[
@@ -842,7 +848,7 @@ class Diarrhoea(Module):
         ] \
             = self.daly_wts['moderate_diarrhoea']
 
-        # Split out by pathogen that causes the diarrahoea
+        # Split out by pathogen that causes the diarrhoea
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
                                                      'gi_last_diarrhoea_pathogen'],
                                               dtype='float')
@@ -859,13 +865,11 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         """
         This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
-        It also outputs to the log the number of incident cases that it has caused.
+        It determines who is infected and when and schedules individual IncidentCase events to represent onset.
         """
         df = population.props
         rng = self.module.rng
         m = self.module
-
-        print(f'PollingEvent Occuring on {self.sim.date}')
 
         # Compute the probabilities of each person getting diarrhoea within the next three months
         mask_could_get_new_diarrhoea_episode = df['is_alive'] \
@@ -880,25 +884,25 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             probs_of_aquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_diarrhoea_episode])
 
-        # --- ** DEBUG ** ---
-        # removing the risk of any pathogen apart from 'rotavirus' in 1 year-olds
-        set_of_pathogens_excluding_rotavirus = m.pathogens - {'rotavirus'}
-        for pathogen in set_of_pathogens_excluding_rotavirus:
-            probs_of_aquiring_pathogen[pathogen] = 0.0
-
-        probs_of_aquiring_pathogen.loc[self.sim.population.props['age_years'] != 1, 'rotavirus'] = 0.0
-        assert all(
-            probs_of_aquiring_pathogen.loc[
-                self.sim.population.props['age_years'] == 1,
-                'rotavirus'].values == m.parameters[f'base_riskper3mo_diarrhoea_by_rotavirus'][1]
-        )
-
-        assert all(
-            probs_of_aquiring_pathogen.loc[
-                (self.sim.population.props['age_years'] < 1) | (self.sim.population.props['age_years'] > 1),
-                'rotavirus'].values == 0.0
-        )
-        # -------------------
+        # # --- ** DEBUG ** ---
+        # # removing the risk of any pathogen apart from 'rotavirus' in 1 year-olds
+        # set_of_pathogens_excluding_rotavirus = m.pathogens - {'rotavirus'}
+        # for pathogen in set_of_pathogens_excluding_rotavirus:
+        #     probs_of_aquiring_pathogen[pathogen] = 0.0
+        #
+        # probs_of_aquiring_pathogen.loc[self.sim.population.props['age_years'] != 1, 'rotavirus'] = 0.0
+        # assert all(
+        #     probs_of_aquiring_pathogen.loc[
+        #         self.sim.population.props['age_years'] == 1,
+        #         'rotavirus'].values == m.parameters[f'base_riskper3mo_diarrhoea_by_rotavirus'][1]
+        # )
+        #
+        # assert all(
+        #     probs_of_aquiring_pathogen.loc[
+        #         (self.sim.population.props['age_years'] < 1) | (self.sim.population.props['age_years'] > 1),
+        #         'rotavirus'].values == 0.0
+        # )
+        # # -------------------
 
         # Create the probability of getting 'any' pathogen:
         # (Assumes that pathogens are mutually exclusive)
@@ -945,7 +949,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 if rng.rand() < prob:
                     symptoms_for_this_person.append(symptom)
 
-            # ----------------------- Create the event for the onset of infection ----------------------
+            # ----------------------- Create the event for the onset of infection -------------------
             self.sim.schedule_event(
                 event=DiarrhoeaIncidentCase(
                     module=self.module,
@@ -1008,10 +1012,13 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_of_outcome
             df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
-        # Add this incident case to the counter
-        age_grp = df.loc[person_id, ['age_years']] \
-            .map({0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'})[0]
-        self.module.incident_cases_counter[age_grp][self.pathogen].append(self.sim.date)
+        # Add this incident case to the tracker
+        age = df.loc[person_id, ['age_years']]
+        if age.values[0] < 5:
+            age_grp = age.map({0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}).values[0]
+        else:
+            age_grp = '5+y'
+        self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
 
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
@@ -1025,7 +1032,7 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
 
-        # Check if person should still die of diarahaoea
+        # Check if person should still die of diarrhoea
         if (df.at[person_id, 'is_alive']) and (df.at[person_id, 'gi_last_diarrhoea_death_date'] == self.sim.date):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
@@ -1044,15 +1051,23 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=1))
         self.date_last_run = self.sim.date
 
-    def apply(self):
-        # Check that all the dates have occured since self.date_last_run and self.sim.date
-        # todo
+    def apply(self, population):
+        # Convert the list of timestamps into a number of timestamps
+        # and check that all the dates have occurred since self.date_last_run
+        counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
 
-        logger.info('%s|incidence_count_by_patho|%s',
+        for age_grp in self.module.incident_case_tracker.keys():
+            for pathogen in self.module.pathogens:
+                list_of_times = self.module.incident_case_tracker[age_grp][pathogen]
+                counts[age_grp][pathogen] = len(list_of_times)
+                for t in list_of_times:
+                    assert self.date_last_run <= t <= self.sim.date
+
+        logger.info('%s|incidence_count_by_pathogen|%s',
                     self.sim.date,
-                    self.module.incident_cases_counter
+                    counts
                     )
 
         # Reset the counters and the date_last_run
-        self.module.incident_cases_counter = self.module.incident_cases_counter_blank
+        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
         self.date_last_run = self.sim.date

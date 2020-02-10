@@ -34,7 +34,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 2)
+end_date = Date(2015, 1, 2)
 popsize = 10000
 
 # add file handler for the purpose of logging
@@ -74,7 +74,7 @@ output = parse_log_file(logfile)
 # %%
 # Calculate the "incidence rate" from the output counts of incidence
 
-counts = output['tlo.methods.diarrhoea']['incidence_count_by_patho']
+counts = output['tlo.methods.diarrhoea']['incidence_count_by_pathogen']
 counts['year'] = pd.to_datetime(counts['date']).dt.year
 counts.drop(columns='date', inplace=True)
 counts.set_index(
@@ -112,7 +112,7 @@ pop.drop(columns=[x for x in range(5)], inplace=True)
 
 # Incidence rate among 0, 1, 2-4 year-olds
 inc_rate = dict()
-for age_grp in counts.columns:
+for age_grp in ['0y', '1y', '2-4y']:
     inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
 # Get the 3 month risk parameters that were input:
@@ -204,7 +204,5 @@ plt.title('2-4 year-olds')
 plt.show()
 
 # %%
-# Look at deaths arising?
-
-# Or anything else?
+# Look at deaths arising? Or anything else?
 
