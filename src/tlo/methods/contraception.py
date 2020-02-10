@@ -10,9 +10,8 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
-from tlo.methods import labour
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

@@ -3,8 +3,7 @@ import pandas as pd
 from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -161,9 +160,6 @@ class PregnancySupervisor(Module):
         sim.schedule_event(event(self),
                            sim.date + DateOffset(days=0))
 
-        event = PregnancySupervisorLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(days=0))
-
 #        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
@@ -191,10 +187,8 @@ class PregnancySupervisor(Module):
                      'person %d for: %s', person_id, treatment_id)
 
     def report_daly_values(self):
-
-        df = self.sim.population.props
-
-    # TODO: Antenatal DALYs
+        logger.debug('This is PregnancySupervisor reporting my health values')
+        # TODO: Antenatal DALYs
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -208,7 +202,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        params = self.module.parameters
 
     # ===================================== UPDATING GESTATIONAL AGE IN WEEKS  ========================================
         # Here we update the gestational age in weeks of all currently pregnant women in the simulation
@@ -229,27 +222,10 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
     # TODO: consider renaming if only dealing with HTN diseases
 
     def __init__(self, module,):
-        super().__init__(module, frequency=DateOffset(weeks=4)) # are we happy with this frequency
+        super().__init__(module, frequency=DateOffset(weeks=4))
 
     def apply(self, population):
-        df = population.props
-        params = self.module.parameters
+        """This is where progression of diseases will be handled"""
 
     # ============================= PROGRESSION OF PREGNANCY DISEASES ==========================================
     # Progression of pregnancy diseases will live here
-
-class PregnancySupervisorLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-        """Handles Pregnancy Supervision  logging"""
-
-        def __init__(self, module):
-            """schedule logging to repeat every 3 months
-            """
-            #    self.repeat = 3
-            #    super().__init__(module, frequency=DateOffset(days=self.repeat))
-            super().__init__(module, frequency=DateOffset(months=3))
-
-        def apply(self, population):
-            """Apply this event to the population.
-            :param population: the current population
-            """
-            df = population.props

@@ -107,11 +107,11 @@ class NewbornOutcomes(Module):
         'nb_retinopathy_prem': Property(Types.CATEGORICAL, 'Level of visual disturbance due to retinopathy of'
                                                            ' prematurity: None, mild, moderate, severe, blindness',
                                         categories=['none', 'mild', 'moderate', 'severe', 'blindness']),
-        'nb_ongoing_impairment': Property(Types.CATEGORICAL,'none, mild motor, mild motor and cognitive, moderate motor'
-                                                            ' moderate motor and cognitive, severe motor, severe motor '
-                                                            'and cognitive',
+        'nb_ongoing_impairment': Property(Types.CATEGORICAL, 'none, mild motor, mild motor and cognitive, '
+                                                             'moderate motor, moderate motor and cognitive, '
+                                                             'severe motor, severe motor and cognitive',
                                           categories=['none', 'mild_mot', 'mild_mot_cog', 'mod_mot', 'mod_mot_cog',
-                                                            'severe_mot', ' severe_mot_cog']),
+                                                      'severe_mot', ' severe_mot_cog']),
         'nb_birth_weight': Property(Types.CATEGORICAL, 'extremely low birth weight (<1000g), very low birth weight '
                                                        '(<1500g), low birth weight (<2500g),'
                                                        'normal birth weight (>2500g)',
@@ -352,7 +352,7 @@ class NewbornOutcomes(Module):
                 df.at[child_id, 'nb_birth_weight'] = 'LBW'
 
             if df.at[child_id, 'nb_late_preterm'] & (self.rng.random_sample() < 0.7):
-                    df.at[child_id, 'nb_birth_weight'] = 'LBW'
+                df.at[child_id, 'nb_birth_weight'] = 'LBW'
 
             if self.eval(params['nb_newborn_equations']['sga'], child_id):
                 df.at[child_id, 'nb_size_for_gestational_age'] = 'SGA'
@@ -368,7 +368,7 @@ class NewbornOutcomes(Module):
             # which is currently incomplete. We then store their risk of sepsis to allow modification by treatment
             # effects (i.e. prophylactic antibiotics).
             if mni[mother_id]['delivery_setting'] == 'facility_delivery':
-                rf1 = 1  
+                rf1 = 1
                 riskfactors = rf1
                 nci[child_id]['ongoing_sepsis_risk'] = riskfactors * nci[child_id]['ongoing_sepsis_risk']
                 # TODO: this should be adapted to use the linear model if possible
@@ -411,8 +411,8 @@ class NewbornOutcomes(Module):
             # We use the linear model to predict individual probability of neonatal encephalopathy and make the
             # changes to the data frame
 
-            if self.rng.random_sample() < params['nb_newborn_equations']['encephalopathy'].predict(df.loc[[child_id]])\
-                .values:
+            if self.rng.random_sample() < params['nb_newborn_equations']['encephalopathy']\
+               .predict(df.loc[[child_id]]).values:
 
                 # For a newborn who is encephalopathic we then set the severity
                 severity_enceph = self.rng.choice(('mild', 'moderate', 'severe'), p=params['prob_enceph_severity'])
@@ -452,10 +452,10 @@ class NewbornOutcomes(Module):
 
                     if self.eval(params['nb_newborn_equations']['retinopathy'], child_id):
                         random_draw = self.rng.choice(('mild', 'moderate', 'severe', 'blindness'),
-                                                             p=params['prob_retinopathy_severity'])
+                                                      p=params['prob_retinopathy_severity'])
                         df.at[child_id, 'nb_retinopathy_prem'] = random_draw
                         logger.debug(f'Neonate %d has developed {random_draw }retinopathy of prematurity',
-                                    child_id)
+                                     child_id)
 
             # TODO: How will we apply the risk reduction of certain complications associated with steroids delivered
             #  antenatally
@@ -487,12 +487,12 @@ class NewbornOutcomes(Module):
                 if (mni[mother_id]['delivery_setting'] == 'home_birth') & (df.at[child_id, 'nb_respiratory_depression']
                                                                            or df.at[child_id,
                                                                                     'nb_early_onset_neonatal_sepsis'] or
-                                                                   (df.at[child_id, 'nb_encephalopathy'] ==
-                                                                    'mild_enceph')
-                                                                   or (df.at[child_id, 'nb_encephalopathy']
-                                                                       == 'moderate_enceph')
-                                                                   or (df.at[child_id, 'nb_encephalopathy'] ==
-                                                                       'severe_enceph')):  # What about preterm comps?
+                                                                           (df.at[child_id, 'nb_encephalopathy'] ==
+                                                                           'mild_enceph')
+                                                                           or (df.at[child_id, 'nb_encephalopathy']
+                                                                           == 'moderate_enceph')
+                                                                           or (df.at[child_id, 'nb_encephalopathy'] ==
+                                                                           'severe_enceph')):
                     prob = 0.75
                     random = self.rng.random_sample(size=1)
                     if random < prob:
@@ -513,8 +513,10 @@ class NewbornOutcomes(Module):
         # Using DHS data we apply a one of probability that women who deliver at home will initiate breastfeeding within
         # one hour of birth
                 if (mni[mother_id]['delivery_setting'] == 'home_birth') & (~df.at[child_id, 'nb_respiratory_depression']
-                                                                & ~df.at[child_id, 'nb_early_onset_neonatal_sepsis'] &
-                                                                    (df.at[child_id, 'nb_encephalopathy'] == 'none')):
+                                                                           & ~df.at[child_id,
+                                                                                    'nb_early_onset_neonatal_sepsis'] &
+                                                                           (df.at[child_id,
+                                                                                  'nb_encephalopathy'] == 'none')):
 
                     if self.rng.random_sample() < params['prob_early_breastfeeding_hb']:
                         df.at[child_id, 'nb_early_breastfeeding'] = True
@@ -602,12 +604,13 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ================================================
 
+
 class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualScopeEventMixin):
     """This HSI ReceivesCareFollowingDelivery. This event is scheduled by the on_birth function. All newborns whose
     mothers delivered in a facility are automatically scheduled to this event. Newborns delivered at home, but who
     experience complications, have this event scheduled due via a care seeking equation (currently just a dummy). It is
     responsible for prophylactic treatments following delivery (i.e. cord care, breastfeeding), applying risk of
-    complications in facility and referral for additional treatment. This module will be reviewd with a clinician and
+    complications in facility and referral for additional treatment. This module will be reviewed with a clinician and
      may be changed
     """
 
@@ -621,7 +624,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         the_appt_footprint['InpatientDays'] = 1  # Todo: review  (DUMMY)
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1 #2/3??
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -640,13 +643,13 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         pkg_code_bcg = pd.unique(consumables.loc[consumables[
                                                  'Intervention_Pkg'] == 'BCG vaccine', 'Intervention_Pkg_Code'])[0]
         pkg_code_polio = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Polio vaccine',
-                                                                                       'Intervention_Pkg_Code'])[0]
+                                                                                      'Intervention_Pkg_Code'])[0]
 
         item_code_vk = pd.unique(
             consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA',
                             'Item_Code'])[0]
         item_code_tc = pd.unique(
-            consumables.loc[consumables['Items'] == 'tetracycline HCl 3% skin ointment, 15 g_10_IDA', 'Item_Code'] )[0]
+            consumables.loc[consumables['Items'] == 'tetracycline HCl 3% skin ointment, 15 g_10_IDA', 'Item_Code'])[0]
 
         consumables_needed = {
             'Intervention_Package_Code': [{pkg_code: 1}, {pkg_code_bcg: 1}, {pkg_code_polio: 1}],
@@ -743,7 +746,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
             df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
 
             logger.debug('Neonate %d has developed early onset sepsis in a health facility on date %s', person_id,
-                        self.sim.date)
+                         self.sim.date)
             logger.debug('%s|early_onset_nb_sep_fd|%s', self.sim.date, {'person_id': person_id})
             # TODO code in effect of prophylaxis
 
@@ -871,7 +874,7 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeE
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code_sep = pd.unique(consumables.loc[consumables[
                                                        'Intervention_Pkg'] == 'Treatment of local infections (newborn)',
-                                                       'Intervention_Pkg_Code'])[0]
+                                                 'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {'Intervention_Package_Code': [{pkg_code_sep: 1}], 'Item_Code': []}
 
@@ -882,8 +885,13 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeE
 
         # Here we use the treatment effect to determine if the newborn remains septic. This logic will need to be
         # changed to reflect need for inpatient admission and longer course of antibiotic
-        if params['prob_cure_antibiotics'] > self.module.rng.random_sample():
-            df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = False
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sep]:
+            logger.debug('pkg_code_sepsis is available, so use it.')
+            if params['prob_cure_antibiotics'] > self.module.rng.random_sample():
+                df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = False
+        else:
+            logger.debug('pkg_code_sepsis is not available, so can' 't use it.')
+
         # TODO: septic newborns will receive a course of ABX as an inpatient, this needs to be scheduled here
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
@@ -909,8 +917,6 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-        df = population.props
-
         # First 48 hours NMR:
 
     #    one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
