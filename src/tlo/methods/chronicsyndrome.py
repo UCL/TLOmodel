@@ -1,9 +1,7 @@
-import logging
-
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
@@ -240,7 +238,7 @@ class ChronicSyndrome(Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logging.debug('This is chronicsyndrome reporting my health values')
+        logger.debug('This is chronicsyndrome reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
