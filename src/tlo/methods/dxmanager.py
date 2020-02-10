@@ -3,9 +3,9 @@ The is the Diagnostic Tests Manager (DxManager). It simplifies the process of co
 See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager)
 """
 
-import logging
-
 import numpy as np
+
+from tlo import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
