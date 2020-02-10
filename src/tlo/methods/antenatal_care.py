@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
@@ -55,9 +55,9 @@ class AntenatalCare(Module):
                 LinearModelType.LOGISTIC,
                 params['odds_first_anc'],
                 Predictor('li_mar_stat').when('1', params['or_anc_unmarried']).when('3',
-                                                                                     params['or_anc_unmarried']),
+                                                                                    params['or_anc_unmarried']),
                 Predictor('li_wealth').when('4', params['or_anc_wealth_4']).when('5',
-                                                                                       params['or_anc_wealth_5']),
+                                                                                 params['or_anc_wealth_5']),
                 Predictor('li_urban').when(True, params['or_anc_urban']))
         }
 
@@ -114,8 +114,8 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
         for person in positive_index:
             logger.debug('')
             anc_date = df.at[person, 'date_of_last_pregnancy'] + pd.to_timedelta(self.module.rng.choice(range(11, 39),
-                                                                                          size=()),
-                                                                   unit='W')
+                                                                                 size=()),
+                                                                                 unit='W')
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=1,  # ????
@@ -213,7 +213,6 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(HSI_Event, Indiv
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
 
         logger.info('This is HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit, person %d has presented for '
                     'a subsequent antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
@@ -265,12 +264,9 @@ class HSI_AntenatalCare_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        params = self.module.parameters
-        m = self
 
         logger.info('This is HSI_AntenatalCare_EmergencyTreatment, person %d has been sent  for treatment '
-                    'of an antenatal emergeny on date %s ', person_id, self.sim.date)
+                    'of an antenatal emergency on date %s ', person_id, self.sim.date)
 
         # Next we define the consumables required for the HSI to run
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -320,8 +316,6 @@ class HSI_AntenatalCare_PostAbortionCare(HSI_Event, IndividualScopeEventMixin): 
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
         logger.info('This is HSI_AntenatalCare_PostAbortionCare, person %d has been sent  for treatment '
                     'following an abortion on date %s ', person_id, self.sim.date)
 
@@ -368,12 +362,10 @@ class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(HSI_Event, Indivi
         the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
         logger.info('This is HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth, person %d has been referred for '
                     'care following an antenatal stillbirth on date %s ', person_id, self.sim.date)
 
@@ -403,4 +395,3 @@ class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(HSI_Event, Indivi
     def did_not_run(self):
         logger.debug('HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth: did not run')
         pass
-
