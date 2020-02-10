@@ -4,6 +4,7 @@ from pathlib import Path
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
+from tlo.lm import LinearModel, LinearModelType, Predictor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -23,6 +24,19 @@ class AntenatalCare(Module):
     PARAMETERS = {
         'prob_seek_care_first_anc': Parameter(
             Types.REAL, 'Probability a woman will access antenatal care for the first time'),  # DUMMY PARAMETER
+        'odds_first_anc': Parameter(
+            Types.REAL, 'odds of a pregnant women ever seeking to initiate first ANC visit'),
+        'or_anc_unmarried': Parameter(
+            Types.REAL, 'odds ratio of first ANC visit for unmarried women'),
+        'or_anc_wealth_4': Parameter(
+            Types.REAL, 'odds ration of first ANC for a woman of wealth level 4'),
+        'or_anc_wealth_5': Parameter(
+            Types.REAL, 'odds ration of first ANC for a woman of wealth level 5'),
+        'or_anc_urban': Parameter(
+            Types.REAL, 'odds ration of first ANC for women living in an urban setting'),
+
+
+
     }
 
     PROPERTIES = {
@@ -31,16 +45,27 @@ class AntenatalCare(Module):
     }
 
     def read_parameters(self, data_folder):
-        """
-        """
-        params = self.parameters
 
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                             sheet_name='parameter_values')
-        dfd.set_index('parameter_name', inplace=True)
-        params['prob_seek_care_first_anc'] = dfd.loc['prob_seek_care_first_anc', 'value']
+        self.load_parameters_from_dataframe(dfd)
 
-        #  We don't
+    # =========================================== LINEAR MODEL EQUATIONS ==============================================
+
+        params = self.parameters
+
+        params['anc_equations'] = {
+            'care_seeking': LinearModel(
+                LinearModelType.LOGISTIC,
+                params['odds_first_anc'],
+                Predictor('li_mar_stat').when('1', params['or_anc_unmarried']).when('3',
+                                                                                     params['or_anc_unmarried']),
+                Predictor('li_wealth').when('4', params['or_anc_wealth_4']).when('5',
+                                                                                       params['or_anc_wealth_5']),
+                Predictor('li_urban').when(True, params['or_anc_urban']))
+        }
+        # TODO: equation copied from labour (values are dummy)
+
     def initialise_population(self, population):
 
         df = population.props
@@ -51,9 +76,6 @@ class AntenatalCare(Module):
         # Todo: Similarly need to the schedule additional ANC visits/ care seeking
 
     def initialise_simulation(self, sim):
-        """Get ready for simulation start.
-
-        """
 
         event = AntenatalCareSeeking(self)
         sim.schedule_event(event, sim.date + DateOffset(weeks=8))
@@ -64,88 +86,54 @@ class AntenatalCare(Module):
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
 
-        This is called by the simulation whenever a new person is born.
-
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
         df = self.sim.population.props
 
         if df.at[child_id, 'sex'] == 'F':
             df.at[child_id, 'ac_total_anc_visits'] = 0
 
     def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
 
         logger.debug('This is AntenatalCare, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
 
 class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
-    """ The event manages care seeking for newly pregnant women
-    """
+    """ This is the AntenatalCareSeeking Event. Currently it houses a dummy care seeking equation to trigger a determine
+    if a pregnant woman will seek care and during which week of gestation she will do so in. This will eventually be
+    housed in the PregnancySupervisor module"""
 
     def __init__(self, module):
-        """One line summary here
-
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        """
         super().__init__(module, frequency=DateOffset(weeks=8))  # could it be 8 weeks?
 
     def apply(self, population):
-        """Apply this event to the population.
 
-        :param population: the current population
-        """
         df = population.props
         m = self
         params = self.module.parameters
 
-        # Todo: Reformat so that we use a weibull distribution to for care seeking
-        # Todo: to discuss with Tim C the best way to mirror whats happening in malawi (only 50% women have ANC1 in
-        #  first trimester)
+    #    anc_careseekers = self.module.rng.random_sample() < params['anc_equations']['care_seeking'].predict(df.loc
+    #                                                                                                 [df.is_pregnant &
+    #                                                                                                  df.is_alive &
+    #                                                                    (df.ps_gestational_age_in_weeks <= 8)]).values
 
-        pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks <= 8) &
-                                       (df.date_of_last_pregnancy > self.sim.start_date)]
+        idx = df.index[df.is_alive & df.sex == 'F']
+        predict =pd.Series( params['anc_equations']['care_seeking'].predict(df.loc
+                                                        [df.is_alive & df.sex == 'F']).values, index=idx)
 
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 DUMMY CARE SEEKING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_month)),
-                                index=df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks <= 8) &
-                                               (df.date_of_last_pregnancy > self.sim.start_date)])
-
-        prob_care_seeking = float(params['prob_seek_care_first_anc'])
-        eff_prob_anc = pd.Series(prob_care_seeking,
-                                 index=df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks <= 8) &
-                                                (df.date_of_last_pregnancy > self.sim.start_date)])
-        dfx = pd.concat([eff_prob_anc, random_draw], axis=1)
-        dfx.columns = ['eff_prob_anc', 'random_draw']
-        idx_anc = dfx.index[dfx.eff_prob_anc > dfx.random_draw] # right?
-
-        gestation_at_anc = pd.Series(self.module.rng.choice(range(11, 39), size=len(idx_anc)), index=df.index[idx_anc])
-        # THIS IS ALL WRONG DATE WISE
-        conception = pd.Series(df.date_of_last_pregnancy, index=df.index[idx_anc])
-        dfx = pd.concat([conception, gestation_at_anc], axis=1)
-        dfx.columns = ['conception', 'gestation_at_anc']
-        dfx['first_anc'] = dfx['conception'] + pd.to_timedelta(dfx['gestation_at_anc'], unit='w')
-
-        for person in idx_anc:
-            care_seeking_date = dfx.at[person, 'first_anc']
-            print(person, self.sim.date, care_seeking_date)
+        anc_careseekers = self.module.rng.random_sample() < params['anc_equations']['care_seeking'].predict(df.loc
+                                                                                                            [df.is_alive]).values
+        for person in anc_careseekers:
+            anc_date = df.at['date_of_last_pregnancy'] + pd.to_timedelta(self.module.rng.choice(range(11, 39),
+                                                                                          size=()),
+                                                                   unit='W')
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=1,  # ????
-                                                                topen=care_seeking_date,
-                                                                tclose=care_seeking_date + DateOffset(days=7))
-        # Todo, is it here that we should be scheduling future ANC visits or should that be at the first HSI?
+                                                                topen=anc_date,
+                                                                tclose=anc_date + DateOffset(days=7))
 
+        # Todo, is it here that we should be scheduling future ANC visits or should that be at the first HSI?
 
 class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(HSI_Event, IndividualScopeEventMixin):
     """
