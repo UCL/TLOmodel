@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -321,7 +322,6 @@ class Diarrhoea(Module):
                                                        'watery',
                                                        'bloody']),
 
-
         # ---- Internal variables to schedule onset and deaths due to diarhoaea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
         'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of diarrhoea'),
@@ -335,7 +335,6 @@ class Diarrhoea(Module):
 
     # Declare symptoms that this module will cause:
     SYMPTOMS = {'diarrhoea', 'fever', 'vomiting', 'dehydration'}
-
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -352,7 +351,7 @@ class Diarrhoea(Module):
 
         # dict to hold counters for the number of episodes of diarrhoea by pathogen-type and age-group
         # (0yrs, 1yrs, 2-4yrs)
-        blank_counter = dict(zip(self.pathogens, [0] * len(self.pathogens)))
+        blank_counter = dict(zip(self.pathogens, len(self.pathogens)*[list()]))
         self.incident_cases_counter_blank = {
             '0y': copy.deepcopy(blank_counter),
             '1y': copy.deepcopy(blank_counter),
@@ -713,12 +712,12 @@ class Diarrhoea(Module):
         # Creat the linear model for the risk of dying due to diarrhoea
         self.risk_of_death_diarrhoea = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
-                        0.0,                                                            ##          <--- fill in (curently no deaths)
-                        Predictor('age_years')                                          ##          <--- fill in
+                        0.0,  ##          <--- fill in (curently no deaths)
+                        Predictor('age_years')  ##          <--- fill in
                         .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
                         .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
                         .otherwise(0.0)
-                                                                                        ##          < --- add in severe or non-severe dehyration
+                        ##          < --- add in severe or non-severe dehyration
                         # # Predictor('hv_inf').
                         # # when(True, m.rr_gi_diarrhoea_HIV),
                         # Predictor('malnutrition').
@@ -729,16 +728,17 @@ class Diarrhoea(Module):
         self.mean_duration_in_days_of_diarrhoea = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen') .when('rotavirus', 5)             ##          <--- fill in (incl HIV, malnutrition)
-                                                    .when('shigella', 5)
-                                                    .when('adenovirus', 5)
-                                                    .when('cryptosporidium', 5)
-                                                    .when('campylobacter', 5)
-                                                    .when('ST-ETEC', 5)
-                                                    .when('sapovirus', 5)
-                                                    .when('norovirus', 5)
-                                                    .when('astrovirus', 5)
-                                                    .when('tEPEC', 5)
+            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus',
+                                                         5)  ##          <--- fill in (incl HIV, malnutrition)
+                .when('shigella', 5)
+                .when('adenovirus', 5)
+                .when('cryptosporidium', 5)
+                .when('campylobacter', 5)
+                .when('ST-ETEC', 5)
+                .when('sapovirus', 5)
+                .when('norovirus', 5)
+                .when('astrovirus', 5)
+                .when('tEPEC', 5)
         )
 
         # --------------------------------------------------------------------------------------------
@@ -746,16 +746,16 @@ class Diarrhoea(Module):
         self.prob_diarrhoea_is_watery = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen') .when('rotavirus', 0.5)         ##          <--- fill in
-                                                    .when('shigella', 0.5)
-                                                    .when('adenovirus', 0.5)
-                                                    .when('cryptosporidium', 0.5)
-                                                    .when('campylobacter', 0.5)
-                                                    .when('ST-ETEC', 0.5)
-                                                    .when('sapovirus', 0.5)
-                                                    .when('norovirus', 0.5)
-                                                    .when('astrovirus', 0.5)
-                                                    .when('tEPEC', 0.5)
+            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', 0.5)  ##          <--- fill in
+                .when('shigella', 0.5)
+                .when('adenovirus', 0.5)
+                .when('cryptosporidium', 0.5)
+                .when('campylobacter', 0.5)
+                .when('ST-ETEC', 0.5)
+                .when('sapovirus', 0.5)
+                .when('norovirus', 0.5)
+                .when('astrovirus', 0.5)
+                .when('tEPEC', 0.5)
         )
         # --------------------------------------------------------------------------------------------
 
@@ -783,11 +783,12 @@ class Diarrhoea(Module):
         df['tmp_continued_breastfeeding'] = False
 
     def initialise_simulation(self, sim):
-        # Schedule the main event:
+
+        # Schedule the main polling event (to first occur immidiately)
         sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date + DateOffset(months=0))
 
-        # Schedule logging event to occur at the end of each year of the simulation
-        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=12))
+        # Schedule the main logging event (to first occur in one year)
+        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         """
@@ -824,28 +825,27 @@ class Diarrhoea(Module):
         df = self.sim.population.props
         p = self.parameters
 
-        # Map the status during last episode to a daly value and zero-out if the last episode is not current
-        total_daly_values = df.loc[df['is_alive'], 'gi_last_diarrhoea_type'].map({
-            'none': 0.0,
-            'acute': self.daly_wts['mild_diarrhoea'],
-            'prolonged': self.daly_wts['moderate_diarrhoea'],
-            'persistent': self.daly_wts['moderate_diarrhoea'],
-            'severe_persistent': self.daly_wts['severe_diarrhoea']
-        })
-        # TODO: Should this be about duration ....???
-        # dehydration.
-        # TODO: look up how many dalys.
+        # Assume that the current DALY loading is linked to *current* symptomatic experience of
+        # symptoms diarrahoea and dehyrdration
+        # **
+        # Need to check if the DALY weights are 'per time' with those symptoms,
+        # in which case will need to link to duration
+        # **
 
-
-        mask_currently_has_diarrhoaea = (df['gi_last_diarrhoea_date_of_onset'] <= self.sim.date) \
-                                        & (df['gi_last_diarrhoea_recovered_date'] >= self.sim.date)
-        total_daly_values.loc[~mask_currently_has_diarrhoaea] = 0.0
+        total_daly_values = pd.Series(data=0.0, index=df.loc[df['is_alive']].index)
+        total_daly_values.loc[
+            self.sim.modules['SymptomManager'].who_has('diarrhoea')
+        ] \
+            = self.daly_wts['mild_diarrhoea']
+        total_daly_values.loc[
+            self.sim.modules['SymptomManager'].who_has(['diarrhoea', 'dehydration'])
+        ] \
+            = self.daly_wts['moderate_diarrhoea']
 
         # Split out by pathogen that causes the diarrahoea
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
                                                      'gi_last_diarrhoea_pathogen'],
                                               dtype='float')
-
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0).drop(columns='none')
 
         return daly_values_by_pathogen
@@ -859,10 +859,13 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         """
         This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
+        It also outputs to the log the number of incident cases that it has caused.
         """
         df = population.props
         rng = self.module.rng
         m = self.module
+
+        print(f'PollingEvent Occuring on {self.sim.date}')
 
         # Compute the probabilities of each person getting diarrhoea within the next three months
         mask_could_get_new_diarrhoea_episode = df['is_alive'] \
@@ -883,17 +886,17 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         for pathogen in set_of_pathogens_excluding_rotavirus:
             probs_of_aquiring_pathogen[pathogen] = 0.0
 
-        probs_of_aquiring_pathogen.loc[self.sim.population.props['age_years']!=1 ,'rotavirus'] = 0.0
+        probs_of_aquiring_pathogen.loc[self.sim.population.props['age_years'] != 1, 'rotavirus'] = 0.0
         assert all(
             probs_of_aquiring_pathogen.loc[
-            self.sim.population.props['age_years']==1,
-            'rotavirus'].values == m.parameters[f'base_riskper3mo_diarrhoea_by_rotavirus'][1]
+                self.sim.population.props['age_years'] == 1,
+                'rotavirus'].values == m.parameters[f'base_riskper3mo_diarrhoea_by_rotavirus'][1]
         )
 
         assert all(
             probs_of_aquiring_pathogen.loc[
-                (self.sim.population.props['age_years']<1) | (self.sim.population.props['age_years']>1),
-            'rotavirus'].values == 0.0
+                (self.sim.population.props['age_years'] < 1) | (self.sim.population.props['age_years'] > 1),
+                'rotavirus'].values == 0.0
         )
         # -------------------
 
@@ -908,67 +911,114 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             ]
 
         # Determine which pathogen each person will acquire (among those who will get a pathogen)
+        # and create the event for the onset of new infection
+
         for person_id in person_id_that_acquire_pathogen:
-            # ----------------------- Allocate a pathogen to each person ----------------------
+            # ----------------------- Allocate a pathogen to the person ----------------------
             p_by_pathogen = probs_of_aquiring_pathogen.loc[person_id].values
             normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
             pathogen = rng.choice(probs_of_aquiring_pathogen.columns,
                                   p=normalised_p_by_pathogen)
-            df.at[person_id, 'gi_last_diarrhoea_pathogen'] = pathogen
 
             # ----------------------- Allocate a date of onset diarrhoea ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, 90))
-            df.at[person_id, 'gi_last_diarrhoea_date_of_onset'] = date_onset
-
-            # ----------------------- Add this incident cases to the counter ----------------------
-            age_grp = df.loc[person_id, ['age_years']] \
-                .map({0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'})[0]
-            self.module.incident_cases_counter[age_grp][pathogen] += 1
 
             # ----------------------- Determine outcomes for this case ----------------------
-            duration_in_days_of_diarrhoea = int(
+            duration_in_days_of_diarrhoea = max(1, int(
                 m.mean_duration_in_days_of_diarrhoea.predict(df.loc[[person_id]]).values[0] + \
                 (-2 + 4 * rng.rand())
-            )
+            ))
 
             prob_diarrhoea_is_watery = m.prob_diarrhoea_is_watery.predict(df.loc[[person_id]]).values[0]
-            df.at[person_id, 'gi_last_diarrhoea_type'] = rng.choice(['watery', 'bloody'],
-                                                                    p=[prob_diarrhoea_is_watery,
-                                                                       1-prob_diarrhoea_is_watery])
+            type = rng.choice(['watery', 'bloody'], p=[prob_diarrhoea_is_watery, 1 - prob_diarrhoea_is_watery])
 
             risk_of_death = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
             if rng.rand() < risk_of_death:
-                # This person is expected to die
-                date_of_death = date_onset + DateOffset(days=duration_in_days_of_diarrhoea)
-
-                # Set the date of death in the dataframe.
-                # (Nb. This will be reset to pd.NaT if the death should not to occur due to treatment.)
-                df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_death
-                df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
-
-                # Schedule the death event
-                self.module.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_death)
-
+                outcome = 'die'
             else:
-                df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = \
-                    date_onset + DateOffset(days=duration_in_days_of_diarrhoea)
-                df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+                outcome = 'recover'
 
             # ----------------------- Allocate symptoms to onset of diarrhoea ----------------------
             possible_symptoms_for_this_pathogen = m.prob_symptoms[pathogen]
+            symptoms_for_this_person = list()
             for symptom, prob in possible_symptoms_for_this_pathogen.items():
                 if rng.rand() < prob:
-                    self.sim.modules['SymptomManager'].change_symptom(
-                        person_id=person_id,
-                        symptom_string=symptom,
-                        add_or_remove='+',
-                        disease_module=self.module,
-                        date_of_onset=date_onset,
-                        duration_in_days=duration_in_days_of_diarrhoea
-                    )
+                    symptoms_for_this_person.append(symptom)
+
+            # ----------------------- Create the event for the onset of infection ----------------------
+            self.sim.schedule_event(
+                event=DiarrhoeaIncidentCase(
+                    module=self.module,
+                    person_id=person_id,
+                    pathogen=pathogen,
+                    type=type,
+                    duration_in_days=duration_in_days_of_diarrhoea,
+                    outcome=outcome,
+                    symptoms=symptoms_for_this_person
+                ),
+                date=date_onset
+            )
+
+
+class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
+    """
+    This Event is for the onset of the infection that causes diarrhoea.
+    """
+
+    def __init__(self, module, person_id, pathogen, type, duration_in_days, outcome, symptoms):
+        super().__init__(module, person_id=person_id)
+        self.pathogen = pathogen
+        self.type = type
+        self.duration_in_days = duration_in_days
+        self.outcome = outcome
+        self.symptoms = symptoms
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        # The event should not run if the person is not currently alive
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Update the properties in the dataframe:
+        df.at[person_id, 'gi_last_diarrhoea_pathogen'] = self.pathogen
+        df.at[person_id, 'gi_last_diarrhoea_date_of_onset'] = self.sim.date
+        df.at[person_id, 'gi_last_diarrhoea_type'] = self.type
+
+        # Onset symptoms:
+        for symptom in self.symptoms:
+            self.module.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string=symptom,
+                add_or_remove='+',
+                disease_module=self.module,
+                duration_in_days=self.duration_in_days
+            )
+
+        # Determine outcome:
+        assert self.outcome in ['die', 'recover']
+        date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
+
+        if self.outcome == 'die':
+            df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
+            df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_outcome
+            self.module.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_outcome)
+
+        elif self.outcome == 'recover':
+            df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_of_outcome
+            df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+
+        # Add this incident case to the counter
+        age_grp = df.loc[person_id, ['age_years']] \
+            .map({0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'})[0]
+        self.module.incident_cases_counter[age_grp][self.pathogen].append(self.sim.date)
 
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
+    """
+    This Event is for the death of someone that is caused by the infection with a pathogen that causes diarrhoea.
+    """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -986,20 +1036,23 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
 
 class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    The event runs every 12 months and logs the number of incident cases of dirarrhoea caused by each pathogen in the
-    previous 12 months, among the special age-groups (0 years, 1 years, 2-4 years).
+    This Event logs the number of incident cases that have occured since the previous logging event
     """
 
     def __init__(self, module):
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        # This event to occur every year
+        super().__init__(module, frequency=DateOffset(years=1))
+        self.date_last_run = self.sim.date
 
-    def apply(self, population):
-        # Log the current status of the counters
+    def apply(self):
+        # Check that all the dates have occured since self.date_last_run and self.sim.date
+        # todo
+
         logger.info('%s|incidence_count_by_patho|%s',
                     self.sim.date,
                     self.module.incident_cases_counter
                     )
 
-        # Reset the counters
+        # Reset the counters and the date_last_run
         self.module.incident_cases_counter = self.module.incident_cases_counter_blank
+        self.date_last_run = self.sim.date
