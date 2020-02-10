@@ -861,12 +861,17 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=3))
+        #TODO: make rates flexible depending on frequency of polling event.
 
     def apply(self, population):
         """
         This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
         It determines who is infected and when and schedules individual IncidentCase events to represent onset.
+
+        A known issue is that diarrhoea events are scheduled based on the risk of current age but occur a short time
+        later when the children have aged.
         """
+
         df = population.props
         rng = self.module.rng
         m = self.module

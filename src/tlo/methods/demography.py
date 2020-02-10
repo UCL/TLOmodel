@@ -248,11 +248,6 @@ class Demography(Module):
         # Persons less than a year-old did not have a birthday in the last year,so remove thier 'birthday_during_window'
         df_calc.loc[df_calc['age_exact_years'] < 1.0, 'birthday_during_window'] = pd.NaT
 
-        # TODO - remove
-        # old lines no longer neccessary
-        # df_calc.loc[df_calc['date_of_birth'].dt.date == df_calc['birthday_during_window'].dt.date, 'birthday_during_window'] = pd.NaT
-        # df_calc.loc[self.sim.date.date() == df_calc['birthday_during_window'].dt.date, 'birthday_during_window'] = pd.NaT
-
         df_calc['days_at_younger_age_in_window'] = 0
         df_calc.loc[df_calc['days_in_window'] > 0, 'days_at_younger_age_in_window'] = (
             df_calc[['exit_from_window', 'birthday_during_window']].min(axis=1) - df_calc['entry_to_window']).dt.days
@@ -267,6 +262,7 @@ class Demography(Module):
         assert all((df_calc['days_at_older_age_in_window'] + df_calc['days_at_younger_age_in_window']) == df_calc[
             'days_in_window'])
         assert all(df_calc.index >= 0)
+        # TODO: check that  N(a,t-1) <= PY(a, [t-1,t]) <= N(a,t)
 
         # Perform groupby on the person-days spent at younger_age and on older_age and sum.
         py = pd.DataFrame(
