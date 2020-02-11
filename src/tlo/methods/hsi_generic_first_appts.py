@@ -42,7 +42,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         acceptable_originating_modules.append(self.sim.modules['HealthSeekingBehaviour'])
         assert module in acceptable_originating_modules
 
-
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
@@ -117,13 +116,9 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
         # Work out what to do with this person....
-
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
             # It's a child and we are in FacilityLevel1, so run the the child management routine:
-            self.sim.modules['ChildhoodManagement'].do_management_of_child_at_facility_level_0(
-                person_id=person_id,
-                hsi_event=self
-            )
+            pass
 
         else:
             # It's an adult

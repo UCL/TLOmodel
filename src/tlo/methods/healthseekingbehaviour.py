@@ -106,31 +106,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                                                                     priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=None)
-
-            elif any([s in symps_this_person for s in ['dehydration', 'diarrhoea_bloody', 'diarrhoea_watery']]):
-                # TODO: @Ines Health Care seeking routine in the case of the symptom being diarrhoae
-                # Or maybe this could be folded into the below clause - depending on what you want it to do.
-                # But, this is where this kind of thing would go.
-
-                # If you wanted to select whether they go to level0 or level1 health facility
-                prob_hsb_with_severe_diarrhoaea = {
-                    'nothing': 0.7,
-                    'level0': 0.1,
-                    'level1': 0.2
-                }
-
-                hsb_outcome = choose_outcome_from_a_dict(prob_hsb_with_severe_diarrhoaea, self.module.rng)
-
-                if (hsb_outcome == 'level1') or ((hsb_outcome == 'level0')):
-                    # in this example, we send them all to level1
-                    hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericfirstappt,
-                                                                        priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=None)
-
             else:
-                # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO GENERIC SYMPTOMS ~~~~~~~~
+                # ~~~~~~ HEALTH CARE SEEKING IN RESPONSE TO GENERIC NON-EMERGENCY SYMPTOMS ~~~~~~~~
                 person_profile = self.sim.population.props.loc[person_id]
 
                 # Build up the RHS of the logistic regresssion equation: 'f' is the linear term f(beta*x +... )
@@ -217,9 +194,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
                 if self.module.rng.rand() < prob_seeking_care:
                     # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
-                    # NB. Here we can specifify which type of facility they would attend if we need to
+                    # NB. Here we can specify which type of facility they would attend if we need to
 
-                    delay_to_seeking_care_in_days = self.module.rng.randint(0, 7)  # Uniform interal 0-7 days
+                    delay_to_seeking_care_in_days = self.module.rng.randint(0, 3)  # Uniform interal 0-3 days
                     date_of_seeking_care = self.sim.date + DateOffset(days=delay_to_seeking_care_in_days)
 
                     hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)

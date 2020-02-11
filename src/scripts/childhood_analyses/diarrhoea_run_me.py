@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import contraception, demography, diarrhoea, childhood_management, healthsystem, enhanced_lifestyle, \
-    symptommanager, healthburden
+    symptommanager, healthburden, healthseekingbehaviour
 
 # %%
 outputpath = Path("./outputs")
@@ -56,7 +56,7 @@ sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-# sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
 

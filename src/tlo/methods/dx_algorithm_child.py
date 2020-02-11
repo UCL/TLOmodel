@@ -1,5 +1,7 @@
 """
-An example of a diagnostic algorithm that is called during an HSI Event.
+This is the place for all the stuff to do with diagnosing a child that presents for care.
+It is expected that the pieces of logic and data that go here will be shared across multiple modules so they
+are put here rather than the individual disease modules.
 """
 import pandas as pd
 
@@ -12,9 +14,8 @@ from tlo import Module
 
 class DxAlgorithmChild(Module):
     """
-    This is an example/placeholder to show how a diagnostic algorithm can be used.
-    The module contains parameters and a function 'diagnose(...)' which is called by a HSI (usually a Generic HSI)
-    and returns a 'diagnosis'.
+    The module contains parameters and functions to 'diagnose(...)' children.
+    These functions are called by an HSI (usually a Generic HSI)
     """
 
     # Define parameters
@@ -36,6 +37,11 @@ class DxAlgorithmChild(Module):
         pass
 
     def initialise_simulation(self, sim):
+        """
+        Define the Diagnostics Tests that will be used
+        dx_manager = self.sim.modules['HealthSystem'].dx_manager
+
+        """
         pass
 
     def on_birth(self, mother_id, child_id):

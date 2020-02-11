@@ -400,7 +400,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        logger.debug("@@@@ A Death is now occuring, to person %s", individual_id)
+        logger.debug("@@@@ A Death is now occurring, to person %s", individual_id)
 
         if df.at[individual_id, 'is_alive']:
             # here comes the death.......
