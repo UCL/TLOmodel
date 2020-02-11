@@ -399,7 +399,7 @@ class Labour (Module):
 
         if df.at[child_id, 'sex'] == 'F':
             df.at[child_id, 'la_due_date_current_pregnancy'] = pd.NaT
-            df.at[child_id, 'la_currently_in_labour'] = pd.NaT
+            df.at[child_id, 'la_currently_in_labour'] = False
             df.at[child_id, 'la_current_labour_successful_induction'] = 'not_induced'
             df.at[child_id, 'la_intrapartum_still_birth'] = False
             df.at[child_id, 'la_parity'] = 0
@@ -653,7 +653,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                               'severity_pph': None,
                               'risk_newborn_sepsis': params['prob_neonatal_sepsis'],
                               'risk_newborn_ba': params['prob_neonatal_birth_asphyxia'],
-                              #  Should this just be risk of asyphixa
+                              #  Should this just be risk of asphyxia
                               'mode_of_delivery': None,  # Vaginal Delivery (VD),Vaginal Delivery Induced (VDI),
                               # Assisted Vaginal Delivery Forceps (AVDF) Assisted Vaginal Delivery Ventouse (AVDV)
                               # Caesarean Section (CS)
@@ -797,7 +797,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # Using the complication_application function we move through each complication in turn determining if a woman
         # will experience any of these if she has delivered at home, and storing the risk so it can be modified by
-        # skilled birth attendance for women delivering in a facility (n.b 'ip' == intrapartum
+        # skilled birth attendance for women delivering in a facility (n.b 'ip' == intrapartum)
 
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='obstructed_labour')
         if df.at[individual_id, 'la_obstructed_labour']:  # there's a neater way of doing this
@@ -906,8 +906,9 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
 
 class LabourDeathEvent (Event, IndividualScopeEventMixin):
-    """This is the LabourDeathEvent. It is scheduled by the LabourOnsetEvent. This event determines if women who have
-    experienced complications in labour will die or experience an intrapartum stillbirth."""
+    """This is the LabourDeathEvent. It is scheduled by the LabourOnsetEvent for all women who go through labour. This
+    event determines if women who have experienced complications in labour will die or experience an intrapartum
+    stillbirth."""
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
@@ -1393,7 +1394,7 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
                 if params['prob_deliver_forceps'] > self.module.rng.random_sample():
                     # df.at[person_id, 'la_obstructed_labour'] = False
                     mni[person_id]['labour_is_currently_obstructed'] = False
-                    mni[person_id]['mode_of_delivery'] = 'AVDF'  # add here effect of antibiotitcs?
+                    mni[person_id]['mode_of_delivery'] = 'AVDF'  # add here effect of antibiotics?
 
                 # Finally if assisted vaginal delivery fails then CS is scheduled
                 else:
@@ -1538,10 +1539,10 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
             hsi_event=self, cons_req_as_footprint=consumables_needed)
 
         # TODO: Again determine how to reflect 1st/2nd line choice
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][consumables_needed]:
-            logger.debug('pkg_code_obst_lab is available, so use it.')
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_eclampsia]:
+            logger.debug('pkg_code_eclampsia is available, so use it.')
         else:
-            logger.debug('pkg_code_obst_lab is not available, so can' 't use it.')
+            logger.debug('pkg_code_eclampsia is not available, so can' 't use it.')
 
 
 # =======================================  HYPERTENSION TREATMENT ======================================================
@@ -1880,7 +1881,7 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
 
 # ================================== SURGERY FOR UNCONTROLLED POSTPARTUM HAEMORRHAGE ==================================
 
-        # If a woman has be referred for surgery for uncontrolled post partum bleeding we use the treatment alogrith to
+        # If a woman has be referred for surgery for uncontrolled post partum bleeding we use the treatment algorithm to
         # determine if her bleeding can be controlled surgically
         if mni[person_id]['postpartum_haem']:
             if params['prob_cure_uterine_ligation'] > self.module.rng.random_sample():
