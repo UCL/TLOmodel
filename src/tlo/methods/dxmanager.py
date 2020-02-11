@@ -193,7 +193,7 @@ class DxTest:
 
         # Get the "true value" of the property being examined
         df: pd.DataFrame = hs_module.sim.population.props
-        assert self.property in df.columns, 'The property is not found in the sim.population.props dataframe'
+        assert self.property in df.columns, f'The property "{self.property}" is not found in the population dataframe'
         true_value = df.at[person_id, self.property]
 
         # If a consumable is required and it is not available, return None
