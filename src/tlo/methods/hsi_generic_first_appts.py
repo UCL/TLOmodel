@@ -118,7 +118,12 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
             # It's a child and we are in FacilityLevel1, so run the the child management routine:
-            pass
+
+            symptoms = self.modules['SymptomManager'].has_what(person_id=person_id)
+
+            # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
+            if 'Diarrhoea' in symptoms:
+                self.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
 
         else:
             # It's an adult
@@ -127,6 +132,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel0: did not run')
+
 
 
 

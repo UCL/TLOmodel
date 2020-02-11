@@ -1060,9 +1060,9 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
 
-class HSI_Diarrhoea_Treatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_Diarrhoea_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a treatment for Diarrhoea administered at FacilityLevel=1
+    This is a treatment for Severe_Dehydration administered at FacilityLevel=1
     """
 
     def __init__(self, module, person_id):
@@ -1070,7 +1070,7 @@ class HSI_Diarrhoea_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'Diarrhoea_Treatment'
+        self.TREATMENT_ID = 'Diarrhoea_Severe_Dehydration'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1083,4 +1083,111 @@ class HSI_Diarrhoea_Treatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
         pass
+
+
+class HSI_Diarrhoea_Non_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a treatment for Severe_Dehydration administered at FacilityLevel=1
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        self.TREATMENT_ID = 'Diarrhoea_Non_Severe_Dehydration'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('Provide the treatment for Diarrhoea')
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
+        df = self.sim.population.props
+        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
+        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+        pass
+
+
+class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a treatment for Severe_Dehydration administered at FacilityLevel=1
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        self.TREATMENT_ID = 'Diarrhoea_Severe_Persistent_Diarrhoea'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('Provide the treatment for Diarrhoea')
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
+        df = self.sim.population.props
+        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
+        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+        pass
+
+
+class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a treatment for Severe_Dehydration administered at FacilityLevel=1
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        self.TREATMENT_ID = 'Diarrhoea_Non_Severe_Persistent_Diarrhoea'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('Provide the treatment for Diarrhoea')
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
+        df = self.sim.population.props
+        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
+        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+        pass
+
+
+class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a treatment for Severe_Dehydration administered at FacilityLevel=1
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        self.TREATMENT_ID = 'Diarrhoea_Dysentery'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('Provide the treatment for Diarrhoea')
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
+        df = self.sim.population.props
+        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
+        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+        pass
+
+
+
+
+
+
+
 
