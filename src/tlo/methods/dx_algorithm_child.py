@@ -61,11 +61,11 @@ class DxAlgorithmChild(Module):
                 ability of the clinician to correctly determine the true value of the property 'gi_severe_dehydration'
         """
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
+        df = self.sim.population.props
         run_dx_test = lambda test: self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=test,
-            hsi_event=self
+            hsi_event=hsi_event
         )
-        df = self.sim.population.props
 
         # Gather information that can be reported:
         # 1) Get duration of diarrhoea to date
@@ -79,9 +79,11 @@ class DxAlgorithmChild(Module):
 
         # Gather information that cannot be reported:
         # 1) Assessment of danger signs
-        danger_signs = run_dx_test('danger_signs_visual_inspection')
-
-        # TODO: add hidden variable of seriousness of dehydration and a DxTest for it.
+        danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='danger_signs_visual_inspection',
+            hsi_event=hsi_event
+        )
+        run_dx_test('danger_signs_visual_inspection')
 
         # Apply the algorithms:
         # --------   Classify Extent of Dehydration   ---------

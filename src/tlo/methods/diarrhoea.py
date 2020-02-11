@@ -325,7 +325,7 @@ class Diarrhoea(Module):
 
         # ---- Classification of whether the dehydration that may be caused is currently severe  ----
         'gi_current_severe_dehydration': Property(Types.BOOL,
-                                           'Whether any dehydration that is caused is is severe currently'),
+                                                  'Whether any dehydration that is caused is is severe currently'),
 
         # ---- Internal variables to schedule onset and deaths due to diarhoaea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
@@ -785,7 +785,7 @@ class Diarrhoea(Module):
         # ---- Key Current Status Classification Properties ----
         df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
         df['gi_last_diarrhoea_type'].values[:] = 'none'
-        df['gi_current_severe_dehydration']= False
+        df['gi_current_severe_dehydration'] = False
 
         # ---- Internal values ----
         df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
@@ -1191,11 +1191,3 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
         pass
-
-
-
-
-
-
-
-
