@@ -8,10 +8,6 @@ import logging
 import os
 from pathlib import Path
 
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,

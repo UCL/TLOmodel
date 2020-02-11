@@ -807,7 +807,7 @@ class Diarrhoea(Module):
 
     def on_birth(self, mother_id, child_id):
         """
-        On birth, all children will have no dirrhoea
+        On birth, all children will have no diarrhoea
         """
         df = self.sim.population.props
 

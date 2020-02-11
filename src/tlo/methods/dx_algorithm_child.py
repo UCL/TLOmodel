@@ -60,12 +60,14 @@ class DxAlgorithmChild(Module):
             * The danger signs are classified collectively and are based on the result of a DxTest representing the
                 ability of the clinician to correctly determine the true value of the property 'gi_severe_dehydration'
         """
+        # Create some short-cuts:
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
         df = self.sim.population.props
         run_dx_test = lambda test: self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=test,
             hsi_event=hsi_event
         )
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
         # Gather information that can be reported:
         # 1) Get duration of diarrhoea to date
@@ -75,15 +77,11 @@ class DxAlgorithmChild(Module):
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
 
         # 3) Get status of dehydration
-        dehydration = 'dehydration' in self.sim.modules['SymptomManager'].has_what(person_id)
+        dehydration = 'dehydration' in symptoms
 
         # Gather information that cannot be reported:
         # 1) Assessment of danger signs
-        danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='danger_signs_visual_inspection',
-            hsi_event=hsi_event
-        )
-        run_dx_test('danger_signs_visual_inspection')
+        danger_signs = run_dx_test('danger_signs_visual_inspection')
 
         # Apply the algorithms:
         # --------   Classify Extent of Dehydration   ---------
@@ -129,6 +127,3 @@ class DxAlgorithmChild(Module):
                          tclose=None
                          )
         # -----------------------------------------------------
-
-        # Return the diagnosis list
-        return diagnosis
