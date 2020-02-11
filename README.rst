@@ -49,7 +49,7 @@ The generated HTML documentation will appear in `dist/docs`.
 Wiki
 ====
 
-Please note that we have a `Wiki <https://github.com/UCL/TLOmodel/wiki>`_ which you may wish to refer to.
+Please note that we have a `Wiki <https://github.com/UCL/TLOmodel/wiki>`_ which you may wish to refer to. It has information on setup, conventions, checklists and code examples.
 
 Development
 ===========
