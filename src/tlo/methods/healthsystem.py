@@ -107,7 +107,7 @@ class HealthSystem(Module):
         logger.info('----------------------------------------------------------------------')
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
-        self.dx_manager = DxManager()
+        self.dx_manager = DxManager(self)
 
     def read_parameters(self, data_folder):
 
