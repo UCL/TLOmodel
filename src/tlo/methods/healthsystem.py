@@ -1117,7 +1117,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # Update load factors:
                         updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
                         df_footprints_of_all_individual_level_hsi_event.loc[updated_call.index, ev_num] = updated_call
-                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                        squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
                             all_calls_today=df_footprints_of_all_individual_level_hsi_event,
                             current_capabilities=current_capabilities,
                         )
@@ -1213,12 +1213,14 @@ class HSI_Event:
 
 
 class HSIEventWrapper(Event):
-    # This is wrapper that contains an HSI event.
-    # It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
-    # be passed to the main simulation scheduler.
-    # When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+    """This is wrapper that contains an HSI event.
 
-    def __init__(self, hsi_event):
+    It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
+    be passed to the main simulation scheduler.
+    When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+    """
+    def __init__(self, hsi_event, *args, **kwargs):
+        super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
 
     def run(self):
