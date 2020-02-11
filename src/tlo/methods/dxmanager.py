@@ -120,6 +120,7 @@ class DxManager:
 def _assert_float_or_none(value, msg):
     assert (value is None) or isinstance(value, float), msg
 
+
 def _default_if_none(value, default):
     return value if value is not None else default
 
