@@ -90,6 +90,7 @@ class DxManager:
         the_dxtests_tried = dict()
 
         for dx_test in dx_tests_to_run:
+            test_result = False
 
             # Loop through the list of DxTests that are registered under this name:
             for test in self.dx_tests[dx_test]:
