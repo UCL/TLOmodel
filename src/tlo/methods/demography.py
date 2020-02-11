@@ -205,7 +205,7 @@ class Demography(Module):
         # Making a working data-frame that is limited to those who were alive one year ago
         df_calc = self.sim.population.props.loc[
             ~(self.sim.population.props['date_of_death'] < (self.sim.date - DateOffset(years=1))),
-            ['sex', 'date_of_birth', 'date_of_death', 'age_years', 'age_exact_years']]
+            ['sex', 'date_of_birth', 'date_of_death', 'age_years', 'age_exact_years', 'is_alive']]
 
         # Define the time-window that is of interest (the year-long period immediately preceding)
         df_calc['year_start'] = self.sim.date - DateOffset(years=1)
@@ -262,7 +262,6 @@ class Demography(Module):
         assert all((df_calc['days_at_older_age_in_window'] + df_calc['days_at_younger_age_in_window']) == df_calc[
             'days_in_window'])
         assert all(df_calc.index >= 0)
-        # TODO: check that  N(a,t-1) <= PY(a, [t-1,t]) <= N(a,t)
 
         # Perform groupby on the person-days spent at younger_age and on older_age and sum.
         py = pd.DataFrame(
@@ -270,7 +269,6 @@ class Demography(Module):
             columns=['M', 'F'],
             data=0.0
         )
-
         py['M'] = df_calc.loc[df_calc['sex'] == 'M'].groupby(by='younger_age')[
             'days_at_younger_age_in_window'].sum().add(
             df_calc.loc[df_calc['sex'] == 'M'].groupby(by='older_age')['days_at_older_age_in_window'].sum(),
@@ -284,6 +282,30 @@ class Demography(Module):
 
         # Convert to fractions of a year
         py = py / duration_of_window_in_days
+
+        # TODO: Check that  N(a-1,t-1) <= PY(a, [t-1,t]) <= N(a,t) -- or an equivalent test
+        # Not a good check!!!
+        df_calc['Age_last_year'] = df_calc['age_exact_years'] - 1
+        df_calc['Age_now'] = df_calc['age_exact_years']
+
+        n_t_minus_one = df_calc.loc[
+            (df_calc['Age_last_year'] >= 1.0)
+            & ~(df_calc['date_of_death'] < (self.sim.date - DateOffset(years=1)))
+            ].groupby('Age_last_year').size()
+
+        n_t = df_calc.loc[
+            (df_calc['Age_now'] >= 2.0)
+            & df_calc['is_alive']
+            ].groupby('Age_now').size()
+        n_t.index = n_t.index - 1.0
+
+        check_interval = pd.concat({
+            'n_t_minus_one': n_t_minus_one,
+            'n_t': n_t}, axis=1)\
+            .merge(pd.DataFrame(data={'py': py.sum(axis=1)}), right_index=True, left_index=True)
+
+        # assert all(check_interval['n_t_minus_one'] <= check_interval['py'])
+        # assert all(check_interval['py'] <= check_interval['n_t'])
 
         return py
 

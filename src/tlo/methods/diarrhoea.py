@@ -33,45 +33,45 @@ class Diarrhoea(Module):
         'tEPEC'}
 
     PARAMETERS = {
-        'base_riskper3mo_diarrhoea_by_rotavirus':
+        'base_inc_rate_diarrhoea_by_rotavirus':
             Parameter(Types.LIST,
-                      '3 month risk  of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
+                      'incidence rate (per person-year)  of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
                       ),
-        'base_riskper3mo_diarrhoea_by_shigella':
+        'base_inc_rate_diarrhoea_by_shigella':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by shigella spp in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by shigella spp in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_adenovirus':
+        'base_inc_rate_diarrhoea_by_adenovirus':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_cryptosporidium':
+        'base_inc_rate_diarrhoea_by_cryptosporidium':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_campylobacter':
+        'base_inc_rate_diarrhoea_by_campylobacter':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_ST-ETEC':
+        'base_inc_rate_diarrhoea_by_ST-ETEC':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_sapovirus':
+        'base_inc_rate_diarrhoea_by_sapovirus':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by sapovirus in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by sapovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_norovirus':
+        'base_inc_rate_diarrhoea_by_norovirus':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by norovirus in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by norovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_astrovirus':
+        'base_inc_rate_diarrhoea_by_astrovirus':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_riskper3mo_diarrhoea_by_tEPEC':
+        'base_inc_rate_diarrhoea_by_tEPEC':
             Parameter(Types.LIST,
-                      '3 month risk of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
                       ),
         'rr_gi_diarrhoea_HHhandwashing':
             Parameter(Types.REAL, 'relative rate of diarrhoea with household handwashing with soap'
@@ -402,9 +402,9 @@ class Diarrhoea(Module):
             'rotavirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_rotavirus'][0])
-                                     .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_rotavirus'][1])
-                                     .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_rotavirus'][2])
+                                     .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_rotavirus'][0])
+                                     .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_rotavirus'][1])
+                                     .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_rotavirus'][2])
                                      .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -425,9 +425,9 @@ class Diarrhoea(Module):
             'shigella': LinearModel(LinearModelType.MULTIPLICATIVE,
                                     1.0,
                                     Predictor('age_years')
-                                    .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_shigella'][0])
-                                    .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_shigella'][1])
-                                    .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_shigella'][2])
+                                    .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_shigella'][0])
+                                    .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_shigella'][1])
+                                    .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_shigella'][2])
                                     .otherwise(0.0),
                                     # Predictor('li_no_access_handwashing')
                                     # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -448,9 +448,9 @@ class Diarrhoea(Module):
             'adenovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_adenovirus'][0])
-                                      .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_adenovirus'][1])
-                                      .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_adenovirus'][2])
+                                      .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_adenovirus'][0])
+                                      .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_adenovirus'][1])
+                                      .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_adenovirus'][2])
                                       .otherwise(0.0),
                                       # Predictor('li_no_access_handwashing')
                                       # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -471,9 +471,9 @@ class Diarrhoea(Module):
             'cryptosporidium': LinearModel(LinearModelType.MULTIPLICATIVE,
                                            1.0,
                                            Predictor('age_years')
-                                           .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_cryptosporidium'][0])
-                                           .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_cryptosporidium'][1])
-                                           .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_cryptosporidium'][2])
+                                           .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][0])
+                                           .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][1])
+                                           .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][2])
                                            .otherwise(0.0),
                                            # Predictor('li_no_access_handwashing')
                                            # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -494,9 +494,9 @@ class Diarrhoea(Module):
             'campylobacter': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('age_years')
-                                         .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_campylobacter'][0])
-                                         .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_campylobacter'][1])
-                                         .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_campylobacter'][2])
+                                         .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_campylobacter'][0])
+                                         .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_campylobacter'][1])
+                                         .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_campylobacter'][2])
                                          .otherwise(0.0),
                                          # Predictor('li_no_access_handwashing')
                                          # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -517,9 +517,9 @@ class Diarrhoea(Module):
             'ST-ETEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                    1.0,
                                    Predictor('age_years')
-                                   .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_ST-ETEC'][0])
-                                   .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_ST-ETEC'][1])
-                                   .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_ST-ETEC'][2])
+                                   .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][0])
+                                   .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][1])
+                                   .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][2])
                                    .otherwise(0.0),
                                    # Predictor('li_no_access_handwashing')
                                    # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -540,9 +540,9 @@ class Diarrhoea(Module):
             'sapovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_sapovirus'][0])
-                                     .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_sapovirus'][1])
-                                     .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_sapovirus'][2])
+                                     .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_sapovirus'][0])
+                                     .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_sapovirus'][1])
+                                     .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_sapovirus'][2])
                                      .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -563,9 +563,9 @@ class Diarrhoea(Module):
             'norovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_norovirus'][0])
-                                     .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_norovirus'][1])
-                                     .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_norovirus'][2])
+                                     .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_norovirus'][0])
+                                     .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_norovirus'][1])
+                                     .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_norovirus'][2])
                                      .otherwise(0.0),
                                      # Predictor('li_no_access_handwashing')
                                      # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -586,9 +586,9 @@ class Diarrhoea(Module):
             'astrovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_astrovirus'][0])
-                                      .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_astrovirus'][1])
-                                      .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_astrovirus'][2])
+                                      .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_astrovirus'][0])
+                                      .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_astrovirus'][1])
+                                      .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_astrovirus'][2])
                                       .otherwise(0.0),
                                       # Predictor('li_no_access_handwashing')
                                       # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -609,9 +609,9 @@ class Diarrhoea(Module):
             'tEPEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                  1.0,
                                  Predictor('age_years')
-                                 .when('.between(0,0)', p['base_riskper3mo_diarrhoea_by_tEPEC'][0])
-                                 .when('.between(1,1)', p['base_riskper3mo_diarrhoea_by_tEPEC'][1])
-                                 .when('.between(2,4)', p['base_riskper3mo_diarrhoea_by_tEPEC'][2])
+                                 .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_tEPEC'][0])
+                                 .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_tEPEC'][1])
+                                 .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_tEPEC'][2])
                                  .otherwise(0.0),
                                  # Predictor('li_no_access_handwashing')
                                  # .when(False, m.rr_gi_diarrhoea_HHhandwashing),
@@ -858,25 +858,24 @@ class Diarrhoea(Module):
 
 
 class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
+    It determines who is infected and when and schedules individual IncidentCase events to represent onset.
+
+    A known issue is that diarrhoea events are scheduled based on the risk of current age but occur a short time
+    later when the children have aged. This means that when comparing the
+    """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=3))
-        #TODO: make rates flexible depending on frequency of polling event.
+        # NB. The frequency of the occurances of this event can be edited safely.
 
     def apply(self, population):
-        """
-        This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
-        It determines who is infected and when and schedules individual IncidentCase events to represent onset.
-
-        A known issue is that diarrhoea events are scheduled based on the risk of current age but occur a short time
-        later when the children have aged.
-        """
-
         df = population.props
         rng = self.module.rng
         m = self.module
 
-        # Compute the probabilities of each person getting diarrhoea within the next three months
+        # Compute the incidence rate for each person getting diarrhoea and then convert into a probability
         mask_could_get_new_diarrhoea_episode = df['is_alive'] \
                                                & (df['age_years'] < 5) \
                                                & (
@@ -884,30 +883,17 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                                    pd.isnull(df['gi_last_diarrhoea_recovered_date'])
                                                )
 
-        probs_of_aquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_diarrhoea_episode].index)
+        inc_of_aquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_diarrhoea_episode].index)
         for pathogen in m.pathogens:
-            probs_of_aquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
+            inc_of_aquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_diarrhoea_episode])
 
-        # # --- ** DEBUG ** ---
-        # # removing the risk of any pathogen apart from 'rotavirus' in 1 year-olds
-        # set_of_pathogens_excluding_rotavirus = m.pathogens - {'rotavirus'}
-        # for pathogen in set_of_pathogens_excluding_rotavirus:
-        #     probs_of_aquiring_pathogen[pathogen] = 0.0
-        #
-        # probs_of_aquiring_pathogen.loc[self.sim.population.props['age_years'] != 1, 'rotavirus'] = 0.0
-        # assert all(
-        #     probs_of_aquiring_pathogen.loc[
-        #         self.sim.population.props['age_years'] == 1,
-        #         'rotavirus'].values == m.parameters[f'base_riskper3mo_diarrhoea_by_rotavirus'][1]
-        # )
-        #
-        # assert all(
-        #     probs_of_aquiring_pathogen.loc[
-        #         (self.sim.population.props['age_years'] < 1) | (self.sim.population.props['age_years'] > 1),
-        #         'rotavirus'].values == 0.0
-        # )
-        # # -------------------
+        # Convert the incidence rates that are predicted by the model into risk of an event occuring before the next
+        # polling event
+        fraction_of_a_year_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(
+            1, 'Y')
+        days_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'D')
+        probs_of_aquiring_pathogen = 1 - np.exp(-inc_of_aquiring_pathogen * fraction_of_a_year_until_next_polling_event)
 
         # Create the probability of getting 'any' pathogen:
         # (Assumes that pathogens are mutually exclusive)
@@ -921,7 +907,6 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Determine which pathogen each person will acquire (among those who will get a pathogen)
         # and create the event for the onset of new infection
-
         for person_id in person_id_that_acquire_pathogen:
             # ----------------------- Allocate a pathogen to the person ----------------------
             p_by_pathogen = probs_of_aquiring_pathogen.loc[person_id].values
@@ -930,22 +915,20 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                   p=normalised_p_by_pathogen)
 
             # ----------------------- Allocate a date of onset diarrhoea ----------------------
-            date_onset = self.sim.date + DateOffset(days=np.random.randint(0, 90))
+            date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
 
             # ----------------------- Determine outcomes for this case ----------------------
             duration_in_days_of_diarrhoea = max(1, int(
                 m.mean_duration_in_days_of_diarrhoea.predict(df.loc[[person_id]]).values[0] + \
-                (-2 + 4 * rng.rand())
+                (-2 + 4 * rng.rand())  # assumes uniform interval around mean duration with range 4 days
             ))
 
             prob_diarrhoea_is_watery = m.prob_diarrhoea_is_watery.predict(df.loc[[person_id]]).values[0]
-            type = rng.choice(['watery', 'bloody'], p=[prob_diarrhoea_is_watery, 1 - prob_diarrhoea_is_watery])
+            type_of_diarrhoea = rng.choice(['watery', 'bloody'],
+                                           p=[prob_diarrhoea_is_watery, 1 - prob_diarrhoea_is_watery])
 
             risk_of_death = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
-            if rng.rand() < risk_of_death:
-                outcome = 'die'
-            else:
-                outcome = 'recover'
+            will_die = rng.rand() < risk_of_death
 
             # ----------------------- Allocate symptoms to onset of diarrhoea ----------------------
             possible_symptoms_for_this_pathogen = m.prob_symptoms[pathogen]
@@ -960,9 +943,9 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     module=self.module,
                     person_id=person_id,
                     pathogen=pathogen,
-                    type=type,
+                    type=type_of_diarrhoea,
                     duration_in_days=duration_in_days_of_diarrhoea,
-                    outcome=outcome,
+                    will_die=will_die,
                     symptoms=symptoms_for_this_person
                 ),
                 date=date_onset
@@ -974,12 +957,12 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
     This Event is for the onset of the infection that causes diarrhoea.
     """
 
-    def __init__(self, module, person_id, pathogen, type, duration_in_days, outcome, symptoms):
+    def __init__(self, module, person_id, pathogen, type, duration_in_days, will_die, symptoms):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
         self.type = type
         self.duration_in_days = duration_in_days
-        self.outcome = outcome
+        self.will_die = will_die
         self.symptoms = symptoms
 
     def apply(self, person_id):
@@ -1005,15 +988,12 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             )
 
         # Determine outcome:
-        assert self.outcome in ['die', 'recover']
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
-
-        if self.outcome == 'die':
+        if self.will_die:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
             df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_outcome
             self.module.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_outcome)
-
-        elif self.outcome == 'recover':
+        else:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_of_outcome
             df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
@@ -1048,7 +1028,8 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
 
 class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This Event logs the number of incident cases that have occured since the previous logging event
+    This Event logs the number of incident cases that have occurred since the previous logging event.
+    Analysis scripts expect that the frequency of this logging event is once per year.
     """
 
     def __init__(self, module):

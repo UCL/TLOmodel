@@ -34,8 +34,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 2)
-popsize = 10000
+end_date = Date(2013, 1, 2)
+popsize = 5000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -119,7 +119,7 @@ for age_grp in ['0y', '1y', '2-4y']:
 base_riskper3mo = dict()
 for pathogen in sim.modules['Diarrhoea'].pathogens:
     base_riskper3mo[pathogen] = \
-        sim.modules['Diarrhoea'].parameters[f'base_riskper3mo_diarrhoea_by_{pathogen}']
+        sim.modules['Diarrhoea'].parameters[f'base_inc_rate_diarrhoea_by_{pathogen}']
 
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
@@ -206,3 +206,6 @@ plt.show()
 # %%
 # Look at deaths arising? Or anything else?
 
+# 3 month check - running
+# 1 mont check - running - good.
+# 6 moth - good.
