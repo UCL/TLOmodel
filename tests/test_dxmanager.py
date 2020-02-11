@@ -394,7 +394,7 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     result, tests_tried = dx_manager.run_dx_test(
                                     dx_tests_to_run='list_of_tests_with_first_not_available',
                                     hsi_event=hsi_event,
-                                    report_DxTest_tried=True
+                                    report_dxtest_tried=True
                                     )
     assert result is not None
     assert result == sim.population.props.at[person_id, 'mi_status']
@@ -406,7 +406,7 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     result, tests_tried = dx_manager.run_dx_test(
                                     dx_tests_to_run='list_of_tests_with_first_available',
                                     hsi_event=hsi_event,
-                                    report_DxTest_tried=True
+                                    report_dxtest_tried=True
                                     )
     assert result is not None
     assert result, tests_tried == sim.population.props.at[person_id, 'mi_status']

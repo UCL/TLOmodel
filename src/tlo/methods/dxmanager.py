@@ -58,19 +58,19 @@ class DxManager:
         print()
         print(f'----------------------')
         print(f'** {name_of_dx_test} **')
-        for n, t in enumerate(the_dx_test):
-            print(f'   Position in List #{n}')
-            print(f'consumables: {t.cons_req_as_footprint}')
-            print(f'sensitivity: {t.sensitivity}')
-            print(f'specificity: {t.specificity}')
-            print(f'property: {t.property}')
+        for num, test in enumerate(the_dx_test):
+            print(f'   Position in List #{num}')
+            print(f'consumables: {test.cons_req_as_footprint}')
+            print(f'sensitivity: {test.sensitivity}')
+            print(f'specificity: {test.specificity}')
+            print(f'property: {test.property}')
             print(f'----------------------')
 
     def print_info_about_all_dx_tests(self):
         for dx_test in self.dx_tests:
             self.print_info_about_dx_test(dx_test)
 
-    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False, report_DxTest_tried=False):
+    def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False, report_dxtest_tried=False):
         from tlo.methods.healthsystem import HSI_Event
 
         # Check that the thing passed to hsi_event is usable as an hsi_event
@@ -112,10 +112,10 @@ class DxManager:
         else:
             result = result_dict_for_list_of_dx_tests
 
-        if report_DxTest_tried:
+        if report_dxtest_tried:
             return result, the_dxtests_tried
-        else:
-            return result
+
+        return result
 
 
 def _assert_float_or_none(value, msg):
@@ -180,8 +180,7 @@ class DxTest:
     def __eq__(self, other):
         if other.__class__ is self.__class__:
             return self.__hash_key() == other.__hash_key()
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def apply(self, hsi_event, hs_module):
         """
@@ -192,13 +191,14 @@ class DxTest:
         :return: value of test or None.
         """
         # Must be an individual level HSI and not a population level HSI
-        assert isinstance(hsi_event, IndividualScopeEventMixin),  'DxManager requires individual-level HSI_Event'
+        assert isinstance(hsi_event, IndividualScopeEventMixin), 'DxManager requires individual-level HSI_Event'
         assert isinstance(hsi_event.target, int), 'DxManager requires individual-level HSI_Event'
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined
         df: pd.DataFrame = hs_module.sim.population.props
-        assert self.property in df.columns, f'The property "{self.property}" is not found in the population dataframe'
+        assert self.property in df.columns, \
+            f'The property "{self.property}" is not found in the population dataframe'
         true_value = df.at[person_id, self.property]
 
         # If a consumable is required and it is not available, return None
