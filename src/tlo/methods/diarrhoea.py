@@ -323,6 +323,10 @@ class Diarrhoea(Module):
                                                        'watery',
                                                        'bloody']),
 
+        # ---- Classification of whether the dehydration that may be caused is currently severe  ----
+        'gi_current_severe_dehydration': Property(Types.BOOL,
+                                           'Whether any dehydration that is caused is is severe currently'),
+
         # ---- Internal variables to schedule onset and deaths due to diarhoaea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
         'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of diarrhoea'),
@@ -781,6 +785,7 @@ class Diarrhoea(Module):
         # ---- Key Current Status Classification Properties ----
         df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
         df['gi_last_diarrhoea_type'].values[:] = 'none'
+        df['gi_current_severe_dehydration']= False
 
         # ---- Internal values ----
         df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
@@ -809,6 +814,7 @@ class Diarrhoea(Module):
         # ---- Key Current Status Classification Properties ----
         df.at[child_id, 'gi_last_diarrhoea_pathogen'] = 'none'
         df.at[child_id, 'gi_last_diarrhoea_type'] = 'none'
+        df.at[child_id, 'gi_current_severe_dehydration'] = False
 
         # ---- Internal values ----
         df.at[child_id, 'gi_last_diarrhoea_date_of_onset'] = pd.NaT
@@ -987,6 +993,8 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 disease_module=self.module,
                 duration_in_days=self.duration_in_days
             )
+
+        # TODO: Determine if/when the dehydration becomes severe -- and make this effect death rate
 
         # Determine outcome:
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)

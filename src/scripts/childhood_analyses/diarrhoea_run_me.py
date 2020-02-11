@@ -16,8 +16,8 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
-from tlo.methods import contraception, demography, diarrhoea, childhood_management, healthsystem, enhanced_lifestyle, \
-    symptommanager, healthburden, healthseekingbehaviour
+from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
+    symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child
 
 # %%
 outputpath = Path("./outputs")
@@ -30,7 +30,7 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 2)
+end_date = Date(2015, 1, 2)
 popsize = 200
 
 # add file handler for the purpose of logging
@@ -56,9 +56,10 @@ sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath)) ## removing this so remove any health care seeking so Ines can focus on the 'natural history' and 'epidemiology'
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
-sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
+sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
+
 
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)

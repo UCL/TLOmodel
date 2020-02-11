@@ -20,7 +20,7 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
-from tlo.methods import contraception, demography, diarrhoea, childhood_management, healthsystem, enhanced_lifestyle, \
+from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
     symptommanager, healthburden
 
 # %%
@@ -34,8 +34,8 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 2)
-popsize = 5000
+end_date = Date(2020, 1, 2)
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -61,7 +61,6 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disabl
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
-sim.register(childhood_management.ChildhoodManagement(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)

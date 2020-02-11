@@ -35,74 +35,65 @@ class DxAlgorithmChild(Module):
         Define the Diagnostics Tests that will be used
         """
 
-        # The details about these tests need to be added to reveal the extent of severe dehydration
-
-        # Test to do..
-        # no_blood_in_stool = DxTest(
-        #     property='AllTrue',
-        #     sensitivity=1.00,
-        #     specificity=1.00
-        # )
-        #
-        # dx_manager = self.sim.modules['HealthSystem'].dx_manager
-        #
-        # dx_manager.register_dx_test(
-        #     something=something
-        # )
+        # Test for the visual inspection of 'Danger signs' for a child who is dehydrated
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            danger_signs_visual_inspection=DxTest(
+                property='gi_current_severe_dehydration',
+                sensitivity=0.90,
+                specificity=0.80
+            )
+        )
 
     def on_birth(self, mother_id, child_id):
         pass
 
     def do_when_diarrhoea(self, person_id, hsi_event):
         """
-        This routine is callled when Diarrhoea is reported.
+        This routine is called when Diarrhoea is reported.
 
-        It diagnsoes
+        It diagnoses the condition of the child and schedules HSI Events appropriate to the condition.
 
         See this report https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf
         (page 3).
         NB:
             * Provisions for cholera are not included
             * The danger signs are classified collectively and are based on the result of a DxTest representing the
-                ability of the clinician to correctly determine the real value of the property 'gi_severe_dehydration'
+                ability of the clinician to correctly determine the true value of the property 'gi_severe_dehydration'
         """
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
-
-        # Create the list to hold the strings for each diagnosis
-        diagnosis = []
+        run_dx_test = lambda test: self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run=test,
+            hsi_event=self
+        )
+        df = self.sim.population.props
 
         # Gather information that can be reported:
-        # 1) Get duration of diarrhoea
-        duration = 10
-        # TODO: fill in these value properly
+        # 1) Get duration of diarrhoea to date
+        duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
 
         # 2) Get type of diarrhoea
-        blood_in_stool = False
+        blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
 
         # 3) Get status of dehydration
-        dehydration = True
+        dehydration = 'dehydration' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # Gather information that cannot be reported:
         # 1) Assessment of danger signs
-        danger_signs = True
+        danger_signs = run_dx_test('danger_signs_visual_inspection')
+
         # TODO: add hidden variable of seriousness of dehydration and a DxTest for it.
 
-        # Apply the algorithm:
+        # Apply the algorithms:
         # --------   Classify Extent of Dehydration   ---------
         if dehydration and danger_signs:
-            diagnosis.append(
-                'Severe_Dehydration'
-            )
+            # 'Severe_Dehydration'
             schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Dehydration(person_id=person_id, module=self),
                          priority=0,
                          topen=self.sim.date,
                          tclose=None
                          )
-
         elif dehydration and not danger_signs:
-            diagnosis.append(
-                'Non_Severe_Dehydration'
-            )
+            # 'Non_Severe_Dehydration'
             schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Dehydration(person_id=person_id, module=self),
                          priority=0,
                          topen=self.sim.date,
@@ -111,19 +102,15 @@ class DxAlgorithmChild(Module):
         # ----------------------------------------------------
 
         # --------   Classify Type of Diarrhoea   -----------
-        if (duration >= 14) and dehydration:
-            diagnosis.append(
-                'Severe_Persistent_Diarrhoea'
-            )
+        if (duration_in_days >= 14) and dehydration:
+            # 'Severe_Persistent_Diarrhoea'
             schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Persistent_Diarrhoea(person_id=person_id, module=self),
                          priority=0,
                          topen=self.sim.date,
                          tclose=None
                          )
-        elif (duration >= 14) and (not dehydration):
-            diagnosis.append(
-                'Non_Severe_Persistent_Diarrhoea'
-            )
+        elif (duration_in_days >= 14) and not dehydration:
+            # 'Non_Severe_Persistent_Diarrhoea'
             schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(person_id=person_id, module=self),
                          priority=0,
                          topen=self.sim.date,
@@ -131,11 +118,9 @@ class DxAlgorithmChild(Module):
                          )
         # -----------------------------------------------------
 
-        # --------   Classify Whether Dysentery or Not --------
+        # --------  Classify Whether Dysentery or Not  --------
         if blood_in_stool:
-            diagnosis.append(
-                'Dysentery'
-            )
+            # 'Dysentery'
             schedule_hsi(hsi_event=HSI_Diarrhoea_Dysentery(person_id=person_id, module=self),
                          priority=0,
                          topen=self.sim.date,
