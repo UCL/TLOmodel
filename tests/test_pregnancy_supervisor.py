@@ -16,11 +16,6 @@ popsize = 200
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.DEBUG)
-
-
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
