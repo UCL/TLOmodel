@@ -166,6 +166,7 @@ class DxTest:
 
     def __hash_key(self):
         return (
+            self.__class__,
             json.dumps(self.cons_req_as_footprint, sort_keys=True),
             self.property,
             self.sensitivity,
@@ -177,7 +178,10 @@ class DxTest:
         return hash(self.__hash_key())
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        if other.__class__ is self.__class__:
+            return self.__hash_key() == other.__hash_key()
+        else:
+            return NotImplemented
 
     def apply(self, hsi_event, hs_module):
         """
