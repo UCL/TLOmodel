@@ -1,13 +1,21 @@
-import logging
 import os
 import time
-
-import pytest
 from pathlib import Path
 
+import pytest
+
 from tlo import Date, Simulation
-from tlo.methods import demography,enhanced_lifestyle, labour, newborn_outcomes, healthburden, healthsystem, antenatal_care,\
-    pregnancy_supervisor, contraception
+from tlo.methods import (
+    antenatal_care,
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    labour,
+    newborn_outcomes,
+    pregnancy_supervisor,
+)
 
 workbook_name = 'demography.xlsx'
 
@@ -31,8 +39,7 @@ def simulation():
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
 
     sim.seed_rngs(1)
     return sim
@@ -48,19 +55,19 @@ def __check_properties(df):
     # TODO: TBC
 
 
-#def test_make_initial_population(simulation):
+# def test_make_initial_population(simulation):
 #    simulation.make_initial_population(n=popsize)
 
 
-#def test_initial_population(simulation):
+# def test_initial_population(simulation):
 #    __check_properties(simulation.population.props)
 
 
-#def test_simulate(simulation):
+# def test_simulate(simulation):
 #    simulation.simulate(end_date=end_date)
 
 
-#def test_final_population(simulation):
+# def test_final_population(simulation):
 #    __check_properties(simulation.population.props)
 
 

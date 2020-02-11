@@ -5,7 +5,14 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography, labour, healthsystem, pregnancy_supervisor, enhanced_lifestyle
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthsystem,
+    labour,
+    pregnancy_supervisor,
+)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
