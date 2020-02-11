@@ -1,14 +1,21 @@
-import logging
 import os
 import time
-
-import pytest
 from pathlib import Path
 
-from tlo import Date, Simulation
+import pytest
 
-from tlo.methods import demography, enhanced_lifestyle, labour, newborn_outcomes, healthburden, healthsystem, antenatal_care,\
-    pregnancy_supervisor, contraception
+from tlo import Date, Simulation
+from tlo.methods import (
+    antenatal_care,
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    labour,
+    newborn_outcomes,
+    pregnancy_supervisor,
+)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
@@ -32,8 +39,7 @@ def simulation():
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
 
     sim.seed_rngs(1)
     return sim
@@ -46,31 +52,30 @@ def test_run(simulation):
 
 def __check_properties(df):
     # Cannot have a partiy of higher than allowed per age group
-    assert not ((df.age_years < 24) & (df.la_parity >4)).any()
-    assert not ((df.age_years < 40) & (df.la_parity >5)).any()
+    assert not ((df.age_years < 24) & (df.la_parity > 4)).any()
+    assert not ((df.age_years < 40) & (df.la_parity > 5)).any()
 
     # Confirming PTB and previous CS logic
     assert not ((df.la_parity <= 1) & (df.la_previous_cs > 1)).any()
     assert not (df.la_previous_cs > 2).any()
     assert not ((df.la_previous_cs == 1) & (df.la_previous_ptb == 1)).any()
-    assert not ((df.la_previous_cs == 2) & (df.la_previous_ptb >= 1) & (df.la_parity ==2)).any()
+    assert not ((df.la_previous_cs == 2) & (df.la_previous_ptb >= 1) & (df.la_parity == 2)).any()
 
 
-#def test_make_initial_population(simulation):
+# def test_make_initial_population(simulation):
 #    simulation.make_initial_population(n=popsize)
 
 
-#def test_initial_population(simulation):
+# def test_initial_population(simulation):
 #    __check_properties(simulation.population.props)
 
 
-#def test_simulate(simulation):
+# def test_simulate(simulation):
 #    simulation.simulate(end_date=end_date)
 
 
-#def test_final_population(simulation):
+# def test_final_population(simulation):
 #    __check_properties(simulation.population.props)
-
 
 
 def test_dypes(simulation):

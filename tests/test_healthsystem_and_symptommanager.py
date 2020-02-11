@@ -13,10 +13,10 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
-    mockitis,
-    symptommanager,
     labour,
-    pregnancy_supervisor
+    mockitis,
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 try:
@@ -56,7 +56,6 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
     sim.register(dx_algorithm_child.DxAlgorithmChild())
-
 
     sim.seed_rngs(0)
 

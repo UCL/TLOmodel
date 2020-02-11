@@ -1,20 +1,17 @@
-import logging
 import os
 from pathlib import Path
 
-import pytest
-
 from tlo import Date, Simulation
 from tlo.methods import (
-    labour,
-    pregnancy_supervisor,
     contraception,
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
+    labour,
     mockitis,
+    pregnancy_supervisor,
     symptommanager,
 )
 
