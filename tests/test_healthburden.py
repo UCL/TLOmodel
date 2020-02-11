@@ -1,9 +1,7 @@
-import logging
 import os
 from pathlib import Path
 
 import pandas as pd
-import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -31,10 +29,6 @@ popsize = 100
 # Simply test whether the system runs under multiple configurations of the healthsystem
 # NB. Running the dummy Mockitits and ChronicSyndrome modules test all aspects of the healthsystem module.
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.DEBUG)
-
 
 def check_dtypes(simulation):
     # check types of columns
@@ -48,14 +42,6 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # Get ready for temporary log-file
-    f = tmpdir.mkdir("healthburden_with_dummy_disease").join("dummy.log")
-    fh = logging.FileHandler(f)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().handlers.clear()
-    logging.getLogger().addHandler(fh)
 
     # Define the service availability as null
     service_availability = []
@@ -74,15 +60,14 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
 
     sim.seed_rngs(0)
 
-    # Run the simulation and flush the logger
+    # Run the simulation
+    f = sim.configure_logging("test_log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    fh.flush()
     output = parse_log_file(f)
-    fh.close()
 
     # Do the checks
     # correctly configured index (outputs on 31st december in each year of simulation for each age/sex group)

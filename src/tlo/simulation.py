@@ -1,14 +1,15 @@
 """The main simulation controller."""
 
+import datetime
 import heapq
 import itertools
-import logging
-import sys
 from collections import OrderedDict
+from pathlib import Path
+from typing import Dict, Union
 
 import numpy as np
 
-from tlo import Population
+from tlo import Population, logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -48,17 +49,42 @@ class Simulation:
         self.modules = OrderedDict()
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
-
         self.end_date = None
+        self.output_file = None
 
-        # TODO: allow override of logging
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(levelname)s|%(name)s|%(message)s')
-        handler.setFormatter(formatter)
-        logging.getLogger().handlers.clear()
-        logging.getLogger().addHandler(handler)
-        logging.basicConfig(level=logging.DEBUG)
+        # clear entire logging environment for this new simulation
+        logging.init_logging()
+
+    def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
+                          custom_levels: Dict[str, int] = None):
+        """
+        Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
+        If no filename is given, configuration is set up writing to stdout.
+
+        :param filename: Prefix for logfile name, final logfile will have a datetime appended
+        :param directory: Path to output directory, default value is the outputs folder.
+        :param custom_levels: dictionary to set logging levels, '*' can be used as a key for all registered modules.
+                              This is likely to be used to disable all disease modules, and then enable one of interest
+                              e.g. {'*': logging.CRITICAL
+                                    'tlo.methods.hiv': logging.INFO}
+        :return: Path of the log file.
+        """
+        if not filename:
+            # no filename given, clear setup and initialise writing to stdout
+            logging.init_logging()
+            return
+
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+        log_path = Path(directory) / f"{filename}__{timestamp}.log"
+        self.output_file = logging.set_output_file(log_path)
+
+        if custom_levels:
+            if not self.modules:
+                raise ValueError("You must register disease modules before adding custom logging levels")
+            module_paths = (module.__module__ for module in self.modules.values())
+            logging.set_logging_levels(custom_levels, module_paths)
+
+        return log_path
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
@@ -129,6 +155,11 @@ class Simulation:
                 module.on_simulation_end()
             except AttributeError:
                 pass
+
+        # complete logging
+        if self.output_file:
+            self.output_file.flush()
+            self.output_file.close()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.

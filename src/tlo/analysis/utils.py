@@ -1,12 +1,11 @@
 """
 General utility functions for TLO analysis
 """
-import logging
 from ast import literal_eval
 
 import pandas as pd
 
-from tlo import util
+from tlo import logging, util
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
