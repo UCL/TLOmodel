@@ -11,8 +11,8 @@ from tlo.methods import demography, enhanced_lifestyle, labour, newborn_outcomes
     pregnancy_supervisor, contraception
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 200
+end_date = Date(2014, 1, 1)
+popsize = 100
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 

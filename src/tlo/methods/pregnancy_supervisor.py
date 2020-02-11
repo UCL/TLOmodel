@@ -128,7 +128,7 @@ class PregnancySupervisor(Module):
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
 
 # ==================================== LINEAR MODEL EQUATIONS ==========================================================
-        # Will live here
+        # Will live here...
 
     def initialise_population(self, population):
 

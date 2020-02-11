@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 class AntenatalCare(Module):
     """This is the Antenatal Care module. It is responsible for calculating probability of antenatal care seeking and
     houses all Health System Interaction events pertaining to monitoring and treatment of women during the antenatal
-    period of their pregnancy"""
+    period of their pregnancy. The majority of this module remains hollow prior to completion for June 2020 deadline"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -112,8 +112,7 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
 
         # For those we do, we use a dummy draw to determine at what gestation they will seek care
         for person in positive_index:
-            logger.debug('')
-            anc_date = df.at[person, 'date_of_last_pregnancy'] + pd.to_timedelta(self.module.rng.choice(range(11, 39),
+            anc_date = df.at[person, 'date_of_last_pregnancy'] + pd.to_timedelta(self.module.rng.choice(range(11, 30),
                                                                                  size=()),
                                                                                  unit='W')
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
