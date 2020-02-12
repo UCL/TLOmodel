@@ -331,12 +331,12 @@ class Diarrhoea(Module):
         'gi_current_severe_dehydration': Property(Types.BOOL,
                                                   'Whether any dehydration that is caused is is severe currently'),
 
-        # ---- Internal variables to schedule onset and deaths due to diarhoaea  ----
+        # ---- Internal variables to schedule onset and deaths due to diarrhoea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
         'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of diarrhoea'),
         'gi_last_diarrhoea_death_date': Property(Types.DATE, 'date of death caused by last episode of diarrhoea'),
 
-        # ---- Temporary Variables: To be replaced with the properites of other modules ----
+        # ---- Temporary Variables: To be replaced with the properties of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
@@ -344,6 +344,7 @@ class Diarrhoea(Module):
 
     # Declare symptoms that this module will cause:
     SYMPTOMS = {'diarrhoea', 'fever', 'vomiting', 'dehydration'}
+    # Todo: decide if we want dehydration to be a symptom
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -966,7 +967,8 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date=date_onset
             )
-            # TODO: Determine if/when the dehydration becomes severe -- and make this effect death rate
+            # TODO: Determine if/when any dehydration becomes severe -- and make this effect death rate
+            # TODO: remove the dehydration symptom
 
 
 class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):

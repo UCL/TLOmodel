@@ -2,6 +2,8 @@
 This is the place for all the stuff to do with diagnosing a child that presents for care.
 It is expected that the pieces of logic and data that go here will be shared across multiple modules so they
 are put here rather than the individual disease modules.
+
+There should be a method here to respond to every symptom that a child could present with:
 """
 
 import pandas as pd
@@ -58,7 +60,7 @@ class DxAlgorithmChild(Module):
         NB:
             * Provisions for cholera are not included
             * The danger signs are classified collectively and are based on the result of a DxTest representing the
-                ability of the clinician to correctly determine the true value of the property 'gi_severe_dehydration'
+                ability of the clinician to correctly determine the true value of the property 'gi_current_severe_dehydration'
         """
         # Create some short-cuts:
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
