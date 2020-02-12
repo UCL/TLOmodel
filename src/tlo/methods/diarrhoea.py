@@ -885,7 +885,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=3))
-        # NB. The frequency of the occurances of this event can be edited safely.
+        # NB. The frequency of the occurrences of this event can be edited safely.
 
     def apply(self, population):
         df = population.props
