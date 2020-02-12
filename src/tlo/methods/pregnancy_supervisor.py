@@ -135,20 +135,20 @@ class PregnancySupervisor(Module):
 
         df = population.props
 
-        df.loc[df.sex == 'F', 'ps_gestational_age_in_weeks'] = 0
-        df.loc[df.sex == 'F', 'ps_ectopic_pregnancy'] = False
-        df.loc[df.sex == 'F', 'ps_ectopic_symptoms'].values[:] = 'none'
-        df.loc[df.sex == 'F', 'ps_ep_unified_symptom_code'] = 0
-        df.loc[df.sex == 'F', 'ps_multiple_pregnancy'] = False
-        df.loc[df.sex == 'F', 'ps_total_miscarriages'] = 0
-        df.loc[df.sex == 'F', 'ps_total_induced_abortion'] = 0
-        df.loc[df.sex == 'F', 'ps_abortion_complication'].values[:] = 'none'
-        df.loc[df.sex == 'F', 'ps_antepartum_still_birth'] = False
-        df.loc[df.sex == 'F', 'ps_previous_stillbirth'] = False
-        df.loc[df.sex == 'F', 'ps_htn_disorder_preg'].values[:] = 'none'
-        df.loc[df.sex == 'F', 'ps_prev_pre_eclamp'] = False
-        df.loc[df.sex == 'F', 'ps_gest_diab'] = False
-        df.loc[df.sex == 'F', 'ps_prev_gest_diab'] = False
+        df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
+        df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
+        df.loc[df.is_alive, 'ps_ectopic_symptoms'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_ep_unified_symptom_code'] = 0
+        df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
+        df.loc[df.is_alive, 'ps_total_miscarriages'] = 0
+        df.loc[df.is_alive, 'ps_total_induced_abortion'] = 0
+        df.loc[df.is_alive, 'ps_abortion_complication'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
+        df.loc[df.is_alive, 'ps_previous_stillbirth'] = False
+        df.loc[df.is_alive, 'ps_htn_disorder_preg'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
+        df.loc[df.is_alive, 'ps_gest_diab'] = False
+        df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -166,21 +166,22 @@ class PregnancySupervisor(Module):
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
 
-        if df.at[child_id, 'sex'] == 'F':
-            df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
-            df.at[child_id, 'ps_ectopic_pregnancy'] = False
-            df.at[child_id, 'ps_ectopic_symptoms'] = 'none'
-            df.at[child_id, 'ps_ep_unified_symptom_code'] = 0
-            df.at[child_id, 'ps_multiple_pregnancy'] = False
-            df.at[child_id, 'ps_total_miscarriages'] = 0
-            df.at[child_id, 'ps_total_induced_abortion'] = 0
-            df.at[child_id, 'ps_abortion_complication'] = 'none'
-            df.at[child_id, 'ps_antepartum_still_birth'] = False
-            df.at[child_id, 'ps_previous_stillbirth'] = False
-            df.at[child_id, 'ps_htn_disorder_preg'] = 'none'
-            df.at[child_id, 'ps_prev_pre_eclamp'] = False
-            df.at[child_id, 'ps_gest_diab'] = False
-            df.at[child_id, 'ps_prev_gest_diab'] = False
+        df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
+        df.at[child_id, 'ps_ectopic_pregnancy'] = False
+        df.at[child_id, 'ps_ectopic_symptoms'] = 'none'
+        df.at[child_id, 'ps_ep_unified_symptom_code'] = 0
+        df.at[child_id, 'ps_multiple_pregnancy'] = False
+        df.at[child_id, 'ps_total_miscarriages'] = 0
+        df.at[child_id, 'ps_total_induced_abortion'] = 0
+        df.at[child_id, 'ps_abortion_complication'] = 'none'
+        df.at[child_id, 'ps_antepartum_still_birth'] = False
+        df.at[child_id, 'ps_previous_stillbirth'] = False
+        df.at[child_id, 'ps_htn_disorder_preg'] = 'none'
+        df.at[child_id, 'ps_prev_pre_eclamp'] = False
+        df.at[child_id, 'ps_gest_diab'] = False
+        df.at[child_id, 'ps_prev_gest_diab'] = False
+
+        df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
 
     def on_hsi_alert(self, person_id, treatment_id):
 

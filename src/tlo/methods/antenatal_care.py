@@ -65,7 +65,7 @@ class AntenatalCare(Module):
     def initialise_population(self, population):
 
         df = population.props
-        df.loc[df.sex == 'F', 'ac_total_anc_visits'] = 0
+        df.loc[df.is_alive, 'ac_total_anc_visits'] = 0
 
         # Todo: We may (will) need to apply a number of previous ANC visits to women pregnant at baseline?
         # Todo: Similarly need to the schedule additional ANC visits/ care seeking
@@ -79,8 +79,7 @@ class AntenatalCare(Module):
 
         df = self.sim.population.props
 
-        if df.at[child_id, 'sex'] == 'F':
-            df.at[child_id, 'ac_total_anc_visits'] = 0
+        df.at[child_id, 'ac_total_anc_visits'] = 0
 
     def on_hsi_alert(self, person_id, treatment_id):
 
