@@ -18,14 +18,14 @@ from tlo.methods import (
     schisto
 )
 
-def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True, mda_sheet='MDA_prognosed_Coverage_zero'):
+def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
     datestamp = datetime.datetime.now().strftime("__%Y_%m_%d_%H_%M")
 
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2045, 2, 1)
+    end_date = Date(2011, 2, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -53,7 +53,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True, mda
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute, mda_sheet=mda_sheet))
+    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
     if haem:
         sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath))
     if mansoni:
@@ -74,7 +74,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True, mda
 # sim, output = run_simulation(popsize=10000, haem=True, mansoni=True, mda_sheet='MDA_prognosed_Coverage_once')
 # sim, output = run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=False, mda_sheet='MDA_prognosed_Coverage_twice')
 # sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=True, mda_sheet='MDA_prognosed_Coverage_3_years')
-sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=True, mda_sheet='MDA_prognosed_Coverage_twice')
+sim, output = run_simulation(popsize=1000, haem=True, mansoni=False, mda_execute=False)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used

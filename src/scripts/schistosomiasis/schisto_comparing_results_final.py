@@ -349,23 +349,6 @@ def save_averages_final_in_csv_years(scenarios_list):
 save_averages_final_in_csv_years(scenarios)
 save_averages_final_in_csv(scenarios, 'prev')
 
-# def plot_dalys_age_group(sim_dict, age):
-#     fig, ax = plt.subplots(figsize=(9, 7))
-#     for k in sim_dict.keys():
-#         df = sim_dict[k]['dalys']
-#         df = df[df['Age_group'] == age]
-#         df_before_2019 = df[(df.date <= pd.Timestamp(date(2019, 1, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
-#         df_after_2019 = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
-#         ax.plot(df_after_2019.date, df_after_2019.DALY_monthly, label=k, linestyle=':')
-#         ax.plot(df_before_2019.date, df_before_2019.DALY_monthly, color='b', label='_nolegend_', linestyle='-')
-#         ax.xaxis_date()
-#     ax.set(xlabel='logging date',
-#            ylabel='DALYs',
-#            title='DALYs per year, ' + age)
-#     ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))
-#     plt.xticks(rotation='vertical')
-#     plt.legend()
-#     plt.show()
 
 #########################################################################################################
 

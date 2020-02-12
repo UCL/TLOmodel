@@ -106,7 +106,7 @@ def plot_per_age_group(scenarios_list, age, vals):
     ax.xaxis.set_major_formatter(DateFormatter("%Y"))
     plt.xticks(rotation='vertical', fontsize=16)
     plt.yticks(fontsize=16)
-    plt.legend(prop={'size': 16})
+    # plt.legend(prop={'size': 16})
     plt.show()
 
 plot_per_age_group(scenarios, 'All', 'haematobium', 'Prevalence')
@@ -115,38 +115,36 @@ plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'Prevalence')
 plot_per_age_group(scenarios, 'SAC', 'haematobium', 'Prevalence')
 plot_per_age_group(scenarios, 'SAC', 'haematobium', 'High-inf_Prevalence')
 
-def plot_all_age_groups_same_plot(scenarios_list, infection, vals):
+def plot_all_age_groups_same_plot(scenarios_list, vals):
     assert vals in ['Prevalence', 'High-inf_Prevalence', 'MeanWormBurden']
     fig, ax = plt.subplots(figsize=(9, 7))
     colours = ['b', 'm', 'y', 'g', 'k', 'c', 'r', 'lawngreen', 'purple', 'orange', 'maroon', 'navy']
-    k = list(scenarios.keys())[0]
+    # k = list(scenarios.keys())[0]
 
-    for ii in range(len(scenarios_list[k]['prev'])):
-        colour_counter = 0
-        df = scenarios_list[k]['prev'][ii]
-        for age in ['PSAC', 'SAC', 'Adults', 'All']:
-            c = colours[colour_counter]
-            age_df = df[df['Age_group'] == age]
-        # df = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
-        # df.date = df.date - np.timedelta64(2000, 'Y')
-        # df = df[(df.date < pd.Timestamp(date(2019, 7, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
-        # df = df[df.date >= pd.Timestamp(date(2014, 1, 1))]
-            if ii < len(scenarios_list[k]['prev']) - 1:
-                ax.plot(age_df.date, age_df[vals], color=c, label='_nolegend_', linestyle=':', alpha=0.5, linewidth=2)
-            # last one is an average of the previous scenarios
-            else:
-                ax.plot(age_df.date, age_df[vals], color=c, label=age, linestyle='-', linewidth=4)
-            colour_counter += 1
+    for k in scenarios_list.keys():
+        for ii in range(len(scenarios_list[k]['prev'])):
+            colour_counter = 0
+            df = scenarios_list[k]['prev'][ii]
+            # df = df[(df.date < pd.Timestamp(date(2019, 7, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
+            df = df[df.date <= pd.Timestamp(date(2015, 1, 1))]
+            # df = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
+            for age in ['PSAC', 'SAC', 'Adults', 'All']:
+                c = colours[colour_counter]
+                age_df = df[df['Age_group'] == age]
+                if ii < len(scenarios_list[k]['prev']) - 1:
+                    ax.plot(age_df.date, age_df[vals], color=c, label='_nolegend_', linestyle='-', alpha=0.5, linewidth=1)
+                # last one is an average of the previous scenarios
+                else:
+                    ()
+                    # ax.plot(age_df.date, age_df[vals], color=c, label=age, linestyle='-', linewidth=1)
+                colour_counter += 1
     # plt.axhline(y=0.05, color='r', linestyle='-')
     # plt.axhline(y=0.01, color='k', linestyle='-')
-        ax.xaxis_date()
-
-    ax.set(xlabel='logging date',
-           ylabel=vals,
-           title=vals + ' per date, ' + ' S.' + infection)
+    ax.xaxis_date()
     plt.ylabel(vals, fontsize=14)
     plt.yticks(fontsize=14)
     plt.xlabel('logging date', fontsize=14)
+    plt.title(vals + ' per date')
     if vals == 'Prevalence':
         # plt.ylim([0, 0.2])
         ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
@@ -157,16 +155,17 @@ def plot_all_age_groups_same_plot(scenarios_list, infection, vals):
     # else:
     #     plt.ylim([0, 2.5])
     ax.grid(linewidth=0.5)
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=12))
+    # ax.xaxis.set_major_locator(mdates.MonthLocator(interval=12))
+    ax.xaxis.set_major_locator(mdates.YearLocator())
     ax.xaxis.set_major_formatter(DateFormatter("%Y"))
     # locs, labels = plt.xticks()
     # plt.xticks = [int(x) - 2019 for x in labels]
     plt.xticks(rotation='vertical')
-    plt.legend(prop={'size': 16})
+    # plt.legend(prop={'size': 16})
     plt.show()
 
-plot_all_age_groups_same_plot(scenarios, 'haematobium', 'Prevalence')
-plot_all_age_groups_same_plot(scenarios, 'haematobium', 'MeanWormBurden')
+plot_all_age_groups_same_plot(scenarios, 'Prevalence')
+plot_all_age_groups_same_plot(scenarios, 'MeanWormBurden')
 
 def plot_measure(scenarios_list, measure_type):
     assert measure_type in ['dalys', 'prev_years']
@@ -270,23 +269,6 @@ def save_averages_final_in_csv(scenarios_list):
 # od = get_average_final(scenarios, 'Prevalence')
 save_averages_final_in_csv(scenarios)
 
-# def plot_dalys_age_group(sim_dict, age):
-#     fig, ax = plt.subplots(figsize=(9, 7))
-#     for k in sim_dict.keys():
-#         df = sim_dict[k]['dalys']
-#         df = df[df['Age_group'] == age]
-#         df_before_2019 = df[(df.date <= pd.Timestamp(date(2019, 1, 1))) & (df.date >= pd.Timestamp(date(2014, 1, 1)))]
-#         df_after_2019 = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
-#         ax.plot(df_after_2019.date, df_after_2019.DALY_monthly, label=k, linestyle=':')
-#         ax.plot(df_before_2019.date, df_before_2019.DALY_monthly, color='b', label='_nolegend_', linestyle='-')
-#         ax.xaxis_date()
-#     ax.set(xlabel='logging date',
-#            ylabel='DALYs',
-#            title='DALYs per year, ' + age)
-#     ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))
-#     plt.xticks(rotation='vertical')
-#     plt.legend()
-#     plt.show()
 
 #########################################################################################################
 
@@ -298,7 +280,7 @@ timestamps22 = ['2020-01-28_18-15-26', '2020-01-28_18-16-42', '2020-01-28_18-16-
 timestamps3 = ['2020-01-24_15-37-04', '2020-01-24_15-37-24', '2020-01-24_15-37-40']
 timestamps4 = ['2020-01-26_14-21-57', '2020-01-26_14-22-20', '2020-01-26_14-22-43']
 timestamps5 = ['2020-01-24_14-38-32', '2020-01-24_14-38-55', '2020-01-24_14-38-45']
-timestamps = [timestamps1, timestamps2, timestamps22, timestamps3, timestamps4, timestamps5, ]
+timestamps = [timestamps1, timestamps2, timestamps22, timestamps3, timestamps4, timestamps5]
 labels = ['No MDA after 2019',
           'Annual MDA, PSAC = 0%',
           'Annual MDA, PSAC = 25%',
@@ -355,13 +337,15 @@ for label, timestamps in scenarios.items():
 
 
 # plots
-# for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
-#     plot_per_age_group(scenarios, age_group, 'haematobium', 'Prevalence')
-for age_group in ['PSAC', 'SAC']:
-    plot_per_age_group(scenarios, age_group, 'haematobium', 'Prevalence')
+for age_group in ['Adults', 'All']:
+    plot_per_age_group(scenarios, age_group, 'Prevalence')
+    plot_per_age_group(scenarios, age_group, 'MeanWormBurden')
 
-plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'High-inf_Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'High-inf_Prevalence')
+for age_group in ['PSAC', 'SAC']:
+    plot_per_age_group(scenarios, age_group, 'Prevalence')
+
+plot_per_age_group(scenarios, 'PSAC', 'High-inf_Prevalence')
+plot_per_age_group(scenarios, 'SAC', 'High-inf_Prevalence')
 
 plot_all_age_groups_same_plot(scenarios, 'haematobium', 'Prevalence')
 
@@ -370,14 +354,6 @@ for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
 
 plot_measure(scenarios, 'dalys')
 plot_measure(scenarios, 'prev_years')
-
-# for testing
-plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'MeanWormBurden')
-
-plot_per_age_group(simulations_total, 'Adults', 'Prevalence')
-plot_per_age_group(simulations_total, 'All', 'Prevalence')
-df = simulations_total['MDA twice per year, PSAC coverage 50%']['dalys']
 
 
 def plot_subset_of_worms(scenarios_list, labels_list, age, vals, title):
