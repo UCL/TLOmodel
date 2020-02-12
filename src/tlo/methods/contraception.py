@@ -167,8 +167,8 @@ class Contraception(Module):
 
         df.loc[df.is_alive, 'co_contraception'] = 'not_using'
         df.loc[df.is_alive, 'co_date_of_childbirth'] = pd.NaT
-    #   df.loc[df.is_alive, 'is_pregnant'] = False #TODO: REVIEW
-    #    df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
+        df.loc[df.is_alive, 'is_pregnant'] = False
+        df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'co_unintended_preg'] = False
 
         # Assign contraception method
@@ -228,6 +228,7 @@ class Contraception(Module):
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
+        df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
 
         # Initiation of mother's contraception after birth (was previously Init2 event)
         # Notes: decide what contraceptive method they have (including not_using, according to
