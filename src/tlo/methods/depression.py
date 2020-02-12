@@ -51,6 +51,10 @@ class Depression(Module):
         'init_pr_antidepr_curr_depr': Parameter(
             Types.REAL, 'initial prob of being on antidepressants if currently depressed'
         ),
+        'init_pr_ever_diagnosed_depression': Parameter(
+            Types.REAL, 'initial prob of having ever been diagnosed with depression, amongst people with ever depr and '
+                        'not on antidepr'
+        ),
         'init_rp_antidepr_ever_depr_not_curr': Parameter(
             Types.REAL, 'initial relative prevalence of being on antidepressants if ever depressed but not currently'
         ),
@@ -69,7 +73,7 @@ class Depression(Module):
         'rr_depr_female': Parameter(Types.REAL, 'Relative rate of depression for females'),
         'rr_depr_prev_epis': Parameter(Types.REAL, 'Relative rate of depression associated with previous depression'),
         'rr_depr_on_antidepr': Parameter(
-            Types.REAL, 'Relative rate of depression associated with previous depression if on antidepressants'
+            Types.REAL, 'Relative rate of depression episode if on antidepressants'
         ),
         'rr_depr_age1519': Parameter(Types.REAL, 'Relative rate of depression associated with 15-20 year olds'),
         'rr_depr_agege60': Parameter(Types.REAL, 'Relative rate of depression associated with age > 60'),
@@ -85,12 +89,18 @@ class Depression(Module):
         'rr_resol_depr_on_antidepr': Parameter(
             Types.REAL, 'Relative rate of resolving depression if on antidepressants'
         ),
+        'rr_resol_depr_current_talk_ther': Parameter(
+            Types.REAL, 'Relative rate of resolving depression if current talking therapy'
+        ),
         'rate_stop_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when not currently depressed'),
         'rate_default_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when still depressed'),
         'rate_init_antidepr': Parameter(Types.REAL, 'rate of initiation of antidepressants'),
+        'pr_talk_ther_in_3_mth_period': Parameter(Types.REAL, 'pr_talk_ther_in_3_mth_period'),
         'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'rate of suicide in (currently depressed) men'),
         'rr_suicide_depr_f': Parameter(Types.REAL, 'relative rate of suicide in women compared with me'),
         'prob_3m_selfharm_depr': Parameter(Types.REAL, 'rate of non-fatal self harm in (currently depressed)'),
+        'rate_diagnosis_depression': Parameter(Types.REAL, 'rate of diagnosis of depression in a person never '
+                                                           'previously diagnosed with depression'),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
         'daly_wt_severe_episode_major_depressive_disorder': Parameter(
             Types.REAL, 'daly_wt_severe_major_depressive_disorder' ' - code 932'
@@ -111,21 +121,22 @@ class Depression(Module):
         'de_ever_depr': Property(Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_prob_3m_resol_depression': Property(Types.REAL, 'probability per 3 months of resolution of depresssion'),
         'de_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
-        # todo - this to be removed when defined in other modules
-        'de_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
-        'de_cc': Property(Types.BOOL, 'whether has chronic condition'),
+        'de_ever_diagnosed_depression': Property(Types.BOOL, 'Whether ever previously diagnosed with depression'),
+        'de_current_talk_ther': Property(Types.BOOL, 'Whether having current talking therapy (in this 3 mnth period)'),
+        'de_cc': Property(Types.BOOL, 'whether has chronic condition')
     }
 
     def read_parameters(self, data_folder):
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx', sheet_name='parameter_values')
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_nov19.xlsx',
+                            sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
         p['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
 
         if 'HealthBurden' in self.sim.modules.keys():
-            # get the DALY weight - 932 and 933 are the sequale codes for epilepsy
+            # get the DALY weight - 932 and 933 are the sequale codes for depression
             p['daly_wt_severe_episode_major_depressive_disorder'] = self.sim.modules[
                 'HealthBurden'
             ].get_daly_weight(sequlae_code=932)
@@ -145,10 +156,11 @@ class Depression(Module):
         df['de_on_antidepr'] = False
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depression'] = 0
+        df['de_ever_diagnosed_depression'] = False
+        df['de_current_talk_ther'] = False
 
         # todo - this to be removed when defined in other modules
         df['de_cc'] = False
-        df['de_wealth'].values[:] = 4
 
         #  this below calls the age dataframe / call age.years to get age in years
 
@@ -158,7 +170,7 @@ class Depression(Module):
         cc_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive]
         age_2059_idx = df.index[(df.age_years >= 20) & (df.age_years < 60) & df.is_alive]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive]
+        wealth45_ge15_idx = df.index[df.li_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive]
         f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive]
         f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & (df.age_years >= 15) & df.is_alive]
 
@@ -219,6 +231,18 @@ class Depression(Module):
             [0.2, 0.3, 0.5, 0.7, 0.95], size=len(curr_depr_index), p=[0.2, 0.2, 0.2, 0.2, 0.2]
         )
 
+        # initiate de_ever_diagnosed
+
+        on_antidepr_idx = df.index[df.is_alive & df.de_on_antidepr]
+        df.loc[on_antidepr_idx, 'de_ever_diagnosed_depression'] = True
+
+        ever_depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_ever_depr & ~df.de_on_antidepr]
+
+        df.loc[ever_depr_not_on_antidepr_idx, 'de_ever_diagnosed_depression'] = (
+            self.init_pr_ever_diagnosed_depression >
+            self.rng.random_sample(size=len(ever_depr_not_on_antidepr_idx))
+        )
+
         # disability
 
         depr_idx = df.index[df.is_alive & df.de_depr]
@@ -263,12 +287,13 @@ class Depression(Module):
         df.at[child_id, 'de_suicide'] = False
         df.at[child_id, 'de_on_antidepr'] = False
         df.at[child_id, 'de_ever_depr'] = False
+        df.at[child_id, 'de_ever_diagnosed_depression'] = False
         df.at[child_id, 'de_prob_3m_resol_depression'] = 0
         df.at[child_id, 'de_disability'] = 0
+        df.at[child_id, 'de_current_talk_ther'] = False
 
         # todo - this to be removed when defined in other modules
         df.at[child_id, 'de_cc'] = False
-        df.at[child_id, 'de_wealth'] = 4
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
@@ -332,6 +357,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         self.depr_resolution_rates = p['depr_resolution_rates']
         self.rr_resol_depr_cc = p['rr_resol_depr_cc']
         self.rr_resol_depr_on_antidepr = p['rr_resol_depr_on_antidepr']
+        self.rate_diagnosis_depression = p['rate_diagnosis_depression']
         self.rate_init_antidepr = p['rate_init_antidepr']
         self.rate_stop_antidepr = p['rate_stop_antidepr']
         self.rate_default_antidepr = p['rate_default_antidepr']
@@ -342,6 +368,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
             'daly_wt_moderate_episode_major_depressive_disorder']
         self.daly_wt_severe_episode_major_depressive_disorder = p[
             'daly_wt_severe_episode_major_depressive_disorder']
+        self.pr_talk_ther_in_3_mth_period = p['pr_talk_ther_in_3_mth_period']
+        self.rr_resol_depr_current_talk_ther = p['rr_resol_depr_current_talk_ther']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -357,12 +385,13 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, 'de_non_fatal_self_harm_event'] = False
         df.loc[df.is_alive, 'de_suicide'] = False
         df.loc[df.is_alive, 'de_disability'] = 0
+        df.loc[df.is_alive, 'de_current_talk_ther'] = False
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
         age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive & ~df.de_depr]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive & ~df.de_depr]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        wealth45_ge15_idx = df.index[df.li_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
         f_not_rec_preg_idx = df.index[
             (df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive & ~df.de_depr
         ]
@@ -392,13 +421,30 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
             [0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2]
         )
 
+        # diagnosis with depression
+
+        depr_never_diagnosed_idx = df.index[df.is_alive & df.de_depr & ~df.de_ever_diagnosed_depression]
+
+        df.loc[depr_never_diagnosed_idx, 'de_ever_diagnosed_depression'] = (
+            self.rate_diagnosis_depression > self.module.rng.random_sample(size=len(depr_never_diagnosed_idx))
+        )
+
+        # talking therapy this 3 month period
+
+        depr_diagnosed_idx = df.index[df.is_alive & df.de_depr & df.de_ever_diagnosed_depression]
+
+        df.loc[depr_diagnosed_idx, 'de_current_talk_ther'] = (
+            self.pr_talk_ther_in_3_mth_period > self.module.rng.random_sample(size=len(depr_diagnosed_idx))
+        )
+
         # initiation of antidepressants
-        depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
+        depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr &
+                                            df.de_ever_diagnosed_depression]
 
         eff_prob_antidepressants = pd.Series(self.rate_init_antidepr, index=depr_not_on_antidepr_idx)
         antidepr = eff_prob_antidepressants > self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx))
 
-        # get the indicies of persons who are going to present for care at somepoint in the next 3 months
+        # get the indicies of persons who are going to present for care at some point in the next 3 months
 
         start_antidepr_this_period_idx = antidepr[antidepr].index
 
@@ -443,12 +489,15 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive]
         cc_depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_cc]
         on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
+        talk_ther_this_3mth_per_idx = df.index[df.is_alive & df.de_current_talk_ther & df.de_depr
+                                               & (df.age_years >= 15)]
 
         eff_prob_depr_resolved = pd.Series(
             df.de_prob_3m_resol_depression, index=depr_idx
         )
         eff_prob_depr_resolved.loc[cc_depr_idx] *= self.rr_resol_depr_cc
         eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
+        eff_prob_depr_resolved.loc[talk_ther_this_3mth_per_idx] *= self.rr_resol_depr_current_talk_ther
 
         depr_resolved = eff_prob_depr_resolved < self.module.rng.random_sample(size=len(depr_idx))
         depr_resolved_idx = depr_resolved[depr_resolved].index
@@ -516,14 +565,14 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, Indivi
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Present_For_Care_And_Start_Antidepressant'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
 
-        # This is the property that repesents currently using antidepresants: de_on_antidepr
+        # This is the property that represents currently using antidepressants: de_on_antidepr
 
         # Check that the person is currently not on antidepressants
         # (not always true so commented out for now)
@@ -571,6 +620,12 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         suicides_this_3m = (df.de_suicide).sum()
         self_harm_events_this_3m = (df.de_non_fatal_self_harm_event).sum()
 
+        n_ever_diagnosed_depression = (df.is_alive & df.de_ever_diagnosed_depression & (df.age_years >= 15)).sum()
+        p_ever_diagnosed_depression = n_ever_diagnosed_depression / n_ge15
+
+        n_current_talk_ther = (df.de_current_talk_ther).sum()
+        prop_current_talk_ther = n_current_talk_ther / n_ge15
+
         # prop_depr = n_depr / n_ge15
         prop_ge15_m_depr = n_ge15_m_depr / n_ge15_m
         prop_ge15_f_depr = n_ge15_f_depr / n_ge15_f
@@ -582,23 +637,30 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_antidepr_ever_depr = n_antidepr_ever_depr / n_ever_depr
         prop_age_50_ever_depr = n_age_50_ever_depr / n_age_50
 
+
+
+
         # TODO: Andrew - I've re-organsied this, check that it's behaving as you wanted
-        dict_for_output = {
-            'prop_ever_depr': prop_ever_depr,
-            'prop_antidepr': prop_antidepr,
-            'prop_antidepr_depr': prop_antidepr_depr,
-            'prop_antidepr_not_depr': prop_antidepr_not_depr,
-            'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
-            'prop_ge15_m_depr': prop_ge15_m_depr,
-            'prop_ge15_f_depr': prop_ge15_f_depr,
-            'prop_age_50_ever_depr': prop_age_50_ever_depr,
-            'prop_depr_ge45': prop_depr_ge45,
-            'suicides_this_3m': suicides_this_3m,
-            'self_harm_events_this_3m': self_harm_events_this_3m,
-        }
+#       dict_for_output = {
+#           'prop_ever_depr': prop_ever_depr,
+#           'p_ever_diagnosed_depression': p_ever_diagnosed_depression,
+#           'prop_antidepr': prop_antidepr,
+#           'prop_antidepr_depr': prop_antidepr_depr,
+#           'prop_antidepr_not_depr': prop_antidepr_not_depr,
+#           'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
+#           'prop_current_talk_ther': prop_current_talk_ther,
+#           'prop_ge15_m_depr': prop_ge15_m_depr,
+#           'prop_ge15_f_depr': prop_ge15_f_depr,
+#           'prop_age_50_ever_depr': prop_age_50_ever_depr,
+#           'prop_depr_ge45': prop_depr_ge45,
+#           'suicides_this_3m': suicides_this_3m,
+#           'self_harm_events_this_3m': self_harm_events_this_3m,
+#       }
 
-        logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
+#       logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
 
-        #       logger.info('%s|person_one|%s',
-        #                    self.sim.date,
-        #                    df.loc[0].to_dict())
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[10].to_dict())
+
+
