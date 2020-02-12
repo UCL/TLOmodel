@@ -50,7 +50,6 @@ logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)
 logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)
 logging.getLogger("tlo.methods.diarrhoea").setLevel(logging.INFO)
 
-
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
@@ -86,14 +85,13 @@ years = pd.to_datetime(py_['date']).dt.year
 py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
 for year in years:
     tot_py = (
-        (py_.loc[pd.to_datetime(py_['date']).dt.year==year]['M']).apply(pd.Series) + \
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) + \
         (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
     ).transpose()
 
     py.loc[year, '0y'] = tot_py.loc[0].values[0]
     py.loc[year, '1y'] = tot_py.loc[1].values[0]
     py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
-
 
 # # get population size to make a comparison
 pop = output['tlo.methods.demography']['num_children']
@@ -102,9 +100,9 @@ pop.set_index(
     drop=True,
     inplace=True
 )
-pop['0y']=pop[0]
-pop['1y']=pop[1]
-pop['2-4y']=pop[2]+pop[3]+pop[4]
+pop['0y'] = pop[0]
+pop['1y'] = pop[1]
+pop['2-4y'] = pop[2] + pop[3] + pop[4]
 pop.drop(columns=[x for x in range(5)], inplace=True)
 
 # Incidence rate among 0, 1, 2-4 year-olds
@@ -120,42 +118,42 @@ for pathogen in sim.modules['Diarrhoea'].pathogens:
 
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
-        'rotavirus': 17.5245863/100.0,
-        'shigella': 11.7936462/100.0,
-        'adenovirus': 5.866180/100.0,
-        'cryptosporidium': 3.0886699/100.0,
-        'campylobacter': 9.8663257/100.0,
-        'ST-ETEC': 27.925146/100.0,
-        'sapovirus': 10.0972179/100.0,
-        'norovirus': 20.4864004/100.0,
-        'astrovirus': 5.4208352/100.0,
-        'tEPEC': 6.0822457/100.0
+    'rotavirus': 17.5245863 / 100.0,
+    'shigella': 11.7936462 / 100.0,
+    'adenovirus': 5.866180 / 100.0,
+    'cryptosporidium': 3.0886699 / 100.0,
+    'campylobacter': 9.8663257 / 100.0,
+    'ST-ETEC': 27.925146 / 100.0,
+    'sapovirus': 10.0972179 / 100.0,
+    'norovirus': 20.4864004 / 100.0,
+    'astrovirus': 5.4208352 / 100.0,
+    'tEPEC': 6.0822457 / 100.0
 }
 
 calibration_incidence_rate_1_year_olds = {
-        'rotavirus': 9.7007598/100.0,
-        'shigella': 7.8794104/100.0,
-        'adenovirus': 5.8661803/100.0,
-        'cryptosporidium': 1.1792363/100.0,
-        'campylobacter': 2.7915478/100.0,
-        'ST-ETEC': 17.0477152/100.0,
-        'sapovirus': 13.2603114/100.0,
-        'norovirus': 6.6146727/100.0,
-        'astrovirus': 3.5974076/100.0,
-        'tEPEC': 2.2716889/100.0
+    'rotavirus': 9.7007598 / 100.0,
+    'shigella': 7.8794104 / 100.0,
+    'adenovirus': 5.8661803 / 100.0,
+    'cryptosporidium': 1.1792363 / 100.0,
+    'campylobacter': 2.7915478 / 100.0,
+    'ST-ETEC': 17.0477152 / 100.0,
+    'sapovirus': 13.2603114 / 100.0,
+    'norovirus': 6.6146727 / 100.0,
+    'astrovirus': 3.5974076 / 100.0,
+    'tEPEC': 2.2716889 / 100.0
 }
 
 calibration_incidence_rate_2_to_4_year_olds = {
-        'rotavirus': 0.9324/100.0,
-        'shigella': 9.3018/100.0,
-        'adenovirus': 0.6438/100.0,
-        'cryptosporidium': 0.4662/100.0,
-        'campylobacter': 0.4884/100.0,
-        'ST-ETEC': 1.9758/100.0,
-        'sapovirus': 0.555/100.0,
-        'norovirus': 0.0888/100.0,
-        'astrovirus': 0.1332/100.0,
-        'tEPEC': 0.1998/100.0
+    'rotavirus': 0.9324 / 100.0,
+    'shigella': 9.3018 / 100.0,
+    'adenovirus': 0.6438 / 100.0,
+    'cryptosporidium': 0.4662 / 100.0,
+    'campylobacter': 0.4884 / 100.0,
+    'ST-ETEC': 1.9758 / 100.0,
+    'sapovirus': 0.555 / 100.0,
+    'norovirus': 0.0888 / 100.0,
+    'astrovirus': 0.1332 / 100.0,
+    'tEPEC': 0.1998 / 100.0
 }
 
 # Produce a set of line plot comparing to the calibration data
@@ -164,10 +162,10 @@ for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
     ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],
-                     xmin=min(inc_rate['0y'].index),
-                     xmax=max(inc_rate['0y'].index),
-                     label='calibrating_data'
-            )
+              xmin=min(inc_rate['0y'].index),
+              xmax=max(inc_rate['0y'].index),
+              label='calibrating_data'
+              )
     ax.set_title(f'{pathogen}')
     ax.set_xlabel("Year")
     ax.set_ylabel("Incidence Rate")

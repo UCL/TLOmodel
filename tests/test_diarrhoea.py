@@ -9,7 +9,6 @@ from tlo.methods import (
     contraception,
     demography,
     diarrhoea,
-    childhood_management,
     healthsystem,
     enhanced_lifestyle,
     symptommanager,
@@ -22,11 +21,13 @@ except NameError:
     # running interactively
     resourcefilepath = 'resources'
 
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
 
 def test_basic_run_of_diarhoea_module_no_health_care():
     start_date = Date(2010, 1, 1)
@@ -50,8 +51,7 @@ def test_basic_run_of_diarhoea_module_no_health_care():
 
     check_dtypes(sim)
 
-#def that there is some diarrhaea
-# that some people die and that the date of death tallies with the reported date of death
+    # Todo: Check there is some non-zero level diarrhaea
 
 
 def test_basic_run_of_diarhoea_module_with_health_care():
@@ -77,5 +77,4 @@ def test_basic_run_of_diarhoea_module_with_health_care():
 
     check_dtypes(sim)
 
-
-
+# Todo: Check there is some treatments due to diarrhoea

@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+# ---------------------------------------------------------------------------------------------------------
+#   MODULE DEFINITIONS
+# ---------------------------------------------------------------------------------------------------------
+
 class Diarrhoea(Module):
     # Declare the pathogens that this module will simulate:
     pathogens = {
@@ -864,6 +868,11 @@ class Diarrhoea(Module):
         return daly_values_by_pathogen
 
 
+# ---------------------------------------------------------------------------------------------------------
+#   DISEASE MODULE EVENTS
+#
+# ---------------------------------------------------------------------------------------------------------
+
 class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
@@ -957,6 +966,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date=date_onset
             )
+            # TODO: Determine if/when the dehydration becomes severe -- and make this effect death rate
 
 
 class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
@@ -993,8 +1003,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 disease_module=self.module,
                 duration_in_days=self.duration_in_days
             )
-
-        # TODO: Determine if/when the dehydration becomes severe -- and make this effect death rate
 
         # Determine outcome:
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
@@ -1035,6 +1043,11 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
                                     self.sim.date)
 
 
+# ---------------------------------------------------------------------------------------------------------
+#   LOGGING EVENTS
+#
+# ---------------------------------------------------------------------------------------------------------
+
 class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This Event logs the number of incident cases that have occurred since the previous logging event.
@@ -1067,6 +1080,11 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
         self.date_last_run = self.sim.date
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   HEALTH SYSTEM INTERACTION EVENTS
+#
+# ---------------------------------------------------------------------------------------------------------
 
 class HSI_Diarrhoea_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
     """

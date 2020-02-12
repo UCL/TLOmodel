@@ -44,7 +44,6 @@ logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)
 logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)
 logging.getLogger("tlo.methods.diarrhoea").setLevel(logging.INFO)
 
-
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
@@ -56,7 +55,6 @@ sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=reso
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
-
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -64,6 +62,3 @@ sim.simulate(end_date=end_date)
 # this will make sure that the logging file is complete
 fh.flush()
 output = parse_log_file(logfile)
-
-
-
