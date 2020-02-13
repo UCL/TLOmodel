@@ -25,7 +25,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 2, 1)
+    end_date = Date(2012, 2, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -55,7 +55,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
     if haem:
-        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath))
+        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=True))
     if mansoni:
         sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath))
 
@@ -70,11 +70,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     output = parse_log_file(logfile)
     return sim, output
 
-# sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_sheet='MDA_prognosed_Coverage_zero')
-# sim, output = run_simulation(popsize=10000, haem=True, mansoni=True, mda_sheet='MDA_prognosed_Coverage_once')
-# sim, output = run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=False, mda_sheet='MDA_prognosed_Coverage_twice')
-# sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=True, mda_sheet='MDA_prognosed_Coverage_3_years')
-sim, output = run_simulation(popsize=1000, haem=True, mansoni=False, mda_execute=False)
+sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
@@ -447,50 +443,8 @@ plt.ylabel('DALYs')
 plt.xlabel('logging date')
 plt.show()
 
-# # # ---------------------------------------------------------------------------------------------------------
-# # #   Check the prevalence of the symptoms
-# # df = sim.population.props
-# # params = sim.modules['Schisto'].parameters
-# # symptoms_params = params['symptoms_haematobium'].set_index('symptoms').to_dict()['prevalence']
-# #
-# # tot_pop_alive = len(df.index[df.is_alive])
-# # huge_list = df['ss_haematobium_specific_symptoms'].dropna().tolist()
-# # huge_list = [item for sublist in huge_list for item in sublist]
-# # symptoms_prevalence = [[x, huge_list.count(x)] for x in set(huge_list)]
-# # symptoms_prevalence = dict(symptoms_prevalence)
-# # for s in symptoms_prevalence.keys():
-# #     print(s + ", prevalence = " + str(round(symptoms_prevalence[s] / tot_pop_alive, 3)), ", expected = " + str(symptoms_params[s]))
-# #
-# # # get prevalence per age_years
-# # df_pa = df[['age_years', 'ss_infection_status']][df.is_alive]
-# # age_groups_count = df_pa['age_years'].value_counts().to_dict()
-# # infected_age_count = df_pa[df['ss_infection_status'] != 'Non-infected']['age_years'].value_counts().to_dict()
-# # age_prev = {}
-# # for k in age_groups_count.keys():
-# #     if k in infected_age_count.keys():
-# #         prev = infected_age_count[k] / age_groups_count[k]
-# #     else:
-# #         prev = 0
-# #     age_prev.update({k: prev})
-# #
-# # lists = sorted(age_prev.items())  # sorted by key, return a list of tuples
-# # x, y = zip(*lists)  # unpack a list of pairs into two tuples
-# # plt.plot(x[0:80], y[0:80])
-# # plt.xlabel('Age')
-# # plt.ylabel('Prevalence')
-# # plt.ylim([0, 1])
-# # plt.title('Final prevalence per age')
-# # plt.show()
-#
-
 
 def count_district_states(df, district):
-    """
-    :param population:
-    :param district:
-    :return: count_states: a dictionary of counts of individuals in district in different states on infection
-    """
-    # this is not ideal bc we're making a copy but it's for clearer code below
     df_distr = df[((df.is_alive) & (df['district_of_residence'] == district))].copy()
 
     count_states = {'Non-infected': 0, 'Low-infection': 0, 'High-infection': 0}
