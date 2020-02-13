@@ -499,8 +499,8 @@ class Labour (Module):
     # ===================================== LABOUR SCHEDULER ==========================================================
 
     def set_date_of_labour(self, individual_id):
-        """This function, called within contraception, uses linear equations to determine a womans liklihood of preterm,
-        postterm or term labour and sets their future date of labour accordingly"""
+        """This function, called within contraception, uses linear equations to determine a womans likelihood of
+        preterm, postterm or term labour and sets their future date of labour accordingly"""
 
         df = self.sim.population.props
         params = self.parameters
@@ -514,18 +514,18 @@ class Labour (Module):
         # We then use a random draw to determine if the woman will go into preterm labour and how early she will deliver
         # We store this draw as a variable so the result can be compared against both probabilities
         random_draw = self.rng.random_sample()
-        if (random_draw < lptb_prob) and (random_draw > eptb_prob):
-            df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
-                                                                        pd.Timedelta((self.rng.randint(34, 36)),
-                                                                                     unit='W')
-
-        elif(random_draw < eptb_prob) and (random_draw < lptb_prob):
+        if random_draw < eptb_prob:
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta((self.rng.randint(24, 33)),
                                                                                      unit='W')
 
+        elif random_draw < lptb_prob:
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
+                                                                        pd.Timedelta((self.rng.randint(34, 36)),
+                                                                                     unit='W')
+
         # For women who will deliver after term we apply a risk of post term birth
-        elif random_draw > lptb_prob:
+        else:
             if self.rng.random_sample() < params['prob_potl']:
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] \
                                                                             + pd.Timedelta((self.rng.randint(42, 46)),
@@ -1067,6 +1067,7 @@ class DiseaseResetEvent (Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
+        mni = self.module.mother_and_newborn_info
 
         # This event ensures that for women who have survived delivery but have suffered a complication in which
         # treatment was unsuccessful have their diseases variables reset
@@ -1080,6 +1081,8 @@ class DiseaseResetEvent (Event, IndividualScopeEventMixin):
             df.at[individual_id, 'la_uterine_rupture'] = False
             df.at[individual_id, 'la_eclampsia'] = False
             df.at[individual_id, 'la_postpartum_haem'] = False
+
+            del mni[individual_id]
 
 # ======================================================================================================================
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ====================================================
@@ -1192,7 +1195,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
     def apply(self, person_id, squeeze_factor):
         mni = self.module.mother_and_newborn_info
 
-        if squeeze_factor > 0.8:  # TODO: confirm
+        # magic number 0.8 is an arbitrary squeeze factor threshold
+        if squeeze_factor > 0.8:
             self.did_not_run()
             logger.debug(
                 'person %d sought care for a facility delivery but HSI_Labour_PresentsForSkilledAttendanceInLabour'
