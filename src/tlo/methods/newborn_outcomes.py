@@ -354,6 +354,7 @@ class NewbornOutcomes(Module):
             if child.nb_early_preterm:
                 df.at[child_id, 'nb_birth_weight'] = 'LBW'
 
+            # Magic number 0.7 is an arbitrary probability determining LBW in late preterm infants
             if child.nb_late_preterm & (self.rng.random_sample() < 0.7):
                 df.at[child_id, 'nb_birth_weight'] = 'LBW'
 
