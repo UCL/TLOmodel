@@ -519,7 +519,7 @@ class Labour (Module):
                                                                         pd.Timedelta((self.rng.randint(24, 33)),
                                                                                      unit='W')
 
-        elif random_draw < lptb_prob:
+        elif random_draw < (lptb_prob + eptb_prob):
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta((self.rng.randint(34, 36)),
                                                                                      unit='W')
