@@ -65,7 +65,7 @@ class Schisto(Module):
     Required for the Schisto_Haematobium and Schisto_Mansoni modules.
     Governs the properties that are common to both of the Schisto modules.
     Also schedules HSI events, Treatment and MDA event.
-    attribute mda_execute: TRUE (default) /FALSE determines whether MDA events should be schedulled or not
+    attribute mda_execute: TRUE (default) /FALSE determines whether MDA events should be scheduled or not
     """
 
     def __init__(self, name=None, resourcefilepath=None, mda_execute=True):
@@ -178,12 +178,9 @@ class Schisto(Module):
             years_of_historical_mda = [25, 26, 27, 28]  # 25 years are required for the model to equilibrate
             years_of_historical_mda = [sim.date.year + el for el in years_of_historical_mda]
             for historical_mda_year in years_of_historical_mda:
-            # for historical_mda_year in [2015, 2016, 2017, 2018]:
-            #     if historical_mda_year >= sim.date.year:
                 sim.schedule_event(SchistoHistoricalMDAEvent(self),
                                    pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23) + DateOffset(months=0))
             year_first_simulated_mda = years_of_historical_mda[-1] + 1
-            # year_first_simulated_mda = 2019
             # schedule prognosed MDA programmes for every district
             for district in sim.population.props.district_of_residence.unique().tolist():
                 freq = self.parameters['MDA_frequency_prognosed'][district]
@@ -269,7 +266,6 @@ class Schisto_Haematobium(Module):
             Types.LIST, 'Symptoms for S. Haematobium infection'),  # actually might also be np.nan
         'sh_start_of_prevalent_period': Property(Types.DATE, 'Date of going from Non-infected to Infected'),
         'sh_start_of_high_infection': Property(Types.DATE, 'Date of going from entering state High-inf'),
-        'sh_onset_of_symptoms_date': Property(Types.DATE, 'Date of onset of symptoms'),
         'sh_harbouring_rate': Property(Types.REAL, 'Rate of harbouring new worms (Poisson), drawn from gamma distribution'),
         'sh_prevalent_days_this_year': Property(Types.REAL, 'Cumulative days with infection in current year'),
         'sh_high_inf_days_this_year': Property(Types.REAL, 'Cumulative days with high-intensity infection in current year')
@@ -327,7 +323,6 @@ class Schisto_Haematobium(Module):
         df['sh_infection_status'] = 'Non-infected'
         df['sh_aggregate_worm_burden'] = 0
         df['sh_symptoms'] = np.nan
-        df['sh_onset_of_symptoms_date'] = pd.NaT
         df['sh_prevalent_days_this_year'] = 0
         df['sh_start_of_prevalent_period'] = pd.NaT
         df['sh_start_of_high_infection'] = pd.NaT
@@ -386,7 +381,7 @@ class Schisto_Haematobium(Module):
                 harbouring_rates = df.loc[eligible, 'sh_harbouring_rate'].values
                 rates = np.multiply(harbouring_rates, contact_rates)
                 reservoir_distr = int(reservoir[distr] * len(eligible))
-                # assign a worm burden
+                # dsitribute a worm burden
                 chosen = self.rng.choice(eligible, reservoir_distr, p=rates / rates.sum())
                 unique, counts = np.unique(chosen, return_counts=True)
                 worms_per_idx = dict(zip(unique, counts))
@@ -448,7 +443,6 @@ class Schisto_Haematobium(Module):
                 # find who should get this symptom assigned - get p indices
                 s_idx = self.rng.choice(eligible_idx, size=int(prev * len(eligible_idx)), replace=False)
                 df.loc[s_idx, symptoms_column] = df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
-                df.loc[s_idx, 'sh_onset_of_symptoms_date'] = self.sim.date
 
     def assign_hsi_dates_initial(self, population, symptomatic_idx):
         df = population.props
@@ -497,7 +491,6 @@ class Schisto_Haematobium(Module):
         df.at[child_id, 'sh_infection_status'] = 'Non-infected'
         df.at[child_id, 'sh_symptoms'] = np.nan
         df.at[child_id, 'sh_aggregate_worm_burden'] = 0
-        df.at[child_id, 'sh_onset_of_symptoms_date'] = pd.NaT
         df.at[child_id, 'sh_prevalent_days_this_year'] = 0
         df.at[child_id, 'sh_start_of_prevalent_period'] = pd.NaT
         df.at[child_id, 'sh_start_of_high_infection'] = pd.NaT
@@ -569,7 +562,6 @@ class Schisto_Mansoni(Module):
             Types.LIST, 'Symptoms for S. Mansoni infection'),  # actually might also be np.nan
         'sm_start_of_prevalent_period': Property(Types.DATE, 'Date of going from Non-infected to Infected'),
         'sm_start_of_high_infection': Property(Types.DATE, 'Date of going from entering state High-inf'),
-        'sm_onset_of_symptoms_date': Property(Types.DATE, 'Date of onset of symptoms'),
         'sm_harbouring_rate': Property(Types.REAL,
                                        'Rate of harbouring new worms (Poisson), drawn from gamma distribution'),
         'sm_prevalent_days_this_year': Property(Types.REAL, 'Cumulative days with infection in current year'),
@@ -628,7 +620,6 @@ class Schisto_Mansoni(Module):
         df['sm_infection_status'] = 'Non-infected'
         df['sm_aggregate_worm_burden'] = 0
         df['sm_symptoms'] = np.nan
-        df['sm_onset_of_symptoms_date'] = pd.NaT
         df['sm_prevalent_days_this_year'] = 0
         df['sm_start_of_prevalent_period'] = pd.NaT
         df['sm_start_of_high_infection'] = pd.NaT
@@ -752,7 +743,6 @@ class Schisto_Mansoni(Module):
                 # find who should get this symptom assigned - get p indices
                 s_idx = self.rng.choice(eligible_idx, size=int(prev * len(eligible_idx)), replace=False)
                 df.loc[s_idx, symptoms_column] = df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
-                df.loc[s_idx, 'sm_onset_of_symptoms_date'] = self.sim.date
 
     def assign_hsi_dates_initial(self, population, symptomatic_idx):
         df = population.props
@@ -803,7 +793,6 @@ class Schisto_Mansoni(Module):
         df.at[child_id, 'sm_infection_status'] = 'Non-infected'
         df.at[child_id, 'sm_symptoms'] = np.nan
         df.at[child_id, 'sm_aggregate_worm_burden'] = 0
-        df.at[child_id, 'sm_onset_of_symptoms_date'] = pd.NaT
         df.at[child_id, 'sm_prevalent_days_this_year'] = 0
         df.at[child_id, 'sm_start_of_prevalent_period'] = pd.NaT
         df.at[child_id, 'sm_start_of_high_infection'] = pd.NaT
@@ -1053,7 +1042,6 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
         symptoms = self.assign_symptoms(self.module.prefix)
         if isinstance(symptoms, list):
             df.at[person_id, self.module.prefix + '_symptoms'] = symptoms
-            df.loc[person_id, self.module.prefix + '_onset_of_symptoms_date'] = self.sim.date
             # schedule Healthcare Seeking
             p = params_hsi['prob_seeking_healthcare']
             will_seek_treatment = self.module.rng.choice(['True', 'False'], size=1, p=[p, 1-p])
@@ -1133,7 +1121,6 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
                         df.loc[person_id, prefix + '_start_of_high_infection'] = pd.NaT
 
                     df.loc[person_id, prefix + '_aggregate_worm_burden'] = 0  # PZQ_efficacy = 100% for now
-                    df.loc[person_id, prefix + '_onset_of_symptoms_date'] = pd.NaT
                     df.loc[person_id, prefix + '_start_of_prevalent_period'] = pd.NaT
                     df.loc[person_id, prefix + '_start_of_high_infection'] = pd.NaT
                     df.loc[person_id, prefix + '_infection_status'] = 'Non-infected'
