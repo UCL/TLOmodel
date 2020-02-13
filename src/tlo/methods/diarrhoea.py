@@ -726,7 +726,6 @@ class Diarrhoea(Module):
             ]
         )
 
-
         # --------------------------------------------------------------------------------------------
         # Creat the linear model for the risk of dying due to diarrhoea
         self.risk_of_death_diarrhoea = \
@@ -884,7 +883,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=1))
         # NB. The frequency of the occurrences of this event can be edited safely.
 
     def apply(self, population):

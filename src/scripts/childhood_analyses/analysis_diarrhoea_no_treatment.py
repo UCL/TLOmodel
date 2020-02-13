@@ -184,6 +184,4 @@ plt.show()
 # %%
 # Look at deaths arising? Or anything else?
 
-# 3 month check - running
-# 1 mont check - running - good.
-# 6 moth - good.
+

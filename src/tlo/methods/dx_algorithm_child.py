@@ -129,3 +129,4 @@ class DxAlgorithmChild(Module):
                          tclose=None
                          )
         # -----------------------------------------------------
+
