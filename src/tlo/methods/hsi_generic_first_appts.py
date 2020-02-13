@@ -2,12 +2,12 @@
 The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
 the health system following the onset of acute generic symptoms.
 """
-import logging
 
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+from tlo import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

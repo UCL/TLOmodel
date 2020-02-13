@@ -196,7 +196,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                     # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
                     # NB. Here we can specify which type of facility they would attend if we need to
 
-                    delay_to_seeking_care_in_days = self.module.rng.randint(0, 3)  # Uniform interal 0-3 days
+                    delay_to_seeking_care_in_days = self.module.rng.randint(0, 1)  # Uniform interal 0-1 days
                     date_of_seeking_care = self.sim.date + DateOffset(days=delay_to_seeking_care_in_days)
 
                     hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)

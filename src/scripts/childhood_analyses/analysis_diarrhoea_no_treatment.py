@@ -8,13 +8,11 @@ There is no treatment.
 
 # %% Import Statements and initial declarations
 import datetime
-import logging
-import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -27,7 +25,6 @@ resourcefilepath = Path("./resources")
 
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 # %% Run the Simulation
 
@@ -38,18 +35,6 @@ popsize = 10000
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
 
-# this block of code is to capture the outputs to file
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
-logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.diarrhoea").setLevel(logging.INFO)
-
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
@@ -59,12 +44,12 @@ sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
 
+logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# this will make sure that the logging file is complete
-fh.flush()
+# Get the output from the logfile
 output = parse_log_file(logfile)
 
 # %%
@@ -110,11 +95,6 @@ inc_rate = dict()
 for age_grp in ['0y', '1y', '2-4y']:
     inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
-# Get the 3 month risk parameters that were input:
-base_riskper3mo = dict()
-for pathogen in sim.modules['Diarrhoea'].pathogens:
-    base_riskper3mo[pathogen] = \
-        sim.modules['Diarrhoea'].parameters[f'base_inc_rate_diarrhoea_by_{pathogen}']
 
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
@@ -185,17 +165,20 @@ inc_mean['2-4y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_2_
 
 # 0 year-olds
 inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
-plt.title('0 year-olds')
+plt.title('Incidence Rate: 0 year-olds')
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # 1 year-olds
 inc_mean.plot.bar(y=['1y_model_output', '1y_calibrating_data'])
-plt.title('1 year-olds')
+plt.title('Incidence Rate: 1 year-olds')
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # 2-4 year-olds
 inc_mean.plot.bar(y=['2-4y_model_output', '2-4y_calibrating_data'])
-plt.title('2-4 year-olds')
+plt.title('Incidence Rate: 2-4 year-olds')
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # %%

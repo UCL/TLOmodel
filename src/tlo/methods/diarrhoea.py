@@ -3,13 +3,12 @@ Childhood Diarrhoea Module
 Documentation: '04 - Methods Repository/Childhood Disease Methods.docx'
 """
 import copy
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
@@ -320,7 +319,7 @@ class Diarrhoea(Module):
                                                'Attributable pathogen for the last episode of diarrhoea',
                                                categories=list(pathogens) + ['none']),
 
-        # ---- Classification of the type of diarrhoaea that is caused  ----
+        # ---- Classification of the type of diarrhoea that is caused  ----
         'gi_last_diarrhoea_type': Property(Types.CATEGORICAL,
                                            'Type of the last episode of diarrhoea',
                                            categories=['none',
@@ -727,16 +726,17 @@ class Diarrhoea(Module):
             ]
         )
 
+
         # --------------------------------------------------------------------------------------------
         # Creat the linear model for the risk of dying due to diarrhoea
         self.risk_of_death_diarrhoea = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
-                        0.0,  ##          <--- fill in (curently no deaths)
+                        0.50,  ##          <--- fill in (curently this is arbitary)
                         Predictor('age_years')  ##          <--- fill in
                         .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
                         .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
                         .otherwise(0.0)
-                        ##          < --- add in severe or non-severe dehyration
+                        ##          < --- TODO: add in current_severe_dehyration
                         # # Predictor('hv_inf').
                         # # when(True, m.rr_gi_diarrhoea_HIV),
                         # Predictor('malnutrition').
@@ -1040,7 +1040,7 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'is_alive']) and (df.at[person_id, 'gi_last_diarrhoea_death_date'] == self.sim.date):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
-                                                                  cause=df.at[person_id, 'gi_last_diarrhoea_pathogen']
+                                                                  cause='Diarrhoea_' + df.at[person_id, 'gi_last_diarrhoea_pathogen']
                                                                   ),
                                     self.sim.date)
 

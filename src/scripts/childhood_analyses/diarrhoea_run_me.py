@@ -4,11 +4,10 @@ This script is used in development. It will become the test script for diraahoea
 
 # %% Import Statements and initial declarations
 import datetime
-import logging
 import os
 from pathlib import Path
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
     parse_log_file,
 )
