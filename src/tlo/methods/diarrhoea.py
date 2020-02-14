@@ -310,7 +310,11 @@ class Diarrhoea(Module):
                       ),
         'rr_diarr_death_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea death for severe acute malnutrition'
-                      )
+                      ),
+        'days_onset_severe_dehydration_before_death':
+            Parameter(Types.INT, 'number of days before a death (in the untreated case) that dehydration would be '
+                                 'classified as severe and child ought to be classified as positive for the danger'
+                                 'signs')
     }
 
     PROPERTIES = {
@@ -328,7 +332,7 @@ class Diarrhoea(Module):
 
         # ---- Classification of whether the dehydration that may be caused is currently severe  ----
         'gi_current_severe_dehydration': Property(Types.BOOL,
-                                                  'Whether any dehydration that is caused is is severe currently'),
+                                                  'Whether any dehydration that is caused is severe currently'),
 
         # ---- Internal variables to schedule onset and deaths due to diarrhoea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
@@ -343,6 +347,7 @@ class Diarrhoea(Module):
 
     # Declare symptoms that this module will cause:
     SYMPTOMS = {'diarrhoea', 'fever', 'vomiting', 'dehydration'}
+
     # Todo: decide if we want dehydration to be a symptom
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -875,7 +880,7 @@ class Diarrhoea(Module):
 
 class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This is the main event that runs the acquisition of pathogens that cause Diaarhoea.
+    This is the main event that runs the acquisition of pathogens that cause Diarrhoea.
     It determines who is infected and when and schedules individual IncidentCase events to represent onset.
 
     A known issue is that diarrhoea events are scheduled based on the risk of current age but occur a short time
@@ -954,6 +959,8 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     symptoms_for_this_person.append(symptom)
 
             # ----------------------- Create the event for the onset of infection -------------------
+            # NB. The symptoms are scheduled by the SymptomManager to 'autoresolve' after the duration
+            #       of the diarrhoea.
             self.sim.schedule_event(
                 event=DiarrhoeaIncidentCase(
                     module=self.module,
@@ -966,8 +973,6 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date=date_onset
             )
-            # TODO: Determine if/when any dehydration becomes severe -- and make this effect death rate
-            # TODO: remove the dehydration symptom
 
 
 class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
@@ -1005,12 +1010,15 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 duration_in_days=self.duration_in_days
             )
 
-        # Determine outcome:
+        # Determine timing of outcome (either recovery or death)
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
         if self.will_die:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
-            df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_outcome
-            self.module.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_outcome)
+            df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+            date_of_onset_severe_dehydration = max(self.sim.date, date_of_outcome - DateOffset(
+                days=self.module.parameters['days_onset_severe_dehydration_before_death']))
+            self.module.sim.schedule_event(DiarrhoeaSevereDehydrationEvent(self.module, person_id),
+                                           date_of_onset_severe_dehydration)
         else:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_of_outcome
             df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
@@ -1022,6 +1030,25 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         else:
             age_grp = '5+y'
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
+
+
+class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
+    """
+    This Event is for the onset of Severe Dehydration. This occurs a set number of days prior to death (for untreated
+    children). It sets the property 'gi_current_severe_dehydration' to True and schedules the death.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        df.at[person_id, 'gi_current_severe_dehydration'] = True
+
+        date_of_death = self.sim.date \
+                        + DateOffset(days=self.module.parameters['days_onset_severe_dehydration_before_death'])
+        df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_death
+        self.module.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_death)
 
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
@@ -1039,7 +1066,8 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'is_alive']) and (df.at[person_id, 'gi_last_diarrhoea_death_date'] == self.sim.date):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
-                                                                  cause='Diarrhoea_' + df.at[person_id, 'gi_last_diarrhoea_pathogen']
+                                                                  cause='Diarrhoea_' + df.at[
+                                                                      person_id, 'gi_last_diarrhoea_pathogen']
                                                                   ),
                                     self.sim.date)
 
@@ -1109,7 +1137,12 @@ class HSI_Diarrhoea_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-        pass
+
+        # Resolve the status of curent_severe_dehydration
+        df.at[person_id, 'gi_current_severe_dehydration'] = False
+
+        # Resolve all the symptoms immediately
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
 
 
 class HSI_Diarrhoea_Non_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
@@ -1134,7 +1167,10 @@ class HSI_Diarrhoea_Non_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin)
         df = self.sim.population.props
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-        pass
+
+        # Resolve all the symptoms immediately
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
+
 
 
 class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
@@ -1159,7 +1195,9 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
         df = self.sim.population.props
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-        pass
+
+        # Resolve all the symptoms immediately
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
 
 
 class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
@@ -1184,7 +1222,9 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
         df = self.sim.population.props
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-        pass
+
+        # Resolve all the symptoms immediately
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
 
 
 class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
@@ -1209,4 +1249,7 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-        pass
+
+        # Resolve all the symptoms immediately
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
+
