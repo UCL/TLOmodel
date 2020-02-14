@@ -48,7 +48,7 @@ class DxManager:
             if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
                 try:
                     assert self.dx_tests[name] == dx_test
-                except:
+                except (KeyError, AssertionError):
                     raise ValueError(
                         "The same Dx_Test or the same name have been registered previously against a different name "
                         "or DxTest.")
@@ -240,10 +240,10 @@ class DxTest:
         if df[self.property].dtype == np.dtype('bool'):
             if true_value:
                 # Apply the sensitivity:
-                test_value = hs_module.rng.choice([True, False], p=[self.sensitivity, 1 - self.sensitivity])
+                test_value = hs_module.rng.rand() < self.sensitivity
             else:
                 # Apply the specificity:
-                test_value = hs_module.rng.choice([False, True], p=[self.specificity, 1 - self.specificity])
+                test_value = not (hs_module.rng.rand() < self.specificity)
 
         elif df[self.property].dtype == np.dtype('float'):
             # Apply the normally distributed zero-mean error
