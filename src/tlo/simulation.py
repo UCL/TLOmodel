@@ -53,7 +53,7 @@ class Simulation:
         self.output_file = None
 
         # clear entire logging environment for this new simulation
-        logging.init_logging()
+        logging.init_logging(self)
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
@@ -71,7 +71,7 @@ class Simulation:
         """
         if not filename:
             # no filename given, clear setup and initialise writing to stdout
-            logging.init_logging()
+            logging.init_logging(self)
             return
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")

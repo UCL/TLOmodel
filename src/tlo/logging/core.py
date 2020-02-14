@@ -23,6 +23,8 @@ class Logger:
         if name == 'tlo':
             self._std_logger.propagate = False
         self.name = self._std_logger.name
+        # populated by init_logging(simulation)
+        self.simulation = None
 
     def __repr__(self):
         return f'<tlo Logger containing {self._std_logger}>'

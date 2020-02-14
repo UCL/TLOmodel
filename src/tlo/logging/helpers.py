@@ -35,7 +35,7 @@ def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
             getLogger(key).setLevel(value)
 
 
-def init_logging():
+def init_logging(simulation=None):
     """Initialise default logging with stdout stream"""
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
@@ -45,3 +45,5 @@ def init_logging():
     logger.filters.clear()
     logger.addHandler(handler)
     _logging.basicConfig(level=_logging.WARNING)
+    if simulation:
+        logger.simulation = simulation
