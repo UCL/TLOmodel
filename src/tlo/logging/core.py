@@ -76,7 +76,7 @@ class Logger:
         # write data json
         row = {"module": self.name, "key": key,
                "date": tlo_logger.simulation.date.isoformat(),
-               "values": data}
+               "values": list(data.values())}
         for handler in tlo_logger.handlers:
             json.dump(row, handler.stream, cls=encoding.PandasEncoder)
             handler.stream.write(handler.terminator)
