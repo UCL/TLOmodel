@@ -204,7 +204,8 @@ class Demography(Module):
         """
         # Making a working data-frame that is limited to those who were alive one year ago
         df_calc = self.sim.population.props.loc[
-            ~(self.sim.population.props['date_of_death'] < (self.sim.date - DateOffset(years=1))),
+            (self.sim.population.props['date_of_birth'] <= (self.sim.date - DateOffset(years=1)))
+            & ~(self.sim.population.props['date_of_death'] < (self.sim.date - DateOffset(years=1))),
             ['sex', 'date_of_birth', 'date_of_death', 'age_years', 'age_exact_years', 'is_alive']]
 
         # Define the time-window that is of interest (the year-long period immediately preceding)
@@ -283,29 +284,16 @@ class Demography(Module):
         # Convert to fractions of a year
         py = py / duration_of_window_in_days
 
-        # TODO: Check that  N(a-1,t-1) <= PY(a, [t-1,t]) <= N(a,t) -- or an equivalent test
-        # Not a good check!!!
-        df_calc['Age_last_year'] = df_calc['age_exact_years'] - 1
-        df_calc['Age_now'] = df_calc['age_exact_years']
-
-        n_t_minus_one = df_calc.loc[
-            (df_calc['Age_last_year'] >= 1.0)
-            & ~(df_calc['date_of_death'] < (self.sim.date - DateOffset(years=1)))
-            ].groupby('Age_last_year').size()
-
-        n_t = df_calc.loc[
-            (df_calc['Age_now'] >= 2.0)
-            & df_calc['is_alive']
-            ].groupby('Age_now').size()
-        n_t.index = n_t.index - 1.0
-
-        check_interval = pd.concat({
-            'n_t_minus_one': n_t_minus_one,
-            'n_t': n_t}, axis=1)\
-            .merge(pd.DataFrame(data={'py': py.sum(axis=1)}), right_index=True, left_index=True)
-
-        # assert all(check_interval['n_t_minus_one'] <= check_interval['py'])
-        # assert all(check_interval['py'] <= check_interval['n_t'])
+        # ------------ Additional logical check ------------
+        # Todo: more logical check on the PY calc may be useful
+        # * Number of PY lived last year is between N(t-1) and N(t)
+        df = self.sim.population.props
+        pop_size_last_year = len(df.loc[(df['date_of_birth'] <= (self.sim.date - DateOffset(years=1))) &
+                                             ((df['date_of_death'] < (self.sim.date - DateOffset(years=1))) | pd.isnull(
+                                         df['date_of_death']))])
+        pop_size_now = len(df.loc[df['is_alive']])
+        assert min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
+        # ----------------------------------------------------
 
         return py
 

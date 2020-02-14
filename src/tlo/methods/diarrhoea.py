@@ -1019,7 +1019,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
             date_of_onset_severe_dehydration = max(self.sim.date, date_of_outcome - DateOffset(
                 days=self.module.parameters['days_onset_severe_dehydration_before_death']))
-            self.module.sim.schedule_event(DiarrhoeaSevereDehydrationEvent(self.module, person_id),
+            self.sim.schedule_event(DiarrhoeaSevereDehydrationEvent(self.module, person_id),
                                            date_of_onset_severe_dehydration)
         else:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_of_outcome
@@ -1050,7 +1050,7 @@ class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
         date_of_death = self.sim.date \
                         + DateOffset(days=self.module.parameters['days_onset_severe_dehydration_before_death'])
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_death
-        self.module.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_death)
+        self.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_death)
 
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
