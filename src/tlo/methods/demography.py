@@ -286,13 +286,14 @@ class Demography(Module):
 
         # ------------ Additional logical check ------------
         # Todo: more logical check on the PY calc may be useful
-        # * Number of PY lived last year is between N(t-1) and N(t)
+        # * Number of PY lived last year is between PopSize(one year ago) and PopSize(now)
         df = self.sim.population.props
         pop_size_last_year = len(df.loc[(df['date_of_birth'] <= (self.sim.date - DateOffset(years=1))) &
-                                             ((df['date_of_death'] < (self.sim.date - DateOffset(years=1))) | pd.isnull(
-                                         df['date_of_death']))])
+                                        ((df['date_of_death'] < (self.sim.date - DateOffset(years=1))) | pd.isnull(
+                                            df['date_of_death']))])
         pop_size_now = len(df.loc[df['is_alive']])
-        assert min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
+        check = min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
+        # assert min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
         # ----------------------------------------------------
 
         return py
