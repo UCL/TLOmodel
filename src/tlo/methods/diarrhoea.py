@@ -36,6 +36,8 @@ class Diarrhoea(Module):
         'astrovirus',
         'tEPEC'}
 
+    # Todo: Some name of parameetr could be simplified - no need for any 'gi_' prefixes
+    # NB. At all times use the exact name of the pathogens as written above.
     PARAMETERS = {
         'base_inc_rate_diarrhoea_by_rotavirus':
             Parameter(Types.LIST,
@@ -347,8 +349,8 @@ class Diarrhoea(Module):
 
     # Declare symptoms that this module will cause:
     SYMPTOMS = {'diarrhoea', 'fever', 'vomiting', 'dehydration'}
-
-    # Todo: decide if we want dehydration to be a symptom
+    # Todo: decide if we want dehydration to be a symptom: currently it is not doing very much: just taken to signify
+    #  non-severe dehydration and is onset immididstely when diarrhoea is onset
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
