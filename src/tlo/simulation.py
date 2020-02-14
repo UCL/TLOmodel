@@ -69,6 +69,7 @@ class Simulation:
                                     'tlo.methods.hiv': logging.INFO}
         :return: Path of the log file.
         """
+
         if not filename:
             # no filename given, clear setup and initialise writing to stdout
             logging.init_logging(self)

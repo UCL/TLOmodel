@@ -1,5 +1,7 @@
+import json
 import logging as _logging
 
+from . import encoding
 
 def disable(level):
     _logging.disable(level=level)
@@ -23,6 +25,7 @@ class Logger:
         if name == 'tlo':
             self._std_logger.propagate = False
         self.name = self._std_logger.name
+        self.keys = set()
         # populated by init_logging(simulation)
         self.simulation = None
 
@@ -55,14 +58,42 @@ class Logger:
     def setLevel(self, level):
         self._std_logger.setLevel(level)
 
+    def _msg(self, level, key, data: dict = None, description=None):
+        tlo_logger = getLogger('tlo')
+        # TODO: filter messages
+        if key not in self.keys:
+            self.keys.add(key)
+            # write header json
+            header = {"level": level,
+                      "module": self.name,
+                      "key": key,
+                      "columns": {key: value.dtype.name for key, value in data.items()},
+                      "description": description}
+            for handler in tlo_logger.handlers:
+                json.dump(header, handler.stream)
+                handler.stream.write(handler.terminator)
+
+        # write data json
+        row = {"module": self.name, "key": key,
+               "date": tlo_logger.simulation.date.isoformat(),
+               "values": data}
+        for handler in tlo_logger.handlers:
+            json.dump(row, handler.stream, cls=encoding.PandasEncoder)
+            handler.stream.write(handler.terminator)
+
     def critical(self, msg, *args, **kwargs):
         self._std_logger.critical(msg, *args, **kwargs)
 
     def debug(self, msg, *args, **kwargs):
         self._std_logger.debug(msg, *args, **kwargs)
 
-    def info(self, msg, *args, **kwargs):
-        self._std_logger.info(msg, *args, **kwargs)
+    def info(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+        if msg:
+            self._std_logger.info(msg, *args, **kwargs)
+        elif key and data:
+            self._msg(level="INFO", key=key, data=data, description=description)
+        else:
+            raise ValueError("Logging information was not recognised")
 
     def warning(self, msg, *args, **kwargs):
         self._std_logger.warning(msg, *args, **kwargs)
@@ -82,3 +113,4 @@ WARNING = _logging.WARNING
 
 _FORMATTER = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
 _LOGGERS = {'tlo': Logger('tlo', WARNING)}
+
