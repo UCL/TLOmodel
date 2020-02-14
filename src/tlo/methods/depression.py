@@ -128,7 +128,7 @@ class Depression(Module):
 
     def read_parameters(self, data_folder):
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_nov19.xlsx',
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_update_feb_20_not_yet_in_master.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
