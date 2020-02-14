@@ -2033,7 +2033,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # select currently pregnant women without IPTp, malaria-negative
-        p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected]
+        p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected & ~df.ma_iptp]
 
         for person_index in p1:
             logger.debug(

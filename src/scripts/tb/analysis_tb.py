@@ -24,7 +24,7 @@ from tlo.methods import (
 start_time = time.time()
 
 # Where will output go
-outputpath = "./outputs/hiv_tb/"
+outputpath = Path("./outputs/hiv_tb")
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -85,8 +85,6 @@ print("--- %s seconds ---" % (time.time() - start_time))
 
 # %% read the results
 output = parse_log_file(logfile)
-
-# output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
 
 # ------------------------------------- DEMOGRAPHY OUTPUTS ------------------------------------- #
 
@@ -288,7 +286,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(50, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.show()
 # plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
