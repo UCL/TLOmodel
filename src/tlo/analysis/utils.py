@@ -1,7 +1,9 @@
 """
 General utility functions for TLO analysis
 """
+import json
 from ast import literal_eval
+from collections import defaultdict
 
 import pandas as pd
 
@@ -41,16 +43,21 @@ def parse_line(line):
     return info
 
 
-def parse_log_file(filepath):
+def parse_log_file(filepath, level=None):
     """
     Parses logged output from a TLO run and create Pandas dataframes for analysis. See
-    parse_output() for details
+    parse_output() for details of stdlib logging parsing
+    and parse_structured_logging() for tlo structured logging parsing
 
     :param filepath: file path to log file
+    :param level: logging level to be parsed, if used then tlo structured logging is enabled
     :return: dictionary of parsed log data
     """
     with open(filepath) as log_file:
-        return parse_output(log_file.readlines())
+        if level:
+            return parse_structured_output(log_file.readlines(), level=level)
+        else:
+            return parse_output(log_file.readlines())
 
 
 def parse_output(list_of_log_lines):
@@ -133,6 +140,36 @@ def parse_output(list_of_log_lines):
             # append the new row to the dataframe for this logger & log name
             o[i['logger']][i['key']] = df.append(row, ignore_index=True)
     return o
+
+
+def parse_structured_output(log_lines, level):
+    allowed_logs = set()
+    parsed_logs = defaultdict(dict)
+    output_logs = defaultdict(dict)
+
+    for line in log_lines:
+        # only parse json entities
+        if line.startswith('{'):
+            packet = json.loads(line)
+            # new header line, if this is the right level, then add module and key to log with header and blank data
+            if 'level' in packet.keys():
+                if packet['level'] == level:
+                    allowed_logs.add(f'{packet["module"]}_{packet["key"]}')
+                    parsed_logs[packet['module']][packet['key']] = {'header': packet, 'values': [], 'dates': []}
+                    continue
+            # log data row if we allow this logger
+            if f'{packet["module"]}_{packet["key"]}' in allowed_logs:
+                parsed_logs[packet['module']][packet['key']]['values'].append(packet['values'])
+                parsed_logs[packet['module']][packet['key']]['dates'].append(pd.Timestamp(packet['date']))
+
+    # convert dictionaries to dataframe
+    for module, keys in parsed_logs.items():
+        for key, data in keys.items():
+            output_logs[module][key] = pd.DataFrame(
+                data["values"], columns=data["header"]["columns"].keys(), index=data["dates"]
+            )
+
+    return output_logs
 
 
 def make_calendar_period_lookup():
