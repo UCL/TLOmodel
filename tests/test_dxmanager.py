@@ -84,6 +84,8 @@ cons_req_as_footprint_for_consumable_that_is_available = consumables_needed = {
     'Intervention_Package_Code': {},
     'Item_Code': {item_code_for_consumable_that_is_available: 1},
 }
+
+
 # --------------------------------------------------------------------------
 
 
@@ -116,15 +118,29 @@ def test_create_dx_test_and_register():
     )
 
     dx_manager.register_dx_test(
-        my_list_of_tests=(my_test1, my_test2)
+        my_tuple_of_tests=(my_test1, my_test2)
     )
 
-    # create duplicate- should issue warning and not be added
+    # try to add the same test again under exactly the same name- should not throw error but not add another
     dx_manager.register_dx_test(
-        my_test2_diff_name_should_not_be_added=my_test2
+        my_test1=my_test1,
     )
 
     dx_manager.print_info_about_all_dx_tests()
+    assert 3 == len(dx_manager.dx_tests)
+
+    # Create duplicate of a test with a different name and same DxTest: should fail and not add a test
+    try:
+        dx_manager.register_dx_test(my_test2_diff_name_should_not_be_added=my_test2)
+    except:
+        pass
+    assert 3 == len(dx_manager.dx_tests)
+
+    # Create a duplicate of test: same name and different DxTest: should fail and not add a test
+    try:
+        dx_manager.register_dx_test(my_test1=DxTest(property='is_alive'))
+    except:
+        pass
     assert 3 == len(dx_manager.dx_tests)
 
 
@@ -351,7 +367,7 @@ def test_run_batch_of_dx_test_in_one_call():
     assert result['my_test2'] == df.at[person_id, 'cs_has_cs']
 
 
-def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
+def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution():
     # Create the tests:
     my_test1_not_available = DxTest(
         cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_not_available,
@@ -366,15 +382,15 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     # Create new DxManager
     dx_manager = DxManager(sim.modules['HealthSystem'])
 
-    # Register list of tests with DxManager:
+    # Register tuple of tests with DxManager:
     dx_manager.register_dx_test(single_test_not_available=my_test1_not_available)
 
-    dx_manager.register_dx_test(list_of_tests_with_first_not_available=(
+    dx_manager.register_dx_test(tuple_of_tests_with_first_not_available=(
         my_test1_not_available,
         my_test2_is_available
     ))
 
-    dx_manager.register_dx_test(list_of_tests_with_first_available=(
+    dx_manager.register_dx_test(tuple_of_tests_with_first_available=(
         my_test2_is_available,
         my_test1_not_available
     ))
@@ -390,24 +406,24 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     )
     assert result is None
 
-    # Run the list of test (when the first test fails): should return a result having run test1 and test2
+    # Run the tuple of test (when the first test fails): should return a result having run test1 and test2
     result, tests_tried = dx_manager.run_dx_test(
-                                    dx_tests_to_run='list_of_tests_with_first_not_available',
-                                    hsi_event=hsi_event,
-                                    report_dxtest_tried=True
-                                    )
+        dx_tests_to_run='tuple_of_tests_with_first_not_available',
+        hsi_event=hsi_event,
+        report_dxtest_tried=True
+    )
     assert result is not None
     assert result == sim.population.props.at[person_id, 'mi_status']
     assert len(tests_tried) == 2
     assert tests_tried[my_test1_not_available] is False
     assert tests_tried[my_test2_is_available] is True
 
-    # Run the list of tests (when the first test fails): should return a result having run test2 and not tried test1
+    # Run the tuple of tests (when the first test fails): should return a result having run test2 and not tried test1
     result, tests_tried = dx_manager.run_dx_test(
-                                    dx_tests_to_run='list_of_tests_with_first_available',
-                                    hsi_event=hsi_event,
-                                    report_dxtest_tried=True
-                                    )
+        dx_tests_to_run='tuple_of_tests_with_first_available',
+        hsi_event=hsi_event,
+        report_dxtest_tried=True
+    )
     assert result is not None
     assert result, tests_tried == sim.population.props.at[person_id, 'mi_status']
     assert len(tests_tried) == 1

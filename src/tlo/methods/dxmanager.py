@@ -23,6 +23,7 @@ class DxManager:
 
     :param hs_module: an instance of HealthSystem module
     """
+
     def __init__(self, hs_module):
         self.hs_module = hs_module
         self.dx_tests: Dict[str, Tuple[DxTest]] = dict()
@@ -34,23 +35,26 @@ class DxManager:
         for name, dx_test in dict_of_tests_to_register.items():
             # Examine the proposed name of the dx_test:
             assert isinstance(name, str), f'Name is not a string: {name}'
-            assert name not in self.dx_tests, 'Test name already in use'
 
             # Examine the proposed dx_test:
-            # Make each item provided into a list of DxTest objects.
+            # Make each item provided into a tuple of DxTest objects.
             if not isinstance(dx_test, tuple):
-                dx_test = (dx_test, )
+                dx_test = (dx_test,)
 
             # Check that the objects given are each a DxTest object
             assert all([isinstance(d, DxTest) for d in dx_test]), f'One of the passed objects is not a DxTest object.'
 
-            # Check if this List of DxTests is a duplicate
-            if dx_test in self.dx_tests.values():
-                logger.warning('This exact same DxTest or list of DxTests has already been registered.')
-                # TODO: lot of effort to prevent this - throw error?
-            else:
-                # Add the list of DxTests to the dict of registered DxTests
-                self.dx_tests.update({name: dx_test})
+            # Check if this tuple of DxTests is a duplicate of something already registered.
+            if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
+                try:
+                    assert self.dx_tests[name] == dx_test
+                except:
+                    raise ValueError(
+                        "The same Dx_Test or the same name have been registered previously against a different name "
+                        "or DxTest.")
+
+            # Add the list of DxTests to the dict of registered DxTests
+            self.dx_tests.update({name: dx_test})
 
     def print_info_about_dx_test(self, name_of_dx_test):
         assert name_of_dx_test in self.dx_tests, f'This DxTest is not recognised: {name_of_dx_test}'
@@ -59,7 +63,7 @@ class DxManager:
         print(f'----------------------')
         print(f'** {name_of_dx_test} **')
         for num, test in enumerate(the_dx_test):
-            print(f'   Position in List #{num}')
+            print(f'   Position in tuple #{num}')
             print(f'consumables: {test.cons_req_as_footprint}')
             print(f'sensitivity: {test.sensitivity}')
             print(f'specificity: {test.specificity}')
@@ -127,6 +131,26 @@ def _default_if_none(value, default):
 
 
 class DxTest:
+    """
+    This is the helper class that contains information about a Diagnostic Test.
+    It is specified by passing at initialisation:
+    * Mandatory:
+    :param property: the column in the sim.population.props that the diagnostic will observe
+    * Optional:
+    Use of consumable - specify either:
+        :param cons_req_as_footprint: the footprint of the consumables that are required for the test to be done.
+        or:
+        :param cons_req_as_footprint: the item code of the consumables that are required for the test to be done.
+    Performance of test:
+        Specify any of the following if the property's dtype is bool
+            :param sensitivity: the sensitivity of the test (probability that a true value will be observed as true)
+            :param specificity: the specificity of the test (probabilit that a false value will be observed as false)
+        Specify any of the following if the property's dtype is numeric
+            :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
+                                        the observation of a continuous property
+            :param threshold: the observed value of a continuous property above which the result of the test is True.
+    """
+
     def __init__(self,
                  property: str,
                  cons_req_as_footprint=None,
@@ -138,7 +162,7 @@ class DxTest:
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
-        assert isinstance(property, str), 'argument "parameter" is required'
+        assert isinstance(property, str), 'argument "property" is required'
         self.property = property
 
         # Store consumable code (None means that no consumables are required)
