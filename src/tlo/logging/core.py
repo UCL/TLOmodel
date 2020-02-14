@@ -64,19 +64,22 @@ class Logger:
         if key not in self.keys:
             self.keys.add(key)
             # write header json
+            columns = {"date": "pd.Timestamp"}
+            columns.update({key: value.dtype.name for key, value in data.items()})
             header = {"level": level,
                       "module": self.name,
                       "key": key,
-                      "columns": {key: value.dtype.name for key, value in data.items()},
+                      "columns": columns,
                       "description": description}
             for handler in tlo_logger.handlers:
                 json.dump(header, handler.stream)
                 handler.stream.write(handler.terminator)
 
         # write data json
+        values = [tlo_logger.simulation.date.isoformat()]
+        values.extend(data.values())
         row = {"module": self.name, "key": key,
-               "date": tlo_logger.simulation.date.isoformat(),
-               "values": list(data.values())}
+               "values": values}
         for handler in tlo_logger.handlers:
             json.dump(row, handler.stream, cls=encoding.PandasEncoder)
             handler.stream.write(handler.terminator)

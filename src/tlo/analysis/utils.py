@@ -160,13 +160,12 @@ def parse_structured_output(log_lines, level):
             # log data row if we allow this logger
             if f'{packet["module"]}_{packet["key"]}' in allowed_logs:
                 parsed_logs[packet['module']][packet['key']]['values'].append(packet['values'])
-                parsed_logs[packet['module']][packet['key']]['dates'].append(pd.Timestamp(packet['date']))
 
     # convert dictionaries to dataframe
     for module, keys in parsed_logs.items():
         for key, data in keys.items():
             output_logs[module][key] = pd.DataFrame(
-                data["values"], columns=data["header"]["columns"].keys(), index=data["dates"]
+                data["values"], columns=data["header"]["columns"].keys(),
             )
 
     return output_logs
