@@ -13,7 +13,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     symptommanager,
     healthburden,
-    healthseekingbehaviour)
+    healthseekingbehaviour, dx_algorithm_child)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -68,6 +68,7 @@ def test_basic_run_of_diarhoea_module_with_health_care():
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
+    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)

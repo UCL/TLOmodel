@@ -1142,7 +1142,8 @@ class HSI_Diarrhoea_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_current_severe_dehydration'] = False
 
         # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
+                                                          disease_module=self.sim.modules['Diarrhoea'])
 
 
 class HSI_Diarrhoea_Non_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
@@ -1169,7 +1170,8 @@ class HSI_Diarrhoea_Non_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin)
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
+                                                          disease_module=self.sim.modules['Diarrhoea'])
 
 
 
@@ -1197,7 +1199,8 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
+                                                          disease_module=self.sim.modules['Diarrhoea'])
 
 
 class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
@@ -1224,7 +1227,8 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
+                                                          disease_module=self.sim.modules['Diarrhoea'])
 
 
 class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
@@ -1251,5 +1255,6 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id, disease_module=self.module)
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
+                                                          disease_module=self.sim.modules['Diarrhoea'])
 

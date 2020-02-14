@@ -7,10 +7,7 @@ import datetime
 import os
 from pathlib import Path
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import (
-    parse_log_file,
-)
+from tlo import Date, Simulation
 from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
     symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child
 
@@ -26,22 +23,10 @@ logfile = outputpath / ('LogFile' + datestamp + '.log')
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 200
+popsize = 5000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
-
-# this block of code is to capture the outputs to file
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
-logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.diarrhoea").setLevel(logging.INFO)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -58,6 +43,4 @@ sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# this will make sure that the logging file is complete
-fh.flush()
-output = parse_log_file(logfile)
+
