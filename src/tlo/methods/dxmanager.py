@@ -54,7 +54,7 @@ class DxManager:
                         "or DxTest.")
 
             # Add the list of DxTests to the dict of registered DxTests
-            self.dx_tests.update({name: dx_test})
+            self.dx_tests[name] = dx_test
 
     def print_info_about_dx_test(self, name_of_dx_test):
         assert name_of_dx_test in self.dx_tests, f'This DxTest is not recognised: {name_of_dx_test}'
