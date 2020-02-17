@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -9,7 +10,7 @@ from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class NewbornOutcomes(Module):
@@ -222,24 +223,24 @@ class NewbornOutcomes(Module):
 
         df = population.props
 
-        df['nb_early_preterm'] = False
-        df['nb_late_preterm'] = False
-        df['nb_congenital_anomaly'].values[:] = 'none'
-        df['nb_early_onset_neonatal_sepsis'] = False
-        df['nb_respiratory_depression'] = False
-        df['nb_hypoxic_ischemic_enceph'] = False
-        df['nb_encephalopathy'].values[:] = 'none'
-        df['nb_intravascular_haem'] = False
-        df['nb_necrotising_entero'] = False
-        df['nb_resp_distress_synd'] = False
-        df['nb_retinopathy_prem'].values[:] = 'none'
-        df['nb_ongoing_impairment'].values[:] = 'none'
-        df['nb_birth_weight'].values[:] = 'NBW'
-        df['nb_size_for_gestational_age'].values[:] = 'AGA'
-        df['nb_early_breastfeeding'] = False
-        df['nb_kmc'] = False
-        df['nb_death_after_birth'] = False
-        df['nb_death_after_birth_date'] = pd.NaT
+        df.loc[df.is_alive, 'nb_early_preterm'] = False
+        df.loc[df.is_alive, 'nb_late_preterm'] = False
+        df.loc[df.is_alive, 'nb_congenital_anomaly'].values[:] = 'none'
+        df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
+        df.loc[df.is_alive, 'nb_respiratory_depression'] = False
+        df.loc[df.is_alive, 'nb_hypoxic_ischemic_enceph'] = False
+        df.loc[df.is_alive, 'nb_encephalopathy'].values[:] = 'none'
+        df.loc[df.is_alive, 'nb_intravascular_haem'] = False
+        df.loc[df.is_alive, 'nb_necrotising_entero'] = False
+        df.loc[df.is_alive, 'nb_resp_distress_synd'] = False
+        df.loc[df.is_alive, 'nb_retinopathy_prem'].values[:] = 'none'
+        df.loc[df.is_alive, 'nb_ongoing_impairment'].values[:] = 'none'
+        df.loc[df.is_alive, 'nb_birth_weight'].values[:] = 'NBW'
+        df.loc[df.is_alive, 'nb_size_for_gestational_age'].values[:] = 'AGA'
+        df.loc[df.is_alive, 'nb_early_breastfeeding'] = False
+        df.loc[df.is_alive, 'nb_kmc'] = False
+        df.loc[df.is_alive, 'nb_death_after_birth'] = False
+        df.loc[df.is_alive, 'nb_death_after_birth_date'] = pd.NaT
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -264,6 +265,9 @@ class NewbornOutcomes(Module):
             df.at[individual_id, 'nb_death_after_birth'] = True
             df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
 
+            logger.debug(F'This is NewbornOutcomes scheduling a death for person %d on date %s who died due to {cause}'
+                         'complications following birth', individual_id, self.sim.date)
+
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module is used to apply the probability that a newborn will experience
         complications following delivery (which may or may not be attributable to the delivery process). This section of
@@ -272,8 +276,14 @@ class NewbornOutcomes(Module):
 
         df = self.sim.population.props
         params = self.parameters
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
         nci = self.newborn_care_info
+
+        # mni dictionary is deleted on maternal death/disease reset. Condition on mother being alive to read in mni
+        # from labour
+        if df.at[mother_id, 'is_alive'] or (~df.at[mother_id, 'is_alive'] &
+                                            ~df.at[mother_id, 'la_intrapartum_still_birth']):
+            mni = self.sim.modules['Labour'].mother_and_newborn_info
+            m = mni[mother_id]
 
         df.at[child_id, 'nb_early_preterm'] = False
         df.at[child_id, 'nb_late_preterm'] = False
@@ -295,7 +305,6 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_death_after_birth_date'] = pd.NaT
 
         child = df.loc[child_id]
-        m = mni[mother_id]
 
         # Here we set the variables for newborns delivered at less than 37 weeks, allocating them to either late or
         # early  preterm based on the gestation at labour
@@ -324,7 +333,7 @@ class NewbornOutcomes(Module):
         # TODO: will labour initialise first ensuring InstantaneousDeath fires before this logic?
 
         # Here we apply the prevalence of congenital birth anomalies in infants who have survived to delivery
-        if child.is_alive & ~m['stillbirth_in_labour']:
+        if child.is_alive and ~m['stillbirth_in_labour']:
             if self.rng.random_sample() < params['prob_congenital_ba']:
                 etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
                 probabilities = params['prob_cba_type']
@@ -378,8 +387,8 @@ class NewbornOutcomes(Module):
                 # TODO: this should be adapted to use the linear model if possible
 
             # If the neonate was born at home we calculate the risk and make changes to the data frame
-            elif m['delivery_setting'] == 'home_birth':
-                if self.eval(params['nb_newborn_equations']['sepsis'], child_id):
+            elif m['delivery_setting'] == 'home_birth' and self.eval(params['nb_newborn_equations']['sepsis'],
+                                                                     child_id):
                     df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
 
                     logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
@@ -476,33 +485,33 @@ class NewbornOutcomes(Module):
     # ======================================= SCHEDULING NEWBORN CARE  ================================================
 
                 # Neonates who were delivered in a facility are automatically scheduled to receive care after birth
-                if m['delivery_setting'] == 'facility_delivery':
-                    event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self, person_id=child_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                        priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
-                    logger.debug(
-                        'This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesCareFollowingDelivery '
-                        'for person %d following a facility delivery', child_id)
+            if m['delivery_setting'] == 'facility_delivery':
+                event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self, person_id=child_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1))
+                logger.debug(
+                    'This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesCareFollowingDelivery '
+                    'for person %d following a facility delivery', child_id)
 
                 # If this neonate was delivered at home and develops a complications we determine the likelihood of care
                 # seeking
-                if (m['delivery_setting'] == 'home_birth') & (child.nb_respiratory_depression or
-                                                              child.nb_early_onset_neonatal_sepsis or
-                                                              (child.nb_encephalopathy == 'mild_enceph') or
-                                                              (child.nb_encephalopathy == 'moderate_enceph') or
-                                                              (child.nb_encephalopathy == 'severe_enceph')):
-                    prob = 0.75
-                    random = self.rng.random_sample(size=1)
-                    if random < prob:
-                        event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self.module, person_id=child_id)
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                            priority=0,
-                                                                            topen=self.sim.date,
-                                                                            tclose=3
-                                                                            )
-                        logger.debug(
+            if (m['delivery_setting'] == 'home_birth') & (child.nb_respiratory_depression or
+                                                          child.nb_early_onset_neonatal_sepsis or
+                                                          (child.nb_encephalopathy == 'mild_enceph') or
+                                                          (child.nb_encephalopathy == 'moderate_enceph') or
+                                                          (child.nb_encephalopathy == 'severe_enceph')):
+                prob = 0.75
+                random = self.rng.random_sample(size=1)
+                if random < prob:
+                    event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self.module, person_id=child_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                        priority=0,
+                                                                        topen=self.sim.date,
+                                                                        tclose=3)
+
+                    logger.debug(
                             'This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesCareFollowingDelivery'
                             'for person %d following a home birth', child_id)
 
@@ -512,24 +521,28 @@ class NewbornOutcomes(Module):
     # ============================================ BREAST FEEDING AT HOME ============================================
                 # Using DHS data we apply a one of probability that women who deliver at home will initiate
                 # breastfeeding within one hour of birth
-                if (m['delivery_setting'] == 'home_birth') and (~child.nb_respiratory_depression and
-                                                                ~child.nb_early_onset_neonatal_sepsis and
-                                                                (child.nb_encephalopathy == 'none')):
+            if (m['delivery_setting'] == 'home_birth') and (~child.nb_respiratory_depression and
+                                                            ~child.nb_early_onset_neonatal_sepsis and
+                                                            (child.nb_encephalopathy == 'none')):
 
-                    if self.rng.random_sample() < params['prob_early_breastfeeding_hb']:
-                        df.at[child_id, 'nb_early_breastfeeding'] = True
-                        logger.debug(
-                            'Neonate %d has started breastfeeding within 1 hour of birth', child_id)
-                    else:
-                        logger.debug(
-                            'Neonate %d did not start breastfeeding within 1 hour of birth', child_id)
+                if self.rng.random_sample() < params['prob_early_breastfeeding_hb']:
+                    df.at[child_id, 'nb_early_breastfeeding'] = True
+                    logger.debug(
+                        'Neonate %d has started breastfeeding within 1 hour of birth', child_id)
+                else:
+                    logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', child_id)
 
     # ===================================== SCHEDULING NEWBORN DEATH EVENT  ============================================
                 # All newborns are then scheduled to pass through a newborn death event to determine likelihood of death
                 # in the presence of complications
 
-                self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=2))
-                logger.info('This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person %d', child_id)
+            self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=2))
+            logger.info('This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person %d', child_id)
+
+            # In the rare instance that a baby has been delivered following a mothers death in labour, we now delete
+            # the mni dictionary record for that woman
+            if m['death_in_labour']:
+                del mni[mother_id]
 
     def on_hsi_alert(self, person_id, treatment_id):
 
@@ -577,23 +590,15 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
         if child.nb_encephalopathy == 'severe_enceph':
             self.module.set_neonatal_death_status(individual_id, cause='enceph_severe')
 
-        # if child.nb_respiratory_depression:
+        if child.nb_respiratory_depression:
             self.module.set_neonatal_death_status(individual_id, cause='respiratory_depression')
-
-        # Schedule the death of any newborns who have died from their complications, whilst cause of death is recorded
-        # as "neonatal complications" we will have contributory factors recorded as the properties of newborns
 
         if child.nb_death_after_birth:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause="neonatal complications"), self.sim.date)
+            assert child.is_alive == 'False'
 
-            logger.debug('This is NewbornDeathEvent scheduling a death for person %d on date %s who died due to '
-                         'complications following birth', individual_id, self.sim.date)
-            logger.info('%s|neonatal_death_48hrs|%s', self.sim.date,
-                        {'age': df.at[individual_id, 'age_years'],
-                         'person_id': individual_id})
-            #  Todo: make sure this is delayed enough following HSI?
-
+        #  Todo: make sure this is delayed enough following HSI?
         #  TODO: Tim C suggested we need to create an offset (using a distribution?) so we're generating deaths for the
         #   first 48 hours
         # TODO: No deaths from preterm birth complications are handled here- need to determine where that will be done
@@ -904,30 +909,41 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeE
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-
+    """ This is NewbornOutcomesLoggingEvent. Currently it produces a yearly output of neonatal and infant mortality.
+    It is incomplete as both neonatal and infant mortality will be effected by deaths outside of this module """
     def __init__(self, module):
-        """schedule logging to repeat every 3 months
-        """
-    #    self.repeat = 3
-    #    super().__init__(module, frequency=DateOffset(days=self.repeat))
         super().__init__(module, frequency=DateOffset(months=12))
 
     def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
-        """
-        # First 48 hours NMR:
+        df = self.sim.population.props
 
-    #    one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-    #    live_births = df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)]
-    #    live_births_sum = len(live_births)
-    #    print(live_births_sum)
+        # Here we calculated the infant mortality rate, deaths in the first year of life per 1000 live births
+        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+        live_births_sum = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
 
-    #    deaths = df.index[(df.nb_death_after_birth == True) & (df.nb_death_after_birth_date > one_year_prior) &
-    #                      (df.nb_death_after_birth_date < self.sim.date)]
+        cumm_deaths = len(df.index[df.nb_death_after_birth & (df.nb_death_after_birth_date > one_year_prior) &
+                          (df.nb_death_after_birth_date < self.sim.date)])
 
-    #    cumm_deaths = len(deaths)
-    #    print(cumm_deaths)
+        if cumm_deaths == 0:
+            imr = 0
+        else:
+            imr = cumm_deaths / live_births_sum * 1000
 
-    #    nmr = cumm_deaths / live_births_sum * 1000
-    #    print('The neonatal mortality ratio for this year is', nmr)
+        logger.info(f'The infant mortality ratio on date %s for this year is {imr} per 1000 live births',
+                    self.sim.date)
+
+        # Here we calculated the neonatal mortality rate, deaths in the 28 days of life per 1000 live births
+        neonatal_deaths = len(df.index[~df.is_alive & ((df.nb_death_after_birth_date - df.date_of_birth)
+                                                                  < pd.Timedelta(28, unit='D'))])
+
+        if neonatal_deaths == 0:
+            nmr = 0
+        else:
+            nmr = cumm_deaths / live_births_sum * 1000
+
+        logger.info(f'The neonatal mortality ratio on date %s for this year is {nmr} per 1000 live births',
+                    self.sim.date)
+
+
+
+

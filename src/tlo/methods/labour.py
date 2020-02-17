@@ -10,7 +10,7 @@ from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Labour (Module):
@@ -748,14 +748,14 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                 # Here we schedule the birth event for 2 days after labour- we do this prior to the death event as women
                 # who die but still deliver a live child will pass through birth event
                 due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
-                self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=3))
+                self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=4))
                 logger.debug('This is LabourOnsetEvent scheduling a birth on date %s to mother %d', due_date,
                              individual_id)
 
                 # We schedule all women to move through the death event where those who have developed a complication
                 # that hasn't been treated or treatment has failed will have a case fatality rate applied
                 self.sim.schedule_event(LabourDeathEvent(self.module, individual_id), self.sim.date +
-                                        DateOffset(days=2))
+                                        DateOffset(days=3))
 
                 logger.debug('This is LabourOnsetEvent scheduling a potential death on date %s for mother %d',
                              self.sim.date, individual_id)
@@ -829,16 +829,15 @@ class BirthEvent(Event, IndividualScopeEventMixin):
 
         # This event tells the simulation that the woman's pregnancy is over and generates the new child in the
         # data frame
-        logger.info('@@@@ A Birth is now occuring, to mother %d', mother_id)
         df = self.sim.population.props
-        mni = self.module.mother_and_newborn_info
         person = df.loc[mother_id]
 
         df.at[mother_id, 'la_currently_in_labour'] = False
 
         # If the mother is alive and still pregnant we generate a live child and the woman is scheduled to move to the
         # postpartum event to determine if she experiences any additional complications
-        if person.is_alive and person.is_pregnant:
+        if person.is_alive and person.is_pregnant and ~person.la_intrapartum_still_birth:
+            logger.info('@@@@ A Birth is now occuring, to mother %d', mother_id)
             #  TODO: Ensure women who have had an IP still birth still move to postpartum event
             self.sim.do_birth(mother_id)
             # gestational_age_in_weeks, is_pregnant and _date_of_last_pregnancy are reset via the on_birth of their
@@ -850,14 +849,16 @@ class BirthEvent(Event, IndividualScopeEventMixin):
 
         # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
         # stillbirth rates. She will not pass through the postpartum complication events
-        if ~person.is_alive and person.is_pregnant & mni[mother_id]['death_in_labour']:
+        if ~person.is_alive and ~person.la_intrapartum_still_birth and person.la_maternal_death:
+            logger.debug('@@@@ A Birth is now occuring, to mother %d who died in childbirth but her child survived',
+                         mother_id)
             self.sim.do_birth(mother_id)
 
 
 class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
     """This is PostpartumLabour event. It is scheduled by BirthEvent immediately following birth. This event applies the
     probability that women delivering at home will experience complications, makes the appropriate changes to the data
-    frame. This event schedules the PostPartumDeathEvent (3 days post this event)and the DisabilityResetEvent"""
+    frame. This event schedules the PostPartumDeathEvent (4 days post this event)and the DisabilityResetEvent"""
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
@@ -888,9 +889,9 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
             # complications may experience death
 
             self.sim.schedule_event(PostPartumDeathEvent(self.module, individual_id), self.sim.date
-                                    + DateOffset(days=3))
+                                    + DateOffset(days=4))
             logger.info('This is PostPartumEvent scheduling a potential death for person %d on date %s', individual_id,
-                        self.sim.date + DateOffset(days=3))  # Date offset to allow for interventions
+                        self.sim.date + DateOffset(days=4))  # Date offset to allow for interventions
 
             # Here we schedule women to an event which resets 'daly' disability associated with delivery complications
             self.sim.schedule_event(DisabilityResetEvent(self.module, individual_id),
@@ -918,8 +919,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         # Similarly we apply a risk of still birth associated with each complication
 
         def set_maternal_death_status_intrapartum(cause):
-            logger.debug(f'{cause} has contributed to person %d death during labour', individual_id)
             if rng.random_sample() < params[f'cfr_{cause}']:
+                logger.debug(f'{cause} has contributed to person %d death during labour', individual_id)
                 mni[individual_id]['death_in_labour'] = True
                 mni[individual_id]['cause_of_death_in_labour'].append(cause)
                 df.at[individual_id, 'la_maternal_death'] = True
@@ -927,32 +928,35 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
 
                 # then if she does die, we determine if the child will still survive
                 if rng.random_sample() < params[f'prob_still_birth_{cause}_md']:
+                    logger.debug(f'Following person %d death due to{cause} they have experienced a still'
+                                 f'birth', individual_id)
                     df.at[individual_id, 'la_intrapartum_still_birth'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
                     df.at[individual_id, 'ps_previous_stillbirth'] = True
 
                 # Otherwise we just determine if this complication will lead to a stillbirth
-                else:
-                    if rng.random_sample() < params[f'prob_still_birth_{cause}']:
-                        df.at[individual_id, 'la_intrapartum_still_birth'] = True
-                        mni[individual_id]['stillbirth_in_labour'] = True
-                        df.at[individual_id, 'ps_previous_stillbirth'] = True
+            else:
+                if rng.random_sample() < params[f'prob_still_birth_{cause}']:
+                    logger.debug(f'person %d has experienced a still birth following {cause} in labour')
+                    df.at[individual_id, 'la_intrapartum_still_birth'] = True
+                    mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
 
             # First we determine if the mother will die due to her complication
-            if mni[individual_id]['labour_is_currently_obstructed']:
-                set_maternal_death_status_intrapartum(cause='obstructed_labour')
+        if mni[individual_id]['labour_is_currently_obstructed']:
+            set_maternal_death_status_intrapartum(cause='obstructed_labour')
 
-            if mni[individual_id]['eclampsia']:
-                set_maternal_death_status_intrapartum(cause='eclampsia')
+        if mni[individual_id]['eclampsia']:
+            set_maternal_death_status_intrapartum(cause='eclampsia')
 
-            if mni[individual_id]['antepartum_haem']:
-                set_maternal_death_status_intrapartum(cause='aph')
+        if mni[individual_id]['antepartum_haem']:
+            set_maternal_death_status_intrapartum(cause='aph')
 
-            if mni[individual_id]['sepsis']:
-                set_maternal_death_status_intrapartum(cause='sepsis')
+        if mni[individual_id]['sepsis']:
+            set_maternal_death_status_intrapartum(cause='sepsis')
 
-            if mni[individual_id]['uterine_rupture']:
-                set_maternal_death_status_intrapartum(cause='uterine_rupture')
+        if mni[individual_id]['uterine_rupture']:
+            set_maternal_death_status_intrapartum(cause='uterine_rupture')
 
             # TODO: Will we apply a reduced CFR in the instance of unsuccessful interventions
 
@@ -970,6 +974,10 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             logger.info('%s|labour_complications|%s', self.sim.date,
                         {'person_id': individual_id,
                          'labour_profile': mni[individual_id]})
+            if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
+                # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
+                # the baby has survived we delete the dictionary following the on_birth function of NewbornOutcomes
+                del mni[individual_id]
 
         if df.at[individual_id, 'la_intrapartum_still_birth']:
             logger.info('@@@@ A Still Birth has occurred, to mother %s', individual_id)
@@ -1023,6 +1031,8 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             logger.debug('%s|labour_complications|%s', self.sim.date,
                          {'person_id': individual_id,
                           'labour_profile': mni[individual_id]})
+            del mni[individual_id]
+
         else:
             # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to false
             # TODO: Consider how best to deal with complications that are long lasting.
@@ -1852,8 +1862,8 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
 
 # ====================================== EMERGENCY CAESAREAN SECTION ==================================================
 
-        if (mni[person_id]['uterine_rupture']) or (mni[person_id]['antepartum_haem']) or \
-           (mni[person_id]['eclampsia']) or (mni[person_id]['labour_is_currently_obstructed']) or \
+        if df.at[person_id, 'is_alive'] and (mni[person_id]['uterine_rupture']) or (mni[person_id]['antepartum_haem']) \
+            or (mni[person_id]['eclampsia']) or (mni[person_id]['labour_is_currently_obstructed']) or \
            (df.at[person_id, 'la_current_labour_successful_induction'] == 'failed_induction'):
             # Consider all indications (elective)
             mni[person_id]['antepartum_haem'] = False
@@ -1902,34 +1912,26 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """Handles Labour logging"""
+    """This is LabourLoggingEvent. Currently it calculates and produces a yearly output of maternal mortality (maternal
+    deaths per 100,000 live births). It is incomplete"""
     def __init__(self, module):
-        """schedule logging to repeat every 3 months
-        """
-    #    self.repeat = 12
-    #    super().__init__(module, frequency=DateOffset(days=self.repeat))
         super().__init__(module, frequency=DateOffset(months=12))
 
     def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
-        """
-        #  MATERNAL MORTALITY RATIO:
+        df = self.sim.population.props
 
-        # live birth total
-        # one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-        # live_births = df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)]
-        # live_births_sum = len(live_births)
-        # print(live_births_sum)
+        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+        live_births_sum = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
 
-        # deaths = df.index[(df.la_maternal_death == True) & (df.la_maternal_death_date > one_year_prior) &
-        #                  (df.la_maternal_death_date < self.sim.date)]
+        maternal_deaths = len(df.index[df.la_maternal_death & (df.la_maternal_death_date > one_year_prior) &
+                                       (df.la_maternal_death_date < self.sim.date)])
 
-        # cumm_deaths = len(deaths)
-        # print(cumm_deaths)
+        if maternal_deaths == 0:
+            mmr = 0
+        else:
+            mmr = maternal_deaths/live_births_sum * 100000
 
-        # mmr = cumm_deaths/live_births_sum * 100000
-        # print('The maternal mortality ratio for this year is', mmr)
+        logger.info(f'The maternal mortality for this year date %s is {mmr} per 100,000 live births', self.sim.date)
 
         # Still Birth Rate
         # Perinatal Mortality
