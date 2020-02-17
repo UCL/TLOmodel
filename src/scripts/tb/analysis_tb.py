@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import time
 import datetime
-import os
+# import os
 import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation, logging
@@ -34,8 +34,8 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 12, 31)
-popsize = 500
+end_date = Date(2025, 12, 31)
+popsize = 50000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -74,7 +74,7 @@ custom_levels = {
     "tlo.methods.demography": logging.INFO,
 }
 # configure_logging automatically appends datetime
-logfile = sim.configure_logging(filename="HivTb_LogFile", custom_levels=custom_levels)
+logfile = sim.configure_logging(filename="HivTb_LogFile_baseline", custom_levels=custom_levels)
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)

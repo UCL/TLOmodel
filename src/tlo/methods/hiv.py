@@ -805,7 +805,7 @@ class Hiv(Module):
 
         sim.schedule_event(HivScheduleTesting(self), sim.date + DateOffset(days=1))
 
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=1))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # Schedule the event that will launch the Outreach event
         outreach_event = HivLaunchOutreachEvent(self)
@@ -1302,7 +1302,7 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
             )
 
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
-            prob = 1.0  # Do not use get_prob_seek_care()
+            prob = 0.5  # Do not use get_prob_seek_care()
             seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
@@ -1395,7 +1395,7 @@ class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         if self.sim.date.year <= 2018:
 
             # select people to go for testing (and subsequent tx)
-            # random sample 0.4 to match clinical case tx coverage
+            # random sample to match clinical case tx coverage
             test = df.index[
                 (self.module.rng.random_sample(size=len(df)) < p["testing_adj"])
                 & df.is_alive

@@ -654,11 +654,11 @@ class Tb(Module):
     def initialise_simulation(self, sim):
 
         sim.schedule_event(TbEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         # sim.schedule_event(TbScheduleTesting(self), sim.date + DateOffset(days=1))
@@ -669,7 +669,7 @@ class Tb(Module):
         sim.schedule_event(TbMdrDeathEvent(self), sim.date + DateOffset(months=1))
 
         # Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
