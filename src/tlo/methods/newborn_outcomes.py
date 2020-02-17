@@ -593,10 +593,10 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
         if child.nb_respiratory_depression:
             self.module.set_neonatal_death_status(individual_id, cause='respiratory_depression')
 
+        child = df.loc[individual_id]
         if child.nb_death_after_birth:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause="neonatal complications"), self.sim.date)
-            assert child.is_alive == 'False'
 
         #  Todo: make sure this is delayed enough following HSI?
         #  TODO: Tim C suggested we need to create an offset (using a distribution?) so we're generating deaths for the
@@ -934,7 +934,7 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Here we calculated the neonatal mortality rate, deaths in the 28 days of life per 1000 live births
         neonatal_deaths = len(df.index[~df.is_alive & ((df.nb_death_after_birth_date - df.date_of_birth)
-                                                                  < pd.Timedelta(28, unit='D'))])
+                                       < pd.Timedelta(28, unit='D'))])
 
         if neonatal_deaths == 0:
             nmr = 0
