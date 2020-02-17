@@ -12,9 +12,11 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   utility functions
 # ---------------------------------------------------------------------------------------------------------
+
 
 def map_age_groups(age_group):
     """Helper function for obtaining the age range for each age_group
@@ -31,6 +33,7 @@ def map_age_groups(age_group):
     age_map = {'PSAC': (0, 4), 'SAC': (5, 14), 'Adults': (15, 120), 'All': (0, 120)}
     return age_map[age_group]
 
+
 def count_days_this_year(date_end, date_start):
     """Used for calculating PrevalentYears this year (that is the year of date_end)
     If the start_date is in the previous years only gives the number of days from
@@ -42,6 +45,7 @@ def count_days_this_year(date_end, date_start):
     duration = int(duration / np.timedelta64(1, 'D'))
     assert duration >= 0, "Duration is negative!"
     return duration
+
 
 def add_elements(el1, el2):
     """Helper function for multiple symptoms assignments
@@ -55,9 +59,11 @@ def add_elements(el1, el2):
     else:
         return el2
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class Schisto(Module):
     """
@@ -79,21 +85,23 @@ class Schisto(Module):
         'delay_till_hsi_a': Parameter(Types.REAL, 'Time till seeking healthcare since the onset of symptoms, start'),
         'delay_till_hsi_b': Parameter(Types.REAL, 'Time till seeking healthcare since the onset of symptoms, end'),
         'delay_till_hsi_a_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again after not being sent to schisto test, start'),
+                                               'Time till seeking healthcare again '
+                                               'after not being sent to schisto test, start'),
         'delay_till_hsi_b_repeated': Parameter(Types.REAL,
-                                               'Time till seeking healthcare again after not being sent to schisto test, end'),
+                                               'Time till seeking healthcare again '
+                                               'after not being sent to schisto test, end'),
 
         'prob_seeking_healthcare': Parameter(Types.REAL,
                                              'Probability that an infected individual visits a healthcare facility'),
         'prob_sent_to_lab_test_children': Parameter(Types.REAL,
-                                           'Probability that an infected child gets sent to urine or stool lab test'),
+                                                    'Probability that infected child gets sent to lab test'),
         'prob_sent_to_lab_test_adults': Parameter(Types.REAL,
-                             'Probability that an infected adults gets sent to urine or stool lab test'),
+                                                  'Probability that an infected adults gets sent to lab test'),
 
         # MDA parameters
-        'MDA_coverage_PSAC': Parameter(Types.DATA_FRAME, 'Probability of being administered PZQ in the MDA for PSAC'),
-        'MDA_coverage_SAC': Parameter(Types.DATA_FRAME, 'Probability of being administered PZQ in the MDA for SAC'),
-        'MDA_coverage_Adults': Parameter(Types.DATA_FRAME, 'Probability of being administered PZQ in the MDA for Adults'),
+        'MDA_coverage_PSAC': Parameter(Types.DATA_FRAME, 'Probability of getting PZQ in the MDA for PSAC'),
+        'MDA_coverage_SAC': Parameter(Types.DATA_FRAME, 'Probability of getting PZQ in the MDA for SAC'),
+        'MDA_coverage_Adults': Parameter(Types.DATA_FRAME, 'Probability of getting PZQ in the MDA for Adults'),
 
         'MDA_prognosed_freq': Parameter(Types.DATA_FRAME, 'Prognosed MDA frequency in months'),
         'MDA_prognosed_PSAC': Parameter(Types.DATA_FRAME, 'Prognosed coverage of MDA in PSAC'),
@@ -146,7 +154,7 @@ class Schisto(Module):
                          'bladder_pathology': 264, 'diarrhoea': 259, 'vomit': 254, 'ascites': 261,
                          'hepatomegaly': 257}
         for symptom, weight in symptoms_dict.items():
-            str = 'daly_wt_'+ symptom
+            str = 'daly_wt_' + symptom
             params[str] = self.sim.modules['HealthBurden'].get_daly_weight(weight)
         params['daly_wt_haematuria'] = 0  # that's a very common symptom but no official DALY weight yet defined
 
@@ -171,7 +179,8 @@ class Schisto(Module):
         """Get ready for simulation start.
         """
         # sim.schedule_event(SchistoLoggingTotalEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(SchistoPrevalentDaysLoggingEvent(self), pd.Timestamp(year=sim.date.year, month=12, day=31, hour=23))
+        sim.schedule_event(SchistoPrevalentDaysLoggingEvent(self),
+                           pd.Timestamp(year=sim.date.year, month=12, day=31, hour=23))
 
         if self.mda_execute:
             # schedule historical MDA to happen once per year in July (4 events)
@@ -179,14 +188,16 @@ class Schisto(Module):
             years_of_historical_mda = [sim.date.year + el for el in years_of_historical_mda]
             for historical_mda_year in years_of_historical_mda:
                 sim.schedule_event(SchistoHistoricalMDAEvent(self),
-                                   pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23) + DateOffset(months=0))
+                                   pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23) +
+                                   DateOffset(months=0))
             year_first_simulated_mda = years_of_historical_mda[-1] + 1
             # schedule prognosed MDA programmes for every district
             for district in sim.population.props.district_of_residence.unique().tolist():
                 freq = self.parameters['MDA_frequency_prognosed'][district]
                 if freq > 0:  # frequency 0 means no need for MDA, because prevalence there is always 0
                     sim.schedule_event(SchistoPrognosedMDAEvent(self, freq, district),
-                                       pd.Timestamp(year=year_first_simulated_mda, month=6, day=1, hour=12) + DateOffset(months=0))
+                                       pd.Timestamp(year=year_first_simulated_mda, month=6, day=1, hour=12) +
+                                       DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -221,6 +232,7 @@ class Schisto(Module):
         else:
             return 0
 
+
 class Schisto_Haematobium(Module):
     """
     Schistosomiasis Haematobium module
@@ -249,10 +261,10 @@ class Schisto_Haematobium(Module):
         'worm_lifespan': Parameter(Types.REAL, 'Lifespan of the worm in human host given in years'),
         'high_intensity_threshold': Parameter(Types.REAL,
                                               'Threshold of worm burden indicating high intensity infection'),
-        'low_intensity_threshold': Parameter(Types.REAL,
-                                              'Threshold of worm burden indicating low intensity infection'),
+        'low_intensity_threshold': Parameter(Types.REAL, 'Threshold of worm burden indicating low intensity infection'),
         'high_intensity_threshold_PSAC': Parameter(Types.REAL,
-                                              'Threshold of worm burden indicating high intensity infection for PSAC'),
+                                                   'Threshold of worm burden indicating'
+                                                   ' high intensity infection for PSAC'),
         'list_of_districts': Parameter(Types.LIST, 'List of the districts with the infection present')
     }
 
@@ -266,9 +278,11 @@ class Schisto_Haematobium(Module):
             Types.LIST, 'Symptoms for S. Haematobium infection'),  # actually might also be np.nan
         'sh_start_of_prevalent_period': Property(Types.DATE, 'Date of going from Non-infected to Infected'),
         'sh_start_of_high_infection': Property(Types.DATE, 'Date of going from entering state High-inf'),
-        'sh_harbouring_rate': Property(Types.REAL, 'Rate of harbouring new worms (Poisson), drawn from gamma distribution'),
+        'sh_harbouring_rate': Property(Types.REAL,
+                                       'Rate of harbouring new worms (Poisson), drawn from gamma distribution'),
         'sh_prevalent_days_this_year': Property(Types.REAL, 'Cumulative days with infection in current year'),
-        'sh_high_inf_days_this_year': Property(Types.REAL, 'Cumulative days with high-intensity infection in current year')
+        'sh_high_inf_days_this_year': Property(Types.REAL,
+                                               'Cumulative days with high-intensity infection in current year')
     }
 
     def read_parameters(self, data_folder):
@@ -287,7 +301,8 @@ class Schisto_Haematobium(Module):
         params['worm_lifespan'] = self.param_list.loc['lifespan_haematobium', 'Value']
         params['high_intensity_threshold'] = self.param_list.loc['high_intensity_threshold_haematobium', 'Value']
         params['low_intensity_threshold'] = self.param_list.loc['low_intensity_threshold_haematobium', 'Value']
-        params['high_intensity_threshold_PSAC'] = self.param_list.loc['high_intensity_threshold_haematobium_PSAC', 'Value']
+        params['high_intensity_threshold_PSAC'] = \
+            self.param_list.loc['high_intensity_threshold_haematobium_PSAC', 'Value']
 
         # baseline reservoir size and other district-related params (alpha and R0)
         params['schisto_initial_reservoir'] = workbook['District_Params_haematobium']
@@ -305,7 +320,9 @@ class Schisto_Haematobium(Module):
             })
 
         # this is to be used if we want to model every district
-        # params['list_of_districts'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv').District.unique().tolist()
+        # params['list_of_districts'] =
+        # pd.read_csv(Path(self.resourcefilepath) /
+        # 'ResourceFile_District_Population_Data.csv').District.unique().tolist()
 
         # this was used for the analysis done in my thesis
         params['list_of_districts'] = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
@@ -336,7 +353,8 @@ class Schisto_Haematobium(Module):
         self.assign_initial_worm_burden(population)
 
         # assign infection statuses
-        df['sh_infection_status'] = df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sh_aggregate_worm_burden']), axis=1)
+        df['sh_infection_status'] = \
+            df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sh_aggregate_worm_burden']), axis=1)
         #  start of the prevalent period & start of high-intensity infections
         infected_idx = df.index[df['sh_infection_status'] != 'Non-infected']
         df.loc[infected_idx, 'sh_start_of_prevalent_period'] = self.sim.date
@@ -373,8 +391,9 @@ class Schisto_Haematobium(Module):
             contact_rates = pd.Series(1, index=eligible)
             for age_group in ['PSAC', 'SAC', 'Adults']:
                 age_range = map_age_groups(age_group)
-                in_the_age_group = df.index[(df['district_of_residence'] == distr) &
-                                    (df['age_years'].between(age_range[0], age_range[1]))].tolist()
+                in_the_age_group = \
+                    df.index[(df['district_of_residence'] == distr) &
+                             (df['age_years'].between(age_range[0], age_range[1]))].tolist()
                 contact_rates.loc[in_the_age_group] *= params['beta_' + age_group]  # Beta(age_group)
 
             if len(eligible):
@@ -401,7 +420,8 @@ class Schisto_Haematobium(Module):
         """ This function generates random number of new worms drawn from Poisson distribution multiplied by
         a product of harbouring rate and exposure rate
         :param district: district name
-        :param rates: harbouring rates used for Poisson distribution, drawn from Gamma, multiplied by contact rate per age group
+        :param rates: harbouring rates used for Poisson distribution, drawn from Gamma,
+        multiplied by contact rate per age group
         :param worms_total: total size of the reservoir of infectious material
         :return harboured_worms: array of numbers of new worms for each of the persons (len = len(rates))
         """
@@ -435,14 +455,16 @@ class Schisto_Haematobium(Module):
         if len(eligible_idx):
             df = population.props
             params = self.parameters
-            symptoms_dict = params['symptoms'].set_index('symptoms').to_dict()['prevalence']  # create a dictionary from a df
+            # create a dictionary from a df
+            symptoms_dict = params['symptoms'].set_index('symptoms').to_dict()['prevalence']
             symptoms_column = 'sh_symptoms'
 
             for symptom in symptoms_dict.keys():
                 prev = symptoms_dict[symptom]  # get the prevalence of the symptom among the infected population
                 # find who should get this symptom assigned - get p indices
                 s_idx = self.rng.choice(eligible_idx, size=int(prev * len(eligible_idx)), replace=False)
-                df.loc[s_idx, symptoms_column] = df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
+                df.loc[s_idx, symptoms_column] = \
+                    df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
 
     def assign_hsi_dates_initial(self, population, symptomatic_idx):
         df = population.props
@@ -451,18 +473,16 @@ class Schisto_Haematobium(Module):
             p = params['prob_seeking_healthcare']
             will_seek_treatment = self.rng.choice(['True', 'False'], size=1, p=[p, 1 - p])
             if will_seek_treatment:
-                seeking_treatment_ahead = self.rng.uniform(params['delay_till_hsi_a'],
-                                                                  params['delay_till_hsi_b'],
-                                                                  size=1).astype(int)
+                seeking_treatment_ahead = \
+                    self.rng.uniform(params['delay_till_hsi_a'], params['delay_till_hsi_b'], size=1).astype(int)
                 seeking_treatment_ahead = pd.to_timedelta(seeking_treatment_ahead, unit='D')
                 df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead
                 seek_treatment_event = HSI_SchistoSeekTreatment(self.sim.modules['Schisto'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_event,
                                                                     priority=1,
                                                                     topen=df.loc[person_id, 'ss_scheduled_hsi_date'],
-                                                                    tclose=df.loc[
-                                                                               person_id, 'ss_scheduled_hsi_date'] + DateOffset(
-                                                                        weeks=502))
+                                                                    tclose=df.loc[person_id, 'ss_scheduled_hsi_date']
+                                                                    + DateOffset(weeks=502))
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -503,7 +523,8 @@ class Schisto_Haematobium(Module):
     def report_daly_values(self):
         logger.debug('This is Schisto Haematobium reporting my health values')
         df = self.sim.population.props
-        health_values = df.loc[df.is_alive, 'sh_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
+        health_values = df.loc[df.is_alive,
+                               'sh_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
         health_values.name = 'Schisto_Haematobium_Symptoms'    # label the cause of this disability
 
         return health_values.loc[df.is_alive]   # returns the series
@@ -514,6 +535,7 @@ class Schisto_Haematobium(Module):
         """
         logger.debug('This is Schisto Haematobium, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
+
 
 class Schisto_Mansoni(Module):
     """
@@ -545,10 +567,9 @@ class Schisto_Mansoni(Module):
         'worm_lifespan': Parameter(Types.REAL, 'Lifespan of the worm in human host given in years'),
         'high_intensity_threshold': Parameter(Types.REAL,
                                               'Threshold of worm burden indicating high intensity infection'),
-        'low_intensity_threshold': Parameter(Types.REAL,
-                                              'Threshold of worm burden indicating low intensity infection'),
-        'high_intensity_threshold_PSAC': Parameter(Types.REAL,
-                                              'Threshold of worm burden indicating high intensity infection for PSAC'),
+        'low_intensity_threshold': Parameter(Types.REAL, 'Threshold of worm burden indicating low intensity infection'),
+        'high_intensity_threshold_PSAC': Parameter(Types.REAL, 'Threshold of worm burden '
+                                                               'indicating high intensity infection for PSAC'),
         'list_of_districts': Parameter(Types.LIST, 'List of the districts with the infection present')
     }
 
@@ -603,8 +624,9 @@ class Schisto_Mansoni(Module):
                 'hsb_symptoms': ['other', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'stomach_ache'],
             })
 
-        params['list_of_districts'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv').District.unique().tolist()
-
+        params['list_of_districts'] = \
+            pd.read_csv(Path(self.resourcefilepath) /
+                        'ResourceFile_District_Population_Data.csv').District.unique().tolist()
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -633,7 +655,8 @@ class Schisto_Mansoni(Module):
         self.assign_initial_worm_burden(population)
 
         # assign infection statuses
-        df['sm_infection_status'] = df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sm_aggregate_worm_burden']), axis=1)
+        df['sm_infection_status'] = \
+            df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sm_aggregate_worm_burden']), axis=1)
         #  start of the prevalent period & start of high-intensity infections
         infected_idx = df.index[df['sm_infection_status'] != 'Non-infected']
         df.loc[infected_idx, 'sm_start_of_prevalent_period'] = self.sim.date
@@ -673,8 +696,9 @@ class Schisto_Mansoni(Module):
             contact_rates = pd.Series(1, index=eligible)
             for age_group in ['PSAC', 'SAC', 'Adults']:
                 age_range = map_age_groups(age_group)
-                in_the_age_group = df.index[(df['district_of_residence'] == distr) &
-                                    (df['age_years'].between(age_range[0], age_range[1]))].tolist()
+                in_the_age_group = \
+                    df.index[(df['district_of_residence'] == distr) &
+                             (df['age_years'].between(age_range[0], age_range[1]))].tolist()
                 contact_rates.loc[in_the_age_group] *= params['beta_' + age_group]  # Beta(age_group)
 
             if len(eligible):
@@ -701,7 +725,8 @@ class Schisto_Mansoni(Module):
         """ This function generates random number of new worms drawn from Poisson distribution multiplied by
         a product of harbouring rate and exposure rate
         :param district: district name
-        :param rates: harbouring rates used for Poisson distribution, drawn from Gamma, multiplied by contact rate per age group
+        :param rates: harbouring rates used for Poisson distribution, drawn from Gamma,
+         multiplied by contact rate per age group
         :param worms_total: total size of the reservoir of infectious material
         :return harboured_worms: array of numbers of new worms for each of the persons (len = len(rates))
         """
@@ -735,14 +760,16 @@ class Schisto_Mansoni(Module):
         if len(eligible_idx):
             df = population.props
             params = self.parameters
-            symptoms_dict = params['symptoms'].set_index('symptoms').to_dict()['prevalence']  # create a dictionary from a df
+            # create a dictionary from a df
+            symptoms_dict = params['symptoms'].set_index('symptoms').to_dict()['prevalence']
             symptoms_column = 'sm_symptoms'
 
             for symptom in symptoms_dict.keys():
                 prev = symptoms_dict[symptom]  # get the prevalence of the symptom among the infected population
                 # find who should get this symptom assigned - get p indices
                 s_idx = self.rng.choice(eligible_idx, size=int(prev * len(eligible_idx)), replace=False)
-                df.loc[s_idx, symptoms_column] = df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
+                df.loc[s_idx, symptoms_column] = \
+                    df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
 
     def assign_hsi_dates_initial(self, population, symptomatic_idx):
         df = population.props
@@ -751,9 +778,8 @@ class Schisto_Mansoni(Module):
             p = params['prob_seeking_healthcare']
             will_seek_treatment = self.rng.choice(['True', 'False'], size=1, p=[p, 1 - p])
             if will_seek_treatment:
-                seeking_treatment_ahead = self.rng.uniform(params['delay_till_hsi_a'],
-                                                                  params['delay_till_hsi_b'],
-                                                                  size=1).astype(int)
+                seeking_treatment_ahead = \
+                    self.rng.uniform(params['delay_till_hsi_a'], params['delay_till_hsi_b'], size=1).astype(int)
                 seeking_treatment_ahead = pd.to_timedelta(seeking_treatment_ahead, unit='D')
                 df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead
                 seek_treatment_event = HSI_SchistoSeekTreatment(self.sim.modules['Schisto'], person_id=person_id)
@@ -761,9 +787,8 @@ class Schisto_Mansoni(Module):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_event,
                                                                     priority=1,
                                                                     topen=df.loc[person_id, 'ss_scheduled_hsi_date'],
-                                                                    tclose=df.loc[
-                                                                               person_id, 'ss_scheduled_hsi_date'] + DateOffset(
-                                                                        weeks=502))
+                                                                    tclose=df.loc[person_id, 'ss_scheduled_hsi_date']
+                                                                    + DateOffset(weeks=502))
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -778,7 +803,6 @@ class Schisto_Mansoni(Module):
         sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(months=0))
         sim.schedule_event(SchistoLoggingPrevDistrictEvent(self), sim.date + DateOffset(years=69))
         # sim.schedule_event(SchistoParamFittingLogging(self), sim.date + DateOffset(years=15))
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -805,7 +829,8 @@ class Schisto_Mansoni(Module):
     def report_daly_values(self):
         logger.debug('This is Schisto Mansoni reporting my health values')
         df = self.sim.population.props
-        health_values = df.loc[df.is_alive, 'sm_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
+        health_values = \
+            df.loc[df.is_alive, 'sm_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
         health_values.name = 'Schisto_Mansoni_Symptoms'    # label the cause of this disability
 
         return health_values.loc[df.is_alive]   # returns the series
@@ -821,6 +846,7 @@ class Schisto_Mansoni(Module):
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class SchistoChangeParameterEvent(Event, PopulationScopeEventMixin):
     def __init__(self, module, param_name, new_value):
@@ -870,7 +896,8 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
                 worms_dict.update(dict(zip(df_distr_indx, new_worms)))
 
         # get indices of people who harboured new worms
-        worms_dict = {key: val for key, val in worms_dict.items() if val != 0}  # remove all indices for which there is no increment
+        # remove all indices for which there is no increment
+        worms_dict = {key: val for key, val in worms_dict.items() if val != 0}
         worm_burden_increased = list(worms_dict.keys())
 
         # schedule the time of new worms becoming mature
@@ -897,7 +924,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         district_reservoir = 0
         ppl_in_district = len(df.index[df['district_of_residence'] == district])
         for age_group in ['PSAC', 'SAC', 'Adults']:
-            beta = params['beta_' + age_group]  # the input to the reservoir of the age group is equal to the contact rate
+            beta = params['beta_' + age_group]  # the input to the reservoir of the age group = contact rate
             age_range = map_age_groups(age_group)
             in_the_age_group = df.index[(df['district_of_residence'] == district) &
                                         (df['age_years'].between(age_range[0], age_range[1]))].tolist()
@@ -939,11 +966,13 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         harbouring_rates = df.loc[df_distr_idx, self.module.prefix + '_harbouring_rate'].values
         rates = np.multiply(harbouring_rates, contact_rates)
         allocated_new_worms = self.module.draw_worms(reservoir, rates, district)
-        prob_of_establishment = list(np.exp(-params['worms_fecundity'] * df.loc[df_distr_idx, self.module.prefix + '_aggregate_worm_burden'].values))
+        prob_of_establishment = list(np.exp(-params['worms_fecundity'] * df.loc[df_distr_idx, self.module.prefix +
+                                                                                '_aggregate_worm_burden'].values))
         prob_of_establishment = [self.module.rng.choice([1, 0], p=[x, 1-x], size=1)[0] for x in prob_of_establishment]
         prob_of_establishment = np.asarray(prob_of_establishment)  # zeroes and ones
         allocated_new_worms = np.multiply(allocated_new_worms, prob_of_establishment)  # becomes 0 if 0 was drawn
         return list(allocated_new_worms)
+
 
 class SchistoMatureWorms(Event, IndividualScopeEventMixin):
     """Increases the aggregate worm burden of an individual upon maturation of the worms
@@ -963,7 +992,8 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
             df.loc[person_id, self.module.prefix + '_aggregate_worm_burden'] += self.new_worms
 
             # schedule the natural death of the worms
-            natural_death_of_worms = SchistoWormsNatDeath(self.module, person_id=person_id, number_of_worms=self.new_worms)
+            natural_death_of_worms = SchistoWormsNatDeath(self.module, person_id=person_id,
+                                                          number_of_worms=self.new_worms)
             self.sim.schedule_event(natural_death_of_worms, self.sim.date + DateOffset(years=params['worm_lifespan']))
 
             if df.loc[person_id, self.module.prefix + '_infection_status'] != 'High-infection':
@@ -978,12 +1008,16 @@ class SchistoMatureWorms(Event, IndividualScopeEventMixin):
                         develop_symptoms = SchistoDevelopSymptomsEvent(self.module, person_id=person_id)
                         self.sim.schedule_event(develop_symptoms, self.sim.date)  # develop symptoms immediately
 
-                elif df.loc[person_id, self.module.prefix + '_aggregate_worm_burden'] >= params['low_intensity_threshold']:
+                elif df.loc[person_id, self.module.prefix +
+                            '_aggregate_worm_burden'] >= params['low_intensity_threshold']:
                     if df.loc[person_id, self.module.prefix + '_infection_status'] == 'Non-infected':
                         df.loc[person_id, self.module.prefix + '_infection_status'] = 'Low-infection'
 
-            if (df.loc[person_id, self.module.prefix + '_infection_status'] != 'Non-infected') & (pd.isna(df.loc[person_id, self.module.prefix + '_start_of_prevalent_period'])):
+            if \
+                (df.loc[person_id, self.module.prefix + '_infection_status'] != 'Non-infected') &\
+                    (pd.isna(df.loc[person_id, self.module.prefix + '_start_of_prevalent_period'])):
                 df.loc[person_id, self.module.prefix + '_start_of_prevalent_period'] = self.sim.date
+
 
 class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
     """Decreases the aggregate worm burden of an individual upon natural death of the adult worms
@@ -1007,9 +1041,11 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
             # clearance of the worms
             if df.loc[person_id, self.module.prefix + '_aggregate_worm_burden'] < params['low_intensity_threshold']:
                 df.loc[person_id, self.module.prefix + '_infection_status'] = 'Non-infected'
-                if df.loc[person_id, self.module.prefix + '_infection_status'] != 'Non-infected':  # does not matter if low or high int infection
+                # does not matter if low or high int infection
+                if df.loc[person_id, self.module.prefix + '_infection_status'] != 'Non-infected':
                     # calculate prevalent period
-                    prevalent_duration = self.sim.date - df.loc[person_id, self.module.prefix + '_start_of_prevalent_period']
+                    prevalent_duration = self.sim.date - df.loc[person_id, self.module.prefix +
+                                                                '_start_of_prevalent_period']
                     prevalent_duration = int(prevalent_duration / np.timedelta64(1, 'D')) % 365
                     df.loc[person_id, self.module.prefix + '_prevalent_days_this_year'] += prevalent_duration
                     df.loc[person_id, self.module.prefix + '_start_of_prevalent_period'] = pd.NaT
@@ -1022,10 +1058,12 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
                         threshold = params['high_intensity_threshold']
                     if df.loc[person_id, self.module.prefix + '_aggregate_worm_burden'] < threshold:
                         df.loc[person_id, self.module.prefix + '_infection_status'] = 'Low-infection'
-                        high_inf_duration = self.sim.date - df.loc[person_id, self.module.prefix + '_start_of_high_infection']
+                        high_inf_duration = self.sim.date - df.loc[person_id, self.module.prefix +
+                                                                   '_start_of_high_infection']
                         high_inf_duration = int(high_inf_duration / np.timedelta64(1, 'D')) % 365
                         df.loc[person_id, self.module.prefix + '_high_inf_days_this_year'] += high_inf_duration
                         df.loc[person_id, self.module.prefix + '_start_of_high_infection'] = pd.NaT
+
 
 class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
     """Development of symptoms upon high intensity infection
@@ -1055,9 +1093,8 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_event,
                                                                     priority=1,
                                                                     topen=df.loc[person_id, 'ss_scheduled_hsi_date'],
-                                                                    tclose=df.loc[
-                                                                               person_id, 'ss_scheduled_hsi_date'] + DateOffset(
-                                                                        weeks=502))
+                                                                    tclose=df.loc[person_id, 'ss_scheduled_hsi_date']
+                                                                    + DateOffset(weeks=502))
 
     def assign_symptoms(self, module_prefix):
         """
@@ -1080,6 +1117,7 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
         if len(symptoms_exp):
             return symptoms_exp
         return np.nan
+
 
 class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
     """Cured upon PZQ treatment through HSI or MDA (Infected -> Non-infected)
@@ -1133,6 +1171,7 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
 #   HSI EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
+
 class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event of seeking treatment for a person with symptoms
     """
@@ -1175,9 +1214,10 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # appt are scheduled and cannot be cancelled in the following situations:
         #   a) person has died
-        #   b) the infection has been treated in MDA or by treating symptoms from other schisto infection before the appt happened
+        #   b) the infection has been treated in MDA or by treating symptoms from
+        #   other schisto infection before the appt happened
         if (df.loc[person_id, 'is_alive'] & is_infected):  # &
-        # (df.loc[person_id, 'ss_scheduled_hsi_date'] <= self.sim.date)):
+            # (df.loc[person_id, 'ss_scheduled_hsi_date'] <= self.sim.date)):
             # check if a person is a child or an adult and assign prob of being sent to schisto test (hence being cured)
             if df.loc[person_id, 'age_years'] <= 15:
                 prob_test = params['prob_sent_to_lab_test_children']
@@ -1185,7 +1225,7 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
                 prob_test = params['prob_sent_to_lab_test_adults']
 
             sent_to_test = self.module.rng.choice([True, False], p=[prob_test, 1-prob_test])
-            ## use this is you don't care about whether PZQ is available or not
+            # use this is you don't care about whether PZQ is available or not
             # if sent_to_test:
             #     self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
             if sent_to_test:
@@ -1215,8 +1255,9 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
             #         logger.debug('ItemsCode1 is not available, so can' 't use it.')
             else:  # person seeked treatment but was not sent to test; visit is reschedulled
                 # schedule another Seeking Treatment event for that person
-                seeking_treatment_ahead_repeated = int(self.module.rng.uniform(params['delay_till_hsi_a_repeated'],
-                                                                   params['delay_till_hsi_b_repeated']))
+                seeking_treatment_ahead_repeated = \
+                    int(self.module.rng.uniform(params['delay_till_hsi_a_repeated'],
+                                                params['delay_till_hsi_b_repeated']))
                 seeking_treatment_ahead_repeated = pd.to_timedelta(seeking_treatment_ahead_repeated, unit='D')
                 df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead_repeated
 
@@ -1224,7 +1265,8 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_repeated,
                                                                     priority=1,
                                                                     topen=df.loc[person_id, 'ss_scheduled_hsi_date'],
-                                                                    tclose=df.loc[person_id, 'ss_scheduled_hsi_date'] + DateOffset(weeks=500))
+                                                                    tclose=df.loc[person_id, 'ss_scheduled_hsi_date']
+                                                                    + DateOffset(weeks=500))
 
     def did_not_run(self):
         print('HSI event did not run')
@@ -1333,7 +1375,8 @@ class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
                             & (df['age_years'].between(age_range[0], age_range[1]))].tolist()
         MDA_idx = []
         if len(eligible):
-            MDA_idx = self.module.rng.choice(eligible, size=int(coverage_distr * (len(eligible))), replace=False).tolist()
+            MDA_idx = self.module.rng.choice(eligible, size=int(coverage_distr * (len(eligible))),
+                                             replace=False).tolist()
 
         return MDA_idx
 
@@ -1341,6 +1384,7 @@ class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class SchistoParamFittingLogging(Event, PopulationScopeEventMixin):
     """This Logging event should only be used for creating a lookup table for parameter fitting
@@ -1367,15 +1411,16 @@ class SchistoParamFittingLogging(Event, PopulationScopeEventMixin):
 
         log_string = '%s|' + inf_type + '|%s'
         logger.info(log_string, self.sim.date.date(),
-            {
-                'Prevalence': prevalence,
-                'MWB': mwb,
-                'alpha': self.module.alpha,
-                'R0': self.module.r0
-            })
+                    {
+                        'Prevalence': prevalence,
+                        'MWB': mwb,
+                        'alpha': self.module.alpha,
+                        'R0': self.module.r0
+                    })
 
     def apply(self, population):
         self.create_logger(population)
+
 
 class SchistoPrevalentDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -1400,11 +1445,15 @@ class SchistoPrevalentDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         for prefix in prefixes:
             still_infected = df_alive.index[~df_alive[prefix + '_start_of_prevalent_period'].isna()]
             for person_id in still_infected:
-                prevalent_duration = count_days_this_year(self.sim.date, df_alive.loc[person_id, prefix + '_start_of_prevalent_period'])
+                prevalent_duration = count_days_this_year(self.sim.date,
+                                                          df_alive.loc[person_id,
+                                                                       prefix + '_start_of_prevalent_period'])
                 df_alive.loc[person_id, prefix + '_prevalent_days_this_year'] += prevalent_duration
             still_high_infected = df_alive.index[~df_alive[prefix + '_start_of_high_infection'].isna()]
             for person_id in still_high_infected:
-                high_inf_duration = count_days_this_year(self.sim.date, df_alive.loc[person_id, prefix + '_start_of_high_infection'])
+                high_inf_duration = count_days_this_year(self.sim.date,
+                                                         df_alive.loc[person_id,
+                                                                      prefix + '_start_of_high_infection'])
                 df_alive.loc[person_id, prefix + '_high_inf_days_this_year'] += high_inf_duration
 
             for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
@@ -1414,7 +1463,8 @@ class SchistoPrevalentDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             {
                                 'Prevalent_years_this_year_total': count_states['Prevalent_years_this_year_total'],
                                 'Prevalent_years_per_100': count_states['Prevalent_years_per_100'],
-                                'High_infection_years_this_year_total': count_states['High_infection_years_this_year_total'],
+                                'High_infection_years_this_year_total':
+                                    count_states['High_infection_years_this_year_total'],
                                 'High_infection_years_per_100': count_states['High_infection_years_per_100'],
                                 'Total_pop_alive': count_states['Tot_pop_alive']
                             })
@@ -1444,6 +1494,7 @@ class SchistoPrevalentDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         self.create_logger(population)
+
 
 class SchistoLoggingPrevDistrictEvent(Event, PopulationScopeEventMixin):
     """Produces a log of prevalence and MWB in every district;
@@ -1483,8 +1534,7 @@ class SchistoLoggingPrevDistrictEvent(Event, PopulationScopeEventMixin):
 
         count_states = {'Non-infected': 0, 'Low-infection': 0, 'High-infection': 0}
         count_states.update(df_distr[self.module.prefix + '_infection_status'].value_counts().to_dict())
-        count_states.update({'infected_any': count_states['Low-infection']
-                                             + count_states['High-infection']})
+        count_states.update({'infected_any': count_states['Low-infection'] + count_states['High-infection']})
         count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['Non-infected']})
         if count_states['total_pop_alive'] != 0.0:
             count_states.update({'Prevalence': count_states['infected_any'] / count_states['total_pop_alive']})
@@ -1499,6 +1549,7 @@ class SchistoLoggingPrevDistrictEvent(Event, PopulationScopeEventMixin):
         districts = self.module.parameters['list_of_districts']
         for distr in districts:
             self.create_logger(population, distr)
+
 
 class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -1539,12 +1590,12 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         age_range = map_age_groups(age_group)  # returns a tuple
 
-        idx = df.index[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])) & (df['district_of_residence'].isin(districts)))]
+        idx = df.index[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1]))
+                        & (df['district_of_residence'].isin(districts)))]
 
         count_states = {'Non-infected': 0, 'Low-infection': 0, 'High-infection': 0}
         count_states.update(df.loc[idx, self.module.prefix + '_infection_status'].value_counts().to_dict())
-        count_states.update({'infected_any': count_states['Low-infection']
-                                                       + count_states['High-infection']})
+        count_states.update({'infected_any': count_states['Low-infection'] + count_states['High-infection']})
         count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['Non-infected']})
         count_states.update({'Prevalence': count_states['infected_any'] / count_states['total_pop_alive']})
         count_states.update({'High-inf_Prevalence': count_states['High-infection'] / count_states['total_pop_alive']})
@@ -1602,7 +1653,8 @@ class SchistoLoggingTotalEvent(RegularEvent, PopulationScopeEventMixin):
     def find_count_infected(self, population, idx):
         df = population.props
         if ('Schisto_Haematobium' in self.sim.modules.keys()) & ('Schisto_Mansoni' in self.sim.modules.keys()):
-            inf = len(df[(df.loc[idx, 'sh_infection_status'] != 'Non-infected') | (df.loc[idx, 'sm_infection_status'] != 'Non-infected')])
+            inf = len(df[(df.loc[idx, 'sh_infection_status'] != 'Non-infected') |
+                         (df.loc[idx, 'sm_infection_status'] != 'Non-infected')])
         elif 'Schisto_Haematobium' in self.sim.modules.keys():
             inf = len(df[(df.loc[idx, 'sh_infection_status'] != 'Non-infected')])
         elif 'Schisto_Mansoni' in self.sim.modules.keys():

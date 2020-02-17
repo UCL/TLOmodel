@@ -18,6 +18,7 @@ from tlo.methods import (
     schisto
 )
 
+
 def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
     datestamp = datetime.datetime.now().strftime("__%Y_%m_%d_%H_%M")
@@ -25,7 +26,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2080, 2, 1)
+    end_date = Date(2012, 2, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -40,7 +41,6 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
 
     logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
     logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
@@ -70,19 +70,24 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     output = parse_log_file(logfile)
     return sim, output
 
+
 sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
 # ---------------------------------------------------------------------------------------------------------
+
 # prevalence, mean worm burden and states count
 def get_timestamp():
     timestamp = str(datetime.datetime.now().replace(microsecond=0))
     timestamp = timestamp.replace(" ", "_")
     timestamp = timestamp.replace(":", "-")
     return timestamp
+
+
 timestamp = get_timestamp()
 print(timestamp)
+
 
 def save_inf_outputs(infection, save_the_districts=False):
     output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
@@ -92,13 +97,11 @@ def save_inf_outputs(infection, save_the_districts=False):
     output_states = pd.DataFrame([])
     for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
         output['tlo.methods.schisto'][age_group + '_' + infection]['Age_group'] = age_group
-        output_states = output_states.append(output['tlo.methods.schisto'][age_group + '_' + infection], ignore_index=True)
+        output_states = \
+            output_states.append(output['tlo.methods.schisto'][age_group + '_' + infection], ignore_index=True)
     output_states.to_csv(savepath, index=False)
 
     if save_the_districts:
-        resourcefilepath = Path("./resources/ResourceFile_District_Population_Data.csv")
-        # districts = pd.read_csv(resourcefilepath)
-        # districts = districts['District']
         districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
         distr_end_data = pd.DataFrame(columns=['District', 'Prevalence', 'MWB', 'High-infection-prevalence'])
         for distr in districts:
@@ -114,12 +117,13 @@ def save_inf_outputs(infection, save_the_districts=False):
 
         distr_end_data.to_csv(savepath_districts_prev, index=False)
 
+
 def save_general_outputs_and_params():
     output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
-    savepath = output_path + "output_Total" + '_' + timestamp + ".csv"
+    # savepath = output_path + "output_Total" + '_' + timestamp + ".csv"
     savepath_full_pop = output_path + "output_population_" + timestamp + ".csv"
     savepath_prevalent_years = output_path + "output_prevalent_years_" + timestamp + ".csv"
-    savepath_daly = output_path + "output_daly_" + timestamp + ".csv"
+    # savepath_daly = output_path + "output_daly_" + timestamp + ".csv"
     savepath_params = output_path + "input_" + timestamp + ".xlsx"
 
     df = sim.population.props
@@ -135,7 +139,8 @@ def save_general_outputs_and_params():
     # Prevalent years
     for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
         output['tlo.methods.schisto'][age_group + '_PrevalentYears']['Age_group'] = age_group
-        output_states = output_states.append(output['tlo.methods.schisto'][age_group + '_PrevalentYears'], ignore_index=True)
+        output_states = \
+            output_states.append(output['tlo.methods.schisto'][age_group + '_PrevalentYears'], ignore_index=True)
     output_states.to_csv(savepath_prevalent_years, index=False)
 
     # loger_DALY_All = output['tlo.methods.healthburden']['DALYS']
@@ -148,6 +153,7 @@ def save_general_outputs_and_params():
         parameters_used[sheet_name].to_excel(writer, sheet_name=sheet_name)
     writer.save()
 
+
 save_inf_outputs('Haematobium', True)
 # save_inf_outputs('Mansoni', False)
 save_general_outputs_and_params()
@@ -157,6 +163,7 @@ save_general_outputs_and_params()
 df = sim.population.props
 df = df[df['is_alive']]
 df = df[df['district_of_residence'].isin(['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe'])]
+
 
 def get_logger(infection, cut_off_left=False):
     assert infection in ['Total', 'Haematobium', 'Mansoni'], 'Wrong infection type!'
@@ -187,6 +194,7 @@ def get_logger(infection, cut_off_left=False):
                 'loger_Adults': loger_Adults, 'loger_All': loger_All}
     return log_dict
 
+
 # Prevalence
 def plot_prevalence(loger_inf, infection):
     fig1, ax = plt.subplots(figsize=(9, 7))
@@ -202,6 +210,8 @@ def plot_prevalence(loger_inf, infection):
     plt.ylabel('fraction of infected sub-population')
     plt.xlabel('logging date')
     plt.show()
+
+
 def plot_high_inf_prevalence(loger_inf, infection):
     fig1, ax = plt.subplots(figsize=(9, 7))
     for log in loger_inf.keys():
@@ -216,10 +226,13 @@ def plot_high_inf_prevalence(loger_inf, infection):
     plt.ylabel('fraction of infected sub-population')
     plt.xlabel('logging date')
     plt.show()
+
+
 plot_prevalence(get_logger('Haematobium', False), 'Haematobium')
 # plot_prevalence(get_logger('Mansoni', True), 'Mansoni')
 # plot_prevalence(get_logger('Total'), 'Total')
 plot_high_inf_prevalence(get_logger('Haematobium'), 'Haematobium')
+
 
 # Final prevalence for every district
 def get_values_per_district(infection):
@@ -241,13 +254,18 @@ def get_values_per_district(infection):
         districts_high_inf_prev.update({distr: high_inf_p})
     return districts_prevalence, districts_mwb, districts_high_inf_prev
 
+
 def get_expected_prevalence(infection):
     expected_district_prevalence = pd.read_excel(Path("./resources") / 'ResourceFile_Schisto.xlsx',
                                                  sheet_name='District_Params_' + infection.lower())
-    expected_district_prevalence = expected_district_prevalence[expected_district_prevalence['District'].isin(['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe'])]
+    expected_district_prevalence = \
+        expected_district_prevalence[expected_district_prevalence['District'].isin(['Blantyre',
+                                                                                    'Chiradzulu', 'Mulanje', 'Nsanje',
+                                                                                    'Nkhotakota', 'Phalombe'])]
     expected_district_prevalence.set_index("District", inplace=True)
     expected_district_prevalence = expected_district_prevalence.loc[:, 'Prevalence'].to_dict()
     return expected_district_prevalence
+
 
 def plot_prevalence_per_district(infection, model_prev, expected_prev):
     plt.bar(*zip(*model_prev.items()), alpha=0.5, label='model')
@@ -258,6 +276,8 @@ def plot_prevalence_per_district(infection, model_prev, expected_prev):
     plt.legend()
     plt.title('Prevalence per district, S.' + infection)
     plt.show()
+
+
 def plot_mwb_per_district(infection, mwb_distr):
     plt.bar(*zip(*mwb_distr.items()), alpha=0.5, label='model')
     plt.xticks(rotation=90)
@@ -266,6 +286,8 @@ def plot_mwb_per_district(infection, mwb_distr):
     plt.legend()
     plt.title('Mean Worm Burden per district, S.' + infection)
     plt.show()
+
+
 def plot_prev_high_infection_per_district(infection, high_inf_distr):
     plt.bar(*zip(*high_inf_distr.items()), alpha=0.5, label='model')
     plt.xticks(rotation=90)
@@ -275,17 +297,13 @@ def plot_prev_high_infection_per_district(infection, high_inf_distr):
     plt.title('Prevalence of high infections per district, S.' + infection)
     plt.show()
 
+
 districts_prevalence, districts_mwb, districts_high_inf_prev = get_values_per_district('Haematobium')
 expected_district_prevalence = get_expected_prevalence('Haematobium')
 plot_prevalence_per_district('Haematobium', districts_prevalence, expected_district_prevalence)
 # plot_mwb_per_district('Haematobium', districts_mwb)
 # plot_prev_high_infection_per_district('Haematobium', districts_high_inf_prev)
 
-# districts_prevalence, districts_mwb, districts_high_inf_prev = get_values_per_district('Mansoni')
-# expected_district_prevalence = get_expected_prevalence('Mansoni')
-# plot_prevalence_per_district('Mansoni', districts_prevalence, expected_district_prevalence)
-# plot_mwb_per_district('Mansoni', districts_mwb)
-# plot_prev_high_infection_per_district('Mansoni', districts_high_inf_prev)
 
 # Mean Worm Burden per month
 def plot_mwb_monthly(loger_inf, infection):
@@ -303,6 +321,7 @@ def plot_mwb_monthly(loger_inf, infection):
     plt.xlabel('logging date')
     plt.show()
 
+
 # Worm burden distribution at the end of the simulation & fitted NegBin
 def plot_worm_burden_histogram(infection):
     if infection == 'Haematobium':
@@ -310,14 +329,10 @@ def plot_worm_burden_histogram(infection):
     else:
         prefix = 'sm'
     wb = df[prefix + '_aggregate_worm_burden'].values
-    # mu = wb.mean()
-    # theta = wb.var()
-    # r = (1 + mu) / (theta * mu * mu)
-    # p = mu / theta
-    r = 0.1238771
-    p = 0.00902744486919016
-    print('clumping param k=', r, ', mean = ', p)
-    negbin = np.random.negative_binomial(r, p, size=len(wb))
+    # r = 0.1238771
+    # p = 0.00902744486919016
+    # print('clumping param k=', r, ', mean = ', p)
+    # negbin = np.random.negative_binomial(r, p, size=len(wb))
     plt.hist(wb, bins=100, density=True, label='model')
     # x = np.linspace(0, len(wb))
     # plt.plot(x, negbin, label = 'parameter fit')
@@ -328,6 +343,7 @@ def plot_worm_burden_histogram(infection):
     plt.legend()
     plt.title('Aggregate worm burden distribution, S.' + infection)
     plt.show()
+
 
 # Harbouring rates distributions
 def plot_harbouring_rates(infection):
@@ -341,6 +357,7 @@ def plot_harbouring_rates(infection):
     plt.ylabel('Count')
     plt.title('Harbouring rates distribution, S.' + infection)
     plt.show()
+
 
 # Mean worm burden per age group - bar plots - at the end of the simulation
 def plot_mwb_bar_plots(infection):
@@ -361,6 +378,7 @@ def plot_mwb_bar_plots(infection):
     plt.xlabel('Age group')
     plt.show()
 
+
 # Mean worm burden age profile - every age - at the end of the simulation
 def get_mwb_per_age(infection, age):
     if infection == 'Haematobium':
@@ -369,6 +387,8 @@ def get_mwb_per_age(infection, age):
         prefix = 'sm'
     mean = df[df['age_years'] == age][prefix + '_aggregate_worm_burden'].values.mean()
     return mean
+
+
 def plot_mwb_age_profile(infection):
     ages = np.arange(0, 80, 1).tolist()
     mean_wb = [get_mwb_per_age(infection, x) for x in ages]
@@ -378,17 +398,13 @@ def plot_mwb_age_profile(infection):
     plt.title('Mean Worm Burden age profile, S.' + infection)
     plt.show()
 
+
 plot_mwb_monthly(get_logger('Haematobium'), 'Haematobium')
 plot_worm_burden_histogram('Haematobium')
 plot_harbouring_rates('Haematobium')
 plot_mwb_bar_plots('Haematobium')
 plot_mwb_age_profile('Haematobium')
 
-# plot_mwb_monthly(get_logger('Mansoni'), 'Mansoni')
-# plot_worm_burden_histogram('Mansoni')
-# plot_harbouring_rates('Mansoni')
-# plot_mwb_bar_plots('Mansoni')
-# plot_mwb_age_profile('Mansoni')
 
 # Prevalent years
 def plot_prevalent_years():
@@ -405,6 +421,8 @@ def plot_prevalent_years():
     plt.ylabel('Years infected')
     plt.xlabel('logging date')
     plt.show()
+
+
 def plot_high_inf_years():
     loger_High_inf_years = output['tlo.methods.schisto']['PrevalentYears_All']
     loger_High_inf_years.date = pd.to_datetime(loger_High_inf_years.date)
@@ -420,22 +438,32 @@ def plot_high_inf_years():
     plt.xlabel('logging date')
     plt.show()
 
+
 plot_prevalent_years()
 plot_high_inf_years()
+
 
 # DALYS
 loger_daly = output['tlo.methods.healthburden']["DALYS"]
 loger_daly.drop(columns=['sex', 'YLL_Demography_Other'], inplace=True)
-loger_daly = loger_daly.groupby(['date', 'age_range'], as_index=False)['YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms'].sum() # this adds M and F
+# this adds M and F
+loger_daly = loger_daly.groupby(['date', 'age_range'],
+                                as_index=False)['YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms'].sum()
 age_map = {'0-4': 'PSAC', '5-9': 'SAC', '10-14': 'SAC'}
 loger_daly['age_group'] = loger_daly['age_range'].map(age_map)
 loger_daly.fillna('Adults', inplace=True)  # the reminder will be Adults
 loger_daly.drop(columns=['age_range'], inplace=True)
-loger_daly = loger_daly.groupby(['date', 'age_group'], as_index=False)['YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms'].sum() # this adds M and F
-
-plt.scatter(loger_daly.date[loger_daly.age_group == 'Adults'], loger_daly.YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms[loger_daly.age_group == 'Adults'], label='Adults')
-plt.scatter(loger_daly.date[loger_daly.age_group == 'PSAC'], loger_daly.YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms[loger_daly.age_group == 'PSAC'], label='PSAC')
-plt.scatter(loger_daly.date[loger_daly.age_group == 'SAC'], loger_daly.YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms[loger_daly.age_group == 'SAC'], label='SAC')
+loger_daly = loger_daly.groupby(['date', 'age_range'],
+                                as_index=False)['YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms'].sum()
+plt.scatter(loger_daly.date[loger_daly.age_group == 'Adults'],
+            loger_daly.YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms[loger_daly.age_group == 'Adults'],
+            label='Adults')
+plt.scatter(loger_daly.date[loger_daly.age_group == 'PSAC'],
+            loger_daly.YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms[loger_daly.age_group == 'PSAC'],
+            label='PSAC')
+plt.scatter(loger_daly.date[loger_daly.age_group == 'SAC'],
+            loger_daly.YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms[loger_daly.age_group == 'SAC'],
+            label='SAC')
 plt.xticks(rotation='vertical')
 plt.legend()
 plt.title('DALYs due to schistosomiasis')
@@ -449,14 +477,14 @@ def count_district_states(df, district):
 
     count_states = {'Non-infected': 0, 'Low-infection': 0, 'High-infection': 0}
     count_states.update(df_distr['sh_infection_status'].value_counts().to_dict())
-    count_states.update({'infected_any': count_states['Low-infection']
-                                         + count_states['High-infection']})
+    count_states.update({'infected_any': count_states['Low-infection'] + count_states['High-infection']})
     count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['Non-infected']})
     if count_states['total_pop_alive'] != 0.0:
         count_states.update({'Prevalence': count_states['infected_any'] / count_states['total_pop_alive']})
     else:
         count_states.update({'Prevalence': 0.0})
     return count_states['Prevalence']
+
 
 districts_prevalence = {}
 for district in ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']:

@@ -94,6 +94,11 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
+        # for the schisto project i need only 6 top districts
+        self.parameters['pop_2010'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Population_2010_Schisto_districts.csv'
+        )
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
