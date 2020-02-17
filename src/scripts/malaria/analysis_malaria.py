@@ -25,7 +25,7 @@ from tlo.methods import (
 t0 = time.time()
 
 # Where will outputs go - by default, wherever this script is run
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+outputpath = Path("./outputs/malaria")
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -34,11 +34,14 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 12, 31)
-popsize = 10000
+end_date = Date(2014, 12, 31)
+popsize = 500
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
+
+# TODO change the seed and filepath for each simulation
+sim.seed_rngs(25)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -76,14 +79,12 @@ sim.register(
     )
 )
 
+# Sets all modules to WARNING threshold, then alters hiv, tb and male_circumcision to INFO
 custom_levels = {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
-
 # configure_logging automatically appends datetime
 logfile = sim.configure_logging(filename="Malaria_LogFile", custom_levels=custom_levels)
 
-# Run the simulation
-# TODO change the seed and filepath for each simulation
-sim.seed_rngs(25)
+# Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
