@@ -1,14 +1,14 @@
 import heapq as hp
 import inspect
+import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 import tlo
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,34 +20,6 @@ class HealthSystem(Module):
     Version: September 2019
     The execution of all health systems interactions are controlled through this module.
     """
-
-    PARAMETERS = {
-        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
-        'Daily_Capabilities': Parameter(
-            Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
-        ),
-        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
-        'Appt_Time_Table': Parameter(
-            Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
-        ),
-        'ApptType_By_FacLevel': Parameter(
-            Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
-        ),
-        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
-        'Facilities_For_Each_District': Parameter(
-            Types.DATA_FRAME,
-            'Mapping between a district and all of the health facilities to which its \
-                      population have access.',
-        ),
-        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
-        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
-    }
-
-    PROPERTIES = {
-        'hs_dist_to_facility': Property(
-            Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
-        )
-    }
 
     def __init__(
         self,
@@ -106,8 +78,33 @@ class HealthSystem(Module):
         logger.info(self.service_availability)
         logger.info('----------------------------------------------------------------------')
 
-        # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
-        self.dx_manager = DxManager(self)
+    PARAMETERS = {
+        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
+        'Daily_Capabilities': Parameter(
+            Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
+        ),
+        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
+        'Appt_Time_Table': Parameter(
+            Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
+        ),
+        'ApptType_By_FacLevel': Parameter(
+            Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
+        ),
+        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
+        'Facilities_For_Each_District': Parameter(
+            Types.DATA_FRAME,
+            'Mapping between a district and all of the health facilities to which its \
+                      population have access.',
+        ),
+        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
+        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+    }
+
+    PROPERTIES = {
+        'hs_dist_to_facility': Property(
+            Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
+        )
+    }
 
     def read_parameters(self, data_folder):
 
@@ -524,17 +521,18 @@ class HealthSystem(Module):
 
         Format is as follows:
             * dict with two keys; Intervention_Package_Code and Item_Code
-            * the value for each is a dict of the form (package_code or item_code): quantity
-            * the codes within each list must be unique and valid codes; quantities must be integer values >0
+            * the value for each is a list of dict
+            * each dict gives code (package_code or item_code):quantity
+            * the codes within each list must be unique and valid codes, quantities must be integer values >0
 
             e.g.
             cons_footprint = {
-                        'Intervention_Package_Code': {my_pkg_code: 1},
-                        'Item_Code': {my_item_code: 10, another_item_code: 1}
+                        'Intervention_Package_Code': [{my_pkg_code: 1}],
+                        'Item_Code': [{my_item_code: 10}, {another_item_code: 1}]
             }
         """
 
-        blank_footprint = {'Intervention_Package_Code': {}, 'Item_Code': {}}
+        blank_footprint = {'Intervention_Package_Code': [], 'Item_Code': []}
         return blank_footprint
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
@@ -673,22 +671,57 @@ class HealthSystem(Module):
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # 0) Check the format of the cons_req_as_footprint:
-        self.check_consumables_footprint_format(cons_req_as_footprint)
+
+        # Format is as follows:
+        #     * dict with two keys; Intervention_Package_Code and Item_Code
+        #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
+        #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
+        #     e.g.
+        #     cons_footprint = {
+        #                 'Intervention_Package_Code': [{my_pkg_code: 1}],
+        #                 'Item_Code': [{my_item_code: 10}, {another_item_code: 1}]
+        #     }
+
+        # check basic formatting
+        assert 'Intervention_Package_Code' in cons_req_as_footprint
+        assert 'Item_Code' in cons_req_as_footprint
+        assert type(cons_req_as_footprint['Intervention_Package_Code']) is list
+        assert type(cons_req_as_footprint['Item_Code']) is list
+
+        # check that consumables being required are in the database:
+        consumables = self.parameters['Consumables']
+
+        for pkg in cons_req_as_footprint['Intervention_Package_Code']:
+            # dict only ever has one item so we only want the key and the value
+            (pkg_code, pkg_quant), = pkg.items()
+            assert pkg_code in consumables['Intervention_Pkg_Code'].values
+            assert type(pkg_quant) is int
+            assert pkg_quant > 0
+
+        for itm in cons_req_as_footprint['Item_Code']:
+            (itm_code, itm_quant), = itm.items()
+            assert itm_code in consumables['Item_Code'].values
+            assert type(itm_quant) is int
+            assert itm_quant > 0
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if self.disable:
             # If the healthsystem module is disabled, return True for all consuambles
             # without checking or logging.
             packages_availability = dict()
-            if not cons_req_as_footprint['Intervention_Package_Code'] == {}:
-                for pkg_code in cons_req_as_footprint['Intervention_Package_Code'].keys():
-                    packages_availability[pkg_code] = True
+            if not cons_req_as_footprint['Intervention_Package_Code'] == []:
+                for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
+                    # dict only ever has one item so we only want the key
+                    package_code, = p_dict.keys()
+                    packages_availability[package_code] = True
 
             # Iterate through the individual items that were requested
             items_availability = dict()
-            if not cons_req_as_footprint['Item_Code'] == {}:
-                for itm_code in cons_req_as_footprint['Item_Code'].keys():
-                    items_availability[itm_code] = True
+            if not cons_req_as_footprint['Item_Code'] == []:
+                for i_dict in cons_req_as_footprint['Item_Code']:
+                    item_code, = i_dict.keys()
+                    # check if *all* items in this package are available
+                    items_availability[item_code] = True
 
             # compile output
             output = dict()
@@ -743,16 +776,20 @@ class HealthSystem(Module):
         # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
         # Iterate through the packages that were requested
         packages_availability = dict()
-        if not cons_req_as_footprint['Intervention_Package_Code'] == {}:
-            for package_code in cons_req_as_footprint['Intervention_Package_Code'].keys():
+        if not cons_req_as_footprint['Intervention_Package_Code'] == []:
+            for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
+                # dict only ever has one item so we only want the key
+                package_code, = p_dict.keys()
                 packages_availability[package_code] = (
                     items_req.loc[items_req['Package_Code'] == package_code, 'Available'].all()
                 )
 
         # Iterate through the individual items that were requested
         items_availability = dict()
-        if not cons_req_as_footprint['Item_Code'] == {}:
-            for item_code in cons_req_as_footprint['Item_Code'].keys():
+        if not cons_req_as_footprint['Item_Code'] == []:
+            for i_dict in cons_req_as_footprint['Item_Code']:
+                item_code, = i_dict.keys()
+                # check if *all* items in this package are available
                 items_availability[item_code] = (
                     items_req.loc[items_req['Item_Code'] == item_code, 'Available'].values[0]
                 )
@@ -763,44 +800,6 @@ class HealthSystem(Module):
         output['Item_Code'] = items_availability
 
         return output
-
-    def check_consumables_footprint_format(self, cons_req_as_footprint):
-        """
-        This function runs some check on the cons_footprint to ensure its in the right format
-        :param cons_footprint:
-        :return:
-        """
-
-        # Format is as follows:
-        #     * dict with two keys; Intervention_Package_Code and Item_Code
-        #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
-        #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
-        #     e.g.
-        #     cons_footprint = {
-        #                 'Intervention_Package_Code': {my_pkg_code: 1},
-        #                 'Item_Code': {my_item_code: 10}, {another_item_code: 1}
-        #     }
-
-        # check basic formatting
-        assert 'Intervention_Package_Code' in cons_req_as_footprint
-        assert 'Item_Code' in cons_req_as_footprint
-        assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
-        assert isinstance(cons_req_as_footprint['Item_Code'], dict)
-
-        # check that consumables being required are in the database:
-        consumables = self.parameters['Consumables']
-
-        # Check packages
-        for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
-            assert pkg_code in consumables['Intervention_Pkg_Code'].values
-            assert isinstance(pkg_quant, int)
-            assert pkg_quant > 0
-
-        # Check items
-        for itm_code, itm_quant in cons_req_as_footprint['Item_Code'].items():
-            assert itm_code in consumables['Item_Code'].values
-            assert isinstance(itm_quant, int)
-            assert itm_quant > 0
 
     def get_consumables_as_individual_items(self, cons_footprint):
         """
@@ -817,7 +816,8 @@ class HealthSystem(Module):
 
         individual_consumables = []
         # Get the individual items in each package:
-        for (package_code, quantity_of_packages) in cons['Intervention_Package_Code'].items():
+        for p_dict in cons['Intervention_Package_Code']:
+            (package_code, quantity_of_packages), = p_dict.items()
             items = consumables.loc[
                 consumables['Intervention_Pkg_Code'] == package_code, ['Item_Code', 'Expected_Units_Per_Case']
             ].to_dict(orient='records')
@@ -827,7 +827,8 @@ class HealthSystem(Module):
                 individual_consumables.append(item)
 
         # Add in any additional items that have been specified seperately:
-        for (item_code, quantity_of_item) in cons['Item_Code'].items():
+        for i_dict in cons['Item_Code']:
+            (item_code, quantity_of_item), = i_dict.items()
             item = {
                 'Item_Code': item_code,
                 'Package_Code': np.nan,
@@ -1117,7 +1118,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # Update load factors:
                         updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
                         df_footprints_of_all_individual_level_hsi_event.loc[updated_call.index, ev_num] = updated_call
-                        squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
+                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(
                             all_calls_today=df_footprints_of_all_individual_level_hsi_event,
                             current_capabilities=current_capabilities,
                         )
@@ -1213,14 +1214,12 @@ class HSI_Event:
 
 
 class HSIEventWrapper(Event):
-    """This is wrapper that contains an HSI event.
+    # This is wrapper that contains an HSI event.
+    # It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
+    # be passed to the main simulation scheduler.
+    # When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
 
-    It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
-    be passed to the main simulation scheduler.
-    When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
-    """
-    def __init__(self, hsi_event, *args, **kwargs):
-        super().__init__(hsi_event.module, *args, **kwargs)
+    def __init__(self, hsi_event):
         self.hsi_event = hsi_event
 
     def run(self):

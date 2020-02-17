@@ -1,12 +1,14 @@
 """
 This Module runs the counting of DALYS
 """
+
+import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Property, Types, logging
+from tlo import DateOffset, Module, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
