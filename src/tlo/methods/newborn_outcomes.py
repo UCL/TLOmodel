@@ -389,11 +389,11 @@ class NewbornOutcomes(Module):
             # If the neonate was born at home we calculate the risk and make changes to the data frame
             elif m['delivery_setting'] == 'home_birth' and self.eval(params['nb_newborn_equations']['sepsis'],
                                                                      child_id):
-                    df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
+                df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
 
-                    logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
-                                child_id, self.sim.date)
-                    logger.info('%s|early_onset_nb_sep_hb|%s', self.sim.date, {'person_id': child_id})
+                logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
+                            child_id, self.sim.date)
+                logger.info('%s|early_onset_nb_sep_hb|%s', self.sim.date, {'person_id': child_id})
 
     # -------------------------------------  RESPIRATORY DEPRESSION  ---------------------------------------------------
 
@@ -943,7 +943,3 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(f'The neonatal mortality ratio on date %s for this year is {nmr} per 1000 live births',
                     self.sim.date)
-
-
-
-
