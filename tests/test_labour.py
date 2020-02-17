@@ -18,8 +18,8 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 100
+end_date = Date(2013, 1, 1)
+popsize = 1000
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 

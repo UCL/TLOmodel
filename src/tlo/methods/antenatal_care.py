@@ -8,7 +8,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class AntenatalCare(Module):
@@ -105,15 +105,12 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
 
         # Using the linear model we determine if these women will ever seek antenatal care
         result = params['anc_equations']['care_seeking'].predict(due_anc)
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(due_anc)), index=due_anc.index)
-        temp_df = pd.concat([result, random_draw], axis=1)
-        temp_df.columns = ['result', 'random_draw']
-        positive_index = temp_df.index[temp_df.random_draw < temp_df.result]
 
+        random_draw = self.module.rng.rand(len(due_anc))
         # For those we do, we use a dummy draw to determine at what gestation they will seek care
-        for person in positive_index:
-            anc_date = df.at[person, 'date_of_last_pregnancy'] + pd.to_timedelta(self.module.rng.choice(range(11, 30),
-                                                                                 size=()),
+
+        for person in due_anc.index[random_draw < result]:
+            anc_date = df.at[person, 'date_of_last_pregnancy'] + pd.to_timedelta(self.module.rng.randint(11, 30),
                                                                                  unit='W')
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
