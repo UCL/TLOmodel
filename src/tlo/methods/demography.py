@@ -80,12 +80,8 @@ class Demography(Module):
         """
 
         # Initial population size:
-        # self.parameters['pop_2010'] = pd.read_csv(
-        #     Path(self.resourcefilepath) / 'ResourceFile_Population_2010.csv'
-        # )
-        # for the schisto project i need only 6 top districts
         self.parameters['pop_2010'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Population_2010_Schisto_districts.csv'
+            Path(self.resourcefilepath) / 'ResourceFile_Population_2010.csv'
         )
 
         # Fraction of babies that are male

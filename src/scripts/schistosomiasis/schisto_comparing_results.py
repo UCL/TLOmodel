@@ -7,6 +7,9 @@ from datetime import date
 import numpy as np
 from pathlib import Path
 
+load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
+save_path = 'C:/Users/ieh19/Desktop/Project 1/result_tables/'
+
 def get_number_of_worms(str):
     numbers = [int(s) for s in str.split() if s.isdigit()]
     return numbers[0]
@@ -16,17 +19,17 @@ def load_outputs(timestamp, infection):
     infection_outputs.date = pd.to_datetime(infection_outputs.date)
     infection_outputs.date = infection_outputs.date - np.timedelta64(20, 'Y')
     if 'High-inf_Prevalence' not in list(infection_outputs.columns):
-        # infection_outputs['High-inf_Prevalence'] = infection_outputs.apply(lambda row: row.High_infections / (row.Infected + row.Non_infected))
         infection_outputs['High-inf_Prevalence'] = infection_outputs['High_infections']/(infection_outputs['Infected'] + infection_outputs['Non_infected'])
 
-    dalys = pd.read_csv(load_path + "output_daly_" + timestamp + ".csv")
-    dalys.date = pd.to_datetime(dalys.date)
-    dalys.date = dalys.date - np.timedelta64(20, 'Y')
-    dalys = dalys.groupby(['date'], as_index=False).agg({'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms': 'sum'})
+    # dalys = pd.read_csv(load_path + "output_daly_" + timestamp + ".csv")
+    # dalys.date = pd.to_datetime(dalys.date)
+    # dalys.date = dalys.date - np.timedelta64(20, 'Y')
+    # dalys = dalys.groupby(['date'], as_index=False).agg({'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms': 'sum'})
 
     prev_years = pd.read_csv(load_path + "output_prevalent_years_" + timestamp + ".csv")
     prev_years.date = pd.to_datetime(prev_years.date)
     prev_years.date = prev_years.date - np.timedelta64(20, 'Y')
+    distr = pd.read_csv(load_path + 'output_districts_prev_Haematobium_' + timestamp + ".csv")
     return infection_outputs, dalys, prev_years
 
 def get_averages_prev(all_sims_outputs):
@@ -35,6 +38,26 @@ def get_averages_prev(all_sims_outputs):
         list_of_dfs.append(df)
     big_df = pd.concat(list_of_dfs, ignore_index=True)
     avg_df = big_df.groupby(['date', 'Age_group'], as_index=False).agg({'Prevalence': 'mean', 'MeanWormBurden': 'mean', 'High-inf_Prevalence': 'mean'})
+    return avg_df
+
+def get_averages_dalys(all_sims_outputs):
+    list_of_dfs = []
+    for df in all_sims_outputs:
+        list_of_dfs.append(df)
+    big_df = pd.concat(list_of_dfs, ignore_index=True)
+    big_df = big_df[['date', 'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms']]
+    avg_df = big_df.groupby(['date'], as_index=False).agg({'YLD_Schisto_Haematobium_Schisto_Haematobium_Symptoms': 'mean'})
+    return avg_df
+
+def get_averages_prev_and_high_inf_years(all_sims_outputs):
+    cols_of_interest = ['Prevalent_years_per_100', 'High_infection_years_per_100']
+    list_of_dfs = []
+    for df in all_sims_outputs:
+        list_of_dfs.append(df)
+    big_df = pd.concat(list_of_dfs, ignore_index=True)
+    # big_df = big_df[['date', cols_of_interest]]
+    avg_df = big_df.groupby(['date', 'Age_group'], as_index=False).agg({cols_of_interest[0]: 'mean', cols_of_interest[1]: 'mean'})
+
     return avg_df
 
 def get_averages_dalys_or_prev_years(all_sims_outputs, vals):
@@ -48,13 +71,14 @@ def get_averages_dalys_or_prev_years(all_sims_outputs, vals):
     avg_df = big_df.groupby(['date'], as_index=False).agg({cols_of_interest[vals]: 'mean'})
     return avg_df
 
-def get_averages_districts(sims):
+def get_averages_districts(all_sims_outputs):
     list_of_dfs = []
-    for k in sims.keys():
-        df = sims[k]['distr']
+    for df in all_sims_outputs:
         list_of_dfs.append(df)
     big_df = pd.concat(list_of_dfs, ignore_index=True)
-    avg_df = big_df.groupby(['District'], as_index=False).agg({'Prevalence': 'mean', 'MWB': 'mean'})
+    avg_df = big_df.groupby(['District'], as_index=False).agg({'Prevalence': 'mean',
+                                                               'MWB': 'mean',
+                                                               'High-infection-prevalence': 'mean'})
     return avg_df
 
 def add_average(sim):
@@ -109,12 +133,6 @@ def plot_per_age_group(scenarios_list, age, vals):
     # plt.legend(prop={'size': 16})
     plt.show()
 
-plot_per_age_group(scenarios, 'All', 'haematobium', 'Prevalence')
-plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'High-inf_Prevalence')
-plot_per_age_group(scenarios, 'PSAC', 'haematobium', 'Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'Prevalence')
-plot_per_age_group(scenarios, 'SAC', 'haematobium', 'High-inf_Prevalence')
-
 def plot_all_age_groups_same_plot(scenarios_list, vals):
     assert vals in ['Prevalence', 'High-inf_Prevalence', 'MeanWormBurden']
     fig, ax = plt.subplots(figsize=(9, 7))
@@ -164,9 +182,6 @@ def plot_all_age_groups_same_plot(scenarios_list, vals):
     # plt.legend(prop={'size': 16})
     plt.show()
 
-plot_all_age_groups_same_plot(scenarios, 'Prevalence')
-plot_all_age_groups_same_plot(scenarios, 'MeanWormBurden')
-
 def plot_measure(scenarios_list, measure_type):
     assert measure_type in ['dalys', 'prev_years']
     if measure_type == 'dalys':
@@ -203,9 +218,6 @@ def plot_measure(scenarios_list, measure_type):
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.show()
-
-plot_measure(scenarios, 'dalys')
-plot_measure(scenarios, 'prev_years')
 
 def get_expected_prevalence(infection):
     expected_district_prevalence = pd.read_excel(Path("./resources") / 'ResourceFile_Schisto.xlsx',
@@ -246,8 +258,7 @@ def find_year_of_elimination(scenarios_list, age_group, level):
             # years_till_elimination = (date_of_elimination - pd.Timestamp(year=2019, month=7, day=1) / np.timedelta64(1, 'Y'))
         print(k, date_of_elimination, treatment_rounds)
 
-find_year_of_elimination(scenarios, 'PSAC', 0.01)
-find_year_of_elimination(scenarios, 'PSAC', 0.00)
+
 
 def get_average_final(scenarios_list):
     output_dict = {}
@@ -330,7 +341,7 @@ for label, timestamps in scenarios.items():
         prev_years.append(prev_years_t)
 
     prev.append(get_averages_prev(prev))
-    dalys.append(get_averages_dalys_or_prev_years(dalys, 'dalys'))
+    # dalys.append(get_averages_dalys_or_prev_years(dalys, 'dalys'))
     prev_years.append(get_averages_dalys_or_prev_years(prev_years, 'prev_years'))
     scenario_outputs = {'prev': prev, 'dalys': dalys, 'prev_years': prev_years}
     scenarios.update({label: scenario_outputs})

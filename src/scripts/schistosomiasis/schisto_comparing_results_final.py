@@ -68,9 +68,9 @@ def get_averages_districts(all_sims_outputs):
     for df in all_sims_outputs:
         list_of_dfs.append(df)
     big_df = pd.concat(list_of_dfs, ignore_index=True)
+    print(big_df)
     avg_df = big_df.groupby(['District'], as_index=False).agg({'Prevalence': 'mean',
-                                                               'MWB': 'mean',
-                                                               'High-infection-prevalence': 'mean'})
+                                                               'MWB': 'mean'})
     return avg_df
 
 def plot_per_age_group(scenarios_list, age, vals):

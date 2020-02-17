@@ -475,7 +475,7 @@ class Schisto_Haematobium(Module):
 
         # add an event to log to screen
         sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(SchistoLoggingPrevDistrictEvent(self), sim.date + DateOffset(years=25))
+        sim.schedule_event(SchistoLoggingPrevDistrictEvent(self), sim.date + DateOffset(years=70))
         # sim.schedule_event(SchistoParamFittingLogging(self), sim.date + DateOffset(years=15))
 
     def on_birth(self, mother_id, child_id):

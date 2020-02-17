@@ -25,7 +25,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 2, 1)
+    end_date = Date(2080, 2, 1)
     popsize = popsize
 
     # Establish the simulation object
@@ -55,12 +55,12 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
     if haem:
-        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=True))
+        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
     if mansoni:
         sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath))
 
     # Run the simulation and flush the logger
-    sim.seed_rngs(int(np.random.uniform(0,1) * 1000))
+    sim.seed_rngs(int(np.random.uniform(0, 1) * 1000))
     # initialise the population
     sim.make_initial_population(n=popsize)
 
