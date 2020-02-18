@@ -56,9 +56,6 @@ class DxAlgorithmChild(Module):
         :param hsi_event: The calling hsi_event.
         :return: a string representing the diagnosis
         """
-        df = self.sim.population.props
-        params = self.sim.modules["Malaria"].parameters
-
         diagnosis_str = "unknown"
 
         # NOTES:
