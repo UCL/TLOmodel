@@ -5,8 +5,6 @@ In the combination of both the codes from Tim C in Contraception and Tim H in De
 
 # %% Import Statements and initial declarations
 import datetime
-import logging
-import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -20,7 +18,15 @@ from tlo.analysis.utils import (
     make_calendar_period_type,
     parse_log_file,
 )
-from tlo.methods import contraception, demography
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    symptommanager,
+)
 from tlo.util import create_age_range_lookup
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -33,35 +39,28 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 resourcefilepath = Path("./resources")
 
-logfile = outputpath / ('LogFile' + datestamp + '.log')
-
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 2)
-popsize = 1000
+end_date = Date(2012, 1, 2)
+popsize = 200
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
-
-# this block of code is to capture the outputs to file
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
+logfile = sim.configure_logging('LogFile')
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.seed_rngs(1)
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+
+sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-
-# this will make sure that the logging file is complete
-fh.flush()
 
 # %% read the results
 
