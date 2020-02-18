@@ -1,10 +1,11 @@
-import logging
 import numbers
 from enum import Enum, auto
 from typing import Any, Callable, Union
 
 import numpy as np
 import pandas as pd
+
+from tlo import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
