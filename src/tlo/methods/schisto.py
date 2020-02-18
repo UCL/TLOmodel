@@ -1,10 +1,8 @@
-import logging
-
 import numpy as np
 import pandas as pd
 from pathlib import Path
 
-
+from tlo import logging
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
@@ -1101,7 +1099,6 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
         Assign symptoms to the person with high intensity infection.
 
         :param module_prefix: indicates type of infection, haematobium or mansoni
-        :param person_id: index of the individual
         :return symptoms: np.nan if no symptom or a list of symptoms
         """
         assert module_prefix in ['sm', 'sh'], "Incorrect infection type. Can't assign symptoms."
@@ -1285,7 +1282,7 @@ class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
         assert isinstance(module, Schisto)
 
-    def apply(self, population, squeeze_factor):
+    def apply(self, population):
         print("Historical MDA is happening now!")
         year = self.sim.date.year
         year = year - 2035 + 2015
