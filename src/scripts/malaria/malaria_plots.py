@@ -1,9 +1,11 @@
-from tlo.analysis.utils import parse_log_file
 import datetime
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pathlib import Path
+
+from tlo.analysis.utils import parse_log_file
 
 # model outputs
 outputpath = "./outputs/malaria/"

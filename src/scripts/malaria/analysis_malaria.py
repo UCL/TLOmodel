@@ -1,26 +1,27 @@
-import time
-from tlo.analysis.utils import parse_log_file
 import datetime
-import os
+import time
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
-from pathlib import Path
+
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import (
+    contraception,
+    demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    malaria,
+    symptommanager,
+)
 
 # import xlsxwriter
 
-from tlo import Date, Simulation, logging
-from tlo.methods import (
-    demography,
-    contraception,
-    healthburden,
-    healthsystem,
-    enhanced_lifestyle,
-    malaria,
-    dx_algorithm_child,
-    dx_algorithm_adult,
-    healthseekingbehaviour,
-    symptommanager,
-)
 
 t0 = time.time()
 

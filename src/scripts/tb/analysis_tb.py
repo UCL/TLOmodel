@@ -1,22 +1,22 @@
-from pathlib import Path
-import pandas as pd
-import time
 import datetime
-import os
+import time
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
     contraception,
+    demography,
+    enhanced_lifestyle,
     healthburden,
     healthsystem,
     hiv,
-    enhanced_lifestyle,
     malecircumcision,
-    tb,
     symptommanager,
+    tb,
 )
 
 # TODO: this sim includes symptom manager. Include dx_algorithm once it is updated by Tim
