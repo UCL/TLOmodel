@@ -925,7 +925,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog.loc[df.is_alive & df.age_years.between(15, 100)] = params[
             "prog_active"
         ]
-        prob_prog.loc[df.hv_inf] *= params["rr_tb_hiv"]
+        prob_prog.loc[df.hv_inf & (df.hv_on_art != 2)] *= params["rr_tb_hiv"]
         prob_prog.loc[df.hv_inf] *= params["rr_tb_aids"]
         prob_prog.loc[(df.hv_on_art == 2)] *= (
             params["rr_tb_hiv"] * params["rr_tb_art_adult"]
@@ -956,7 +956,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         if new_latent:
 
-            # index of all new susc cases
+            # index of all new latent cases
             idx = df[
                 (df.tb_date_latent == now) & (df.age_years >= 15) & df.is_alive
             ].index
@@ -1032,6 +1032,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog_child.loc[df.is_alive & df.tb_bcg & df.age_years <= 10] *= params[
             "rr_tb_bcg"
         ]
+        prob_prog_child.loc[df.hv_inf & (df.hv_on_art != 2)] *= params["rr_tb_hiv"]
         prob_prog_child.loc[(df.hv_on_art == 2)] *= params["rr_tb_art_child"]
 
         dur_ipt_inf = pd.to_timedelta(params["dur_prot_ipt_infant"], unit="d")
@@ -1850,7 +1851,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog.loc[df.is_alive & df.age_years.between(15, 100)] = params[
             "prog_active"
         ]
-        prob_prog.loc[df.hv_inf] *= params["rr_tb_hiv"]
+        prob_prog.loc[df.hv_inf & (df.hv_on_art != 2)] *= params["rr_tb_hiv"]
         prob_prog.loc[(df.hv_on_art == 2)] *= (
             params["rr_tb_hiv"] * params["rr_tb_art_adult"]
         )
@@ -1965,6 +1966,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
             "prog_10yr"
         ]
         prob_prog_child.loc[df.tb_bcg & df.age_years < 10] *= params["rr_tb_bcg"]
+        prob_prog_child.loc[df.hv_inf & (df.hv_on_art != 2)] *= params["rr_tb_hiv"]
         prob_prog_child.loc[(df.hv_on_art == 2)] *= params["rr_tb_art_child"]
 
         # ipt - protection against active disease for one yr (6-month regimen)
