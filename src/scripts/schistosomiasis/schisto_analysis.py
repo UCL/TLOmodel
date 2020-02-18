@@ -1,6 +1,4 @@
 import datetime
-import logging
-import os
 from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -8,7 +6,7 @@ import numpy as np
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
@@ -17,7 +15,6 @@ from tlo.methods import (
     contraception,
     schisto
 )
-
 
 def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -32,21 +29,21 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
-    # Establish the logger
-    logfile = outputpath / ('LogFile' + datestamp + '.log')
+    # # Establish the logger
+    # logfile = outputpath / ('LogFile' + datestamp + '.log')
 
-    if os.path.exists(logfile):
-        os.remove(logfile)
-    fh = logging.FileHandler(logfile)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().addHandler(fh)
-
-    logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
-    logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
-    logging.getLogger("tlo.methods.healthburden").setLevel(logging.WARNING)
-    logging.getLogger("tlo.methods.healthsystem").setLevel(logging.WARNING)
-    logging.getLogger("tlo.methods.schisto").setLevel(logging.INFO)
+    # if os.path.exists(logfile):
+    #     os.remove(logfile)
+    # fh = logging.FileHandler(logfile)
+    # fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    # fh.setFormatter(fr)
+    # logging.getLogger().addHandler(fh)
+    #
+    # logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
+    # logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
+    # logging.getLogger("tlo.methods.healthburden").setLevel(logging.WARNING)
+    # logging.getLogger("tlo.methods.healthsystem").setLevel(logging.WARNING)
+    # logging.getLogger("tlo.methods.schisto").setLevel(logging.INFO)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -59,19 +56,26 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     if mansoni:
         sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath))
 
-    # Run the simulation and flush the logger
+    # Sets all modules to WARNING threshold, then alters schisto to INFO
+    custom_levels = {"*": logging.WARNING,
+                     "tlo.methods.schisto": logging.INFO,
+                     }
+    # configure logging after registering modules with custom levels
+    logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
+
+    # Run the simulation
     sim.seed_rngs(int(np.random.uniform(0, 1) * 1000))
     # initialise the population
     sim.make_initial_population(n=popsize)
 
     # # start the simulation
     sim.simulate(end_date=end_date)
-    fh.flush()
+    # fh.flush()
     output = parse_log_file(logfile)
     return sim, output
 
 
-sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False)
+sim, output = run_simulation(popsize=1000, haem=True, mansoni=False, mda_execute=False)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used

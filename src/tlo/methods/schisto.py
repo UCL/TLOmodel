@@ -271,15 +271,15 @@ class Schisto_Haematobium(Module):
             Types.CATEGORICAL, 'Current status of schistosomiasis infection',
             categories=['Non-infected', 'Low-infection', 'High-infection']),
         'sh_aggregate_worm_burden': Property(
-            Types.REAL, 'Number of mature worms in the individual'),
+            Types.INT, 'Number of mature worms in the individual'),
         'sh_symptoms': Property(
             Types.LIST, 'Symptoms for S. Haematobium infection'),  # actually might also be np.nan
         'sh_start_of_prevalent_period': Property(Types.DATE, 'Date of going from Non-infected to Infected'),
         'sh_start_of_high_infection': Property(Types.DATE, 'Date of going from entering state High-inf'),
         'sh_harbouring_rate': Property(Types.REAL,
                                        'Rate of harbouring new worms (Poisson), drawn from gamma distribution'),
-        'sh_prevalent_days_this_year': Property(Types.REAL, 'Cumulative days with infection in current year'),
-        'sh_high_inf_days_this_year': Property(Types.REAL,
+        'sh_prevalent_days_this_year': Property(Types.INT, 'Cumulative days with infection in current year'),
+        'sh_high_inf_days_this_year': Property(Types.INT,
                                                'Cumulative days with high-intensity infection in current year')
     }
 
@@ -318,12 +318,11 @@ class Schisto_Haematobium(Module):
             })
 
         # this is to be used if we want to model every district
-        # params['list_of_districts'] =
-        # pd.read_csv(Path(self.resourcefilepath) /
-        # 'ResourceFile_District_Population_Data.csv').District.unique().tolist()
-
+        params['list_of_districts'] = \
+            pd.read_csv(Path(self.resourcefilepath) /
+                        'ResourceFile_District_Population_Data.csv').District.unique().tolist()
         # this was used for the analysis done in my thesis
-        params['list_of_districts'] = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
+        # params['list_of_districts'] = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -335,7 +334,7 @@ class Schisto_Haematobium(Module):
 
         assert len(df.index[df.is_alive].tolist()) == len(df.index.tolist()), "Dead subjects in the initial population"
 
-        df['sh_infection_status'] = 'Non-infected'
+        # df['sh_infection_status'] = 'Non-infected'
         df['sh_aggregate_worm_burden'] = 0
         df['sh_symptoms'] = np.nan
         df['sh_prevalent_days_this_year'] = 0
@@ -353,6 +352,7 @@ class Schisto_Haematobium(Module):
         # assign infection statuses
         df['sh_infection_status'] = \
             df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sh_aggregate_worm_burden']), axis=1)
+        df['sh_infection_status'] = df['sh_infection_status'].astype('category')
         #  start of the prevalent period & start of high-intensity infections
         infected_idx = df.index[df['sh_infection_status'] != 'Non-infected']
         df.loc[infected_idx, 'sh_start_of_prevalent_period'] = self.sim.date
@@ -576,15 +576,15 @@ class Schisto_Mansoni(Module):
             Types.CATEGORICAL, 'Current status of schistosomiasis infection',
             categories=['Non-infected', 'Low-infection', 'High-infection']),
         'sm_aggregate_worm_burden': Property(
-            Types.REAL, 'Number of mature worms in the individual'),
+            Types.INT, 'Number of mature worms in the individual'),
         'sm_symptoms': Property(
             Types.LIST, 'Symptoms for S. Mansoni infection'),  # actually might also be np.nan
         'sm_start_of_prevalent_period': Property(Types.DATE, 'Date of going from Non-infected to Infected'),
         'sm_start_of_high_infection': Property(Types.DATE, 'Date of going from entering state High-inf'),
         'sm_harbouring_rate': Property(Types.REAL,
                                        'Rate of harbouring new worms (Poisson), drawn from gamma distribution'),
-        'sm_prevalent_days_this_year': Property(Types.REAL, 'Cumulative days with infection in current year'),
-        'sm_high_inf_days_this_year': Property(Types.REAL,
+        'sm_prevalent_days_this_year': Property(Types.INT, 'Cumulative days with infection in current year'),
+        'sm_high_inf_days_this_year': Property(Types.INT,
                                                'Cumulative days with high-intensity infection in current year')
     }
 
@@ -637,7 +637,7 @@ class Schisto_Mansoni(Module):
 
         assert len(df.index[df.is_alive].tolist()) == len(df.index.tolist()), "Dead subjects in the initial population"
 
-        df['sm_infection_status'] = 'Non-infected'
+        # df['sm_infection_status'] = 'Non-infected'
         df['sm_aggregate_worm_burden'] = 0
         df['sm_symptoms'] = np.nan
         df['sm_prevalent_days_this_year'] = 0
@@ -655,6 +655,7 @@ class Schisto_Mansoni(Module):
         # assign infection statuses
         df['sm_infection_status'] = \
             df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sm_aggregate_worm_burden']), axis=1)
+        df['sm_infection_status'] = df['sm_infection_status'].astype('category')
         #  start of the prevalent period & start of high-intensity infections
         infected_idx = df.index[df['sm_infection_status'] != 'Non-infected']
         df.loc[infected_idx, 'sm_start_of_prevalent_period'] = self.sim.date

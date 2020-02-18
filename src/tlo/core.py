@@ -32,6 +32,8 @@ class Types(Enum):
     SERIES = auto()
     DATA_FRAME = auto()
     STRING = auto()
+    DICT = auto()
+    # TODO: Add 'set' too?
 
 
 class Specifiable:
@@ -47,7 +49,8 @@ class Specifiable:
         Types.LIST: object,
         Types.SERIES: object,
         Types.DATA_FRAME: object,
-        Types.STRING: object
+        Types.STRING: object,
+        Types.DICT: object
     }
 
     """Map our Types to Python types."""
@@ -60,7 +63,8 @@ class Specifiable:
         Types.LIST: list,
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
-        Types.STRING: object
+        Types.STRING: object,
+        Types.DICT: dict
     }
 
     def __init__(self, type_, description, categories=None):
@@ -279,6 +283,15 @@ class Module:
         It is a good place to add initial events to the event queue.
         """
         raise NotImplementedError
+
+    def pre_initialise_population(self):
+        """Carry out any work before any populations have been initalised
+
+        This optional method allows access to all other registered modules, before any of
+        the modules have initialised a population. This is expected to be useful for
+        when a module's properties rely upon information from other modules.
+        """
+        pass
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.

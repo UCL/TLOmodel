@@ -1,4 +1,3 @@
-import logging
 import os
 import time
 from pathlib import Path
@@ -13,11 +12,6 @@ end_date = Date(2015, 1, 1)
 popsize = 500
 
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.INFO)
-
-
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -25,7 +19,7 @@ def simulation():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=["tb*"],
+                                           service_availability=["tb*"],        # TODO: TH - why TB* only? (HIV?)
                                            capabilities_coefficient=1.0))
     sim.register(tb.tb(resourcefilepath=resourcefilepath))
     sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
