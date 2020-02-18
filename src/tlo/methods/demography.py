@@ -3,15 +3,13 @@ The core demography module and its associated events.
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
-
-import logging
 import math
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.util import create_age_range_lookup
 
