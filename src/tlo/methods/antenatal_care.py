@@ -166,9 +166,9 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(HSI_Event, Individual
                                                  'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code: 1}, {pkg_code_syphilis: 1}, {pkg_code_tetanus: 1},
-                                          {pkg_code_ipt: 1}],
-            'Item_Code': [],
+            'Intervention_Package_Code': {pkg_code: 1, pkg_code_syphilis: 1, pkg_code_tetanus: 1,
+                                          pkg_code_ipt: 1},
+            'Item_Code': {},
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -218,8 +218,8 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(HSI_Event, Indiv
                                                  'Intervention_Pkg'] == 'Basic ANC',
                                              'Intervention_Pkg_Code'])[0]
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code: 1}],
-            'Item_Code': [],
+            'Intervention_Package_Code': {pkg_code: 1},
+            'Item_Code': {},
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -270,8 +270,8 @@ class HSI_AntenatalCare_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin)
                                                  'Intervention_Pkg'] == 'Basic ANC',
                                              'Intervention_Pkg_Code'])[0]
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code: 1}],
-            'Item_Code': [],
+            'Intervention_Package_Code': {pkg_code: 1},
+            'Item_Code': {},
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -320,8 +320,8 @@ class HSI_AntenatalCare_PostAbortionCare(HSI_Event, IndividualScopeEventMixin): 
                                                  'Intervention_Pkg'] == 'Post-abortion case management',
                                              'Intervention_Pkg_Code'])[0]
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code: 1}],
-            'Item_Code': [],
+            'Intervention_Package_Code': {pkg_code: 1},
+            'Item_Code': {},
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -370,8 +370,8 @@ class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(HSI_Event, Indivi
                                                  'Intervention_Pkg'] == 'Post-abortion case management',
                                              'Intervention_Pkg_Code'])[0]
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code: 1}],
-            'Item_Code': [],
+            'Intervention_Package_Code': {pkg_code: 1},
+            'Item_Code': {},
         }
 
         # TODO: Dummy consumables above- review

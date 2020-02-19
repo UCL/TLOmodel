@@ -656,8 +656,8 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
             consumables.loc[consumables['Items'] == 'tetracycline HCl 3% skin ointment, 15 g_10_IDA', 'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code: 1}, {pkg_code_bcg: 1}, {pkg_code_polio: 1}],
-            'Item_Code': [{item_code_vk: 1}, {item_code_tc: 1}]}
+            'Intervention_Package_Code': {pkg_code: 1, pkg_code_bcg: 1, pkg_code_polio: 1},
+            'Item_Code': {item_code_vk: 1, item_code_tc: 1}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -819,7 +819,7 @@ class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(HSI_Event, IndividualScop
                                                                                 '(institutional)',
                                              'Intervention_Pkg_Code'])[0]
 
-        consumables_needed = {'Intervention_Package_Code': [{pkg_code: 1}], 'Item_Code': []}
+        consumables_needed = {'Intervention_Package_Code': {pkg_code: 1}, 'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -880,7 +880,7 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeE
                                                        'Intervention_Pkg'] == 'Treatment of local infections (newborn)',
                                                  'Intervention_Pkg_Code'])[0]
 
-        consumables_needed = {'Intervention_Package_Code': [{pkg_code_sep: 1}], 'Item_Code': []}
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)

@@ -1141,8 +1141,8 @@ class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMix
                                                        'Intervention_Pkg_Code'])[0]
         # TODO: review induction guidelines to confirm appropriate 1st line/2nd line consumable use
 
-        consumables_needed = {'Intervention_Package_Code': [{pkg_code_induction: 1}],
-                              'Item_Code': [], }
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_induction: 1},
+                              'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -1224,8 +1224,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
                                                   'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code_sba_uncomp: 1}],
-            'Item_Code': []}
+            'Intervention_Package_Code': {pkg_code_sba_uncomp: 1},
+            'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -1370,8 +1370,8 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
                                                       'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code_obst_lab: 1}],
-            'Item_Code': []}
+            'Intervention_Package_Code': {pkg_code_obst_lab: 1},
+            'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -1464,7 +1464,7 @@ class HSI_Labour_ReceivesCareForMaternalSepsis(HSI_Event, IndividualScopeEventMi
                                                     'Maternal sepsis case management',
                                                     'Intervention_Pkg_Code'])[0]
 
-        consumables_needed = {'Intervention_Package_Code': [{pkg_code_sepsis: 1}], 'Item_Code': []}
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_sepsis: 1}, 'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -1540,8 +1540,8 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
                             'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code_eclampsia: 1}],
-            'Item_Code': [{item_code_nf: 2}, {item_code_hz:  2}, {item_code_hs: 1}]}
+            'Intervention_Package_Code': {pkg_code_eclampsia: 1},
+            'Item_Code': {item_code_nf: 2, item_code_hz:  2, item_code_hs: 1}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -1637,8 +1637,8 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
                                                    'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code_pph: 1}],
-            'Item_Code': [{item_code_aph1: 2}, {item_code_aph2: 1}, {item_code_aph3: 1}, {item_code_aph4: 1}]}
+            'Intervention_Package_Code': {pkg_code_pph: 1},
+            'Item_Code': {item_code_aph1: 2, item_code_aph2: 1, item_code_aph3: 1, item_code_aph4: 1}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
@@ -1756,7 +1756,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
                                                 'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code_am: 1}], 'Item_Code': []}
+            'Intervention_Package_Code': {pkg_code_am: 1}, 'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed
@@ -1847,8 +1847,8 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
                                                 'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code_cs: 1}],
-            'Item_Code': []}
+            'Intervention_Package_Code': {pkg_code_cs: 1},
+            'Item_Code': {}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed)
