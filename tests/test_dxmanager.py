@@ -12,6 +12,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    labour,
     mockitis,
     symptommanager,
 )
@@ -38,6 +39,7 @@ sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
 
