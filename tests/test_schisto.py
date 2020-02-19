@@ -1,12 +1,11 @@
 import os
 import time
-import pandas as pd
 import numpy as np
 from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.methods import (
     contraception,
     demography,
@@ -16,8 +15,8 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1000
+end_date = Date(2011, 1, 1)
+popsize = 10000
 
 
 @pytest.fixture(scope='module')
@@ -32,9 +31,6 @@ def simulation_haem():
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(schisto.Schisto(resourcefilepath=resourcefilepath))
     sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
-
-    # custom_levels = {"*": logging.WARNING}
-    # sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
 
     sim.seed_rngs(1)
     return sim
@@ -54,9 +50,6 @@ def simulation_both():
     sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
     sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
 
-    # custom_levels = {"*": logging.WARNING}
-    # sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
-
     sim.seed_rngs(1)
     return sim
 
@@ -67,7 +60,9 @@ def test_run(simulation_both):
 
 # for some reason this test keeps failing:
 # 'sm_infection_status' dtype changes from 'object' to 'categorical' even though i'm doing
-# type castng to categorical at the initialisation of the population
+# type casting to categorical at the initialisation of the population in line 658 of schisto.py
+# (without it the dtype of the population.props 'sm_infection_status' was object and
+# the new_row was categorical
 # def test_dtypes(simulation_both):
 #     # check types of columns
 #     df = simulation_both.population.props
