@@ -59,17 +59,10 @@ def test_run(simulation_both):
     simulation_both.simulate(end_date=end_date)
     check_dtypes(simulation_both)
 
-# for some reason this test keeps failing:
-# 'sm_infection_status' dtype changes from 'object' to 'categorical' even though i'm doing
-# type casting to categorical at the initialisation of the population in line 658 of schisto.py
-# (without it the dtype of the population.props 'sm_infection_status' was object and
-# the new_row was categorical
 
 def check_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
-    print(df.dtypes)
-    print(orig.dtypes)
     assert (df.dtypes == orig.dtypes).all()
 
 

@@ -52,9 +52,9 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
     if haem:
-        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=True))
     if mansoni:
-        sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath))
+        sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=True))
 
     # Sets all modules to WARNING threshold, then alters schisto to INFO
     custom_levels = {"*": logging.WARNING,
@@ -64,7 +64,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
 
     # Run the simulation
-    sim.seed_rngs(int(np.random.uniform(0, 1) * 1000))
+    sim.seed_rngs(int(np.random.uniform(0, 1) * 0 + 1000))
     # initialise the population
     sim.make_initial_population(n=popsize)
 
@@ -75,7 +75,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     return sim, output
 
 
-sim, output = run_simulation(popsize=1000, haem=True, mansoni=False, mda_execute=False)
+sim, output = run_simulation(popsize=1000, haem=True, mansoni=True, mda_execute=True)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used

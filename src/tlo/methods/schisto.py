@@ -96,7 +96,13 @@ class Schisto(Module):
         'prob_sent_to_lab_test_adults': Parameter(Types.REAL,
                                                   'Probability that an infected adults gets sent to lab test'),
 
+        # symptoms prevalence
+        'symptoms_prevalence': Parameter(Types.DICT, 'Prevalence of a symptom occurring given an infection'),
+        'symptoms_mapping': Parameter(Types.DICT, 'Schisto symptom mapped to HSB symptom'),
+
         # MDA parameters
+        'years_till_first_MDA': Parameter(Types.REAL, 'Years till the first historical MDA'),
+
         'MDA_coverage_PSAC': Parameter(Types.DATA_FRAME, 'Probability of getting PZQ in the MDA for PSAC'),
         'MDA_coverage_SAC': Parameter(Types.DATA_FRAME, 'Probability of getting PZQ in the MDA for SAC'),
         'MDA_coverage_Adults': Parameter(Types.DATA_FRAME, 'Probability of getting PZQ in the MDA for Adults'),
@@ -115,8 +121,6 @@ class Schisto(Module):
 
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx', sheet_name=None)
-        # workbook = pd.read_excel(os.path.join(self.resourcefilepath,
-        #                                       'ResourceFile_Schisto.xlsx'), sheet_name=None)
 
         params = self.parameters
         params['param_list'] = workbook['Parameters']
@@ -132,7 +136,15 @@ class Schisto(Module):
         params['prob_sent_to_lab_test_adults'] = self.param_list.loc['prob_sent_to_lab_test_adults', 'Value']
         params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
 
+        # symptoms prevalence
+        symptoms_df = workbook['Symptoms']
+        params['symptoms_prevalence'] = pd.Series(symptoms_df.Prevalence.values, index=symptoms_df.Symptom).to_dict()
+        params['symptoms_mapping'] = \
+            pd.Series(symptoms_df.HSB_mapped_symptom.values, index=symptoms_df.Symptom).to_dict()
+
         # MDA coverage historical
+        params['years_till_first_MDA'] = self.param_list.loc['years_till_first_MDA', 'Value']
+
         params['MDA_coverage'] = workbook['MDA_historical_Coverage']
         self.MDA_coverage.set_index(['District', 'Year'], inplace=True)
         params['MDA_coverage_PSAC'] = self.MDA_coverage.loc[:, 'Coverage PSAC']
@@ -167,9 +179,6 @@ class Schisto(Module):
         :param population: the population of individuals
         """
         df = population.props
-
-        assert len(df.index[df.is_alive].tolist()) == len(df.index.tolist()), "Dead subjects in the initial population"
-
         df['ss_scheduled_hsi_date'] = pd.NaT
         df['ss_last_PZQ_date'] = pd.Timestamp(year=1900, month=1, day=1)  # for simplicity to avoid NaT later
 
@@ -182,20 +191,19 @@ class Schisto(Module):
 
         if self.mda_execute:
             # schedule historical MDA to happen once per year in July (4 events)
-            years_of_historical_mda = [25, 26, 27, 28]  # 25 years are required for the model to equilibrate
-            years_of_historical_mda = [sim.date.year + el for el in years_of_historical_mda]
+            y0 = self.parameters['years_till_first_MDA']
+            years_of_historical_mda = [int(y0 + ii) for ii in range(4)]  # 4 consecutive years
+            years_of_historical_mda = [sim.date.year + el for el in years_of_historical_mda]  # create dates
             for historical_mda_year in years_of_historical_mda:
                 sim.schedule_event(SchistoHistoricalMDAEvent(self),
-                                   pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23) +
-                                   DateOffset(months=0))
+                                   pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23))
             year_first_simulated_mda = years_of_historical_mda[-1] + 1
             # schedule prognosed MDA programmes for every district
             for district in sim.population.props.district_of_residence.unique().tolist():
                 freq = self.parameters['MDA_frequency_prognosed'][district]
                 if freq > 0:  # frequency 0 means no need for MDA, because prevalence there is always 0
                     sim.schedule_event(SchistoPrognosedMDAEvent(self, freq, district),
-                                       pd.Timestamp(year=year_first_simulated_mda, month=6, day=1, hour=12) +
-                                       DateOffset(months=0))
+                                       pd.Timestamp(year=year_first_simulated_mda, month=6, day=1, hour=12))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -249,7 +257,7 @@ class Schisto_Haematobium(Module):
         'reservoir_2010': Parameter(Types.REAL, 'Initial reservoir of infectious material per district in 2010'),
         'delay_a': Parameter(Types.REAL, 'End of the latent period in days, start'),
         'delay_b': Parameter(Types.REAL, 'End of the latent period in days, end'),
-        'symptoms': Parameter(Types.DATA_FRAME, 'Symptoms for S. Haematobium infection'),
+        'symptoms': Parameter(Types.LIST, 'Symptoms for S. Haematobium infection'),
         'gamma_alpha': Parameter(Types.REAL, 'Parameter alpha for Gamma distribution for harbouring rates'),
         'beta_PSAC': Parameter(Types.REAL, 'Contact/exposure rate of PSAC'),
         'beta_SAC': Parameter(Types.REAL, 'Contact/exposure rate of PSAC'),
@@ -310,12 +318,7 @@ class Schisto_Haematobium(Module):
         params['R0'] = self.schisto_initial_reservoir.loc[:, 'R0_value']
 
         # symptoms prevalence
-        params['symptoms'] = pd.DataFrame(
-            data={
-                'symptoms': ['anemia', 'fever', 'haematuria', 'hydronephrosis', 'dysuria', 'bladder_pathology'],
-                'prevalence': [0.9, 0.3, 0.625, 0.083, 0.2857, 0.7857],
-                'hsb_symptoms': ['other', 'fever', 'other', 'stomach_ache', 'stomach_ache', 'stomach_ache'],
-            })
+        params['symptoms'] = ['anemia', 'fever', 'haematuria', 'hydronephrosis', 'dysuria', 'bladder_pathology']
 
         # this is to be used if we want to model every district
         params['list_of_districts'] = \
@@ -332,9 +335,6 @@ class Schisto_Haematobium(Module):
         assert 'Schisto' in self.sim.modules.keys(), "Module Schisto must be registered for Schisto_Haematobium to work"
         df = population.props
 
-        assert len(df.index[df.is_alive].tolist()) == len(df.index.tolist()), "Dead subjects in the initial population"
-
-        # df['sh_infection_status'] = 'Non-infected'
         df['sh_aggregate_worm_burden'] = 0
         df['sh_symptoms'] = np.nan
         df['sh_prevalent_days_this_year'] = 0
@@ -350,9 +350,8 @@ class Schisto_Haematobium(Module):
         self.assign_initial_worm_burden(population)
 
         # assign infection statuses
-        df['sh_infection_status'] = \
+        df['sh_infection_status'].values[:] = \
             df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sh_aggregate_worm_burden']), axis=1)
-        df['sh_infection_status'] = df['sh_infection_status'].astype('category')
         #  start of the prevalent period & start of high-intensity infections
         infected_idx = df.index[df['sh_infection_status'] != 'Non-infected']
         df.loc[infected_idx, 'sh_start_of_prevalent_period'] = self.sim.date
@@ -398,7 +397,7 @@ class Schisto_Haematobium(Module):
                 harbouring_rates = df.loc[eligible, 'sh_harbouring_rate'].values
                 rates = np.multiply(harbouring_rates, contact_rates)
                 reservoir_distr = int(reservoir[distr] * len(eligible))
-                # dsitribute a worm burden
+                # distribute a worm burden
                 chosen = self.rng.choice(eligible, reservoir_distr, p=rates / rates.sum())
                 unique, counts = np.unique(chosen, return_counts=True)
                 worms_per_idx = dict(zip(unique, counts))
@@ -453,8 +452,10 @@ class Schisto_Haematobium(Module):
         if len(eligible_idx):
             df = population.props
             params = self.parameters
-            # create a dictionary from a df
-            symptoms_dict = params['symptoms'].set_index('symptoms').to_dict()['prevalence']
+            symptoms_possible = params['symptoms']
+            all_symptoms_dict = self.sim.modules['Schisto'].parameters['symptoms_prevalence']
+            # get the prevalence of the possible symptoms
+            symptoms_dict = {k: all_symptoms_dict[k] for k in symptoms_possible}
             symptoms_column = 'sh_symptoms'
 
             for symptom in symptoms_dict.keys():
@@ -465,16 +466,21 @@ class Schisto_Haematobium(Module):
                     df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
 
     def assign_hsi_dates_initial(self, population, symptomatic_idx):
+        """
+        Schedules the treatment seeking to the initial population (only the clinical cases)
+        :param population:
+        :param symptomatic_idx: indices of people with symptoms
+        """
         df = population.props
         params = self.sim.modules['Schisto'].parameters
         for person_id in symptomatic_idx:
             p = params['prob_seeking_healthcare']
-            will_seek_treatment = self.rng.choice(['True', 'False'], size=1, p=[p, 1 - p])
+            will_seek_treatment = self.rng.rand() < p
+            # will_seek_treatment = self.rng.choice(['True', 'False'], size=1, p=[p, 1 - p])
             if will_seek_treatment:
                 seeking_treatment_ahead = \
-                    self.rng.uniform(params['delay_till_hsi_a'], params['delay_till_hsi_b'], size=1).astype(int)
-                seeking_treatment_ahead = pd.to_timedelta(seeking_treatment_ahead, unit='D')
-                df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead
+                    int(self.rng.uniform(params['delay_till_hsi_a'], params['delay_till_hsi_b'], size=1))
+                df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + DateOffset(days=seeking_treatment_ahead)
                 seek_treatment_event = HSI_SchistoSeekTreatment(self.sim.modules['Schisto'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_event,
                                                                     priority=1,
@@ -615,12 +621,7 @@ class Schisto_Mansoni(Module):
         params['R0'] = self.schisto_initial_reservoir.loc[:, 'R0_value']
 
         # symptoms prevalence
-        params['symptoms'] = pd.DataFrame(
-            data={
-                'symptoms': ['anemia', 'fever', 'ascites', 'diarrhoea', 'vomit', 'hepatomegaly'],
-                'prevalence': [0.9, 0.3, 0.0054, 0.0144, 0.0172, 0.1574],
-                'hsb_symptoms': ['other', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'stomach_ache'],
-            })
+        params['symptoms'] = ['anemia', 'fever', 'ascites', 'diarrhoea', 'vomit', 'hepatomegaly']
 
         params['list_of_districts'] = \
             pd.read_csv(Path(self.resourcefilepath) /
@@ -635,9 +636,6 @@ class Schisto_Mansoni(Module):
 
         df = population.props
 
-        assert len(df.index[df.is_alive].tolist()) == len(df.index.tolist()), "Dead subjects in the initial population"
-
-        df['sm_infection_status'].values[:] = 'Non-infected'
         df['sm_aggregate_worm_burden'] = 0
         df['sm_symptoms'] = np.nan
         df['sm_prevalent_days_this_year'] = 0
@@ -655,10 +653,6 @@ class Schisto_Mansoni(Module):
         # assign infection statuses
         df['sm_infection_status'].values[:] = \
             df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sm_aggregate_worm_burden']), axis=1)
-
-        # df['sm_infection_status'] = \
-        #     df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sm_aggregate_worm_burden']), axis=1)
-        # df['sm_infection_status'] = df['sm_infection_status'].astype('category')
 
         #  start of the prevalent period & start of high-intensity infections
         infected_idx = df.index[df['sm_infection_status'] != 'Non-infected']
@@ -695,7 +689,6 @@ class Schisto_Mansoni(Module):
 
         for distr in districts:
             eligible = df.index[df['district_of_residence'] == distr].tolist()
-            reservoir_distr = int(reservoir[distr] * len(eligible))
             contact_rates = pd.Series(1, index=eligible)
             for age_group in ['PSAC', 'SAC', 'Adults']:
                 age_range = map_age_groups(age_group)
@@ -763,8 +756,10 @@ class Schisto_Mansoni(Module):
         if len(eligible_idx):
             df = population.props
             params = self.parameters
-            # create a dictionary from a df
-            symptoms_dict = params['symptoms'].set_index('symptoms').to_dict()['prevalence']
+            symptoms_possible = params['symptoms']
+            all_symptoms_dict = self.sim.modules['Schisto'].parameters['symptoms_prevalence']
+            # get the prevalence of the possible symptoms
+            symptoms_dict = {k: all_symptoms_dict[k] for k in symptoms_possible}
             symptoms_column = 'sm_symptoms'
 
             for symptom in symptoms_dict.keys():
@@ -775,16 +770,22 @@ class Schisto_Mansoni(Module):
                     df.loc[s_idx, symptoms_column].apply(lambda x: add_elements(x, [symptom]))
 
     def assign_hsi_dates_initial(self, population, symptomatic_idx):
+        """
+        Schedules the treatment seeking to the initial population (only the clinical cases)
+        :param population:
+        :param symptomatic_idx: indices of people with symptoms
+        """
         df = population.props
         params = self.sim.modules['Schisto'].parameters
         for person_id in symptomatic_idx:
             p = params['prob_seeking_healthcare']
-            will_seek_treatment = self.rng.choice(['True', 'False'], size=1, p=[p, 1 - p])
+            will_seek_treatment = self.rng.rand() < p
+            # will_seek_treatment = self.rng.choice(['True', 'False'], size=1, p=[p, 1 - p])
             if will_seek_treatment:
                 seeking_treatment_ahead = \
-                    self.rng.uniform(params['delay_till_hsi_a'], params['delay_till_hsi_b'], size=1).astype(int)
-                seeking_treatment_ahead = pd.to_timedelta(seeking_treatment_ahead, unit='D')
-                df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead
+                    int(self.rng.uniform(params['delay_till_hsi_a'], params['delay_till_hsi_b'], size=1))
+                # seeking_treatment_ahead = pd.to_timedelta(seeking_treatment_ahead, unit='D')
+                df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + DateOffset(days=seeking_treatment_ahead)
                 seek_treatment_event = HSI_SchistoSeekTreatment(self.sim.modules['Schisto'], person_id=person_id)
                 # self.sim.schedule_event(seek_treatment_event, self.sim.date)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_event,
@@ -1085,13 +1086,14 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, self.module.prefix + '_symptoms'] = symptoms
             # schedule Healthcare Seeking
             p = params_hsi['prob_seeking_healthcare']
-            will_seek_treatment = self.module.rng.choice(['True', 'False'], size=1, p=[p, 1-p])
+            will_seek_treatment = self.module.rng.rand() < p
+            # will_seek_treatment = self.module.rng.choice(['True', 'False'], size=1, p=[p, 1-p])
             if will_seek_treatment:
-                seeking_treatment_ahead = self.module.rng.uniform(params_hsi['delay_till_hsi_a'],
+                seeking_treatment_ahead = int(self.module.rng.uniform(params_hsi['delay_till_hsi_a'],
                                                                   params_hsi['delay_till_hsi_b'],
-                                                                  size=1).astype(int)
-                seeking_treatment_ahead = pd.to_timedelta(seeking_treatment_ahead, unit='D')
-                df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + seeking_treatment_ahead
+                                                                  size=1))
+                # seeking_treatment_ahead = pd.to_timedelta(seeking_treatment_ahead, unit='D')
+                df.loc[person_id, 'ss_scheduled_hsi_date'] = self.sim.date + DateOffset(days=seeking_treatment_ahead)
                 seek_treatment_event = HSI_SchistoSeekTreatment(self.sim.modules['Schisto'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_event,
                                                                     priority=1,
@@ -1108,12 +1110,15 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
         """
         assert module_prefix in ['sm', 'sh'], "Incorrect infection type. Can't assign symptoms."
         params = self.module.parameters
-        symptoms_dict = params['symptoms'].set_index('symptoms').to_dict()[
-            'prevalence']  # create a dictionary from a df
+        symptoms_possible = params['symptoms']
+        all_symptoms_dict = self.sim.modules['Schisto'].parameters['symptoms_prevalence']
+        # get the prevalence of the possible symptoms
+        symptoms_dict = {k: all_symptoms_dict[k] for k in symptoms_possible}
         symptoms_exp = []
         for symptom in symptoms_dict.keys():
             prev = symptoms_dict[symptom]  # get the prevalence of the symptom among the infected population
-            is_experienced = self.module.rng.choice([True, False], 1, p=[prev, 1-prev])
+            is_experienced = self.module.rng.rand() < prev
+            # is_experienced = self.module.rng.choice([True, False], 1, p=[prev, 1-prev])
             if is_experienced:
                 symptoms_exp.append(symptom)
         if len(symptoms_exp):
@@ -1192,7 +1197,7 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
         else:
             the_appt_footprint['Over5OPD'] = 1
 
-        the_accepted_facility_level = 0
+        the_accepted_facility_level = 1
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Schisto_Treatment_seeking'  # This must begin with the module name
@@ -1226,7 +1231,8 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 prob_test = params['prob_sent_to_lab_test_adults']
 
-            sent_to_test = self.module.rng.choice([True, False], p=[prob_test, 1-prob_test])
+            sent_to_test = self.module.rng.rand() < prob_test
+            # sent_to_test = self.module.rng.choice([True, False], p=[prob_test, 1-prob_test])
             # use this is you don't care about whether PZQ is available or not
             # if sent_to_test:
             #     self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
@@ -1237,7 +1243,7 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
                     pd.unique(
                         consumables.loc[
                             consumables['Items'] == "Praziquantel, 600 mg (donated)", 'Item_Code'])[0]
-                the_cons_footprint = {'Intervention_Package_Code': [], 'Item_Code': [{items_code1: 1}]}
+                the_cons_footprint = {'Intervention_Package_Code': {}, 'Item_Code': {items_code1: 1}}
                 outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                     hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
                 )
@@ -1249,9 +1255,7 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
                     )
                     logger.debug('ItemsCode1 is available, so use it.')
                     # patient is cured
-                    # print('Patients is cured with PZQ')
                     self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
-
             #     else:
             #         # print('There was no PZQ available')
             #         logger.debug('ItemsCode1 is not available, so can' 't use it.')
@@ -1290,7 +1294,9 @@ class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         print("Historical MDA is happening now!")
         year = self.sim.date.year
-        year = year - 2035 + 2015
+        # this might look hacky, but it's done because the data for the MDA is for only these specific years
+        # and the simulation might have to run longer to equilibrate
+        year = year - self.sim.start_date.year + 2015
         assert year in [2015, 2016, 2017, 2018], "No historical coverage data for this year"
 
         treated_idx_PSAC = self.assign_historical_MDA_coverage(population, year, 'PSAC')
