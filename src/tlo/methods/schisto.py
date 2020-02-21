@@ -637,7 +637,7 @@ class Schisto_Mansoni(Module):
 
         assert len(df.index[df.is_alive].tolist()) == len(df.index.tolist()), "Dead subjects in the initial population"
 
-        # df['sm_infection_status'] = 'Non-infected'
+        df['sm_infection_status'].values[:] = 'Non-infected'
         df['sm_aggregate_worm_burden'] = 0
         df['sm_symptoms'] = np.nan
         df['sm_prevalent_days_this_year'] = 0
@@ -653,9 +653,13 @@ class Schisto_Mansoni(Module):
         self.assign_initial_worm_burden(population)
 
         # assign infection statuses
-        df['sm_infection_status'] = \
+        df['sm_infection_status'].values[:] = \
             df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sm_aggregate_worm_burden']), axis=1)
-        df['sm_infection_status'] = df['sm_infection_status'].astype('category')
+
+        # df['sm_infection_status'] = \
+        #     df.apply(lambda x: self.intensity_of_infection(x['age_years'], x['sm_aggregate_worm_burden']), axis=1)
+        # df['sm_infection_status'] = df['sm_infection_status'].astype('category')
+
         #  start of the prevalent period & start of high-intensity infections
         infected_idx = df.index[df['sm_infection_status'] != 'Non-infected']
         df.loc[infected_idx, 'sm_start_of_prevalent_period'] = self.sim.date
