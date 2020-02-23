@@ -96,7 +96,7 @@ result.loc['Proportion of 15+ currently depressed using anti-depressants, aged 1
 # Process the event outputs from the model
 depr_events = outputs['tlo.methods.depression']['event_counts']
 depr_events['year'] = pd.to_datetime(depr_events['date']).dt.year
-depr_events = depr_events.groupby(by='year')[['SelfHarmEvents', 'SuicideEvents']].count()
+depr_events = depr_events.groupby(by='year')[['SelfHarmEvents', 'SuicideEvents']].sum()
 
 # Get population sizes for the
 def get_15plus_pop_by_year(df):
