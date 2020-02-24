@@ -68,8 +68,8 @@ class HealthBurden(Module):
         for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
             assert 'report_daly_values' in dir(self.sim.modules['HealthSystem'].registered_disease_modules[module_name])
 
-        # Launch the DALY Logger to run every month
-        sim.schedule_event(Get_Current_DALYS(self), sim.date)
+        # Launch the DALY Logger to run every month, starting with the end of month 1
+        sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         pass

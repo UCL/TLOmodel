@@ -8,6 +8,7 @@ https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
@@ -230,8 +231,7 @@ class Depression(Module):
             self.daly_wts = dict()
             # get the DALY weight - 932 and 933 are the sequale codes for depression
             # TODO: check are these for the status or for an episode?
-            # TODO: ONLY SEVERE IS USED?
-            # TODO; make it use the 'average' as noted in the method document
+            # TODO: if we are only modelling severe should it not just be that weight?
             self.daly_wts['severe_episode_major_depressive_disorder'] = self.sim.modules[
                 'HealthBurden'
             ].get_daly_weight(sequlae_code=932)
@@ -239,6 +239,12 @@ class Depression(Module):
             self.daly_wts['moderate_episode_major_depressive_disorder'] = self.sim.modules[
                 'HealthBurden'
             ].get_daly_weight(sequlae_code=933)
+
+            self.daly_wts['average_per_day_during_any_episode'] = 0.5 * ( \
+                self.daly_wts['severe_episode_major_depressive_disorder']
+                + self.daly_wts['moderate_episode_major_depressive_disorder']
+            )
+
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -359,15 +365,37 @@ class Depression(Module):
         Report Daly Values based on current status: current depression attracts a set Daly weight, which it is assumed
         lasted the entire previous month
         """
-        # TODO: adjust this caluclation acccording to onset/resolution of depresssion
-        # TODO: reconcile with what it in the document about using an average
+        # TODO: check the calc here.
+
+        def left_censor(obs, window_open):
+            return obs.apply(lambda x: max(x, window_open) if ~pd.isnull(x) else pd.NaT)
+
+        def right_censor(obs, window_close):
+            return obs.apply(lambda x: window_close if pd.isnull(x) else min(x, window_close))
 
         df = self.sim.population.props
 
-        disability_series_for_alive_persons = df.loc[df.is_alive, 'de_depr'].map(
-            {True: self.daly_wts['severe_episode_major_depressive_disorder'], False: 0})
+        # Calculate fraction of the last month that was spent depressed
+        any_depr_in_the_last_month = (df['is_alive']) \
+                                     & (
+                                         ~pd.isnull(df['de_date_init_most_rec_depr']) &
+                                         (df['de_date_init_most_rec_depr'] <= self.sim.date)
+                                     )\
+                                     & (
+                                         pd.isnull(df['de_date_depr_resolved']) |
+                                         (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+                                     )
 
-        return disability_series_for_alive_persons
+        start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'], self.sim.date - DateOffset(months=1))
+        end_depr = right_censor(df.loc[any_depr_in_the_last_month, 'de_date_depr_resolved'], self.sim.date)
+        dur_depr_in_days = (end_depr - start_depr).dt.days.clip(0).fillna(0)
+        days_in_last_month = (self.sim.date - (self.sim.date - DateOffset(months=1))).days
+        fraction_of_month_depr = dur_depr_in_days / days_in_last_month
+
+        # Apply the daly_wt to give a an average daly_wt for the previous month
+        av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='', data=0.0).add(fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'],fill_value=0.0)
+
+        return av_daly_wt_last_month
 
 
 class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
