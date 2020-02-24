@@ -23,16 +23,13 @@ popsize = 1000
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
-
     sim.seed_rngs(0)
     return sim
 
@@ -46,6 +43,7 @@ def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
+    print((df.dtypes == orig.dtypes))
     assert (df.dtypes == orig.dtypes).all()
 
 

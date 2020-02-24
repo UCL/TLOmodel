@@ -19,12 +19,14 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# ---------------------------------------------------------------------------------------------------------
+#   MODULE DEFINITIONS
+# ---------------------------------------------------------------------------------------------------------
 
 class Depression(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-
 
     # Module parameters
     PARAMETERS = {
@@ -128,24 +130,18 @@ class Depression(Module):
         'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
         'de_current_talk_ther': Property(Types.BOOL, 'Whether having current talking therapy (in this 3 mnth period)'),
 
-        # TODO: Probably will delete these
-        'de_non_fatal_self_harm_event': Property(Types.BOOL, 'non fatal self harm event this 3 month period'),
-        'de_suicide': Property(Types.BOOL, 'suicide this 3 month period'),
-        'de_prob_3m_resol_depression': Property(Types.REAL, 'probability per 3 months of resolution of depresssion'),
+        'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non fatal self harm event'),
 
         # Temporary property
         'de_cc': Property(Types.BOOL, 'whether has chronic condition')
     }
 
     # Symptom that this module will use
-    SYMPTOMS = {'em_SelfHarm'}      # The 'em_' prefix means that the onset of this symptom leads to emergency care.
+    SYMPTOMS = {'em_SelfHarm'}  # The 'em_' prefix means that the onset of this symptom leads to seeking emergency care.
 
     def read_parameters(self, data_folder):
-        # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
-                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(dfd)
-
+        self.load_parameters_from_dataframe(pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
+                                                          sheet_name='parameter_values'))
         p = self.parameters
 
         # Build the Linear Models:
@@ -175,7 +171,6 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression']).otherwise(0.0)
-
         )
 
         self.LinearModels['Using_AntiDepressants_Initialisation'] = LinearModel(
@@ -198,7 +193,6 @@ class Depression(Module):
             Predictor().when('(sex=="F") & (is_pregnant==False)', p['rr_depr_female']),
             Predictor('de_ever_depr').when(True, p['rr_depr_prev_epis']),
             Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
-
         )
         # TODO; in this equation there is no RR given for those 20-60 years of age.
 
@@ -241,10 +235,9 @@ class Depression(Module):
             ].get_daly_weight(sequlae_code=933)
 
             self.daly_wts['average_per_day_during_any_episode'] = 0.5 * ( \
-                self.daly_wts['severe_episode_major_depressive_disorder']
-                + self.daly_wts['moderate_episode_major_depressive_disorder']
+                    self.daly_wts['severe_episode_major_depressive_disorder']
+                    + self.daly_wts['moderate_episode_major_depressive_disorder']
             )
-
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -263,16 +256,13 @@ class Depression(Module):
         # TODO; reduce these properties when final list is decided.
         df = population.props  # a shortcut to the data-frame storing data for individuals
         df['de_depr'] = False
-        df['de_disability'] = 0
+        df['de_ever_depr'] = False
         df['de_date_init_most_rec_depr'] = pd.NaT
         df['de_date_depr_resolved'] = pd.NaT
-        df['de_non_fatal_self_harm_event'] = False
-        df['de_suicide'] = False
-        df['de_on_antidepr'] = False
-        df['de_ever_depr'] = False
-        df['de_prob_3m_resol_depression'] = 0
         df['de_ever_diagnosed_depression'] = False
+        df['de_on_antidepr'] = False
         df['de_current_talk_ther'] = False
+        df['de_ever_non_fatal_self_harm_event'] = False
         df['de_cc'] = False
 
         # Assign initial 'current depression' status
@@ -302,15 +292,6 @@ class Depression(Module):
         )
         # TODO: need to get refill prescriptions through an HSI
 
-        #
-        # TODO: Need to initlaise any previous episodes?
-        # find a way to use depr_resolution_rates parameter list for resol rates rather than
-        # # list 0.2, 0.3, 0.5, 0.7, 0.95]
-        #
-        # df.loc[curr_depr_index, 'de_prob_3m_resol_depression'] = np.random.choice(
-        #     [0.2, 0.3, 0.5, 0.7, 0.95], size=len(curr_depr_index), p=[0.2, 0.2, 0.2, 0.2, 0.2]
-        # )
-
     def initialise_simulation(self, sim):
         """
         Launch the main polling event and the logging event
@@ -323,30 +304,18 @@ class Depression(Module):
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother: the mother for this child
-        :param child: the new child
+        :param mother_id: the mother for this child
+        :param child_id: the new child
         """
-
         df = self.sim.population.props
-
         df.at[child_id, 'de_depr'] = False
         df.at[child_id, 'de_ever_depr'] = False
         df.at[child_id, 'de_date_init_most_rec_depr'] = pd.NaT
         df.at[child_id, 'de_date_depr_resolved'] = pd.NaT
-
+        df.at[child_id, 'de_ever_diagnosed_depression'] = False
         df.at[child_id, 'de_on_antidepr'] = False
         df.at[child_id, 'de_current_talk_ther'] = False
-
-        # Probably delete this
-        df.at[child_id, 'de_non_fatal_self_harm_event'] = False
-        df.at[child_id, 'de_suicide'] = False
-        df.at[child_id, 'de_ever_diagnosed_depression'] = False
-        df.at[child_id, 'de_prob_3m_resol_depression'] = 0
-
-        # Temporary property
+        df.at[child_id, 'de_ever_non_fatal_self_harm_event'] = False
         df.at[child_id, 'de_cc'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -362,10 +331,9 @@ class Depression(Module):
 
     def report_daly_values(self):
         """
-        Report Daly Values based on current status: current depression attracts a set Daly weight, which it is assumed
-        lasted the entire previous month
+        Report Daly Values based on current status.
+        A daly weight is attracted to a status of depression for as long as the depression lasts.
         """
-        # TODO: check the calc here.
 
         def left_censor(obs, window_open):
             return obs.apply(lambda x: max(x, window_open) if ~pd.isnull(x) else pd.NaT)
@@ -380,23 +348,28 @@ class Depression(Module):
                                      & (
                                          ~pd.isnull(df['de_date_init_most_rec_depr']) &
                                          (df['de_date_init_most_rec_depr'] <= self.sim.date)
-                                     )\
+                                     ) \
                                      & (
                                          pd.isnull(df['de_date_depr_resolved']) |
                                          (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
                                      )
 
-        start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'], self.sim.date - DateOffset(months=1))
+        start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
+                                 self.sim.date - DateOffset(months=1))
         end_depr = right_censor(df.loc[any_depr_in_the_last_month, 'de_date_depr_resolved'], self.sim.date)
         dur_depr_in_days = (end_depr - start_depr).dt.days.clip(0).fillna(0)
         days_in_last_month = (self.sim.date - (self.sim.date - DateOffset(months=1))).days
         fraction_of_month_depr = dur_depr_in_days / days_in_last_month
 
         # Apply the daly_wt to give a an average daly_wt for the previous month
-        av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='', data=0.0).add(fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'],fill_value=0.0)
+        av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='', data=0.0).add(
+            fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
 
         return av_daly_wt_last_month
 
+# ---------------------------------------------------------------------------------------------------------
+#   DISEASE MODULE EVENTS
+# ---------------------------------------------------------------------------------------------------------
 
 class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -469,6 +442,7 @@ class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
 
         logger.debug('SelfHarm event')
         self.module.EventsTracker['SelfHarmEvents'] += 1
+        self.sim.population.props.at[person_id, 'de_ever_non_fatal_self_harm_event'] = True
 
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought
         self.sim.modules['SymptomManager'].change_symptom(
@@ -498,11 +472,17 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
         self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
 
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   LOGGING EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This is the LoggingEvent for Depression. It runs every 3 months and give population summaries for statuses for
     Depression.
     """
+
     def __init__(self, module):
         self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
@@ -553,6 +533,10 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # reset the tracker
         self.module.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   HEALTH SYSTEM INTERACTION EVENTS
+# ---------------------------------------------------------------------------------------------------------
 
 class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     """
