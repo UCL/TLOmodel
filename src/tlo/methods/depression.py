@@ -8,16 +8,17 @@ https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
+from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -115,6 +116,11 @@ class Depression(Module):
         'prob_3m_selfharm_depr': Parameter(Types.REAL, 'rate of non-fatal self harm in (currently depressed)'),
         'rate_diagnosis_depression': Parameter(Types.REAL, 'rate of diagnosis of depression in a person never '
                                                            'previously diagnosed with depression'),
+
+        'sensitivity_of_assessment_of_depression': Parameter(Types.REAL, 'sensitivity_of_assessment_of_depression'),
+        'specificity_of_assessment_of_depression': Parameter(Types.REAL, 'specificity_of_assessment_of_depression'),
+        'pr_assessed_for_depression_in_generic_appt_level1': Parameter(Types.REAL,
+                                                                       'probability that a person is assessed for depression during a generic appointment at facility level 1'),
     }
 
     # Properties of individuals 'owned' by this module
@@ -137,7 +143,8 @@ class Depression(Module):
     }
 
     # Symptom that this module will use
-    SYMPTOMS = {'em_SelfHarm'}  # The 'em_' prefix means that the onset of this symptom leads to seeking emergency care.
+    SYMPTOMS = {
+        'em_Injuries_From_Self_Harm'}  # The 'em_' prefix means that the onset of this symptom leads to seeking emergency care.
 
     def read_parameters(self, data_folder):
         self.load_parameters_from_dataframe(pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
@@ -221,11 +228,10 @@ class Depression(Module):
         )
 
         # Get DALY weight values:
+        # TODO: check are these for the status or for an episode?
+        # TODO: if we are only modelling severe should it not just be that weight?
         if 'HealthBurden' in self.sim.modules.keys():
             self.daly_wts = dict()
-            # get the DALY weight - 932 and 933 are the sequale codes for depression
-            # TODO: check are these for the status or for an episode?
-            # TODO: if we are only modelling severe should it not just be that weight?
             self.daly_wts['severe_episode_major_depressive_disorder'] = self.sim.modules[
                 'HealthBurden'
             ].get_daly_weight(sequlae_code=932)
@@ -234,9 +240,9 @@ class Depression(Module):
                 'HealthBurden'
             ].get_daly_weight(sequlae_code=933)
 
-            self.daly_wts['average_per_day_during_any_episode'] = 0.5 * ( \
-                    self.daly_wts['severe_episode_major_depressive_disorder']
-                    + self.daly_wts['moderate_episode_major_depressive_disorder']
+            self.daly_wts['average_per_day_during_any_episode'] = ( \
+                    0.33 * self.daly_wts['severe_episode_major_depressive_disorder']
+                    + 0.66 * self.daly_wts['moderate_episode_major_depressive_disorder']
             )
 
         # Register this disease module with the health system
@@ -302,6 +308,15 @@ class Depression(Module):
         # Create Tracker for the number of SelfHarm and Suicide events
         self.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
+        # Create the diagnostic representing the assessment for whether a person is diagnosed with depression
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_depression=DxTest(
+                property='de_depr',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_depression'],
+                specificity=self.parameters['specificity_of_assessment_of_depression'],
+            )
+        )
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         :param mother_id: the mother for this child
@@ -322,11 +337,6 @@ class Depression(Module):
         """
         Nothing happens if this module is alerted to a person attending an HSI
         """
-        logger.debug(
-            'This is Depression, being alerted about a health system interaction ' 'person %d for: %s',
-            person_id,
-            treatment_id,
-        )
         pass
 
     def report_daly_values(self):
@@ -366,6 +376,37 @@ class Depression(Module):
             fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
 
         return av_daly_wt_last_month
+
+    def do_when_suspected_depression(self, person_id, hsi_event):
+        """
+        This is called by the a generic HSI event when depression is suspected or otherwise investigated.
+        :param person_id:
+        :param hsi_event: The HSI event that has called this event
+        :return:
+        """
+
+        # Assess for depression and initiate treatments for depression if needed
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_depression',
+                                                                   hsi_event=hsi_event
+                                                                   ):
+            # If depressed: diagnose the person with depression
+            self.sim.population.props.at[person_id, 'de_ever_diagnosed_depression'] = True
+
+            # Provide talking therapy
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
+                priority=0,
+                topen=self.sim.date
+            )
+
+            # Initiate on anti-depressants
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Depression_Start_Antidepressant(module=self,
+                                                              person_id=person_id),
+                priority=0,
+                topen=self.sim.date
+            )
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -430,7 +471,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
 class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
     """
     This is a Self-Harm event. It has been scheduled to occur by the DepressionPollingEvent.
-    It imposes the em_SelfHarm symptom, which will lead to emergency care being sought
+    It imposes the em_Injuries_From_Self_Harm symptom, which will lead to emergency care being sought
     """
 
     def __init__(self, module, person_id):
@@ -449,7 +490,7 @@ class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
             person_id=person_id,
             disease_module=self.module,
             add_or_remove='+',
-            symptom_string='em_SelfHarm'
+            symptom_string='Injuries_From_Self_Harm'
         )
 
 
@@ -470,7 +511,6 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
 
         self.module.EventsTracker['SuicideEvents'] += 1
         self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
-
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -538,13 +578,10 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
+class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event.
-
-    It is appointment at which someone with depression presents for care at level 0 and is provided with
-    anti-depressants.
-
+    This is a Health System Interaction Event in which a person receives a short period of talking therapy.
+    This only happens if the squeeze-factor is sufficiently low.
     """
 
     def __init__(self, module, person_id):
@@ -555,7 +592,7 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, Indivi
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Depression_Present_For_Care_And_Start_Antidepressant'
+        self.TREATMENT_ID = 'Depression_TalkingTherapy'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
@@ -563,21 +600,63 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # This is the property that represents currently using antidepressants: de_on_antidepr
+        # examine squeeze factors and update the status of the person as neccessary
+        pass
 
-        # Check that the person is currently not on antidepressants
-        # (not always true so commented out for now)
 
-        #       assert df.at[person_id, 'de_on_antidepr'] is False
+class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event in which a person is started on anti-depressants
+    """
 
-        # Change the flag for this person
-        df.at[person_id, 'de_on_antidepr'] = True
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Depression_Antidepressant_Start'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
 
         # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
+        # If no availability of that medication then the person is not on antidepressants
 
-#TODO: HSI Talk Therapy
+        # Update the status for this person
+        df.at[person_id, 'de_on_antidepr'] = True
 
-#TODO: HSI Start Antidepressant
 
-#TODO: means of diagnosis other than self-harm
+class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Depression_Antidepressant_Refill'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+        # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
+        # If no availability of that medication then the person is not on antidepressants
+
+        # Update the status for this person
+        df.at[person_id, 'de_on_antidepr'] = True
+
 

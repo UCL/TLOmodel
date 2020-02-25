@@ -11,6 +11,7 @@ from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #
 #    ** NON-EMERGENCY APPOINTMENTS **
@@ -79,6 +80,12 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         else:
             # It's an adult
             logger.debug('To fill in ... what to with an adult')
+
+            # ---- ASSESS FOR DEPRESSION ----
+            if (squeeze_factor == 0.0) and (self.module.rng() < self.sim.modules['Depression'].parameters[
+                'pr_assessed_for_depression_in_generic_appt_level1']):
+                self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            # -------------------------------
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -172,10 +179,17 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
+        df = self.sim.population.props
 
         # simple diagnosis to work out which HSI event to trigger
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
+        # -----  SUSPECTED DEPRESSION  -----
+        if 'em_Injuries_From_Self_Harm' in symptoms:
+            self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            # TODO: Trigger surgical care for injuries.
+
+        # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'em_craving_sandwiches' in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
                 module=self.sim.modules['ChronicSyndrome'],
