@@ -277,13 +277,20 @@ class Depression(Module):
             df.loc[df['is_alive']]
         )
         # If currently depressed, set the date on which this episode began to the start of the simulation
+        # and the intrinsic risk of resolution
         df.loc[df['is_alive'] & df['de_depr'], 'de_date_init_most_rec_depr'] = self.sim.date
+        df.loc[df['is_alive'] & df['de_depr'], 'de_intrinsic_3mo_risk_of_depr_resolution'] = \
+            self.rng.choice(
+                self.parameters['depr_resolution_rates'],
+                (df['is_alive'] & df['de_depr']).sum()
+            )
 
         # Assign initial 'ever depression' status
         df.loc[df['is_alive'], 'de_ever_depr'] = self.apply_linear_model(
             self.LinearModels['Depression_Ever_At_Population_Initialisation'],
             df.loc[df['is_alive']]
         )
+        df.loc[(df['is_alive'] & df['de_depr']), 'de_ever_depr'] = True  # For logical consistency
 
         # Assign initial 'ever diagnosed' status
         df.loc[df['is_alive'], 'de_ever_diagnosed_depression'] = self.apply_linear_model(

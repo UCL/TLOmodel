@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 
 import pandas as pd
@@ -17,7 +16,7 @@ from tlo.methods import (
     healthseekingbehaviour)
 
 # --------------------------------------------------------------------------
-# Create a very short-run simulation for use in the tests
+# Create and run a simulation for use in the tests
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 except NameError:
@@ -54,7 +53,7 @@ def test_configuration_of_properties():
 
     def is_subset_of(col_of_ever, col_of_now):
         """
-        Confirms logical consistency between an property for ever occurrence of something and current occurence
+        Confirms logical consistency between an property for ever occurrence of something and its current occurrence
         """
         # If it it occurring now, it must have ever occurred:
         assert (col_of_now[col_of_now] == col_of_ever[col_of_now]).all()
@@ -92,10 +91,16 @@ def test_epi_assumptions():
     # There have been some deaths due to suicide
 
 
-
 def test_hsi_functions():
-
+    pass
     # Check that there have been been some cases of Talking Therapy
 
     # Check that there have been some uses of anti-depressants
+
+
+# TODO: TEST IN WHICH THERE IS NO HEALTH SEEKING BHEAVIOUR OR NO RESOURCES OF HSI APPOINTMENTS AND THERE SHOULD NOT BE ANY TREATMENT APART FROM THOSE INITIALLY
+
+# TODO: TEST IN WHICH HEALTH SYSEM HAS NO ANTIDEPRESSANT MEDICATION -- THERE SHOULD BE NO ONE ON TREATMENT
+
+
 
