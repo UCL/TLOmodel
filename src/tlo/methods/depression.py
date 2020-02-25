@@ -574,3 +574,10 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, Indivi
         df.at[person_id, 'de_on_antidepr'] = True
 
         # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
+
+#TODO: HSI Talk Therapy
+
+#TODO: HSI Start Antidepressant
+
+#TODO: means of diagnosis other than self-harm
+
