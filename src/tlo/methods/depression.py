@@ -134,7 +134,7 @@ class Depression(Module):
         # TODO is the word 'diagnosed' used correctly here
 
         'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
-        'de_current_talk_ther': Property(Types.BOOL, 'Whether having current talking therapy (in this 3 mnth period)'),
+        'de_ever_current_talk_ther': Property(Types.BOOL, 'Whether the person has ever had a session of talking therapy)'),
 
         'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non fatal self harm event'),
 
@@ -208,7 +208,7 @@ class Depression(Module):
             1.0,
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
             Predictor('de_on_antidepr').when(True, p['rr_resol_depr_on_antidepr']),
-            Predictor('de_current_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
+            Predictor('de_ever_current_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -262,7 +262,7 @@ class Depression(Module):
         df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
         df['de_ever_diagnosed_depression'] = False
         df['de_on_antidepr'] = False
-        df['de_current_talk_ther'] = False
+        df['de_ever_current_talk_ther'] = False
         df['de_ever_non_fatal_self_harm_event'] = False
         df['de_cc'] = False
 
@@ -325,7 +325,7 @@ class Depression(Module):
         df.at[child_id, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
         df.at[child_id, 'de_ever_diagnosed_depression'] = False
         df.at[child_id, 'de_on_antidepr'] = False
-        df.at[child_id, 'de_current_talk_ther'] = False
+        df.at[child_id, 'de_ever_current_talk_ther'] = False
         df.at[child_id, 'de_ever_non_fatal_self_harm_event'] = False
         df.at[child_id, 'de_cc'] = False
 
@@ -440,12 +440,11 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[onset_depression.loc[onset_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = \
             self.module.rng.choice(p['depr_resolution_rates'], len(onset_depression.loc[onset_depression]))
 
-        # Determine resolution of depression for those with depression (not onset just now)
+        # Determine resolution of depression for those with depression (but not depression that has onset just now)
         resolved_depression = apply_linear_model(
             self.module.LinearModels['Risk_of_Depression_Resolution_per3mo'],
-            df.loc[df['de_depr'] & ~df.index.isin(onset_depression.index)]
+            df.loc[df['de_depr'] & ~df.index.isin(onset_depression.loc[onset_depression].index)]
         )
-        # TODO: check that the above excludes thos who are onset for depression
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_depr'] = False
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
@@ -549,7 +548,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_diagnosed_depression = (df.is_alive & df.de_ever_diagnosed_depression & (df.age_years >= 15)).sum()
         n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
         n_antidepr_ever_depr = (df.is_alive & df.de_on_antidepr & df.de_ever_depr & (df.age_years >= 15)).sum()
-        n_current_talk_ther = (df.de_current_talk_ther & df.is_alive & df.de_depr).sum()
+        n_ever_talk_ther = (df.de_ever_current_talk_ther & df.is_alive & df.de_depr).sum()
 
         dict_for_output = {
             'prop_ge15_depr': n_ge15_depr / n_ge15,
@@ -560,7 +559,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'p_ever_diagnosed_depression': n_ever_diagnosed_depression / n_ge15,
             'prop_antidepr_if_curr_depr': n_antidepr_depr / n_ge15_depr,
             'prop_antidepr_if_ever_depr': n_antidepr_ever_depr / n_ever_depr,
-            'prop_current_talk_ther_if_depr': n_current_talk_ther / n_ge15_depr,
+            'prop_ever_talk_ther_if_depr': n_ever_talk_ther / n_ge15_depr,
         }
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
@@ -599,10 +598,8 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        # examine squeeze factors and update the status of the person as neccessary
-        pass
+        if squeeze_factor == 0.0:
+            self.sim.population.props.at[person_id, 'de_ever_current_talk_ther'] = True
 
 
 class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
