@@ -2,6 +2,7 @@ import os
 import time
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
@@ -15,44 +16,86 @@ from tlo.methods import (
     symptommanager,
     healthseekingbehaviour)
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1000
-
-
-@pytest.fixture(scope='module')
-def simulation():
+# --------------------------------------------------------------------------
+# Create a very short-run simulation for use in the tests
+try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
-    sim.seed_rngs(0)
-    return sim
+except NameError:
+    # running interactively
+    resourcefilepath = Path('./resources')
 
+# Establish the simulation object
+sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
-def test_run(simulation):
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+# Register the appropriate modules
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
+sim.seed_rngs(0)
+sim.make_initial_population(n=2000)
+sim.simulate(end_date=Date(year=2012, month=1, day=1))
+# --------------------------------------------------------------------------
 
-def test_dtypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    print((df.dtypes == orig.dtypes))
+def test_dtypes():
+    # Check types of columns
+    df = sim.population.props
+    orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+def test_configuration_of_properties():
+    # Check that all value of all properties for depression make sesne
+    df = sim.population.props
 
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
+    def is_subset_of(col_of_ever, col_of_now):
+        """
+        Confirms logical consistency between an property for ever occurrence of something and current occurence
+        """
+        # If it it occurring now, it must have ever occurred:
+        assert (col_of_now[col_of_now] == col_of_ever[col_of_now]).all()
+
+        # If it has never occurred, it cannot be occurring now
+        assert (col_of_ever[(~col_of_ever)] == col_of_now[~col_of_ever]).all()
+
+    is_subset_of(df['de_ever_depr'], df['de_depr'])
+    assert (pd.isnull(df['de_intrinsic_3mo_risk_of_depr_resolution']) == ~df['de_depr']).all()
+
+    never_had_an_episode = ~df['de_ever_depr']
+    assert (pd.isnull(df['de_date_init_most_rec_depr']) == never_had_an_episode).all()
+    assert (pd.isnull(df['de_date_depr_resolved']) == never_had_an_episode).all()
+
+    had_an_episode_now_resolved = (~pd.isnull(df['de_date_init_most_rec_depr']) & pd.isnull(df['de_date_depr_resolved']))
+    assert (df.loc[had_an_episode_now_resolved, 'de_ever_depr'] == True).all()
+    assert (df.loc[had_an_episode_now_resolved, 'de_depr'] == False).all()
+    assert (df.loc[~pd.isnull(df['de_date_depr_resolved']), 'de_date_depr_resolved'] <= sim.date).all()
+
+    had_an_episode_still_ongoing = (~pd.isnull(df['de_date_init_most_rec_depr']) & ~pd.isnull(df['de_date_depr_resolved']))
+    assert (df.loc[had_an_episode_still_ongoing, 'de_ever_depr'] == True).all()
+    assert (df.loc[had_an_episode_still_ongoing, 'de_depr'] == True).all()
+
+    is_subset_of(df['de_ever_depr'], df['de_ever_non_fatal_self_harm_event'])
+    is_subset_of(df['de_ever_diagnosed_depression'], df['de_ever_current_talk_ther'])
+    is_subset_of(df['de_ever_diagnosed_depression'], df['de_on_antidepr'])
+
+
+def test_epi_assumptions():
+    # Check that all value of all properties for depression make sense
+    df = sim.population.props
+
+    # No one aged less than 15 is depressed
+
+    # There have been some deaths due to suicide
+
+
+
+def test_hsi_functions():
+
+    # Check that there have been been some cases of Talking Therapy
+
+    # Check that there have been some uses of anti-depressants
+
