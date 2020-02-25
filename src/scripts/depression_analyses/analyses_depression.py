@@ -15,7 +15,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthburden,
     healthsystem,
-    symptommanager)
+    symptommanager, healthseekingbehaviour)
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -36,9 +36,10 @@ sim.seed_rngs(0)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(depression.Depression(resourcefilepath=resourcefilepath))

@@ -7,8 +7,8 @@ https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-
 
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
@@ -107,8 +107,8 @@ class Depression(Module):
         'rr_resol_depr_current_talk_ther': Parameter(
             Types.REAL, 'Relative rate of resolving depression if current talking therapy'
         ),
-        'rate_stop_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when not currently depressed'),
-        'rate_default_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when still depressed'),
+        'rate_stop_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when not currently depressed per 3mo'),
+        'rate_default_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when still depressed per 3mo'),
         'rate_init_antidepr': Parameter(Types.REAL, 'rate of initiation of antidepressants'),
         'pr_talk_ther_in_3_mth_period': Parameter(Types.REAL, 'pr_talk_ther_in_3_mth_period'),
         'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'rate of suicide in (currently depressed) men'),
@@ -121,6 +121,7 @@ class Depression(Module):
         'specificity_of_assessment_of_depression': Parameter(Types.REAL, 'specificity_of_assessment_of_depression'),
         'pr_assessed_for_depression_in_generic_appt_level1': Parameter(Types.REAL,
                                                                        'probability that a person is assessed for depression during a generic appointment at facility level 1'),
+        'anti_depressant_medication_item_code': Parameter(Types.INT, 'The item code used for one month of anti-depressant treatment')
     }
 
     # Properties of individuals 'owned' by this module
@@ -129,12 +130,14 @@ class Depression(Module):
         'de_ever_depr': Property(Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_date_init_most_rec_depr': Property(Types.DATE, 'When this individual last initiated a depr episode'),
         'de_date_depr_resolved': Property(Types.DATE, 'When the last episode of depr was resolved'),
-        'de_intrinsic_3mo_risk_of_depr_resolution': Property(Types.REAL, 'The risk per 3 mo of an episode of depression being resolved in abscance of any treatments'),
+        'de_intrinsic_3mo_risk_of_depr_resolution': Property(Types.REAL,
+                                                             'The risk per 3 mo of an episode of depression being resolved in abscance of any treatments'),
         'de_ever_diagnosed_depression': Property(Types.BOOL, 'Whether ever previously diagnosed with depression'),
         # TODO is the word 'diagnosed' used correctly here
 
         'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
-        'de_ever_current_talk_ther': Property(Types.BOOL, 'Whether the person has ever had a session of talking therapy)'),
+        'de_ever_current_talk_ther': Property(Types.BOOL,
+                                              'Whether the person has ever had a session of talking therapy)'),
 
         'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non fatal self harm event'),
 
@@ -209,6 +212,13 @@ class Depression(Module):
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
             Predictor('de_on_antidepr').when(True, p['rr_resol_depr_on_antidepr']),
             Predictor('de_ever_current_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
+        )
+
+        self.LinearModels['Risk_of_Stopping_Antidepressants'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1.0,
+            Predictor('de_depr').when(True, p['rate_default_antidepr'])
+                                .when(False, p['rate_stop_antidepr'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -388,17 +398,20 @@ class Depression(Module):
             # If depressed: diagnose the person with depression
             self.sim.population.props.at[person_id, 'de_ever_diagnosed_depression'] = True
 
-            # Provide talking therapy
+            # Provide talking therapy (at the same facility level as the HSI event that is calling)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
+                hsi_event=HSI_Depression_TalkingTherapy(module=self,
+                                                        person_id=person_id,
+                                                        facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
                 priority=0,
                 topen=self.sim.date
             )
 
-            # Initiate on anti-depressants
+            # Initiate on anti-depressants (at the same facility level as the HSI event that is calling)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Start_Antidepressant(module=self,
-                                                              person_id=person_id),
+                                                              person_id=person_id,
+                                                              facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
                 priority=0,
                 topen=self.sim.date
             )
@@ -426,6 +439,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
         apply_linear_model = self.module.apply_linear_model
 
+        # -----------------------------------------------------------------------------------------------------
         # Determine who will be onset with depression among those who are not currently depressed
         # Assign initial 'current depression' status
         onset_depression = apply_linear_model(
@@ -440,16 +454,26 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[onset_depression.loc[onset_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = \
             self.module.rng.choice(p['depr_resolution_rates'], len(onset_depression.loc[onset_depression]))
 
+        # -----------------------------------------------------------------------------------------------------
         # Determine resolution of depression for those with depression (but not depression that has onset just now)
         resolved_depression = apply_linear_model(
             self.module.LinearModels['Risk_of_Depression_Resolution_per3mo'],
-            df.loc[df['de_depr'] & ~df.index.isin(onset_depression.loc[onset_depression].index)]
+            df.loc[df['is_alive']& df['de_depr'] & ~df.index.isin(onset_depression.loc[onset_depression].index)]
         )
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_depr'] = False
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
 
-        # Schedule Self-harm events (individual level events)
+        # -----------------------------------------------------------------------------------------------------
+        # Determine cessation of use of antidepressants
+        stop_using_antidepressants = apply_linear_model(
+            self.module.LinearModels['Risk_of_Stopping_Antidepressants'],
+            df.loc[df['is_alive'] & df['de_on_antidepr']]
+        )
+        df.loc[stop_using_antidepressants.loc[stop_using_antidepressants].index, 'de_on_antidepr'] = False
+
+        # -----------------------------------------------------------------------------------------------------
+        # Schedule Self-harm events for those with current depression (individual level events)
         will_self_harm_in_next_3mo = apply_linear_model(
             self.module.LinearModels['Risk_of_SelfHarm_per3mo'],
             df.loc[df['is_alive'] & df['de_depr']]
@@ -458,7 +482,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(DepressionSelfHarmEvent(self.module, person_id),
                                     self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
 
-        # Schedule Suicide events (individual level events)
+        # Schedule Suicide events for those with current depression (individual level events)
         will_suicide_in_next_3mo = apply_linear_model(
             self.module.LinearModels['Risk_of_Suicide_per3mo'],
             df.loc[df['is_alive'] & df['de_depr']]
@@ -582,9 +606,10 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person receives a short period of talking therapy.
     This only happens if the squeeze-factor is sufficiently low.
+    The facility_level is modified as a input parameter.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level):
         super().__init__(module, person_id=person_id)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
@@ -594,7 +619,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -604,10 +629,11 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event in which a person is started on anti-depressants
+    This is a Health System Interaction Event in which a person is started on anti-depressants.
+    The facility_level is modified as a input parameter.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level):
         super().__init__(module, person_id=person_id)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
@@ -617,17 +643,32 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Antidepressant_Start'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
-        # If no availability of that medication then the person is not on antidepressants
+        # Check availability
+        item_code = self.module.parameters['anti_depressant_medication_item_code']
+        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
+        )['Item_Code'][item_code]
 
-        # Update the status for this person
-        df.at[person_id, 'de_on_antidepr'] = True
+        if result_of_cons_request:
+            df.at[person_id, 'de_on_antidepr'] = True
+
+            # Schedule their next HSI for a refill of medication
+            self.sim.modules['HealthSystem'].schedule_hsi(
+                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
+                priority=1,
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
+            )
+        else:
+            # if medication was not available, the persons ceases to be taking antidepressants
+            df.at[person_id, 'de_on_antidepr'] = False
 
 
 class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin):
@@ -645,16 +686,32 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Antidepressant_Refill'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
-        # If no availability of that medication then the person is not on antidepressants
+        # Check that the person is on anti-depressants
+        if not df.at[person_id, 'de_on_antidepr']:
+            # This person is not on anti-depressants so will not have this HSI
+            # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
-        # Update the status for this person
-        df.at[person_id, 'de_on_antidepr'] = True
+        # Check availability
+        item_code = self.module.parameters['anti_depressant_medication_item_code']
+        result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
+            {'Item_Code': item_code }
+        )['Item_Code'][item_code]
 
-
+        if result_of_cons_request:
+            # Schedule their next HSI for a refill of medication
+            self.sim.modules['HealthSystem'].schedule_hsi(
+                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
+                priority=1,
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
+            )
+        else:
+            # If medication was not available, the persons ceases to be taking antidepressants
+            df.at[person_id, 'de_on_antidepr'] = False
