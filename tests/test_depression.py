@@ -12,7 +12,8 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthburden,
     healthsystem,
-)
+    symptommanager,
+    healthseekingbehaviour)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -28,6 +29,8 @@ def simulation():
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)

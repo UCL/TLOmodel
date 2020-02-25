@@ -8,6 +8,7 @@ https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
@@ -94,9 +95,8 @@ class Depression(Module):
         'rr_depr_agege60': Parameter(Types.REAL, 'Relative rate of depression associated with age > 60'),
         'depr_resolution_rates': Parameter(
             Types.LIST,
-            'Probabilities that depression will resolve in a 3 month window. '
-            'Each individual is equally likely to fall into one of the listed'
-            ' categories. Must sum to one.',
+            'Risk of depression resolving in 3 months.'
+            'Each individual is equally likely to be assigned each of these risks'
         ),
         'rr_resol_depr_cc': Parameter(
             Types.REAL, 'Relative rate of resolving depression associated with chronic disease symptoms'
@@ -129,7 +129,7 @@ class Depression(Module):
         'de_ever_depr': Property(Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_date_init_most_rec_depr': Property(Types.DATE, 'When this individual last initiated a depr episode'),
         'de_date_depr_resolved': Property(Types.DATE, 'When the last episode of depr was resolved'),
-
+        'de_intrinsic_3mo_risk_of_depr_resolution': Property(Types.REAL, 'The risk per 3 mo of an episode of depression being resolved in abscance of any treatments'),
         'de_ever_diagnosed_depression': Property(Types.BOOL, 'Whether ever previously diagnosed with depression'),
         # TODO is the word 'diagnosed' used correctly here
 
@@ -206,14 +206,9 @@ class Depression(Module):
         self.LinearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
-            Predictor('days_since_onset_of_depression', external=True)
-                .when(0, 0)
-                .when('<= 90', p['depr_resolution_rates'][0])
-                .when('<= 180', p['depr_resolution_rates'][1])
-                .when('<= 270', p['depr_resolution_rates'][2])
-                .otherwise(p['depr_resolution_rates'][3]),
-            Predictor('de_on_antidepr').when(True, 2),  # TODO <--- fill in these values
-            Predictor('de_current_talk_ther').when(True, 1.5)  # TODO <--- fill in these values
+            Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
+            Predictor('de_on_antidepr').when(True, p['rr_resol_depr_on_antidepr']),
+            Predictor('de_current_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -259,12 +254,12 @@ class Depression(Module):
         return self.rng.rand(len(df)) < lm.predict(df)
 
     def initialise_population(self, population):
-        # TODO; reduce these properties when final list is decided.
         df = population.props  # a shortcut to the data-frame storing data for individuals
         df['de_depr'] = False
         df['de_ever_depr'] = False
         df['de_date_init_most_rec_depr'] = pd.NaT
         df['de_date_depr_resolved'] = pd.NaT
+        df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
         df['de_ever_diagnosed_depression'] = False
         df['de_on_antidepr'] = False
         df['de_current_talk_ther'] = False
@@ -327,6 +322,7 @@ class Depression(Module):
         df.at[child_id, 'de_ever_depr'] = False
         df.at[child_id, 'de_date_init_most_rec_depr'] = pd.NaT
         df.at[child_id, 'de_date_depr_resolved'] = pd.NaT
+        df.at[child_id, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
         df.at[child_id, 'de_ever_diagnosed_depression'] = False
         df.at[child_id, 'de_on_antidepr'] = False
         df.at[child_id, 'de_current_talk_ther'] = False
@@ -440,16 +436,21 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[onset_depression.loc[onset_depression].index, 'de_depr'] = True
         df.loc[onset_depression.loc[onset_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
 
-        # Determine resolution of depression for those with depression
-        days_since_onset_of_depression = (self.sim.date - df.loc[df['de_depr'], 'de_date_init_most_rec_depr']).dt.days
-        p_resolved_depression = self.module.LinearModels['Risk_of_Depression_Resolution_per3mo'].predict(
-            df.loc[df['de_depr']], days_since_onset_of_depression=days_since_onset_of_depression)
-        resolved_depression = self.module.rng.rand(len(p_resolved_depression)) < p_resolved_depression
+        # Set the rate of depression resolution for each person who is onset with depression
+        df.loc[onset_depression.loc[onset_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = \
+            self.module.rng.choice(p['depr_resolution_rates'], len(onset_depression.loc[onset_depression]))
 
+        # Determine resolution of depression for those with depression (not onset just now)
+        resolved_depression = apply_linear_model(
+            self.module.LinearModels['Risk_of_Depression_Resolution_per3mo'],
+            df.loc[df['de_depr'] & ~df.index.isin(onset_depression.index)]
+        )
+        # TODO: check that the above excludes thos who are onset for depression
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_depr'] = False
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
+        df.loc[resolved_depression.loc[resolved_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
 
-        # Self-harm events (individual level events)
+        # Schedule Self-harm events (individual level events)
         will_self_harm_in_next_3mo = apply_linear_model(
             self.module.LinearModels['Risk_of_SelfHarm_per3mo'],
             df.loc[df['is_alive'] & df['de_depr']]
@@ -458,7 +459,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(DepressionSelfHarmEvent(self.module, person_id),
                                     self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
 
-        # Suicide events (individual level events)
+        # Schedule Suicide events (individual level events)
         will_suicide_in_next_3mo = apply_linear_model(
             self.module.LinearModels['Risk_of_Suicide_per3mo'],
             df.loc[df['is_alive'] & df['de_depr']]
@@ -490,7 +491,7 @@ class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
             person_id=person_id,
             disease_module=self.module,
             add_or_remove='+',
-            symptom_string='Injuries_From_Self_Harm'
+            symptom_string='em_Injuries_From_Self_Harm'
         )
 
 
