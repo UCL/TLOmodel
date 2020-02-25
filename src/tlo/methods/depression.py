@@ -298,10 +298,10 @@ class Depression(Module):
             df.loc[df['is_alive']]
         )
 
-        # Assign initial 'using anti-depressants' status
+        # Assign initial 'using anti-depressants' status to those who are currently depressed
         df.loc[df['is_alive'], 'de_on_antidepr'] = self.apply_linear_model(
             self.LinearModels['Using_AntiDepressants_Initialisation'],
-            df.loc[df['is_alive']]
+            df.loc[df['is_alive'] & df['de_depr']]
         )
 
     def initialise_simulation(self, sim):
@@ -327,14 +327,15 @@ class Depression(Module):
         # Scatter these refill appointments of approx the first month of the simulation (these refills are assumed
         # to occur monthly).
         df = sim.population.props
-        for person_id in df.loc[df['de_on_antidepr']].index:
-            date_of_next_appt_scheduled = self.sim.date + DateOffset(days=self.rng.randint(0, 30))
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
-                priority=1,
-                topen=date_of_next_appt_scheduled,
-                tclose=date_of_next_appt_scheduled + DateOffset(days=7)
-            )
+        if df['de_on_antidepr'].sum():
+            for person_id in df.loc[df['de_on_antidepr']].index:
+                date_of_next_appt_scheduled = self.sim.date + DateOffset(days=self.rng.randint(0, 30))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
+                    priority=1,
+                    topen=date_of_next_appt_scheduled,
+                    tclose=date_of_next_appt_scheduled + DateOffset(days=7)
+                )
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -465,6 +466,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         df.loc[onset_depression.loc[onset_depression].index, 'de_depr'] = True
+        df.loc[onset_depression.loc[onset_depression].index, 'de_ever_depr'] = True
         df.loc[onset_depression.loc[onset_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
 
         # Set the rate of depression resolution for each person who is onset with depression

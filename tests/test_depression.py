@@ -51,22 +51,27 @@ def test_configuration_of_properties():
     # Check that all value of all properties for depression make sesne
     df = sim.population.props
 
-    def is_subset_of(col_of_ever, col_of_now):
-        """
-        Confirms logical consistency between an property for ever occurrence of something and its current occurrence
-        """
-        # If it it occurring now, it must have ever occurred:
-        assert (col_of_now[col_of_now] == col_of_ever[col_of_now]).all()
+    def check_ever_vs_now_properties(col_of_ever, col_of_now):
+        # Confirms logical consistency between an property for ever occurrence of something and its current occurrence
+        assert set(col_of_now.loc[col_of_now].index).issubset(col_of_ever.loc[col_of_ever].index)
 
-        # If it has never occurred, it cannot be occurring now
-        assert (col_of_ever[(~col_of_ever)] == col_of_now[~col_of_ever]).all()
 
-    is_subset_of(df['de_ever_depr'], df['de_depr'])
+    check_ever_vs_now_properties(df['de_ever_depr'], df['de_depr'])
     assert (pd.isnull(df['de_intrinsic_3mo_risk_of_depr_resolution']) == ~df['de_depr']).all()
 
     never_had_an_episode = ~df['de_ever_depr']
-    assert (pd.isnull(df['de_date_init_most_rec_depr']) == never_had_an_episode).all()
-    assert (pd.isnull(df['de_date_depr_resolved']) == never_had_an_episode).all()
+    assert (pd.isnull(df.loc[never_had_an_episode, 'de_date_init_most_rec_depr'])).all()
+    assert (pd.isnull(df.loc[never_had_an_episode, 'de_date_depr_resolved'])).all()
+    assert (pd.isnull(df.loc[never_had_an_episode, 'de_intrinsic_3mo_risk_of_depr_resolution'])).all()
+    assert (False == (df.loc[never_had_an_episode, 'de_ever_diagnosed_depression'])).all()
+    assert (False == (df.loc[never_had_an_episode, 'de_on_antidepr'])).all()
+    assert (False == (df.loc[never_had_an_episode, 'de_ever_current_talk_ther'])).all()
+    assert (False == (df.loc[never_had_an_episode, 'de_ever_non_fatal_self_harm_event'])).all()
+
+
+
+
+
 
     had_an_episode_now_resolved = (~pd.isnull(df['de_date_init_most_rec_depr']) & pd.isnull(df['de_date_depr_resolved']))
     assert (df.loc[had_an_episode_now_resolved, 'de_ever_depr'] == True).all()
@@ -77,9 +82,9 @@ def test_configuration_of_properties():
     assert (df.loc[had_an_episode_still_ongoing, 'de_ever_depr'] == True).all()
     assert (df.loc[had_an_episode_still_ongoing, 'de_depr'] == True).all()
 
-    is_subset_of(df['de_ever_depr'], df['de_ever_non_fatal_self_harm_event'])
-    is_subset_of(df['de_ever_diagnosed_depression'], df['de_ever_current_talk_ther'])
-    is_subset_of(df['de_ever_diagnosed_depression'], df['de_on_antidepr'])
+    check_ever_vs_now_properties(df['de_ever_depr'], df['de_ever_non_fatal_self_harm_event'])
+    check_ever_vs_now_properties(df['de_ever_diagnosed_depression'], df['de_ever_current_talk_ther'])
+    check_ever_vs_now_properties(df['de_ever_diagnosed_depression'], df['de_on_antidepr'])
 
 
 def test_epi_assumptions():
