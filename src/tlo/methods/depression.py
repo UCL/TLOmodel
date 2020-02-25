@@ -132,7 +132,6 @@ class Depression(Module):
         'de_intrinsic_3mo_risk_of_depr_resolution': Property(Types.REAL,
                                                              'The risk per 3 mo of an episode of depression being resolved in abscance of any treatments'),
         'de_ever_diagnosed_depression': Property(Types.BOOL, 'Whether ever previously diagnosed with depression'),
-        # TODO is the word 'diagnosed' used correctly here
 
         'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
         'de_ever_current_talk_ther': Property(Types.BOOL,
@@ -155,7 +154,6 @@ class Depression(Module):
 
         # Build the Linear Models:
         self.LinearModels = dict()
-
         self.LinearModels['Depression_At_Population_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'],
@@ -203,7 +201,6 @@ class Depression(Module):
             Predictor('de_ever_depr').when(True, p['rr_depr_prev_epis']),
             Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
         )
-        # TODO; in this equation there is no RR given for those 20-60 years of age.
 
         self.LinearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -232,8 +229,7 @@ class Depression(Module):
         )
 
         # Get DALY weight values:
-        # TODO: check are these for the status or for an episode?
-        # TODO: if we are only modelling severe should it not just be that weight?
+        # TODO: check are these for the status or for an episode? & If we are only modelling severe should it not just be that weight?
         if 'HealthBurden' in self.sim.modules.keys():
             self.daly_wts = dict()
             self.daly_wts['severe_episode_major_depressive_disorder'] = self.sim.modules[
@@ -300,7 +296,6 @@ class Depression(Module):
             self.LinearModels['Using_AntiDepressants_Initialisation'],
             df.loc[df['is_alive']]
         )
-        # TODO: need to get refill prescriptions through an HSI
 
     def initialise_simulation(self, sim):
         """
@@ -320,6 +315,19 @@ class Depression(Module):
                 specificity=self.parameters['specificity_of_assessment_of_depression'],
             )
         )
+
+        # For those that are taking anti-depressants at initiation, schedule their refill HSI appointments
+        # Scatter these refill appointments of approx the first month of the simulation (these refills are assumed
+        # to occur monthly).
+        df = sim.population.props
+        for person_id in df.loc[df['de_on_antidepr']].index:
+            date_of_next_appt_scheduled = self.sim.date + DateOffset(days=self.rng.randint(0, 30))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
+                priority=1,
+                topen=date_of_next_appt_scheduled,
+                tclose=date_of_next_appt_scheduled + DateOffset(days=7)
+            )
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -668,7 +676,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
 
             # Schedule their next HSI for a refill of medication
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
+                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
@@ -706,13 +714,14 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         # Check availability
         item_code = self.module.parameters['anti_depressant_medication_item_code']
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            {'Item_Code': item_code}
+            hsi_event=self,
+            cons_req_as_footprint={'Intervention_Package_Code': dict(), 'Item_Code': {item_code: 1}}
         )['Item_Code'][item_code]
 
         if result_of_cons_request:
             # Schedule their next HSI for a refill of medication, one month from now
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
+                hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
