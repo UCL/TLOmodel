@@ -2,9 +2,6 @@
 This is the Depression Module. Documentation at:
 https://www.dropbox.com/s/8q9etj23owwlubx/Depression%20and%20Antidepressants%20-%20Description%20-%20Feb%2020.docx?dl=0
 """
-
-# TODO: Use the new logging
-
 from pathlib import Path
 
 import numpy as np
@@ -107,7 +104,8 @@ class Depression(Module):
         'rr_resol_depr_current_talk_ther': Parameter(
             Types.REAL, 'Relative rate of resolving depression if current talking therapy'
         ),
-        'rate_stop_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when not currently depressed per 3mo'),
+        'rate_stop_antidepr': Parameter(Types.REAL,
+                                        'rate of stopping antidepressants when not currently depressed per 3mo'),
         'rate_default_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when still depressed per 3mo'),
         'rate_init_antidepr': Parameter(Types.REAL, 'rate of initiation of antidepressants'),
         'pr_talk_ther_in_3_mth_period': Parameter(Types.REAL, 'pr_talk_ther_in_3_mth_period'),
@@ -121,7 +119,8 @@ class Depression(Module):
         'specificity_of_assessment_of_depression': Parameter(Types.REAL, 'specificity_of_assessment_of_depression'),
         'pr_assessed_for_depression_in_generic_appt_level1': Parameter(Types.REAL,
                                                                        'probability that a person is assessed for depression during a generic appointment at facility level 1'),
-        'anti_depressant_medication_item_code': Parameter(Types.INT, 'The item code used for one month of anti-depressant treatment')
+        'anti_depressant_medication_item_code': Parameter(Types.INT,
+                                                          'The item code used for one month of anti-depressant treatment')
     }
 
     # Properties of individuals 'owned' by this module
@@ -218,7 +217,7 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['rate_default_antidepr'])
-                                .when(False, p['rate_stop_antidepr'])
+                .when(False, p['rate_stop_antidepr'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -399,6 +398,7 @@ class Depression(Module):
             self.sim.population.props.at[person_id, 'de_ever_diagnosed_depression'] = True
 
             # Provide talking therapy (at the same facility level as the HSI event that is calling)
+            # (This can occur even if the person has already had talking therapy before)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_TalkingTherapy(module=self,
                                                         person_id=person_id,
@@ -408,13 +408,15 @@ class Depression(Module):
             )
 
             # Initiate on anti-depressants (at the same facility level as the HSI event that is calling)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Depression_Start_Antidepressant(module=self,
-                                                              person_id=person_id,
-                                                              facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-                priority=0,
-                topen=self.sim.date
-            )
+            # if not already taking them
+            if not self.sim.population.props.at[person_id, 'de_on_antidepr']:
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Depression_Start_Antidepressant(module=self,
+                                                                  person_id=person_id,
+                                                                  facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
+                    priority=0,
+                    topen=self.sim.date
+                )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -458,7 +460,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Determine resolution of depression for those with depression (but not depression that has onset just now)
         resolved_depression = apply_linear_model(
             self.module.LinearModels['Risk_of_Depression_Resolution_per3mo'],
-            df.loc[df['is_alive']& df['de_depr'] & ~df.index.isin(onset_depression.loc[onset_depression].index)]
+            df.loc[df['is_alive'] & df['de_depr'] & ~df.index.isin(onset_depression.loc[onset_depression].index)]
         )
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_depr'] = False
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
@@ -649,7 +651,11 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # Check availability
+        assert not df.at[
+            person_id, 'de_on_antidepr'], "The person should not be starting anti-depressants and they " \
+                                          "are already taking them"
+
+        # Check availability of antidepressant medication
         item_code = self.module.parameters['anti_depressant_medication_item_code']
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -657,23 +663,22 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
         )['Item_Code'][item_code]
 
         if result_of_cons_request:
+            # If medication is available, flag as being on antidepressants
             df.at[person_id, 'de_on_antidepr'] = True
 
             # Schedule their next HSI for a refill of medication
-            self.sim.modules['HealthSystem'].schedule_hsi(
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(days=7)
             )
-        else:
-            # if medication was not available, the persons ceases to be taking antidepressants
-            df.at[person_id, 'de_on_antidepr'] = False
 
 
 class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants
+    This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants.
+    If it does not run, then person ceases to be on anti-depressants.
     """
 
     def __init__(self, module, person_id):
@@ -701,12 +706,12 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         # Check availability
         item_code = self.module.parameters['anti_depressant_medication_item_code']
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
-            {'Item_Code': item_code }
+            {'Item_Code': item_code}
         )['Item_Code'][item_code]
 
         if result_of_cons_request:
-            # Schedule their next HSI for a refill of medication
-            self.sim.modules['HealthSystem'].schedule_hsi(
+            # Schedule their next HSI for a refill of medication, one month from now
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self),
                 priority=1,
                 topen=self.sim.date + DateOffset(months=1),
@@ -715,3 +720,8 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         else:
             # If medication was not available, the persons ceases to be taking antidepressants
             df.at[person_id, 'de_on_antidepr'] = False
+
+    def did_not_run(self):
+        # If this HSI event did not run, then the persons ceases to be taking antidepressants
+        person_id = self.target
+        self.sim.population.props.at[person_id, 'de_on_antidepr'] = False
