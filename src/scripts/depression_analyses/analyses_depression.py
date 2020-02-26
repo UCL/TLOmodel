@@ -108,7 +108,6 @@ depr_event_rate = depr_events.div(tot_pop, axis=0)
 # Rate of serious non fatal self harm incidents per 100,000 adults age 15+ per year
 result.loc['Rate of non-fatal self-harm incidence per 100k persons aged 15+', 'Model'] = 1e5 * depr_event_rate[
     'SelfHarmEvents'].mean()
-result.loc['Rate of non-fatal self-harm incidence per 100k persons aged 15+', 'Data'] = 7.7
 
 # Rate of suicide per 100,000 adults age 15+ per year
 result.loc['Rate of suicide incidence per 100k persons aged 15+', 'Model'] = 1e5 * depr_event_rate[

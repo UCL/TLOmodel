@@ -64,7 +64,7 @@ def test_configuration_of_properties():
     assert (pd.isnull(df.loc[never_had_an_episode, 'de_intrinsic_3mo_risk_of_depr_resolution'])).all()
     assert (False == (df.loc[never_had_an_episode, 'de_ever_diagnosed_depression'])).all()
     assert (False == (df.loc[never_had_an_episode, 'de_on_antidepr'])).all()
-    assert (False == (df.loc[never_had_an_episode, 'de_ever_current_talk_ther'])).all()
+    assert (False == (df.loc[never_had_an_episode, 'de_ever_talk_ther'])).all()
     assert (False == (df.loc[never_had_an_episode, 'de_ever_non_fatal_self_harm_event'])).all()
 
     had_an_episode_now_resolved = (
@@ -82,7 +82,7 @@ def test_configuration_of_properties():
     # NB. These tests assume that no one who is not depressed would be wrongly diagnosed as depressed.
     # (i.e. the specificity of the DxTest = 1.0)
     check_ever_vs_now_properties(df['de_ever_depr'], df['de_ever_non_fatal_self_harm_event'])
-    check_ever_vs_now_properties(df['de_ever_diagnosed_depression'], df['de_ever_current_talk_ther'])
+    check_ever_vs_now_properties(df['de_ever_diagnosed_depression'], df['de_ever_talk_ther'])
     check_ever_vs_now_properties(df['de_ever_diagnosed_depression'], df['de_on_antidepr'])
 
     # Check No one aged less than 15 is depressed
@@ -93,7 +93,7 @@ def test_configuration_of_properties():
     assert pd.isnull(df.loc[df['age_years'] < 15, 'de_intrinsic_3mo_risk_of_depr_resolution']).all()
     assert (df.loc[df['age_years'] < 15, 'de_ever_diagnosed_depression'] == False).all()
     assert (df.loc[df['age_years'] < 15, 'de_on_antidepr'] == False).all()
-    assert (df.loc[df['age_years'] < 15, 'de_ever_current_talk_ther'] == False).all()
+    assert (df.loc[df['age_years'] < 15, 'de_ever_talk_ther'] == False).all()
     assert (df.loc[df['age_years'] < 15, 'de_ever_non_fatal_self_harm_event'] == False).all()
     assert (df.loc[df['age_years'] < 15, 'de_ever_diagnosed_depression'] == False).all()
 
@@ -134,7 +134,7 @@ def test_hsi_functions(tmpdir):
     sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
     sim.population.props['de_ever_diagnosed_depression'] = False
     sim.population.props['de_on_antidepr'] = False
-    sim.population.props['de_ever_current_talk_ther'] = False
+    sim.population.props['de_ever_talk_ther'] = False
     sim.population.props['de_ever_non_fatal_self_harm_event'] = False
 
     sim.simulate(end_date=Date(year=2012, month=1, day=1))
@@ -145,7 +145,7 @@ def test_hsi_functions(tmpdir):
     output = parse_log_file(f)
 
     # Check that there have been been some cases of Talking Therapy and anti-depressants
-    assert df['de_ever_current_talk_ther'].sum()
+    assert df['de_ever_talk_ther'].sum()
 
     hsi = output['tlo.methods.healthsystem']['HSI_Event']
     assert 'Depression_TalkingTherapy' in hsi['TREATMENT_ID'].values
@@ -186,7 +186,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
     sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
     sim.population.props['de_ever_diagnosed_depression'] = False
     sim.population.props['de_on_antidepr'] = False
-    sim.population.props['de_ever_current_talk_ther'] = False
+    sim.population.props['de_ever_talk_ther'] = False
     sim.population.props['de_ever_non_fatal_self_harm_event'] = False
 
     # zero-out the availability of the consumable that is required for the treatment of antidepressants
@@ -201,7 +201,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
     output = parse_log_file(f)
 
     # Check that there have been been some cases of Talking Therapy and anti-depressants
-    assert df['de_ever_current_talk_ther'].sum()
+    assert df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
 
     hsi = output['tlo.methods.healthsystem']['HSI_Event']
@@ -248,7 +248,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
     sim.population.props['de_ever_diagnosed_depression'] = False
     sim.population.props['de_on_antidepr'] = False
-    sim.population.props['de_ever_current_talk_ther'] = False
+    sim.population.props['de_ever_talk_ther'] = False
     sim.population.props['de_ever_non_fatal_self_harm_event'] = False
 
     sim.simulate(end_date=Date(year=2012, month=1, day=1))
@@ -259,7 +259,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     output = parse_log_file(f)
 
     # Check that there have been been no some cases of talking Therapy and anti-depressants
-    assert 0 == df['de_ever_current_talk_ther'].sum()
+    assert 0 == df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
 
     hsi = output['tlo.methods.healthsystem']['HSI_Event']

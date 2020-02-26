@@ -130,11 +130,11 @@ class Depression(Module):
         'de_date_depr_resolved': Property(Types.DATE, 'date this person resolved last episode of depression'),
         'de_intrinsic_3mo_risk_of_depr_resolution': Property(Types.REAL,
                                                              'the risk per 3 mo of an episode of depression being '
-                                                             'resolved in abscense of any treatment'),
+                                                             'resolved in absence of any treatment'),
         'de_ever_diagnosed_depression': Property(Types.BOOL, 'whether ever diagnosed with depression'),
 
         'de_on_antidepr': Property(Types.BOOL, 'is currently on anti-depressants'),
-        'de_ever_current_talk_ther': Property(Types.BOOL,
+        'de_ever_talk_ther': Property(Types.BOOL,
                                               'whether this person has ever had a session of talking therapy'),
 
         'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non-fatal self harm event'),
@@ -166,12 +166,17 @@ class Depression(Module):
                 .otherwise(p['init_rp_depr_agege60'])
         )
 
-        self.LinearModels['Depression_Ever_At_Population_Initialisation'] = LinearModel(
+        self.LinearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1.0,
+            Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']),
+        )
+
+        self.LinearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * p['init_rp_ever_depr_per_year_older_f']),
         )
-        # TODO: make this depend on sex and age_years and use self.parameters['onit_rp_ever_depr_per_year_older_m'] for sex=='M'
 
         self.LinearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -206,7 +211,7 @@ class Depression(Module):
             1.0,
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
             Predictor('de_on_antidepr').when(True, p['rr_resol_depr_on_antidepr']),
-            Predictor('de_ever_current_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
+            Predictor('de_ever_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
         self.LinearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel(
@@ -228,7 +233,6 @@ class Depression(Module):
         )
 
         # Get DALY weight values:
-        # TODO: check are these for the status or for an episode? & If we are only modelling severe should it not just be that weight?
         if 'HealthBurden' in self.sim.modules.keys():
             self.daly_wts = dict()
             self.daly_wts['severe_episode_major_depressive_disorder'] = self.sim.modules[
@@ -239,6 +243,7 @@ class Depression(Module):
                 'HealthBurden'
             ].get_daly_weight(sequlae_code=933)
 
+            # The average of these is what is used for the weight for any episode of depression.
             self.daly_wts['average_per_day_during_any_episode'] = ( \
                     0.33 * self.daly_wts['severe_episode_major_depressive_disorder']
                     + 0.66 * self.daly_wts['moderate_episode_major_depressive_disorder']
@@ -267,7 +272,7 @@ class Depression(Module):
         df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
         df['de_ever_diagnosed_depression'] = False
         df['de_on_antidepr'] = False
-        df['de_ever_current_talk_ther'] = False
+        df['de_ever_talk_ther'] = False
         df['de_ever_non_fatal_self_harm_event'] = False
         df['de_cc'] = False
 
@@ -285,11 +290,17 @@ class Depression(Module):
                 (df['is_alive'] & df['de_depr']).sum()
             )
 
-        # Assign initial 'ever depression' status
-        df.loc[df['is_alive'], 'de_ever_depr'] = self.apply_linear_model(
-            self.LinearModels['Depression_Ever_At_Population_Initialisation'],
-            df.loc[df['is_alive']]
+        # Assign initial 'ever depression' status (uses seperate LinearModels for Males and Females due to the nature
+        # of the model that is specified)
+        df.loc[(df['is_alive'] & (df['sex'] == 'M')), 'de_ever_depr'] = self.apply_linear_model(
+            self.LinearModels['Depression_Ever_At_Population_Initialisation_Males'],
+            df.loc[(df['is_alive'] & (df['sex'] == 'M'))]
         )
+        df.loc[(df['is_alive'] & (df['sex'] == 'F')), 'de_ever_depr'] = self.apply_linear_model(
+            self.LinearModels['Depression_Ever_At_Population_Initialisation_Females'],
+            df.loc[(df['is_alive'] & (df['sex'] == 'F'))]
+        )
+
         df.loc[(df['is_alive'] & df['de_depr']), 'de_ever_depr'] = True     # For logical consistency
         df.loc[(df['is_alive'] & ~df['de_depr'] & df['de_ever_depr']), 'de_date_depr_resolved'] = \
             self.sim.date - DateOffset(days=1)      # If ever had depression, needs a resolution date in the past
@@ -307,7 +318,7 @@ class Depression(Module):
                 df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
         )
 
-        # TODO: Assigning ever having had talking therapy and self-harm event?
+        # TODO: Initialise 'ever having had talking therapy' and 'ever had self-harm event'
 
     def initialise_simulation(self, sim):
         """
@@ -358,7 +369,7 @@ class Depression(Module):
         df.at[child_id, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
         df.at[child_id, 'de_ever_diagnosed_depression'] = False
         df.at[child_id, 'de_on_antidepr'] = False
-        df.at[child_id, 'de_ever_current_talk_ther'] = False
+        df.at[child_id, 'de_ever_talk_ther'] = False
         df.at[child_id, 'de_ever_non_fatal_self_harm_event'] = False
         df.at[child_id, 'de_cc'] = False
 
@@ -403,7 +414,7 @@ class Depression(Module):
         # Apply the daly_wt to give a an average daly_wt for the previous month
         av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='SevereDepression', data=0.0).add(
             fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
-        # TODO update name property accoding to decison about definition of DALYs
+
         return av_daly_wt_last_month
 
     def do_when_suspected_depression(self, person_id, hsi_event):
@@ -596,7 +607,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_diagnosed_depression = (df.is_alive & df.de_ever_diagnosed_depression & (df.age_years >= 15)).sum()
         n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
         n_antidepr_ever_depr = (df.is_alive & df.de_on_antidepr & df.de_ever_depr & (df.age_years >= 15)).sum()
-        n_ever_talk_ther = (df.de_ever_current_talk_ther & df.is_alive & df.de_depr).sum()
+        n_ever_talk_ther = (df.de_ever_talk_ther & df.is_alive & df.de_depr).sum()
 
         dict_for_output = {
             'prop_ge15_depr': n_ge15_depr / n_ge15,
@@ -648,7 +659,10 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         if squeeze_factor == 0.0:
-            self.sim.population.props.at[person_id, 'de_ever_current_talk_ther'] = True
+            self.sim.population.props.at[person_id, 'de_ever_talk_ther'] = True
+        else:
+            # If squeeze_factor non-zero then do nothing and do not take up any time.
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
 
 class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
