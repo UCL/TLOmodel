@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     chronicsyndrome,
@@ -91,7 +91,7 @@ def test_run_no_interventions_allowed(tmpdir):
     sim.seed_rngs(0)
 
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
+    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
