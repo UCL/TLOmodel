@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -210,13 +210,13 @@ def test_hsi_functions_no_medication_available(tmpdir):
     assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
 
     # Check no anti-depressants used
-    if 'Consumables' in output['tlo.methods.healthsystem']:
-        cons = output['tlo.methods.healthsystem']['Consumables']
-        assert item_code not in cons['Quantity_Of_Item'].apply(pd.Series).columns
+    cons = output['tlo.methods.healthsystem']['Consumables']
+    assert (False == cons['Available'].apply(pd.Series)[item_code]).all()
+
 
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
     # With health seeking and healthsystem functioning and no medication ---
-    #   --- people should have nothing (no talking therapy or antidepressants) and no appointments
+    #   --- people should have nothing (no talking therapy or antidepressants) and no HSI events at all
 
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population
@@ -263,11 +263,8 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     assert 0 == df['de_on_antidepr'].sum()
 
     hsi = output['tlo.methods.healthsystem']['HSI_Event']
-    assert 'Depression_TalkingTherapy' not in hsi['TREATMENT_ID'].values
-    assert 'Depression_Antidepressant_Start' not in hsi['TREATMENT_ID'].values
-    assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
+    assert 0 == hsi['did_run'].sum()
 
     # Check no antidepresants used
-    if 'Consumables' in output['tlo.methods.healthsystem']:
-        cons = output['tlo.methods.healthsystem']['Consumables']
-        assert item_code not in cons['Quantity_Of_Item'].apply(pd.Series).column
+    assert 'Consumables' not in output['tlo.methods.healthsystem']
+
