@@ -1,7 +1,5 @@
 import datetime
-import os
-# import matplotlib.pyplot as plt
-# import numpy as np
+
 from pathlib import Path
 
 import pandas as pd
@@ -45,12 +43,7 @@ sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
 # Establish the logger
-custom_levels = {"*": logging.INFO,
-                 "tlo.methods.Depression": logging.DEBUG
-}
-logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
-
-logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
+logfile = sim.configure_logging(filename="LogFile", custom_levels={"*": logging.INFO})
 
 # Run the simulation
 sim.make_initial_population(n=popsize)
