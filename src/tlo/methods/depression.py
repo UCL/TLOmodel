@@ -30,68 +30,72 @@ class Depression(Module):
     PARAMETERS = {
         'init_pr_depr_m_age1519_no_cc_wealth123': Parameter(
             Types.REAL,
-            'initial probability of being depressed in male age1519 with no chronic condition with wealth level 123',
+            'Initial probability of being depressed in male age1519 with no chronic condition with wealth level 1 or '
+            '2 or 3',
         ),
 
         'init_rp_depr_f_not_rec_preg': Parameter(
-            Types.REAL, 'initial relative prevalence of being depressed in females not recently pregnant'
+            Types.REAL, 'Initial relative prevalence of being depressed in females not recently pregnant'
         ),
 
         'init_rp_depr_f_rec_preg': Parameter(
-            Types.REAL, 'initial relative prevalence of being depressed in females recently pregnant'
+            Types.REAL, 'Initial relative prevalence of being depressed in females recently pregnant'
         ),
 
         'init_rp_depr_age2059': Parameter(
-            Types.REAL, 'initial relative prevalence of being depressed in 20-59 year olds'
+            Types.REAL, 'Initial relative prevalence of being depressed in 20-59 year olds vs 15-19'
         ),
 
         'init_rp_depr_agege60': Parameter(
-            Types.REAL, 'initial relative prevalence of being depressed in 60 + year olds'
+            Types.REAL, 'Initial relative prevalence of being depressed in 60+ year olds vs 15-19'
         ),
 
         'init_rp_depr_cc': Parameter(
-            Types.REAL, 'initial relative prevalence of being depressed in people with chronic condition'
+            Types.REAL, 'Initial relative prevalence of being depressed in people with chronic condition'
         ),
 
         'init_rp_depr_wealth45': Parameter(
-            Types.REAL, 'initial relative prevalence of being depressed in people with wealth level 4 or 5'
+            Types.REAL, 'Initial relative prevalence of being depressed in people with wealth level 4 or 5 vs 1 or 2 '
+                        'or 3 '
         ),
 
         'init_rp_ever_depr_per_year_older_m': Parameter(
-            Types.REAL, 'initial relative prevalence ever depression per year older in men if not currently depressed'
+            Types.REAL, 'Initial relative prevalence ever depression per year older in men'
         ),
 
         'init_rp_ever_depr_per_year_older_f': Parameter(
-            Types.REAL, 'initial relative prevalence ever depression per year older in women if not currently depressed'
+            Types.REAL, 'Initial relative prevalence ever depression per year older in women'
         ),
 
         'init_pr_antidepr_curr_depr': Parameter(
-            Types.REAL, 'initial prob of being on antidepressants if currently depressed'
+            Types.REAL, 'Initial probability of being on antidepressants if currently depressed'
         ),
 
         'init_rp_antidepr_ever_depr_not_curr': Parameter(
-            Types.REAL, 'initial relative prevalence of being on antidepressants if ever depressed but not currently'
+            Types.REAL, 'Initial relative prevalence of being on antidepressants if ever depressed but not currently'
         ),
 
         'init_pr_ever_diagnosed_depression': Parameter(
-            Types.REAL, 'initial prob of having ever been diagnosed with depression, amongst people with ever depr and '
-                        'not on antidepr'
+            Types.REAL, 'Initial probability of having ever been diagnosed with depression, amongst people with ever '
+                        'depression and not on antidepressants'
         ),
 
         'base_3m_prob_depr': Parameter(
-            Types.REAL, 'base probability of depression over a 3 month period if male, wealth123, no chronic '
-                        'condition, never previously depressed',
+            Types.REAL, 'Probability of onset of depression in a 3 month period if male, wealth 1 2 or 3, no chronic '
+                        'condition and never previously depressed',
         ),
 
-        'rr_depr_wealth45': Parameter(Types.REAL, 'Relative rate of depression when in wealth level 4 or 5'),
+        'rr_depr_wealth45': Parameter(Types.REAL, 'Relative rate of depression when in wealth level 4 or 5 vs 1 or 2 '
+                                                  'or 3'),
 
-        'rr_depr_cc': Parameter(Types.REAL, 'Relative rate of depression associated with chronic disease'),
+        'rr_depr_cc': Parameter(Types.REAL, 'Relative rate of depression if has any chronic disease'),
 
         'rr_depr_pregnancy': Parameter(Types.REAL, 'Relative rate of depression when pregnant or recently pregnant'),
 
-        'rr_depr_female': Parameter(Types.REAL, 'Relative rate of depression for females'),
+        'rr_depr_female': Parameter(Types.REAL, 'Relative rate of depression for females vs males'),
 
-        'rr_depr_prev_epis': Parameter(Types.REAL, 'Relative rate of depression associated with previous depression'),
+        'rr_depr_prev_epis': Parameter(Types.REAL, 'Relative rate of depression associated with previous depression '
+                                                   'vs never previously depressed'),
 
         'rr_depr_on_antidepr': Parameter(
             Types.REAL, 'Relative rate of depression episode if on antidepressants'
@@ -103,12 +107,12 @@ class Depression(Module):
 
         'depr_resolution_rates': Parameter(
             Types.LIST,
-            'Risk of depression resolving in 3 months.'
+            'Risk of depression resolving in 3 months if no chronic conditions and no treatments.'
             'Each individual is equally likely to be assigned each of these risks'
         ),
 
         'rr_resol_depr_cc': Parameter(
-            Types.REAL, 'Relative rate of resolving depression associated with chronic disease symptoms************'
+            Types.REAL, 'Relative rate of resolving depression if has any chronic disease'
         ),
 
         'rr_resol_depr_on_antidepr': Parameter(
@@ -116,31 +120,37 @@ class Depression(Module):
         ),
 
         'rr_resol_depr_current_talk_ther': Parameter(
-            Types.REAL, 'Relative rate of resolving depression if current talking therapy'
+            Types.REAL, 'Relative rate of resolving depression if has ever had talking therapy vs has never had '
+                        'talking therapy '
         ),
 
-        'rate_stop_antidepr': Parameter(Types.REAL,
-                                        'rate of stopping antidepressants when not currently depressed per 3mo'),
+        'prob_3m_stop_antidepr': Parameter(Types.REAL,
+                                        'Probability per 3 months of stopping antidepressants when not currently '
+                                        'depressed.'),
 
-        'rate_default_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when still depressed per 3mo'),
-
-
-
-        'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'rate of suicide in (currently depressed) men'),
-
-        'rr_suicide_depr_f': Parameter(Types.REAL, 'relative rate of suicide in women compared with me'),
-
-        'prob_3m_selfharm_depr': Parameter(Types.REAL, 'rate of non-fatal self harm in (currently depressed)'),
+        'prob_3m_default_antidepr': Parameter(Types.REAL, 'Probability per 3 months of stopping antidepressants when '
+                                                          'still depressed.'),
 
 
-        'sensitivity_of_assessment_of_depression': Parameter(Types.REAL, 'sensitivity_of_assessment_of_depression'),
+        'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'Probability per 3 months of suicide in currently depressed '
+                                                        'men'),
+
+        'rr_suicide_depr_f': Parameter(Types.REAL, 'Relative risk of suicide in women compared with men'),
+
+        'prob_3m_selfharm_depr': Parameter(Types.REAL, 'Probability per 3 months of non-fatal self harm in those '
+                                                       'currently depressed'),
+
+        'sensitivity_of_assessment_of_depression': Parameter(Types.REAL, 'The sensitivity of the clinical assessment '
+                                                                         'in detecting the true current status of '
+                                                                         'depression'),
 
         'pr_assessed_for_depression_in_generic_appt_level1': Parameter(
-            Types.REAL,'probability that a person is assessed for depression during a generic appointment at facility '
+            Types.REAL,'Probability that a person is assessed for depression during a non-emergency generic appointment'
                        'level 1'),
 
         'anti_depressant_medication_item_code': Parameter(Types.INT,
-                                                          'The item code used for one month of anti-depressant treatment')
+                                                          'The item code used for one month of anti-depressant '
+                                                          'treatment')
     }
 
     # Properties of individuals 'owned' by this module
@@ -240,8 +250,8 @@ class Depression(Module):
         self.LinearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
-            Predictor('de_depr').when(True, p['rate_default_antidepr'])
-                .when(False, p['rate_stop_antidepr'])
+            Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
+                .when(False, p['prob_3m_stop_antidepr'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
