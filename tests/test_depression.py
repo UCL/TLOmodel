@@ -102,9 +102,11 @@ def test_configuration_of_properties():
 
 
 def test_hsi_functions(tmpdir):
+    # With health seeking and healthsystem functioning and no constrinat --
+    #   --- people should have both talking therapies and antidepressants
     # --------------------------------------------------------------------------
-    # Create and run a longer simulation on a small population -- with health seeking and healthsystem functioning
-    # And no constraints in the healthsystem.
+    # Create and run a longer simulation on a small population.
+
     sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
     # Register the appropriate modules
@@ -142,58 +144,130 @@ def test_hsi_functions(tmpdir):
 
     output = parse_log_file(f)
 
-    # Check that there have been been some cases of Talking Therapy
+    # Check that there have been been some cases of Talking Therapy and anti-depressants
     assert df['de_ever_current_talk_ther'].sum()
 
-    # look inside the logged output:
+    hsi = output['tlo.methods.healthsystem']['HSI_Event']
+    assert 'Depression_TalkingTherapy' in hsi['TREATMENT_ID'].values
+    assert 'Depression_Antidepressant_Start' in hsi['TREATMENT_ID'].values
+    assert 'Depression_Antidepressant_Refill' in hsi['TREATMENT_ID'].values
 
 
-    # Check that there have been some uses of Anti-depressants
+def test_hsi_functions_no_medication_available(tmpdir):
+    # With health seeking and healthsystem functioning and no medication ---
+    #   --- people should have talking therapy but not antidepressants,
+    #       though appointments to try to start them can occur
 
-
-
-def test_hsi_functions_no_medication_available():
     # --------------------------------------------------------------------------
-    # Create and run a longer simulation on a small population -- with health seeking and healthsystem functioning
+    # Create and run a longer simulation on a small population
     sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+    sim.register(healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        mode_appt_constraints=0))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
-    sim.simulate(end_date=Date(year=2020, month=1, day=1))
+
+    # zero-out all instances of current or ever depression, or ever talking therapies
+    sim.population.props['de_depr'] = False
+    sim.population.props['de_ever_depr'] = False
+    sim.population.props['de_date_init_most_rec_depr'] = pd.NaT
+    sim.population.props['de_date_depr_resolved'] = pd.NaT
+    sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    sim.population.props['de_ever_diagnosed_depression'] = False
+    sim.population.props['de_on_antidepr'] = False
+    sim.population.props['de_ever_current_talk_ther'] = False
+    sim.population.props['de_ever_non_fatal_self_harm_event'] = False
+
+    # zero-out the availability of the consumable that is required for the treatment of antidepressants
+    item_code = sim.modules['Depression'].parameters['anti_depressant_medication_item_code']
+    sim.modules['HealthSystem'].prob_unique_item_codes_available.loc[item_code] = 0.0
+
+    sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
 
-    # TODO: TEST IN WHICH HEALTH SYSEM HAS NO ANTIDEPRESSANT MEDICATION -- THERE SHOULD BE NO ONE ON TREATMENT
-    # TODO: but there should be some people having had talking therapies --- look in log of HSI?
+    df = sim.population.props
 
+    output = parse_log_file(f)
 
-def test_hsi_functions_no_healthsystem_capability():
+    # Check that there have been been some cases of Talking Therapy and anti-depressants
+    assert df['de_ever_current_talk_ther'].sum()
+    assert 0 == df['de_on_antidepr'].sum()
+
+    hsi = output['tlo.methods.healthsystem']['HSI_Event']
+    assert 'Depression_TalkingTherapy' in hsi['TREATMENT_ID'].values
+    assert 'Depression_Antidepressant_Start' in hsi['TREATMENT_ID'].values
+    assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
+
+    # Check no anti-depressants used
+    if 'Consumables' in output['tlo.methods.healthsystem']:
+        cons = output['tlo.methods.healthsystem']['Consumables']
+        assert item_code not in cons['Quantity_Of_Item'].apply(pd.Series).columns
+
+def test_hsi_functions_no_healthsystem_capability(tmpdir):
+    # With health seeking and healthsystem functioning and no medication ---
+    #   --- people should have nothing (no talking therapy or antidepressants) and no appointments
+
     # --------------------------------------------------------------------------
-    # Create and run a longer simulation on a small population -- with health seeking and healthsystem functioning
+    # Create and run a longer simulation on a small population
     sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+    sim.register(healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        mode_appt_constraints=2,
+        ignore_cons_constraints=True,
+        capabilities_coefficient=0.0))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
-    sim.simulate(end_date=Date(year=2020, month=1, day=1))
+
+    # zero-out all instances of current or ever depression, or ever talking therapies
+    sim.population.props['de_depr'] = False
+    sim.population.props['de_ever_depr'] = False
+    sim.population.props['de_date_init_most_rec_depr'] = pd.NaT
+    sim.population.props['de_date_depr_resolved'] = pd.NaT
+    sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    sim.population.props['de_ever_diagnosed_depression'] = False
+    sim.population.props['de_on_antidepr'] = False
+    sim.population.props['de_ever_current_talk_ther'] = False
+    sim.population.props['de_ever_non_fatal_self_harm_event'] = False
+
+    sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
 
-    # TODO: TEST IN WHICH THERE NOT BE ANY TREATMENT OR TALKING THERAPY APART FROM THOSE INITIALLY
+    df = sim.population.props
+
+    output = parse_log_file(f)
+
+    # Check that there have been been no some cases of talking Therapy and anti-depressants
+    assert 0 == df['de_ever_current_talk_ther'].sum()
+    assert 0 == df['de_on_antidepr'].sum()
+
+    hsi = output['tlo.methods.healthsystem']['HSI_Event']
+    assert 'Depression_TalkingTherapy' not in hsi['TREATMENT_ID'].values
+    assert 'Depression_Antidepressant_Start' not in hsi['TREATMENT_ID'].values
+    assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
+
+    # Check no antidepresants used
+    if 'Consumables' in output['tlo.methods.healthsystem']:
+        cons = output['tlo.methods.healthsystem']['Consumables']
+        assert item_code not in cons['Quantity_Of_Item'].apply(pd.Series).column
