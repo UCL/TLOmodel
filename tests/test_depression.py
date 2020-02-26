@@ -69,14 +69,14 @@ def test_configuration_of_properties():
 
     had_an_episode_now_resolved = (
         ~pd.isnull(df['de_date_init_most_rec_depr']) & (~pd.isnull(df['de_date_depr_resolved'])))
-    assert (df.loc[had_an_episode_now_resolved, 'de_ever_depr'] == True).all()
-    assert (df.loc[had_an_episode_now_resolved, 'de_depr'] == False).all()
+    assert (df.loc[had_an_episode_now_resolved, 'de_ever_depr']).all()
+    assert not (df.loc[had_an_episode_now_resolved, 'de_depr']).any()
     assert (df.loc[had_an_episode_now_resolved, 'de_date_depr_resolved'] <= sim.date).all()
 
     had_an_episode_still_ongoing = (
         ~pd.isnull(df['de_date_init_most_rec_depr']) & pd.isnull(df['de_date_depr_resolved']))
-    assert (df.loc[had_an_episode_still_ongoing, 'de_ever_depr'] == True).all()
-    assert (df.loc[had_an_episode_still_ongoing, 'de_depr'] == True).all()
+    assert (df.loc[had_an_episode_still_ongoing, 'de_ever_depr']).all()
+    assert (df.loc[had_an_episode_still_ongoing, 'de_depr']).all()
 
     # check access to intervention
     # NB. These tests assume that no one who is not depressed would be wrongly diagnosed as depressed.
@@ -86,16 +86,16 @@ def test_configuration_of_properties():
     check_ever_vs_now_properties(df['de_ever_diagnosed_depression'], df['de_on_antidepr'])
 
     # Check No one aged less than 15 is depressed
-    assert (df.loc[df['age_years'] < 15, 'de_depr'] == False).all()
-    assert (df.loc[df['age_years'] < 15, 'de_ever_depr'] == False).all()
+    assert not (df.loc[df['age_years'] < 15, 'de_depr']).any()
+    assert not (df.loc[df['age_years'] < 15, 'de_ever_depr']).any()
     assert pd.isnull(df.loc[df['age_years'] < 15, 'de_date_init_most_rec_depr']).all()
     assert pd.isnull(df.loc[df['age_years'] < 15, 'de_date_depr_resolved']).all()
     assert pd.isnull(df.loc[df['age_years'] < 15, 'de_intrinsic_3mo_risk_of_depr_resolution']).all()
-    assert (df.loc[df['age_years'] < 15, 'de_ever_diagnosed_depression'] == False).all()
-    assert (df.loc[df['age_years'] < 15, 'de_on_antidepr'] == False).all()
-    assert (df.loc[df['age_years'] < 15, 'de_ever_talk_ther'] == False).all()
-    assert (df.loc[df['age_years'] < 15, 'de_ever_non_fatal_self_harm_event'] == False).all()
-    assert (df.loc[df['age_years'] < 15, 'de_ever_diagnosed_depression'] == False).all()
+    assert not (df.loc[df['age_years'] < 15, 'de_ever_diagnosed_depression']).any()
+    assert not (df.loc[df['age_years'] < 15, 'de_on_antidepr']).any()
+    assert not (df.loc[df['age_years'] < 15, 'de_ever_talk_ther']).any()
+    assert not (df.loc[df['age_years'] < 15, 'de_ever_non_fatal_self_harm_event']).any()
+    assert not (df.loc[df['age_years'] < 15, 'de_ever_diagnosed_depression']).any()
 
     # There is some non-zero prevalence of ever having had depression in the initial population
     assert df.loc[df['date_of_birth'] < sim.start_date, 'de_ever_depr'].sum()
@@ -211,7 +211,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
     # Check no anti-depressants used
     cons = output['tlo.methods.healthsystem']['Consumables']
-    assert (False == cons['Available'].apply(pd.Series)[item_code]).all()
+    assert not (cons['Available'].apply(pd.Series)[item_code]).any()
 
 
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
@@ -267,4 +267,3 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
 
     # Check no antidepresants used
     assert 'Consumables' not in output['tlo.methods.healthsystem']
-

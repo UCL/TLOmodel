@@ -85,7 +85,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             # ---- ASSESS FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:
                 if (squeeze_factor == 0.0) and (self.module.rng.rand() < self.sim.modules['Depression'].parameters[
-                    'pr_assessed_for_depression_in_generic_appt_level1']):
+                                                                'pr_assessed_for_depression_in_generic_appt_level1']):
                     self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # -------------------------------
 
@@ -181,7 +181,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
-        df = self.sim.population.props
 
         # simple diagnosis to work out which HSI event to trigger
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)

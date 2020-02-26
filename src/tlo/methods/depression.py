@@ -17,6 +17,7 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -125,12 +126,11 @@ class Depression(Module):
         ),
 
         'prob_3m_stop_antidepr': Parameter(Types.REAL,
-                                        'Probability per 3 months of stopping antidepressants when not currently '
-                                        'depressed.'),
+                                           'Probability per 3 months of stopping antidepressants when not currently '
+                                           'depressed.'),
 
         'prob_3m_default_antidepr': Parameter(Types.REAL, 'Probability per 3 months of stopping antidepressants when '
                                                           'still depressed.'),
-
 
         'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'Probability per 3 months of suicide in currently depressed '
                                                         'men'),
@@ -145,8 +145,9 @@ class Depression(Module):
                                                                          'depression'),
 
         'pr_assessed_for_depression_in_generic_appt_level1': Parameter(
-            Types.REAL,'Probability that a person is assessed for depression during a non-emergency generic appointment'
-                       'level 1'),
+            Types.REAL,
+            'Probability that a person is assessed for depression during a non-emergency generic appointment'
+            'level 1'),
 
         'anti_depressant_medication_item_code': Parameter(Types.INT,
                                                           'The item code used for one month of anti-depressant '
@@ -166,12 +167,13 @@ class Depression(Module):
 
         'de_on_antidepr': Property(Types.BOOL, 'is currently on anti-depressants'),
         'de_ever_talk_ther': Property(Types.BOOL,
-                                              'whether this person has ever had a session of talking therapy'),
+                                      'whether this person has ever had a session of talking therapy'),
 
         'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non-fatal self harm event'),
-        'de_cc': Property(Types.BOOL, 'whether this person has chronic condition')
-                                                                                # TODO: <--- define and update at poll
-        # TODO: define a recency of pregnancy metric, update this in the polling event, and refer to this in the LinearModels
+        'de_cc': Property(Types.BOOL, 'whether this person has chronic condition'),
+        # TODO: <--- define and update at poll
+        'de_recently_pregnant': Property(Types.BOOL, 'whether this person is female and is either currently pregnant '
+                                                     'or had a last pregnancy less than one year ago')
     }
 
     # Symptom that this module will use
@@ -190,8 +192,8 @@ class Depression(Module):
             self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'],
             Predictor('de_cc').when(True, p['init_rp_depr_cc']),
             Predictor('li_wealth').when('isin([4,5])', p['init_rp_depr_wealth45']),
-            Predictor().when('(sex=="F") & (is_pregnant==True)', p['init_rp_depr_f_rec_preg']),
-            Predictor().when('(sex=="F") & (is_pregnant==False)', p['init_rp_depr_f_not_rec_preg']),
+            Predictor().when('(sex=="F") & (de_recently_pregnant==True)', p['init_rp_depr_f_rec_preg']),
+            Predictor().when('(sex=="F") & (de_recently_pregnant==False)', p['init_rp_depr_f_not_rec_preg']),
             Predictor('age_years').when('.between(0, 14)', 0)
                 .when('.between(15, 19)', 1.0)
                 .when('.between(20, 59)', p['init_rp_depr_age2059'])
@@ -201,7 +203,8 @@ class Depression(Module):
         self.LinearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
-            Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']),
+            Predictor('age_years').apply(
+                lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']),
         )
 
         self.LinearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel(
@@ -228,12 +231,12 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             p['base_3m_prob_depr'],
             Predictor('de_cc').when(True, p['rr_depr_cc']),
-            Predictor('age_years').when('.between(0, 14)', 0)
-                .when('.between(15, 19)', p['rr_depr_age1519'])
-                .when('>=60', p['rr_depr_agege60']),
+            Predictor('age_years')  .when('.between(0, 14)', 0)
+                                    .when('.between(15, 19)', p['rr_depr_age1519'])
+                                    .when('>=60', p['rr_depr_agege60']),
             Predictor('li_wealth').when('isin([4,5])', p['rr_depr_wealth45']),
-            Predictor().when('(sex=="F") & (is_pregnant==True)', p['rr_depr_female'] * p['rr_depr_pregnancy']),
-            Predictor().when('(sex=="F") & (is_pregnant==False)', p['rr_depr_female']),
+            Predictor().when('(sex=="F") & (de_recently_pregnant==True)', p['rr_depr_female'] * p['rr_depr_pregnancy']),
+            Predictor().when('(sex=="F") & (de_recently_pregnant==False)', p['rr_depr_female']),
             Predictor('de_ever_depr').when(True, p['rr_depr_prev_epis']),
             Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
         )
@@ -251,7 +254,7 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
-                .when(False, p['prob_3m_stop_antidepr'])
+                                .when(False, p['prob_3m_stop_antidepr'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -277,9 +280,9 @@ class Depression(Module):
             ].get_daly_weight(sequlae_code=933)
 
             # The average of these is what is used for the weight for any episode of depression.
-            self.daly_wts['average_per_day_during_any_episode'] = ( \
-                    0.33 * self.daly_wts['severe_episode_major_depressive_disorder']
-                    + 0.66 * self.daly_wts['moderate_episode_major_depressive_disorder']
+            self.daly_wts['average_per_day_during_any_episode'] = (
+                0.33 * self.daly_wts['severe_episode_major_depressive_disorder']
+                + 0.66 * self.daly_wts['moderate_episode_major_depressive_disorder']
             )
 
         # Register this disease module with the health system
@@ -307,6 +310,9 @@ class Depression(Module):
         df['de_on_antidepr'] = False
         df['de_ever_talk_ther'] = False
         df['de_ever_non_fatal_self_harm_event'] = False
+        df['de_recently_pregnant'] = df['is_pregnant'] | (
+                df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=1))
+        )
         df['de_cc'] = False
 
         # Assign initial 'current depression' status
@@ -334,9 +340,9 @@ class Depression(Module):
             df.loc[(df['is_alive'] & (df['sex'] == 'F'))]
         )
 
-        df.loc[(df['is_alive'] & df['de_depr']), 'de_ever_depr'] = True     # For logical consistency
+        df.loc[(df['is_alive'] & df['de_depr']), 'de_ever_depr'] = True  # For logical consistency
         df.loc[(df['is_alive'] & ~df['de_depr'] & df['de_ever_depr']), 'de_date_depr_resolved'] = \
-            self.sim.date - DateOffset(days=1)      # If ever had depression, needs a resolution date in the past
+            self.sim.date - DateOffset(days=1)  # If ever had depression, needs a resolution date in the past
 
         # Assign initial 'ever diagnosed' status
         df.loc[df['is_alive'], 'de_ever_diagnosed_depression'] = self.apply_linear_model(
@@ -349,7 +355,7 @@ class Depression(Module):
             self.apply_linear_model(
                 self.LinearModels['Using_AntiDepressants_Initialisation'],
                 df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
-        )
+            )
 
         # TODO: Initialise 'ever having had talking therapy' and 'ever had self-harm event'
 
@@ -404,6 +410,7 @@ class Depression(Module):
         df.at[child_id, 'de_on_antidepr'] = False
         df.at[child_id, 'de_ever_talk_ther'] = False
         df.at[child_id, 'de_ever_non_fatal_self_harm_event'] = False
+        df.at[child_id, 'de_recently_pregnant'] = False
         df.at[child_id, 'de_cc'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -427,15 +434,12 @@ class Depression(Module):
         df = self.sim.population.props
 
         # Calculate fraction of the last month that was spent depressed
-        any_depr_in_the_last_month = (df['is_alive']) \
-                                     & (
-                                         ~pd.isnull(df['de_date_init_most_rec_depr']) &
-                                         (df['de_date_init_most_rec_depr'] <= self.sim.date)
-                                     ) \
-                                     & (
-                                         pd.isnull(df['de_date_depr_resolved']) |
-                                         (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-                                     )
+        any_depr_in_the_last_month = (df['is_alive']) & (
+            ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
+        ) & (
+            pd.isnull(df['de_date_depr_resolved']) | (
+                df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+        )
 
         start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
                                  self.sim.date - DateOffset(months=1))
@@ -507,6 +511,16 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         p = self.module.parameters
         apply_linear_model = self.module.apply_linear_model
+
+        # -----------------------------------------------------------------------------------------------------
+        # Update properties that are used by the module
+        df['de_recently_pregnant'] = df['is_pregnant'] | (
+            df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=1)))
+
+        assert (df.loc[df['is_pregnant'], 'de_recently_pregnant']).all()
+        assert not (df['de_recently_pregnant'] & pd.isnull(df['date_of_last_pregnancy'])).any()
+        assert (df.loc[((~df['is_pregnant']) & df['de_recently_pregnant']), 'date_of_last_pregnancy'] > (
+            self.sim.date - DateOffset(years=1))).all()
 
         # -----------------------------------------------------------------------------------------------------
         # Determine who will be onset with depression among those who are not currently depressed
