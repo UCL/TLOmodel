@@ -61,10 +61,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
-        diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
-
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
+
+            diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
+
             # It's a child:
             logger.debug('Run the ICMI algorithm for this child')
 
@@ -82,9 +83,10 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             logger.debug('To fill in ... what to with an adult')
 
             # ---- ASSESS FOR DEPRESSION ----
-            if (squeeze_factor == 0.0) and (self.module.rng() < self.sim.modules['Depression'].parameters[
-                'pr_assessed_for_depression_in_generic_appt_level1']):
-                self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            if 'Depression' in self.sim.modules:
+                if (squeeze_factor == 0.0) and (self.module.rng.rand() < self.sim.modules['Depression'].parameters[
+                    'pr_assessed_for_depression_in_generic_appt_level1']):
+                    self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # -------------------------------
 
     def did_not_run(self):

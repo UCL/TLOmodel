@@ -116,7 +116,6 @@ class Depression(Module):
                                                            'previously diagnosed with depression'),
 
         'sensitivity_of_assessment_of_depression': Parameter(Types.REAL, 'sensitivity_of_assessment_of_depression'),
-        'specificity_of_assessment_of_depression': Parameter(Types.REAL, 'specificity_of_assessment_of_depression'),
         'pr_assessed_for_depression_in_generic_appt_level1': Parameter(Types.REAL,
                                                                        'probability that a person is assessed for depression during a generic appointment at facility level 1'),
         'anti_depressant_medication_item_code': Parameter(Types.INT,
@@ -290,7 +289,9 @@ class Depression(Module):
             self.LinearModels['Depression_Ever_At_Population_Initialisation'],
             df.loc[df['is_alive']]
         )
-        df.loc[(df['is_alive'] & df['de_depr']), 'de_ever_depr'] = True  # For logical consistency
+        df.loc[(df['is_alive'] & df['de_depr']), 'de_ever_depr'] = True     # For logical consistency
+        df.loc[(df['is_alive'] & ~df['de_depr'] & df['de_ever_depr']), 'de_date_depr_resolved'] = \
+            self.sim.date - DateOffset(days=1)                              # If ever had depr, needs a resolution date
 
         # Assign initial 'ever diagnosed' status
         df.loc[df['is_alive'], 'de_ever_diagnosed_depression'] = self.apply_linear_model(
@@ -298,11 +299,13 @@ class Depression(Module):
             df.loc[df['is_alive']]
         )
 
-        # Assign initial 'using anti-depressants' status to those who are currently depressed
-        df.loc[df['is_alive'], 'de_on_antidepr'] = self.apply_linear_model(
+        # Assign initial 'using anti-depressants' status to those who are currently depressed and diagnosed
+        df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression'], 'de_on_antidepr'] = self.apply_linear_model(
             self.LinearModels['Using_AntiDepressants_Initialisation'],
-            df.loc[df['is_alive'] & df['de_depr']]
+            df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
         )
+
+        # TODO; assigning ever having had talking therapy?
 
     def initialise_simulation(self, sim):
         """
@@ -315,11 +318,11 @@ class Depression(Module):
         self.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
         # Create the diagnostic representing the assessment for whether a person is diagnosed with depression
+        # NB. By implication specificity is assumed to be 100%
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_depression=DxTest(
                 property='de_depr',
                 sensitivity=self.parameters['sensitivity_of_assessment_of_depression'],
-                specificity=self.parameters['specificity_of_assessment_of_depression'],
             )
         )
 
@@ -468,6 +471,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[onset_depression.loc[onset_depression].index, 'de_depr'] = True
         df.loc[onset_depression.loc[onset_depression].index, 'de_ever_depr'] = True
         df.loc[onset_depression.loc[onset_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
+        df.loc[onset_depression.loc[onset_depression].index, 'de_date_depr_resolved'] = pd.NaT
 
         # Set the rate of depression resolution for each person who is onset with depression
         df.loc[onset_depression.loc[onset_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = \
@@ -480,7 +484,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[df['is_alive'] & df['de_depr'] & ~df.index.isin(onset_depression.loc[onset_depression].index)]
         )
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_depr'] = False
-        df.loc[resolved_depression.loc[resolved_depression].index, 'de_date_init_most_rec_depr'] = self.sim.date
+        df.loc[resolved_depression.loc[resolved_depression].index, 'de_date_depr_resolved'] = self.sim.date
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
 
         # -----------------------------------------------------------------------------------------------------
@@ -671,6 +675,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
         assert not df.at[
             person_id, 'de_on_antidepr'], "The person should not be starting anti-depressants and they " \
                                           "are already taking them"
+        assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should no receiving an HSI."
 
         # Check availability of antidepressant medication
         item_code = self.module.parameters['anti_depressant_medication_item_code']
@@ -713,6 +718,8 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+
+        assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should no receiving an HSI."
 
         # Check that the person is on anti-depressants
         if not df.at[person_id, 'de_on_antidepr']:
