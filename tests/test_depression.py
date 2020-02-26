@@ -79,7 +79,7 @@ def test_configuration_of_properties():
     assert (df.loc[had_an_episode_still_ongoing, 'de_depr'] == True).all()
 
     # check access to intervention
-    # NB. These tests assume that no one is not depressed would be diagnosed as depressed.
+    # NB. These tests assume that no one who is not depressed would be wrongly diagnosed as depressed.
     # (i.e. the specificity of the DxTest = 1.0)
     check_ever_vs_now_properties(df['de_ever_depr'], df['de_ever_non_fatal_self_harm_event'])
     check_ever_vs_now_properties(df['de_ever_diagnosed_depression'], df['de_ever_current_talk_ther'])
@@ -102,7 +102,7 @@ def test_configuration_of_properties():
 
 
 def test_hsi_functions(tmpdir):
-    # With health seeking and healthsystem functioning and no constrinat --
+    # With health seeking and healthsystem functioning and no constraints --
     #   --- people should have both talking therapies and antidepressants
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population.
@@ -154,9 +154,9 @@ def test_hsi_functions(tmpdir):
 
 
 def test_hsi_functions_no_medication_available(tmpdir):
-    # With health seeking and healthsystem functioning and no medication ---
+    # With health seeking and healthsystem functioning but no medication available ---
     #   --- people should have talking therapy but not antidepressants,
-    #       though appointments to try to start them can occur
+    #       (though appointments to try to start them can occur)
 
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population
@@ -216,7 +216,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
     # With health seeking and healthsystem functioning and no medication ---
-    #   --- people should have nothing (no talking therapy or antidepressants) and no HSI events at all
+    #   --- people should have nothing (no talking therapy or antidepressants) and no HSI events run at all
 
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population

@@ -124,27 +124,27 @@ class Depression(Module):
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
-        'de_depr': Property(Types.BOOL, 'currently depr'),
-        'de_ever_depr': Property(Types.BOOL, 'Whether this person has ever experienced depr'),
-        'de_date_init_most_rec_depr': Property(Types.DATE, 'When this individual last initiated a depr episode'),
-        'de_date_depr_resolved': Property(Types.DATE, 'When the last episode of depr was resolved'),
+        'de_depr': Property(Types.BOOL, 'whether this person is currently depressed'),
+        'de_ever_depr': Property(Types.BOOL, 'whether this person has ever experienced depression'),
+        'de_date_init_most_rec_depr': Property(Types.DATE, 'date this person last initiated a depression episode'),
+        'de_date_depr_resolved': Property(Types.DATE, 'date this person resolved last episode of depression'),
         'de_intrinsic_3mo_risk_of_depr_resolution': Property(Types.REAL,
-                                                             'The risk per 3 mo of an episode of depression being resolved in abscance of any treatments'),
-        'de_ever_diagnosed_depression': Property(Types.BOOL, 'Whether ever previously diagnosed with depression'),
+                                                             'the risk per 3 mo of an episode of depression being '
+                                                             'resolved in abscense of any treatment'),
+        'de_ever_diagnosed_depression': Property(Types.BOOL, 'whether ever diagnosed with depression'),
 
-        'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
+        'de_on_antidepr': Property(Types.BOOL, 'is currently on anti-depressants'),
         'de_ever_current_talk_ther': Property(Types.BOOL,
-                                              'Whether the person has ever had a session of talking therapy)'),
+                                              'whether this person has ever had a session of talking therapy'),
 
-        'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non fatal self harm event'),
-
-        # Temporary property
-        'de_cc': Property(Types.BOOL, 'whether has chronic condition')
+        'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non-fatal self harm event'),
+        'de_cc': Property(Types.BOOL, 'whether this person has chronic condition')
+                                                                                # TODO: <--- define and update at poll
     }
 
     # Symptom that this module will use
-    SYMPTOMS = {
-        'em_Injuries_From_Self_Harm'}  # The 'em_' prefix means that the onset of this symptom leads to seeking emergency care.
+    # NB. The 'em_' prefix means that the onset of this symptom leads to an GenericEmergencyAppt
+    SYMPTOMS = {'em_Injuries_From_Self_Harm'}
 
     def read_parameters(self, data_folder):
         self.load_parameters_from_dataframe(pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
@@ -209,7 +209,7 @@ class Depression(Module):
             Predictor('de_ever_current_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
-        self.LinearModels['Risk_of_Stopping_Antidepressants'] = LinearModel(
+        self.LinearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['rate_default_antidepr'])
@@ -250,7 +250,8 @@ class Depression(Module):
     def apply_linear_model(self, lm, df):
         """
         Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event
-        happening to each individual. It returns a series with same index with bools indicating the outcome
+        happening to each individual. It then returns a series with same index with bools indicating the outcome based
+        on the toss of the biased coin.
         :param lm: The linear model
         :param df: The dataframe
         :return: Series with same index containing outcomes (bool)
@@ -258,7 +259,7 @@ class Depression(Module):
         return self.rng.rand(len(df)) < lm.predict(df)
 
     def initialise_population(self, population):
-        df = population.props  # a shortcut to the data-frame storing data for individuals
+        df = population.props
         df['de_depr'] = False
         df['de_ever_depr'] = False
         df['de_date_init_most_rec_depr'] = pd.NaT
@@ -276,7 +277,7 @@ class Depression(Module):
             df.loc[df['is_alive']]
         )
         # If currently depressed, set the date on which this episode began to the start of the simulation
-        # and the intrinsic risk of resolution
+        # and draw the intrinsic risk of resolution
         df.loc[df['is_alive'] & df['de_depr'], 'de_date_init_most_rec_depr'] = self.sim.date
         df.loc[df['is_alive'] & df['de_depr'], 'de_intrinsic_3mo_risk_of_depr_resolution'] = \
             self.rng.choice(
@@ -291,7 +292,7 @@ class Depression(Module):
         )
         df.loc[(df['is_alive'] & df['de_depr']), 'de_ever_depr'] = True     # For logical consistency
         df.loc[(df['is_alive'] & ~df['de_depr'] & df['de_ever_depr']), 'de_date_depr_resolved'] = \
-            self.sim.date - DateOffset(days=1)                              # If ever had depr, needs a resolution date
+            self.sim.date - DateOffset(days=1)      # If ever had depression, needs a resolution date in the past
 
         # Assign initial 'ever diagnosed' status
         df.loc[df['is_alive'], 'de_ever_diagnosed_depression'] = self.apply_linear_model(
@@ -300,16 +301,20 @@ class Depression(Module):
         )
 
         # Assign initial 'using anti-depressants' status to those who are currently depressed and diagnosed
-        df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression'], 'de_on_antidepr'] = self.apply_linear_model(
-            self.LinearModels['Using_AntiDepressants_Initialisation'],
-            df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
+        df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression'], 'de_on_antidepr'] = \
+            self.apply_linear_model(
+                self.LinearModels['Using_AntiDepressants_Initialisation'],
+                df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
         )
 
-        # TODO; assigning ever having had talking therapy?
+        # TODO: Assigning ever having had talking therapy and self-harm event?
 
     def initialise_simulation(self, sim):
         """
-        Launch the main polling event and the logging event
+        Launch the main polling event and the logging event.
+        Schedule the refill prescriptions for those on antidepressants.
+        Register the assessment of depression with the DxManager.
+
         """
         sim.schedule_event(DepressionPollingEvent(self), sim.date)
         sim.schedule_event(DepressionLoggingEvent(self), sim.date)
@@ -318,7 +323,7 @@ class Depression(Module):
         self.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
         # Create the diagnostic representing the assessment for whether a person is diagnosed with depression
-        # NB. By implication specificity is assumed to be 100%
+        # NB. Specificity is assumed to be 100%
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_depression=DxTest(
                 property='de_depr',
@@ -327,7 +332,7 @@ class Depression(Module):
         )
 
         # For those that are taking anti-depressants at initiation, schedule their refill HSI appointments
-        # Scatter these refill appointments of approx the first month of the simulation (these refills are assumed
+        # Scatter these refill appointments over approx the first month of the simulation (these refills are assumed
         # to occur monthly).
         df = sim.population.props
         if df['de_on_antidepr'].sum():
@@ -341,7 +346,7 @@ class Depression(Module):
                 )
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
+        """Initialise our properties for a newborn individual -- they will not have depression or any history of it.
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
@@ -365,8 +370,8 @@ class Depression(Module):
 
     def report_daly_values(self):
         """
-        Report Daly Values based on current status.
-        A daly weight is attracted to a status of depression for as long as the depression lasts.
+        Report DALYs based status in the previous month.
+        A DALY weight is attached to a status of depression for as long as the depression lasted in the previous month.
         """
 
         def left_censor(obs, window_open):
@@ -396,9 +401,9 @@ class Depression(Module):
         fraction_of_month_depr = dur_depr_in_days / days_in_last_month
 
         # Apply the daly_wt to give a an average daly_wt for the previous month
-        av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='', data=0.0).add(
+        av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='SevereDepression', data=0.0).add(
             fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
-
+        # TODO update name property accoding to decison about definition of DALYs
         return av_daly_wt_last_month
 
     def do_when_suspected_depression(self, person_id, hsi_event):
@@ -409,7 +414,7 @@ class Depression(Module):
         :return:
         """
 
-        # Assess for depression and initiate treatments for depression if needed
+        # Assess for depression and initiate treatments for depression if positive diagnosis
         if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_depression',
                                                                    hsi_event=hsi_event
                                                                    ):
@@ -426,8 +431,8 @@ class Depression(Module):
                 topen=self.sim.date
             )
 
-            # Initiate on anti-depressants (at the same facility level as the HSI event that is calling)
-            # if not already taking them
+            # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
+            # (But if person is already on anti-depressants, do not do anything)
             if not self.sim.population.props.at[person_id, 'de_on_antidepr']:
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Depression_Start_Antidepressant(module=self,
@@ -446,9 +451,8 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     The regular event that actually changes individuals' depression status.
     It occurs every 3 months and this cannot be changed.
-    To be efficient, the onset and resolution of depression events occurs at the polling event and synchonrously for
-    all persons. Individual level events (HSI, self-harm/suicide events) may occur at other times and lead to earlier
-    resolution.
+    The onset and resolution of depression events occurs at the polling event and synchronously for
+    all persons. Individual level events (HSI, self-harm/suicide events) may occur at other times.
     """
 
     def __init__(self, module):
@@ -462,7 +466,6 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -----------------------------------------------------------------------------------------------------
         # Determine who will be onset with depression among those who are not currently depressed
-        # Assign initial 'current depression' status
         onset_depression = apply_linear_model(
             self.module.LinearModels['Risk_of_Depression_Onset_per3mo'],
             df.loc[df['is_alive'] & ~df['de_depr']]
@@ -488,9 +491,9 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_intrinsic_3mo_risk_of_depr_resolution'] = np.nan
 
         # -----------------------------------------------------------------------------------------------------
-        # Determine cessation of use of antidepressants
+        # Determine cessation of use of antidepressants among those who are currently taking them.
         stop_using_antidepressants = apply_linear_model(
-            self.module.LinearModels['Risk_of_Stopping_Antidepressants'],
+            self.module.LinearModels['Risk_of_Stopping_Antidepressants_per3mo'],
             df.loc[df['is_alive'] & df['de_on_antidepr']]
         )
         df.loc[stop_using_antidepressants.loc[stop_using_antidepressants].index, 'de_on_antidepr'] = False
@@ -528,7 +531,6 @@ class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        logger.debug('SelfHarm event')
         self.module.EventsTracker['SelfHarmEvents'] += 1
         self.sim.population.props.at[person_id, 'de_ever_non_fatal_self_harm_event'] = True
 
@@ -554,8 +556,6 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        logger.debug('Suicide event')
-
         self.module.EventsTracker['SuicideEvents'] += 1
         self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
 
@@ -566,8 +566,9 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This is the LoggingEvent for Depression. It runs every 3 months and give population summaries for statuses for
-    Depression.
+    This is the LoggingEvent for Depression. It runs every 3 months and gives:
+    * population summaries for statuses for Depression at that time.
+    * counts of events of self-harm and suicide that have occurred in the 3 months prior
     """
 
     def __init__(self, module):
@@ -578,7 +579,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # 1) Produce summary statistics for the current states
-        # Popualation totals
+        # Population totals
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
         n_ge15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
@@ -617,7 +618,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'SuicideEvents': self.module.EventsTracker['SuicideEvents'],
         })
 
-        # reset the tracker
+        # Reset the EventTracker
         self.module.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
 
@@ -673,9 +674,10 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         assert not df.at[
-            person_id, 'de_on_antidepr'], "The person should not be starting anti-depressants and they " \
+            person_id, 'de_on_antidepr'], "The person should not be starting anti-depressants as they " \
                                           "are already taking them"
-        assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should no receiving an HSI."
+        assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should not be " \
+                                                                 "receiving an HSI. "
 
         # Check availability of antidepressant medication
         item_code = self.module.parameters['anti_depressant_medication_item_code']
@@ -688,7 +690,7 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
             # If medication is available, flag as being on antidepressants
             df.at[person_id, 'de_on_antidepr'] = True
 
-            # Schedule their next HSI for a refill of medication
+            # Schedule their next HSI for a refill of medication in one month
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Refill_Antidepressant(person_id=person_id, module=self.module),
                 priority=1,
@@ -700,7 +702,9 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
 class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants.
-    If it does not run, then person ceases to be on anti-depressants.
+    The next refill of anti-depressants is also scheduled.
+    If the person is flagged as not being on antidepressants, then the event does nothing and returns a blank footprint.
+    If it does not run, then person ceases to be on anti-depressants and no further refill HSI are scheduled.
     """
 
     def __init__(self, module, person_id):
@@ -719,7 +723,8 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should no receiving an HSI."
+        assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should not be " \
+                                                                 "receiving an HSI. "
 
         # Check that the person is on anti-depressants
         if not df.at[person_id, 'de_on_antidepr']:
@@ -727,7 +732,7 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
             # Return the blank_appt_footprint() so that this HSI does not occupy any time resources
             return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
-        # Check availability
+        # Check availability of antidepressant medication
         item_code = self.module.parameters['anti_depressant_medication_item_code']
         result_of_cons_request = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
