@@ -17,7 +17,6 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -33,91 +32,113 @@ class Depression(Module):
             Types.REAL,
             'initial probability of being depressed in male age1519 with no chronic condition with wealth level 123',
         ),
-        # TODO: consider renaming -- what does "level 123" mean?
 
         'init_rp_depr_f_not_rec_preg': Parameter(
             Types.REAL, 'initial relative prevalence of being depressed in females not recently pregnant'
         ),
+
         'init_rp_depr_f_rec_preg': Parameter(
             Types.REAL, 'initial relative prevalence of being depressed in females recently pregnant'
         ),
-        # TODO: Consider renaming these two are they are used to determine risk based on *Current* pregancny status
 
         'init_rp_depr_age2059': Parameter(
             Types.REAL, 'initial relative prevalence of being depressed in 20-59 year olds'
         ),
+
         'init_rp_depr_agege60': Parameter(
             Types.REAL, 'initial relative prevalence of being depressed in 60 + year olds'
         ),
+
         'init_rp_depr_cc': Parameter(
             Types.REAL, 'initial relative prevalence of being depressed in people with chronic condition'
         ),
+
         'init_rp_depr_wealth45': Parameter(
             Types.REAL, 'initial relative prevalence of being depressed in people with wealth level 4 or 5'
         ),
+
         'init_rp_ever_depr_per_year_older_m': Parameter(
             Types.REAL, 'initial relative prevalence ever depression per year older in men if not currently depressed'
         ),
+
         'init_rp_ever_depr_per_year_older_f': Parameter(
             Types.REAL, 'initial relative prevalence ever depression per year older in women if not currently depressed'
         ),
+
         'init_pr_antidepr_curr_depr': Parameter(
             Types.REAL, 'initial prob of being on antidepressants if currently depressed'
         ),
+
+        'init_rp_antidepr_ever_depr_not_curr': Parameter(
+            Types.REAL, 'initial relative prevalence of being on antidepressants if ever depressed but not currently'
+        ),
+
         'init_pr_ever_diagnosed_depression': Parameter(
             Types.REAL, 'initial prob of having ever been diagnosed with depression, amongst people with ever depr and '
                         'not on antidepr'
         ),
-        'init_rp_antidepr_ever_depr_not_curr': Parameter(
-            Types.REAL, 'initial relative prevalence of being on antidepressants if ever depressed but not currently'
-        ),
-        'init_rp_never_depr': Parameter(Types.REAL, 'initial relative prevalence of having never been depressed'),
-        'init_rp_ever_depr_not_current': Parameter(
-            Types.REAL, 'initial relative prevalence of being ever depressed but not currently depressed'
-        ),
+
         'base_3m_prob_depr': Parameter(
-            Types.REAL,
-            'base probability of depression over a 3 month period if male, wealth123, '
-            'no chronic condition, never previously depressed',
+            Types.REAL, 'base probability of depression over a 3 month period if male, wealth123, no chronic '
+                        'condition, never previously depressed',
         ),
+
         'rr_depr_wealth45': Parameter(Types.REAL, 'Relative rate of depression when in wealth level 4 or 5'),
+
         'rr_depr_cc': Parameter(Types.REAL, 'Relative rate of depression associated with chronic disease'),
+
         'rr_depr_pregnancy': Parameter(Types.REAL, 'Relative rate of depression when pregnant or recently pregnant'),
+
         'rr_depr_female': Parameter(Types.REAL, 'Relative rate of depression for females'),
+
         'rr_depr_prev_epis': Parameter(Types.REAL, 'Relative rate of depression associated with previous depression'),
+
         'rr_depr_on_antidepr': Parameter(
             Types.REAL, 'Relative rate of depression episode if on antidepressants'
         ),
+
         'rr_depr_age1519': Parameter(Types.REAL, 'Relative rate of depression associated with 15-20 year olds'),
+
         'rr_depr_agege60': Parameter(Types.REAL, 'Relative rate of depression associated with age > 60'),
+
         'depr_resolution_rates': Parameter(
             Types.LIST,
             'Risk of depression resolving in 3 months.'
             'Each individual is equally likely to be assigned each of these risks'
         ),
+
         'rr_resol_depr_cc': Parameter(
-            Types.REAL, 'Relative rate of resolving depression associated with chronic disease symptoms'
+            Types.REAL, 'Relative rate of resolving depression associated with chronic disease symptoms************'
         ),
+
         'rr_resol_depr_on_antidepr': Parameter(
             Types.REAL, 'Relative rate of resolving depression if on antidepressants'
         ),
+
         'rr_resol_depr_current_talk_ther': Parameter(
             Types.REAL, 'Relative rate of resolving depression if current talking therapy'
         ),
+
         'rate_stop_antidepr': Parameter(Types.REAL,
                                         'rate of stopping antidepressants when not currently depressed per 3mo'),
+
         'rate_default_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when still depressed per 3mo'),
-        'rate_init_antidepr': Parameter(Types.REAL, 'rate of initiation of antidepressants'),
-        'pr_talk_ther_in_3_mth_period': Parameter(Types.REAL, 'pr_talk_ther_in_3_mth_period'),
+
+
+
         'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'rate of suicide in (currently depressed) men'),
+
         'rr_suicide_depr_f': Parameter(Types.REAL, 'relative rate of suicide in women compared with me'),
+
         'prob_3m_selfharm_depr': Parameter(Types.REAL, 'rate of non-fatal self harm in (currently depressed)'),
-        'rate_diagnosis_depression': Parameter(Types.REAL, 'rate of diagnosis of depression in a person never '
-                                                           'previously diagnosed with depression'),
+
 
         'sensitivity_of_assessment_of_depression': Parameter(Types.REAL, 'sensitivity_of_assessment_of_depression'),
-        'pr_assessed_for_depression_in_generic_appt_level1': Parameter(Types.REAL,
-                                                                       'probability that a person is assessed for depression during a generic appointment at facility level 1'),
+
+        'pr_assessed_for_depression_in_generic_appt_level1': Parameter(
+            Types.REAL,'probability that a person is assessed for depression during a generic appointment at facility '
+                       'level 1'),
+
         'anti_depressant_medication_item_code': Parameter(Types.INT,
                                                           'The item code used for one month of anti-depressant treatment')
     }
@@ -140,6 +161,7 @@ class Depression(Module):
         'de_ever_non_fatal_self_harm_event': Property(Types.BOOL, 'ever had a non-fatal self harm event'),
         'de_cc': Property(Types.BOOL, 'whether this person has chronic condition')
                                                                                 # TODO: <--- define and update at poll
+        # TODO: define a recency of pregnancy metric, update this in the polling event, and refer to this in the LinearModels
     }
 
     # Symptom that this module will use
@@ -198,7 +220,7 @@ class Depression(Module):
             Predictor('de_cc').when(True, p['rr_depr_cc']),
             Predictor('age_years').when('.between(0, 14)', 0)
                 .when('.between(15, 19)', p['rr_depr_age1519'])
-                .when('>=60', p['init_rp_depr_agege60']),
+                .when('>=60', p['rr_depr_agege60']),
             Predictor('li_wealth').when('isin([4,5])', p['rr_depr_wealth45']),
             Predictor().when('(sex=="F") & (is_pregnant==True)', p['rr_depr_female'] * p['rr_depr_pregnancy']),
             Predictor().when('(sex=="F") & (is_pregnant==False)', p['rr_depr_female']),
@@ -210,6 +232,7 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
+            Predictor('de_cc').when(True, p['rr_resol_depr_cc']),
             Predictor('de_on_antidepr').when(True, p['rr_resol_depr_on_antidepr']),
             Predictor('de_ever_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
