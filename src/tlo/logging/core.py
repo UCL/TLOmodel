@@ -123,31 +123,35 @@ class Logger:
                 json.dump(row, handler.stream, cls=encoding.PandasEncoder)
                 handler.stream.write(handler.terminator)
 
-    def _try_log_message(self, level, key=None, data: dict = None, description=None):
+    def _try_log_message(self, level, key=None, data=None, description=None):
         if key and data:
             self._log_message(level=level, key=key, data=data, description=description)
         else:
             raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
 
-    def critical(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+    def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+                 description=None, **kwargs):
         if msg:
             self._std_logger.critical(msg, *args, **kwargs)
         else:
             self._try_log_message(level="CRITICAL", key=key, data=data, description=description)
 
-    def debug(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+    def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+              description=None, **kwargs):
         if msg:
             self._std_logger.debug(msg, *args, **kwargs)
         else:
             self._try_log_message(level="DEBUG", key=key, data=data, description=description)
 
-    def info(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+    def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+             description=None, **kwargs):
         if msg:
             self._std_logger.info(msg, *args, **kwargs)
         else:
             self._try_log_message(level="INFO", key=key, data=data, description=description)
 
-    def warning(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+    def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+                description=None, **kwargs):
         if msg:
             self._std_logger.warning(msg, *args, **kwargs)
         else:
