@@ -1,7 +1,10 @@
 import json
 import logging as _logging
+from typing import Union
 
-from . import encoding
+import pandas as pd
+
+from tlo.logging import encoding
 
 
 def disable(level):
@@ -66,8 +69,18 @@ class Logger:
     def setLevel(self, level):
         self._std_logger.setLevel(level)
 
-    def _msg(self, level, key, data: dict = None, description=None):
-        # TODO: will we always want a dict?
+    def _msg(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple] = None, description=None):
+        """Writes structured log message if handler allows this and logging level is allowed
+
+        Will write a header line the first time a new logging key is encountered
+        Then will only write data rows in later rows for this logging key
+
+        :param level: Level the message is being logged as
+        :param key: logging key
+        :param data: data to be logged
+        :param description: description of this log type
+        """
+        data = self._convert_log_data(data)
         tlo_logger = getLogger('tlo')
         record = FilterRecord(self.name)
         header = {}
