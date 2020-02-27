@@ -4,6 +4,7 @@ from typing import Union
 
 import pandas as pd
 
+from tlo import util
 from tlo.logging import encoding
 
 
@@ -68,6 +69,21 @@ class Logger:
 
     def setLevel(self, level):
         self._std_logger.setLevel(level)
+
+    def _convert_log_data(self, data):
+        """Convert log data to a dictionary if it isn't already"""
+        if isinstance(data, dict):
+            return data
+        elif isinstance(data, pd.DataFrame):
+            if len(data.index) == 1:
+                converted_data = data.to_dict('records')[0]
+            else:
+                converted_data = util.nested_to_record(data)
+            return converted_data
+        elif isinstance(data, (list, set, tuple)):
+            return {f'item_{index + 1}': value for index, value in enumerate(data)}
+        else:
+            raise ValueError(f'Unexpected type given as data:\n{data}')
 
     def _msg(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple] = None, description=None):
         """Writes structured log message if handler allows this and logging level is allowed

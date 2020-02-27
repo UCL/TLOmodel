@@ -183,3 +183,23 @@ class TestStructuredLogging:
         # message should be written to log
         assert [] == lines
 
+
+class TestConvertLogData:
+    def setup(self):
+        self.expected_output = {'item_1': 1, 'item_2': 2}
+        self.logger = logging.getLogger('tlo.test.logger')
+
+    @pytest.mark.parametrize("iterable_data", [[1, 2], {1, 2}, (1, 2)])
+    def test_convert_iterable_to_dict(self, iterable_data):
+        output = self.logger._convert_log_data(iterable_data)
+        assert self.expected_output == output
+
+    def test_convert_df_to_dict(self):
+        df = pd.DataFrame({'item_1': [1], 'item_2': [2]})
+        output = self.logger._convert_log_data(df)
+
+        assert self.expected_output == output
+
+    def test_string_to_dict_fails(self):
+        with pytest.raises(ValueError):
+            self.logger._convert_log_data("strings")
