@@ -14,6 +14,12 @@ def getLogger(name='tlo'):
     return _LOGGERS[name]
 
 
+class FilterRecord:
+    def __init__(self, name):
+        self.name = name
+        self.nlen = len(name)
+
+
 class Logger:
     """
     TLO logging facade so that logging can be intercepted and customised
@@ -61,26 +67,30 @@ class Logger:
     def _msg(self, level, key, data: dict = None, description=None):
         # TODO: will we always want a dict?
         tlo_logger = getLogger('tlo')
-        # TODO: filter messages
+        record = FilterRecord(self.name)
+        header = {}
         if key not in self.keys:
             self.keys.add(key)
-            # write header json
+            # create header json
             header = {"level": level,
                       "module": self.name,
                       "key": key,
                       "columns": {key: value.dtype.name for key, value in data.items()},
                       "description": description}
-            for handler in tlo_logger.handlers:
-                json.dump(header, handler.stream)
-                handler.stream.write(handler.terminator)
 
-        # write data json
+        # create row data json
         row = {"module": self.name, "key": key,
                "date": tlo_logger.simulation.date.isoformat(),
                "values": list(data.values())}
+
+        # for each handler, write json data if allowed
         for handler in tlo_logger.handlers:
-            json.dump(row, handler.stream, cls=encoding.PandasEncoder)
-            handler.stream.write(handler.terminator)
+            if handler.filter(record) and self._std_logger.level >= eval(level):
+                if header:
+                    json.dump(header, handler.stream)
+                    handler.stream.write(handler.terminator)
+                json.dump(row, handler.stream, cls=encoding.PandasEncoder)
+                handler.stream.write(handler.terminator)
 
     def critical(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
         if msg:
