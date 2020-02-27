@@ -58,6 +58,7 @@ class Skeleton(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.store = {'Proportion_infected': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
