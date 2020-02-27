@@ -6,8 +6,8 @@ from ast import literal_eval
 import pandas as pd
 
 from tlo import logging, util
-from tlo.util import create_age_range_lookup
 from tlo.logging.reader import parse_structured_output
+from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -139,7 +139,6 @@ def parse_output(list_of_log_lines):
             # append the new row to the dataframe for this logger & log name
             o[i['logger']][i['key']] = df.append(row, ignore_index=True)
     return o
-
 
 
 def make_calendar_period_lookup():

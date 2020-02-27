@@ -1,11 +1,11 @@
+import json
 import os
 from pathlib import Path
 
-import json
-import pytest
 import pandas as pd
+import pytest
 
-from tlo import logging, Simulation, Date
+from tlo import Date, Simulation, logging
 from tlo.methods import demography, enhanced_lifestyle
 
 start_date = Date(2010, 1, 1)
@@ -86,8 +86,6 @@ def log_message(message_level, logger_level, message, logger_name='tlo.test.logg
             logger.warning(message)
         elif message_level == 'logging.CRITICAL':
             logger.critical(message)
-
-
 
 
 @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])

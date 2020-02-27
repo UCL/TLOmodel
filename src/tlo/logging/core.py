@@ -3,6 +3,7 @@ import logging as _logging
 
 from . import encoding
 
+
 def disable(level):
     _logging.disable(level=level)
 
@@ -24,6 +25,7 @@ class Logger:
     """
     TLO logging facade so that logging can be intercepted and customised
     """
+
     def __init__(self, name: str, level=_logging.NOTSET):
         assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
         self._std_logger = _logging.getLogger(name=name)
@@ -139,4 +141,3 @@ WARNING = _logging.WARNING
 
 _FORMATTER = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
 _LOGGERS = {'tlo': Logger('tlo', WARNING)}
-
