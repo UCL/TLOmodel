@@ -82,11 +82,21 @@ class Logger:
             json.dump(row, handler.stream, cls=encoding.PandasEncoder)
             handler.stream.write(handler.terminator)
 
-    def critical(self, msg, *args, **kwargs):
-        self._std_logger.critical(msg, *args, **kwargs)
+    def critical(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+        if msg:
+            self._std_logger.critical(msg, *args, **kwargs)
+        elif key and data:
+            self._msg(level="CRITICAL", key=key, data=data, description=description)
+        else:
+            raise ValueError("Logging information was not recognised")
 
-    def debug(self, msg, *args, **kwargs):
-        self._std_logger.debug(msg, *args, **kwargs)
+    def debug(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+        if msg:
+            self._std_logger.debug(msg, *args, **kwargs)
+        elif key and data:
+            self._msg(level="DEBUG", key=key, data=data, description=description)
+        else:
+            raise ValueError("Logging information was not recognised")
 
     def info(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
         if msg:
@@ -96,8 +106,13 @@ class Logger:
         else:
             raise ValueError("Logging information was not recognised")
 
-    def warning(self, msg, *args, **kwargs):
-        self._std_logger.warning(msg, *args, **kwargs)
+    def warning(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
+        if msg:
+            self._std_logger.warning(msg, *args, **kwargs)
+        elif key and data:
+            self._msg(level="WARNING", key=key, data=data, description=description)
+        else:
+            raise ValueError("Logging information was not recognised")
 
     def removeFilter(self, fltr):
         self._std_logger.removeFilter(fltr)
