@@ -85,7 +85,7 @@ class Logger:
         else:
             raise ValueError(f'Unexpected type given as data:\n{data}')
 
-    def _msg(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple] = None, description=None):
+    def _log_message(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple] = None, description=None):
         """Writes structured log message if handler allows this and logging level is allowed
 
         Will write a header line the first time a new logging key is encountered
@@ -123,37 +123,35 @@ class Logger:
                 json.dump(row, handler.stream, cls=encoding.PandasEncoder)
                 handler.stream.write(handler.terminator)
 
+    def _try_log_message(self, level, key=None, data: dict = None, description=None):
+        if key and data:
+            self._log_message(level=level, key=key, data=data, description=description)
+        else:
+            raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
+
     def critical(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
         if msg:
             self._std_logger.critical(msg, *args, **kwargs)
-        elif key and data:
-            self._msg(level="CRITICAL", key=key, data=data, description=description)
         else:
-            raise ValueError("Logging information was not recognised")
+            self._try_log_message(level="CRITICAL", key=key, data=data, description=description)
 
     def debug(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
         if msg:
             self._std_logger.debug(msg, *args, **kwargs)
-        elif key and data:
-            self._msg(level="DEBUG", key=key, data=data, description=description)
         else:
-            raise ValueError("Logging information was not recognised")
+            self._try_log_message(level="DEBUG", key=key, data=data, description=description)
 
     def info(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
         if msg:
             self._std_logger.info(msg, *args, **kwargs)
-        elif key and data:
-            self._msg(level="INFO", key=key, data=data, description=description)
         else:
-            raise ValueError("Logging information was not recognised")
+            self._try_log_message(level="INFO", key=key, data=data, description=description)
 
     def warning(self, msg=None, *args, key=None, data: dict = None, description=None, **kwargs):
         if msg:
             self._std_logger.warning(msg, *args, **kwargs)
-        elif key and data:
-            self._msg(level="WARNING", key=key, data=data, description=description)
         else:
-            raise ValueError("Logging information was not recognised")
+            self._try_log_message(level="WARNING", key=key, data=data, description=description)
 
     def removeFilter(self, fltr):
         self._std_logger.removeFilter(fltr)
