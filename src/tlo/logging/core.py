@@ -59,27 +59,25 @@ class Logger:
         self._std_logger.setLevel(level)
 
     def _msg(self, level, key, data: dict = None, description=None):
+        # TODO: will we always want a dict?
         tlo_logger = getLogger('tlo')
         # TODO: filter messages
         if key not in self.keys:
             self.keys.add(key)
             # write header json
-            columns = {"date": "pd.Timestamp"}
-            columns.update({key: value.dtype.name for key, value in data.items()})
             header = {"level": level,
                       "module": self.name,
                       "key": key,
-                      "columns": columns,
+                      "columns": {key: value.dtype.name for key, value in data.items()},
                       "description": description}
             for handler in tlo_logger.handlers:
                 json.dump(header, handler.stream)
                 handler.stream.write(handler.terminator)
 
         # write data json
-        values = [tlo_logger.simulation.date.isoformat()]
-        values.extend(data.values())
         row = {"module": self.name, "key": key,
-               "values": values}
+               "date": tlo_logger.simulation.date.isoformat(),
+               "values": list(data.values())}
         for handler in tlo_logger.handlers:
             json.dump(row, handler.stream, cls=encoding.PandasEncoder)
             handler.stream.write(handler.terminator)
