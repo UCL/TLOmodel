@@ -88,100 +88,98 @@ def log_message(message_level, logger_level, message, logger_name='tlo.test.logg
             logger.critical(message)
 
 
-@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-def test_messages_at_same_level(basic_configuration, message_level):
-    # given that messages are at the same level as the logger
-    logger_level = eval(message_level)
-    log_message(message_level, logger_level, "test message")
-    lines = read_file(*basic_configuration)
+class TestStdLibLogging:
+    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+    def test_messages_at_same_level(self, basic_configuration, message_level):
+        # given that messages are at the same level as the logger
+        logger_level = eval(message_level)
+        log_message(message_level, logger_level, "test message")
+        lines = read_file(*basic_configuration)
 
-    # messages should be written to log
-    assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
+        # messages should be written to log
+        assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
 
+    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+    def test_messages_at_higher_level(self, basic_configuration, message_level):
+        # given that messages are at a higher level as the logger
+        logging_level = eval(message_level) - 1
+        log_message(message_level, logging_level, "test message")
+        lines = read_file(*basic_configuration)
 
-@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-def test_messages_at_higher_level(basic_configuration, message_level):
-    # given that messages are at a higher level as the logger
-    logging_level = eval(message_level) - 1
-    log_message(message_level, logging_level, "test message")
-    lines = read_file(*basic_configuration)
+        # messages should be written to log
+        assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
 
-    # messages should be written to log
-    assert [f'{message_level.strip("logging.")}|tlo.test.logger|test message\n'] == lines
+    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+    def test_messages_at_lower_level(self, basic_configuration, message_level):
+        # given that messages are at a lower level as the logger
+        logging_level = eval(message_level) + 1
+        log_message(message_level, logging_level, "test message")
+        lines = read_file(*basic_configuration)
 
+        # messages should not be written to log
+        assert [] == lines
 
-@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-def test_messages_at_lower_level(basic_configuration, message_level):
-    # given that messages are at a lower level as the logger
-    logging_level = eval(message_level) + 1
-    log_message(message_level, logging_level, "test message")
-    lines = read_file(*basic_configuration)
+    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+    def test_disable(self, basic_configuration, message_level):
+        # given that messages are at a higher level as the logger BUT the logger is disabled at critical
+        logging_level = eval(message_level) - 1
+        logging.disable(logging.CRITICAL)
+        log_message(message_level, logging_level, "test message")
+        lines = read_file(*basic_configuration)
 
-    # messages should not be written to log
-    assert [] == lines
-
-
-@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-def test_disable(basic_configuration, message_level):
-    # given that messages are at a higher level as the logger BUT the logger is disabled at critical
-    logging_level = eval(message_level) - 1
-    logging.disable(logging.CRITICAL)
-    log_message(message_level, logging_level, "test message")
-    lines = read_file(*basic_configuration)
-
-    # messages should not be written to log
-    assert [] == lines
+        # messages should not be written to log
+        assert [] == lines
 
 
-@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-def test_structlog_messages_same_level(simulation_configuration, message_level):
-    # given that messages are at the same level as the logger
-    logger_level = eval(message_level)
-    message = {"message": pd.Series([12.5])[0]}
-    file_handler, file_path = simulation_configuration
-    log_message(message_level, logger_level, message, structured_logging=True)
+class TestStructuredLogging:
+    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+    def test_messages_same_level(self, simulation_configuration, message_level):
+        # given that messages are at the same level as the logger
+        logger_level = eval(message_level)
+        message = {"message": pd.Series([12.5])[0]}
+        file_handler, file_path = simulation_configuration
+        log_message(message_level, logger_level, message, structured_logging=True)
 
-    lines = read_file(file_handler, file_path)
-    header_json = json.loads(lines[0])
-    data_json = json.loads(lines[1])
+        lines = read_file(file_handler, file_path)
+        header_json = json.loads(lines[0])
+        data_json = json.loads(lines[1])
 
-    # message should be written to log
-    assert len(lines) == 2
-    assert header_json['level'] == message_level.lstrip("logging.")
-    assert 'message' in header_json['columns']
-    assert header_json['columns']['message'] == 'float64'
-    assert data_json['values'] == [12.5]
+        # message should be written to log
+        assert len(lines) == 2
+        assert header_json['level'] == message_level.lstrip("logging.")
+        assert 'message' in header_json['columns']
+        assert header_json['columns']['message'] == 'float64'
+        assert data_json['values'] == [12.5]
 
+    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+    def test_messages_higher_level(self, simulation_configuration, message_level):
+        # given that messages are a higher level than the logger
+        logger_level = eval(message_level) + 1
+        message = {"message": pd.Series([12.5])[0]}
+        file_handler, file_path = simulation_configuration
+        log_message(message_level, logger_level, message, structured_logging=True)
 
-@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-def test_structlog_messages_higher_level(simulation_configuration, message_level):
-    # given that messages are a higher level than the logger
-    logger_level = eval(message_level) + 1
-    message = {"message": pd.Series([12.5])[0]}
-    file_handler, file_path = simulation_configuration
-    log_message(message_level, logger_level, message, structured_logging=True)
+        lines = read_file(file_handler, file_path)
+        header_json = json.loads(lines[0])
+        data_json = json.loads(lines[1])
 
-    lines = read_file(file_handler, file_path)
-    header_json = json.loads(lines[0])
-    data_json = json.loads(lines[1])
+        # message should be written to log
+        assert len(lines) == 2
+        assert header_json['level'] == message_level.lstrip("logging.")
+        assert 'message' in header_json['columns']
+        assert header_json['columns']['message'] == 'float64'
+        assert data_json['values'] == [12.5]
 
-    # message should be written to log
-    assert len(lines) == 2
-    assert header_json['level'] == message_level.lstrip("logging.")
-    assert 'message' in header_json['columns']
-    assert header_json['columns']['message'] == 'float64'
-    assert data_json['values'] == [12.5]
+    @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
+    def test_messages_lower_level(self, simulation_configuration, message_level):
+        # given that messages are at a lower level than logger
+        logger_level = eval(message_level) - 1
+        message = {"message": pd.Series([12.5])[0]}
+        file_handler, file_path = simulation_configuration
+        log_message(message_level, logger_level, message, structured_logging=True)
 
+        lines = read_file(file_handler, file_path)
 
-@pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
-def test_structlog_messages_lower_level(simulation_configuration, message_level):
-    # given that messages are at a lower level than logger
-    logger_level = eval(message_level) - 1
-    message = {"message": pd.Series([12.5])[0]}
-    file_handler, file_path = simulation_configuration
-    log_message(message_level, logger_level, message, structured_logging=True)
+        # message should be written to log
+        assert [] == lines
 
-    lines = read_file(file_handler, file_path)
-
-    # message should be written to log
-    assert [] == lines
