@@ -63,7 +63,7 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
     # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile", custom_levels={"*": logging.INFO})
+    logfile = sim.configure_logging(filename="LogFile")
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -145,7 +145,7 @@ def run_simulation_with_set_intvs_maximised():
     sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] = 1.0
 
     # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile", custom_levels={"*": logging.INFO})
+    logfile = sim.configure_logging(filename="LogFile")
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
