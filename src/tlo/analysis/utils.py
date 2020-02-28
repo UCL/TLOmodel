@@ -6,7 +6,7 @@ from ast import literal_eval
 import pandas as pd
 
 from tlo import logging, util
-from tlo.logging.reader import parse_structured_output
+from tlo.logging.reader import LogData, LogRow
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def parse_line(line):
     return info
 
 
-def parse_log_file(filepath, level=None):
+def parse_log_file(filepath, level="INFO"):
     """
     Parses logged output from a TLO run and create Pandas dataframes for analysis. See
     parse_output() for details of stdlib logging parsing
@@ -52,14 +52,23 @@ def parse_log_file(filepath, level=None):
     :param level: logging level to be parsed, if used then tlo structured logging is enabled
     :return: dictionary of parsed log data
     """
+    oldstyle_loglines = []
+    log_data = LogData()
     with open(filepath) as log_file:
-        if level:
-            return parse_structured_output(log_file.readlines(), level=level)
-        else:
-            return parse_output(log_file.readlines())
+        for line in log_file:
+            # only parse json entities
+            if line.startswith('{'):
+                packet = LogRow(line)
+                log_data.parse_packet(packet, level)
+            else:
+                oldstyle_loglines.append(line)
+
+    # convert dictionaries to dataframes
+    output_logs = {**log_data.get_log_dataframes(), **oldstyle_parse_output(oldstyle_loglines)}
+    return output_logs
 
 
-def parse_output(list_of_log_lines):
+def oldstyle_parse_output(list_of_log_lines):
     """
     Parses logged output from a TLO run and create Pandas dataframes for analysis.
 

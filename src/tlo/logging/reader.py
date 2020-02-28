@@ -5,7 +5,7 @@ from typing import DefaultDict, Dict
 import pandas as pd
 
 
-class Packet:
+class LogRow:
     """Convenience class for interacting with packet of json log data"""
     is_header = False
 
@@ -18,35 +18,35 @@ class Packet:
         if 'level' in log_data.keys():
             self.is_header = True
             self.level = log_data['level']
-            self.header_line = {'header': log_data, 'values': [], 'dates': []}
+            self.header_data = log_data
         else:
             self.date = log_data['date']
             self.values = log_data['values']
 
 
-def parse_structured_output(log_lines, level):
-    allowed_logs = set()
-    parsed_logs: DefaultDict[str, Dict[str, Dict[str, list]]] = defaultdict(dict)
-    output_logs: DefaultDict[str, Dict[str, pd.DataFrame]] = defaultdict(dict)
+class LogData:
+    """Class to build up log data"""
+    def __init__(self):
+        self.data: DefaultDict[str, Dict[str, Dict[str, list]]] = defaultdict(dict)
+        self.allowed_logs = set()
 
-    for line in log_lines:
-        # only parse json entities
-        if line.startswith('{'):
-            packet = Packet(line)
-            # new header line, if this is the right level, then add module and key to log with header and blank data
-            if packet.is_header:
-                if packet.level == level:
-                    allowed_logs.add(packet.log_id)
-                    parsed_logs[packet.module][packet.key] = packet.header_line
-            # log data row if we allow this logger
-            elif packet.log_id in allowed_logs:
-                parsed_logs[packet.module][packet.key]['dates'].append(packet.date)
-                parsed_logs[packet.module][packet.key]['values'].append(packet.values)
+    def parse_packet(self, packet, level):
+        # new header line, if this is the right level, then add module and key to log with header and blank data
+        if packet.is_header:
+            if packet.level == level:
+                self.allowed_logs.add(packet.log_id)
+                self.data[packet.module][packet.key] = {'header': packet.header_data, 'values': [], 'dates': []}
+        # log data row if we allow this logger
+        elif packet.log_id in self.allowed_logs:
+            self.data[packet.module][packet.key]['dates'].append(packet.date)
+            self.data[packet.module][packet.key]['values'].append(packet.values)
 
-    # convert dictionaries to dataframes
-    for module, log_keys in parsed_logs.items():
-        for key, data in log_keys.items():
-            output_logs[module][key] = pd.DataFrame(data['values'], columns=data['header']['columns'].keys())
-            output_logs[module][key].insert(0, "date", pd.Series(data["dates"], dtype='datetime64[ns]'))
+    def get_log_dataframes(self):
+        output_logs: DefaultDict[str, Dict[str, pd.DataFrame]] = defaultdict(dict)
 
-    return output_logs
+        for module, log_data in self.data.items():
+            for key, data in log_data.items():
+                output_logs[module][key] = pd.DataFrame(data['values'], columns=data['header']['columns'].keys())
+                output_logs[module][key].insert(0, "date", pd.Series(data["dates"], dtype='datetime64[ns]'))
+
+        return output_logs
