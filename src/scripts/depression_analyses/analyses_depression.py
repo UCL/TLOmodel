@@ -1,18 +1,25 @@
 import datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    chronicsyndrome,
     contraception,
     demography,
     depression,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
-    symptommanager, healthseekingbehaviour)
+    mockitis,
+    symptommanager,
+)
+from tlo.methods.depression import compute_key_outputs_for_last_3_years
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -25,91 +32,134 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 20000
+popsize = 2000
+
 
 # Establish the simulation object
-sim = Simulation(start_date=start_date)
-sim.seed_rngs(0)
+def run_simulation_with_set_service_coverage_parameter(service_availability, healthsystemdisable):
+    """
+    This helper function will run a simulation with a given service coverage parameter and return the path of
+    the logfile.
+    :param service_availability: list indicating which serivces to include (see HealthSystem)
+    :param healthsystemdisable: bool to indicate whether or not to disable healthsystem (see HealthSystem)
+    :return: logfile name
+    """
 
-# Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
-# Establish the logger
-logfile = sim.configure_logging(filename="LogFile", custom_levels={"*": logging.INFO})
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        service_availability=service_availability,
+        disable=healthsystemdisable
+    ))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
-# Run the simulation
-sim.make_initial_population(n=popsize)
-sim.simulate(end_date=end_date)
+    # Establish the logger
+    logfile = sim.configure_logging(filename="LogFile", custom_levels={"*": logging.INFO})
 
-# %% read the results
-outputs = parse_log_file(logfile)
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
 
-# %%  Compute Key Outputs
+    return logfile
 
-depr = outputs['tlo.methods.depression']['summary_stats']
-depr.date = (pd.to_datetime(depr['date']))
+# %%  Run model with all interventions working to check that outputs of depression match thge calibration points
 
-# define the period of interest for averages to be the last 3 years of the simulation
-period = (max(depr.date) - pd.DateOffset(years=3)) < depr['date']
+results_health_system_disabled = compute_key_outputs_for_last_3_years(
+    parse_log_file(
+        run_simulation_with_set_service_coverage_parameter(
+            service_availability=['*'],
+            healthsystemdisable=True
+        )
+    )
+)
 
-result = pd.DataFrame(columns=['Model', 'Data'])
-
-# Overall prevalence of current moderate/severe depression in people aged 15+
-# (Note that only severe depressions are modelled)
-
-result.loc['Current prevalence of depression, aged 15+', 'Model'] = depr.loc[period, 'prop_ge15_depr'].mean()
-result.loc['Current prevalence of depression, aged 15+', 'Data'] = 0.09
-
-result.loc['Current prevalence of depression, aged 15+ males', 'Model'] = depr.loc[period, 'prop_ge15_m_depr'].mean()
-result.loc['Current prevalence of depression, aged 15+ males', 'Data'] = 0.06
-
-result.loc['Current prevalence of depression, aged 15+ females', 'Model'] = depr.loc[period, 'prop_ge15_f_depr'].mean()
-result.loc['Current prevalence of depression, aged 15+ females', 'Data'] = [0.10, 0.08]
-
-# Ever depression in people age 50:
-result.loc['Ever depression, aged 50y', 'Model'] = depr.loc[period, 'prop_age_50_ever_depr'].mean()
-
-# Prevalence of antidepressant use amongst age 15+ year olds ever depressed
-result.loc['Proportion of 15+ ever depressed using anti-depressants, aged 15+y', 'Model'] = depr.loc[
-    period, 'prop_antidepr_if_ever_depr'].mean()
-
-# Prevalence of antidepressant use amongst people currently depressed
-result.loc['Proportion of 15+ currently depressed using anti-depressants, aged 15+y', 'Model'] = depr.loc[
-    period, 'prop_antidepr_if_curr_depr'].mean()
-
-# Process the event outputs from the model
-depr_events = outputs['tlo.methods.depression']['event_counts']
-depr_events['year'] = pd.to_datetime(depr_events['date']).dt.year
-depr_events = depr_events.groupby(by='year')[['SelfHarmEvents', 'SuicideEvents']].sum()
+# Add in comparator Data:
+calibration_df = pd.DataFrame(data={'Model': results_health_system_disabled})
+calibration_df['Data'] = pd.Series(data=np.nan).astype(object)
+calibration_df.loc['Current prevalence of depression, aged 15+', 'Data'] = 0.09
+calibration_df.loc['Current prevalence of depression, aged 15+ males', 'Data'] = 0.06
+calibration_df.at['Current prevalence of depression, aged 15+ females', 'Data'] = [0.10, 0.08]
+calibration_df.at['Rate of suicide incidence per 100k persons aged 15+', 'Data'] = [26.1, 8.0, 3.7]
 
 
-# Get population sizes for the
-def get_15plus_pop_by_year(df):
-    df = df.copy()
-    df['year'] = pd.to_datetime(df['date']).dt.year
-    df.drop(columns='date', inplace=True)
-    df.set_index('year', drop=True, inplace=True)
-    cols_for_15plus = [int(x[0]) >= 15 for x in df.columns.str.strip('+').str.split('-')]
-    return df[df.columns[cols_for_15plus]].sum(axis=1)
+# %% Run a comparison model with the interventions (with all interventions turned off)
+results_no_intvs = compute_key_outputs_for_last_3_years(
+    parse_log_file(
+        run_simulation_with_set_service_coverage_parameter(
+            service_availability=[],
+            healthsystemdisable=False
+        )
+    )
+)
+
+# Make a table to compare the effects of having vs not having any interventions
+effect_of_intvs_df = pd.DataFrame(data={'Intvs_On': results_health_system_disabled, 'Intvs_Off': results_no_intvs})
 
 
-tot_pop = get_15plus_pop_by_year(outputs['tlo.methods.demography']['age_range_m']) \
-          + get_15plus_pop_by_year(outputs['tlo.methods.demography']['age_range_f'])
+# %% Run a comparison in which the effectiveness of interventions for depression at turned up to implausible levels
+#       in order to check that the effect of the interventions is working. Also with mockitis
+#       and chronicsyndrome so allowing further opportunities for diagnosing depression
 
-depr_event_rate = depr_events.div(tot_pop, axis=0)
+def run_simulation_with_set_intvs_maximised():
+    """
+    This helper function will run a simulation with a given service coverage parameter and return the path of
+    the logfile.
+    :param service_availability: list indicating which serivces to include (see HealthSystem)
+    :param healthsystemdisable: bool to indicate whether or not to disable healthsystem (see HealthSystem)
+    :return: logfile name
+    """
 
-# Rate of serious non fatal self harm incidents per 100,000 adults age 15+ per year
-result.loc['Rate of non-fatal self-harm incidence per 100k persons aged 15+', 'Model'] = 1e5 * depr_event_rate[
-    'SelfHarmEvents'].mean()
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
-# Rate of suicide per 100,000 adults age 15+ per year
-result.loc['Rate of suicide incidence per 100k persons aged 15+', 'Model'] = 1e5 * depr_event_rate[
-    'SuicideEvents'].mean()
-result.loc['Rate of suicide incidence per 100k persons aged 15+', 'Data'] = [26.1, 8.0, 3.7]
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath,
+        service_availability=['*'],
+        disable=True
+    ))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath = resourcefilepath))
+
+    sim.modules['Depression'].parameters['rr_depr_on_antidepr'] = 50
+    sim.modules['Depression'].parameters['rr_resol_depr_on_antidepr'] = 50
+    sim.modules['Depression'].parameters['rr_resol_depr_current_talk_ther'] = 50
+    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+    sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] = 1.0
+
+    # Establish the logger
+    logfile = sim.configure_logging(filename="LogFile", custom_levels={"*": logging.INFO})
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    return logfile
+
+results_max_intvs = compute_key_outputs_for_last_3_years(
+    parse_log_file(
+        run_simulation_with_set_intvs_maximised()
+        )
+)
+
+effect_of_intvs_df['Intvs_Max'] = pd.Series(results_max_intvs)
+
+
+

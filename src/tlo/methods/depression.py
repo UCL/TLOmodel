@@ -231,9 +231,9 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             p['base_3m_prob_depr'],
             Predictor('de_cc').when(True, p['rr_depr_cc']),
-            Predictor('age_years')  .when('.between(0, 14)', 0)
-                                    .when('.between(15, 19)', p['rr_depr_age1519'])
-                                    .when('>=60', p['rr_depr_agege60']),
+            Predictor('age_years').when('.between(0, 14)', 0)
+                .when('.between(15, 19)', p['rr_depr_age1519'])
+                .when('>=60', p['rr_depr_agege60']),
             Predictor('li_wealth').when('isin([4,5])', p['rr_depr_wealth45']),
             Predictor().when('(sex=="F") & (de_recently_pregnant==True)', p['rr_depr_female'] * p['rr_depr_pregnancy']),
             Predictor().when('(sex=="F") & (de_recently_pregnant==False)', p['rr_depr_female']),
@@ -254,7 +254,7 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
-                                .when(False, p['prob_3m_stop_antidepr'])
+                .when(False, p['prob_3m_stop_antidepr'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -311,7 +311,7 @@ class Depression(Module):
         df['de_ever_talk_ther'] = False
         df['de_ever_non_fatal_self_harm_event'] = False
         df['de_recently_pregnant'] = df['is_pregnant'] | (
-                df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=1))
+            df['date_of_last_pregnancy'] > (self.sim.date - DateOffset(years=1))
         )
         df['de_cc'] = False
 
@@ -437,9 +437,9 @@ class Depression(Module):
         any_depr_in_the_last_month = (df['is_alive']) & (
             ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
         ) & (
-            pd.isnull(df['de_date_depr_resolved']) | (
-                df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-        )
+                                         pd.isnull(df['de_date_depr_resolved']) | (
+                                         df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+                                     )
 
         start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
                                  self.sim.date - DateOffset(months=1))
@@ -480,15 +480,13 @@ class Depression(Module):
             )
 
             # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
-            # (But if person is already on anti-depressants, do not do anything)
-            if not self.sim.population.props.at[person_id, 'de_on_antidepr']:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event=HSI_Depression_Start_Antidepressant(module=self,
-                                                                  person_id=person_id,
-                                                                  facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-                    priority=0,
-                    topen=self.sim.date
-                )
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Depression_Start_Antidepressant(module=self,
+                                                              person_id=person_id,
+                                                              facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
+                priority=0,
+                topen=self.sim.date
+            )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -656,16 +654,19 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_antidepr_ever_depr = (df.is_alive & df.de_on_antidepr & df.de_ever_depr & (df.age_years >= 15)).sum()
         n_ever_talk_ther = (df.de_ever_talk_ther & df.is_alive & df.de_depr).sum()
 
+        def zero_out_nan(x):
+            return x if not np.isnan(x) else 0
+
         dict_for_output = {
-            'prop_ge15_depr': n_ge15_depr / n_ge15,
-            'prop_ge15_m_depr': n_ge15_m_depr / n_ge15_m,
-            'prop_ge15_f_depr': n_ge15_f_depr / n_ge15_f,
-            'prop_ever_depr': n_ever_depr / n_ge15,
-            'prop_age_50_ever_depr': n_age_50_ever_depr / n_age_50,
-            'p_ever_diagnosed_depression': n_ever_diagnosed_depression / n_ge15,
-            'prop_antidepr_if_curr_depr': n_antidepr_depr / n_ge15_depr,
-            'prop_antidepr_if_ever_depr': n_antidepr_ever_depr / n_ever_depr,
-            'prop_ever_talk_ther_if_depr': n_ever_talk_ther / n_ge15_depr,
+            'prop_ge15_depr': zero_out_nan(n_ge15_depr / n_ge15),
+            'prop_ge15_m_depr': zero_out_nan(n_ge15_m_depr / n_ge15_m),
+            'prop_ge15_f_depr': zero_out_nan(n_ge15_f_depr / n_ge15_f),
+            'prop_ever_depr': zero_out_nan(n_ever_depr / n_ge15),
+            'prop_age_50_ever_depr': zero_out_nan(n_age_50_ever_depr / n_age_50),
+            'p_ever_diagnosed_depression': zero_out_nan(n_ever_diagnosed_depression / n_ge15),
+            'prop_antidepr_if_curr_depr': zero_out_nan(n_antidepr_depr / n_ge15_depr),
+            'prop_antidepr_if_ever_depr': zero_out_nan(n_antidepr_ever_depr / n_ever_depr),
+            'prop_ever_talk_ther_if_depr': zero_out_nan(n_ever_talk_ther / n_ge15_depr),
         }
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
@@ -734,9 +735,10 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        assert not df.at[
-            person_id, 'de_on_antidepr'], "The person should not be starting anti-depressants as they " \
-                                          "are already taking them"
+        # If person is already on anti-depressants, do not do anything
+        if df.at[person_id, 'de_on_antidepr']:
+            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
         assert df.at[person_id, 'de_ever_diagnosed_depression'], "The person is not diagnosed and so should not be " \
                                                                  "receiving an HSI. "
 
@@ -816,3 +818,78 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         # If this HSI event did not run, then the persons ceases to be taking antidepressants
         person_id = self.target
         self.sim.population.props.at[person_id, 'de_on_antidepr'] = False
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   HELPER FUNCTIONS
+# ---------------------------------------------------------------------------------------------------------
+
+# %%  Compute Key Outputs
+def compute_key_outputs_for_last_3_years(parsed_output):
+    """
+
+    Helper function that computes the key outputs for the Depression Module. These are computed as averages for the
+    last 3 years of the simulation.
+
+    :param parsed_output: The parsed_output returned from `parse_log_file`
+    :return: dict containting the key outputs
+
+    """
+
+    depr = parsed_output['tlo.methods.depression']['summary_stats']
+    depr.date = (pd.to_datetime(depr['date']))
+
+    # define the period of interest for averages to be the last 3 years of the simulation
+    period = (max(depr.date) - pd.DateOffset(years=3)) < depr['date']
+
+    result = dict()
+
+    # Overall prevalence of current moderate/severe depression in people aged 15+
+    # (Note that only severe depressions are modelled)
+
+    result['Current prevalence of depression, aged 15+'] = depr.loc[period, 'prop_ge15_depr'].mean()
+
+    result['Current prevalence of depression, aged 15+ males'] = depr.loc[period, 'prop_ge15_m_depr'].mean()
+
+    result['Current prevalence of depression, aged 15+ females'] = depr.loc[period, 'prop_ge15_f_depr'].mean()
+
+    # Ever depression in people age 50:
+    result['Ever depression, aged 50y'] = depr.loc[period, 'prop_age_50_ever_depr'].mean()
+
+    # Prevalence of antidepressant use amongst age 15+ year olds ever depressed
+    result['Proportion of 15+ ever depressed using anti-depressants, aged 15+y'] = depr.loc[
+        period, 'prop_antidepr_if_ever_depr'].mean()
+
+    # Prevalence of antidepressant use amongst people currently depressed
+    result['Proportion of 15+ currently depressed using anti-depressants, aged 15+y'] = depr.loc[
+        period, 'prop_antidepr_if_curr_depr'].mean()
+
+    # Process the event outputs from the model
+    depr_events = parsed_output['tlo.methods.depression']['event_counts']
+    depr_events['year'] = pd.to_datetime(depr_events['date']).dt.year
+    depr_events = depr_events.groupby(by='year')[['SelfHarmEvents', 'SuicideEvents']].sum()
+
+    # Get population sizes for the
+    def get_15plus_pop_by_year(df):
+        df = df.copy()
+        df['year'] = pd.to_datetime(df['date']).dt.year
+        df.drop(columns='date', inplace=True)
+        df.set_index('year', drop=True, inplace=True)
+        cols_for_15plus = [int(x[0]) >= 15 for x in df.columns.str.strip('+').str.split('-')]
+        return df[df.columns[cols_for_15plus]].sum(axis=1)
+
+    tot_pop = get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_m']) \
+              + get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_f'])
+
+    depr_event_rate = depr_events.div(tot_pop, axis=0)
+
+    # Rate of serious non fatal self harm incidents per 100,000 adults age 15+ per year
+    result['Rate of non-fatal self-harm incidence per 100k persons aged 15+'] = 1e5 * depr_event_rate[
+        'SelfHarmEvents'].mean()
+
+    # Rate of suicide per 100,000 adults age 15+ per year
+    result['Rate of suicide incidence per 100k persons aged 15+'] = 1e5 * depr_event_rate[
+        'SuicideEvents'].mean()
+
+    return result
+
