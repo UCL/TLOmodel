@@ -6,9 +6,8 @@ are put here rather than the individual disease modules.
 There should be a method here to respond to every symptom that a child could present with:
 """
 
-import pandas as pd
 from tlo import Module
-from tlo.methods.diarrhoea import HSI_Diarrhoea_Severe_Dehydration, HSI_Diarrhoea_Non_Severe_Dehydration, \
+from tlo.methods.diarrhoea import HSI_Diarrhoea_Treatment_PlanA, HSI_Diarrhoea_Treatment_PlanB, HSI_Diarrhoea_Treatment_PlanC,\
     HSI_Diarrhoea_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Dysentery
 from tlo.methods.dxmanager import DxTest
 
@@ -89,18 +88,26 @@ class DxAlgorithmChild(Module):
         # --------   Classify Extent of Dehydration   ---------
         if dehydration and danger_signs:
             # 'Severe_Dehydration'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Dehydration(person_id=person_id, module=self),
+            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanC(person_id=person_id, module=self),
                          priority=0,
                          topen=self.sim.date,
                          tclose=None
                          )
-        elif dehydration and not danger_signs:
-            # 'Non_Severe_Dehydration'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Dehydration(person_id=person_id, module=self),
+        elif not dehydration and not danger_signs:
+            # Treatment Plan A for uncomplicated diarrhoea
+            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanA(person_id=person_id, module=self),
                          priority=0,
                          topen=self.sim.date,
                          tclose=None
                          )
+        elif dehydration and not danger_signs: #TODO: add - and not other severe classsification
+            # Treatment Plan B for some dehydration diarrhoea
+            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id, module=self),
+                         priority=0,
+                         topen=self.sim.date,
+                         tclose=None
+                         )
+
         # ----------------------------------------------------
 
         # --------   Classify Type of Diarrhoea   -----------

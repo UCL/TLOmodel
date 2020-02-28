@@ -7,7 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -36,7 +35,6 @@ class Diarrhoea(Module):
         'astrovirus',
         'tEPEC'}
 
-    # Todo: Some name of parameetr could be simplified - no need for any 'gi_' prefixes
     # NB. At all times use the exact name of the pathogens as written above.
     PARAMETERS = {
         'base_inc_rate_diarrhoea_by_rotavirus':
@@ -79,28 +77,28 @@ class Diarrhoea(Module):
             Parameter(Types.LIST,
                       'incidence rate (per person-year) of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'rr_gi_diarrhoea_HHhandwashing':
+        'rr_diarrhoea_HHhandwashing':
             Parameter(Types.REAL, 'relative rate of diarrhoea with household handwashing with soap'
                       ),
-        'rr_gi_diarrhoea_improved_sanitation':
+        'rr_diarrhoea_improved_sanitation':
             Parameter(Types.REAL, 'relative rate of diarrhoea for improved sanitation'
                       ),
-        'rr_gi_diarrhoea_clean_water':
+        'rr_diarrhoea_clean_water':
             Parameter(Types.REAL, 'relative rate of diarrhoea for access to clean drinking water'
                       ),
-        'rr_gi_diarrhoea_HIV':
+        'rr_diarrhoea_HIV':
             Parameter(Types.REAL, 'relative rate of diarrhoea for HIV positive status'
                       ),
-        'rr_gi_diarrhoea_SAM':
+        'rr_diarrhoea_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
                       ),
-        'rr_gi_diarrhoea_excl_breast':
+        'rr_diarrhoea_excl_breast':
             Parameter(Types.REAL, 'relative rate of diarrhoea for exclusive breastfeeding upto 6 months'
                       ),
-        'rr_gi_diarrhoea_cont_breast':
+        'rr_diarrhoea_cont_breast':
             Parameter(Types.REAL, 'relative rate of diarrhoea for continued breastfeeding 6 months to 2 years'
                       ),
-        'rr_gi_diarrhoea_rotavirus_vaccination':
+        'rr_diarrhoea_rotavirus_vaccination':
             Parameter(Types.REAL, 'relative rate of diarrhoea for rotavirus vaccine'
                       ),
         'proportion_AWD_by_rotavirus':
@@ -345,6 +343,10 @@ class Diarrhoea(Module):
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
+
+        # ---- Treatment properties ----
+        'gi_diarrhoea_treatment': Property(Types.BOOL, 'currently on diarrhoea treatment'),
+        'gi_diarrhoea_tx_start_date': Property(Types.BOOL, 'start date of diarrhoea treatment for current episode'),
     }
 
     # Declare symptoms that this module will cause:
@@ -368,6 +370,11 @@ class Diarrhoea(Module):
         # dict to hold counters for the number of episodes of diarrhoea by pathogen-type and age-group
         # (0yrs, 1yrs, 2-4yrs)
         blank_counter = dict(zip(self.pathogens, [list() for _ in self.pathogens]))
+        # dict(zip(keys, values)) covert two lists into a dictionary, is the same as:
+        # blank_counter = dict()
+        # for pathogen in self.pathogens:
+        #     blank_counter[pathogen] = list()
+
         self.incident_case_tracker_blank = {
             '0y': copy.deepcopy(blank_counter),
             '1y': copy.deepcopy(blank_counter),
@@ -411,7 +418,7 @@ class Diarrhoea(Module):
                 self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=34)
 
         # --------------------------------------------------------------------------------------------
-        # Make a dict to hold the equations that govern the probability that a person acquires diarrhaoe
+        # Make a dict to hold the equations that govern the probability that a person acquires diarrhoea
         # that is caused (primarily) by a pathogen
 
         self.incidence_equations_by_pathogen.update({
@@ -737,7 +744,11 @@ class Diarrhoea(Module):
         # Creat the linear model for the risk of dying due to diarrhoea
         self.risk_of_death_diarrhoea = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
-                        0.50,  ##          <--- fill in (curently this is arbitary)
+                        1.0,  ##          <--- fill in (curently this is arbitary)
+                        Predictor('gi_last_diarrhoea_type')  ##          <--- fill in
+                        .when('watery', p['case_fatality_rate_AWD'])
+                        .when('bloody', p['case_fatality_rate_dysentery']),
+                        # .when('persistent', p['cfr_persistent_diarrhoea']),
                         Predictor('age_years')  ##          <--- fill in
                         .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
                         .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
@@ -753,17 +764,18 @@ class Diarrhoea(Module):
         self.mean_duration_in_days_of_diarrhoea = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus',
-                                                         5)  ##          <--- fill in (incl HIV, malnutrition)
-                .when('shigella', 5)
-                .when('adenovirus', 5)
-                .when('cryptosporidium', 5)
-                .when('campylobacter', 5)
-                .when('ST-ETEC', 5)
-                .when('sapovirus', 5)
-                .when('norovirus', 5)
-                .when('astrovirus', 5)
-                .when('tEPEC', 5)
+            Predictor('gi_last_diarrhoea_pathogen')
+            .when('rotavirus', 0.5)  ##          <--- fill in
+            .when('shigella', 0.5)
+            .when('adenovirus', 0.5)
+            .when('cryptosporidium', 0.5)
+            .when('campylobacter', 0.5)
+            .when('ST-ETEC', 0.5)
+            .when('sapovirus', 0.5)
+            .when('norovirus', 0.5)
+            .when('astrovirus', 0.5)
+            .when('tEPEC', 0.5)
+
         )
 
         # --------------------------------------------------------------------------------------------
@@ -771,16 +783,17 @@ class Diarrhoea(Module):
         self.prob_diarrhoea_is_watery = LinearModel(
             LinearModelType.ADDITIVE,
             0.0,
-            Predictor('gi_last_diarrhoea_pathogen').when('rotavirus', 0.5)  ##          <--- fill in
-                .when('shigella', 0.5)
-                .when('adenovirus', 0.5)
-                .when('cryptosporidium', 0.5)
-                .when('campylobacter', 0.5)
-                .when('ST-ETEC', 0.5)
-                .when('sapovirus', 0.5)
-                .when('norovirus', 0.5)
-                .when('astrovirus', 0.5)
-                .when('tEPEC', 0.5)
+            Predictor('gi_last_diarrhoea_pathogen')
+            .when('rotavirus', p['proportion_AWD_by_rotavirus'])
+            .when('shigella', p['proportion_AWD_by_shigella'])
+            .when('adenovirus', p['proportion_AWD_by_adenovirus'])
+            .when('cryptosporidium', p['proportion_AWD_by_cryptosporidium'])
+            .when('campylobacter', p['proportion_AWD_by_campylobacter'])
+            .when('ST-ETEC', p['proportion_AWD_by_ST-ETEC'])
+            .when('sapovirus', p['proportion_AWD_by_sapovirus'])
+            .when('norovirus', p['proportion_AWD_by_norovirus'])
+            .when('astrovirus', p['proportion_AWD_by_astrovirus'])
+            .when('tEPEC', p['proportion_AWD_by_tEPEC'])
         )
         # --------------------------------------------------------------------------------------------
 
@@ -866,6 +879,11 @@ class Diarrhoea(Module):
         ] \
             = self.daly_wts['moderate_diarrhoea']
 
+        total_daly_values.loc[
+            self.sim.population.props['gi_current_severe_dehydration']
+        ] \
+            = self.daly_wts['severe_diarrhoea']
+
         # Split out by pathogen that causes the diarrhoea
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
                                                      'gi_last_diarrhoea_pathogen'],
@@ -899,19 +917,18 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
 
         # Compute the incidence rate for each person getting diarrhoea and then convert into a probability
-        mask_could_get_new_diarrhoea_episode = df['is_alive'] \
-                                               & (df['age_years'] < 5) \
-                                               & (
-                                                   (df['gi_last_diarrhoea_recovered_date'] <= self.sim.date) |
-                                                   pd.isnull(df['gi_last_diarrhoea_recovered_date'])
-                                               )
+        # getting all children that do not have diarrhoea currently
+        mask_could_get_new_diarrhoea_episode = \
+            df['is_alive'] & (df['age_years'] < 5) & ((df['gi_last_diarrhoea_recovered_date'] <= self.sim.date) |
+                                                      pd.isnull(df['gi_last_diarrhoea_recovered_date']))
 
         inc_of_aquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_diarrhoea_episode].index)
+
         for pathogen in m.pathogens:
             inc_of_aquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_diarrhoea_episode])
 
-        # Convert the incidence rates that are predicted by the model into risk of an event occuring before the next
+        # Convert the incidence rates that are predicted by the model into risk of an event occurring before the next
         # polling event
         fraction_of_a_year_until_next_polling_event = (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(
             1, 'Y')
@@ -933,7 +950,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         for person_id in person_id_that_acquire_pathogen:
             # ----------------------- Allocate a pathogen to the person ----------------------
             p_by_pathogen = probs_of_aquiring_pathogen.loc[person_id].values
-            normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
+            normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen) # don't understand this normalised
             pathogen = rng.choice(probs_of_aquiring_pathogen.columns,
                                   p=normalised_p_by_pathogen)
 
@@ -1076,7 +1093,6 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
-#
 # ---------------------------------------------------------------------------------------------------------
 
 class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1114,20 +1130,23 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
-#
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_Diarrhoea_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
+class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a treatment for Severe_Dehydration administered at FacilityLevel=1
+    This is a treatment for diarrhoea with severe dehydration administered at outpatient setting through IMCI
     """
+# if child has no other severe classification: PLAN C
+# Or if child has another severe classification:
+    # refer urgently to hospital with mother giving frequent ORS on the way, advise on breastfeeding
+# if cholera is in your area, give antibiotic for cholera
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'Diarrhoea_Severe_Dehydration'
+        self.TREATMENT_ID = 'Treatment_PlanC'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1137,50 +1156,145 @@ class HSI_Diarrhoea_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
         df = self.sim.population.props
-        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
-        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_diarrhoea_severe_dehydration = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
+                            'Intervention_Pkg_Code'])[0]
 
-        # Resolve the status of curent_severe_dehydration
-        df.at[person_id, 'gi_current_severe_dehydration'] = False
+        the_consumables_needed = {
+            'Intervention_Package_Code': {pkg_code_diarrhoea_severe_dehydration: 1},
+            'Item_Code': {}
+        }
 
-        # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['Diarrhoea'])
+        # Outcome of the request for treatment
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+        if is_cons_available:
+            logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
+                         person_id)
+            if df.at[person_id, 'is_alive']:
+                df.at[person_id, 'gi_diarrhoea_treatment'] = True
+                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
+                # Resolve the status of curent_severe_dehydration
+                df.at[person_id, 'gi_current_severe_dehydration'] = False
+                # schedule cure date
+                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(weeks=1))
 
 
-class HSI_Diarrhoea_Non_Severe_Dehydration(HSI_Event, IndividualScopeEventMixin):
+class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a treatment for Severe_Dehydration administered at FacilityLevel=1
+    This is a treatment for uncomplicated diarrhoea administered at outpatient setting through IMCI
     """
+    # no dehydration - PLAN A
+    # advise on follow up in 5 days
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'Diarrhoea_Non_Severe_Dehydration'
+        self.TREATMENT_ID = 'Diarrhoea_Treatment_PlanA'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('Provide the treatment for Diarrhoea')
+        logger.debug('Provide Treatment Plan A for uncomplicated Diarrhoea')
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
         df = self.sim.population.props
-        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
-        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_uncomplic_diarrhoea = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
+                                'Intervention_Pkg_Code'])[0]
 
-        # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['Diarrhoea'])
+        # give the mother 2 packets of ORS
+        # give zinc (2 mo up to 5 years) - <6 mo 1/2 tablet (10mg) for 10 days, >6 mo 1 tab (20mg) for 10 days
+        # follow up in 5 days if not improving
+        # continue feeding
 
+        the_consumables_needed = {
+            'Intervention_Package_Code': {pkg_code_uncomplic_diarrhoea: 1},
+            'Item_Code': {}
+        }
+
+        # Request the treatment
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+        if is_cons_available:
+            logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
+                         person_id)
+            if df.at[person_id, 'is_alive']:
+                df.at[person_id, 'gi_diarrhoea_treatment'] = True
+                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
+                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(weeks=1))
+
+
+class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a treatment for diarrhoea with some dehydration at outpatient setting through IMCI
+    """
+    # some dehydration with no other severe classification - PLAN B
+    # if child has a severe classification - refer urgently to hospital and gic=ving ORS on the way, advise on breastfeeding
+    # advise on follow up in 5 days
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        self.TREATMENT_ID = 'Diarrhoea_Treatment_PlanB'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('Provide Treatment Plan B for Diarrhoea with some dehydartion')
+
+        df = self.sim.population.props
+
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_uncomplic_diarrhoea = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
+                                'Intervention_Pkg_Code'])[0]
+        # Give ORS for the first 4 hours and reassess.
+
+        the_consumables_needed = {
+            'Intervention_Package_Code': {pkg_code_uncomplic_diarrhoea: 1},
+            'Item_Code': {}
+        }
+
+        # Request the treatment
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+        if is_cons_available:
+            logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
+                         person_id)
+            if df.at[person_id, 'is_alive']:
+                df.at[person_id, 'gi_diarrhoea_treatment'] = True
+                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
+                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(weeks=1))
 
 
 class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for Severe_Dehydration administered at FacilityLevel=1
     """
+    # treat the dehydration and refer to the hospital
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1195,20 +1309,44 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
     def apply(self, person_id, squeeze_factor):
         logger.debug('Provide the treatment for Diarrhoea')
 
-        # Stop the person from dying of Diarrhoea (if they were going to die)
         df = self.sim.population.props
-        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
-        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
-        # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['Diarrhoea'])
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
+                                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
+        }
+# if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for 5 days
+        # if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and suplements
+
+        # Request the treatment
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+        if is_cons_available:
+            logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
+                         person_id)
+            if df.at[person_id, 'is_alive']:
+                df.at[person_id, 'gi_diarrhoea_treatment'] = True
+                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
+                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(weeks=1))
 
 
 class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for Severe_Dehydration administered at FacilityLevel=1
     """
+# give multivitamins for 14 days
+    # give zinc for 10 days
+    # follow up in 5 days
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1225,12 +1363,55 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
         df = self.sim.population.props
-        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
-        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
-        # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['Diarrhoea'])
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        if df.at[person_id, df.age_exact_years < 0.5]:
+            pkg_code1 = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 0-6 months',
+                                'Intervention_Pkg_Code'])[0]
+            item_code_zinc1 = pd.unique(
+                consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg', 'Item_Code'])[0]
+            the_consumables_needed1 = {
+                'Intervention_Package_Code': {pkg_code1: 1},
+                'Item_Code': {item_code_zinc1: 5}
+            }
+            # Request the treatment
+            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_consumables_needed1)
+            logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+            if is_cons_available:
+                logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
+                             person_id)
+                if df.at[person_id, 'is_alive']:
+                    df.at[person_id, 'gi_diarrhoea_treatment'] = True
+                    df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
+                    self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                            self.sim.date + DateOffset(weeks=1))
+
+        if df.at[person_id, df.age_exact_years > 0.5 & df.age_exact_years < 5]:
+            pkg_code2 = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 6-59 months',
+                                'Intervention_Pkg_Code'])[0]
+            item_code_zinc2 = pd.unique(
+                consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg', 'Item_Code'])[0]
+            the_consumables_needed2 = {
+                'Intervention_Package_Code': {pkg_code2: 1},
+                'Item_Code': {item_code_zinc2: 5}
+            }
+            # Request the treatment
+            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_consumables_needed2)
+            logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+            if is_cons_available:
+                logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
+                             person_id)
+                if df.at[person_id, 'is_alive']:
+                    df.at[person_id, 'gi_diarrhoea_treatment'] = True
+                    df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
+                    self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                            self.sim.date + DateOffset(weeks=1))
 
 
 class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
@@ -1251,10 +1432,58 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         logger.debug('Provide the treatment for Diarrhoea')
 
-        # Stop the person from dying of Diarrhoea (if they were going to die)
         df = self.sim.population.props
+
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for treatment of dysentery',
+                                'Intervention_Pkg_Code'])[0]
+        item_code_cipro = pd.unique(
+            consumables.loc[consumables['Items'] == 'Ciprofloxacin 250mg_100_CMST', 'Item_Code'])[0]
+
+        # <6 mo - 250mg 1/2 tab x2 daily for 3 days
+        # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
+        # follow up in 3 days
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {item_code_cipro: 6}
+        }
+
+        # Request the treatment
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+        if is_cons_available:
+            logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
+                         person_id)
+            if df.at[person_id, 'is_alive']:
+                df.at[person_id, 'gi_diarrhoea_treatment'] = True
+                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
+                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(weeks=1))
+
+
+class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("DiarrhoeaCureEvent: Stopping diarrhoea treatment and curing person %d", person_id)
+
+        df = self.sim.population.props
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+
+        # clear the treatment prperties
+        df.at[person_id, 'gi_diarrhoea_treatment'] = False
+        df.at[person_id, 'gi_diarrhoea_tx_start_date'] = pd.NaT
 
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
