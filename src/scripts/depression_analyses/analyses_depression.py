@@ -104,12 +104,11 @@ results_no_intvs = compute_key_outputs_for_last_3_years(
 # Make a table to compare the effects of having vs not having any interventions
 effect_of_intvs_df = pd.DataFrame(data={'Intvs_On': results_health_system_disabled, 'Intvs_Off': results_no_intvs})
 
-
 # %% Run a comparison in which the effectiveness of interventions for depression at turned up to implausible levels
 #       in order to check that the effect of the interventions is working. Also with mockitis
 #       and chronicsyndrome so allowing further opportunities for diagnosing depression
 
-def run_simulation_with_set_intvs_maximised():
+def run_simulation_with_intvs_maximised():
     """
     This helper function will run a simulation with a given service coverage parameter and return the path of
     the logfile.
@@ -156,7 +155,7 @@ def run_simulation_with_set_intvs_maximised():
 
 results_max_intvs = compute_key_outputs_for_last_3_years(
     parse_log_file(
-        run_simulation_with_set_intvs_maximised()
+        run_simulation_with_intvs_maximised()
     )
 )
 
