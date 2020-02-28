@@ -663,7 +663,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'prop_ge15_f_depr': zero_out_nan(n_ge15_f_depr / n_ge15_f),
             'prop_ever_depr': zero_out_nan(n_ever_depr / n_ge15),
             'prop_age_50_ever_depr': zero_out_nan(n_age_50_ever_depr / n_age_50),
-            'p_ever_diagnosed_depression': zero_out_nan(n_ever_diagnosed_depression / n_ge15),
+            'p_ever_diagnosed_depression_if_ever_depressed': zero_out_nan(n_ever_diagnosed_depression / n_ever_depr),
             'prop_antidepr_if_curr_depr': zero_out_nan(n_antidepr_depr / n_ge15_depr),
             'prop_antidepr_if_ever_depr': zero_out_nan(n_antidepr_ever_depr / n_ever_depr),
             'prop_ever_talk_ther_if_depr': zero_out_nan(n_ever_talk_ther / n_ge15_depr),
@@ -863,6 +863,10 @@ def compute_key_outputs_for_last_3_years(parsed_output):
     # Prevalence of antidepressant use amongst people currently depressed
     result['Proportion of 15+ currently depressed using anti-depressants, aged 15+y'] = depr.loc[
         period, 'prop_antidepr_if_curr_depr'].mean()
+
+    # Proportion of those persons ever depressed that have ever been diagnosed
+    result['Proportion of those persons ever depressed that have ever been diagnosed'] = \
+        depr.loc[period, 'p_ever_diagnosed_depression_if_ever_depressed'].mean()
 
     # Process the event outputs from the model
     depr_events = parsed_output['tlo.methods.depression']['event_counts']

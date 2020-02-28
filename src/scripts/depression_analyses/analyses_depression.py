@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 20000
+end_date = Date(2012, 1, 1)
+popsize = 200
 
 
 # Establish the simulation object
@@ -136,7 +136,7 @@ def run_simulation_with_set_intvs_maximised():
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
-    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepat=resourcefilepath))
+    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
     sim.modules['Depression'].parameters['rr_depr_on_antidepr'] = 50
     sim.modules['Depression'].parameters['rr_resol_depr_on_antidepr'] = 50
