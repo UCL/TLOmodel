@@ -10,7 +10,7 @@ from tlo import DateOffset, Module, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 
 class HealthBurden(Module):

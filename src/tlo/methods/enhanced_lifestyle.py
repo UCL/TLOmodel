@@ -13,7 +13,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 
 # todo: Note: bmi category at turning age 15 needs to be made dependent on malnutrition in childhood when that

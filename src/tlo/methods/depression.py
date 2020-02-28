@@ -231,9 +231,9 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             p['base_3m_prob_depr'],
             Predictor('de_cc').when(True, p['rr_depr_cc']),
-            Predictor('age_years').when('.between(0, 14)', 0)
-                .when('.between(15, 19)', p['rr_depr_age1519'])
-                .when('>=60', p['rr_depr_agege60']),
+            Predictor('age_years')  .when('.between(0, 14)', 0)
+                                    .when('.between(15, 19)', p['rr_depr_age1519'])
+                                    .when('>=60', p['rr_depr_agege60']),
             Predictor('li_wealth').when('isin([4,5])', p['rr_depr_wealth45']),
             Predictor().when('(sex=="F") & (de_recently_pregnant==True)', p['rr_depr_female'] * p['rr_depr_pregnancy']),
             Predictor().when('(sex=="F") & (de_recently_pregnant==False)', p['rr_depr_female']),
@@ -254,7 +254,7 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
-                .when(False, p['prob_3m_stop_antidepr'])
+                                .when(False, p['prob_3m_stop_antidepr'])
         )
 
         self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -437,9 +437,9 @@ class Depression(Module):
         any_depr_in_the_last_month = (df['is_alive']) & (
             ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
         ) & (
-                                         pd.isnull(df['de_date_depr_resolved']) | (
-                                         df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-                                     )
+            pd.isnull(df['de_date_depr_resolved']) |
+            (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+            )
 
         start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
                                  self.sim.date - DateOffset(months=1))
@@ -878,8 +878,8 @@ def compute_key_outputs_for_last_3_years(parsed_output):
         cols_for_15plus = [int(x[0]) >= 15 for x in df.columns.str.strip('+').str.split('-')]
         return df[df.columns[cols_for_15plus]].sum(axis=1)
 
-    tot_pop = get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_m']) \
-              + get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_f'])
+    tot_pop = get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_m']) + \
+        get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_f'])
 
     depr_event_rate = depr_events.div(tot_pop, axis=0)
 
@@ -892,4 +892,3 @@ def compute_key_outputs_for_last_3_years(parsed_output):
         'SuicideEvents'].mean()
 
     return result
-

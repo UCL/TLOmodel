@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 2000
+end_date = Date(2020, 1, 1)
+popsize = 20000
 
 
 # Establish the simulation object
@@ -71,6 +71,7 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
 
     return logfile
 
+
 # %%  Run model with all interventions working to check that outputs of depression match thge calibration points
 
 results_health_system_disabled = compute_key_outputs_for_last_3_years(
@@ -89,7 +90,6 @@ calibration_df.loc['Current prevalence of depression, aged 15+', 'Data'] = 0.09
 calibration_df.loc['Current prevalence of depression, aged 15+ males', 'Data'] = 0.06
 calibration_df.at['Current prevalence of depression, aged 15+ females', 'Data'] = [0.10, 0.08]
 calibration_df.at['Rate of suicide incidence per 100k persons aged 15+', 'Data'] = [26.1, 8.0, 3.7]
-
 
 # %% Run a comparison model with the interventions (with all interventions turned off)
 results_no_intvs = compute_key_outputs_for_last_3_years(
@@ -136,7 +136,7 @@ def run_simulation_with_set_intvs_maximised():
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
-    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath = resourcefilepath))
+    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepat=resourcefilepath))
 
     sim.modules['Depression'].parameters['rr_depr_on_antidepr'] = 50
     sim.modules['Depression'].parameters['rr_resol_depr_on_antidepr'] = 50
@@ -153,13 +153,11 @@ def run_simulation_with_set_intvs_maximised():
 
     return logfile
 
+
 results_max_intvs = compute_key_outputs_for_last_3_years(
     parse_log_file(
         run_simulation_with_set_intvs_maximised()
-        )
+    )
 )
 
 effect_of_intvs_df['Intvs_Max'] = pd.Series(results_max_intvs)
-
-
-
