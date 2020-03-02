@@ -1265,8 +1265,11 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
     # ===================================== PROPHYLACTIC INTERVENTIONS ================================================
 
         # Clean delivery - birth kit
-        # Antibiotics - PROM/PPROM
+        # Antibiotics - PROM
+        # Antibiotics - PPROM  # todo: pprom treatment guidlines are written as if its happened antenatally,
+                                #   not in labour? maybe we could use same consumables for both?
         # Steroids - premature
+        # Group b streph prophy - premature
         # Magnesium - severe pre-eclampsia
 
     # ===================================== APPLYING COMPLICATION INCIDENCE ===========================================
