@@ -854,13 +854,12 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         smear_pos[smear_pos == 0] = 1
         smear_neg[smear_neg == 0] = 1
 
-        foi = pd.Series(0, index=districts)
         foi = (
             params["transmission_rate"]
             * smear_pos
             * (smear_neg * params["rel_inf_smear_ng"])
             * uninfected
-        ) / pop
+        ).div(pop, fill_value=0)
 
         assert foi.isna().sum() == 0  # check there is a foi for every district
 

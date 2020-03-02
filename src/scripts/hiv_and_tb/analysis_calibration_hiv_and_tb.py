@@ -19,7 +19,6 @@ from tlo.methods import (
     tb,
 )
 
-# TODO: this sim includes symptom manager. Include dx_algorithm once it is updated by Tim
 
 start_time = time.time()
 
@@ -31,7 +30,6 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
-# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2018, 12, 31)
@@ -71,6 +69,7 @@ custom_levels = {
     "*": logging.WARNING,
     "tlo.methods.hiv": logging.INFO,
     "tlo.methods.tb": logging.INFO,
+    "tlo.method.malecircumcision": logging.INFO,
     "tlo.methods.demography": logging.INFO,
 }
 # configure_logging automatically appends datetime
@@ -291,71 +290,3 @@ plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.show()
 # plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
 
-
-##########################################################################################################
-# send outputs to csv files
-##########################################################################################################
-
-# create new folder with today's date
-# datestamp2 = datetime.date.today().strftime("%Y_%m_%d")
-# path = "Z:Thanzi la Onse/model_outputs/" + datestamp2
-# if not os.path.exists(path):
-#     os.makedirs(path)
-#
-# ## HIV
-# inc = output['tlo.methods.hiv']['hiv_infected']
-# prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
-# prev_f = output['tlo.methods.hiv']['hiv_adult_prev_f']
-# prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
-# tx = output['tlo.methods.hiv']['hiv_treatment']
-# fsw = output['tlo.methods.hiv']['hiv_fsw']
-# mort = output['tlo.methods.hiv']['hiv_mortality']
-#
-# inc_path = os.path.join(path, "hiv_inc_new.csv")
-# inc.to_csv(inc_path, header=True)
-#
-# prev_m_path = os.path.join(path, "hiv_prev_m.csv")
-# prev_m.to_csv(prev_m_path, header=True)
-#
-# prev_f_path = os.path.join(path, "hiv_prev_f.csv")
-# prev_f.to_csv(prev_f_path, header=True)
-#
-# prev_child_path = os.path.join(path, "hiv_prev_child.csv")
-# prev_child.to_csv(prev_child_path, header=True)
-#
-# tx_path = os.path.join(path, "hiv_tx_new.csv")
-# tx.to_csv(tx_path, header=True)
-#
-# fsw_path = os.path.join(path, "hiv_fsw_new.csv")
-# fsw.to_csv(fsw_path, header=True)
-#
-# mort_path = os.path.join(path, "hiv_mort_new.csv")
-# mort.to_csv(mort_path, header=True)
-#
-# # TB
-# tb_inc = output['tlo.methods.tb']['tb_incidence']
-# tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
-# tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
-# tb_prev = output['tlo.methods.tb']['tb_prevalence']
-# tb_mort = output['tlo.methods.tb']['tb_mortality']
-#
-# tb_inc_path = os.path.join(path, "tb_inc.csv")
-# tb_inc.to_csv(tb_inc_path, header=True)
-#
-# tb_prev_m_path = os.path.join(path, "tb_prev_m.csv")
-# tb_prev_m.to_csv(tb_prev_m_path, header=True)
-#
-# tb_prev_f_path = os.path.join(path, "tb_prev_f.csv")
-# tb_prev_f.to_csv(tb_prev_f_path, header=True)
-#
-# tb_prev_path = os.path.join(path, "tb_prev.csv")
-# tb_prev.to_csv(tb_prev_path, header=True)
-#
-# tb_mort_path = os.path.join(path, "tb_mort.csv")
-# tb_mort.to_csv(tb_mort_path, header=True)
-
-# deaths_df = output['tlo.methods.demography']['death']
-# deaths_df['date'] = pd.to_datetime(deaths_df['date'])
-# deaths_df['year'] = deaths_df['date'].dt.year
-# d_gp = deaths_df.groupby(['year', 'cause']).size().unstack().fillna(0)
-# d_gp.to_csv(r'Z:Thanzi la Onse\HIV\Model_original\deaths_new.csv', header=True)
