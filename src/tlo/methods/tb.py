@@ -4436,7 +4436,6 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
 #   Logging
 # ---------------------------------------------------------------------------
 
-
 class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check

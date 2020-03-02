@@ -178,7 +178,7 @@ class Hiv(Module):
         ),
         "hv_mother_inf_by_birth": Property(Types.BOOL, "hiv status of mother"),
         "hv_mother_art": Property(
-            Types.CATEGORICAL, "art status", categories=[0, 1, 2]
+            Types.CATEGORICAL, "mother's art status", categories=[0, 1, 2]
         ),
         "hv_specific_symptoms": Property(
             Types.CATEGORICAL,
@@ -682,7 +682,6 @@ class Hiv(Module):
         # params = self.parameters
 
         # ----------------------------------- ADULT SYMPTOMS -----------------------------------
-
         adults = df[
             df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (df.age_years >= 15)
         ].index
@@ -704,7 +703,6 @@ class Hiv(Module):
         df.loc[idx, "hv_specific_symptoms"] = "aids"
 
         # ----------------------------------- CHILD SYMPTOMS -----------------------------------
-
         # baseline pop - infants, all assumed slow progressors
 
         infants = df[
@@ -1413,8 +1411,6 @@ class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Launch outreach events
 # ---------------------------------------------------------------------------
-
-
 class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
     """
     this is voluntary testing and counselling
@@ -2963,6 +2959,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_women_in_sex_work = len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49)) & (df.hv_sexual_risk == "sex_work")]) / len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49))])
         assert prop_women_in_sex_work <= 1
 
+        # TODO Screen outputs for zeros
 
         logger.info(
             "%s|hiv_infected|%s",
@@ -3035,7 +3032,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_prev_age = child_prev_age.fillna(0)
 
         logger.info("%s|hiv_child_prev_m|%s", self.sim.date, child_prev_age.to_dict())
-
 
         # ------------------------------------ TREATMENT ------------------------------------
         # prop on treatment, adults

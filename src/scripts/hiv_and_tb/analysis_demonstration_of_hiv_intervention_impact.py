@@ -117,7 +117,8 @@ def get_key_outputs(logfile):
     make_year_the_index(output['tlo.methods.hiv']['hiv_treatment'])
     r['adult_art_cov'] = output['tlo.methods.hiv']['hiv_treatment']['hiv_coverage_adult_art']
 
-    pass
+
+    # TODO get other outputs
 
 
 
@@ -128,5 +129,5 @@ logfile = run_simulation_with_set_intv_parameters()
 
 # %% Make some graphs of the key outputs across the scenarios:
 
-
+# TODO: Produce basic plots across scenarios
 
