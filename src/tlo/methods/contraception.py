@@ -315,20 +315,21 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         # select a random contraceptive for everyone not currently using
         random_co = df.loc[individuals_not_using, 'age_years'].apply(pick_random_contraceptive)
 
-        # get index of all those now using
-        now_using_co = random_co.index[random_co != 'not_using']
+        if len(random_co):
+            # get index of all those now using
+            now_using_co = random_co.index[random_co != 'not_using']
 
-        # only update entries for all those now using a contraceptive
-        df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
+            # only update entries for all those now using a contraceptive
+            df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
 
-        for woman in now_using_co:
-            logger.info('%s|start_contraception1|%s',
-                        self.sim.date,
-                        {
-                            'woman_index': woman,
-                            'age': df.at[woman, 'age_years'],
-                            'co_contraception': df.at[woman, 'co_contraception']
-                        })
+            for woman in now_using_co:
+                logger.info('%s|start_contraception1|%s',
+                            self.sim.date,
+                            {
+                                'woman_index': woman,
+                                'age': df.at[woman, 'age_years'],
+                                'co_contraception': df.at[woman, 'co_contraception']
+                            })
 
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
@@ -387,15 +388,16 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
         # random choose some to discontinue
         random_draw = rng.random_sample(size=len(individuals_using))
-        co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
-        df.loc[co_discontinue, 'co_contraception'] = 'not_using'
+        if len(random_draw):
+            co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
+            df.loc[co_discontinue, 'co_contraception'] = 'not_using'
 
-        for woman in co_discontinue:
-            logger.info('%s|stop_contraception|%s',
-                        self.sim.date,
-                        {
-                            'woman_index': woman,
-                        })
+            for woman in co_discontinue:
+                logger.info('%s|stop_contraception|%s',
+                            self.sim.date,
+                            {
+                                'woman_index': woman,
+                            })
 
 
 class Fail(RegularEvent, PopulationScopeEventMixin):
