@@ -888,11 +888,11 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
             if mni[individual_id]['delivery_setting'] == 'facility_delivery':
                 logger.info('This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartumPeriod for person '
                             '%d on date %s', individual_id, self.sim.date)
-                event = HSI_Labour_ReceivesCareForPostpartumPeriod(self.module, person_id=individual_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
+        #        event = HSI_Labour_ReceivesCareForPostpartumPeriod(self.module, person_id=individual_id)
+        #        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+        #                                                            priority=0,
+        #                                                            topen=self.sim.date,
+        #                                                            tclose=self.sim.date + DateOffset(days=1))
                 # TODO: same issue for women who seek care but cant be seek- comps wont be allocated!
             # We schedule all women to then go through the death event where those with untreated/unsuccessfully treated
             # complications may experience death
