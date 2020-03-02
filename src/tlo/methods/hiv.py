@@ -2895,64 +2895,89 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         print("current_time", datetime.datetime.now())
 
         # ------------------------------------ INC / PREV ------------------------------------
-        # adult incidence
-        tmp = len(
+        # New HIV infections among Adults aged 15-49
+        num_new_infections_15_to_49 = len(
             df.loc[
                 (df.age_years.between(15, 49))
                 & df.is_alive
                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                & (df.hv_date_inf <= now)
             ]
         )
-        pop = len(df[df.is_alive & (df.age_years.between(15, 49))])
-        adult_inc_percent = (tmp / pop) * 100
 
-        assert adult_inc_percent <= 100
+        pop_15_to_49 = len(df[df.is_alive & (df.age_years.between(15, 49))])
+        inc_percent_15_to_49 = (num_new_infections_15_to_49 / pop_15_to_49) * 100
+        # TODO: denominator should be person-years at risk not population and not as a 'percentage'
+        # See: https://github.com/UCL/TLOmodel/issues/116
+        assert inc_percent_15_to_49 <= 100
 
-        # child incidence
-        tmp2 = len(
+        # New HIV infections among Children age 0-14 years
+        num_new_infections_O_to_14 = len(
             df.loc[
-                (df.age_years < 15)
+                (df.age_years.between(0, 14))
                 & df.is_alive
                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                & (df.hv_date_inf <= now)
             ]
         )
-        child_pop = len(df[df.is_alive & (df.age_years < 15)])
-        child_inc_percent = (tmp2 / child_pop) * 100
+        pop_O_to_14 = len(df[df.is_alive & df.age_years.between(0, 14)])
+        inc_percent_0_to_14 = (num_new_infections_O_to_14 / pop_O_to_14) * 100
+        assert inc_percent_0_to_14 <= 100
 
-        assert child_inc_percent <= 100
+        # New HIV infections among FSW (aged 15+)
+        num_new_infections_fsw = len(
+            df.loc[
+                (df.age_years > 15)
+                & (df.hv_sexual_risk == "sex_work")
+                & df.is_alive
+                & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                & (df.hv_date_inf <= now)
+                ]
+        )
+        pop_fsw = len(df[df.is_alive & (df.age_years > 15) & (df.hv_sexual_risk == "sex_work")])
+        inc_percent_fsw = (num_new_infections_fsw / pop_fsw) * 100
+        assert inc_percent_fsw <= 100
 
-        # adult prevalence
-        ad_prev = (
+        # HIV prevalence among 15-49yo
+        prev_15_to_49 = (
             len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 49))])
             / len(df[df.is_alive & (df.age_years.between(15, 49))])
         ) * 100
+        assert prev_15_to_49 <= 100
 
-        assert ad_prev <= 100
-
-        # child prevalence
-        child_prev = (
+        # HIV prevalence among 0-14yo
+        prev_0_to_14 = (
             len(df[df.hv_inf & df.is_alive & (df.age_years.between(0, 14))])
             / len(df[df.is_alive & (df.age_years.between(0, 14))])
         ) * 100
+        assert prev_0_to_14 <= 100
 
-        assert child_prev <= 100
+        # HIV prevalence among FSW
+        prev_fsw = (
+            len(df[df.hv_inf & df.is_alive & (df.age_years>15) & (df.hv_sexual_risk == "sex_work")])
+            / len(df[df.is_alive & (df.age_years>15) & (df.hv_sexual_risk == "sex_work")])
+        ) * 100
+        assert prev_fsw <= 1
 
-        # proportion exposed to behaviour change
-        prop_behav = len(
-            df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
-        ) / len(df[df.is_alive & (df.age_years >= 15)])
+        # Proportion of women aged 15-49 that are classified as sexual_risk=='sex_work'
+        prop_women_in_sex_work = len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49)) & (df.hv_sexual_risk == "sex_work")]) / len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49))])
+        assert prop_women_in_sex_work <= 1
 
-        assert prop_behav <= 1
 
         logger.info(
             "%s|hiv_infected|%s",
             self.sim.date,
             {
-                "hiv_adult_inc_percent": adult_inc_percent,
-                "hiv_child_inc_percent": child_inc_percent,
-                "hiv_prev_adult": ad_prev,
-                "hiv_prev_child": child_prev,
-                "prop_behav_change": prop_behav,
+                "num_new_infections_15_to_49": num_new_infections_15_to_49,
+                "num_new_infections_0_to_14": num_new_infections_O_to_14,
+                "num_new_infections_fsw": num_new_infections_fsw,
+                "inc_percent_15_to_49": inc_percent_15_to_49,
+                "inc_percent_0_to_49": inc_percent_0_to_14,
+                "inc_percent_fsw": num_new_infections_fsw,
+                "prev_15_to_49": prev_15_to_49,
+                "prev_0_to_49": prev_0_to_14,
+                "prev_fsw": prev_fsw,
+                "prop_women_in_sex_work": prop_women_in_sex_work
             },
         )
 
@@ -3011,6 +3036,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info("%s|hiv_child_prev_m|%s", self.sim.date, child_prev_age.to_dict())
 
+
         # ------------------------------------ TREATMENT ------------------------------------
         # prop on treatment, adults
         art = len(
@@ -3056,71 +3082,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             },
         )
 
-        # ------------------------------------ FSW ------------------------------------
-        # prop fsw
-        fsw = len(df[df.is_alive & (df.hv_sexual_risk == "sex_work")])
-        prop_fsw = fsw / len(
-            df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49))]
-        )
+        # TODO log exposure to others interventions: behaviour change: having been diagnosed, prep
+        # ------------------------------------ INTERVENTIONS ------------------------------------
+        # proportion exposed to behaviour change
+        prop_behav = len(
+            df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
+        ) / len(df[df.is_alive & (df.age_years >= 15)])
+        assert prop_behav <= 1
 
-        assert prop_fsw <= 1
 
-        # hiv prev in fsw
-        hiv_fsw = len(
-            df[
-                df.is_alive
-                & df.hv_inf
-                & (df.hv_sexual_risk == "sex_work")
-                & (df.age_years >= 15)
-            ]
-        )
-        hiv_prev_fsw = hiv_fsw / fsw if fsw else 0
-
-        logger.info(
-            "%s|hiv_fsw|%s",
-            self.sim.date,
-            {"prop_fsw": prop_fsw, "hiv_prev_fsw": hiv_prev_fsw},
-        )
-
-        # ------------------------------------ MORTALITY ------------------------------------
-        # aids deaths (incl tb) reported in the last 12 months per 1000
-        deaths_hiv = len(
-            df.loc[(df.hv_date_death_occurred > (now - DateOffset(months=self.repeat)))]
-        )
-
-        deaths_tb_hiv = len(
-            df[df.hv_inf & (df.tb_date_death > (now - DateOffset(months=self.repeat)))]
-        )
-
-        pop_alive = len(df[df.is_alive])
-        mort_rate1000 = ((deaths_hiv + deaths_tb_hiv) / pop_alive) * 100000
-
-        # adults
-        deaths_hiv_adults = len(
-            df.loc[
-                (df.hv_date_death_occurred > (now - DateOffset(months=self.repeat)))
-                & (df.age_years >= 15)
-            ]
-        )
-
-        deaths_tb_hiv_adults = len(
-            df[
-                df.hv_inf
-                & (df.tb_date_death > (now - DateOffset(months=self.repeat)))
-                & (df.age_years >= 15)
-            ]
-        )
-
-        pop_alive_adults = len(df[df.is_alive & (df.age_years >= 15)])
-        mort_rate1000_adults = (
-            (deaths_hiv_adults + deaths_tb_hiv_adults) / pop_alive_adults
-        ) * 100000
-
-        logger.info(
-            "%s|hiv_mortality|%s",
-            now,
-            {
-                "hiv_MortRate100k": mort_rate1000,
-                "hiv_MortRate100k_adults": mort_rate1000_adults,
-            },
-        )

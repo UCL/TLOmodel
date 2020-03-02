@@ -102,8 +102,20 @@ def get_key_outputs(logfile):
     * Coverage of ever been diagnosed with HIV among PLHIV
     * Coverage of PrEP among FSW
     """
+    output = parse_log_file(logfile)
+    r = dict()  # processed results
 
+    def make_year_the_index(df):
+        df.set_index(pd.to_datetime(df['date']).dt.year, drop=True, inplace=True)
 
+    # New infections
+    make_year_the_index(output['tlo.methods.hiv']['hiv_treatment'])
+    r['num_new_infections_15_to_49'] = output['tlo.methods.hiv']['hiv_infected']['num_new_infections_15_to_49']
+    r['num_new_infections_0_to_14'] = output['tlo.methods.hiv']['hiv_infected']['num_new_infections_0_to_14']
+
+    # Adult ART coverage
+    make_year_the_index(output['tlo.methods.hiv']['hiv_treatment'])
+    r['adult_art_cov'] = output['tlo.methods.hiv']['hiv_treatment']['hiv_coverage_adult_art']
 
     pass
 

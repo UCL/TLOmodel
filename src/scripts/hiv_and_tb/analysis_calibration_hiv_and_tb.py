@@ -18,7 +18,7 @@ from tlo.methods import (
     symptommanager,
     tb,
 )
-
+# TODO: have chnaged name of thigns coming out of the log - so update accordingly.
 
 start_time = time.time()
 

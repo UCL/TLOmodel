@@ -859,9 +859,10 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
             * smear_pos
             * (smear_neg * params["rel_inf_smear_ng"])
             * uninfected
-        ).div(pop, fill_value=0)
+        ).div(pop)
+        foi[pd.isnull(foi)]=0.0
 
-        assert foi.isna().sum() == 0  # check there is a foi for every district
+        assert not any(pd.isnull(foi))  # check there is a foi for every district
 
         foi_df = pd.DataFrame(foi, columns=["foi"])
 
