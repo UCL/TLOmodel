@@ -442,7 +442,7 @@ class Labour (Module):
         if mother.la_intrapartum_still_birth:
             #  N.B this will only record intrapartum stillbirth
             death = demography.InstantaneousDeath(self.sim.modules['Demography'], child_id,
-                                                  cause='Stillbirth')
+                                                  cause='ip stillbirth')
             self.sim.schedule_event(death, self.sim.date)
 
             # This property is then reset in case of future pregnancies/stillbirths
@@ -848,14 +848,12 @@ class BirthEvent(Event, IndividualScopeEventMixin):
 
         df.at[mother_id, 'la_currently_in_labour'] = False
 
-        # If the mother is alive and still pregnant we generate a live child and the woman is scheduled to move to the
-        # postpartum event to determine if she experiences any additional complications
-        if person.is_alive and person.is_pregnant and ~person.la_intrapartum_still_birth:
+        # If the mother is alive and still pregnant we generate a  child and the woman is scheduled to move to the
+        # postpartum event to determine if she experiences any additional complications (intrapartum stillbirths till
+        # trigger births for monitoring purposes_)
+        if person.is_alive and person.is_pregnant:
             logger.info('@@@@ A Birth is now occuring, to mother %d', mother_id)
-            #  TODO: Ensure women who have had an IP still birth still move to postpartum event
             self.sim.do_birth(mother_id)
-            # gestational_age_in_weeks, is_pregnant and _date_of_last_pregnancy are reset via the on_birth of their
-            # respective modules
             logger.debug('This is BirthEvent scheduling mother %d to undergo the PostPartumEvent following birth',
                          mother_id)
             self.sim.schedule_event(PostpartumLabourEvent(self.module, mother_id),
@@ -1255,8 +1253,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         pkg_code_uncomplicated_delivery = pd.unique(consumables.loc[consumables[
                                                         'Intervention_Pkg'] == 'Vaginal delivery - skilled attendance',
                                                         'Intervention_Pkg_Code'])[0]
-
         # todo: do we defined the complicated delivery pkg here
+        # todo: check defining here actually uses the resources within the health system
 
         pkg_code_clean_delivery_kit = pd.unique(consumables.loc[consumables[
                                                             'Intervention_Pkg'] == 'Clean practices and immediate'
@@ -1269,7 +1267,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
 
         pkg_code_pprom = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM',
                                                    'Intervention_Pkg_Code'])[0]
-        # n.b 2 additional IV abx not in guidlines
+        # n.b 2 additional IV abx not in guidelines
 
         # ===================================== PROPHYLACTIC INTERVENTIONS ============================================
 
@@ -1445,12 +1443,12 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         maternal_deaths = len(df.index[df.la_maternal_death & (df.la_maternal_death_date > one_year_prior) &
                                        (df.la_maternal_death_date < self.sim.date)])
 
-        if maternal_deaths == 0:
-            mmr = 0
-        else:
-            mmr = maternal_deaths/live_births_sum * 100000
+    #    if maternal_deaths == 0:
+    #        mmr = 0
+    #    else:
+    #        mmr = maternal_deaths/live_births_sum * 100000
 
-        logger.info(f'The maternal mortality for this year date %s is {mmr} per 100,000 live births', self.sim.date)
+    #    logger.info(f'The maternal mortality for this year date %s is {mmr} per 100,000 live births', self.sim.date)
 
         # Facility Delivery Rate
 
