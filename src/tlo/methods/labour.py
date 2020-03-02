@@ -10,7 +10,7 @@ from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Labour (Module):
@@ -512,6 +512,10 @@ class Labour (Module):
         params = self.parameters
         logger.debug('person %d is having their labour scheduled on date %s', individual_id, self.sim.date)
 
+        # Check only alive newly pregnant women are scheduled to this function
+        assert df.at[individual_id, 'is_alive'] and df.at[individual_id, 'is_pregnant']
+        assert df.at[individual_id, 'date_of_last_pregnancy'] == self.sim.date
+
         # Using the linear equations defined above we calculate this womans individual risk of early and late preterm
         # labour
         eptb_prob = params['la_labour_equations']['early_preterm_birth'].predict(df.loc[[individual_id]])[individual_id]
@@ -541,7 +545,7 @@ class Labour (Module):
                                                                             + pd.Timedelta((self.rng.randint(37, 41)),
                                                                                            unit='W')
 
-            # Here we check that no one can go into labour before 24 weeks gestation
+        # Here we check that no one can go into labour before 24 weeks gestation
         days_until_labour = df.at[individual_id, 'la_due_date_current_pregnancy'] - self.sim.date
         assert days_until_labour >= pd.Timedelta(168, unit='d')
 
@@ -581,6 +585,11 @@ class Labour (Module):
                             {'age': df.at[individual_id, 'age_years'],
                              'person_id': individual_id})
 
+        # Ensure that women delivering in facilities do not have their complication status set
+        assert not mni[individual_id]['delivery_setting'] == 'facility_delivery' and df.at[individual_id,
+                                                                                           f'la_{complication}'] or \
+            df.at[individual_id, f'la_{complication}_disab']
+
     def set_complications_during_facility_birth(self, person_id, complication, labour_stage):
         """Using each womans individual risk of a complication (which may have been modified by treatment) this function
         determines if she will experience a complication during her facility delivery. If so, additional treatment is
@@ -589,6 +598,9 @@ class Labour (Module):
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
         rng = self.rng
+
+        # Ensure women delivering at home arent having complications set this way
+        assert not mni[person_id]['delivery_setting'] == 'home_birth'
 
         if rng.random_sample() < mni[person_id][f'risk_{labour_stage}_{complication}']:
             df.at[person_id, f'la_{complication}'] = True
@@ -620,6 +632,11 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
         # Here we populate the maternal and newborn info dictionary with baseline values before the womans labour begins
         mni = self.module.mother_and_newborn_info
+
+        logger.debug('person %d has just reached LabourOnsetEvent on %s', individual_id, self.sim.date)
+
+        # Here we check only women who have reached their due date are going into labour
+        assert df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date
 
         # TODO: review in context of properties- ensure what should be a property IS one, and what SHOULDN'T be isnt.
         mni[individual_id] = {'labour_state': None,  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or
@@ -668,7 +685,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                               'death_postpartum': False}  # True (T) or False (F)
 
 # ===================================== LABOUR STATE  ==================================================================
-        logger.debug('person %d has just reached LabourOnsetEvent on %s', individual_id, self.sim.date)
 
         # Debug logging to highlight the women who have miscarried/had an abortion/stillbirth who still come to the
         # event
@@ -676,6 +692,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
         if ~person.is_pregnant:
             logger.debug('person %d has just reached LabourOnsetEvent on %s but is no longer pregnant',
                          individual_id, self.sim.date)
+            del mni[individual_id]
 
         # The event is conditioned on the woman being pregnant, today being her due date and being alive
         # We don't use assert functions to ensure the due date is correct as women who lose their pregnancy will still
@@ -695,22 +712,31 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # Now we use gestational age to categorise the 'labour_state'
             if person.is_pregnant & person.is_alive:
                 if 37 <= person.ps_gestational_age_in_weeks < 42:
-                    mni[individual_id]['labour_state'] = 'TL'
+                    mni[individual_id]['labour_state'] = 'term_labour'
 
                 elif 24 <= person.ps_gestational_age_in_weeks < 34:
-                    mni[individual_id]['labour_state'] = 'EPTL'
+                    mni[individual_id]['labour_state'] = 'early_preterm_labour'
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                 elif 37 > person.ps_gestational_age_in_weeks >= 34:
-                    mni[individual_id]['labour_state'] = 'LPTL'
+                    mni[individual_id]['labour_state'] = 'late_preterm_labour'
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                 elif person.ps_gestational_age_in_weeks > 41:
-                    mni[individual_id]['labour_state'] = 'POTL'
+                    mni[individual_id]['labour_state'] = 'postterm_labour'
                     logger.info('%s|postterm_birth|%s', self.sim.date,
                                 {'age': df.at[individual_id, 'age_years'],
                                  'person_id': individual_id})
 
+                assert not mni[individual_id]['labour_state'] == 'postterm_labour' and \
+                    person.ps_gestational_age_in_weeks < 42
+                assert not mni[individual_id]['labour_state'] == 'term_labour' and \
+                    (36 > person.ps_gestational_age_in_weeks > 41)
+                assert not mni[individual_id]['labour_state'] == 'early_preterm_labour' and \
+                    (24 > person.ps_gestational_age_in_weeks > 33)
+                assert not mni[individual_id]['labour_state'] == 'late_preterm_labour' and \
+                    (34 > person.ps_gestational_age_in_weeks > 36)
+                
                 labour_state = mni[individual_id]['labour_state']
                 logger.debug(f'This is LabourOnsetEvent, person %d has now gone into {labour_state} on date %s',
                              individual_id, self.sim.date)
@@ -803,7 +829,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # Here we apply a risk that this woman's labour was preceded by premature rupture of membranes, in preterm
         # women this has likely predisposed their labour
-        if (mni[individual_id]['labour_state'] == 'EPTL') or (mni[individual_id]['labour_state'] == 'LPTL'):
+        if (mni[individual_id]['labour_state'] == 'early_preterm_labour') or (mni[individual_id]['labour_state'] == 'late_preterm_labour'):
             if self.module.rng.random_sample() < params['prob_prom']:
                 mni[individual_id]['PROM'] = True
         # TODO: term labour can have prom also (also this should be an antenatal thing?)
