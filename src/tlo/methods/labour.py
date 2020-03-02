@@ -730,13 +730,14 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
                 assert not mni[individual_id]['labour_state'] == 'postterm_labour' and \
                     person.ps_gestational_age_in_weeks < 42
-                assert not mni[individual_id]['labour_state'] == 'term_labour' and \
-                    (36 > person.ps_gestational_age_in_weeks > 41)
-                assert not mni[individual_id]['labour_state'] == 'early_preterm_labour' and \
-                    (24 > person.ps_gestational_age_in_weeks > 33)
-                assert not mni[individual_id]['labour_state'] == 'late_preterm_labour' and \
-                    (34 > person.ps_gestational_age_in_weeks > 36)
-                
+
+            #    assert mni[individual_id]['labour_state'] == 'term_labour' and \
+            #        (person.ps_gestational_age_in_weeks < 41 or person.ps_gestational_age_in_weeks >= 37)
+            #    assert mni[individual_id]['labour_state'] == 'early_preterm_labour' and \
+            #           (person.ps_gestational_age_in_weeks < 34 or person.ps_gestational_age_in_weeks >= 24)
+            #    assert mni[individual_id]['labour_state'] == 'late_preterm_labour' and \
+            #           (person.ps_gestational_age_in_weeks < 37 or person.ps_gestational_age_in_weeks >= 34)
+
                 labour_state = mni[individual_id]['labour_state']
                 logger.debug(f'This is LabourOnsetEvent, person %d has now gone into {labour_state} on date %s',
                              individual_id, self.sim.date)
