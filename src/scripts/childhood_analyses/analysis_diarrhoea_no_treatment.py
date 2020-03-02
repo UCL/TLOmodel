@@ -12,7 +12,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -95,6 +95,10 @@ inc_rate = dict()
 for age_grp in ['0y', '1y', '2-4y']:
     inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
+# death rate among 0, 1, 2-4 year-olds
+death_rate = dict()
+for age_grp in ['0y', '1y', '2-4y']:
+    death_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
@@ -134,6 +138,12 @@ calibration_incidence_rate_2_to_4_year_olds = {
     'norovirus': 0.0888 / 100.0,
     'astrovirus': 0.1332 / 100.0,
     'tEPEC': 0.1998 / 100.0
+}
+
+# load the death data to which we calibrate - deaths under 5
+deaths_per_year = {
+    '2010': 0.231561 / 100.0,
+    '2015': 0.129141 / 100.0
 }
 
 # Produce a set of line plot comparing to the calibration data
@@ -183,5 +193,44 @@ plt.show()
 
 # %%
 # Look at deaths arising? Or anything else?
+# fig1, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
+# for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
+#     ax = fig.axes[ax_num]
+#     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
+#     ax.hlines(y=deaths_per_year,
+#               xmin=min(inc_rate['0y'].index),
+#               xmax=max(inc_rate['0y'].index),
+#               label='calibrating_data'
+#               )
+#     ax.set_title(f'{pathogen}')
+#     ax.set_xlabel("Year")
+#     ax.set_ylabel("death rate")
+#     ax.legend()
+# plt.show()
 
+# Produce a bar plot for means of death rate during the simulation:
+death_mean = pd.DataFrame()
+death_mean['0y_model_output'] = death_rate['0y'].mean()
+death_mean['1y_model_output'] = death_rate['1y'].mean()
+death_mean['2-4y_model_output'] = death_rate['2-4y'].mean()
 
+# put in the inputs:
+# no calibration data for deaths by age
+
+# 0 year-olds
+death_mean.plot.bar(y=['0y_model_output'])
+plt.title('Death Rate: 0 year-olds')
+plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+# 1 year-olds
+death_mean.plot.bar(y=['1y_model_output'])
+plt.title('Death Rate: 1 year-olds')
+plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+# 2-4 year-olds
+death_mean.plot.bar(y=['2-4y_model_output'])
+plt.title('Death Rate: 2-4 year-olds')
+plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.show()
