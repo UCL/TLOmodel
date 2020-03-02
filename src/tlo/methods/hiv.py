@@ -1571,8 +1571,8 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
         }
 
         is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
@@ -1706,8 +1706,8 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [],
-            "Item_Code": [{item_code1: 1}, {item_code2: 1}, {item_code3: 1}],
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code1: 1, item_code2: 1, item_code3: 1}
         }
 
         is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
@@ -1844,8 +1844,8 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
         }
 
         is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
@@ -1927,8 +1927,8 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [{item_code1: 1}],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {item_code1: 1},
         }
 
         # query if consumables are available before logging their use (will depend on test results)
@@ -1966,8 +1966,8 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
 
                 # in this case, only the hiv test is used, so reset the cons_footprint
                 the_cons_footprint = {
-                    "Intervention_Package_Code": [{pkg_code1: 1}],
-                    "Item_Code": [],
+                    "Intervention_Package_Code": {pkg_code1: 1},
+                    "Item_Code": {},
                 }
 
                 cons_logged = self.sim.modules["HealthSystem"].request_consumables(
@@ -2053,7 +2053,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             "Intervention_Package_Code": [],
-            "Item_Code": [{item_code1: 1}, {item_code2: 1}, {item_code3: 1}],
+            "Item_Code": {item_code1: 1, item_code2: 1, item_code3: 1}
         }
 
         is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
@@ -2125,8 +2125,8 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [{item_code1: 1}],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {item_code1: 1}
         }
 
         is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
@@ -2272,8 +2272,8 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [],
-            "Item_Code": [{item_code1: 1}],
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code1: 1},
         }
 
         is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
@@ -2453,8 +2453,8 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
         }
 
         self.sim.modules["HealthSystem"].request_consumables(
@@ -2500,8 +2500,8 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [],
-            "Item_Code": [{item_code1: 1}],
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code1: 1},
         }
 
         request_cons = self.sim.modules["HealthSystem"].request_consumables(

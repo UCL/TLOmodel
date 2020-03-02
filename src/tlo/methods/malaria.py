@@ -2126,8 +2126,8 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         consumables_needed = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
         }
 
         # request the RDT
@@ -2283,8 +2283,8 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
             ]  # this pkg_code includes another rdt
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
@@ -2363,8 +2363,8 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
             ]  # this pkg_code includes another rdt
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
@@ -2442,8 +2442,8 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
             ]  # this pkg_code includes another rdt
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
@@ -2520,8 +2520,8 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
             )[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
@@ -2598,8 +2598,8 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
             )[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
@@ -2676,8 +2676,8 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
             )[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
