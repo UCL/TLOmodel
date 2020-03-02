@@ -120,15 +120,14 @@ def incidence_analysis(complication, birth_denominator):
     dataframe['date'] = pd.to_datetime(dataframe['date'])
     dataframe['year'] = dataframe['date'].dt.year
     complication_per_year = dataframe.groupby(['year'])['person_id'].size()
-    if ~complication_per_year.empty:
+    if ~dataframe.empty:
 
         complication_df = pd.concat((complication_per_year, all_births_by_year), axis=1)
-        complication_df.columns = ['maternal_sepsis_cases', 'all_births']
-        complication_df[f'{complication}_incidence'] = complication_df['complication_cases']/ \
-                                                       complication_df['all_births'] * birth_denominator
+        complication_df.columns = ['complication_cases', 'all_births']
+        complication_df[f'{complication}_incidence'] = complication_df['complication_cases'] / complication_df['all_births'] * birth_denominator
 
         complication_df.plot.bar(y=f'{complication}_incidence', stacked=True)
-        plt.title(f"Yearly {complication} Incidence")
+        plt.title(f"Yearly {complication} Incidence per {birth_denominator} births")
         plt.show()
 
     else:
@@ -138,17 +137,17 @@ def incidence_analysis(complication, birth_denominator):
    # TODO: maternal deaths by each contributing cause
 
 # Incidence of Obstructed Labour
-incidence_analysis('obstructed_labour', 100)
+incidence_analysis('obstructed_labour', 1000)
 
 # Incidence of Uterine Rupture
-incidence_analysis('uterine_rupture', 100)
+incidence_analysis('uterine_rupture', 1000)
 
 # Incidence of Antepartum Haemorrhage
-incidence_analysis('antepartum_haem', 100)
+incidence_analysis('antepartum_haem', 1000)
 
 # Incidence of Intrapartum Eclampsia
-incidence_analysis('eclampsia', 100)
+incidence_analysis('eclampsia', 1000)
 
 # Incidence of Intrapartum direct maternal sepsis
-incidence_analysis('sepsis', 100)
+incidence_analysis('sepsis', 1000)
 
