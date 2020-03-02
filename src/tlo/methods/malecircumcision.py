@@ -247,8 +247,8 @@ class HSI_Circumcision_PresentsForCare(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
         }
         is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
             hsi_event=self, cons_req_as_footprint=the_cons_footprint

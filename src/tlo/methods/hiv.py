@@ -2052,7 +2052,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            "Intervention_Package_Code": [],
+            "Intervention_Package_Code": {},
             "Item_Code": {item_code1: 1, item_code2: 1, item_code3: 1}
         }
 

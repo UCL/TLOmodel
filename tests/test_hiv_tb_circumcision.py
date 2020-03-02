@@ -61,7 +61,6 @@ def test_simulation():
     df = sim.population.props
 
     # check properties
-    # assert ((df.sex == 'M') & (df.hv_sexual_risk == 'low')).all()  # no sex work
     assert not any((df.sex == "M") & (df.hv_sexual_risk == "sex_work"))
 
     assert not ((df.hv_number_tests >= 1) & ~df.hv_ever_tested).any()

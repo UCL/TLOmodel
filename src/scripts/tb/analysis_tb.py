@@ -34,8 +34,8 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 12, 31)
-popsize = 500
+end_date = Date(2018, 12, 31)
+popsize = 10000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
