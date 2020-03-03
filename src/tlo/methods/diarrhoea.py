@@ -345,6 +345,7 @@ class Diarrhoea(Module):
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
 
         # ---- Treatment properties ----
+        # TODO; Ines -- you;ve introduced these but not initialised them and don;t use them. do you need them?
         'gi_diarrhoea_treatment': Property(Types.BOOL, 'currently on diarrhoea treatment'),
         'gi_diarrhoea_tx_start_date': Property(Types.BOOL, 'start date of diarrhoea treatment for current episode'),
     }
@@ -1087,7 +1088,7 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
-        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date  # Presumably this is right?
+        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date  # TODO; Ines - see change.....Presumably this is right?
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # clear the treatment prperties
@@ -1324,7 +1325,8 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self, cons_req_as_footprint=the_consumables_needed)
         logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
-        if is_cons_available:
+        # TODO; be careful here --- you need to check the availability of the consumable--- copy this change for everytime you use request_consumables.
+        if is_cons_available['Intervention_Package_Code']['pkg_code_uncomplic_diarrhoea']:
             logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
