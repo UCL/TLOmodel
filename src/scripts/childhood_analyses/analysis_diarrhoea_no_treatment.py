@@ -10,6 +10,7 @@ There is no treatment.
 import datetime
 from pathlib import Path
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 from tlo import Date, Simulation
@@ -54,7 +55,6 @@ output = parse_log_file(logfile)
 
 # %%
 # Calculate the "incidence rate" from the output counts of incidence
-
 counts = output['tlo.methods.diarrhoea']['incidence_count_by_pathogen']
 counts['year'] = pd.to_datetime(counts['date']).dt.year
 counts.drop(columns='date', inplace=True)
@@ -95,11 +95,6 @@ inc_rate = dict()
 for age_grp in ['0y', '1y', '2-4y']:
     inc_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
-# death rate among 0, 1, 2-4 year-olds
-death_rate = dict()
-for age_grp in ['0y', '1y', '2-4y']:
-    death_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
-
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
     'rotavirus': 17.5245863 / 100.0,
@@ -138,12 +133,6 @@ calibration_incidence_rate_2_to_4_year_olds = {
     'norovirus': 0.0888 / 100.0,
     'astrovirus': 0.1332 / 100.0,
     'tEPEC': 0.1998 / 100.0
-}
-
-# load the death data to which we calibrate - deaths under 5
-deaths_per_year = {
-    '2010': 0.231561 / 100.0,
-    '2015': 0.129141 / 100.0
 }
 
 # Produce a set of line plot comparing to the calibration data
@@ -191,6 +180,7 @@ plt.title('Incidence Rate: 2-4 year-olds')
 plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
+# ---------------------------- MODEL OUTPUT FOR MEAN DEATH RATE BY PATHOGEN ----------------------------
 # %%
 # Look at deaths arising? Or anything else?
 # fig1, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
@@ -208,29 +198,68 @@ plt.show()
 #     ax.legend()
 # plt.show()
 
-# Produce a bar plot for means of death rate during the simulation:
-death_mean = pd.DataFrame()
-death_mean['0y_model_output'] = death_rate['0y'].mean()
-death_mean['1y_model_output'] = death_rate['1y'].mean()
-death_mean['2-4y_model_output'] = death_rate['2-4y'].mean()
+# death rate among 0, 1, 2-4 year-olds
+death_rate = dict()
+for age_grp in ['0y', '1y', '2-4y']:
+    death_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
-# put in the inputs:
-# no calibration data for deaths by age
+# load the death data to which we calibrate - deaths under 5
+calibration_death_rate_per_year = {
+    '2010': 0.231561 / 100.0,
+    '2011': 0.217606 / 100.0,
+    '2012': 0.181523 / 100.0,
+    '2013': 0.159492 / 100.0,
+    '2014': 0.139997 / 100.0,
+    '2015': 0.129141 / 100.0
+}
 
-# 0 year-olds
-death_mean.plot.bar(y=['0y_model_output'])
-plt.title('Death Rate: 0 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
-plt.show()
 
-# 1 year-olds
-death_mean.plot.bar(y=['1y_model_output'])
-plt.title('Death Rate: 1 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
-plt.show()
+# # Produce a bar plot for means of death rate during the simulation:
+# death_mean = pd.DataFrame()
+# death_mean['0y_model_output'] = death_rate['0y'].mean()
+# death_mean['1y_model_output'] = death_rate['1y'].mean()
+# death_mean['2-4y_model_output'] = death_rate['2-4y'].mean()
+#
+# # put in the inputs:
+# # no calibration data for deaths by age
+#
+# # 0 year-olds
+# death_mean.plot.bar(y=['0y_model_output'])
+# plt.title('Death Rate: 0 year-olds')
+# plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
+# plt.show()
+#
+# # 1 year-olds
+# death_mean.plot.bar(y=['1y_model_output'])
+# plt.title('Death Rate: 1 year-olds')
+# plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
+# plt.show()
+#
+# # 2-4 year-olds
+# death_mean.plot.bar(y=['2-4y_model_output'])
+# plt.title('Death Rate: 2-4 year-olds')
+# plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
+# plt.show()
 
-# 2-4 year-olds
-death_mean.plot.bar(y=['2-4y_model_output'])
-plt.title('Death Rate: 2-4 year-olds')
+# ---------------------------------------------------------------------------------------------
+# ---------------------------- MODEL OUTPUT FOR DEATH RATE BY YEAR ----------------------------
+# Mortality rate among in years
+pop['<5y'] = pop[0] + pop[1] + pop[2] + pop[3] + pop[4]
+under5_mortality = dict()
+under5_mortality['<5y'] = counts['<5y'].apply(pd.Series).div(py['<5y'], axis=0).dropna()
+
+count_deaths = output['tlo.methods.diarrhoea']['number_of_deaths_diarrhoea']
+death_rate = count_deaths.diarrhoea_death_per_year / pop['<5y']
+count_deaths['year'] = pd.to_datetime(counts['date']).dt.year
+count_deaths['health_data.org'] = pd.Series(data=calibration_death_rate_per_year)
+
+# %% Plot Incidence of Diarrhoea Over time:
+years = mdates.YearLocator()   # every year
+months = mdates.MonthLocator()  # every month
+years_fmt = mdates.DateFormatter('%Y')
+
+# count_deaths
+count_deaths.plot.bar(y=['year', 'health_data.org'])
+plt.title('Under 5 mortality rate')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
