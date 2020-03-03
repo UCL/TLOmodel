@@ -1050,7 +1050,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             age_grp = '5+y'
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
 
-
 class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
     """
     This Event is for the onset of Severe Dehydration. This occurs a set number of days prior to death (for untreated
@@ -1088,7 +1087,7 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
-        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
+        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date  # Presumably this is right?
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # clear the treatment prperties
