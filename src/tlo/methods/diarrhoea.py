@@ -1062,6 +1062,11 @@ class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+
+        # terminate the event if the person has already died.
+        if not df.at[person_id, 'is_alive']:
+            return
+
         df.at[person_id, 'gi_current_severe_dehydration'] = True
 
         date_of_death = self.sim.date \
@@ -1490,8 +1495,11 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         logger.debug("DiarrhoeaCureEvent: Stopping diarrhoea treatment and curing person %d", person_id)
-
         df = self.sim.population.props
+
+        # terminate the event if the person has already died.
+        if not df.at[person_id, 'is_alive']:
+            return
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
