@@ -12,6 +12,7 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 class Labour (Module):
     """This module for labour, delivery, the immediate postpartum period and skilled birth attendance."""
 
@@ -120,7 +121,7 @@ class Labour (Module):
         'prob_still_birth_eclampsia_md': Parameter(
             Types.REAL, 'probability of still birth following eclampsia in labour where the mother dies'),
         'prob_pp_eclampsia': Parameter(
-            Types.REAL, 'probability of eclampsia following delivery for women who were in spotaneous unobstructed '
+            Types.REAL, 'probability of eclampsia following delivery for women who were in spontaneous unobstructed '
                         'labour'),
         'prob_pph': Parameter(
             Types.REAL, 'probability of an postpartum haemorrhage following labour'),
@@ -605,7 +606,7 @@ class Labour (Module):
         mni = self.mother_and_newborn_info
         rng = self.rng
 
-        # Ensure women delivering at home arent having complications set this way
+        # Ensure women delivering at home are not having complications set this way
         assert not mni[person_id]['delivery_setting'] == 'home_birth'
 
         if rng.random_sample() < mni[person_id][f'risk_{labour_stage}_{complication}']:
@@ -638,69 +639,77 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
         # Here we populate the maternal and newborn info dictionary with baseline values before the womans labour begins
         mni = self.module.mother_and_newborn_info
+        if df.at[individual_id, 'is_alive']:
+            logger.debug('person %d has just reached LabourOnsetEvent on %s', individual_id, self.sim.date)
 
-        logger.debug('person %d has just reached LabourOnsetEvent on %s', individual_id, self.sim.date)
+            # Here we check only women who have reached their due date are going into labour and no women are in labour
+            # before 24 weeks
+            assert df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date
 
-        # Here we check only women who have reached their due date are going into labour and no women are in labour
-        # before 24 weeks
-        assert df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date
-        assert df.at[individual_id, 'ps_gestational_age_in_weeks'] > 23
+            # As ps_gestational_age_in_weeks is updated in a weekly event, it is possible for this property to read 23 -
+            # when it is actually a womans 24th week of gestation - need a more permanent fix
+            assert df.at[individual_id, 'ps_gestational_age_in_weeks'] > 22
 
         # TODO: review in context of properties- ensure what should be a property IS one, and what SHOULDN'T be isnt.
-        mni[individual_id] = {'labour_state': None,  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or
-                              # Post Term (POTL)
-                              'delivery_setting': None,  # Facility Delivery (FD) or Home Birth (HB)
-                              'delivery_facility_type': None,  # health_centre, hospital, regional_hospital
-                              'delivery_attended': None,  # unattended or attended
-                              'induced_labour': False,
-                              'referred_for': None,  # Induction (I) or Caesarean (CS)
-                              'cord_prolapse': False,
-                              'PROM': False,
-                              'PPROM': False,
-                              'risk_ip_obstructed_labour': params['prob_pl_ol'],
-                              'labour_is_currently_obstructed': False,  # True (T) or False (F)
-                              'labour_has_previously_been_obstructed': False,
-                              'risk_ip_sepsis': params['prob_ip_sepsis'],
-                              'risk_pp_sepsis': params['prob_pp_sepsis'],
-                              'sepsis': False,  # True (T) or False (F)
-                              'sepsis_pp': False,  # True (T) or False (F) #do we need this
-                              'source_sepsis': None,  # Obstetric (O) or Non-Obstetric (NO)
-                              'risk_ip_antepartum_haem': params['prob_aph'],
-                              'antepartum_haem': False,  # True (T) or False (F)
-                              'source_aph': None,  # Placenta Praevia (PP) or Placental Abruption (PA) (Other?)
-                              'units_transfused': 0,
-                              'risk_ip_eclampsia': params['prob_ip_eclampsia'],
-                              'risk_pp_eclampsia': params['prob_pp_eclampsia'],
-                              'eclampsia': False,  # True (T) or False (F)
-                              'eclampsia_pp': False,  # True (T) or False (F)
-                              'risk_ip_uterine_rupture': params['prob_uterine_rupture'],
-                              'uterine_rupture': False,  # True (T) or False (F)
-                              'grade_of_UR': 'X',  # Partial (P) or Complete (C)
-                              'risk_pp_postpartum_haem': params['prob_pph'],
-                              'postpartum_haem': False,  # True (T) or False (F)
-                              'source_pph': None,  # Uterine Atony (UA) or Retained Products/Placenta (RPP)
-                              'severity_pph': None,
-                              'risk_newborn_sepsis': params['prob_neonatal_sepsis'],
-                              'risk_newborn_ba': params['prob_neonatal_birth_asphyxia'],
-                              #  Should this just be risk of asphyxia
-                              'mode_of_delivery': None,  # Vaginal Delivery (VD),Vaginal Delivery Induced (VDI),
-                              # Assisted Vaginal Delivery Forceps (AVDF) Assisted Vaginal Delivery Ventouse (AVDV)
-                              # Caesarean Section (CS)
-                              'death_in_labour': False,  # True (T) or False (F)
-                              'cause_of_death_in_labour': [],  # Appended list of cause/causes of death
-                              # TODO: should we do the same thing for still birth? Would help with mapping
-                              'stillbirth_in_labour': False,  # True (T) or False (F)
-                              'death_postpartum': False}  # True (T) or False (F)
+            # Here we populate the maternal and newborn info dictionary with baseline values before the womans labour
+            # begins
+            mni[individual_id] = {'labour_state': None,
+                                  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
+                                  'delivery_setting': None,  # Facility Delivery (FD) or Home Birth (HB)
+                                  'delivery_facility_type': None,  # health_centre, hospital, regional_hospital
+                                  'delivery_attended': None,  # unattended or attended
+                                  'induced_labour': False,
+                                  'referred_for': None,  # Induction (I) or Caesarean (CS)
+                                  'cord_prolapse': False,
+                                  'PROM': False,
+                                  'PPROM': False,
+                                  'risk_ip_obstructed_labour': params['prob_pl_ol'],
+                                  'labour_is_currently_obstructed': False,  # True (T) or False (F)
+                                  'labour_has_previously_been_obstructed': False,
+                                  'risk_ip_sepsis': params['prob_ip_sepsis'],
+                                  'risk_pp_sepsis': params['prob_pp_sepsis'],
+                                  'sepsis': False,  # True (T) or False (F)
+                                  'sepsis_pp': False,  # True (T) or False (F) #do we need this
+                                  'source_sepsis': None,  # Obstetric (O) or Non-Obstetric (NO)
+                                  'risk_ip_antepartum_haem': params['prob_aph'],
+                                  'antepartum_haem': False,  # True (T) or False (F)
+                                  'source_aph': None,  # Placenta Praevia (PP) or Placental Abruption (PA) (Other?)
+                                  'units_transfused': 0,
+                                  'risk_ip_eclampsia': params['prob_ip_eclampsia'],
+                                  'risk_pp_eclampsia': params['prob_pp_eclampsia'],
+                                  'eclampsia': False,  # True (T) or False (F)
+                                  'eclampsia_pp': False,  # True (T) or False (F)
+                                  'risk_ip_uterine_rupture': params['prob_uterine_rupture'],
+                                  'uterine_rupture': False,  # True (T) or False (F)
+                                  'grade_of_UR': 'X',  # Partial (P) or Complete (C)
+                                  'risk_pp_postpartum_haem': params['prob_pph'],
+                                  'postpartum_haem': False,  # True (T) or False (F)
+                                  'source_pph': None,  # Uterine Atony (UA) or Retained Products/Placenta (RPP)
+                                  'severity_pph': None,
+                                  'risk_newborn_sepsis': params['prob_neonatal_sepsis'],
+                                  'risk_newborn_ba': params['prob_neonatal_birth_asphyxia'],
+                                  #  Should this just be risk of asphyxia
+                                  'mode_of_delivery': None,  # Vaginal Delivery (VD),Vaginal Delivery Induced (VDI),
+                                  # Assisted Vaginal Delivery Forceps (AVDF) Assisted Vaginal Delivery Ventouse (AVDV)
+                                  # Caesarean Section (CS)
+                                  'death_in_labour': False,  # True (T) or False (F)
+                                  'cause_of_death_in_labour': [],  # Appended list of cause/causes of death
+                                  # TODO: should we do the same thing for still birth? Would help with mapping
+                                  'stillbirth_in_labour': False,  # True (T) or False (F)
+                                  'death_postpartum': False}  # True (T) or False (F)
 
 # ===================================== LABOUR STATE  ==================================================================
 
         # Debug logging to highlight the women who have miscarried/had an abortion/stillbirth who still come to the
         # event
         person = df.loc[individual_id]
-        if ~person.is_pregnant:
+        if person.is_alive and ~person.is_pregnant:
             logger.debug('person %d has just reached LabourOnsetEvent on %s but is no longer pregnant',
                          individual_id, self.sim.date)
             del mni[individual_id]
+
+        # TODO: PregnancySupervisor event updates GA weekly, women on the threshold will be miscatergorised as a
+        #  different labour state
 
         # The event is conditioned on the woman being pregnant, today being her due date and being alive
         # We don't use assert functions to ensure the due date is correct as women who lose their pregnancy will still
@@ -722,7 +731,9 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             if 37 <= person.ps_gestational_age_in_weeks < 42:
                 mni[individual_id]['labour_state'] = 'term_labour'
 
-            elif 24 <= person.ps_gestational_age_in_weeks < 34:
+            # Here we allow a woman to go into early preterm labour with a gestational age of 23 (limit is 24) to
+            # account for PregnancySupervisor only updating weekly
+            elif 23 <= person.ps_gestational_age_in_weeks < 34:
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
@@ -736,6 +747,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                             {'age': df.at[individual_id, 'age_years'],
                              'person_id': individual_id})
 
+            assert mni[individual_id]['labour_state'] is not None
             labour_state = mni[individual_id]['labour_state']
             logger.debug(f'This is LabourOnsetEvent, person %d has now gone into {labour_state} on date %s',
                          individual_id, self.sim.date)
