@@ -1132,6 +1132,15 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # deaths reported in the last 12 months per person
         death_count = len(df[(df.gi_last_diarrhoea_death_date > (self.sim.date - DateOffset(months=self.repeat)))])
 
+        # py = self.sim.modules['Demography'].calc_py_lived_in_last_year()
+        # py_year = pd.to_datetime(py['date']).dt.year
+        #
+        # tot_py = (
+        #     (py.loc[pd.to_datetime(py['date']).dt.year == year]['M']).apply(pd.Series) + \
+        #     (py.loc[pd.to_datetime(py['date']).dt.year == year]['F']).apply(pd.Series)
+        # ).transpose()
+        # death_rate = death_count / py
+
         logger.info("%s|number_of_deaths_diarrhoea|%s", self.sim.date, {'diarrhoea_death_per_year': death_count})
 
 

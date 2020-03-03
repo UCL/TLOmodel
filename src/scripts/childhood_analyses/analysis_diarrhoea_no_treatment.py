@@ -30,8 +30,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 2)
-popsize = 10000
+end_date = Date(2016, 1, 2)
+popsize = 1000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -67,7 +67,7 @@ counts.set_index(
 # get person-years of 0 year-old, 1 year-olds and 2-4 year-old
 py_ = output['tlo.methods.demography']['person_years']
 years = pd.to_datetime(py_['date']).dt.year
-py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
+py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y', '<5y'])
 for year in years:
     tot_py = (
         (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) + \
@@ -77,6 +77,7 @@ for year in years:
     py.loc[year, '0y'] = tot_py.loc[0].values[0]
     py.loc[year, '1y'] = tot_py.loc[1].values[0]
     py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
+    py.loc[year, '<5y'] = tot_py.loc[0:4].sum().values[0]
 
 # # get population size to make a comparison
 pop = output['tlo.methods.demography']['num_children']
@@ -88,6 +89,7 @@ pop.set_index(
 pop['0y'] = pop[0]
 pop['1y'] = pop[1]
 pop['2-4y'] = pop[2] + pop[3] + pop[4]
+pop['<5y'] = pop[0] + pop[1] + pop[2] + pop[3] + pop[4]
 pop.drop(columns=[x for x in range(5)], inplace=True)
 
 # Incidence rate among 0, 1, 2-4 year-olds
@@ -198,11 +200,6 @@ plt.show()
 #     ax.legend()
 # plt.show()
 
-# death rate among 0, 1, 2-4 year-olds
-death_rate = dict()
-for age_grp in ['0y', '1y', '2-4y']:
-    death_rate[age_grp] = counts[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
-
 # load the death data to which we calibrate - deaths under 5
 calibration_death_rate_per_year = {
     '2010': 0.231561 / 100.0,
@@ -244,22 +241,26 @@ calibration_death_rate_per_year = {
 # ---------------------------------------------------------------------------------------------
 # ---------------------------- MODEL OUTPUT FOR DEATH RATE BY YEAR ----------------------------
 # Mortality rate among in years
-pop['<5y'] = pop[0] + pop[1] + pop[2] + pop[3] + pop[4]
-under5_mortality = dict()
-under5_mortality['<5y'] = counts['<5y'].apply(pd.Series).div(py['<5y'], axis=0).dropna()
-
 count_deaths = output['tlo.methods.diarrhoea']['number_of_deaths_diarrhoea']
-death_rate = count_deaths.diarrhoea_death_per_year / pop['<5y']
-count_deaths['year'] = pd.to_datetime(counts['date']).dt.year
-count_deaths['health_data.org'] = pd.Series(data=calibration_death_rate_per_year)
+under5_mortality = dict()
+for age_group in ['0y', '1y', '2-4y']:
+    under5_mortality[age_grp] = count_deaths[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
 # %% Plot Incidence of Diarrhoea Over time:
 years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')
 
+mort_df = pd.DataFrame()
+mort_df['year'] = pd.to_datetime(count_deaths['date']).dt.year
+mort_df['mortality5'] = under5_mortality['0y'].mean()
+mort_df['health_data.org'] = pd.Series(data=calibration_death_rate_per_year)
+
 # count_deaths
-count_deaths.plot.bar(y=['year', 'health_data.org'])
+mort_df.plot.bar(y=['mortality5', 'health_data.org'])
 plt.title('Under 5 mortality rate')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
+
+# also do case-fatality-rate
+
