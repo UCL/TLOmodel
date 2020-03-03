@@ -48,11 +48,11 @@ def simulation():
 
 
 def test_run(simulation):
-#    f = simulation.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
-#                                                                  'tlo.module.labour': logging.DEBUG,
-#                                                                  'tlo.module.newborn_outcomes': logging.DEBUG,
-#                                                                  'tlo.module.pregnancy_supervisor': logging.DEBUG,
-#                                                                  'tlo.module.antenatal_care': logging.DEBUG})
+    #    f = simulation.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
+    #                                                                  'tlo.module.labour': logging.DEBUG,
+    #                                                                  'tlo.module.newborn_outcomes': logging.DEBUG,
+    #                                                                  'tlo.module.pregnancy_supervisor': logging.DEBUG,
+    #                                                                  'tlo.module.antenatal_care': logging.DEBUG})
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 #    output = parse_log_file(f)
