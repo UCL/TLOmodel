@@ -241,10 +241,31 @@ calibration_death_rate_per_year = {
 # ---------------------------------------------------------------------------------------------
 # ---------------------------- MODEL OUTPUT FOR DEATH RATE BY YEAR ----------------------------
 # Mortality rate among in years
-count_deaths = output['tlo.methods.diarrhoea']['number_of_deaths_diarrhoea']
-under5_mortality = dict()
-for age_group in ['0y', '1y', '2-4y', '<5y']:
-    under5_mortality[age_grp] = count_deaths[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
+# count_deaths = output['tlo.methods.diarrhoea']['number_of_deaths_diarrhoea']
+# under5_mortality = dict()
+# for age_group in ['0y', '1y', '2-4y', '<5y']:
+#     under5_mortality[age_grp] = count_deaths[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
+#
+#
+
+# ~~~~~ INES --- this is getting deaths from the demography logger
+# Get deaths in the age-groups 0y, 1y, 2-4y and total <5y:
+d = output['tlo.methods.demography']['death']
+d['year'] = pd.to_datetime(d['date']).dt.year
+d = d.loc[d['age']<5].copy()
+d['age_grp'] = d['age'].map(
+    {0: '0y',
+     1: '1y',
+     2: '2-4y',
+     3: '2-4y',
+     4: '2-4y'}
+)
+deaths = d.groupby(by=['year','age_grp','cause']).size().reset_index()
+deaths.rename(columns={0: 'count'}, inplace=True)
+# ~~~~~~~~~~~~~~~~~~~~~
+
+
+
 
 # %% Plot Incidence of Diarrhoea Over time:
 years = mdates.YearLocator()   # every year
