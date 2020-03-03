@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -46,14 +47,16 @@ def simulation():
     return sim
 
 
-def test_run(simulation, tmpdir):
-    simulation.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
-                                                                  'tlo.module.labour': logging.DEBUG,
-                                                                  'tlo.module.newborn_outcomes': logging.DEBUG,
-                                                                  'tlo.module.pregnancy_supervisor': logging.DEBUG,
-                                                                  'tlo.module.antenatal_care': logging.DEBUG})
+def test_run(simulation):
+#    f = simulation.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
+#                                                                  'tlo.module.labour': logging.DEBUG,
+#                                                                  'tlo.module.newborn_outcomes': logging.DEBUG,
+#                                                                  'tlo.module.pregnancy_supervisor': logging.DEBUG,
+#                                                                  'tlo.module.antenatal_care': logging.DEBUG})
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
+#    output = parse_log_file(f)
+
 
 
 def __check_properties(df):
@@ -98,8 +101,8 @@ def test_dypes(simulation):
 
 if __name__ == '__main__':
     t0 = time.time()
-   # simulation = simulation()
-   # test_run(simulation, tmpdir=direct)
-   # t1 = time.time()
-   # print('Time taken', t1 - t0)
-   # test_dypes(simulation)
+    simulation = simulation()
+    test_run(simulation)
+    t1 = time.time()
+    print('Time taken', t1 - t0)
+    test_dypes(simulation)
