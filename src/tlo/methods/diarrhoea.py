@@ -1074,6 +1074,30 @@ class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_death
         self.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_death)
 
+class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("DiarrhoeaCureEvent: Stopping diarrhoea treatment and curing person %d", person_id)
+        df = self.sim.population.props
+
+        # terminate the event if the person has already died.
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
+        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
+        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+
+        # clear the treatment prperties
+        df.at[person_id, 'gi_diarrhoea_treatment'] = False
+        df.at[person_id, 'gi_diarrhoea_tx_start_date'] = pd.NaT
+
+        # Resolve all the symptoms immediately
+        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
+                                                          disease_module=self.sim.modules['Diarrhoea'])
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -1487,29 +1511,4 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
 
-
-class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-    def apply(self, person_id):
-        logger.debug("DiarrhoeaCureEvent: Stopping diarrhoea treatment and curing person %d", person_id)
-        df = self.sim.population.props
-
-        # terminate the event if the person has already died.
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # Stop the person from dying of Diarrhoea (if they were going to die)
-        df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = df.at[person_id, 'gi_last_diarrhoea_death_date']
-        df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-
-        # clear the treatment prperties
-        df.at[person_id, 'gi_diarrhoea_treatment'] = False
-        df.at[person_id, 'gi_diarrhoea_tx_start_date'] = pd.NaT
-
-        # Resolve all the symptoms immediately
-        self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
-                                                          disease_module=self.sim.modules['Diarrhoea'])
 
