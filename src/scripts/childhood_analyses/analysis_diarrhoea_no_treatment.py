@@ -243,7 +243,7 @@ calibration_death_rate_per_year = {
 # Mortality rate among in years
 count_deaths = output['tlo.methods.diarrhoea']['number_of_deaths_diarrhoea']
 under5_mortality = dict()
-for age_group in ['0y', '1y', '2-4y']:
+for age_group in ['0y', '1y', '2-4y', '<5y']:
     under5_mortality[age_grp] = count_deaths[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
 # %% Plot Incidence of Diarrhoea Over time:
@@ -253,7 +253,7 @@ years_fmt = mdates.DateFormatter('%Y')
 
 mort_df = pd.DataFrame()
 mort_df['year'] = pd.to_datetime(count_deaths['date']).dt.year
-mort_df['mortality5'] = under5_mortality['0y'].mean()
+mort_df['mortality5'] = under5_mortality['<5y'].mean()
 mort_df['health_data.org'] = pd.Series(data=calibration_death_rate_per_year)
 
 # count_deaths
