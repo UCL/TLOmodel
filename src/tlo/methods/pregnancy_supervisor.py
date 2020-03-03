@@ -7,7 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class PregnancySupervisor(Module):
@@ -212,6 +212,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         gestation_in_days = self.sim.date - df.loc[alive_and_preg, 'date_of_last_pregnancy']
         gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
         df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] = gestation_in_weeks.astype('int64')
+        logger.debug('updating gestational ages on date %s', self.sim.date)
 
     # ======================================= PREGNANCY COMPLICATIONS ==================================================
         # Application of pregnancy complications will occur here

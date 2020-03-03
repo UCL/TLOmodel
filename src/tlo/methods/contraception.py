@@ -436,6 +436,8 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
 
         for woman in women_co_failure:
             # this woman's contraception has failed - she is pregnant
+            # Women currently in labour cannot become pregnant
+        #    if ~df.at[woman, 'la_currently_in_labour']:
             df.at[woman, 'is_pregnant'] = True
             df.at[woman, 'date_of_last_pregnancy'] = self.sim.date
             df.at[woman, 'co_unintended_preg'] = True
