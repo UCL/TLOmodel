@@ -309,13 +309,13 @@ class NewbornOutcomes(Module):
         # Here we set the variables for newborns delivered at less than 37 weeks, allocating them to either late or
         # early  preterm based on the gestation at labour
 
-        if m['labour_state'] == 'EPTL':
+        if m['labour_state'] == 'early_preterm_labour':
             df.at[child_id, 'nb_early_preterm'] = True
             logger.info('%s|early_preterm|%s', self.sim.date,
                         {'age': df.at[child_id, 'age_years'],
                          'person_id': child_id})
 
-        elif m['labour_state'] == 'LPTL':
+        elif m['labour_state'] == 'late_preterm_labour':
             df.at[child_id, 'nb_late_preterm'] = True
             logger.info('%s|late_preterm|%s', self.sim.date,
                         {'age': df.at[child_id, 'age_years'],

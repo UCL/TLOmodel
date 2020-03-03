@@ -960,3 +960,82 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEvent
     def did_not_run(self):
         logger.debug('HSI_Labour_ReferredForSurgicalCareInLabour: did not run')
         pass
+
+
+class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMixin):
+    """ This is the HSI PresentsForInductionOfLabour. Currently it IS NOT scheduled, but will be scheduled by the
+    AntenatalCare module pending its completion. It will be responsible for the intervention of induction for women who
+    are postterm. As this intervention will start labour- it will schedule either the LabourOnsetEvent or the caesarean
+    section event depending on success"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+        # TODO: await antenatal care module to schedule induction
+        # TODO: women with praevia, obstructed labour, should be induced
+        self.TREATMENT_ID = 'Labour_PresentsForInductionOfLabour'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1
+        # TODO: review appt footprint as this wont include midwife time?
+
+        # Define the necessary information for an HSI
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('This is HSI_Labour_PresentsForInductionOfLabour, person %d is attending a health facility to have'
+                     'their labour induced on date %s', person_id, self.sim.date)
+
+        # TODO: discuss squeeze factors/ consumable back up with TC
+
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        # Initial request for consumables needed
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_induction = pd.unique(consumables.loc[consumables[
+                                                       'Intervention_Pkg'] ==
+                                                       'Induction of labour (beyond 41 weeks)',
+                                                       'Intervention_Pkg_Code'])[0]
+        # TODO: review induction guidelines to confirm appropriate 1st line/2nd line consumable use
+
+        consumables_needed = {'Intervention_Package_Code': {pkg_code_induction: 1},
+                              'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_induction]:
+            logger.debug('pkg_code_induction is available, so use it.')
+            # TODO: reschedule if consumables aren't available at this point in time?
+        else:
+            logger.debug('PkgCode1 is not available, so can' 't use it.')
+
+        # We use a random draw to determine if this womans labour will be successfully induced
+        # Indications: Post term, eclampsia, severe pre-eclampsia, mild pre-eclampsia at term, PROM > 24 hrs at term
+        # or PPROM > 34 weeks EGA, and IUFD.
+
+        if self.module.rng.random_sample() < params['prob_successful_induction']:
+            logger.info('Person %d has had her labour successfully induced', person_id)
+            df.at[person_id, 'la_current_labour_successful_induction'] = 'successful_induction'
+
+            self.sim.schedule_event(LabourOnsetEvent(self.module, person_id), self.sim.date)
+            # TODO: scheduling
+        # For women whose induction fails they will undergo caesarean section
+        else:
+            logger.info('Persons %d labour has been unsuccessful induced', person_id)
+            df.at[person_id, 'la_current_labour_successful_induction'] = 'failed_induction'
+            # TODO: schedule CS or second attempt induction? -- will need to lead to labour event
+
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+    #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_PresentsForInductionOfLabour: did not run')
+        pass
+
+    #  TODO: 3 HSIs, for each facility level (interventions in functions)??

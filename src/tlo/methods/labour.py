@@ -12,7 +12,6 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-
 class Labour (Module):
     """This module for labour, delivery, the immediate postpartum period and skilled birth attendance."""
 
@@ -394,6 +393,11 @@ class Labour (Module):
 
     def initialise_simulation(self, sim):
 
+    #    sim.configure_logging('output', custom_levels={'*': logging.WARNING, 'tlo.module.labour': logging.DEBUG,
+    #                                                   'tlo.module.newborn_outcomes': logging.DEBUG,
+    #                                                   'tlo.module.pregnancy_supervisor': logging.DEBUG,
+    #                                                   'tlo.module.antenatal_care': logging.DEBUG})
+
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
@@ -561,34 +565,36 @@ class Labour (Module):
         return self.rng.random_sample() < eq.predict(self.sim.population.props.loc[[person_id]])[person_id]
 
     def set_home_birth_complications(self, individual_id, labour_stage, complication):
-        """Uses the result of a linear equation to determine the probability of a certain complication, stores the
-        probability for women delivery in facility and applies the probability for women delivering at home.
-        Sets complication properties according to the result"""
+        """Uses the result of a linear equation to determine the probability of a certain complicationand makes changes
+         to the appropriate variables in the data frame dependent on the result."""
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
         params = self.parameters
 
-        if mni[individual_id]['delivery_setting'] == 'facility_delivery':
-            mni[individual_id][f'risk_{labour_stage}_{complication}'] = \
-                params['la_labour_equations'][f'{complication}_{labour_stage}'].predict(df.loc[[individual_id]]
-                                                                                        )[individual_id]
-        else:
-            if self.eval(params['la_labour_equations'][f'{complication}_{labour_stage}'], individual_id):
-                mni[individual_id][f'{complication}'] = True
-                df.at[individual_id, f'la_{complication}'] = True
-                df.at[individual_id, f'la_{complication}_disab'] = True
+        assert not mni[individual_id]['delivery_setting'] == 'facility_delivery'
 
-                logger.debug(f'person %d has developed {complication} in the community on date %s',
-                             individual_id, self.sim.date)
+        if self.eval(params['la_labour_equations'][f'{complication}_{labour_stage}'], individual_id):
+            mni[individual_id][f'{complication}'] = True
+            df.at[individual_id, f'la_{complication}'] = True
+            df.at[individual_id, f'la_{complication}_disab'] = True
 
-                logger.info(f'%s|{complication}|%s', self.sim.date,
-                            {'age': df.at[individual_id, 'age_years'],
-                             'person_id': individual_id})
+            logger.debug(f'person %d has developed {complication} in the community on date %s',
+                         individual_id, self.sim.date)
 
-        # Ensure that women delivering in facilities do not have their complication status set
-        assert not mni[individual_id]['delivery_setting'] == 'facility_delivery' and df.at[individual_id,
-                                                                                           f'la_{complication}'] or \
-            df.at[individual_id, f'la_{complication}_disab']
+            logger.info(f'%s|{complication}|%s', self.sim.date,
+                        {'age': df.at[individual_id, 'age_years'],
+                         'person_id': individual_id})
+
+    def calculate_complication_risk_facility_delivery(self, individual_id, complication, labour_stage):
+        """This function is called at the beginning of a facility delivery to calculate a woman's risk of each
+        complication and store the returned value in her personal MNI dictionary"""
+        df = self.sim.population.props
+        mni = self.mother_and_newborn_info
+        params = self.parameters
+
+        mni[individual_id][f'risk_{labour_stage}_{complication}'] = \
+            params['la_labour_equations'][f'{complication}_{labour_stage}'].predict(df.loc[[individual_id]]
+                                                                                    )[individual_id]
 
     def set_complications_during_facility_birth(self, person_id, complication, labour_stage):
         """Using each womans individual risk of a complication (which may have been modified by treatment) this function
@@ -635,8 +641,10 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
         logger.debug('person %d has just reached LabourOnsetEvent on %s', individual_id, self.sim.date)
 
-        # Here we check only women who have reached their due date are going into labour
+        # Here we check only women who have reached their due date are going into labour and no women are in labour
+        # before 24 weeks
         assert df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date
+        assert df.at[individual_id, 'ps_gestational_age_in_weeks'] > 23
 
         # TODO: review in context of properties- ensure what should be a property IS one, and what SHOULDN'T be isnt.
         mni[individual_id] = {'labour_state': None,  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or
@@ -705,105 +713,96 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             if (person.la_current_labour_successful_induction == 'failed_induction') or \
                (person.la_current_labour_successful_induction == 'successful_induction'):
                 mni[individual_id]['delivery_setting'] = 'facility_delivery'
+
             # We then store her induction status if successful
             if person.la_current_labour_successful_induction == 'successful_induction':
                 mni[individual_id]['induced_labour'] = True
 
             # Now we use gestational age to categorise the 'labour_state'
-            if person.is_pregnant & person.is_alive:
-                if 37 <= person.ps_gestational_age_in_weeks < 42:
-                    mni[individual_id]['labour_state'] = 'term_labour'
+            if 37 <= person.ps_gestational_age_in_weeks < 42:
+                mni[individual_id]['labour_state'] = 'term_labour'
 
-                elif 24 <= person.ps_gestational_age_in_weeks < 34:
-                    mni[individual_id]['labour_state'] = 'early_preterm_labour'
-                    df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
+            elif 24 <= person.ps_gestational_age_in_weeks < 34:
+                mni[individual_id]['labour_state'] = 'early_preterm_labour'
+                df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-                elif 37 > person.ps_gestational_age_in_weeks >= 34:
-                    mni[individual_id]['labour_state'] = 'late_preterm_labour'
-                    df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
+            elif 37 > person.ps_gestational_age_in_weeks >= 34:
+                mni[individual_id]['labour_state'] = 'late_preterm_labour'
+                df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-                elif person.ps_gestational_age_in_weeks > 41:
-                    mni[individual_id]['labour_state'] = 'postterm_labour'
-                    logger.info('%s|postterm_birth|%s', self.sim.date,
-                                {'age': df.at[individual_id, 'age_years'],
-                                 'person_id': individual_id})
+            elif person.ps_gestational_age_in_weeks > 41:
+                mni[individual_id]['labour_state'] = 'postterm_labour'
+                logger.info('%s|postterm_birth|%s', self.sim.date,
+                            {'age': df.at[individual_id, 'age_years'],
+                             'person_id': individual_id})
 
-                assert not mni[individual_id]['labour_state'] == 'postterm_labour' and \
-                    person.ps_gestational_age_in_weeks < 42
-
-            #    assert mni[individual_id]['labour_state'] == 'term_labour' and \
-            #        (person.ps_gestational_age_in_weeks < 41 or person.ps_gestational_age_in_weeks >= 37)
-            #    assert mni[individual_id]['labour_state'] == 'early_preterm_labour' and \
-            #           (person.ps_gestational_age_in_weeks < 34 or person.ps_gestational_age_in_weeks >= 24)
-            #    assert mni[individual_id]['labour_state'] == 'late_preterm_labour' and \
-            #           (person.ps_gestational_age_in_weeks < 37 or person.ps_gestational_age_in_weeks >= 34)
-
-                labour_state = mni[individual_id]['labour_state']
-                logger.debug(f'This is LabourOnsetEvent, person %d has now gone into {labour_state} on date %s',
-                             individual_id, self.sim.date)
+            labour_state = mni[individual_id]['labour_state']
+            logger.debug(f'This is LabourOnsetEvent, person %d has now gone into {labour_state} on date %s',
+                         individual_id, self.sim.date)
 
 # ======================================= PROBABILITY OF HOME DELIVERY =================================================
 
+            # TODO: Care seeking- choice of facility etc.
+            facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(self.module,
+                                                                                              person_id=individual_id)
+
+            # As women who have presented for induction are already in a facility we exclude them, then apply a
+            # probability of home birth
+            if self.module.eval(params['la_labour_equations']['care_seeking'], individual_id) & \
+               (person.la_current_labour_successful_induction == 'not_induced'):
+
+                mni[individual_id]['delivery_setting'] = 'home_birth'
                 self.sim.schedule_event(LabourAtHomeEvent(self.module, individual_id), self.sim.date)
 
-                # TODO: choice of facility level
-                facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(self.module,
-                                                                                                  person_id=
-                                                                                                  individual_id)
+                logger.debug('This is LabourEvent,  person %d will not seek care in labour and will deliver at '
+                             'home', individual_id)
 
-                # As women who have presented for induction are already in a facility we exclude them, then apply a
-                # probability of home birth
-                if self.module.eval(params['la_labour_equations']['care_seeking'], individual_id) & \
-                   (person.la_current_labour_successful_induction == 'not_induced'):
-                    mni[individual_id]['delivery_setting'] = 'home_birth'
-                    self.sim.schedule_event(LabourAtHomeEvent(self.module, individual_id), self.sim.date)
-                    logger.debug('This is LabourEvent,  person %d will not seek care in labour and will deliver at '
-                                 'home', individual_id)
-                    logger.info('%s|home_birth|%s', self.sim.date,
-                                {'person_id': individual_id})
-                else:
-                    mni[individual_id]['delivery_setting'] = 'facility_delivery'
-                    logger.info(
+                logger.info('%s|home_birth|%s', self.sim.date,
+                            {'person_id': individual_id})
+            else:
+                mni[individual_id]['delivery_setting'] = 'facility_delivery'
+                logger.info(
                         'This is LabourOnsetEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour on date'
                         ' %s for person %d as they have chosen to seek care for delivery', self.sim.date, individual_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
-                                                                        priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
-                    logger.info('%s|facility_delivery|%s', self.sim.date,
-                                {'person_id': individual_id})
 
-                # Here we schedule delivery care for women who have already sought care for induction, whether or not
-                # that induction was successful
-                if (person.la_current_labour_successful_induction == 'failed_induction') or \
-                   (person.la_current_labour_successful_induction == 'successful_induction'):
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
-                                                                        priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
-                    logger.info('%s|facility_delivery|%s', self.sim.date,
-                                {'person_id': individual_id})
+                self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1))
+                logger.info('%s|facility_delivery|%s', self.sim.date,
+                            {'person_id': individual_id})
+
+            # Here we schedule delivery care for women who have already sought care for induction, whether or not
+            # that induction was successful (they would already be at a facility)
+            if (person.la_current_labour_successful_induction == 'failed_induction') or \
+               (person.la_current_labour_successful_induction == 'successful_induction'):
+                self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1))
+                logger.info('%s|facility_delivery|%s', self.sim.date,
+                            {'person_id': individual_id})
 
 # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ==========================================
 
-                # Here we schedule the birth event for 2 days after labour- we do this prior to the death event as women
-                # who die but still deliver a live child will pass through birth event
-                due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
-                self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=4))
-                logger.debug('This is LabourOnsetEvent scheduling a birth on date %s to mother %d', due_date,
-                             individual_id)
+            # We schedule all women to move through the death event where those who have developed a complication
+            # that hasn't been treated or treatment has failed will have a case fatality rate applied
+            self.sim.schedule_event(LabourDeathEvent(self.module, individual_id), self.sim.date + DateOffset(days=3))
 
-                # We schedule all women to move through the death event where those who have developed a complication
-                # that hasn't been treated or treatment has failed will have a case fatality rate applied
-                self.sim.schedule_event(LabourDeathEvent(self.module, individual_id), self.sim.date +
-                                        DateOffset(days=3))
+            # Here we schedule the birth event for 4 days after labour- as women who die but still deliver a live child
+            # will pass through birth event
+            due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
+            self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=4))
+            logger.debug('This is LabourOnsetEvent scheduling a birth on date %s to mother %d', due_date,
+                         individual_id)
 
-                logger.debug('This is LabourOnsetEvent scheduling a potential death on date %s for mother %d',
-                             self.sim.date, individual_id)
+            logger.debug('This is LabourOnsetEvent scheduling a potential death on date %s for mother %d',
+                         self.sim.date, individual_id)
 
-                # Here we set the due date of women who have been induced to pd.NaT so they dont go into labour twice
-                if person.la_current_labour_successful_induction != 'not_induced':
-                    df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
+            # Here we set the due date of women who have been induced to pd.NaT so they dont go into labour twice
+            if person.la_current_labour_successful_induction != 'not_induced':
+                df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
+                # TODO: this will crash assertion error used at the top of this event
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
@@ -822,6 +821,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         logger.debug('person %d has is now going to deliver at home', individual_id)
 
+        # Check only women delivering at home pass through this event
+        assert mni[individual_id]['delivery_setting'] == 'home_birth'
+
     # ============================ INDIVIDUAL RISK OF COMPLICATIONS DURING LABOUR =====================================
 
         # DEAL WITH VERY EARLY PRETERM BIRTHS?!?!
@@ -830,16 +832,18 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # Here we apply a risk that this woman's labour was preceded by premature rupture of membranes, in preterm
         # women this has likely predisposed their labour
-        if (mni[individual_id]['labour_state'] == 'early_preterm_labour') or (mni[individual_id]['labour_state'] == 'late_preterm_labour'):
+        if (mni[individual_id]['labour_state'] == 'early_preterm_labour') or (mni[individual_id]['labour_state'] ==
+                                                                              'late_preterm_labour'):
             if self.module.rng.random_sample() < params['prob_prom']:
                 mni[individual_id]['PROM'] = True
         # TODO: term labour can have prom also (also this should be an antenatal thing?)
 
     # ===================================  APPLICATION OF COMPLICATIONS ===============================================
 
-        # Using the complication_application function we move through each complication in turn determining if a woman
-        # will experience any of these if she has delivered at home, and storing the risk so it can be modified by
-        # skilled birth attendance for women delivering in a facility (n.b 'ip' == intrapartum)
+        # Using the set_home_birth_complications function we move through each complication in turn determining if a
+        # woman will experience any of these if she has delivered at home.
+
+        # Here labour_stage 'ip' means intrapartum
 
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='obstructed_labour')
         if df.at[individual_id, 'la_obstructed_labour']:  # there's a neater way of doing this
@@ -848,7 +852,6 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
         # TODO: As OL is a contraindication of induction, should we skip it here for induced women?
         #  late diagnosis of obstruction is possible surely
 
-        # Here labour_stage 'ip' means intrapartum
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='antepartum_haem')
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='sepsis')
         self.module.set_home_birth_complications(individual_id, labour_stage='ip', complication='eclampsia')
@@ -906,16 +909,24 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         mni = self.module.mother_and_newborn_info
 
-        # Here we use the complication_application function to determine if a women who has survived labour will
-        # experience any further complications (risk is stored for facility deliveries)
+        # Event should only run if woman is still alive
         if df.at[individual_id, 'is_alive']:
-            # Here labour_stage 'pp' means postpartum
-            self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='postpartum_haem')
-            self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='sepsis')
-            self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='eclampsia')
+
+            # Here we use the set_home_birth_complications function to determine if a women who has survived labour at
+            # home will experience any further complications
+            if mni[individual_id]['delivery_setting'] == 'home_birth':
+
+                # Here labour_stage 'pp' means postpartum
+                self.module.set_home_birth_complications(individual_id, labour_stage='pp',
+                                                         complication='postpartum_haem')
+                self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='sepsis')
+                self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='eclampsia')
+
+            # TODO: care seeking for home_birth complications.
 
             # If a woman has delivered in a facility we schedule her to now receive additional care following birth
             if mni[individual_id]['delivery_setting'] == 'facility_delivery':
+
                 logger.info('This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartumPeriod for person '
                             '%d on date %s', individual_id, self.sim.date)
                 event = HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(self.module, person_id=individual_id)
@@ -923,20 +934,16 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                                                                     priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
-                # TODO: same issue for women who seek care but cant be seek- comps wont be allocated!
+
             # We schedule all women to then go through the death event where those with untreated/unsuccessfully treated
             # complications may experience death
-
-            self.sim.schedule_event(PostPartumDeathEvent(self.module, individual_id), self.sim.date
-                                    + DateOffset(days=4))
+            self.sim.schedule_event(PostPartumDeathEvent(self.module, individual_id), self.sim.date+ DateOffset(days=4))
             logger.info('This is PostPartumEvent scheduling a potential death for person %d on date %s', individual_id,
                         self.sim.date + DateOffset(days=4))  # Date offset to allow for interventions
 
             # Here we schedule women to an event which resets 'daly' disability associated with delivery complications
-            self.sim.schedule_event(DisabilityResetEvent(self.module, individual_id),
-                                    self.sim.date + DateOffset(months=1))
-
-            # TODO: symptom manager for women who have complications at home
+            self.sim.schedule_event(DisabilityResetEvent(self.module, individual_id), self.sim.date +
+                                    DateOffset(months=1))
 
 
 class LabourDeathEvent (Event, IndividualScopeEventMixin):
@@ -953,7 +960,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         mni = self.module.mother_and_newborn_info
         rng = self.module.rng
 
-        # Currently we apply an untreated case fatality ratio (dummy values presently) who have experienced a
+        # Currently we apply an untreated case fatality ratio (dummy values presently) to women who have experienced a
         # complication
         # Similarly we apply a risk of still birth associated with each complication
 
@@ -1137,89 +1144,6 @@ class DiseaseResetEvent (Event, IndividualScopeEventMixin):
 # ======================================================================================================================
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ====================================================
 # ======================================================================================================================
-    # TODO: Discuss with the team the potential impact of deviating from guidelines- at present if a woman presents,
-    #  staff time is available and resources are available she gets all needed interventions (this may not be the case,
-    #  question of quality
-
-
-class HSI_Labour_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMixin):
-    """ This is the HSI PresentsForInductionOfLabour. Currently it IS NOT scheduled, but will be scheduled by the
-    AntenatalCare module pending its completion. It will be responsible for the intervention of induction for women who
-    are postterm. As this intervention will start labour- it will schedule either the LabourOnsetEvent or the caesarean
-    section event depending on success"""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Labour)
-        # TODO: await antenatal care module to schedule induction
-        # TODO: women with praevia, obstructed labour, should be induced
-        self.TREATMENT_ID = 'Labour_PresentsForInductionOfLabour'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
-        # TODO: review appt footprint as this wont include midwife time?
-
-        # Define the necessary information for an HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 2
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_Labour_PresentsForInductionOfLabour, person %d is attending a health facility to have'
-                     'their labour induced on date %s', person_id, self.sim.date)
-
-        # TODO: discuss squeeze factors/ consumable back up with TC
-
-        df = self.sim.population.props
-        params = self.module.parameters
-
-        # Initial request for consumables needed
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code_induction = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                       'Induction of labour (beyond 41 weeks)',
-                                                       'Intervention_Pkg_Code'])[0]
-        # TODO: review induction guidelines to confirm appropriate 1st line/2nd line consumable use
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_induction: 1},
-                              'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_induction]:
-            logger.debug('pkg_code_induction is available, so use it.')
-            # TODO: reschedule if consumables aren't available at this point in time?
-        else:
-            logger.debug('PkgCode1 is not available, so can' 't use it.')
-
-        # We use a random draw to determine if this womans labour will be successfully induced
-        # Indications: Post term, eclampsia, severe pre-eclampsia, mild pre-eclampsia at term, PROM > 24 hrs at term
-        # or PPROM > 34 weeks EGA, and IUFD.
-
-        if self.module.rng.random_sample() < params['prob_successful_induction']:
-            logger.info('Person %d has had her labour successfully induced', person_id)
-            df.at[person_id, 'la_current_labour_successful_induction'] = 'successful_induction'
-
-            self.sim.schedule_event(LabourOnsetEvent(self.module, person_id), self.sim.date)
-            # TODO: scheduling
-        # For women whose induction fails they will undergo caesarean section
-        else:
-            logger.info('Persons %d labour has been unsuccessful induced', person_id)
-            df.at[person_id, 'la_current_labour_successful_induction'] = 'failed_induction'
-            # TODO: schedule CS or second attempt induction? -- will need to lead to labour event
-
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
-    #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
-
-        return actual_appt_footprint
-
-    def did_not_run(self):
-        logger.debug('HSI_Labour_PresentsForInductionOfLabour: did not run')
-        pass
-
-    #  TODO: 3 HSIs, for each facility level (interventions in functions)??
-
 
 class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """This is the HSI PresentsForSkilledAttendanceInLabourFacilityLevel1. This event is scheduled by the LabourOnset
@@ -1251,6 +1175,25 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
 
         logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
                     'at birth for person %d on date %s', person_id, self.sim.date)
+
+    # ================================= STORING COMPLICATION RISKS IN MNI ==========================================
+
+        # We calculate a woman's individual risk of each complication at the start of the HSI, and store this in her
+        # MNI dictionary. This allows the risk to be manipulated by prophylactic interventions
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='obstructed_labour',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='eclampsia',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='antepartum_haem',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='sepsis',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='uterine_rupture',
+                                                                  labour_stage='ip')
+
+        # TODO: Would it be neater to have interventions are predictors within the linear model, store interventions in
+        #  the mni ('clean birth practices' == True), then do one function that uses this equation to determine
+        #  complication !!! WOULDNT ALLOW ONE COMPLICATION TO EFFECT ANOTHER OL--> SEPSIS !!!!
 
     # ================================= CHECKING FACILITY TYPE AND ATTENDANT ==========================================
 
@@ -1395,6 +1338,18 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
         logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: Providing skilled attendance following birth '
                     'for person %d', person_id)
 
+        # ================================= STORING COMPLICATION RISKS IN MNI ==========================================
+
+        # We calculate a woman's individual risk of each complication at the start of the HSI, and store this in her
+        # MNI dictionary. This allows the risk to be manipulated by prophylactic interventions
+
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='eclampsia',
+                                                                  labour_stage='pp')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='postpartum_haem',
+                                                                  labour_stage='pp')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='sepsis',
+                                                                  labour_stage='pp')
+
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code_am = pd.unique(consumables.loc[consumables[
                                                             'Intervention_Pkg'] ==
@@ -1430,25 +1385,18 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
         # As with the SkilledBirthAttendance HSI we recalculate risk of complications in light of preventative
         # interventions
 
-#        htn_treatment = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy
-#        self.module.\
-#            set_complications_during_facility_birth(person_id, complication='eclampsia', labour_stage='pp',
-#                                                    treatment_hsi=htn_treatment(self.module, person_id=person_id))
+        self.module.set_complications_during_facility_birth(person_id, complication='eclampsia', labour_stage='pp')
+        self.module.set_complications_during_facility_birth(person_id, complication='postpartum_haem',
+                                                            labour_stage='pp')
+        self.module.set_complications_during_facility_birth(person_id, complication='sepsis', labour_stage='pp')
 
-#        self.module.set_complications_during_facility_birth(person_id, complication='postpartum_haem',
-#                                                            labour_stage='pp',
-#                                                            treatment_hsi=HSI_Labour_ReceivesCareForMaternalHaemorrhage
-#                                                            (self.module, person_id=person_id))
-
-#        self.module.set_complications_during_facility_birth(person_id, complication='sepsis', labour_stage='pp',
-#                                                            treatment_hsi=HSI_Labour_ReceivesCareForMaternalSepsis
-#                                                            (self.module, person_id=person_id))
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # TODO: modify based on complications?
         return actual_appt_footprint
 
     def did_not_run(self):
         logger.debug('HSI_Labour_ReceivesCareForPostpartumPeriod: did not run')
+        # TODO: reset delivery_setting to home_birth and send back to postpartum event?
         pass
 
 

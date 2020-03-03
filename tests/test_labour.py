@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -29,6 +29,7 @@ def simulation():
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
+
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -45,7 +46,12 @@ def simulation():
     return sim
 
 
-def test_run(simulation):
+def test_run(simulation, tmpdir):
+    simulation.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
+                                                                  'tlo.module.labour': logging.DEBUG,
+                                                                  'tlo.module.newborn_outcomes': logging.DEBUG,
+                                                                  'tlo.module.pregnancy_supervisor': logging.DEBUG,
+                                                                  'tlo.module.antenatal_care': logging.DEBUG})
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 
@@ -92,8 +98,8 @@ def test_dypes(simulation):
 
 if __name__ == '__main__':
     t0 = time.time()
-    simulation = simulation()
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
-    test_dypes(simulation)
+   # simulation = simulation()
+   # test_run(simulation, tmpdir=direct)
+   # t1 = time.time()
+   # print('Time taken', t1 - t0)
+   # test_dypes(simulation)
