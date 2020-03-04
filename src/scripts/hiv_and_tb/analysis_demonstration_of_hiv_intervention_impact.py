@@ -1,8 +1,6 @@
-import datetime
-import time
+
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation, logging

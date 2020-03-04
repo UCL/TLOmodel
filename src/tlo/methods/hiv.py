@@ -2888,7 +2888,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        print("current_time", datetime.datetime.now())
+        def divide_but_zero_if_nan(x, y):
+            if y > 0:
+                return x / y
+            else:
+                return 0
 
         # ------------------------------------ INC / PREV ------------------------------------
         # New HIV infections among Adults aged 15-49
@@ -2931,7 +2935,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 ]
         )
         pop_fsw = len(df[df.is_alive & (df.age_years > 15) & (df.hv_sexual_risk == "sex_work")])
-        inc_percent_fsw = (num_new_infections_fsw / pop_fsw) * 100
+        inc_percent_fsw = (num_new_infections_fsw / pop_fsw) * 100 if not pop_fsw == 0 else 0
         assert inc_percent_fsw <= 100
 
         # HIV prevalence among 15-49yo
@@ -2949,9 +2953,10 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         assert prev_0_to_14 <= 100
 
         # HIV prevalence among FSW
-        prev_fsw = (
-            len(df[df.hv_inf & df.is_alive & (df.age_years>15) & (df.hv_sexual_risk == "sex_work")])
-            / len(df[df.is_alive & (df.age_years>15) & (df.hv_sexual_risk == "sex_work")])
+        num_fsw = len(df[df.is_alive & (df.age_years>15) & (df.hv_sexual_risk == "sex_work")])
+        prev_fsw = divide_but_zero_if_nan(
+            len(df[df.hv_inf & df.is_alive & (df.age_years>15) & (df.hv_sexual_risk == "sex_work")]),
+            num_fsw
         ) * 100
         assert prev_fsw <= 1
 
@@ -2959,23 +2964,25 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_women_in_sex_work = len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49)) & (df.hv_sexual_risk == "sex_work")]) / len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49))])
         assert prop_women_in_sex_work <= 1
 
-        # TODO Screen outputs for zeros
+        # TODO Fill in dict for each entry as it it created. Systematically screen outputs for nans.
+        dict_of_outputs = dict()
+        {
+            "num_new_infections_15_to_49": num_new_infections_15_to_49,
+            "num_new_infections_0_to_14": num_new_infections_O_to_14,
+            "num_new_infections_fsw": num_new_infections_fsw,
+            "inc_percent_15_to_49": inc_percent_15_to_49,
+            "inc_percent_0_to_49": inc_percent_0_to_14,
+            "inc_percent_fsw": num_new_infections_fsw,
+            "prev_15_to_49": prev_15_to_49,
+            "prev_0_to_49": prev_0_to_14,
+            "prev_fsw": prev_fsw,
+            "prop_women_in_sex_work": prop_women_in_sex_work
+        }
 
         logger.info(
             "%s|hiv_infected|%s",
             self.sim.date,
-            {
-                "num_new_infections_15_to_49": num_new_infections_15_to_49,
-                "num_new_infections_0_to_14": num_new_infections_O_to_14,
-                "num_new_infections_fsw": num_new_infections_fsw,
-                "inc_percent_15_to_49": inc_percent_15_to_49,
-                "inc_percent_0_to_49": inc_percent_0_to_14,
-                "inc_percent_fsw": num_new_infections_fsw,
-                "prev_15_to_49": prev_15_to_49,
-                "prev_0_to_49": prev_0_to_14,
-                "prev_fsw": prev_fsw,
-                "prop_women_in_sex_work": prop_women_in_sex_work
-            },
+            dict_of_outputs,
         )
 
         # ------------------------------------ PREVALENCE BY AGE ------------------------------------
@@ -3085,5 +3092,3 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
         ) / len(df[df.is_alive & (df.age_years >= 15)])
         assert prop_behav <= 1
-
-
