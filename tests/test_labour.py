@@ -18,7 +18,7 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 1000
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -51,8 +51,12 @@ def test_run(simulation):
 
 
 def __check_properties(df):
-    # Cannot have a partiy of higher than allowed per age group
-    assert not ((df.age_years < 24) & (df.la_parity > 4)).any()
+    # Here we check that no men have the labour properties edited
+    assert not ((df.sex == 'M') & (df.la_parity > 0)).any()
+
+
+
+
     assert not ((df.age_years < 40) & (df.la_parity > 5)).any()
 
     # Confirming PTB and previous CS logic
