@@ -72,3 +72,7 @@ def test_simulation():
 
     # only on cotrim if hiv is diagnosed [hv_date_cotrim = DATE and hv_diagnosed = True]
     assert not any(df.hv_date_cotrim.notnull() & ~df.hv_diagnosed)
+
+
+
+# TODO: assert that HSI can turn off/on different interventions testing, fsw-prep, art,

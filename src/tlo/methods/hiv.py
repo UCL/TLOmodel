@@ -191,7 +191,7 @@ class Hiv(Module):
         "hv_date_tested": Property(Types.DATE, "date of hiv test"),
         "hv_number_tests": Property(Types.INT, "number of hiv tests taken"),
         "hv_diagnosed": Property(Types.BOOL, "hiv+ and tested"),
-        "hv_on_art": Property(Types.CATEGORICAL, "art status", categories=[0, 1, 2]),
+        "hv_on_art": Property(Types.CATEGORICAL, "art status", categories=[0, 1, 2]),   # TODO: turn these into string categories to do with adherance
         "hv_date_art_start": Property(Types.DATE, "date art started"),
         "hv_viral_load": Property(Types.DATE, "date last viral load test"),
         "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
@@ -203,9 +203,10 @@ class Hiv(Module):
         "hv_date_death_occurred": Property(
             Types.DATE, "date death due to AIDS actually occurred"
         ),
+        "hv_on_prep": Property(Types.BOOL, "person is currently receiving PrEP")
     }
 
-    SYMPTOMS = {"hiv_symptoms", "aids_symptoms"}
+    SYMPTOMS = {"hiv_symptoms", "aids_symptoms"}   # TODO; rename this and use them consistently
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -277,6 +278,8 @@ class Hiv(Module):
         df["hv_fast_progressor"] = False
         df["hv_behaviour_change"] = False
         df["hv_date_death_occurred"] = pd.NaT
+        df["hv_on_prep"] = False
+
 
         self.fsw(
             population
@@ -873,6 +876,7 @@ class Hiv(Module):
         df.at[child_id, "hv_fast_progressor"] = False
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_date_death_occurred"] = pd.NaT
+        df.at[child_id, "hv_on_prep"] = False
 
         if df.at[mother_id, "hv_inf"]:
             df.at[child_id, "hv_mother_inf_by_birth"] = True
@@ -3001,54 +3005,55 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info("%s|plhiv_f|%s", self.sim.date, plhiv_f.to_dict())
 
         # ------------------------------------ TREATMENT ------------------------------------
-        # prop on treatment, adults
-        art = len(
-            df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years >= 15)]
-        )
-        denom = len(df[df.is_alive & df.hv_inf & (df.age_years >= 15)])
-        adult_art = art / denom if denom else 0
+        # Numbers on ART by category
+        on_art_15plus = df.loc[
+            df.is_alive &
+            (df.hv_on_art==1) &   # TODO: update this to be the bool
+            (df.age_years >= 15)
+        ].groupby(by=["hv_on_art"]).size()
 
-        assert adult_art <= 1
-
-        # on treatment, adults, virally suppressed
-        # art_vs = df.loc[(df.hv_on_art == 2) & (df.age_years >= 15), 'is_alive'].sum()
-        art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years >= 15)])
-        prop_vir_sup_adult = art_vs / art if art else 0
-
-        assert prop_vir_sup_adult <= 1
-
-        # prop on treatment, children
-        c_art = len(
-            df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years < 15)]
-        )
-        if len(df[df.is_alive & df.hv_inf & (df.age_years < 15)]) > 1:
-            child_art = c_art / len(df[df.is_alive & df.hv_inf & (df.age_years < 15)])
-
-            assert child_art <= 1
-        else:
-            child_art = 0
-
-        # on treatment, children, virally suppressed
-        c_art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years < 15)])
-        prop_vir_sup_child = c_art_vs / c_art if c_art else 0
-
-        assert prop_vir_sup_child <= 1
+        on_art_0_to_4 = df.loc[
+            df.is_alive &
+            (df.hv_on_art==1) &  # TODO: update this to be the bool
+            (df['age_years'].between(0,4))
+        ].groupby(by=["hv_on_art"]).size()
 
         logger.info(
             "%s|hiv_treatment|%s",
             self.sim.date,
             {
-                "hiv_coverage_adult_art": adult_art,
-                "hiv_coverage_child_art": child_art,
-                "hiv_viral_supp_adults": prop_vir_sup_adult,
-                "hiv_viral_supp_child": prop_vir_sup_child,
+                "on_art_15plus": on_art_15plus.to_dict(),
+                "on_art_0_to_15": on_art_0_to_4.to_dict(),
             },
         )
 
-        # TODO log exposure to others interventions: behaviour change: having been diagnosed, prep
-        # ------------------------------------ INTERVENTIONS ------------------------------------
-        # proportion exposed to behaviour change
-        prop_behav = len(
+        # ------------------------------------ OTHER INTERVENTIONS ------------------------------------
+        # Proportion exposed to behaviour change
+        prop_exposed_to_behaviour_change_15plus = len(
             df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
         ) / len(df[df.is_alive & (df.age_years >= 15)])
-        assert prop_behav <= 1
+
+        # PREP
+        prop_fsw_on_prep = divide_but_zero_if_nan(
+            (df.is_alive & df.hv_on_prep & (df.hv_sexual_risk == "sex_work") & (df.age_years >= 15)).sum(),
+            (df.is_alive & (df.hv_sexual_risk == "sex_work") & (df.age_years >= 15)).sum()
+        )
+
+        # Proportion of Adult PLHIV who have been diagnosed
+        # TODO: maybe elaborate this so that we can track the route through which the person was diagnosed.
+        prop_15plus_diagnosed = divide_but_zero_if_nan(
+            (df.is_alive & (df.age_years > 15) & df.hv_inf & df.hv_diagnosed).sum(),
+            (df.is_alive & (df.age_years > 15) & df.hv_inf).sum()
+        )
+
+        logger.info(
+            "%s|hiv_intvs|%s",
+            self.sim.date,
+            {
+                "prop_exposed_to_behaviour_change_15plus": prop_exposed_to_behaviour_change_15plus,
+                "prop_fsw_on_prep": prop_fsw_on_prep,
+                "prop_15plus_diagnosed": prop_15plus_diagnosed
+            },
+        )
+
+
