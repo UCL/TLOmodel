@@ -324,6 +324,14 @@ class NewbornOutcomes(Module):
             df.at[child_id, 'nb_early_preterm'] = False
             df.at[child_id, 'nb_late_preterm'] = False
 
+        # Check no children born at term or postterm women are incorrectly categorised as preterm
+        if m['labour_state'] == 'TL':
+            assert ~df.at[child_id, 'nb_early_preterm']
+            assert ~df.at[child_id, 'nb_late_preterm']
+        if m['labour_state'] == 'POTL':
+            assert ~df.at[child_id, 'nb_early_preterm']
+            assert ~df.at[child_id, 'nb_late_preterm']
+
         if child.nb_early_preterm or child.nb_late_preterm:
             logger.info('%s|preterm_birth|%s', self.sim.date,
                         {'age': df.at[child_id, 'age_years'],
@@ -342,6 +350,11 @@ class NewbornOutcomes(Module):
 
         # For all newborns we first generate a dictionary that will store the prophylactic interventions then receive at
         # birth if delivered in a facility
+
+            # Check the mothers MNI dictionary has data
+            assert mni[mother_id]['risk_newborn_sepsis'] is not None
+
+            # Set up NCI dictionary
             nci[child_id] = {'cord_care': False,
                              'bcg_vacc': False,
                              'polio_vacc': False,
@@ -436,6 +449,9 @@ class NewbornOutcomes(Module):
                 else:
                     df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
 
+                # Check all encephalopathy cases receive a grade
+                assert df.at[child_id, 'nb_encephalopathy'] != 'none'
+
                 #  TODO: To determine temporal direction of causal influence of neonatal encephalopathy on respiratory
                 #   depression, risk of NE may need to be applied first
 
@@ -470,6 +486,12 @@ class NewbornOutcomes(Module):
                         logger.debug(f'Neonate %d has developed {random_draw }retinopathy of prematurity',
                                      child_id)
 
+            # Check no term or postterm neonates are developing complications of prematurity
+            if m['labour_state'] == 'TL' or m['labour_state'] == 'POTL':
+                assert ~df.at[child_id, 'nb_necrotising_entero']
+                assert ~df.at[child_id, 'nb_resp_distress_synd']
+                assert df.at[child_id, 'nb_retinopathy_prem'] == 'none'
+
             # TODO: How will we apply the risk reduction of certain complications associated with steroids delivered
             #  antenatally
 
@@ -495,14 +517,15 @@ class NewbornOutcomes(Module):
                     'This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesCareFollowingDelivery '
                     'for person %d following a facility delivery', child_id)
 
-                # If this neonate was delivered at home and develops a complications we determine the likelihood of care
-                # seeking
+            # If this neonate was delivered at home and develops a complications we determine the likelihood of care
+            # seeking
             if (m['delivery_setting'] == 'home_birth') & (child.nb_respiratory_depression or
                                                           child.nb_early_onset_neonatal_sepsis or
                                                           (child.nb_encephalopathy == 'mild_enceph') or
                                                           (child.nb_encephalopathy == 'moderate_enceph') or
                                                           (child.nb_encephalopathy == 'severe_enceph')):
-                prob = 0.75
+
+                prob = 0.75  # magic number represents dummy care seeking value
                 random = self.rng.random_sample(size=1)
                 if random < prob:
                     event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self.module, person_id=child_id)
@@ -536,7 +559,7 @@ class NewbornOutcomes(Module):
                 # All newborns are then scheduled to pass through a newborn death event to determine likelihood of death
                 # in the presence of complications
 
-            self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=2))
+            self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=3))
             logger.info('This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person %d', child_id)
 
             # In the rare instance that a baby has been delivered following a mothers death in labour, we now delete
@@ -576,6 +599,9 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         child = df.loc[individual_id]
+
+        # Check the correct amount of time has passed between birth and the death event
+        assert (self.sim.date - df.at[individual_id, 'date_of_birth']) == pd.to_timedelta(3, unit='D')
 
         # Using the set_neonatal_death_status function, defined above, it is determined if newborns who have experienced
         # complications will die because of them. Successful treatment in a HSI will turn off theses properties meaning
