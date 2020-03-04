@@ -2964,9 +2964,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_women_in_sex_work = len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49)) & (df.hv_sexual_risk == "sex_work")]) / len(df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49))])
         assert prop_women_in_sex_work <= 1
 
-        # TODO Fill in dict for each entry as it it created. Systematically screen outputs for nans.
-        dict_of_outputs = dict()
-        {
+        dict_of_outputs = {
             "num_new_infections_15_to_49": num_new_infections_15_to_49,
             "num_new_infections_0_to_14": num_new_infections_O_to_14,
             "num_new_infections_fsw": num_new_infections_fsw,
@@ -2980,65 +2978,27 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         }
 
         logger.info(
-            "%s|hiv_infected|%s",
+            "%s|hiv_epidemiology|%s",
             self.sim.date,
             dict_of_outputs,
         )
 
         # ------------------------------------ PREVALENCE BY AGE ------------------------------------
-        # if groupby both sex and age_range, you lose categories where size==0, get the counts separately
-        m_adult_hiv = (
-            df[
+        # Output number of People Living With HIV (PLHIV) by age group and seperately for men and women
+        plhiv_m = df.loc[
                 df.is_alive
                 & (df.sex == "M")
                 & df.hv_inf
-                & (df.age_years.between(15, 65))
-            ]
-            .groupby("age_range")
-            .size()
-        )
-        m_adult_pop = (
-            df[df.is_alive & (df.sex == "M") & (df.age_years.between(15, 65))]
-            .groupby("age_range")
-            .size()
-        )
-        m_adult_prev = (m_adult_hiv / m_adult_pop) * 100
-        m_adult_prev_out = m_adult_prev.fillna(0)
-        # m_adult_prev_out = [x if x < 1 else 1 for x in m_adult_prev_out]
+                ].groupby("age_range").size()
 
-        f_adult_hiv = (
-            df[
+        plhiv_f = df.loc[
                 df.is_alive
                 & (df.sex == "F")
                 & df.hv_inf
-                & (df.age_years.between(15, 65))
-            ]
-            .groupby("age_range")
-            .size()
-        )
-        f_adult_pop = (
-            df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 65))]
-            .groupby("age_range")
-            .size()
-        )
-        f_adult_prev = (f_adult_hiv / f_adult_pop) * 100
-        f_adult_prev_out = f_adult_prev.fillna(0)
-        # f_adult_prev_out = [x if x < 1 else 1 for x in f_adult_prev_out]
+                ].groupby("age_range").size()
 
-        logger.info("%s|hiv_adult_prev_m|%s", self.sim.date, m_adult_prev_out.to_dict())
-
-        logger.info("%s|hiv_adult_prev_f|%s", self.sim.date, f_adult_prev_out.to_dict())
-
-        child_hiv_age = (
-            df[df.is_alive & df.hv_inf & (df.age_years < 15)]
-            .groupby("age_range")
-            .size()
-        )
-        child_pop = df[df.is_alive & (df.age_years < 15)].groupby("age_range").size()
-        child_prev_age = child_hiv_age / child_pop
-        child_prev_age = child_prev_age.fillna(0)
-
-        logger.info("%s|hiv_child_prev_m|%s", self.sim.date, child_prev_age.to_dict())
+        logger.info("%s|plhiv_m|%s", self.sim.date, plhiv_m.to_dict())
+        logger.info("%s|plhiv_f|%s", self.sim.date, plhiv_f.to_dict())
 
         # ------------------------------------ TREATMENT ------------------------------------
         # prop on treatment, adults
