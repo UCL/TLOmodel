@@ -1,4 +1,24 @@
 """
+Progress on re-working
+
+* Basic natural history - logic of progression, correct use of parameters for survival
+    * Overall progression - done
+    * MTCT - basic structrue
+    * Correct parameters for survival
+
+* Tests to confirm basic logic of the model properties + Analysis plots of incidence, deaths, prevalence w/o intervention
+
+* Bring in 'natural change' events
+* Bring in HSI events
+    * Sort out the use of consumables in the HSI
+    * DxTest in the HSI
+    * General flow of the HSI
+
+"""
+
+
+
+"""
 The HIV Module.
 See XXXXXX (TODO: Link to the methods file on dropbox)
 """
@@ -934,21 +954,26 @@ class Hiv(Module):
         * Schedule the time of Pre-AIDS (one year prior to AIDS)
 
         The key inputs (date-of-birth and date-of-infection and found in sim.population.props)
+        :person_id: the person_id who is newly infected
         :return: None
         """
 
         df = self.sim.population.props
-        assert df.at[person_id, 'is_alive'], 'The person is not alive.'
+        assert df.at[person_id, 'is_alive'] and df.at[person_id, 'hv_inf'] and (not pd.isnull(df.at[person_id, 'hiv_inf_date'])), \
+            'The person is not alive or is not infected with HIV or there is not a valid infection date.'
 
         # Find date of AIDS Death
-        date_of_aidsdeath = self.sim.date + DateOffset(years=10)
+        date_infection = df.at[person_id, 'hiv_inf_date']
+
+        date_of_aidsdeath = date_infection + DateOffset(years=10)
         date_of_aids = date_of_aidsdeath - DateOffset(years=1)
         date_of_preaids = date_of_aids - DateOffset(years=1)
+        # TODO: safety checks that these are all in the future and the right order
 
         # Schedule events for these stages of disease progression:
         self.sim.schedule_event(HivAidsDeathEvent(self, person_id), date_of_aidsdeath)
         self.sim.schedule_event(HivAidsEvent(self, person_id), date_of_aids)
-        self.sim.schedule_event(HivPreAidsEvent(self, person_id), date_of_aids)
+        self.sim.schedule_event(HivPreAidsEvent(self, person_id), date_of_preaids)
 
 
         """ # ----------------------------------- TIME OF DEATH -----------------------------------
@@ -1543,7 +1568,6 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
 #   TODO Transitions on/off treatment
 # ---------------------------------------------------------------------------
 
-
 class HivARVEndEvent(Event, IndividualScopeEventMixin):
     """ scheduled end of ARV provision (infant prophylaxis)
     """
@@ -1851,7 +1875,6 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
                     .index
             )
             df.loc[fsw_new, "hv_sexual_risk"] = "sex_work"
-
 
 # ---------------------------------------------------------------------------
 #   TODO Health System Interactions
