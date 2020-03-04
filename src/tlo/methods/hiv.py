@@ -213,6 +213,7 @@ class Hiv(Module):
 
         # Build Linear Models:
         # TODO: Check this linear model - esp the ed-level which looks odd in it selection of levels
+        self.LinearModels = dict()
         self.LinearModels['relative_risk_of_acquiring_HIV_among_those_not_infected'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
@@ -227,12 +228,12 @@ class Hiv(Module):
                                     .when("3", p["rr_windex_middle"])
                                     .when("4", p["rr_windex_richer"])
                                     .when("5", p["rr_windex_richest"]),
-            Predictor('age_years')  .when('.betweeen(20, 24)', p["rr_age_gp20"])
-                                    .when('.betweeen(25, 29)', p["rr_age_gp25"])
-                                    .when('.betweeen(30, 34)', p["rr_age_gp30"])
-                                    .when('.betweeen(35, 39)', p["rr_age_gp35"])
-                                    .when('.betweeen(40, 44)', p["rr_age_gp40"])
-                                    .when('.betweeen(45, 50)', p["rr_age_gp45"])
+            Predictor('age_years')  .when('.between(20, 24)', p["rr_age_gp20"])
+                                    .when('.between(25, 29)', p["rr_age_gp25"])
+                                    .when('.between(30, 34)', p["rr_age_gp30"])
+                                    .when('.between(35, 39)', p["rr_age_gp35"])
+                                    .when('.between(40, 44)', p["rr_age_gp40"])
+                                    .when('.between(45, 50)', p["rr_age_gp45"])
                                     .when('> 50', p["rr_age_gp50"])
         )
 
@@ -311,12 +312,9 @@ class Hiv(Module):
         self.initial_pop_deaths_adults(population)      # add death dates for adults
         self.assign_symptom_level(population)           # assign symptom level for all infected
 
-        # Onset symptoms for those who are infected
+        # Set the natural history events for those who are infected
         for person_id in df.loc[df['hv_inf'] & df['is_alive']].index:
-            self.set_natural_history(
-                person_id=person_id,
-                date_of_infection=df.at[person_id, 'hv_date_inf'],
-            )
+            self.set_natural_history(person_id=person_id)
 
     def log_scale(self, a0):
         """ helper function for adult mortality rates"""
@@ -719,7 +717,7 @@ class Hiv(Module):
         # Schedule the events for the natural history of persons already infected
         df = sim.population.props
         for person_id in df.loc[df['is_alive'] & df['hv_inf']].index:
-            self.set_natural_history(self, person_id)
+            self.set_natural_history(person_id)
 
         # Schedule Main Polling Event
         sim.schedule_event(HivMainPollingEvent(self), sim.date + DateOffset(months=12))
@@ -1137,14 +1135,41 @@ class HivMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
+        p = self.module.parameters
+
+        lm = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1.0,
+            Predictor('hv_sexual_risk').when('sex_work', p["rr_fsw"]),
+            Predictor('mc_is_circumcised').when(True, p["rr_circumcision"]),
+            Predictor('li_urban').when(False, p["rr_rural"]),
+            Predictor('sex').when('F', p["rr_sex_f"]),
+            Predictor('hv_behaviour_change').when(True, p["rr_behaviour_change"]),
+            Predictor('li_ed_lev')  .when("2", p["rr_edlevel_primary"])
+                                    .when("3", p["rr_edlevel_secondary"]),
+            Predictor('li_wealth')  .when("2", p["rr_windex_poorer"])
+                                    .when("3", p["rr_windex_middle"])
+                                    .when("4", p["rr_windex_richer"])
+                                    .when("5", p["rr_windex_richest"]),
+            Predictor('age_years')  .when('.between(20, 24)', p["rr_age_gp20"])
+                                    .when('.between(25, 29)', p["rr_age_gp25"])
+                                    .when('.between(30, 34)', p["rr_age_gp30"])
+                                    .when('.between(35, 39)', p["rr_age_gp35"])
+                                    .when('.between(40, 44)', p["rr_age_gp40"])
+                                    .when('.between(45, 50)', p["rr_age_gp45"])
+                                    .when('> 50', p["rr_age_gp50"])
+        )
+
+        lm.predict(df.loc[df['is_alive'] & ~df['hv_inf']])
+
         # ----------------------------------- NEW INFECTIONS -----------------------------------
         # Relative risk of acquiring HIV
-        rr_aq_hiv = self.LinearModels['relative_risk_of_acquiring_HIV_among_those_not_infected'].predict(
+        rr_aq_hiv = self.module.LinearModels['relative_risk_of_acquiring_HIV_among_those_not_infected'].predict(
             df.loc[df['is_alive'] & ~df['hv_inf']]
         )
 
         # Relative risk of transmitting HIV
-        rr_tr_hiv = self.LinearModels['risk_of_transmitting_HIV_by_those_infected'].predict(
+        rr_tr_hiv = self.module.LinearModels['risk_of_transmitting_HIV_by_those_infected'].predict(
             df.loc[df['is_alive'] & df['hv_inf']]
         )
 
@@ -1286,9 +1311,8 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     Enacts the death of the person if they are not on treatment.
     """
 
-    def __init__(self, module, individual_id, cause):
+    def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
-        self.cause = cause
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -1406,6 +1430,11 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 
+
+# ---------------------------------------------------------------------------
+#   Other Events
+# ---------------------------------------------------------------------------
+
 class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
     """ additional HIV testing happening outside the symptom-driven generic HSI event
     to increase tx coverage up to reported levels
@@ -1444,9 +1473,6 @@ class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
                 )
 
 
-# ---------------------------------------------------------------------------
-#   Launch outreach events
-# ---------------------------------------------------------------------------
 class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
     """
     this is voluntary testing and counselling
@@ -1554,7 +1580,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
 
 
 # ---------------------------------------------------------------------------
-#   Health system interactions
+#   Health System Interactions
 # ---------------------------------------------------------------------------
 
 
