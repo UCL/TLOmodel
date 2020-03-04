@@ -10,7 +10,7 @@ from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Labour (Module):
@@ -1056,6 +1056,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         mni = self.module.mother_and_newborn_info
 
         logger.debug('mother %d at PPD at date %s', individual_id, self.sim.date)
+
         # Check the correct amount of time has passed between labour onset and PostPartumDeathEvent
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(8, unit='D')
 
@@ -1070,42 +1071,46 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                 mni[individual_id]['cause_of_death_in_labour'].append(f'{cause}_postpartum')
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
-        if mni[individual_id]['eclampsia_pp']:
-            set_maternal_death_status_postpartum(cause='eclampsia')
+        # Check the woman is currently alive
+        if df.at[individual_id, 'is_alive']:
+            if mni[individual_id]['eclampsia_pp']:
+                set_maternal_death_status_postpartum(cause='eclampsia')
 
-        if mni[individual_id]['postpartum_haem']:
-            set_maternal_death_status_postpartum(cause='pph')
+            if mni[individual_id]['postpartum_haem']:
+                set_maternal_death_status_postpartum(cause='pph')
 
-        if mni[individual_id]['sepsis_pp']:
-            set_maternal_death_status_postpartum(cause='sepsis')
+            if mni[individual_id]['sepsis_pp']:
+                set_maternal_death_status_postpartum(cause='sepsis')
 
-        if mni[individual_id]['death_postpartum']:
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='postpartum labour'), self.sim.date)
+            if mni[individual_id]['death_postpartum']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='postpartum labour'), self.sim.date)
 
-    # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id][cause_of_death_in_labour]
+        # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id]
+        #  [cause_of_death_in_labour]
 
-            logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
-                         'postpartum complications', individual_id,
-                         self.sim.date)
+                logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
+                             'postpartum complications', individual_id,
+                             self.sim.date)
 
-            logger.debug('%s|labour_complications|%s', self.sim.date,
-                         {'person_id': individual_id,
-                          'labour_profile': mni[individual_id]})
-            del mni[individual_id]
+                logger.debug('%s|labour_complications|%s', self.sim.date,
+                             {'person_id': individual_id,
+                              'labour_profile': mni[individual_id]})
+                del mni[individual_id]
 
-        else:
-            # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to false
-            # TODO: Consider how best to deal with complications that are long lasting.
-            self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id),
-                                    self.sim.date + DateOffset(weeks=1))
+            else:
+                # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to
+                # false
+                self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id),
+                                        self.sim.date + DateOffset(weeks=1))
+                # TODO: Consider how best to deal with complications that are long lasting.
 
-            logger.debug('%s|labour_complications|%s', self.sim.date,
-                         {'person_id': individual_id,
-                          'labour_profile': mni[individual_id]})
+                logger.debug('%s|labour_complications|%s', self.sim.date,
+                             {'person_id': individual_id,
+                              'labour_profile': mni[individual_id]})
 
-        # End the period of current labour
-        df.at[individual_id, 'la_currently_in_labour'] = False
+            # End the period of current labour
+            df.at[individual_id, 'la_currently_in_labour'] = False
 
 
 class DisabilityResetEvent (Event, IndividualScopeEventMixin):
@@ -1292,47 +1297,47 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
                 'could not run, they will now deliver at home', person_id)
             mni[person_id]['delivery_setting'] = 'home_birth'
             self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
-
-        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
-                    'at birth for person %d on date %s', person_id, self.sim.date)
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code_sba_uncomp = pd.unique(consumables.loc[consumables[
-                                                      'Intervention_Pkg'] ==
-                                                  'Vaginal delivery - skilled attendance',
-                                                  'Intervention_Pkg_Code'])[0]
-
-        consumables_needed = {
-            'Intervention_Package_Code': {pkg_code_sba_uncomp: 1},
-            'Item_Code': {}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sba_uncomp]:
-            logger.debug('PkgCode1 is available, so use it.')
         else:
-            logger.debug('PkgCode1 is not available, so can' 't use it.')
-            # TODO: If delivery pack isn't available then birth will still occur but should have risk of sepsis?
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
+                        'at birth for person %d on date %s', person_id, self.sim.date)
 
-        df = self.sim.population.props
-        params = self.module.parameters
-        mni = self.module.mother_and_newborn_info
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            pkg_code_sba_uncomp = pd.unique(consumables.loc[consumables[
+                                                        'Intervention_Pkg'] ==
+                                                    'Vaginal delivery - skilled attendance',
+                                                    'Intervention_Pkg_Code'])[0]
+
+            consumables_needed = {
+                'Intervention_Package_Code': {pkg_code_sba_uncomp: 1},
+                'Item_Code': {}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sba_uncomp]:
+                logger.debug('PkgCode1 is available, so use it.')
+            else:
+                logger.debug('PkgCode1 is not available, so can' 't use it.')
+                # TODO: If delivery pack isn't available then birth will still occur but should have risk of sepsis?
+
+            df = self.sim.population.props
+            params = self.module.parameters
+            mni = self.module.mother_and_newborn_info
 
         # TODO: Discuss with Tim H the best way to capture which HCP will be attending this delivery and how that may
         #  affect outcomes?
 
     # ============================ CLEAN DELIVERY PRACTICES AT BIRTH ==================================================
 
-        # First we apply the estimated impact of clean birth practices on maternal and newborn risk of sepsis
+            # First we apply the estimated impact of clean birth practices on maternal and newborn risk of sepsis
 
-        adjusted_maternal_sepsis_risk = mni[person_id]['risk_ip_sepsis'] * \
-            params['rr_maternal_sepsis_clean_delivery']
-        mni[person_id]['risk_ip_sepsis'] = adjusted_maternal_sepsis_risk
+            adjusted_maternal_sepsis_risk = mni[person_id]['risk_ip_sepsis'] * \
+                params['rr_maternal_sepsis_clean_delivery']
+            mni[person_id]['risk_ip_sepsis'] = adjusted_maternal_sepsis_risk
 
-        adjusted_newborn_sepsis_risk = mni[person_id]['risk_newborn_sepsis'] * \
-            params['rr_newborn_sepsis_clean_delivery']
-        mni[person_id]['risk_newborn_sepsis'] = adjusted_newborn_sepsis_risk
+            adjusted_newborn_sepsis_risk = mni[person_id]['risk_newborn_sepsis'] * \
+                params['rr_newborn_sepsis_clean_delivery']
+            mni[person_id]['risk_newborn_sepsis'] = adjusted_newborn_sepsis_risk
 
 # =============================== SKILLED BIRTH ATTENDANCE EFFECT ======================================================
         # Then we apply the estimated effect of fetal surveillance methods on maternal/newborn outcomes
@@ -1345,71 +1350,72 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         # complications/poor newborn outcomes
 
         # ------------------------------------- PROM ------------------------------------------------------------------
-        # First we apply a risk reduction in likelihood of sepsis for women with PROM as they have received prophylactic
-        # antibiotics
-        if mni[person_id]['PROM']:
-            treatment_effect = params['rr_sepsis_post_abx_prom']
-            new_sepsis_risk = mni[person_id]['risk_ip_sepsis'] * treatment_effect
-            mni[person_id]['risk_ip_sepsis'] = new_sepsis_risk
+            # First we apply a risk reduction in likelihood of sepsis for women with PROM as they have received
+            # prophylactic antibiotics
+            if mni[person_id]['PROM']:
+                treatment_effect = params['rr_sepsis_post_abx_prom']
+                new_sepsis_risk = mni[person_id]['risk_ip_sepsis'] * treatment_effect
+                mni[person_id]['risk_ip_sepsis'] = new_sepsis_risk
 
         # ------------------------------------- PREMATURITY # TODO: care bundle for women in preterm labour (pg 49)----
-        # Here we apply the effect of interventions to improve outcomes of neonates born preterm
+            # Here we apply the effect of interventions to improve outcomes of neonates born preterm
 
-        # Antibiotics for group b strep prophylaxis: (are we going to apply this to all cause sepsis?)
-        if mni[person_id]['labour_state'] == 'EPTL' or mni[person_id]['labour_state'] == 'LPTL':
-            mni[person_id]['risk_newborn_sepsis'] = mni[person_id]['risk_newborn_sepsis'] * \
-                                                    params['rr_newborn_sepsis_proph_abx']
+            # Antibiotics for group b strep prophylaxis: (are we going to apply this to all cause sepsis?)
+            if mni[person_id]['labour_state'] == 'EPTL' or mni[person_id]['labour_state'] == 'LPTL':
+                mni[person_id]['risk_newborn_sepsis'] = mni[person_id]['risk_newborn_sepsis'] * \
+                                                        params['rr_newborn_sepsis_proph_abx']
 
-        # TODO: STEROIDS - effect applied directly to newborns (need consumables here) store within maternal MNI
-        # TOXOLYTICS !? - WHO advises against
+            # TODO: STEROIDS - effect applied directly to newborns (need consumables here) store within maternal MNI
+            # TOXOLYTICS !? - WHO advises against
 
 # ===================================  COMPLICATIONS OF LABOUR ========================================================
 
-        # Here, using the adjusted risks calculated following 'in-labour' interventions to determine which complications
-        # a woman may experience and store those in the data frame
+            # Here, using the adjusted risks calculated following 'in-labour' interventions to determine which
+            # complications a woman may experience and store those in the data frame
 
-        self.module.set_complications_during_facility_birth(person_id, complication='obstructed_labour',
-                                                            labour_stage='ip',
-                                                            treatment_hsi=HSI_Labour_ReceivesCareForObstructedLabour
-                                                            (self.module, person_id=person_id))
-        if df.at[person_id, 'la_obstructed_labour']:
-            mni[person_id]['labour_is_currently_obstructed'] = True
-            mni[person_id]['labour_has_previously_been_obstructed'] = True
+            self.module.set_complications_during_facility_birth(person_id, complication='obstructed_labour',
+                                                                labour_stage='ip',
+                                                                treatment_hsi=HSI_Labour_ReceivesCareForObstructedLabour
+                                                                (self.module, person_id=person_id))
+            if df.at[person_id, 'la_obstructed_labour']:
+                mni[person_id]['labour_is_currently_obstructed'] = True
+                mni[person_id]['labour_has_previously_been_obstructed'] = True
 
-        # (htn_treatment variable made so line would conform to flake8 formatting)
-        htn_treatment = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy
-        self.module.set_complications_during_facility_birth(person_id, complication='eclampsia', labour_stage='ip',
-                                                            treatment_hsi=htn_treatment(self.module,
-                                                                                        person_id=person_id))
+            # (htn_treatment variable made so line would conform to flake8 formatting)
+            htn_treatment = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy
+            self.module.set_complications_during_facility_birth(person_id, complication='eclampsia', labour_stage='ip',
+                                                                treatment_hsi=htn_treatment(self.module,
+                                                                                            person_id=person_id))
 
-        self.module.set_complications_during_facility_birth(person_id, complication='antepartum_haem',
-                                                            labour_stage='ip',
-                                                            treatment_hsi=HSI_Labour_ReceivesCareForMaternalHaemorrhage
-                                                            (self.module, person_id=person_id))
+            sep_treatment = HSI_Labour_ReceivesCareForMaternalHaemorrhage
+            self.module.set_complications_during_facility_birth(person_id, complication='antepartum_haem',
+                                                                labour_stage='ip',
+                                                                treatment_hsi=sep_treatment(self.module,
+                                                                                            person_id=person_id))
 
-        self.module.set_complications_during_facility_birth(person_id, complication='sepsis', labour_stage='ip',
-                                                            treatment_hsi=HSI_Labour_ReceivesCareForMaternalSepsis
-                                                            (self.module, person_id=person_id))
+            self.module.set_complications_during_facility_birth(person_id, complication='sepsis', labour_stage='ip',
+                                                                treatment_hsi=HSI_Labour_ReceivesCareForMaternalSepsis
+                                                                (self.module, person_id=person_id))
 
-        self.module.set_complications_during_facility_birth(person_id, complication='uterine_rupture',
-                                                            labour_stage='ip',
-                                                            treatment_hsi=HSI_Labour_ReceivesCareForObstructedLabour
-                                                            (self.module, person_id=person_id))
+            self.module.set_complications_during_facility_birth(person_id, complication='uterine_rupture',
+                                                                labour_stage='ip',
+                                                                treatment_hsi=HSI_Labour_ReceivesCareForObstructedLabour
+                                                                (self.module, person_id=person_id))
 
         # TODO: issue- if we apply risk of both UR and OL here then we will negate the effect of OL treatment on
         #  reduction of incidence of UR
 
-        # DUMMY ... (risk factors?)
-        if self.module.rng.random_sample() < params['prob_cord_prolapse']:
-            mni[person_id]['cord_prolapse'] = True
+            # DUMMY ... (risk factors?)
+            if self.module.rng.random_sample() < params['prob_cord_prolapse']:
+                mni[person_id]['cord_prolapse'] = True
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
 
-        if mni[person_id]['uterine_rupture'] or mni[person_id]['eclampsia'] or mni[person_id]['antepartum_haem'] or\
-           mni[person_id]['sepsis'] or mni[person_id]['labour_is_currently_obstructed']:
-            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery'] * 1
+            if mni[person_id]['uterine_rupture'] or mni[person_id]['eclampsia'] or mni[person_id]['antepartum_haem'] or\
+               mni[person_id]['sepsis'] or mni[person_id]['labour_is_currently_obstructed']:
+                actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery'] * 1
 
-        return actual_appt_footprint
+            return actual_appt_footprint
 
     def did_not_run(self):
         return True
