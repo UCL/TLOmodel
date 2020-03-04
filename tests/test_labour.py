@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 import time
 from pathlib import Path
 
@@ -60,16 +61,23 @@ def test_run(simulation):
 
 
 def __check_properties(df):
-    # Cannot have a partiy of higher than allowed per age group
-    assert not df.sex == 'M' and df.la_parity > 0
-    assert not ((df.age_years < 24) & (df.la_parity > 4)).any()
-    assert not ((df.age_years < 40) & (df.la_parity > 5)).any()
+    # Here we check none of the properties created in labour are set to True for males or under 15s
+    assert not (df.sex == 'M' or df.age_year < 15) and (df.la_due_date_current_pregnancy != pd.NaT or
+                                                        df.la_currently_in_labour or
+                                                        df.la_current_labour_successful_induction != 'none' or
+                                                        df.la_intrapartum_still_birth or df.la_previous_cs_delivery
+                                                        or df.la_has_previously_delivered_preterm or
+                                                        df.la_obstructed_labour or df.la_obstructed_labour_disab
+                                                        or df.la_antepartum_haem or df.la_antepartum_haem_disab or
+                                                        df.la_uterine_rupture or df.la_uterine_rupture_disab or
+                                                        df.la_sepsis or df.la_sepsis_disab or df.la_eclampsia or
+                                                        df.la_eclampsia_disab or df.la_postpartum_haem or
+                                                        df.la_postpartum_haem_disab or df.la_maternal_death or
+                                                        df.la_maternal_death_date != pd.NaT)
 
-    # Confirming PTB and previous CS logic
-    assert not ((df.la_parity <= 1) & (df.la_previous_cs > 1)).any()
-    assert not (df.la_previous_cs > 2).any()
-    assert not ((df.la_previous_cs == 1) & (df.la_previous_ptb == 1)).any()
-    assert not ((df.la_previous_cs == 2) & (df.la_previous_ptb >= 1) & (df.la_parity == 2)).any()
+    # Here we check that neither men nor under 15s can have a parity of >0
+    assert not df.sex == 'M' and df.la_parity > 0
+    assert not df.age_years < 15 and df.la_parity > 0
 
 
 # def test_make_initial_population(simulation):
