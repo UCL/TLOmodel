@@ -22,7 +22,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-popsize = 10
+popsize = 1000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -46,7 +46,7 @@ sim.simulate(end_date=end_date)
 # Get the output from the logfile
 output = parse_log_file(logfile)
 
-# All births
+# All births (not clear if this should be live births)
 all_births_df = output['tlo.methods.demography']['on_birth']
 all_births_df['date'] = pd.to_datetime(all_births_df['date'])
 all_births_df['year'] = all_births_df['date'].dt.year
@@ -63,7 +63,7 @@ facility_delivery_births.columns = ['facility_deliveries', 'all_births']
 facility_delivery_births['FBR'] = facility_delivery_births['facility_deliveries'] /\
                                   facility_delivery_births['all_births'] * 100
 
-facility_delivery_births.plot.bar(y='facility_delivery_rate', stacked=True)
+facility_delivery_births.plot.bar(y='FBR', stacked=True)
 plt.title("Yearly Facility Delivery Rate")
 plt.show()
 
@@ -71,4 +71,5 @@ plt.show()
 # % of women who sought care following comps (not just labour onset)
 # Met need? (by signal function)
 # Crude number of each signal function/intervention?
+# Number of women who are sent home to deliver because higher squeeze threshold is applied
 
