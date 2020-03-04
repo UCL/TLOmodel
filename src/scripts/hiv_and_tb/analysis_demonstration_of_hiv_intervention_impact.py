@@ -17,8 +17,8 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-popsize = 100
+end_date = Date(2020, 12, 31)
+popsize = 5000
 
 
 # %% Define some helper functions to run and analyse the model
@@ -95,7 +95,6 @@ def run_simulation_with_set_intv_parameters(
 
     return logfile
 
-
 def get_key_outputs(logfile):
     """
     This helper function accepts the path of a logfile and computes the following key metrics for each year:
@@ -147,7 +146,6 @@ def get_key_outputs(logfile):
 
     return r
 
-
 def batch_run(scenarios):
     """
     :param scenarios: a dict of the form: {name_of_scenario: dict_of_params}
@@ -172,7 +170,6 @@ def batch_run(scenarios):
             compiled_results[output][scenario] = results[scenario][output]
 
     return compiled_results
-
 
 # %% Examine the impact of PrEP
 # Scenarios for different levels of PrEP for FSW
