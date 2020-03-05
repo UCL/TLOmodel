@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 2)
+end_date = Date(2016, 1, 1)
 popsize = 5000
 
 # add file handler for the purpose of logging
@@ -262,22 +262,20 @@ all_deaths['age_grp'] = all_deaths['age'].map(
      4: '2-4y'}
 )
 deaths = all_deaths.groupby(by=['year', 'age_grp', 'cause']).size().reset_index()
-# death count for all under 5s
-# deaths = all_deaths.groupby(by=['year']).size().reset_index()
-deaths.rename(columns={0: 'count'}, inplace=True)
 deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
-deaths = deaths.drop(deaths.loc[deaths['cause_simplified']=='Other'].index)
+deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index)
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
+deaths.drop(deaths.index[deaths['year']>2015.0], inplace=True)
+deaths = deaths.pivot(values='count', columns='age_grp', index='year')
 
-deaths_melt = deaths.melt()
-py_melt = py.melt(id_vars=['0y', '1y'])
+# Death Rate = death count (by year, by age-group) / person-years
+death_rate = deaths.div(py)
 
-# mortality rate among 0, 1, 2-4 year-olds
+# produce plot:
+death_rate.plot()
+plt.show()
 
-mortality_rate = dict()
-for age_grp in all_deaths['age_grp']:
-    mortality_rate[age_grp] = deaths[age_grp].apply(pd.Series).div(py[age_grp], axis=0).dropna()
 
 # deaths['health_data.org'] = pd.Series(data=calibration_death_rate_per_year).groupby(by=)
 
