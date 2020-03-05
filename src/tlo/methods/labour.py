@@ -36,8 +36,14 @@ class Labour (Module):
             Types.REAL, 'probability of a woman entering prolonged/obstructed labour'),
         'rr_PL_OL_nuliparity': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they are nuliparous'),
-        'rr_PL_OL_para1': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a parity of 1'),
+        'rr_PL_OL_para_more3': Parameter(
+            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a parity of greater'
+                        'than 2'),
+        'rr_PL_OL_bmi_less18': Parameter(
+            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a BMI of less than '
+                        '18'),
+        'rr_PL_OL_bmi_more25': Parameter(
+            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a BMI of > 25'),
         'rr_PL_OL_age_less20': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her age is less'
                         'than 20 years'),
@@ -223,7 +229,7 @@ class Labour (Module):
         'sensitivity_of_assessment_of_obstructed_labour_hp': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment by birth attendant for obstructed labour in a level 1 '
                         'hospital'),
-        'sensitivity_or_assessment_of_cs_for_obstructed_labour': Parameter(
+        'sensitivity_of_assessment_of_obstructed_labour_for_cs': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment by birth attendant that for obstructed labour in a level 1 '
                         'facility a women needs a caesarean'),
         'sensitivity_of_assessment_of_sepsis_hc': Parameter(
@@ -321,7 +327,9 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,  # TODO: stunting/malnutrition
                 params['prob_pl_ol'],
                 Predictor('la_parity').when('0', params['rr_PL_OL_nuliparity']),
-                Predictor('la_parity').when('1', params['rr_PL_OL_para1']),
+                Predictor('la_parity').when('>2', params['rr_PL_OL_para_more3']),
+                Predictor('li_bmi').when('<18', params['rr_PL_OL_bmi_less18']),
+                Predictor('li_bmi').when('>25', params['rr_PL_OL_bmi_more25']),
                 Predictor('age_years').when('<20', params['rr_PL_OL_age_less20'])),
 
              'sepsis_ip': LinearModel(
@@ -435,7 +443,7 @@ class Labour (Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_obstructed_labour_for_cs=DxTest(
                 property='la_obstructed_labour',
-                sensitivity=self.parameters['sensitivity_or_assessment_of_cs_for_obstructed_labour'], ))
+                sensitivity=self.parameters['sensitivity_of_assessment_of_obstructed_labour_for_cs'], ))
 
         # Sepsis diagnosis
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -1457,27 +1465,45 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
     # ======================================= COMPLICATION MANAGEMENT =================================================
         # Assisted Vaginal Delivery:
             def assessment_and_management_of_obstructed_labour(facility_type):
+                # First we check if this womans birth attendant will identify obstructed labour, based on facility type
                 if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
                                                                            f'assess_obstructed_labour_{facility_type}',
                                                                            hsi_event=self):
 
-                    # CONSUMABLES CONDITIONING...
-                    logger.debug(
-                        'mother %d has had her obstructed labour identified during delivery. Staff will attempt '
-                        'an assisted vaginal delivery',
-                        person_id)
-                    if params['prob_deliver_ventouse'] > self.module.rng.random_sample():
-                        # df.at[person_id, 'la_obstructed_labour'] = False
-                        mni[person_id]['labour_is_currently_obstructed'] = False
-                        mni[person_id]['mode_of_delivery'] = 'AVDV'
-                        # add here effect of antibiotics?
-                    elif params['prob_deliver_forceps'] > self.module.rng.random_sample():
+                    # If obstructed labour is correctly identified we check if the consumables are available to manage
+                    # this complication
+                    pkg_code_obstructed_labour = pd.unique(consumables.loc[consumables[
+                                                                                'Intervention_Pkg'] ==
+                                                                           'Management of obstructed labour',
+                                                                           'Intervention_Pkg_Code'])[0]
+                    item_code_forceps = pd.unique(consumables.loc[consumables['Items'] == 'Forceps, obstetric',
+                                                                  'Item_Code'])[0]
+                    item_code_vacuum = pd.unique(consumables.loc[consumables['Items'] == 'Vacuum, obstetric',
+                                                                 'Item_Code'])[0]
+
+                    consumables_obstructed_labour = {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
+                                                     'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}}
+
+                    outcome_of_request_for_consumables_ol = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=self, cons_req_as_footprint=consumables_obstructed_labour, to_log=True)
+                    # TODO: as ol pkg is very comprehensive, may be a bad idea to condition on this
+
+                    if outcome_of_request_for_consumables_ol:
+                        logger.debug('mother %d has had her obstructed labour identified during delivery. Staff will '
+                                     'attempt an assisted vaginal delivery as the equipment is available', person_id)
+
+                        if params['prob_deliver_ventouse'] > self.module.rng.random_sample():
+                            # df.at[person_id, 'la_obstructed_labour'] = False
+                            mni[person_id]['labour_is_currently_obstructed'] = False
+                            mni[person_id]['mode_of_delivery'] = 'AVDV'
+                            # add here effect of antibiotics?
+                        elif params['prob_deliver_forceps'] > self.module.rng.random_sample():
                             # If the vacuum is unsuccessful we apply the probability of successful forceps delivery
                             # df.at[person_id, 'la_obstructed_labour'] = False
                             mni[person_id]['labour_is_currently_obstructed'] = False
                             mni[person_id]['mode_of_delivery'] = 'AVDF'  # add here effect of antibiotics?
-                    else:
-                        mni[person_id]['refer_for_cs'] = True
+                        else:
+                            mni[person_id]['refer_for_cs'] = True
 
                 if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
                     assessment_and_management_of_obstructed_labour('hc')
