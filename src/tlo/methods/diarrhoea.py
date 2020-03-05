@@ -347,7 +347,7 @@ class Diarrhoea(Module):
         # ---- Treatment properties ----
         # TODO; Ines -- you;ve introduced these but not initialised them and don;t use them. do you need them?
         'gi_diarrhoea_treatment': Property(Types.BOOL, 'currently on diarrhoea treatment'),
-        'gi_diarrhoea_tx_start_date': Property(Types.BOOL, 'start date of diarrhoea treatment for current episode'),
+        'gi_diarrhoea_tx_start_date': Property(Types.DATE, 'start date of diarrhoea treatment for current episode'),
     }
 
     # Declare symptoms that this module will cause:
@@ -750,10 +750,10 @@ class Diarrhoea(Module):
                         .when('watery', p['case_fatality_rate_AWD'])
                         .when('bloody', p['case_fatality_rate_dysentery']),
                         # .when('persistent', p['cfr_persistent_diarrhoea']),
-                        Predictor('age_years')  ##          <--- fill in
-                        .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
-                        .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
-                        .otherwise(0.0)
+                        # Predictor('age_years')  ##          <--- fill in
+                        # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
+                        # .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
+                        # .otherwise(0.0)
                         ##          < --- TODO: add in current_severe_dehyration
                         # # Predictor('hv_inf').
                         # # when(True, m.rr_diarrhoea_HIV),
@@ -816,6 +816,9 @@ class Diarrhoea(Module):
         df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
         df['gi_last_diarrhoea_recovered_date'] = pd.NaT
         df['gi_last_diarrhoea_death_date'] = pd.NaT
+
+        df['gi_diarrhoea_treatment'] = False
+        df['gi_diarrhoea_tx_start_date'] = pd.NaT
 
         # ---- Temporary values ----
         df['tmp_malnutrition'] = False
@@ -1158,21 +1161,6 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
         self.date_last_run = self.sim.date
 
-        # # deaths reported in the last 12 months per person
-        # death_count = len(df[(df.gi_last_diarrhoea_death_date > (self.sim.date - DateOffset(months=self.repeat)))])
-        #
-        # # py = self.sim.modules['Demography'].calc_py_lived_in_last_year()
-        # # py_year = pd.to_datetime(py['date']).dt.year
-        # #
-        # # tot_py = (
-        # #     (py.loc[pd.to_datetime(py['date']).dt.year == year]['M']).apply(pd.Series) + \
-        # #     (py.loc[pd.to_datetime(py['date']).dt.year == year]['F']).apply(pd.Series)
-        # # ).transpose()
-        # # death_rate = death_count / py
-        #
-        # logger.info("%s|number_of_deaths_diarrhoea|%s", self.sim.date, {'diarrhoea_death_per_year': death_count})
-
-
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -1511,5 +1499,3 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
-
-
