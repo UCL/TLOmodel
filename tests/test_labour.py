@@ -1,8 +1,8 @@
 import os
-import pandas as pd
 import time
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from tlo import Date, Simulation

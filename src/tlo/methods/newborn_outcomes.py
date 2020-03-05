@@ -25,25 +25,34 @@ class NewbornOutcomes(Module):
 
     PARAMETERS = {
         'base_incidence_low_birth_weight': Parameter(
-            Types.REAL, 'baseline incidence of low birth weight for neonates'),
+            Types.REAL,
+            'baseline incidence of low birth weight for neonates'),
         'base_incidence_sga': Parameter(
-            Types.REAL, 'baseline incidence of small for gestational age for neonates'),
+            Types.REAL,
+            'baseline incidence of small for gestational age for neonates'),
         'prob_congenital_ba': Parameter(
-            Types.REAL, 'baseline probability of a neonate being born with a congenital anomaly'),
+            Types.REAL,
+            'baseline probability of a neonate being born with a congenital anomaly'),
         'prob_cba_type': Parameter(
-            Types.LIST, 'Probability of types of CBA'),
+            Types.LIST,
+            'Probability of types of CBA'),
         'prob_early_onset_neonatal_sepsis': Parameter(
-            Types.REAL, 'baseline probability of a neonate developing sepsis following birth'),
+            Types.REAL,
+            'baseline probability of a neonate developing sepsis following birth'),
         'prob_resp_depression': Parameter(
-            Types.REAL, 'baseline probability of a neonate developing intrapartum related complications '
-                        '(previously birth asphyxia) following delivery '),
+            Types.REAL,
+            'baseline probability of a neonate developing intrapartum related complications '
+            '(previously birth asphyxia) following delivery'),
         'prob_encephalopathy': Parameter(
-            Types.REAL, 'baseline probability of a neonate developing encephalopathy of any severity following birth'),
+            Types.REAL,
+            'baseline probability of a neonate developing encephalopathy of any severity following birth'),
         'prob_enceph_severity': Parameter(
-            Types.LIST, 'probability of the severity of encephalopathy in a newborn who is encephalopathic'),
+            Types.LIST,
+            'probability of the severity of encephalopathy in a newborn who is encephalopathic'),
         'prob_ivh_preterm': Parameter(
-            Types.REAL, 'baseline probability of a preterm neonate developing an intravascular haemorrhage as a result'
-                        'of prematurity '),
+            Types.REAL,
+            'baseline probability of a preterm neonate developing an intravascular haemorrhage as a '
+            'result of prematurity'),
         'prob_nec_preterm': Parameter(
             Types.REAL,
             'baseline probability of a preterm neonate developing necrotising enterocolitis as a result of '
@@ -59,16 +68,20 @@ class NewbornOutcomes(Module):
             Types.LIST,
             'probabilities of severity of retinopathy'),
         'prob_low_birth_weight': Parameter(
-            Types.REAL, 'baseline probability of a neonate being born low birth weight'),
+            Types.REAL,
+            'baseline probability of a neonate being born low birth weight'),
         'prob_early_breastfeeding_hf': Parameter(
-            Types.REAL, 'probability that a neonate will be breastfed within the first hour following birth when '
-                        'delivered at a health facility'),
+            Types.REAL,
+            'probability that a neonate will be breastfed within the first hour following birth when '
+            'delivered at a health facility'),
         'prob_early_breastfeeding_hb': Parameter(
-            Types.REAL, 'probability that a neonate will be breastfed within the first hour following birth when '
-                        'delivered at home'),
+            Types.REAL,
+            'probability that a neonate will be breastfed within the first hour following birth when '
+            'delivered at home'),
         'prob_facility_offers_kmc': Parameter(
-            Types.REAL, 'probability that the facility in which a low birth weight neonate is born will offer kangaroo'
-                        ' mother care for low birth weight infants delivered at home'),
+            Types.REAL,
+            'probability that the facility in which a low birth weight neonate is born will offer '
+            'kangaroo mother care for low birth weight infants delivered at home'),
         'prob_successful_resuscitation': Parameter(
             Types.REAL, 'probability newborn resuscitation will be successful'),
         'cfr_neonatal_sepsis': Parameter(
@@ -82,44 +95,53 @@ class NewbornOutcomes(Module):
     }
 
     PROPERTIES = {
-        'nb_early_preterm': Property(Types.BOOL, 'whether this neonate has been born early preterm (24-33 weeks '
-                                                 'gestation)'),
-        'nb_late_preterm': Property(Types.BOOL, 'whether this neonate has been born late preterm (34-36 weeks '
-                                                'gestation)'),
-        'nb_congenital_anomaly': Property(Types.CATEGORICAL, 'Congenital Anomalies: None, Orthopedic, Gastrointestinal,'
-                                                             'Neurological, Cosmetic, Other',
-                                          #  todo: May need more specificity
-                                          categories=['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']),
-        'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
-                                                               ' following birth'),
-        'nb_respiratory_depression': Property(Types.BOOL, 'whether this neonate has been born asphyxiated and apneic '
-                                                          'due to intrapartum related complications'),
-        'nb_hypoxic_ischemic_enceph': Property(Types.BOOL, 'whether a perinatally asphyxiated neonate has developed '
-                                                           'hypoxic ischemic encephalopathy'),
-        'nb_encephalopathy': Property(Types.CATEGORICAL, 'None, mild encephalopathy, moderate encephalopathy, '
-                                                         'severe encephalopathy',
-                                      categories=['none', 'mild_enceph', 'moderate_enceph', 'severe_enceph']),
-        'nb_intravascular_haem': Property(Types.BOOL, 'whether this neonate has developed an intravascular haemorrhage '
-                                                      'following preterm birth'),
-        'nb_necrotising_entero': Property(Types.BOOL, 'whether this neonate has developed necrotising enterocolitis '
-                                                      'following preterm birth'),
-        'nb_resp_distress_synd': Property(Types.BOOL, 'whether this neonate has developed newborn respiritory distress '
-                                                      'syndrome following preterm birth '),
-        'nb_retinopathy_prem': Property(Types.CATEGORICAL, 'Level of visual disturbance due to retinopathy of'
-                                                           ' prematurity: None, mild, moderate, severe, blindness',
-                                        categories=['none', 'mild', 'moderate', 'severe', 'blindness']),
-        'nb_ongoing_impairment': Property(Types.CATEGORICAL, 'none, mild motor, mild motor and cognitive, '
-                                                             'moderate motor, moderate motor and cognitive, '
-                                                             'severe motor, severe motor and cognitive',
-                                          categories=['none', 'mild_mot', 'mild_mot_cog', 'mod_mot', 'mod_mot_cog',
-                                                      'severe_mot', ' severe_mot_cog']),
-        'nb_birth_weight': Property(Types.CATEGORICAL, 'extremely low birth weight (<1000g), very low birth weight '
-                                                       '(<1500g), low birth weight (<2500g),'
-                                                       'normal birth weight (>2500g)',
-                                    categories=['ext_LBW', 'very_LBW', 'LBW', 'NBW']),
-        'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'small for gestational age, average for gestational'
-                                                                   ' age, large for gestational age',
-                                                categories=['SGA', 'AGA', 'LGA']),
+        'nb_early_preterm': Property(
+            Types.BOOL, 'whether this neonate has been born early preterm (24-33 weeks gestation)'),
+        'nb_late_preterm': Property(
+            Types.BOOL, 'whether this neonate has been born late preterm (34-36 weeks gestation)'),
+        'nb_congenital_anomaly': Property(
+            Types.CATEGORICAL,
+            'Congenital Anomalies: None, Orthopedic, Gastrointestinal, Neurological, Cosmetic, Other',
+            #  todo: May need more specificity
+            categories=['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']),
+        'nb_early_onset_neonatal_sepsis': Property(
+            Types.BOOL, 'whether his neonate has developed neonatal sepsis following birth'),
+        'nb_respiratory_depression': Property(
+            Types.BOOL,
+            'whether this neonate has been born asphyxiated and apneic due to intrapartum related complications'),
+        'nb_hypoxic_ischemic_enceph': Property(
+            Types.BOOL, 'whether a perinatally asphyxiated neonate has developed hypoxic ischemic encephalopathy'),
+        'nb_encephalopathy': Property(
+            Types.CATEGORICAL,
+            'None, mild encephalopathy, moderate encephalopathy, severe encephalopathy',
+            categories=['none', 'mild_enceph', 'moderate_enceph', 'severe_enceph']),
+        'nb_intravascular_haem': Property(
+            Types.BOOL,
+            'whether this neonate has developed an intravascular haemorrhage following preterm birth'),
+        'nb_necrotising_entero': Property(
+            Types.BOOL,
+            'whether this neonate has developed necrotising enterocolitis following preterm birth'),
+        'nb_resp_distress_synd': Property(
+            Types.BOOL,
+            'whether this neonate has developed newborn respiritory distress syndrome following preterm birth '),
+        'nb_retinopathy_prem': Property(
+            Types.CATEGORICAL,
+            'Level of visual disturbance due to retinopathy of prematurity: None, mild, moderate, severe, blindness',
+            categories=['none', 'mild', 'moderate', 'severe', 'blindness']),
+        'nb_ongoing_impairment': Property(
+            Types.CATEGORICAL,
+            'none, mild motor, mild motor and cognitive, moderate motor, moderate motor and cognitive, '
+            'severe motor, severe motor and cognitive',
+            categories=['none', 'mild_mot', 'mild_mot_cog', 'mod_mot', 'mod_mot_cog', 'severe_mot', ' severe_mot_cog']),
+        'nb_birth_weight': Property(
+            Types.CATEGORICAL,
+            'extremely low birth weight (<1000g), very low birth weight (<1500g), '
+            'low birth weight (<2500g), normal birth weight (>2500g)',
+            categories=['ext_LBW', 'very_LBW', 'LBW', 'NBW']),
+        'nb_size_for_gestational_age': Property(
+            Types.CATEGORICAL,
+            'small for gestational age, average for gestational age, large for gestational age',
+            categories=['SGA', 'AGA', 'LGA']),
         'nb_early_breastfeeding': Property(Types.BOOL, 'whether this neonate is exclusively breastfed after birth'),
         'nb_kmc': Property(Types.BOOL, 'whether this neonate received kangaroo mother care following birth'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
@@ -174,69 +196,68 @@ class NewbornOutcomes(Module):
 
         params['nb_newborn_equations'] = {
             'lbw': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['base_incidence_low_birth_weight'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['base_incidence_low_birth_weight'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'sga': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['base_incidence_sga'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['base_incidence_sga'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'sepsis': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['prob_early_onset_neonatal_sepsis'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_early_onset_neonatal_sepsis'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'resp_depression': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['prob_resp_depression'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_resp_depression'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'encephalopathy': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['prob_encephalopathy'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_encephalopathy'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'resp_distress_synd': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['prob_nrds_preterm'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_nrds_preterm'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'intra_vent_haem': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['prob_ivh_preterm'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_ivh_preterm'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'nec': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['prob_nec_preterm'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_nec_preterm'],
+                Predictor('age_years').when('.between(0,2)', 1)),
 
             'retinopathy': LinearModel(
-             LinearModelType.MULTIPLICATIVE,
-             params['prob_retinopathy_preterm'],
-             Predictor('age_years').when('.between(0,2)', 1))
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_retinopathy_preterm'],
+                Predictor('age_years').when('.between(0,2)', 1))
         }
 
     def initialise_population(self, population):
-
         df = population.props
 
         df.loc[df.is_alive, 'nb_early_preterm'] = False
         df.loc[df.is_alive, 'nb_late_preterm'] = False
-        df.loc[df.is_alive, 'nb_congenital_anomaly'].values[:] = 'none'
+        df.loc[df.is_alive, 'nb_congenital_anomaly'] = 'none'
         df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_respiratory_depression'] = False
         df.loc[df.is_alive, 'nb_hypoxic_ischemic_enceph'] = False
-        df.loc[df.is_alive, 'nb_encephalopathy'].values[:] = 'none'
+        df.loc[df.is_alive, 'nb_encephalopathy'] = 'none'
         df.loc[df.is_alive, 'nb_intravascular_haem'] = False
         df.loc[df.is_alive, 'nb_necrotising_entero'] = False
         df.loc[df.is_alive, 'nb_resp_distress_synd'] = False
-        df.loc[df.is_alive, 'nb_retinopathy_prem'].values[:] = 'none'
-        df.loc[df.is_alive, 'nb_ongoing_impairment'].values[:] = 'none'
-        df.loc[df.is_alive, 'nb_birth_weight'].values[:] = 'NBW'
-        df.loc[df.is_alive, 'nb_size_for_gestational_age'].values[:] = 'AGA'
+        df.loc[df.is_alive, 'nb_retinopathy_prem'] = 'none'
+        df.loc[df.is_alive, 'nb_ongoing_impairment'] = 'none'
+        df.loc[df.is_alive, 'nb_birth_weight'] = 'NBW'
+        df.loc[df.is_alive, 'nb_size_for_gestational_age'] = 'AGA'
         df.loc[df.is_alive, 'nb_early_breastfeeding'] = False
         df.loc[df.is_alive, 'nb_kmc'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
@@ -246,9 +267,7 @@ class NewbornOutcomes(Module):
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
-
-        event = NewbornOutcomesLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(days=0))
+        sim.schedule_event(NewbornOutcomesLoggingEvent(self), sim.date)
 
     def eval(self, eq, person_id):
         """Compares the result of a specific linear equation with a random draw providing a boolean for the outcome
@@ -273,7 +292,6 @@ class NewbornOutcomes(Module):
         complications following delivery (which may or may not be attributable to the delivery process). This section of
         code is subject to change as it contains some dummy code (low birth weight/SGA application) and needs review by
         a clinician"""
-
         df = self.sim.population.props
         params = self.parameters
         nci = self.newborn_care_info
@@ -811,7 +829,6 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
 
     def did_not_run(self):
         logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
-        pass
 
 
 class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(HSI_Event, IndividualScopeEventMixin):
@@ -873,7 +890,6 @@ class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(HSI_Event, IndividualScop
 
     def did_not_run(self):
         logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
-        pass
 
 
 class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeEventMixin):
@@ -931,7 +947,6 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeE
 
     def did_not_run(self):
         logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
-        pass
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):

@@ -22,8 +22,8 @@ class PregnancySupervisor(Module):
 
     PARAMETERS = {
         'prob_pregnancy_factors': Parameter(
-            Types.DATA_FRAME, 'Data frame containing probabilities of key outcomes/complications associated with the '
-                              'antenatal period'),
+            Types.DATA_FRAME,
+            'Data frame containing probabilities of key outcomes/complications associated with the antenatal period'),
         'base_prev_pe': Parameter(
             Types.REAL, 'relative risk of miscarriage for women who have previously miscarried'),
         'base_prev_gest_htn': Parameter(
@@ -47,8 +47,9 @@ class PregnancySupervisor(Module):
         'rr_gest_diab_stillbirth': Parameter(
             Types.REAL, 'relative risk of gestational diabetes in women who have previously had a still birth'),
         'rr_gest_diab_prevdiab': Parameter(
-            Types.REAL, 'relative risk of gestational diabetes in women who suffered from gestational diabetes in '
-                        'previous pregnancy'),
+            Types.REAL,
+            'relative risk of gestational diabetes in women who suffered from gestational diabetes in '
+            'previous pregnancy'),
         'rr_gest_diab_chron_htn': Parameter(
             Types.REAL, 'relative risk of gestational diabetes in women who suffer from chronic hypertension'),
         'prob_ectopic_pregnancy': Parameter(
@@ -60,14 +61,15 @@ class PregnancySupervisor(Module):
         'prob_pa_complications': Parameter(
             Types.REAL, 'probability that a woman who has had an induced abortion will experience any complications'),
         'prob_pa_complication_type': Parameter(
-            Types.REAL, 'List of probabilities that determine what type of complication a woman who has had an abortion'
-                        ' will experience'),
+            Types.REAL,
+            'List of probabilities that determine what type of complication a woman who has had an abortion '
+            'will experience'),
         'r_mild_pe_gest_htn': Parameter(
-            Types.REAL, 'probability per month that a woman will progress from gestational hypertension to mild '
-                        'pre-eclampsia'),
+            Types.REAL,
+            'probability per month that a woman will progress from gestational hypertension to mild pre-eclampsia'),
         'r_severe_pe_mild_pe': Parameter(
-            Types.REAL, 'probability per month that a woman will progress from mild pre-eclampsia to severe '
-                        'pre-eclampsia'),
+            Types.REAL,
+            'probability per month that a woman will progress from mild pre-eclampsia to severe pre-eclampsia'),
         'r_eclampsia_severe_pe': Parameter(
             Types.REAL, 'probability per month that a woman will progress from severe pre-eclampsia to eclampsia'),
         'r_hellp_severe_pe': Parameter(
@@ -75,11 +77,13 @@ class PregnancySupervisor(Module):
     }
 
     PROPERTIES = {
-        'ps_gestational_age_in_weeks': Property(Types.INT, 'current gestational age, in weeks, of this womans '
-                                                           'pregnancy'),
+        'ps_gestational_age_in_weeks': Property(
+            Types.INT, 'current gestational age, in weeks, of this womans pregnancy'),
         'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether this womans pregnancy is ectopic'),
-        'ps_ectopic_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for ectopic pregnancy',
-                                        categories=['none', 'abdominal pain', 'abdominal pain plus bleeding', 'shock']),
+        'ps_ectopic_symptoms': Property(
+            Types.CATEGORICAL,
+            'Level of symptoms for ectopic pregnancy',
+            categories=['none', 'abdominal pain', 'abdominal pain plus bleeding', 'shock']),
         'ps_ep_unified_symptom_code': Property(
             Types.CATEGORICAL,
             'Level of symptoms on the standardised scale (governing health-care seeking): '
@@ -88,23 +92,28 @@ class PregnancySupervisor(Module):
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
         'ps_total_miscarriages': Property(Types.INT, 'the number of miscarriages a woman has experienced'),
         'ps_total_induced_abortion': Property(Types.INT, 'the number of induced abortions a woman has experienced'),
-        'ps_abortion_complication': Property(Types.CATEGORICAL, 'Type of complication following an induced abortion: '
-                                                                'None; Sepsis; Haemorrhage; Sepsis and Haemorrhage',
-                                             categories=['none', 'haem', 'sepsis', 'haem_sepsis']),
-        'ps_antepartum_still_birth': Property(Types.BOOL, 'whether this woman has experienced an antepartum still birth'
-                                                          'of her current pregnancy'),
-        'ps_previous_stillbirth': Property(Types.BOOL, 'whether this woman has had any previous pregnancies end in '
-                                                       'still birth'),  # consider if this should be an interger
-        'ps_htn_disorder_preg': Property(Types.CATEGORICAL,  'Hypertensive disorders of pregnancy: none, '
-                                                             'gestational hypertension, mild pre-eclampsia,'
-                                                             'severe pre-eclampsia, eclampsia,'
-                                                             ' HELLP syndrome',
-                                         categories=['none', 'gest_htn', 'mild_pe', 'severe_pe', 'eclampsia', 'HELLP']),
-        'ps_prev_pre_eclamp': Property(Types.BOOL, 'whether this woman has experienced pre-eclampsia in a previous '
-                                                   'pregnancy'),
+        'ps_abortion_complication': Property(
+            Types.CATEGORICAL,
+            'Type of complication following an induced abortion: None; Sepsis; Haemorrhage; Sepsis and Haemorrhage',
+            categories=['none', 'haem', 'sepsis', 'haem_sepsis']),
+        'ps_antepartum_still_birth': Property(
+            Types.BOOL,
+            'whether this woman has experienced an antepartum still birth of her current pregnancy'),
+        'ps_previous_stillbirth': Property(
+            Types.BOOL,  # consider if this should be an integer
+            'whether this woman has had any previous pregnancies end in still birth'),
+        'ps_htn_disorder_preg': Property(
+            Types.CATEGORICAL,
+            'Hypertensive disorders of pregnancy: none, gestational hypertension, mild pre-eclampsia, '
+            'severe pre-eclampsia, eclampsia, HELLP syndrome',
+            categories=['none', 'gest_htn', 'mild_pe', 'severe_pe', 'eclampsia', 'HELLP']),
+        'ps_prev_pre_eclamp': Property(
+            Types.BOOL,
+            'whether this woman has experienced pre-eclampsia in a previous pregnancy'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
-        'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
-                                                  'during a previous pregnancy')
+        'ps_prev_gest_diab': Property(
+            Types.BOOL,
+            'whether this woman has ever suffered from gestational diabetes during a previous pregnancy')
     }
 
     def read_parameters(self, data_folder):
@@ -132,20 +141,19 @@ class PregnancySupervisor(Module):
         # Will live here...
 
     def initialise_population(self, population):
-
         df = population.props
 
         df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
-        df.loc[df.is_alive, 'ps_ectopic_symptoms'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_ectopic_symptoms'] = 'none'
         df.loc[df.is_alive, 'ps_ep_unified_symptom_code'] = 0
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
         df.loc[df.is_alive, 'ps_total_miscarriages'] = 0
         df.loc[df.is_alive, 'ps_total_induced_abortion'] = 0
-        df.loc[df.is_alive, 'ps_abortion_complication'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
         df.loc[df.is_alive, 'ps_previous_stillbirth'] = False
-        df.loc[df.is_alive, 'ps_htn_disorder_preg'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_htn_disorder_preg'] = 'none'
         df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_gest_diab'] = False
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
@@ -153,15 +161,9 @@ class PregnancySupervisor(Module):
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """
-        event = PregnancySupervisorEvent
-        sim.schedule_event(event(self),
-                           sim.date + DateOffset(days=0))
-
-        event = PregnancyDiseaseProgressionEvent
-        sim.schedule_event(event(self),
-                           sim.date + DateOffset(days=0))
-
-#        self.sim.modules['HealthSystem'].register_disease_module(self)
+        sim.schedule_event(PregnancySupervisorEvent(self), sim.date)
+        sim.schedule_event(PregnancyDiseaseProgressionEvent(self), sim.date)
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
