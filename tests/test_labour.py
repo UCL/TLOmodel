@@ -30,6 +30,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 def simulation():
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+
     sim = Simulation(start_date=start_date)
 
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
@@ -44,20 +45,20 @@ def simulation():
 
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
 
+    # sim.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
+    #                                                               'tlo.module.labour': logging.DEBUG,
+    #                                                              'tlo.module.newborn_outcomes': logging.DEBUG,
+    #                                                              'tlo.module.pregnancy_supervisor': logging.DEBUG,
+    #                                                              'tlo.module.antenatal_care': logging.DEBUG})
+
     sim.seed_rngs(1)
     return sim
 
 
 def test_run(simulation):
-    #    f = simulation.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
-    #                                                                  'tlo.module.labour': logging.DEBUG,
-    #                                                                  'tlo.module.newborn_outcomes': logging.DEBUG,
-    #                                                                  'tlo.module.pregnancy_supervisor': logging.DEBUG,
-    #                                                                  'tlo.module.antenatal_care': logging.DEBUG})
+
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
-#    output = parse_log_file(f)
-
 
 
 def __check_properties(df):
