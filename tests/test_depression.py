@@ -26,15 +26,15 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
     return sim
