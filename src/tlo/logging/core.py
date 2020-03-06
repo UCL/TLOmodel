@@ -97,6 +97,10 @@ class Logger:
         :param data: data to be logged
         :param description: description of this log type
         """
+        # message level less than than the logger level, early exit
+        if eval(level) < self._std_logger.level:
+            return
+
         data = self._convert_log_data(data)
         tlo_logger = getLogger('tlo')
         # create record to allow for handler filtering
@@ -119,7 +123,7 @@ class Logger:
 
         # for each handler, write json data if allowed
         for handler in tlo_logger.handlers:
-            if handler.filter(record) and self._std_logger.level >= eval(level):
+            if handler.filter(record):
                 if header:
                     json.dump(header, handler.stream)
                     handler.stream.write(handler.terminator)
