@@ -282,7 +282,7 @@ class HSI_AntenatalCare_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin)
         logger.debug('HSI_AntenatalCare_EmergencyTreatment: did not run')
 
 
-class HSI_AntenatalCare_PostAbortionCare(HSI_Event, IndividualScopeEventMixin):  # ??Name
+class HSI_AntenatalCare_PresentsForPostAbortionCare(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI PostAbortionCare. Currently it is not scheduled, but will be scheduled via the PregnancySupervisor
     module for women who seek care following a termination of pregnancy. It will manage treatment for common
     complications of abortion, including manual removal of retained products. Currently it is

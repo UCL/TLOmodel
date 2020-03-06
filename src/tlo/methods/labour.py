@@ -34,6 +34,21 @@ class Labour(Module):
         'prob_prom': Parameter(
             Types.REAL,
             'probability of a woman in term labour having had experience prolonged rupture of membranes'),
+        'parity_constant_value': Parameter(
+            Types.REAL,
+            'constant value from parity regression equation'),
+        'parity_unit_age_increase': Parameter(
+            Types.REAL,
+            'unit change in parity for unit increase in age, years'),
+        'parity_marriage_level_2': Parameter(
+            Types.REAL,
+            'unit change in parity from marriage level 1 to marriage level 2'),
+        'parity_marriage_level_3': Parameter(
+            Types.REAL,
+            'unit change in parity from marriage level 1 to marriage level 3'),
+        'parity_by_wealth_level': Parameter(
+            Types.LIST,
+            'unit change in parity by each of the five wealth levels'),
         'prob_pl_ol': Parameter(
             Types.REAL,
             'probability of a woman entering prolonged/obstructed labour'),
@@ -386,16 +401,19 @@ class Labour(Module):
         params['la_labour_equations'] = {
             'parity': LinearModel(
                 LinearModelType.ADDITIVE,
-                -3,
-                Predictor('age_years').apply(lambda age_years: (age_years * 0.22)),
-                Predictor('li_mar_stat').when('2', 0.91).when('3', 0.16),
-                Predictor('li_wealth').when('5', -0.13)
-                                      .when('4', -0.13)
-                                      .when('3', -0.26)
-                                      .when('2', -0.37)
-                                      .when('1', -0.9)
+                params['parity_constant_value'],
+                Predictor('age_years').apply(lambda age_years: (age_years * params['parity_unit_age_increase'])),
+                Predictor('li_mar_stat').when('2', params['parity_marriage_level_2']).  when('3',
+                                                                                             params
+                                                                                             ['parity_marriage_level_3']
+                                                                                             ),
+                Predictor('li_wealth').when('5', params['parity_by_wealth_level'][4])
+                                      .when('4', params['parity_by_wealth_level'][3])
+                                      .when('3', params['parity_by_wealth_level'][2])
+                                      .when('2', params['parity_by_wealth_level'][1])
+                                      .when('1', params['parity_by_wealth_level'][0])
             ),
-            # TODO: first draft from rough regression of 2010 DHS data, rounded in code to ensure whole numbers
+            # TODO: first draft from rough regression of 2010 DHS data
 
             'early_preterm_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,  # TODO: Anaemia/ Malaria / Multiple gestation
@@ -1461,6 +1479,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         # TODO: Discuss with Tim H the best way to capture which HCP will be attending this delivery and how that may
         #  affect outcomes?
 
+        # TODO: define consumables at the top of the module, store as dict to refer to later?
+
     # ============================ CLEAN DELIVERY PRACTICES AT BIRTH ==================================================
 
             # First we apply the estimated impact of clean birth practices on maternal and newborn risk of sepsis
@@ -1774,6 +1794,7 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
         else:
             logger.debug('pkg_code_eclampsia is not available, so can' 't use it.')
 
+        # TODO: build in consumables usage
 
 # =======================================  HYPERTENSION TREATMENT ======================================================
         # tbc
