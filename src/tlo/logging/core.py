@@ -33,11 +33,13 @@ class Logger:
 
     def __init__(self, name: str, level=_logging.NOTSET):
         assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
+        # std library logger for oldstyle logging and tracking
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)
         if name == 'tlo':
             self._std_logger.propagate = False
         self.name = self._std_logger.name
+        # track keys given during structured logging
         self.keys = set()
         # populated by init_logging(simulation)
         self.simulation = None
