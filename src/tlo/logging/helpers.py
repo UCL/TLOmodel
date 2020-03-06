@@ -41,8 +41,13 @@ def init_logging(simulation=None):
     handler.setLevel(DEBUG)
     handler.setFormatter(_FORMATTER)
     logger = getLogger('tlo')
+    # clear all logger settings
     logger.handlers.clear()
     logger.filters.clear()
+    # boolean attributes used for now, can be removed after transition to structured logging
+    logger.logged_stdlib = False
+    logger.logged_structured = False
+
     logger.addHandler(handler)
     _logging.basicConfig(level=_logging.WARNING)
     if simulation:

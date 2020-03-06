@@ -26,6 +26,11 @@ def basic_configuration(tmpdir):
 
 @pytest.fixture(scope='function')
 def simulation_configuration(tmpdir):
+    logger = logging.getLogger('tlo.test.logger')
+    logger.keys.clear()
+    logger.logged_stdlib = False
+    logger.logged_structured = False
+
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
     sim = Simulation(start_date=start_date)
@@ -37,8 +42,6 @@ def simulation_configuration(tmpdir):
     yield sim.output_file, f
 
     sim.output_file.close()
-    logger = logging.getLogger('tlo.test.logger')
-    logger.keys.clear()
 
 
 def read_file(file_handler, file_name):
@@ -61,7 +64,6 @@ def log_message(message_level, logger_level, message, logger_name='tlo.test.logg
     :param message_level: level that the message will be added as
     :param logger_level: level that the logger is set to
     :param message: message to be written to log
-    :param logger_name: name of the logger
     :param structured_logging:
 
     """
@@ -70,13 +72,13 @@ def log_message(message_level, logger_level, message, logger_name='tlo.test.logg
 
     if structured_logging:
         if message_level == 'logging.DEBUG':
-            logger.debug(key='tlo.test.logger', data=message)
+            logger.debug(key='structured', data=message)
         elif message_level == 'logging.INFO':
-            logger.info(key='tlo.test.logger', data=message)
+            logger.info(key='structure', data=message)
         elif message_level == 'logging.WARNING':
-            logger.warning(key='tlo.test.logger', data=message)
+            logger.warning(key='structured', data=message)
         elif message_level == 'logging.CRITICAL':
-            logger.critical(key='tlo.test.logger', data=message)
+            logger.critical(key='structured', data=message)
     else:
         if message_level == 'logging.DEBUG':
             logger.debug(message)
@@ -203,3 +205,11 @@ class TestConvertLogData:
     def test_string_to_dict_fails(self):
         with pytest.raises(ValueError):
             self.logger._convert_log_data("strings")
+
+
+def test_mixed_logging():
+    """Logging with both oldstyle and structured logging should raise an error"""
+    logger = logging.getLogger('tlo.test.logger')
+    with pytest.raises(ValueError):
+        logger.info("stdlib method")
+        logger.info(key="structured", data={"key": 10})

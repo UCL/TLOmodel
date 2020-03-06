@@ -43,6 +43,10 @@ class Logger:
         self.keys = set()
         # populated by init_logging(simulation)
         self.simulation = None
+        # to ensure only structured or oldstyle logging used for a single module
+        # can be removed after transition
+        self.logged_stdlib = False
+        self.logged_structured = False
 
     def __repr__(self):
         return f'<tlo Logger containing {self._std_logger}>'
@@ -134,9 +138,22 @@ class Logger:
                 json.dump(row, handler.stream, cls=encoding.PandasEncoder)
                 handler.stream.write(handler.terminator)
 
+    def _mixed_logging_check(self, is_structured: bool):
+        """Set booleans for logging type and throw exception if both types of logging haven't been used"""
+        if is_structured:
+            self.logged_structured = True
+        else:
+            self.logged_stdlib = True
+
+        if self.logged_structured and self.logged_stdlib:
+            raise ValueError(f"Both oldstyle and structured logging has been used for {self.name}, "
+                             "please update all logging to use structured logging")
+
+
     def _try_log_message(self, level, key, data, description):
         """Log strucured message, if key or data are None, then throw exception"""
         if key and data:
+            self._mixed_logging_check(is_structured=True)
             self._log_message(level=level, key=key, data=data, description=description)
         else:
             raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
@@ -145,6 +162,7 @@ class Logger:
                  description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
+            self._mixed_logging_check(is_structured=False)
             self._std_logger.critical(msg, *args, **kwargs)
         else:
             self._try_log_message(level="CRITICAL", key=key, data=data, description=description)
@@ -153,6 +171,7 @@ class Logger:
               description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
+            self._mixed_logging_check(is_structured=False)
             self._std_logger.debug(msg, *args, **kwargs)
         else:
             self._try_log_message(level="DEBUG", key=key, data=data, description=description)
@@ -161,6 +180,7 @@ class Logger:
              description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
+            self._mixed_logging_check(is_structured=False)
             self._std_logger.info(msg, *args, **kwargs)
         else:
             self._try_log_message(level="INFO", key=key, data=data, description=description)
@@ -169,6 +189,7 @@ class Logger:
                 description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
+            self._mixed_logging_check(is_structured=False)
             self._std_logger.warning(msg, *args, **kwargs)
         else:
             self._try_log_message(level="WARNING", key=key, data=data, description=description)
