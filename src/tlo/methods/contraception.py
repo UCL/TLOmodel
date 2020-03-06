@@ -419,6 +419,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
         prob_of_failure = p['contraception_failure']
 
         # TODO: N.B edited by joe- was allowing pregnant women (at baseline) to become pregnant again!,
+        # And - to include breastfeeding, which is slated to be included in the lifestyle module
         #  ~df.is_pregnant added
         possible_to_fail = ((df.sex == 'F') &
                             df.is_alive & ~df.is_pregnant & ~df.la_currently_in_labour &
