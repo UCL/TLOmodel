@@ -75,16 +75,16 @@ class Logger:
         """Convert log data to a dictionary if it isn't already"""
         if isinstance(data, dict):
             return data
-        elif isinstance(data, pd.DataFrame):
+        if isinstance(data, pd.DataFrame):
             if len(data.index) == 1:
                 converted_data = data.to_dict('records')[0]
             else:
                 converted_data = util.nested_to_record(data)
             return converted_data
-        elif isinstance(data, (list, set, tuple)):
+        if isinstance(data, (list, set, tuple)):
             return {f'item_{index + 1}': value for index, value in enumerate(data)}
-        else:
-            raise ValueError(f'Unexpected type given as data:\n{data}')
+
+        raise ValueError(f'Unexpected type given as data:\n{data}')
 
     def _log_message(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple] = None, description=None):
         """Writes structured log message if handler allows this and logging level is allowed
