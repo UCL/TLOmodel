@@ -192,9 +192,6 @@ class Depression(Module):
                                                           sheet_name='parameter_values'))
         p = self.parameters
 
-        # overwriting for testing purposes
-        p['base_3m_prob_depr'] = .3
-
         # Build the Linear Models:
         self.LinearModels = dict()
         self.LinearModels['Depression_At_Population_Initialisation'] = LinearModel(
@@ -703,7 +700,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'p_ever_diagnosed_depression_if_ever_depressed': zero_out_nan(n_ever_diagnosed_depression / n_ever_depr),
             'prop_antidepr_if_curr_depr': zero_out_nan(n_antidepr_depr / n_ge15_depr),
             'prop_antidepr_if_ever_depr': zero_out_nan(n_antidepr_ever_depr / n_ever_depr),
-            'prop_ever_talk_ther_if_depr': zero_out_nan(n_ever_talk_ther / n_ge15_depr),
+            'prop_ever_talk_ther_if_ever_depr': zero_out_nan(n_ever_talk_ther / n_ever_depr),
             'prop_ever_self_harmed': zero_out_nan(n_ever_self_harmed / n_ever_depr),
         }
 
