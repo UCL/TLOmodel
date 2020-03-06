@@ -52,14 +52,11 @@ class Simulation:
         self.end_date = None
         self.output_file = None
 
-        # clear entire logging environment for this new simulation
-        logging.init_logging(self)
-
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
         """
-        Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
-        If no filename is given, configuration is set up writing to stdout.
+        Configure logging, can write logging to a logfile in addition the default of stdout.
+        Minimum custom levels for each loggers can be specified for filtering out messages.
 
         :param filename: Prefix for logfile name, final logfile will have a datetime appended
         :param directory: Path to output directory, default value is the outputs folder.
@@ -67,17 +64,11 @@ class Simulation:
                               This is likely to be used to disable all disease modules, and then enable one of interest
                               e.g. {'*': logging.CRITICAL
                                     'tlo.methods.hiv': logging.INFO}
-        :return: Path of the log file.
+        :return: Path of the log file if a filename has been given.
         """
-
-        if not filename:
-            # no filename given, clear setup and initialise writing to stdout
-            logging.init_logging(self)
-            return
-
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
-        log_path = Path(directory) / f"{filename}__{timestamp}.log"
-        self.output_file = logging.set_output_file(log_path)
+        # clear logging environment
+        logging.init_logging()
+        logging.inject_into_logger(self)
 
         if custom_levels:
             if not self.modules:
@@ -85,7 +76,11 @@ class Simulation:
             module_paths = (module.__module__ for module in self.modules.values())
             logging.set_logging_levels(custom_levels, module_paths)
 
-        return log_path
+        if filename:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+            log_path = Path(directory) / f"{filename}__{timestamp}.log"
+            self.output_file = logging.set_output_file(log_path)
+            return log_path
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
