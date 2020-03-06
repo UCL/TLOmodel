@@ -84,6 +84,10 @@ class Depression(Module):
                         'depression and not on antidepressants'
         ),
 
+        'init_pr_ever_self_harmed_if_ever_depr': Parameter(
+            Types.REAL, 'Initial probability of having ever self harmed if ever depressed'
+        ),
+
         'base_3m_prob_depr': Parameter(
             Types.REAL, 'Probability of onset of depression in a 3 month period if male, wealth 1 2 or 3, no chronic '
                         'condition and never previously depressed',
@@ -239,6 +243,12 @@ class Depression(Module):
             Predictor('de_ever_diagnosed_depression').when(False, 0)
         )
 
+        self.LinearModels['Ever_Self_Harmed_Initialisation'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['init_pr_ever_self_harmed_if_ever_depr'],
+            Predictor('de_ever_depr').when(False, 0)
+        )
+
         self.LinearModels['Risk_of_Depression_Onset_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['base_3m_prob_depr'],
@@ -365,6 +375,12 @@ class Depression(Module):
         # Assign initial 'de_ever_talk_ther' status
         df.loc[df['is_alive'], 'de_ever_talk_ther'] = self.apply_linear_model(
              self.LinearModels['Ever_Talking_Therapy_Initialisation'],
+             df.loc[df['is_alive']]
+        )
+
+        # Assign initial 'de_ever_non_fatal_self_harm_event' status
+        df.loc[df['is_alive'], 'de_ever_non_fatal_self_harm_event'] = self.apply_linear_model(
+             self.LinearModels['Ever_Self_Harmed_Initialisation'],
              df.loc[df['is_alive']]
         )
 
@@ -666,6 +682,9 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_depr = (df.de_ever_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_age_50_ever_depr = (df.is_alive & (df.age_years == 50) & df.de_ever_depr).sum()
 
+        # Proportion of ever depressed who have self harmed
+        n_ever_self_harmed = (df.is_alive & df.de_ever_non_fatal_self_harm_event).sum()
+
         # Numbers experiencing interventions
         n_ever_diagnosed_depression = (df.is_alive & df.de_ever_diagnosed_depression & (df.age_years >= 15)).sum()
         n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
@@ -685,6 +704,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'prop_antidepr_if_curr_depr': zero_out_nan(n_antidepr_depr / n_ge15_depr),
             'prop_antidepr_if_ever_depr': zero_out_nan(n_antidepr_ever_depr / n_ever_depr),
             'prop_ever_talk_ther_if_depr': zero_out_nan(n_ever_talk_ther / n_ge15_depr),
+            'prop_ever_self_harmed': zero_out_nan(n_ever_self_harmed / n_ever_depr),
         }
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)

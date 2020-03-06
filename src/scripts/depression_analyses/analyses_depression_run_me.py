@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 7, 1)
+end_date = Date(2014, 7, 1)
 popsize = 10000
 
 sim = Simulation(start_date=start_date)
