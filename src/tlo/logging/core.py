@@ -20,6 +20,7 @@ def getLogger(name='tlo'):
 
 
 class FilterRecord:
+    """Class to allow stdlib handler filtering"""
     def __init__(self, name):
         self.name = name
         self.nlen = len(name)
@@ -98,18 +99,20 @@ class Logger:
         """
         data = self._convert_log_data(data)
         tlo_logger = getLogger('tlo')
+        # create record to allow for handler filtering
         record = FilterRecord(self.name)
+
         header = {}
         if key not in self.keys:
+            # new log key, so create header json row
             self.keys.add(key)
-            # create header json
             header = {"level": level,
                       "module": self.name,
                       "key": key,
                       "columns": {key: value.dtype.name for key, value in data.items()},
                       "description": description}
 
-        # create row data json
+        # create data json row
         row = {"module": self.name, "key": key,
                "date": tlo_logger.simulation.date.isoformat(),
                "values": list(data.values())}
@@ -123,7 +126,8 @@ class Logger:
                 json.dump(row, handler.stream, cls=encoding.PandasEncoder)
                 handler.stream.write(handler.terminator)
 
-    def _try_log_message(self, level, key=None, data=None, description=None):
+    def _try_log_message(self, level, key, data, description):
+        """Log strucured message, if key or data are None, then throw exception"""
         if key and data:
             self._log_message(level=level, key=key, data=data, description=description)
         else:
@@ -131,6 +135,7 @@ class Logger:
 
     def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
                  description=None, **kwargs):
+        # std logger branch can be removed once transition is completed
         if msg:
             self._std_logger.critical(msg, *args, **kwargs)
         else:
@@ -138,6 +143,7 @@ class Logger:
 
     def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
               description=None, **kwargs):
+        # std logger branch can be removed once transition is completed
         if msg:
             self._std_logger.debug(msg, *args, **kwargs)
         else:
@@ -145,6 +151,7 @@ class Logger:
 
     def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
              description=None, **kwargs):
+        # std logger branch can be removed once transition is completed
         if msg:
             self._std_logger.info(msg, *args, **kwargs)
         else:
@@ -152,6 +159,7 @@ class Logger:
 
     def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
                 description=None, **kwargs):
+        # std logger branch can be removed once transition is completed
         if msg:
             self._std_logger.warning(msg, *args, **kwargs)
         else:

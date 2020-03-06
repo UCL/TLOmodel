@@ -48,8 +48,30 @@ def parse_log_file(filepath, level="INFO"):
     parse_output() for details of stdlib logging parsing
     and parse_structured_logging() for tlo structured logging parsing
 
+    The format can be one of two style, stdlib logging like :
+        INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
+
+    or a JSON representation with the first instance from a log key being a header line, and all following
+    rows being data only rows (without column names or metadata).
+
+    The dictionary returned has the format:
+    {
+        <logger 1 name>: {
+                           <log key 1>: <pandas dataframe>,
+                           <log key 2>: <pandas dataframe>,
+                           <log key 3>: <pandas dataframe>
+                         },
+
+        <logger 2 name>: {
+                           <log key 4>: <pandas dataframe>,
+                           <log key 5>: <pandas dataframe>,
+                           <log key 6>: <pandas dataframe>
+                         },
+        ...
+    }
+
     :param filepath: file path to log file
-    :param level: logging level to be parsed, if used then tlo structured logging is enabled
+    :param level: logging level to be parsed for structured logging
     :return: dictionary of parsed log data
     """
     oldstyle_loglines = []
@@ -59,7 +81,7 @@ def parse_log_file(filepath, level="INFO"):
             # only parse json entities
             if line.startswith('{'):
                 packet = LogRow(line)
-                log_data.parse_packet(packet, level)
+                log_data.parse_log_row(packet, level)
             else:
                 oldstyle_loglines.append(line)
 
@@ -72,7 +94,7 @@ def oldstyle_parse_output(list_of_log_lines):
     """
     Parses logged output from a TLO run and create Pandas dataframes for analysis.
 
-    Use parse_log_file() wrapper if required
+    Used by parse_log_file() to handle stdlib logging
 
     Each input line follows the format:
     INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
