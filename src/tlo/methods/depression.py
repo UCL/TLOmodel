@@ -67,6 +67,9 @@ class Depression(Module):
         'init_rp_ever_depr_per_year_older_f': Parameter(
             Types.REAL, 'Initial relative prevalence ever depression per year older in women'
         ),
+        'init_pr_ever_talking_therapy_if_diagnosed': Parameter(
+            Types.REAL, 'Initial probability of ever having had talking therapy if ever diagnosed with depression'
+        ),
 
         'init_pr_antidepr_curr_depr': Parameter(
             Types.REAL, 'Initial probability of being on antidepressants if currently depressed'
@@ -181,9 +184,12 @@ class Depression(Module):
     SYMPTOMS = {'em_Injuries_From_Self_Harm'}
 
     def read_parameters(self, data_folder):
-        self.load_parameters_from_dataframe(pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
+        self.load_parameters_from_dataframe(pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_ap_th.xlsx',
                                                           sheet_name='parameter_values'))
         p = self.parameters
+
+        # overwriting for testing purposes
+        p['base_3m_prob_depr'] = .3
 
         # Build the Linear Models:
         self.LinearModels = dict()
@@ -225,6 +231,12 @@ class Depression(Module):
             Predictor('de_depr').when(True, p['init_pr_antidepr_curr_depr']),
             Predictor().when('de_depr==False & de_ever_diagnosed_depression==True',
                              p['init_rp_antidepr_ever_depr_not_curr'])
+        )
+
+        self.LinearModels['Ever_Talking_Therapy_Initialisation'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['init_pr_ever_talking_therapy_if_diagnosed'],
+            Predictor('de_ever_diagnosed_depression').when(False, 0)
         )
 
         self.LinearModels['Risk_of_Depression_Onset_per3mo'] = LinearModel(
@@ -329,7 +341,7 @@ class Depression(Module):
                 (df['is_alive'] & df['de_depr']).sum()
             )
 
-        # Assign initial 'ever depression' status (uses seperate LinearModels for Males and Females due to the nature
+        # Assign initial 'ever depression' status (uses separate LinearModels for Males and Females due to the nature
         # of the model that is specified)
         df.loc[(df['is_alive'] & (df['sex'] == 'M')), 'de_ever_depr'] = self.apply_linear_model(
             self.LinearModels['Depression_Ever_At_Population_Initialisation_Males'],
@@ -350,12 +362,18 @@ class Depression(Module):
             df.loc[df['is_alive']]
         )
 
+        # Assign initial 'de_ever_talk_ther' status
+        df.loc[df['is_alive'], 'de_ever_talk_ther'] = self.apply_linear_model(
+             self.LinearModels['Ever_Talking_Therapy_Initialisation'],
+             df.loc[df['is_alive']]
+        )
+
         # Assign initial 'using anti-depressants' status to those who are currently depressed and diagnosed
         df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression'], 'de_on_antidepr'] = \
             self.apply_linear_model(
                 self.LinearModels['Using_AntiDepressants_Initialisation'],
                 df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
-            )
+        )
 
         # TODO: Initialise 'ever having had talking therapy' and 'ever had self-harm event'
 
@@ -676,6 +694,10 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'SelfHarmEvents': self.module.EventsTracker['SelfHarmEvents'],
             'SuicideEvents': self.module.EventsTracker['SuicideEvents'],
         })
+
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[10].to_dict())
 
         # Reset the EventTracker
         self.module.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
