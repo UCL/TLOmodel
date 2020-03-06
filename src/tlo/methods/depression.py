@@ -666,7 +666,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_depr = (df.de_ever_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_age_50_ever_depr = (df.is_alive & (df.age_years == 50) & df.de_ever_depr).sum()
 
-        # Numbers benefiting from interventions
+        # Numbers experiencing interventions
         n_ever_diagnosed_depression = (df.is_alive & df.de_ever_diagnosed_depression & (df.age_years >= 15)).sum()
         n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
         n_antidepr_ever_depr = (df.is_alive & df.de_on_antidepr & df.de_ever_depr & (df.age_years >= 15)).sum()
