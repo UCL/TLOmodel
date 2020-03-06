@@ -1,25 +1,18 @@
 import datetime
 from pathlib import Path
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from matplotlib.dates import DateFormatter
+
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.dates import DateFormatter
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    demography,
-    healthburden,
-    healthsystem,
-    contraception,
-    schisto
-)
+from tlo.methods import contraception, demography, healthburden, healthsystem, schisto
+
 
 def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
-    outputpath = Path("./outputs")  # folder for convenience of storing outputs
-    datestamp = datetime.datetime.now().strftime("__%Y_%m_%d_%H_%M")
-
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
@@ -80,6 +73,7 @@ sim, output = run_simulation(popsize=1000, haem=True, mansoni=True, mda_execute=
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
 # ---------------------------------------------------------------------------------------------------------
+
 
 # prevalence, mean worm burden and states count
 def get_timestamp():

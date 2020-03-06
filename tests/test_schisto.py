@@ -1,18 +1,12 @@
 import os
 import time
-import numpy as np
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import (
-    contraception,
-    demography,
-    healthburden,
-    healthsystem,
-    schisto
-)
+from tlo.methods import contraception, demography, healthburden, healthsystem, schisto
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
@@ -25,12 +19,12 @@ def simulation_haem():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 schisto.Schisto(resourcefilepath=resourcefilepath),
+                 schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
 
     sim.seed_rngs(1)
     return sim
@@ -42,13 +36,13 @@ def simulation_both():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
-    sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 schisto.Schisto(resourcefilepath=resourcefilepath),
+                 schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False),
+                 schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
 
     sim.seed_rngs(1)
     return sim
