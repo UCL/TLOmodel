@@ -74,6 +74,17 @@ class Logger:
     def addHandler(self, hdlr):
         self._std_logger.addHandler(hdlr=hdlr)
 
+    def reset_attributes(self):
+        """Reset logger attributes to an unset state"""
+        # clear all logger settings
+        self.handlers.clear()
+        self.filters.clear()
+        self.keys.clear()
+        self.simulation = None
+        # boolean attributes used for now, can be removed after transition to structured logging
+        self.logged_stdlib = False
+        self.logged_structured = False
+
     def setLevel(self, level):
         self._std_logger.setLevel(level)
 

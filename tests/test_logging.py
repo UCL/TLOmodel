@@ -27,9 +27,7 @@ def basic_configuration(tmpdir):
 @pytest.fixture(scope='function')
 def simulation_configuration(tmpdir):
     logger = logging.getLogger('tlo.test.logger')
-    logger.keys.clear()
-    logger.logged_stdlib = False
-    logger.logged_structured = False
+    logger.reset_attributes()
 
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 

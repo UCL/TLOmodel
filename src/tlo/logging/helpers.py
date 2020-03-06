@@ -35,20 +35,23 @@ def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
             getLogger(key).setLevel(value)
 
 
-def init_logging(simulation=None):
+def init_logging():
     """Initialise default logging with stdout stream"""
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
     handler.setFormatter(_FORMATTER)
     logger = getLogger('tlo')
-    # clear all logger settings
-    logger.handlers.clear()
-    logger.filters.clear()
-    # boolean attributes used for now, can be removed after transition to structured logging
-    logger.logged_stdlib = False
-    logger.logged_structured = False
+    logger.reset_attributes()
 
     logger.addHandler(handler)
     _logging.basicConfig(level=_logging.WARNING)
-    if simulation:
-        logger.simulation = simulation
+
+
+def inject_into_logger(simulation):
+    """
+    Inject simulation into logger for structured logging, called by the simulation
+    :param simulation:
+    :return:
+    """
+    logger = getLogger('tlo')
+    logger.simulation = simulation
