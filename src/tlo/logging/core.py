@@ -110,14 +110,16 @@ class Logger:
         if key not in self.keys:
             # new log key, so create header json row
             self.keys.add(key)
-            header = {"level": level,
+            header = {"type": "header",
+                      "level": level,
                       "module": self.name,
                       "key": key,
                       "columns": {key: value.dtype.name for key, value in data.items()},
                       "description": description}
 
         # create data json row
-        row = {"module": self.name, "key": key,
+        row = {"type": "data",
+               "module": self.name, "key": key,
                "date": tlo_logger.simulation.date.isoformat(),
                "values": list(data.values())}
 

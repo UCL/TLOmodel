@@ -15,7 +15,7 @@ class LogRow:
         self.module = log_data['module']
         self.log_id = f'{self.module}_{self.key}'
 
-        if 'level' in log_data.keys():
+        if log_data['type'] == 'header':
             self.is_header = True
             self.level = log_data['level']
             self.header_data = log_data
