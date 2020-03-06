@@ -242,6 +242,12 @@ class Labour (Module):
         'sensitivity_of_assessment_of_uterine_rupture_hp': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment by birth attendant for uterine rupture in a level 1 '
                         'hospital'),
+        'sensitivity_of_assessment_of_severe_pe_hc': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for severe pre-eclampsia in a level 1 '
+                        'hospital'),
+        'sensitivity_of_assessment_of_severe_pe_hp': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment by birth attendant for severe pre-eclampsia in a level 1 '
+                        'hospital'),
     }
 
     PROPERTIES = {
@@ -458,14 +464,14 @@ class Labour (Module):
 
         # severe pre eclampsia diagnosis
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            assess_sepsis_hc=DxTest(
+            assess_severe_pe_hc=DxTest(
                 property='la_eclampsia',  # TODO: this wrong, needs to be 'ps_htn_disorders' == 'severe_pe' but cant
                                           # read categorical
-                sensitivity=self.parameters['sensitivity_of_assessment_of_sepsis_hc'], ))
+                sensitivity=self.parameters['sensitivity_of_assessment_of_severe_pe_hc'], ))
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            assess_sepsis_hp=DxTest(
+            assess_severe_pe_hp=DxTest(
                 property='la_sepsis',
-                sensitivity=self.parameters['sensitivity_of_assessment_of_sepsis_hp'], ))
+                sensitivity=self.parameters['sensitivity_of_assessment_of_severe_pe_hp'], ))
 
         # Uterine Rupture
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -805,6 +811,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'antepartum_haem': False,  # True (T) or False (F)
                                   'source_aph': None,  # Placenta Praevia (PP) or Placental Abruption (PA) (Other?)
                                   'units_transfused': 0,
+                                  'received_mgso4_severe_pe': False,
                                   'risk_ip_eclampsia': params['prob_ip_eclampsia'],
                                   'risk_pp_eclampsia': params['prob_pp_eclampsia'],
                                   'eclampsia': False,  # True (T) or False (F)
@@ -1566,7 +1573,12 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                             mni[person_id]['labour_is_currently_obstructed'] = False
                             mni[person_id]['mode_of_delivery'] = 'AVDF'  # add here effect of antibiotics?
                         else:
+                            logger.debug('Following a failed assisted vaginal delivery other %d will need additional '
+                                         'treatment',person_id)
                             mni[person_id]['refer_for_cs'] = True
+                else:
+                    logger.debug('mother %d has not had their obstructed labour identified during delivery and will not'
+                                 'be treated', person_id)
 
                 if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
                     assessment_and_treatment_of_obstructed_labour('hc')
@@ -1589,11 +1601,16 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                                                                            f'assess_sepsis_{facility_type}',
                                                                            hsi_event=self):
                     if outcome_of_request_for_consumables_sep:
+                        logger.debug('mother %d has has their sepsis identified during delivery. As consumables are '
+                                     'available they will receive treatment', person_id)
                         mni[person_id]['received_abx_sepsis'] = True
 
                         # if params['prob_cure_antibiotics'] > self.module.rng.random_sample():
                         # mni[person_id]['sepsis'] = False
                         # We actually want to apply this as a mortality reduction (so maybe we store on abx in mni)
+                else:
+                    logger.debug('mother %d has not had their sepsis identified during delivery and will not be treated'
+                                 , person_id)
 
             if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
                 assessment_and_treatment_of_maternal_sepsis('hc')
@@ -1604,7 +1621,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
     # --------------------------------------------------- Maternal Hypertension ---------------------------------------
     # ------------------------------------------------- Severe pre-eclampsia ------------------------------------------
             pkg_code_severe_preeclampsia = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of '
-                                                                                                       'eclampsia',
+                                                                                                        'eclampsia',
                                                                                 'Intervention_Pkg_Code'])[0]
 
             consumables_needed_spe = {'Intervention_Package_Code': {pkg_code_severe_preeclampsia: 1}, 'Item_Code': {}}
@@ -1614,19 +1631,20 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
 
             def assessment_and_treatment_of_severe_pre_eclampsia(facility_type):
                 if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
-                                                                           f'assess_sepsis_{facility_type}',
+                                                                           f'assess_severe_pe_{facility_type}',
                                                                            hsi_event=self):
                     if outcome_of_request_for_consumables_sep:
-                        mni[person_id]['received_abx_sepsis'] = True
-
-                        # if params['prob_cure_antibiotics'] > self.module.rng.random_sample():
-                        # mni[person_id]['sepsis'] = False
-                        # We actually want to apply this as a mortality reduction (so maybe we store on abx in mni)
+                        mni[person_id]['received_mgso4_severe_pe'] = True
+                        logger.debug('mother %d has has their severe pre-eclampsia identified during delivery. As '
+                                     'consumables are available they will receive treatment', person_id)
+                else:
+                    logger.debug('mother %d has not had their severe pre-eclampsia identified during delivery and will '
+                                 'not be treated', person_id)
 
             if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
-                assessment_and_treatment_of_maternal_sepsis('hc')
+                assessment_and_treatment_of_severe_pre_eclampsia('hc')
             if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
-                assessment_and_treatment_of_maternal_sepsis('hp')
+                assessment_and_treatment_of_severe_pre_eclampsia('hp')
                 # todo: unattended?
 
 
@@ -1648,10 +1666,15 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
     def did_not_run(self):
         return False
 
+
 class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event.
-    This event manages the Health System Interaction for women who receive post partum care following delivery
+    This is the HSI HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1. This event is scheduled by the
+    PostpartumLabourEvent . This event manages initial care around the time of delivery including prophylactic interventions (i.e. clean
+    birth practices) for women presenting at Level 1 of the health system for delivery care. This event uses a womans
+    stored risk of complications, which may be manipulated by treatment effects to determines if they will experience
+    a complication during their labour in hospital. It is responsible for scheduling treatment HSIs for those
+    complications.
     """
 
     def __init__(self, module, person_id):
@@ -1726,7 +1749,6 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
                                                             labour_stage='pp')
         self.module.set_complications_during_facility_birth(person_id, complication='sepsis', labour_stage='pp')
 
-
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # TODO: modify based on complications?
         return actual_appt_footprint
 
@@ -1734,6 +1756,80 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
         logger.debug('HSI_Labour_ReceivesCareForPostpartumPeriod: did not run')
         # TODO: reset delivery_setting to home_birth and send back to postpartum event?
         pass
+
+
+class HSI_Labour_CaesareanSectionFacilityLevel2(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is HSI_Labour_CaesareanSectionFacilityLevel2. It is scheduled by HSI_Labour_
+    PresentsForSkilledAttendanceInLabourFacilityLevel1. This event manages caesarean section delivery.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+
+        self.TREATMENT_ID = 'HSI_Labour_CaesareanSectionFacilityLevel2'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['MajorSurg'] = 1
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.info('This is HSI_Labour_CaesareanSection: Person %d will now undergo delivery via Caesarean Section',
+                    person_id)
+
+class HSI_Labour_SurgeryForLabourComplications(HSI_Event, IndividualScopeEventMixin):
+    """ This is HSI_Labour_SurgeryForLabourComplications. It can be scheduled by HSI_Labour_
+    PresentsForSkilledAttendanceInLabourFacilityLevel1 or HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1
+    This event manages surgery for women who have developed complication in labour where medical management has failed.
+    This includes uterine rupture, antepartum haemorrhage, and postpartum haemorrhage."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+
+        self.TREATMENT_ID = 'HSI_Labour_SurgeryForLabourComplications'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['MajorSurg'] = 1
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.info('This is HSI_Labour_SurgeryForLabourComplications: Person %d will now undergo surgery for '
+                    'complications developed in labour', person_id)
+
+
+class HSI_Labour_ReceivesBloodTransfusionFacilityLevel2(HSI_Event, IndividualScopeEventMixin):
+    """ This is HSI_Labour_ReceivesBloodTransfusionFacilityLevel2. It can be scheduled by HSI_Labour_
+    PresentsForSkilledAttendanceInLabourFacilityLevel1 or HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1
+    This event manages blood transfusion for women who have experienced significant blood loss in labour"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+
+        self.TREATMENT_ID = 'HSI_Labour_ReceivesBloodTransfusionFacilityLevel2'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.info('This is HSI_Labour_ReceivesBloodTransfusionFacilityLevel2: Person %d will now receive a blood '
+                    'transfusion following haemorrhage/blood loss delivery', person_id)
+
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
