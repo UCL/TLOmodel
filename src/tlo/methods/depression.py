@@ -388,8 +388,6 @@ class Depression(Module):
                 df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
         )
 
-        # TODO: Initialise 'ever having had talking therapy' and 'ever had self-harm event'
-
     def initialise_simulation(self, sim):
         """
         Launch the main polling event and the logging event.
