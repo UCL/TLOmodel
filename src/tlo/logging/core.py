@@ -160,7 +160,6 @@ class Logger:
             raise ValueError(f"Both oldstyle and structured logging has been used for {self.name}, "
                              "please update all logging to use structured logging")
 
-
     def _try_log_message(self, level, key, data, description):
         """Log strucured message, if key or data are None, then throw exception"""
         if key and data:
