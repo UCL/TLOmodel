@@ -154,7 +154,7 @@ class TestStructuredLogging:
     @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
     def test_messages_higher_level(self, simulation_configuration, message_level):
         # given that messages are a higher level than the logger
-        logger_level = eval(message_level) + 1
+        logger_level = eval(message_level) - 1
         message = {"message": pd.Series([12.5])[0]}
         file_handler, file_path = simulation_configuration
         log_message(message_level, logger_level, message, structured_logging=True)
@@ -173,7 +173,7 @@ class TestStructuredLogging:
     @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
     def test_messages_lower_level(self, simulation_configuration, message_level):
         # given that messages are at a lower level than logger
-        logger_level = eval(message_level) - 1
+        logger_level = eval(message_level) + 1
         message = {"message": pd.Series([12.5])[0]}
         file_handler, file_path = simulation_configuration
         log_message(message_level, logger_level, message, structured_logging=True)
