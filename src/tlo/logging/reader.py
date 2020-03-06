@@ -13,7 +13,7 @@ class LogRow:
         log_data = json.loads(line)
         self.key = log_data['key']
         self.module = log_data['module']
-        self.log_id = f'{self.module}_{self.key}'
+        self.log_id = (self.module, self.key)
 
         if log_data['type'] == 'header':
             self.is_header = True
