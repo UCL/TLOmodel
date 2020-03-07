@@ -110,23 +110,23 @@ class Oesophageal_Cancer(Module):
             "relative rate of receiving medical treatment aimed at cure if have stage3, "
             "given diagnosis (surgery, radiotherapy and/or chemotherapy",
         ),
-        "rr_diagnosis_low_grade_dysp": Parameter(
-            Types.REAL, "probability per 3 months of diagnosis in a person with low grade oesophageal dysplasia"
+        "rr_dysphagia_low_grade_dysp": Parameter(
+            Types.REAL, "probability per 3 months of dysphagia in a person with low grade oesophageal dysplasia"
         ),
-        "rr_diagnosis_high_grade_dysp": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high grade oesophageal dysplasia"
+        "rr_dysphagia_high_grade_dysp": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have high grade oesophageal dysplasia"
         ),
-        "r_diagnosis_stage1": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 1 oesophageal cancer"
+        "r_dysphagia_stage1": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 1 oesophageal cancer"
         ),
-        "rr_diagnosis_stage2": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 2 oesophageal cancer"
+        "rr_dysphagia_stage2": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 2 oesophageal cancer"
         ),
-        "rr_diagnosis_stage3": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 3 oesophageal cancer"
+        "rr_dysphagia_stage3": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 3 oesophageal cancer"
         ),
-        "rr_diagnosis_stage4": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 4 oesophageal cancer"
+        "rr_dysphagia_stage4": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 4 oesophageal cancer"
         ),
         "init_prop_oes_cancer_stage": Parameter(
             Types.LIST,
@@ -144,7 +144,7 @@ class Oesophageal_Cancer(Module):
         "rp_oes_cancer_ex_alc": Parameter(
             Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer "
         ),
-        "init_prop_diagnosed_oes_cancer_by_stage": Parameter(
+        "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer diagnosed"
         ),
         "init_prop_treatment_status_oes_cancer": Parameter(
@@ -164,6 +164,11 @@ class Oesophageal_Cancer(Module):
             Types.REAL, "disability weight for oesophageal cancer primary therapy - code 550"
         ),
     }
+
+    # todo:  Dysplasia is assumed to persist indefinitely so if diagnosis is not made as a result of an initial
+    # todo: presentation (diagnostic algorithm) there is a possibility  of re - presentation at a later  point at
+    #  which there is again a certain probability of diagnosis.
+
 
     # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
     # medication, has a chronic disease that requires medication every day and causes some
@@ -202,13 +207,11 @@ class Oesophageal_Cancer(Module):
             "high grade dysplasia, stage 1, stage 2, stage 3",
             categories=["never", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3"],
         ),
+        "sy_dysphagia": Property(Types.BOOL, "has dysphagia"),
         "ca_oesophagus_diagnosed": Property(Types.BOOL, "diagnosed with oesophageal dysplasia / cancer"),
         "ca_oesophageal_cancer_death": Property(Types.BOOL, "death from oesophageal cancer"),
-        "ca_incident_oes_cancer_diagnosis_this_3_month_period": Property(
-            Types.BOOL, "incident oesophageal cancer" "diagnosis this 3 month period"
-        ),
-        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment"),
-        "ca_disability": Property(Types.REAL, "disability weight this three month period"),
+        "ca_date_oes_cancer_diagnosis": Property(Types.DATE, "date incident oesophageal cancer"),
+        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment")
     }
     TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
 
@@ -255,6 +258,7 @@ class Oesophageal_Cancer(Module):
         df.loc[df.is_alive, "ca_disability"] = 0
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment_requested"] = False
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
+        df.loc[df.is_alive, "sy_dysphagia"] = False
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
@@ -283,16 +287,31 @@ class Oesophageal_Cancer(Module):
         # set for those that have cancer
         df.loc[stage.index[stage != 'none'], 'ca_oesophagus'] = stage[stage != 'none']
 
-        # -------------------- ASSIGN VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
+        # -------------------- ASSIGN VALUES SY_DYSPHAGIA AT BASELINE --------------------------------
+
+        def set_dysphagia(stage):
+            """samples dysphagia status based on stage of cancer"""
+            # get the positional offset of the stage (from definition of category in PROPERTIES)
+            offset = df.ca_oesophagus.cat.categories.get_loc(stage) - 1
+            # get the probability of dysphagia  this stage of cancer
+            p_dysphagia = m.init_prop_dysphagia_oes_cancer_by_stage[offset]
+            # randomly select some to have been diagnosed
+            subset = df.is_alive & (df.ca_oesophagus == stage)
+            df.loc[subset, 'sy_dysphagia'] = rng.random_sample(size=subset.sum()) < p_dysphagia
+
+        for stage in cancer_stages:
+            set_dysphagia(stage)
+
+        # -------------------- ASSIGN VALUES OESOPHAGEAL_CANCER_DIAGNOSED AT BASELINE --------------------------------
 
         def set_diagnosed(stage):
             """samples diagnosed status based on stage of cancer"""
             # get the positional offset of the stage (from definition of category in PROPERTIES)
             offset = df.ca_oesophagus.cat.categories.get_loc(stage) - 1
-            # get the probability of diagnosis at this stage of cancer
-            p_diagnosed = m.init_prop_diagnosed_oes_cancer_by_stage[offset]
+            # get the probability of diagnosis at this stage of cancer, given sy_dysphagia
+            p_diagnosed = m.init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage[offset]
             # randomly select some to have been diagnosed
-            subset = df.is_alive & (df.ca_oesophagus == stage)
+            subset = df.is_alive & (df.ca_oesophagus == stage) & df.sy_dysphagia
             df.loc[subset, 'ca_oesophagus_diagnosed'] = rng.random_sample(size=subset.sum()) < p_diagnosed
 
         for stage in cancer_stages:
