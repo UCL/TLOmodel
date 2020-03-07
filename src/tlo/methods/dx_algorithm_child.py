@@ -66,8 +66,8 @@ class DxAlgorithmChild(Module):
             consumables.loc[consumables['Items'] == 'Proteinuria test (dipstick)', 'Item_Code']
         )[0]
         consumables_needed = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [{item_code_test: 1}],
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_test: 1},
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(

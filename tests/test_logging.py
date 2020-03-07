@@ -200,10 +200,9 @@ class TestConvertLogData:
 
         assert self.expected_output == output
 
-    def test_string_to_dict_fails(self):
-        with pytest.raises(ValueError):
-            self.logger._convert_log_data("strings")
-
+    def test_string_to_dict(self):
+        output = self.logger._convert_log_data("strings")
+        assert {'message': 'strings'} == output
 
 def test_mixed_logging():
     """Logging with both oldstyle and structured logging should raise an error"""
