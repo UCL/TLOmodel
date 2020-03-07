@@ -100,10 +100,12 @@ class Logger:
             return converted_data
         if isinstance(data, (list, set, tuple)):
             return {f'item_{index + 1}': value for index, value in enumerate(data)}
+        if isinstance(data, str):
+            return {'message': data}
 
         raise ValueError(f'Unexpected type given as data:\n{data}')
 
-    def _log_message(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple] = None, description=None):
+    def _log_message(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None):
         """Writes structured log message if handler allows this and logging level is allowed
 
         Will write a header line the first time a new logging key is encountered
@@ -131,7 +133,8 @@ class Logger:
                       "level": level,
                       "module": self.name,
                       "key": key,
-                      "columns": {key: value.dtype.name for key, value in data.items()},
+                      # using type().__name__ so both pandas and stdlib types can be used
+                      "columns": {key: type(value).__name__ for key, value in data.items()},
                       "description": description}
 
         # create data json row
@@ -168,7 +171,7 @@ class Logger:
         else:
             raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
 
-    def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+    def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                  description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
@@ -177,7 +180,7 @@ class Logger:
         else:
             self._try_log_message(level="CRITICAL", key=key, data=data, description=description)
 
-    def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+    def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
               description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
@@ -186,7 +189,7 @@ class Logger:
         else:
             self._try_log_message(level="DEBUG", key=key, data=data, description=description)
 
-    def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+    def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
              description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
@@ -195,7 +198,7 @@ class Logger:
         else:
             self._try_log_message(level="INFO", key=key, data=data, description=description)
 
-    def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple] = None,
+    def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                 description=None, **kwargs):
         # std logger branch can be removed once transition is completed
         if msg:
