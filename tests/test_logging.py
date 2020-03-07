@@ -201,6 +201,7 @@ class TestConvertLogData:
         output = self.logger._convert_log_data("strings")
         assert {'message': 'strings'} == output
 
+
 def test_mixed_logging():
     """Logging with both oldstyle and structured logging should raise an error"""
     logger = logging.getLogger('tlo.test.logger')
