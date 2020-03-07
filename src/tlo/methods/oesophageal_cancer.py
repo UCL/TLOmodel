@@ -199,23 +199,6 @@ class Oesophageal_Cancer(Module):
     # NB. The 'em_' prefix means that the onset of this symptom leads to an GenericEmergencyAppt
     SYMPTOMS = {'sy_dysphagia'}
 
-    # Get DALY weight values:
-    if "HealthBurden" in self.sim.modules.keys():
-        # get the DALY weight for oes cancer
-        self.parameters["daly_wt_oes_dysp_diagnosed"] = 0.03
-        self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
-        sequlae_code=550
-        )
-        self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
-        sequlae_code=549
-        )
-        self.parameters["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
-        sequlae_code=547
-        )
-
-    # Register this disease module with the health system
-    self.sim.modules['HealthSystem'].register_disease_module(self)
-
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
@@ -226,20 +209,23 @@ class Oesophageal_Cancer(Module):
         )
         self.load_parameters_from_dataframe(dfd)
 
+        # Get DALY weight values:
+
         if "HealthBurden" in self.sim.modules.keys():
-            # get the DALY weight - 547-550 are the sequale codes for oesophageal cancer
-            self.parameters["daly_wt_oes_cancer_controlled"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=547
-            )
-            self.parameters["daly_wt_oes_cancer_terminal"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=548
-            )
-            self.parameters["daly_wt_oes_cancer_metastatic"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=549
-            )
-            self.parameters["daly_wt_oes_cancer_primary_therapy"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=550
-            )
+        # get the DALY weight for oes cancer
+        self.parameters["daly_wt_oes_dysp_diagnosed"] = 0.03
+        self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            sequlae_code=550
+        )
+        self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            sequlae_code=549
+        )
+        self.parameters["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            sequlae_code=547
+        )
+
+         # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -256,8 +242,7 @@ class Oesophageal_Cancer(Module):
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment"] = "never"
         df.loc[df.is_alive, "ca_oesophageal_cancer_death"] = False
-        df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
-        df.loc[df.is_alive, "ca_disability"] = 0
+        df.loc[df.is_alive, "ca_date_oes_cancer_diagnosis"] = pd.NaT
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment_requested"] = False
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
         df.loc[df.is_alive, "sy_dysphagia"] = False
@@ -354,7 +339,6 @@ class Oesophageal_Cancer(Module):
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
         df.at[child_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
-        df.at[child_id, "ca_oes_disability"] = 0
         df.at[child_id, "ca_oesophagus_curative_treatment_requested"] = False
         df.at[child_id, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
         df.at[child_id, "sy_dysphagia"] = False
@@ -405,14 +389,25 @@ class Oesophageal_Cancer(Module):
         disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage4")
                                                 ] = 'daly_wt_oes_cancer_stage4'
 
-        disability_series_for_alive_persons.loc[df.is_alive & (
-            ((df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia') & (df.ca_oesophagus == 'low_grade_dysplasia')) or
-            ((df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia') & (df.ca_oesophagus == 'high_grade_dysplasia')) or
-            ((df.ca_oesophagus_curative_treatment == 'stage1') & (df.ca_oesophagus == 'stage1')) or
-            ((df.ca_oesophagus_curative_treatment == 'stage2') & (df.ca_oesophagus == 'stage2')) or
-            ((df.ca_oesophagus_curative_treatment == 'stage3') & (df.ca_oesophagus == 'stage3'))
-            )]
-            = 'daly_wt_treated_oes_cancer'
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia') & (df.ca_oesophagus == 'low_grade_dysplasia')
+        ] = 'daly_wt_treated_oes_cancer'
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia') & (df.ca_oesophagus == 'high_grade_dysplasia')
+        ] = 'daly_wt_treated_oes_cancer'
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'stage1') & (df.ca_oesophagus == 'stage1')
+        ] = 'daly_wt_treated_oes_cancer'
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'stage2') & (df.ca_oesophagus == 'stage2')
+        ] = 'daly_wt_treated_oes_cancer'
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'stage3') & (df.ca_oesophagus == 'stage3')
+        ] = 'daly_wt_treated_oes_cancer'
 
         return disability_series_for_alive_persons
 
