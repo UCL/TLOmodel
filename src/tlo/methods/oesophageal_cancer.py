@@ -410,10 +410,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # set ca_oesophageal_cancer_death back to False after death
-        df.loc[df.is_alive, "ca_oesophageal_cancer_death"] = False
-        df.loc[df.is_alive, "ca_disability"] = 0
-        #       df['ca_oesophagus_curative_treatment_requested'] = False
         df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
 
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
@@ -494,27 +490,30 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                        'stage3', 'stage4',
                        m.r_stage4_stage3, m.rr_stage4_undergone_curative_treatment)
 
-        # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
+        # -------------------- UPDATING OF SY_DYSPHAGIA OVER TIME --------------------------------
         # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation
         # todo: for diagnosis
 
         # update diagnosis status for undiagnosed people with low grade dysplasia
 
-        def update_diagnosis(current_stage, r_diagnosis):
+        def update_dysphagia(current_stage, r_dysphagia):
             idx = df.index[df.is_alive &
-                           (df.ca_oesophagus == current_stage) &
-                           (df.age_years >= 20) &
-                           ~df.ca_oesophagus_diagnosed]
-            selected = idx[r_diagnosis > rng.random_sample(size=len(idx))]
-            df.loc[selected, 'ca_oesophagus_diagnosed'] = True
-            df.loc[selected, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = True
+                           (df.ca_oesophagus == current_stage)]
+            selected = idx[r_dysphagia > rng.random_sample(size=len(idx))]
+            df.loc[selected, 'sy_dysphagia'] = True
+            df.loc[selected, 'ca_date_oes_cancer_diagnosis'] = self.sim.date
 
-        update_diagnosis('low_grade_dysplasia', m.r_diagnosis_stage1 * m.rr_diagnosis_low_grade_dysp)
-        update_diagnosis('high_grade_dysplasia', m.r_diagnosis_stage1 * m.rr_diagnosis_high_grade_dysp)
-        update_diagnosis('stage1', m.r_diagnosis_stage1)
-        update_diagnosis('stage2', m.r_diagnosis_stage1 * m.rr_diagnosis_stage2)
-        update_diagnosis('stage3', m.r_diagnosis_stage1 * m.rr_diagnosis_stage3)
-        update_diagnosis('stage4', m.r_diagnosis_stage1 * m.rr_diagnosis_stage4)
+        update_dysphagia('low_grade_dysphagia', m.r_dysphagia_stage1 * m.rr_dysphagia_low_grade_dysp)
+        update_dysphagia('high_grade_dysphagia', m.r_dysphagia_stage1 * m.rr_dysphagia_high_grade_dysp)
+        update_dysphagia('stage1', m.r_dysphagia_stage1)
+        update_dysphagia('stage2', m.r_dysphagia_stage1 * m.rr_dysphagia_stage2)
+        update_dysphagia('stage3', m.r_dysphagia_stage1 * m.rr_dysphagia_stage3)
+        update_dysphagia('stage4', m.r_dysphagia_stage1 * m.rr_dysphagia_stage4)
+
+        # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
+
+        # todo: diagnosis now occurs due to HSI event resulting from presentation of all people with dysphagia
+
 
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
