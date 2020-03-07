@@ -215,6 +215,10 @@ class Oesophageal_Cancer(Module):
     }
     TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
 
+    # Symptom that this module will use
+    # NB. The 'em_' prefix means that the onset of this symptom leads to an GenericEmergencyAppt
+    SYMPTOMS = {'sy_dysphagia'}
+
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
         """
@@ -388,6 +392,92 @@ class Oesophageal_Cancer(Module):
         return disability_series_for_alive_persons
 
 
+
+
+"""
+     # -------------------- DISABLITY -----------------------------------------------------------
+
+        # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
+        # medication, has a chronic disease that requires medication every day and causes some
+        # worry but minimal interference with daily activities., 0.049, 0.031, 0.072
+        #
+        # 548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers,
+        # end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong
+        # medication to avoid constant pain. The person has no appetite, feels nauseous, and needs
+        # to spend most of the day in bed.", 0.54, 0.377, 0.687
+        #
+        # 549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme
+        # fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
+        #
+        # 550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and
+        # primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193,
+        # 0.399
+
+        # assume disability does not depend on whether diagnosed but may want to change in future
+        # todo: note these disability weights don't map fully to cancer stages - may need to re-visit these
+        # todo: choices below at some point
+        # todo: I think the m.daly_wt_oes_cancer_primary_therapy etc being read in are not being
+        # todo: recognised as REAL - need to covert to REAL so can take linear combinations of them below
+        disability_lookup = {
+            'low_grade_dysplasia': 0.01,
+            'high_grade_dysplasis': 0.01,
+            'stage1': m.daly_wt_oes_cancer_controlled,
+            'stage2': m.daly_wt_oes_cancer_primary_therapy,
+            'stage3': m.daly_wt_oes_cancer_primary_therapy,
+            'stage4': m.daly_wt_oes_cancer_metastatic,
+        }
+
+        for stage, weight in disability_lookup.items():
+            df.loc[df.is_alive & (df.ca_oesophagus == stage), 'ca_disability'] = weight
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def report_daly_values(self):
+
+        def left_censor(obs, window_open):
+            return obs.apply(lambda x: max(x, window_open) if ~pd.isnull(x) else pd.NaT)
+
+        def right_censor(obs, window_close):
+            return obs.apply(lambda x: window_close if pd.isnull(x) else min(x, window_close))
+
+        df = self.sim.population.props
+
+        # Calculate fraction of the last month that was spent depressed
+        any_depr_in_the_last_month = (df['is_alive']) & (
+            ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
+        ) & (
+            pd.isnull(df['de_date_depr_resolved']) |
+            (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+            )
+
+        start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
+                                 self.sim.date - DateOffset(months=1))
+        end_depr = right_censor(df.loc[any_depr_in_the_last_month, 'de_date_depr_resolved'], self.sim.date)
+        dur_depr_in_days = (end_depr - start_depr).dt.days.clip(0).fillna(0)
+        days_in_last_month = (self.sim.date - (self.sim.date - DateOffset(months=1))).days
+        fraction_of_month_depr = dur_depr_in_days / days_in_last_month
+
+        # Apply the daly_wt to give a an average daly_wt for the previous month
+        av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='SevereDepression', data=0.0).add(
+            fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
+
+        return av_daly_wt_last_month
+
+"""
+
+
+
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all oesophagealcancer properties for population
@@ -546,153 +636,35 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         update_curative_treatment('stage2', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage2)
         update_curative_treatment('stage3', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage3)
 
-        # -------------------- DISABLITY -----------------------------------------------------------
-
-        # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
-        # medication, has a chronic disease that requires medication every day and causes some
-        # worry but minimal interference with daily activities., 0.049, 0.031, 0.072
-        #
-        # 548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers,
-        # end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong
-        # medication to avoid constant pain. The person has no appetite, feels nauseous, and needs
-        # to spend most of the day in bed.", 0.54, 0.377, 0.687
-        #
-        # 549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme
-        # fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
-        #
-        # 550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and
-        # primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193,
-        # 0.399
-
-        # assume disability does not depend on whether diagnosed but may want to change in future
-        # todo: note these disability weights don't map fully to cancer stages - may need to re-visit these
-        # todo: choices below at some point
-        # todo: I think the m.daly_wt_oes_cancer_primary_therapy etc being read in are not being
-        # todo: recognised as REAL - need to covert to REAL so can take linear combinations of them below
-        disability_lookup = {
-            'low_grade_dysplasia': 0.01,
-            'high_grade_dysplasis': 0.01,
-            'stage1': m.daly_wt_oes_cancer_controlled,
-            'stage2': m.daly_wt_oes_cancer_primary_therapy,
-            'stage3': m.daly_wt_oes_cancer_primary_therapy,
-            'stage4': m.daly_wt_oes_cancer_metastatic,
-        }
-
-        for stage, weight in disability_lookup.items():
-            df.loc[df.is_alive & (df.ca_oesophagus == stage), 'ca_disability'] = weight
-
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
         selected_to_die = stage4_idx[m.r_death_oesoph_cancer > rng.random_sample(size=len(stage4_idx))]
-        df.loc[selected_to_die, "ca_oesophageal_cancer_death"] = True
         for individual_id in selected_to_die:
             self.sim.schedule_event(
                 demography.InstantaneousDeath(self.module, individual_id, "Oesophageal_cancer"), self.sim.date
             )
 
 
-class HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-    It is appointment at which someone with low grade oes dysplasia is treated.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # Get the consumables required
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_low_grade_oes_dysplasia"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 0
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "low_grade_dysplasia"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
-
-
-class HSI_OesCancer_StartTreatmentHighGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_high_grade_oes_dysplasia"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "high_grade_dysplasia"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
-
-
-class HSI_OesCancer_StartTreatmentStage1OesCancer(HSI_Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_stage1_oes_cancer"
+        self.TREATMENT_ID = "start_treatment_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage1"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
-
-
-class HSI_OesCancer_StartTreatmentStage2OesCancer(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_stage2_oes_cancer"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage2"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
-
-
-class HSI_OesCancer_StartTreatmentStage3OesCancer(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_stage3_oes_cancer"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage3"
+        df.at[person_id, "ca_oesophagus_curative_treatment"] = df.ca_oesophagus
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """Handles lifestyle logging"""
+    """Handles logging"""
 
     def __init__(self, module):
         """schedule logging to repeat every 3 months
