@@ -7,9 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
+from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -167,7 +169,7 @@ class Oesophageal_Cancer(Module):
 
     # todo:  Dysplasia is assumed to persist indefinitely so if diagnosis is not made as a result of an initial
     # todo: presentation (diagnostic algorithm) there is a possibility  of re - presentation at a later  point at
-    #  which there is again a certain probability of diagnosis.
+    # todo: which there is again a certain probability of diagnosis.
 
     PROPERTIES = {
         "ca_oesophagus": Property(
@@ -191,8 +193,7 @@ class Oesophageal_Cancer(Module):
         "ca_oesophagus_diagnosed": Property(Types.BOOL, "diagnosed with oesophageal dysplasia / cancer"),
         "ca_oesophageal_cancer_death": Property(Types.BOOL, "death from oesophageal cancer"),
         "ca_date_oes_cancer_diagnosis": Property(Types.DATE, "date incident oesophageal cancer"),
-        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment"),
-        "ca_oes_disability": Property(Types.REAL, "disability weight")
+        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment")
     }
 
     # Symptom that this module will use
@@ -212,20 +213,20 @@ class Oesophageal_Cancer(Module):
         # Get DALY weight values:
 
         if "HealthBurden" in self.sim.modules.keys():
-        # get the DALY weight for oes cancer
-        self.parameters["daly_wt_oes_dysp_diagnosed"] = 0.03
-        self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            # get the DALY weight for oes cancer
+            self.parameters["daly_wt_oes_dysp_diagnosed"] = 0.03
+            self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
             sequlae_code=550
-        )
-        self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            )
+            self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
             sequlae_code=549
-        )
-        self.parameters["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            )
+            self.parameters["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
             sequlae_code=547
-        )
+            )
 
-         # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+            # Register this disease module with the health system
+            self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -241,7 +242,6 @@ class Oesophageal_Cancer(Module):
         df.loc[df.is_alive, "ca_oesophagus"] = "none"
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment"] = "never"
-        df.loc[df.is_alive, "ca_oesophageal_cancer_death"] = False
         df.loc[df.is_alive, "ca_date_oes_cancer_diagnosis"] = pd.NaT
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment_requested"] = False
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
@@ -326,8 +326,16 @@ class Oesophageal_Cancer(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         event = OesCancerLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
+
+        # Create the diagnostic representing the assessment for whether a person with dysphagia is diagnosed with
+        # oes cancer
+        # assume specificity = 100%
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_dysphagia=DxTest(
+                property='ca_oesophagus',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_oes_cancer_with_dysphagia'],
+            )
+        )
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -337,14 +345,12 @@ class Oesophageal_Cancer(Module):
         df = self.sim.population.props
         df.at[child_id, "ca_oesophagus"] = "none"
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
+        df.at[child_id, "ca_date_oes_cancer_diagnosis"] = pd_NaT
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
         df.at[child_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
         df.at[child_id, "ca_oesophagus_curative_treatment_requested"] = False
         df.at[child_id, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
         df.at[child_id, "sy_dysphagia"] = False
-
-# todo: check all properties defined on birth
-
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
@@ -352,9 +358,7 @@ class Oesophageal_Cancer(Module):
         # And report it on the unified symptomology scale
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
-        # todo: currently diagnosis can just occur at some point - need to create properties for
-        # todo: symptoms such as dysphagia and then symptoms that are caused by later stage cancers
-        # todo: and let these determine presentation to the health system (and hence diagnosis)
+
         return pd.Series("1", index=df.index[df.is_alive])
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -411,6 +415,19 @@ class Oesophageal_Cancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_when_dysphagia(self, person_id, hsi_event):
+        """
+        This is called by a generic HSI event when dysphagia is present
+        :param person_id:
+        :param hsi_event: The HSI event that has called this event
+        :return:
+        """
+        # Assess for oes cancer
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_oes_cancer_dysphagia',
+                                                                   hsi_event=hsi_event
+                                                                   ):
+            self.sim.population.props.at[person_id, 'ca_oesophagus_diagnosed'] = True
+
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all oesophagealcancer properties for population
@@ -427,8 +444,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-        # TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
-
         df = population.props
         m = self.module
         rng = m.rng
@@ -487,11 +502,12 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # updating for people aged over 20 with current stage to next stage
         def progress_stage(index, current_stage, next_stage, r_next_stage, rr_curative_treatment):
-            """helper function to progress people at given stage to next stage"""
+
             eff_prob_next_stage = pd.Series(r_next_stage, index=index)
+
             eff_prob_next_stage.loc[df.is_alive &
-                                    (df.ca_oesophagus == current_stage) &
-                                    (df.age_years >= 20) &
+                                   (df.ca_oesophagus == current_stage) &
+                                   (df.age_years >= 20) &
                                     (df.ca_oesophagus_curative_treatment == current_stage)
                                     ] *= rr_curative_treatment
             selected = index[eff_prob_next_stage > rng.random_sample(size=len(eff_prob_next_stage))]
@@ -514,11 +530,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                        m.r_stage4_stage3, m.rr_stage4_undergone_curative_treatment)
 
         # -------------------- UPDATING OF SY_DYSPHAGIA OVER TIME --------------------------------
-        # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation
-        # todo: for diagnosis
-
-        # update diagnosis status for undiagnosed people with low grade dysplasia
-
         def update_dysphagia(current_stage, r_dysphagia):
             idx = df.index[df.is_alive &
                            (df.ca_oesophagus == current_stage)]
@@ -532,11 +543,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         update_dysphagia('stage2', m.r_dysphagia_stage1 * m.rr_dysphagia_stage2)
         update_dysphagia('stage3', m.r_dysphagia_stage1 * m.rr_dysphagia_stage3)
         update_dysphagia('stage4', m.r_dysphagia_stage1 * m.rr_dysphagia_stage4)
-
-        # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
-
-        # todo: diagnosis now occurs due to HSI event resulting from presentation of all people with dysphagia
-
 
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
@@ -578,6 +584,24 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
+
+class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "assess_dysphagia_for_oes_cancer"
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        df.at[person_id, "ca_oesophagus_diagnosed"] = True
+        df.at[person_id, "ca_date_oes_cancer_diagnosis"] = self.sim.date
+
+
 class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -594,6 +618,25 @@ class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = df.ca_oesophagus
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
+
+
+    #todo: HSIs to add
+""""
+Clinic appointment: (present with symptoms but) failure to diagnose 
+Clinic appointment: diagnosis 
+
+Attempt at curative treatment – pre surgery
+Attempt at curative treatment – surgery
+Attempt at curative treatment – chemotherapy clinic appointment
+Attempt at curative treatment – radiotherapy clinic appointment
+Attempt at curative treatment – initiation of endocrine treatment
+Clinic appointment: monitoring - no new action 
+
+Clinic appointment: initiate palliative care
+
+Pharmacy: drug pick up 
+
+"""
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
