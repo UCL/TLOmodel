@@ -169,26 +169,6 @@ class Oesophageal_Cancer(Module):
     # todo: presentation (diagnostic algorithm) there is a possibility  of re - presentation at a later  point at
     #  which there is again a certain probability of diagnosis.
 
-
-    # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
-    # medication, has a chronic disease that requires medication every day and causes some
-    # worry but minimal interference with daily activities., 0.049, 0.031, 0.072
-    #
-    # 548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers,
-    # end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong
-    # medication to avoid constant pain. The person has no appetite, feels nauseous, and needs
-    # to spend most of the day in bed.", 0.54, 0.377, 0.687
-    #
-    # 549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme
-    # fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
-    #
-    # 550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and
-    # primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193,
-    # 0.399
-
-    # Next we declare the properties of individuals that this module provides.
-    # Again each has a name, type and description. In addition, properties may be marked
-    # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         "ca_oesophagus": Property(
             Types.CATEGORICAL,
@@ -211,13 +191,31 @@ class Oesophageal_Cancer(Module):
         "ca_oesophagus_diagnosed": Property(Types.BOOL, "diagnosed with oesophageal dysplasia / cancer"),
         "ca_oesophageal_cancer_death": Property(Types.BOOL, "death from oesophageal cancer"),
         "ca_date_oes_cancer_diagnosis": Property(Types.DATE, "date incident oesophageal cancer"),
-        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment")
+        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment"),
+        "ca_oes_disability": Property(Types.REAL, "disability weight")
     }
-    TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
 
     # Symptom that this module will use
     # NB. The 'em_' prefix means that the onset of this symptom leads to an GenericEmergencyAppt
     SYMPTOMS = {'sy_dysphagia'}
+
+    # Get DALY weight values:
+    if "HealthBurden" in self.sim.modules.keys():
+        # get the DALY weight for oes cancer
+        self.parameters["daly_wt_oes_dysp_diagnosed"] = 0.03
+        self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+        sequlae_code=550
+        )
+        self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+        sequlae_code=549
+        )
+        self.parameters["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
+        sequlae_code=547
+        )
+
+    # Register this disease module with the health system
+    self.sim.modules['HealthSystem'].register_disease_module(self)
+
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
@@ -355,11 +353,14 @@ class Oesophageal_Cancer(Module):
         df.at[child_id, "ca_oesophagus"] = "none"
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
-        df.at[child_id, "ca_oesophageal_cancer_death"] = False
         df.at[child_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
-        df.at[child_id, "ca_disability"] = 0
+        df.at[child_id, "ca_oes_disability"] = 0
         df.at[child_id, "ca_oesophagus_curative_treatment_requested"] = False
         df.at[child_id, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
+        df.at[child_id, "sy_dysphagia"] = False
+
+# todo: check all properties defined on birth
+
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
@@ -388,95 +389,32 @@ class Oesophageal_Cancer(Module):
         # the past month
         #       logger.debug('This is Oesophageal Cancer reporting my health values')
         df = self.sim.population.props  # shortcut to population properties dataframe
-        disability_series_for_alive_persons = df.loc[df["is_alive"], "ca_disability"]
+
+        disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive],data=0.0)
+
+        disability_series_for_alive_persons.loc[df.is_alive &
+                                                ((df.ca_oesophagus == "low_grade_dysplasia") or
+                                                (df.ca_oesophagus == "high_grade_dysplasia")) &
+                                                df.ca.oesophagus_diagnosed] = 'daly_wt_oes_dysp_diagnosed'
+
+        disability_series_for_alive_persons.loc[df.is_alive &
+                                                ((df.ca_oesophagus == "stage1") or
+                                                (df.ca_oesophagus == "stage2") or (df.ca_oesophagus == "stage3"))
+                                                ] = 'daly_wt_oes_cancer_stage_1_3'
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage4")
+                                                ] = 'daly_wt_oes_cancer_stage4'
+
+        disability_series_for_alive_persons.loc[df.is_alive & (
+            ((df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia') & (df.ca_oesophagus == 'low_grade_dysplasia')) or
+            ((df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia') & (df.ca_oesophagus == 'high_grade_dysplasia')) or
+            ((df.ca_oesophagus_curative_treatment == 'stage1') & (df.ca_oesophagus == 'stage1')) or
+            ((df.ca_oesophagus_curative_treatment == 'stage2') & (df.ca_oesophagus == 'stage2')) or
+            ((df.ca_oesophagus_curative_treatment == 'stage3') & (df.ca_oesophagus == 'stage3'))
+            )]
+            = 'daly_wt_treated_oes_cancer'
+
         return disability_series_for_alive_persons
-
-
-
-
-"""
-     # -------------------- DISABLITY -----------------------------------------------------------
-
-        # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
-        # medication, has a chronic disease that requires medication every day and causes some
-        # worry but minimal interference with daily activities., 0.049, 0.031, 0.072
-        #
-        # 548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers,
-        # end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong
-        # medication to avoid constant pain. The person has no appetite, feels nauseous, and needs
-        # to spend most of the day in bed.", 0.54, 0.377, 0.687
-        #
-        # 549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme
-        # fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
-        #
-        # 550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and
-        # primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193,
-        # 0.399
-
-        # assume disability does not depend on whether diagnosed but may want to change in future
-        # todo: note these disability weights don't map fully to cancer stages - may need to re-visit these
-        # todo: choices below at some point
-        # todo: I think the m.daly_wt_oes_cancer_primary_therapy etc being read in are not being
-        # todo: recognised as REAL - need to covert to REAL so can take linear combinations of them below
-        disability_lookup = {
-            'low_grade_dysplasia': 0.01,
-            'high_grade_dysplasis': 0.01,
-            'stage1': m.daly_wt_oes_cancer_controlled,
-            'stage2': m.daly_wt_oes_cancer_primary_therapy,
-            'stage3': m.daly_wt_oes_cancer_primary_therapy,
-            'stage4': m.daly_wt_oes_cancer_metastatic,
-        }
-
-        for stage, weight in disability_lookup.items():
-            df.loc[df.is_alive & (df.ca_oesophagus == stage), 'ca_disability'] = weight
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def report_daly_values(self):
-
-        def left_censor(obs, window_open):
-            return obs.apply(lambda x: max(x, window_open) if ~pd.isnull(x) else pd.NaT)
-
-        def right_censor(obs, window_close):
-            return obs.apply(lambda x: window_close if pd.isnull(x) else min(x, window_close))
-
-        df = self.sim.population.props
-
-        # Calculate fraction of the last month that was spent depressed
-        any_depr_in_the_last_month = (df['is_alive']) & (
-            ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
-        ) & (
-            pd.isnull(df['de_date_depr_resolved']) |
-            (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-            )
-
-        start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
-                                 self.sim.date - DateOffset(months=1))
-        end_depr = right_censor(df.loc[any_depr_in_the_last_month, 'de_date_depr_resolved'], self.sim.date)
-        dur_depr_in_days = (end_depr - start_depr).dt.days.clip(0).fillna(0)
-        days_in_last_month = (self.sim.date - (self.sim.date - DateOffset(months=1))).days
-        fraction_of_month_depr = dur_depr_in_days / days_in_last_month
-
-        # Apply the daly_wt to give a an average daly_wt for the previous month
-        av_daly_wt_last_month = pd.Series(index=df.loc[df.is_alive].index, name='SevereDepression', data=0.0).add(
-            fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
-
-        return av_daly_wt_last_month
-
-"""
-
-
 
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
