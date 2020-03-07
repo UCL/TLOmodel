@@ -206,7 +206,7 @@ class Oesophageal_Cancer(Module):
         """
         # Update parameters from the resource dataframe
         dfd = pd.read_excel(
-            Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx", sheet_name="parameter_values"
+            Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer_mar20_ap.xlsx", sheet_name="parameter_values"
         )
         self.load_parameters_from_dataframe(dfd)
 
