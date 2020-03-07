@@ -6,8 +6,7 @@ from tlo import logging
 
 @pytest.fixture(autouse=True)
 def reset_logging():
-    """Remove all tlo handlers and filters during teardown of test"""
+    """Reset all logging in test setup"""
+    logger = logging.getLogger('tlo.test.logger')
+    logger.reset_attributes()
     yield
-    logger = logging.getLogger('tlo')
-    logger.handlers.clear()
-    logger.filters.clear()

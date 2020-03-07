@@ -26,9 +26,6 @@ def basic_configuration(tmpdir):
 
 @pytest.fixture(scope='function')
 def simulation_configuration(tmpdir):
-    logger = logging.getLogger('tlo.test.logger')
-    logger.reset_attributes()
-
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
     sim = Simulation(start_date=start_date)
