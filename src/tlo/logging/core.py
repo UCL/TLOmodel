@@ -174,7 +174,7 @@ class Logger:
     def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                  description=None, **kwargs):
         # std logger branch can be removed once transition is completed
-        if msg:
+        if msg or msg == []:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.critical(msg, *args, **kwargs)
         else:
@@ -183,7 +183,7 @@ class Logger:
     def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
               description=None, **kwargs):
         # std logger branch can be removed once transition is completed
-        if msg:
+        if msg or msg == []:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.debug(msg, *args, **kwargs)
         else:
@@ -192,7 +192,7 @@ class Logger:
     def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
              description=None, **kwargs):
         # std logger branch can be removed once transition is completed
-        if msg:
+        if msg or msg == []:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.info(msg, *args, **kwargs)
         else:
@@ -201,7 +201,7 @@ class Logger:
     def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                 description=None, **kwargs):
         # std logger branch can be removed once transition is completed
-        if msg:
+        if msg or msg == []:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.warning(msg, *args, **kwargs)
         else:
