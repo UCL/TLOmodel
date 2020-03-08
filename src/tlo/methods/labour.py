@@ -1825,11 +1825,13 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
-        if df.at[person_id, 'la_sepsis'] or df.at[person_id, 'la_antepartum_haem'] or df.at[person_id, 'la_uterine_rupture'] or df.at[person_id, 'la_eclampsia']:
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
-            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery']
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        if df.at[person_id, 'la_sepsis'] or df.at[person_id, 'la_antepartum_haem'] or df.at[person_id,
+                                                                                            'la_uterine_rupture'] or \
+           df.at[person_id, 'la_eclampsia']:
+            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery'] # is this right?
 
-            return actual_appt_footprint
+        return actual_appt_footprint
 
     def did_not_run(self):
         return False
