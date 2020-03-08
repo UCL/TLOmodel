@@ -1374,8 +1374,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         # TODO: consider writing this whole event as a function, which can then just be called in HSI level 2/3
         # TODO: assert functions here?
 
-        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
-                    'at birth for person %d on date %s', person_id, self.sim.date)
+        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother %d has presented to a health '
+                    'facility on date %s following the onset of her labour', person_id, self.sim.date)
 
     # ================================= SQUEEZE IS TOO HIGH FOR EVENT TO RUN ==========================================
         # TODO: we should output the % of women this is happening too
@@ -1440,7 +1440,6 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
             assert mni[person_id]['delivery_setting'] == 'facility_delivery'
 
             # == == == == == == == == == == == == == == DEFINING CONSUMABLES(PROPHYLAXIS) == == == == == == == == == ==
-
             # Here we define all the possible consumables that could be required for an uncomplicated delivery at this
             # facility level, including all prophylactics
             # TODO: define consumables inside the module and just call within the HSI
@@ -1493,15 +1492,17 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                     hsi_event=self, cons_req_as_footprint=consumables_attended_delivery, to_log=True)
 
                 # CLEAN BIRTH PRACTICES:
-                # We querey if the consumables specific to each intervention are available...
+                # We query if the consumables specific to each intervention are available...
                 if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_clean_delivery_kit]:
 
-                    # And apply the effect of these intervention on the mothers stored risk
+                    # And apply the effect of these intervention on the mother and newborns risk of sepsis
                     mni[person_id]['risk_ip_sepsis'] = mni[person_id]['risk_ip_sepsis'] * \
                         params['rr_maternal_sepsis_clean_delivery']
-
                     mni[person_id]['risk_newborn_sepsis'] = mni[person_id]['risk_newborn_sepsis'] * \
                         params['rr_newborn_sepsis_clean_delivery']
+
+                    logger.debug('This facility has delivery kits available and have been used for mother %d delivery.',
+                                 person_id)
 
                 # If consumables are not available, the intervention is not delivered
                 else:
@@ -1512,6 +1513,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                     if outcome_of_request_for_consumables['Item_Code'][item_code_abx_prom]:
                         mni[person_id]['risk_ip_sepsis'] = mni[person_id]['risk_ip_sepsis'] *\
                                                        params['rr_sepsis_post_abx_prom']
+
+                        logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
+                                     'to PROM.', person_id)
                     else:
                         logger.debug('This facility has no antibiotics for the treatment of PROM.')
 
@@ -1520,26 +1524,35 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                     if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pprom]:
                         mni[person_id]['risk_ip_sepsis'] = mni[person_id]['risk_ip_sepsis'] * \
                                                         params['rr_sepsis_post_abx_pprom']
+
+                        logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
+                                     'to PPROM.', person_id)
                     else:
                         logger.debug('This facility has no antibiotics for the treatment of PROM.')
                         # todo: pprom treatment guidelines are written as if its happened antenatally,
                         #   not in labour? maybe we could use same consumables for both?
 
                 # PROPHYLACTIC STEROIDS FOR PRETERM LABOUR
-                if mni[person_id]['labour_state'] == 'early_preterm_labour' or 'late_preterm_labour':
+                if mni[person_id]['labour_state'] == 'early_preterm_labour' or mni[person_id]['labour_state'] == \
+                   'late_preterm_labour':
                     if outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_betamethasone] and \
                        outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_dexamethasone]:
                         mni[person_id]['corticosteroids_given'] = True
+                        logger.debug('This facility has provided corticosteroids for mother %d who is in preterm labour'
+                                     , person_id)
                     else:
                         logger.debug('This facility has no steroids for women in preterm labour.')
 
                 # PROPHYLACTIC ANTIBIOTICS FOR GROUP B STREP IN PRETERM LABOUR
-                if mni[person_id]['labour_state'] == 'early_preterm_labour' 'late_preterm_labour':
+                if mni[person_id]['labour_state'] == 'early_preterm_labour' or mni[person_id]['labour_state'] == \
+                   'late_preterm_labour':
                     if outcome_of_request_for_consumables['Item_Code'][item_code_antibiotics_gbs_proph]:
                         mni[person_id]['risk_newborn_sepsis'] = mni[person_id]['risk_newborn_sepsis'] * \
                                                             params['rr_newborn_sepsis_proph_abx']
-                else:
-                    logger.debug('This facility has no antibiotics for group B strep prophylaxis.')
+                        logger.debug('This facility has provided antibiotics for mother %d whose baby is a risk of '
+                                     'Group B strep', person_id)
+                    else:
+                        logger.debug('This facility has no antibiotics for group B strep prophylaxis.')
             else:
                 # Mothers delivering unattended receive no benefit of prophylaxis
                 logger.debug('mother %d received no prophylaxis as she is delivering unattended', person_id)
@@ -1795,12 +1808,6 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         # Finally we send any women who require additional treatment to the following HSIs
 
         # Currently we dont want any referrals from unattended deliveries
-        print(mni[person_id])
-       # assert not mni[person_id]['delivery_attended'] and mni[person_id]['referred_for_cs'] == True
-        #assert not ~mni[person_id]['delivery_attended'] and mni[person_id]['referred_for_surgery']
-        #assert not ~mni[person_id]['delivery_attended'] and mni[person_id]['referred_for_blood']
-
-        x ='u'
 
         if mni[person_id]['referred_for_cs']:
             self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_CaesareanSectionFacilityLevel2,
@@ -1817,6 +1824,12 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
+
+        if df.at[person_id, 'la_sepsis'] or df.at[person_id, 'la_antepartum_haem'] or df.at[person_id, 'la_uterine_rupture'] or df.at[person_id, 'la_eclampsia']:
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery']
+
+            return actual_appt_footprint
 
     def did_not_run(self):
         return False
