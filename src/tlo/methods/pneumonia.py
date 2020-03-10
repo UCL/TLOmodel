@@ -43,37 +43,37 @@ class Pneumonia(Module):
     }
 
     PARAMETERS = {
-        'base_incidence_pneumonia_by_RSV': Parameter
+        'base_inc_rate_pneumonia_by_RSV': Parameter
         (Types.LIST, 'incidence of pneumonia caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
          ),
-        'base_incidence_pneumonia_by_rhinovirus': Parameter
+        'base_inc_rate_pneumonia_by_rhinovirus': Parameter
         (Types.LIST, 'incidence of pneumonia caused by rhinovirus in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_hMPV': Parameter
+        'base_inc_rate_pneumonia_by_hMPV': Parameter
         (Types.LIST, 'incidence of pneumonia caused by hMPV in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_parainfluenza': Parameter
+        'base_inc_rate_pneumonia_by_parainfluenza': Parameter
         (Types.LIST, 'incidence of pneumonia caused by parainfluenza in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_streptococcus': Parameter
+        'base_inc_rate_pneumonia_by_streptococcus': Parameter
         (Types.LIST, 'incidence of pneumonia caused by streptoccocus 40/41 in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_hib': Parameter
+        'base_inc_rate_pneumonia_by_hib': Parameter
         (Types.LIST, 'incidence of pneumonia caused by hib in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_TB': Parameter
+        'base_inc_rate_pneumonia_by_TB': Parameter
         (Types.LIST, 'incidence of pneumonia caused by TB in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_staphylococcus': Parameter
+        'base_inc_rate_pneumonia_by_staphylococcus': Parameter
         (Types.LIST, 'incidence of pneumonia caused by Staphylococcus aureus in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_influenza': Parameter
+        'base_inc_rate_pneumonia_by_influenza': Parameter
         (Types.LIST, 'incidence of pneumonia caused by influenza in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_incidence_pneumonia_by_jirovecii': Parameter
+        'base_inc_rate_pneumonia_by_jirovecii': Parameter
         (Types.LIST, 'incidence of pneumonia caused by P. jirovecii in age groups 0-11, 12-59 months'
          ),
-        'base_incidence_pneumonia_by_other_pathogens': Parameter
+        'base_inc_rate_pneumonia_by_other_pathogens': Parameter
         (Types.LIST, 'incidence of pneumonia caused by other pathogens in age groups 0-11, 12-59 months'
          ),
         'rr_ri_pneumonia_HHhandwashing': Parameter
@@ -244,14 +244,6 @@ class Pneumonia(Module):
             pd.read_excel(
                 Path(self.resourcefilepath) / 'ResourceFile_Childhood_Pneumonia.xlsx', sheet_name='Parameter_values'))
 
-        p['rr_death_pneumonia_agelt2mo'] = 1.4
-        p['rr_death_pneumonia_age12to23mo'] = 0.8
-        p['rr_death_pneumonia_age24to59mo'] = 0.3
-        p['rr_death_pneumonia_HIV'] = 1.4
-        p['rr_death_pneumonia_SAM'] = 1.4
-        p['IMCI_effectiveness_2010'] = 0.5
-        p['dhs_care_seeking_2010'] = 0.6
-        p['case_fatality_rate'] = 0.15
 
         # Check that every value has been read-in successfully
         for param_name, type in self.PARAMETERS.items():
@@ -592,8 +584,8 @@ class Pneumonia(Module):
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
                         Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
-                        .when('non-severe', p['case_fatality_rate_AWD'])
-                        .when('severe', p['case_fatality_rate_AWD'])
+                        .when('non-severe', 0) # zero probability of dying if non-severe
+                        .when('severe', 0.9)
                         # .when('persistent', p['cfr_persistent_diarrhoea']),
                         # Predictor('age_years')  ##          <--- fill in
                         # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
@@ -804,7 +796,7 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             will_die = rng.rand() < risk_of_death
 
             # ----------------------- Allocate symptoms to onset of pneumonia ----------------------
-            possible_symptoms_by_severity = m.prob_symptoms[severity]
+            possible_symptoms_by_severity = m.prob_symptoms['non-severe']
             symptoms_for_this_person = list()
             for symptom, prob in possible_symptoms_by_severity.items():
                 if rng.rand() < prob:
@@ -901,6 +893,11 @@ class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
                 return
 
             df.at[person_id, 'ri_last_pneumonia_severity'] = 'severe'
+            possible_symptoms_by_severity = self.module.prob_symptoms['severe']
+            symptoms_for_this_person = list()
+            for symptom, prob in possible_symptoms_by_severity.items():
+                if self.module.rng.rand() < prob:
+                    symptoms_for_this_person.append(symptom)
 
             date_of_death = self.sim.date\
                             + DateOffset(days=self.module.parameters['days_onset_severe_pneumonia_before_death'])
@@ -991,47 +988,3 @@ class PneumoniaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the counters and the date_last_run
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
         self.date_last_run = self.sim.date
-
-# ----------------------------------------------------------------------------------------------------
-        # # # # # # # # # # # # # # # # # # SYMPTOMS FROM VERY SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
-
-        pn_current_very_sev_pneum_idx = df.index[df.is_alive & (df.age_years < 5) &
-                                                 (df.ri_pneumonia_severity == 'very severe pneumonia')]
-
-        eff_prob_cough = pd.Series(0.857, index=pn_current_very_sev_pneum_idx)
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
-                                index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ri_pneumonia_severity == 'very severe pneumonia')])
-        dfx = pd.concat([eff_prob_cough, random_draw], axis=1)
-        dfx.columns = ['eff_prob_cough', 'random number']
-        idx_cough = dfx.index[dfx.eff_prob_cough > random_draw]
-        df.loc[idx_cough, 'pn_cough'] = True
-
-        eff_prob_difficult_breathing = pd.Series(0.43, index=pn_current_very_sev_pneum_idx)
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
-                                index=df.index[
-                                    (df.age_years < 5) & df.is_alive & (
-                                        df.ri_pneumonia_severity == 'very severe pneumonia')])
-        dfx = pd.concat([eff_prob_difficult_breathing, random_draw], axis=1)
-        dfx.columns = ['eff_prob_difficult_breathing', 'random number']
-        idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
-        df.loc[idx_difficult_breathing, 'pn_difficult_breathing'] = True
-
-        eff_prob_fast_breathing = pd.Series(0.857, index=pn_current_very_sev_pneum_idx)
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
-                                index=df.index[
-                                    (df.age_years < 5) & df.is_alive & (
-                                        df.ri_pneumonia_severity == 'very severe pneumonia')])
-        dfx = pd.concat([eff_prob_fast_breathing, random_draw], axis=1)
-        dfx.columns = ['eff_prob_fast_breathing', 'random number']
-        idx_fast_breathing = dfx.index[dfx.eff_prob_fast_breathing > random_draw]
-        df.loc[idx_fast_breathing, 'pn_fast_breathing'] = True
-
-        eff_prob_chest_indrawing = pd.Series(0.76, index=pn_current_very_sev_pneum_idx)
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
-                                index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ri_pneumonia_severity == 'very severe pneumonia')])
-        dfx = pd.concat([eff_prob_chest_indrawing, random_draw], axis=1)
-        dfx.columns = ['eff_prob_chest_indrawing', 'random number']
-        idx_chest_indrawing = dfx.index[dfx.eff_prob_chest_indrawing > random_draw]
-        df.loc[idx_chest_indrawing, 'pn_chest_indrawing'] = True
