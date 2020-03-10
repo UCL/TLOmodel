@@ -104,7 +104,11 @@ class PregnancySupervisor(Module):
                                                    'pregnancy'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
-                                                  'during a previous pregnancy')
+                                                  'during a previous pregnancy'),
+        'ps_premature_rupture_of_membranes': Property(Types.BOOL, 'whether this woman has experience rupture of '
+                                                                  'membranes before the onset of labour. If this is <37 '
+                                                                  'weeks from gestation the woman has preterm premature '
+                                                                  'rupture of membranes'),
     }
 
     def read_parameters(self, data_folder):
@@ -149,6 +153,8 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_gest_diab'] = False
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
+        df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -180,6 +186,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_prev_pre_eclamp'] = False
         df.at[child_id, 'ps_gest_diab'] = False
         df.at[child_id, 'ps_prev_gest_diab'] = False
+        df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
 
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
 
