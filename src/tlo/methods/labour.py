@@ -272,8 +272,9 @@ class Labour (Module):
                                                                     'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'whether this womans labour has become obstructed'),
         'la_obstructed_labour_disab': Property(Types.BOOL, 'disability associated with obstructed labour'),
-        'la_obstructed_labour_treatment': Property(Types.BOOL, 'whether this womans obstructed labour has been '
-                                                               'treated'),
+        'la_obstructed_labour_treatment': Property(Types.CATEGORICAL, 'If this woman has received treatment for '
+                                                                      'obstructed labour, and how promptly',
+                                                   categories=['none', 'prompt_treatment', 'delayed_treatment']),
         'la_antepartum_haem': Property(Types.BOOL, 'whether the woman has experienced an antepartum haemorrhage in this'
                                                    'delivery'),
         'la_antepartum_haem_treatment': Property(Types.BOOL, 'whether this womans antepartum haemorrhage has been '
@@ -284,16 +285,23 @@ class Labour (Module):
         'la_uterine_rupture_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
         'la_sepsis': Property(Types.BOOL, 'whether the woman has developed sepsis associated with in this delivery'),
         'la_sepsis_disab': Property(Types.BOOL, 'disability associated with maternal sepsis'),
-        'la_sepsis_treatment': Property(Types.BOOL, 'whether this woman has been treated for sepsis'),
+        'la_sepsis_treatment': Property(Types.CATEGORICAL, 'If this woman has received treatment for maternal sepsis'
+                                                           ' and how promptly',
+                                                           categories=['none', 'prompt_treatment',
+                                                                       'delayed_treatment']),
         'la_eclampsia': Property(Types.BOOL, 'whether the woman has experienced an eclamptic seizure in this delivery'),
         'la_eclampsia_disab': Property(Types.BOOL, 'disability associated with maternal haemorrhage'),
-        'la_eclampsia_treatment': Property(Types.BOOL, 'whether this woman has been treated for eclampsia'),
+        'la_eclampsia_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
         'la_severe_pre_eclampsia_treatment': Property(Types.BOOL, 'whether this woman has been treated for severe '
                                                                   'pre-eclampsia'),
         'la_maternal_hypertension_treatment': Property(Types.BOOL, 'whether this woman has been treated for maternal '
                                                                    'hypertension'),
         'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
                                                    'delivery'),
+        'la_postpartum_haem_treatment': Property(Types.CATEGORICAL, 'If this woman has received treatment for '
+                                                                    'postpartum haemorrhage and how promptly',
+                                                           categories=['none', 'prompt_treatment',
+                                                                       'delayed_treatment']),
         'la_maternal_haem_non_severe_disab': Property(Types.BOOL, 'disability associated with non severe maternal '
                                                                   'haemorrhage'),
         'la_maternal_haem_severe_disab': Property(Types.BOOL, 'disability associated with severe maternal haemorrhage'),
@@ -359,7 +367,8 @@ class Labour (Module):
              'obstructed_labour_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_still_birth_obstructed_labour'],
-                Predictor('la_obstructed_labour_treatment').when(True, 0.5),
+                Predictor('la_obstructed_labour_treatment').when('prompt_treatment', 0.5),
+                Predictor('la_obstructed_labour_treatment').when('delayed_treatment', 0.25),
                 Predictor('la_maternal_death_in_labour').when(True, 3)),
 
              'sepsis_ip': LinearModel(
@@ -370,12 +379,14 @@ class Labour (Module):
              'sepsis_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_sepsis'],
-                Predictor('la_sepsis_treatment').when(True, 0.5)),
+                Predictor('la_sepsis_treatment').when('prompt_treatment', 0.5),
+                Predictor('la_sepsis_treatment').when('delayed_treatment', 0.25)),
 
              'sepsis_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_still_birth_sepsis'],
-                Predictor('la_sepsis_treatment').when(True, 0.5),
+                 Predictor('la_sepsis_treatment').when('prompt_treatment', 0.5),
+                 Predictor('la_sepsis_treatment').when('delayed_treatment', 0.25),
                 Predictor('la_maternal_death_in_labour').when(True, 3)),
 
              'sepsis_pp': LinearModel(
@@ -386,7 +397,8 @@ class Labour (Module):
              'sepsis_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_sepsis'],
-                Predictor('la_sepsis_treatment').when(True, 0.5)),
+                Predictor('la_sepsis_treatment').when('prompt_treatment', 0.5),
+                Predictor('la_sepsis_treatment').when('delayed_treatment', 0.25)),
                 # DUMMY, copy from above
 
              'eclampsia_ip': LinearModel(
@@ -443,7 +455,8 @@ class Labour (Module):
              'postpartum_haem_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_pph'],
-                Predictor('la_postpartum_haem_treatment').when(True, 0.5)),
+                Predictor('la_postpartum_haem_treatment').when('delayed_treatment', 0.25),
+                Predictor('la_postpartum_haem_treatment').when('prompt_treatment', 0.5)),
 
              'uterine_rupture_ip': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -491,19 +504,22 @@ class Labour (Module):
         df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.is_alive, 'la_obstructed_labour'] = False
         df.loc[df.is_alive, 'la_obstructed_labour_disab'] = False
-        df.loc[df.is_alive, 'la_obstructed_labour_treatment'] = False
+        df.loc[df.is_alive, 'la_obstructed_labour_treatment'] = 'none'
         df.loc[df.is_alive, 'la_antepartum_haem'] = False
         df.loc[df.is_alive, 'la_antepartum_haem_treatment'] = False
         df.loc[df.is_alive, 'la_uterine_rupture'] = False
         df.loc[df.is_alive, 'la_uterine_rupture_disab'] = False
         df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
+        df.loc[df.is_alive, 'la_sepsis'] = False
+        df.loc[df.is_alive, 'la_sepsis_disab'] = False
+        df.loc[df.is_alive, 'la_sepsis_treatment'] = 'none'
         df.loc[df.is_alive, 'la_eclampsia'] = False
         df.loc[df.is_alive, 'la_eclampsia_disab'] = False
         df.loc[df.is_alive, 'la_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'la_severe_pre_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'la_maternal_hypertension_treatment'] = False
         df.loc[df.is_alive, 'la_postpartum_haem'] = False
-        df.loc[df.is_alive, 'la_postpartum_haem_treatment'] = False
+        df.loc[df.is_alive, 'la_postpartum_haem_treatment'] = 'none'
         df.loc[df.is_alive, 'la_maternal_haem_non_severe_disab'] = False
         df.loc[df.is_alive, 'la_maternal_haem_severe_disab'] = False
         df.loc[df.is_alive, 'la_maternal_death_in_labour'] = False
@@ -609,7 +625,7 @@ class Labour (Module):
         df.at[child_id, 'la_has_previously_delivered_preterm'] = False
         df.at[child_id, 'la_obstructed_labour'] = False
         df.at[child_id, 'la_obstructed_labour_disab'] = False
-        df.at[child_id, 'la_obstructed_labour_treatment'] = False
+        df.at[child_id, 'la_obstructed_labour_treatment'] = 'none'
         df.at[child_id, 'la_antepartum_haem'] = False
         df.at[child_id, 'la_antepartum_haem_treatment'] = False
         df.at[child_id, 'la_uterine_rupture'] = False
@@ -617,15 +633,15 @@ class Labour (Module):
         df.at[child_id, 'la_uterine_rupture_treatment'] = False
         df.at[child_id, 'la_sepsis'] = False
         df.at[child_id, 'la_sepsis_disab'] = False
-        df.at[child_id, 'la_sepsis_treatment'] = False
+        df.at[child_id, 'la_sepsis_treatment'] = 'none'
         df.at[child_id, 'la_eclampsia'] = False
         df.at[child_id, 'la_eclampsia_disab'] = False
         df.at[child_id, 'la_eclampsia_treatment'] = False
         df.at[child_id, 'la_severe_pre_eclampsia_treatment'] = False
         df.at[child_id, 'la_maternal_hypertension_treatment'] = False
         df.at[child_id, 'la_postpartum_haem'] = False
-        df.at[child_id, 'la_postpartum_haem_treatment'] = False
-        df.at[child_id, 'la_maternal_haem_moderate_disab'] = False
+        df.at[child_id, 'la_postpartum_haem_treatment'] = 'none'
+        df.at[child_id, 'la_maternal_haem_non_severe_disab'] = False
         df.at[child_id, 'la_maternal_haem_severe_disab'] = False
         df.at[child_id, 'la_maternal_death_in_labour'] = False
         df.at[child_id, 'la_maternal_death_in_labour_date'] = pd.NaT
@@ -938,9 +954,9 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'mode_of_delivery': None,  # Vaginal Delivery (VD),Vaginal Delivery Induced (VDI),
                                   # Assisted Vaginal Delivery Forceps (AVDF) Assisted Vaginal Delivery Ventouse (AVDV)
                                   # Caesarean Section (CS)
-                                  'referred_for_cs': None,
-                                  'referred_for_blood': None,
-                                  'referred_for_surgery': None,
+                                  'referred_for_cs': 'none',  # 'none', 'prompt_referral', 'late_referral'
+                                  'referred_for_blood': 'none',  # 'none', 'prompt_referral', 'late_referral'
+                                  'referred_for_surgery': 'none',  # 'none', 'prompt_referral', 'late_referral'
                                   'death_in_labour': False,  # True (T) or False (F)
                                   'cause_of_death_in_labour': [],  # Appended list of cause/causes of death
                                   # TODO: should we do the same thing for still birth? Would help with mapping
@@ -1490,65 +1506,58 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         assert mni[person_id]['delivery_attended'] is not None
         assert mni[person_id]['delivery_setting'] == 'facility_delivery'
 
-        # == == == == == == == == == == == == DEFINING CONSUMABLES(PROPHYLAXIS) == == == == == == == == == ==
-        # Here we define all the possible consumables that could be required for an uncomplicated delivery at this
-        # facility level, including all prophylactics
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # TODO: define consumables inside the module and just call within the HSI
         # TODO: ensure only logging consumables that are used (not all that are defined)
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # This function manages the consumables and administration of prophylactic interventions in labour
+        def prophylactic_labour_interventions():
+            #  We define all the possible consumables that could be required
 
-        # Baseline consumables for delivery...
-        pkg_code_uncomplicated_delivery = pd.unique(consumables.loc[consumables[
+            # Baseline consumables for delivery...
+            pkg_code_uncomplicated_delivery = pd.unique(consumables.loc[consumables[
                                                                     'Intervention_Pkg'] == 'Vaginal delivery - skilled '
                                                                                            'attendance',
                                                                     'Intervention_Pkg_Code'])[0]
-        # todo: do we defined the complicated delivery pkg here
-        # todo: check defining here actually uses the resources within the health system
+            # todo: do we defined the complicated delivery pkg here
+            # todo: check defining here actually uses the resources within the health system
 
-        # A clean delivery kit to reduce probability of maternal and newborn sepsis...
-        pkg_code_clean_delivery_kit = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Clean practices '
-                                                                                                       'and immediate '
-                                                                                                       'essential '
-                                                                                                       'newborn care '
-                                                                                                       '(in facility)',
-                                                                'Intervention_Pkg_Code'])[0]
+            # A clean delivery kit to reduce probability of maternal and newborn sepsis...
+            pkg_code_clean_delivery_kit = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+                                                                    'Clean practices and immediate essential newborn '
+                                                                    'care (in facility)', 'Intervention_Pkg_Code'])[0]
 
-        # Antibiotics for women whose membranes have ruptured prematurely...
-        item_code_abx_prom = pd.unique(consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU),'
-                                                                               ' PFR_Each_CMST', 'Item_Code'])[0]
-        pkg_code_pprom = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM',
-                                                       'Intervention_Pkg_Code'])[0]
-        # n.b 2 additional IV abx not in guidelines
+            # Antibiotics for women whose membranes have ruptured prematurely...
+            item_code_abx_prom = pd.unique(consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU),'
+                                                                                   ' PFR_Each_CMST', 'Item_Code'])[0]
+            pkg_code_pprom = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM',
+                                                                    'Intervention_Pkg_Code'])[0]
+            # n.b 2 additional IV abx not in guidelines
 
-        # Steroids for women who have gone into preterm labour to improve newborn outcomes...
-        item_code_steroids_prem_dexamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
-        item_code_steroids_prem_betamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
+            # Steroids for women who have gone into preterm labour to improve newborn outcomes...
+            item_code_steroids_prem_dexamethasone = pd.unique(
+                consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
+            item_code_steroids_prem_betamethasone = pd.unique(
+                consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
 
-        # Antibiotics for women delivering preterm to reduce newborn risk of group b strep infection...
-        item_code_antibiotics_gbs_proph = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
+            # Antibiotics for women delivering preterm to reduce newborn risk of group b strep infection...
+            item_code_antibiotics_gbs_proph = pd.unique(
+                consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
 
-        consumables_attended_delivery = {
-                'Intervention_Package_Code': {pkg_code_uncomplicated_delivery: 1, pkg_code_clean_delivery_kit: 1,
-                                              pkg_code_pprom: 1},
-                'Item_Code': {item_code_abx_prom: 3, item_code_steroids_prem_dexamethasone: 5,
-                              item_code_steroids_prem_betamethasone: 2, item_code_antibiotics_gbs_proph: 3}}
+            consumables_attended_delivery = {
+                    'Intervention_Package_Code': {pkg_code_uncomplicated_delivery: 1, pkg_code_clean_delivery_kit: 1,
+                                                  pkg_code_pprom: 1},
+                    'Item_Code': {item_code_abx_prom: 3, item_code_steroids_prem_dexamethasone: 5,
+                                  item_code_steroids_prem_betamethasone: 2, item_code_antibiotics_gbs_proph: 3}}
 
-        # ===================================== PROPHYLACTIC INTERVENTIONS ========================================
-        # If this womans delivery is attended by a health care professional, we check if consumables are available
-        # then administered prophylactic interventions accordingly:
-        if mni[person_id]['delivery_attended']:
+            # we check if consumables are available then administered prophylactic interventions accordingly:
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_attended_delivery, to_log=True)
 
-            # CLEAN BIRTH PRACTICES:
+            # Clean birth practices...
             # We query if the consumables specific to each intervention are available...
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_clean_delivery_kit]:
-
-                    # And apply the effect of these intervention on the mother and newborns risk of sepsis
+                # And apply the effect of these intervention on the mother and newborns risk of sepsis
                 mni[person_id]['risk_ip_sepsis'] = mni[person_id]['risk_ip_sepsis'] * \
                     params['rr_maternal_sepsis_clean_delivery']
                 mni[person_id]['risk_newborn_sepsis'] = mni[person_id]['risk_newborn_sepsis'] * \
@@ -1561,7 +1570,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
             else:
                 logger.debug('This facility has no delivery kits.')
 
-            # PROPHYLACTIC ANTIBIOTICS FOR PROLONGED RUPTURE OF MEMBRANES:
+            # Prophylactic antibiotics for premature rupture of membranes in term deliveries...
             if mni[person_id]['labour_state'] == 'term_labour' and df.at[person_id,
                                                                          'ps_premature_rupture_of_membranes']:
                 if outcome_of_request_for_consumables['Item_Code'][item_code_abx_prom]:
@@ -1573,7 +1582,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 else:
                     logger.debug('This facility has no antibiotics for the treatment of PROM.')
 
-            # PROPHYLACTIC ANTIBIOTICS FOR PREMATURE PROLONGED RUPTURE OF MEMBRANES:
+            # Prophylactic antibiotics for premature rupture of membranes in preterm deliveries...
             if (mni[person_id]['labour_state'] == 'early_preterm_labour' or mni[person_id]['labour_state'] ==
                'late_preterm_labour') and df.at[person_id, 'ps_premature_rupture_of_membranes']:
                 if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pprom]:
@@ -1587,7 +1596,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                     # todo: pprom treatment guidelines are written as if its happened antenatally,
                     #   not in labour? maybe we could use same consumables for both?
 
-            # PROPHYLACTIC STEROIDS FOR PRETERM LABOUR
+            # Prophylactic steroids for women who have gone into preterm labour...
             if mni[person_id]['labour_state'] == 'early_preterm_labour' or mni[person_id]['labour_state'] == \
                'late_preterm_labour':
                 if outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_betamethasone] and \
@@ -1598,7 +1607,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 else:
                     logger.debug('This facility has no steroids for women in preterm labour.')
 
-            # PROPHYLACTIC ANTIBIOTICS FOR GROUP B STREP IN PRETERM LABOUR
+            # Prophylactic antibiotics for women who have gone into preterm labour...
             if mni[person_id]['labour_state'] == 'early_preterm_labour' or mni[person_id]['labour_state'] == \
                'late_preterm_labour':
                 if outcome_of_request_for_consumables['Item_Code'][item_code_antibiotics_gbs_proph]:
@@ -1608,13 +1617,17 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                                  'Group B strep', person_id)
                 else:
                     logger.debug('This facility has no antibiotics for group B strep prophylaxis.')
+
+        # If this womans delivery is attended, the function will run
+        if mni[person_id]['delivery_attended']:
+            prophylactic_labour_interventions()
         else:
-            # Mothers delivering unattended receive no benefit of prophylaxis
+            # Otherwise she receives no benefit of prophylaxis
             logger.debug('mother %d received no prophylaxis as she is delivering unattended', person_id)
 
     # ===================================== APPLYING COMPLICATION INCIDENCE ===========================================
-        # Now we use the mothers individual risk of each complication to determine if she will experience any
-        # complications using the set_complications_during_facility_birth function.
+        # Following adminstration of prophylaxis (for attended deliveries) we use risk values stored in the MNI to
+        # assess if this woman will develop any complications
 
         self.module.set_complications_during_facility_birth(person_id, complication='obstructed_labour',
                                                             labour_stage='ip')
@@ -1626,111 +1639,125 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                                                             labour_stage='ip')
 
     # ======================================= COMPLICATION MANAGEMENT =================================================
-        # The following section mimics the assessment of a woman during labour.
+        # Management of each complication is housed within its own function which follows a similar pattern
         # a.) required consumables are defined
-        # b.) The woman is assessed for a complication.
+        # b.) The woman is assessed for a complication using the dx_test function. Specificity of assesment varies
+        #     between facility level
         # c.) If she has the complication and it is correctly identified by staff they check consumables are
         #     available
         # d.) If the consumables are available- she will receive treatment
+        # If the woman is delivering unattended, we assume any treatment she receives is delayed, delayed treatment is
+        # less effective meaning risk of death is increased
+
         # In the instance that treatment cannot be delivered at the facility type a woman has delivered at (i.e.
         # health centres do not perform caesarean sections) she is assessed for referral and sent to another
         # facility
 
         # -----------------------------------------Obstructed Labour: -------------------------------------------------
-        # Required consumables are defined
-        pkg_code_obstructed_labour = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of '
-                                                                                                  'obstructed labour',
-                                               'Intervention_Pkg_Code'])[0]
+        def assessment_and_treatment_of_obstructed_labour(facility_type):
+            # Required consumables are defined
+            pkg_code_obstructed_labour = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+                                                                   'Management of obstructed labour',
+                                                                   'Intervention_Pkg_Code'])[0]
 
-        item_code_forceps = pd.unique(consumables.loc[consumables['Items'] == 'Forceps, obstetric', 'Item_Code'])[0]
-        item_code_vacuum = pd.unique(consumables.loc[consumables['Items'] == 'Vacuum, obstetric', 'Item_Code'])[0]
+            item_code_forceps = pd.unique(consumables.loc[consumables['Items'] == 'Forceps, obstetric', 'Item_Code'])[0]
+            item_code_vacuum = pd.unique(consumables.loc[consumables['Items'] == 'Vacuum, obstetric', 'Item_Code'])[0]
 
-        consumables_obstructed_labour = {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
-                                         'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}}
-        # todo: if we're combining the effectivness then we want forceps OR vacuum
+            consumables_obstructed_labour = {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
+                                             'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}}
 
-        outcome_of_request_for_consumables_ol = self.sim.modules['HealthSystem'].request_consumables(
+            # todo: if we're combining the effectiveness then we want forceps OR vacuum
+            # TODO: as ol pkg is very comprehensive, may be a bad idea to condition on this
+
+            outcome_of_request_for_consumables_ol = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_obstructed_labour, to_log=True)
 
-        # TODO: as ol pkg is very comprehensive, may be a bad idea to condition on this
-
-        def assessment_and_treatment_of_obstructed_labour(facility_type):
-            # If present, we determine if this complication will be identified at this facility level
+            # We determine if this complication will be identified at this facility level
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
-                                                                           f'assess_obstructed_labour_{facility_type}',
-                                                                           hsi_event=self):
+                                                                       f'assess_obstructed_labour_{facility_type}',
+                                                                       hsi_event=self):
                 if outcome_of_request_for_consumables_ol:
-                    # If the consumables are available the treatment is provided
+                    # If the consumables are available, treatment occurs. It is prompt or delayed depending on if the
+                    # delivery is attended or not
                     logger.debug('mother %d has had her obstructed labour identified during delivery. Staff will '
                                  'attempt an assisted vaginal delivery as the equipment is available', person_id)
+                    treatment_success = params['prob_successful_assisted_vaginal_delivery'] > self.module.rng.\
+                        random_sample()
 
-                    if params['prob_successful_assisted_vaginal_delivery'] > self.module.rng.random_sample():
-                        # A probability of successful assisted delivery is applied
-                        df.at[person_id, 'la_obstructed_labour_treatment'] = True
+                    if treatment_success and mni[person_id]['delivery_attended']:
+                        df.at[person_id, 'la_obstructed_labour_treatment'] = 'prompt_treatment'
                         mni[person_id]['mode_of_delivery'] = 'instrumental'
-                        # add here effect of antibiotics?
+
+                    elif treatment_success and ~mni[person_id]['delivery_attended']:
+                        df.at[person_id, 'la_obstructed_labour_treatment'] = 'delayed_treatment'
+                        mni[person_id]['mode_of_delivery'] = 'instrumental'
+
+                    # If treatment is unsuccessful, the woman will be referred for additional treatment
                     else:
                         logger.debug('Following a failed assisted vaginal delivery other %d will need additional '
                                      'treatment', person_id)
-                        # If obstructed labour is identified, assisted vaginal delivery fails, the women requires a
-                        # caesarean section and will be referred
-                        mni[person_id]['refer_for_cs'] = True
 
+                        if mni[person_id]['delivery_attended']:
+                            mni[person_id]['refer_for_cs'] = 'prompt_referral'
+                        else:
+                            mni[person_id]['refer_for_cs'] = 'delayed_referral'
+
+            # If treatment is not not provided, as need is not identified, risk of death and stillbirth will be higher
+            # in the linear model
             elif df.at[person_id, 'la_obstructed_labour']:
-                # If this woman is in obstructed labour and  treatment is not administered, an untreated case
-                # fatality/stillbirth rate will be applied in the death event
                 logger.debug('mother %d has not had their obstructed labour identified during delivery and will not'
                              'be treated', person_id)
 
         # We use variable sensitivity of the assessment of these complications by facility type (to mimic
         # gradient in quality)
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_facility_type'] == 'health_centre':
                 assessment_and_treatment_of_obstructed_labour('hc')
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_facility_type'] == 'hospital':
                 assessment_and_treatment_of_obstructed_labour('hp')
-            # todo: unattended?
 
     # ---------------------------------------------- Maternal Sepsis: -------------------------------------------------
-        pkg_code_sepsis = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case'
-                                                                                       ' management',
-                                                    'Intervention_Pkg_Code'])[0]
+        # We follow a similar pattern for treatment of sepsis
+        def assessment_and_treatment_of_maternal_sepsis(facility_type):
+            pkg_code_sepsis = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case'
+                                                                                           ' management',
+                                                        'Intervention_Pkg_Code'])[0]
 
-        consumables_needed_sepsis = {'Intervention_Package_Code': {pkg_code_sepsis: 1}, 'Item_Code': {}}
+            consumables_needed_sepsis = {'Intervention_Package_Code': {pkg_code_sepsis: 1}, 'Item_Code': {}}
 
-        outcome_of_request_for_consumables_sep = self.sim.modules['HealthSystem'].request_consumables(
+            outcome_of_request_for_consumables_sep = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_needed_sepsis)
 
-        def assessment_and_treatment_of_maternal_sepsis(facility_type):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_sepsis_{facility_type}',
                                                                        hsi_event=self):
                 if outcome_of_request_for_consumables_sep:
                     logger.debug('mother %d has has their sepsis identified during delivery. As consumables are '
                                  'available they will receive treatment', person_id)
-                    df.at[person_id, 'la_sepsis_treatment'] = True
-
+                    if mni[person_id]['delivery_attended']:
+                        df.at[person_id, 'la_sepsis_treatment'] = 'prompt_treatment'
+                    else:
+                        df.at[person_id, 'la_sepsis_treatment'] = 'delayed_treatment'
             elif df.at[person_id, 'la_sepsis']:
                 logger.debug('mother %d has not had their sepsis identified during delivery and will not be treated',
                              person_id)
 
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_facility_type'] == 'health_centre':
                 assessment_and_treatment_of_maternal_sepsis('hc')
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_facility_type'] == 'hospital':
                 assessment_and_treatment_of_maternal_sepsis('hp')
-                # todo: unattended?
 
     # --------------------------------------------------- Maternal Hypertension ---------------------------------------
             # TODO: are we gunna group mild pre-eclampsia, gest htn and chronic htn all together?
 
-        pkg_code_severe_hypertension = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of '
-                                                                                                    'eclampsia',
-                                                                 'Intervention_Pkg_Code'])[0]
-
-        consumables_needed_htn = {'Intervention_Package_Code': {pkg_code_severe_hypertension: 1}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables_htn = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed_htn)
-
+        # and for hypertension
         def assessment_and_treatment_of_hypertension(facility_type):
+            pkg_code_severe_hypertension = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of '
+                                                                                                        'eclampsia',
+                                                                     'Intervention_Pkg_Code'])[0]
+
+            consumables_needed_htn = {'Intervention_Package_Code': {pkg_code_severe_hypertension: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables_htn = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed_htn)
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
                                                                        f'assess_hypertension_{facility_type}',
                                                                        hsi_event=self):
@@ -1743,22 +1770,24 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                     logger.debug('mother %d has not had their hypertension identified during delivery and will '
                                  'not be treated', person_id)
 
+        # However we assume that only women who are having an attended delivery will have their hypertension identified
         if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
             assessment_and_treatment_of_hypertension('hc')
         if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
             assessment_and_treatment_of_hypertension('hp')
 
     # ------------------------------------------------- Severe pre-eclampsia ------------------------------------------
-        pkg_code_severe_preeclampsia = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of '
-                                                                                                    'eclampsia',
-                                                                 'Intervention_Pkg_Code'])[0]
-
-        consumables_needed_spe = {'Intervention_Package_Code': {pkg_code_severe_preeclampsia: 1}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables_sep = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed_spe)
 
         def assessment_and_treatment_of_severe_pre_eclampsia(facility_type):
+            pkg_code_severe_preeclampsia = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of '
+                                                                                                        'eclampsia',
+                                                                     'Intervention_Pkg_Code'])[0]
+
+            consumables_needed_spe = {'Intervention_Package_Code': {pkg_code_severe_preeclampsia: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables_sep = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed_spe)
+
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
                                                                        f'assess_severe_pe_{facility_type}',
                                                                        hsi_event=self):
@@ -1771,22 +1800,25 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 logger.debug('mother %d has not had their severe pre-eclampsia identified during delivery and will '
                              'not be treated', person_id)
 
+        # We assume that only women who are having an attended delivery will have their severe pre-eclampsia identified
         if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
             assessment_and_treatment_of_severe_pre_eclampsia('hc')
         if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
             assessment_and_treatment_of_severe_pre_eclampsia('hp')
-                # todo: unattended?
 
     # ------------------------------------------------ ECLAMPSIA  ------------------------------------------------------
-        pkg_code_eclampsia = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-                                                                                          'Intervention_Pkg_Code'])[0]
 
-        consumables_needed_eclampsia = {'Intervention_Package_Code': {pkg_code_eclampsia: 1}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables_ec = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed_eclampsia)
-
+        # Because eclampsia presents and easily recognisable seizures we do not use the dx_test function and assume all
+        # women have equal likelihood of treatment irrespective of facility level or delivery attendance
         def assessment_and_treatment_of_eclampsia():
+            pkg_code_eclampsia = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
+                                                           'Intervention_Pkg_Code'])[0]
+
+            consumables_needed_eclampsia = {'Intervention_Package_Code': {pkg_code_eclampsia: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables_ec = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed_eclampsia)
+
             if outcome_of_request_for_consumables_ec:
                 df.at[person_id, 'la_eclampsia_treatment'] = True
                 logger.debug('mother %d has has their eclampsia identified during delivery. As '
@@ -1795,11 +1827,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 logger.debug('mother %d has not had their eclampsia identified during delivery and will '
                              'not be treated', person_id)
 
-        # We are assuming that staff at both health centre and hospitals are equally likely to recognise eclampsia and
-        # attempt treatment due to the clinical presentation (seizures)
-        if mni[person_id]['delivery_attended']:
-            if df.at[person_id, 'la_eclampsia']:
-                assessment_and_treatment_of_eclampsia()
+        assessment_and_treatment_of_eclampsia()
 
     # ------------------------------------------------ ANTEPARTUM HAEMORRHAGE -----------------------------------------
         # Antepartum haemorrhage can only be treated by delivery in our model (as both causes are placental). Here the
@@ -1811,28 +1839,40 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test\
                     (dx_tests_to_run=f'assess_for_{treatment_or_referral}_aph_{facility_type}',
                      hsi_event=self):
-                mni[person_id]['referred_for_cs'] = True
-                mni[person_id]['referred_for_blood'] = True
-                # ? blood?
+                if mni[person_id]['delivery_attended']:
+                    mni[person_id]['referred_for_cs'] = 'prompt_referral'
+                    mni[person_id]['referred_for_blood'] = 'prompt_referral'
+                else:
+                    mni[person_id]['referred_for_cs'] = 'delayed_referral'
+                    mni[person_id]['referred_for_blood'] = 'delayed_referral'
                 logger.debug('mother %d has has their antepartum haemorrhage identified during delivery. They will now '
                              'be referred for additional treatment', person_id)
             elif df.at[person_id, 'la_antepartum_haem']:
                 logger.debug('mother %d has not had their antepartum haemorrhage identified during delivery and will'
                              'not be referred for treatment', person_id)
 
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
+        # Whilst we assume a difference in sensitivity of assessment between health centres and hospitals, we assume
+        # women who are delivering unattended have the same likelihood of treatment due to the presentation of this
+        # condition
+        if mni[person_id]['delivery_facility_type'] == 'health_centre':
             assessment_and_plan_for_referral_antepartum_haemorrhage('hc', 'referral')
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_facility_type'] == 'hospital':
             assessment_and_plan_for_referral_antepartum_haemorrhage('hp', 'treatment')
 
     # ------------------------------------------------ UTERINE RUPTURE ------------------------------------------------
 
+        # Similarly treatment of uterine rupture requires comprehensive services, therefore the dx test is for assemenet
+        # for referral
         def assessment_and_plan_for_referral_uterine_rupture(facility_type, treatment_or_referral):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test\
                     (dx_tests_to_run=f'assess_for_{treatment_or_referral}_uterine_rupture_{facility_type}',
                      hsi_event=self):
-                mni[person_id]['referred_for_cs'] = True
-                mni[person_id]['referred_for_surgery'] = True
+                if mni[person_id]['delivery_attended']:
+                    mni[person_id]['referred_for_surgery'] = 'prompt_referral'
+                    mni[person_id]['referred_for_cs'] = 'prompt_referral'
+                else:
+                    mni[person_id]['referred_for_surgery'] = 'delayed_referral'
+                    mni[person_id]['referred_for_cs'] = 'delayed_referral'
                 # ? blood?
                 logger.debug('mother %d has has their uterine rupture identified during delivery. They will now be '
                              'referred for additional treatment', person_id)
@@ -1840,43 +1880,41 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 logger.debug('mother %d has not had their uterine_rupture identified during delivery and will not be '
                              'referred for treatment', person_id)
 
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_facility_type'] == 'health_centre':
             assessment_and_plan_for_referral_uterine_rupture('hc', 'referral')
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_facility_type'] == 'hospital':
             assessment_and_plan_for_referral_uterine_rupture('hp', 'treatment')
 
-    # todo: mgso4 for severe pe can be given post eclampsia risk being calculated as will reduce risk of PP eclampsia
-    #  cases
-
+    #
     # ============================================== REFERRAL =========================================================
         # Finally we send any women who require additional treatment to the following HSIs
 
-        # Currently we dont want any referrals from unattended deliveries
+        if mni[person_id]['referred_for_cs'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_CaesareanSectionFacilityLevel1,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+        if mni[person_id]['referred_for_surgery'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_SurgeryForLabourComplications,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+        if mni[person_id]['referred_for_blood'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_ReceivesBloodTransfusionFacilityLevel2,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
-    #    if mni[person_id]['referred_for_cs']:
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_CaesareanSectionFacilityLevel1,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=1))
-    #    if mni[person_id]['referred_for_surgery']:
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_SurgeryForLabourComplications,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=1))
-    #    if mni[person_id]['referred_for_blood']:
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_ReceivesBloodTransfusionFacilityLevel2,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=1))
-
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # If a this woman has experienced a complication the appointment footprint is changed from normal to complicated
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         if df.at[person_id, 'la_sepsis'] or df.at[person_id, 'la_antepartum_haem'] or df.at[person_id,
                                                                                             'la_uterine_rupture'] or \
            df.at[person_id, 'la_eclampsia']:
-            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery'] # is this right?
+            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery']  # is this right?
 
         return actual_appt_footprint
 
+    # In the event that the health system doesnt have the capacity to run this event, the woman will deliver at home
     def did_not_run(self):
         person_id = self.target
         mni = self.module.mother_and_newborn_info
@@ -1918,6 +1956,115 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2(HSI_Event, I
 
         logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother %d has presented to a health '
                     'facility on date %s following the onset of her labour', person_id, self.sim.date)
+
+        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother %d has presented to a health '
+                    'facility on date %s following the onset of her labour', person_id, self.sim.date)
+
+        # todo: check this is only capturing true FDs i.e. the event has actually ran
+        logger.info('%s|facility_delivery|%s', self.sim.date,
+                    {'person_id': person_id})
+
+        # ============================== STORING COMPLICATION RISKS IN MNI ========================================
+
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='obstructed_labour',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='eclampsia',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='antepartum_haem',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='sepsis',
+                                                                  labour_stage='ip')
+        self.module.calculate_complication_risk_facility_delivery(person_id, complication='uterine_rupture',
+                                                                  labour_stage='ip')
+
+        if squeeze_factor > params['squeeze_factor_threshold_delivery_attendance']:
+            mni[person_id]['delivery_attended'] = False
+            logger.debug('mother %d is delivering without assistance at a level 1 health facility', person_id)
+            logger.info(('%s|unattended_facility_delivery|%s', self.sim.date,
+                         {'age': df.at[person_id, 'age_years'],
+                          'person_id': person_id}))
+        else:
+            mni[person_id]['delivery_attended'] = True
+            logger.debug('mother %d is delivering with assistance at a level 1 health facility', person_id)
+
+        mni[person_id]['delivery_facility_type'] = 'hospital'
+
+        assert mni[person_id]['delivery_facility_type'] is not None
+        assert mni[person_id]['delivery_attended'] is not None
+        assert mni[person_id]['delivery_setting'] == 'facility_delivery'
+
+        if mni[person_id]['delivery_attended']:
+            self.module.prophylactic_labour_interventions()
+        else:
+            logger.debug('mother %d received no prophylaxis as she is delivering unattended', person_id)
+
+        # ===================================== APPLYING COMPLICATION INCIDENCE =======================================
+
+        self.module.set_complications_during_facility_birth(person_id, complication='obstructed_labour',
+                                                            labour_stage='ip')
+        self.module.set_complications_during_facility_birth(person_id, complication='eclampsia', labour_stage='ip')
+        self.module.set_complications_during_facility_birth(person_id, complication='antepartum_haem',
+                                                            labour_stage='ip')
+        self.module.set_complications_during_facility_birth(person_id, complication='sepsis', labour_stage='ip')
+        self.module.set_complications_during_facility_birth(person_id, complication='uterine_rupture',
+                                                            labour_stage='ip')
+
+        # ===================================== COMPLICATION ASSESSMENT ===========================================
+        self.module.assessment_and_treatment_of_obstructed_labour('hp')
+
+        self.module.assessment_and_treatment_of_maternal_sepsis('hp')
+
+        if mni[person_id]['delivery_attended']:
+            self.module.assessment_and_treatment_of_hypertension('hp')
+
+        if mni[person_id]['delivery_attended']:
+            self.module.assessment_and_treatment_of_severe_pre_eclampsia('hp')
+
+        self.module.assessment_and_treatment_of_eclampsia()
+
+        self.module.assessment_and_plan_for_referral_antepartum_haemorrhage('hp', 'treatment')
+
+        self.module.assessment_and_plan_for_referral_uterine_rupture('hp', 'treatment')
+
+    # ============================================== REFERRAL =========================================================
+
+        if mni[person_id]['referred_for_cs'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_CaesareanSectionFacilityLevel1,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+        if mni[person_id]['referred_for_surgery'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_SurgeryForLabourComplications,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+        if mni[person_id]['referred_for_blood'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_ReceivesBloodTransfusionFacilityLevel2,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+
+        # If a this woman has experienced a complication the appointment footprint is changed from normal to complicated
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+        if df.at[person_id, 'la_sepsis'] or df.at[person_id, 'la_antepartum_haem'] or df.at[person_id,
+                                                                                            'la_uterine_rupture'] \
+            or df.at[person_id, 'la_eclampsia']:
+            actual_appt_footprint['NormalDelivery'] = actual_appt_footprint['CompDelivery']  # is this right?
+
+        return actual_appt_footprint
+
+    # In the event that the health system doesnt have the capacity to run this event, the woman will deliver at home
+    def did_not_run(self):
+        person_id = self.target
+        mni = self.module.mother_and_newborn_info
+        logger.debug('squeeze factor is too high for this event to run for mother %s on date %d and she will now '
+                 'deliver at home', person_id, self.sim.date)
+
+        logger.info('%s|homebirth_high_squeeze|%s', self.sim.date,
+                {'person_id': person_id})
+
+        mni[person_id]['delivery_setting'] = 'home_birth'
+        self.sim.schedule_event(LabourAtHomeEvent(self, person_id), self.sim.date)
 
 
 class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
@@ -2006,52 +2153,55 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
 
     # ======================================= COMPLICATION MANAGEMENT =================================================
     # ------------------------------------------------ SEPSIS  ------------------------------------------------------
-        pkg_code_sepsis = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case'
-                                                                                       ' management',
-                                                    'Intervention_Pkg_Code'])[0]
-
-        consumables_needed_sepsis = {'Intervention_Package_Code': {pkg_code_sepsis: 1}, 'Item_Code': {}}
-
-        outcome_of_request_for_consumables_sep = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed_sepsis)
 
         def assessment_and_treatment_of_maternal_sepsis(facility_type):
+            pkg_code_sepsis = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case'
+                                                                                           ' management',
+                                                        'Intervention_Pkg_Code'])[0]
+
+            consumables_needed_sepsis = {'Intervention_Package_Code': {pkg_code_sepsis: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables_sep = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed_sepsis)
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_sepsis_{facility_type}',
                                                                        hsi_event=self):
                 if outcome_of_request_for_consumables_sep:
-                    logger.debug('mother %d has has their sepsis identified during delivery. As consumables are '
+                    logger.debug('mother %d has has their sepsis identified following delivery. As consumables are '
                                  'available they will receive treatment', person_id)
-                    df.at[person_id, 'la_sepsis_treatment'] = True
+                    if mni[person_id]['delivery_attended']:
+                        df.at[person_id, 'la_sepsis_treatment'] = 'prompt_treatment'
+                    else:
+                        df.at[person_id, 'la_sepsis_treatment'] = 'delayed_treatment'
 
             elif df.at[person_id, 'la_sepsis']:
                 logger.debug('mother %d has not had their sepsis identified during delivery and will not be treated',
                              person_id)
 
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
+        # todo: will this not double run this event on women who are already septic?
+        if mni[person_id]['delivery_facility_type'] == 'health_centre':
             assessment_and_treatment_of_maternal_sepsis('hc')
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_facility_type'] == 'hospital':
             assessment_and_treatment_of_maternal_sepsis('hp')
 
     # ------------------------------------------------ ECLAMPSIA  -----------------------------------------------------
-        pkg_code_eclampsia = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
-                                       'Intervention_Pkg_Code'])[0]
+        def assessment_and_treatment_of_eclampsia():
+            pkg_code_eclampsia = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
+                                                           'Intervention_Pkg_Code'])[0]
 
-        consumables_needed_eclampsia = {'Intervention_Package_Code': {pkg_code_eclampsia: 1}, 'Item_Code': {}}
+            consumables_needed_eclampsia = {'Intervention_Package_Code': {pkg_code_eclampsia: 1}, 'Item_Code': {}}
 
-        outcome_of_request_for_consumables_ec = self.sim.modules['HealthSystem'].request_consumables(
+            outcome_of_request_for_consumables_ec = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_needed_eclampsia)
 
-        def assessment_and_treatment_of_eclampsia():
-                if outcome_of_request_for_consumables_ec:
-                    df.at[person_id, 'la_eclampsia_treatment'] = True
-                    logger.debug('mother %d has has their eclampsia identified during delivery. As '
-                                 'consumables are available they will receive treatment', person_id)
-                elif df.at[person_id, 'la_eclampsia']:
-                    logger.debug('mother %d has not had their eclampsia identified during delivery and will '
-                                 'not be treated', person_id)
+            if outcome_of_request_for_consumables_ec:
+                df.at[person_id, 'la_eclampsia_treatment'] = True
+                logger.debug('mother %d has has their eclampsia identified during delivery. As '
+                             'consumables are available they will receive treatment', person_id)
+            elif df.at[person_id, 'la_eclampsia']:
+                logger.debug('mother %d has not had their eclampsia identified during delivery and will '
+                             'not be treated', person_id)
 
-        if mni[person_id]['delivery_attended']:
-            assessment_and_treatment_of_eclampsia()
+        assessment_and_treatment_of_eclampsia()
 
         # ----------------------------------- POSTPARTUM HAEMORRHAGE --------------------------------------------------
 
@@ -2071,41 +2221,58 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
         def assessment_and_treatment_of_pph_retained_placenta():
             if outcome_of_request_for_consumables_pph:
                 if params['prob_successful_manual_removal_placenta'] > self.module.rng.random_sample():
-                    df.at[person_id, 'la_postpartum_haem_treatment'] = True
+                    if mni[person_id]['delivery_attended']:
+                        df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
+                    else:
+                        df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
                 else:
-                    mni[person_id]['referred_for_surgery'] = True
-                    mni[person_id]['referred_for_blood'] = True
+                    if mni[person_id]['delivery_attended']:
+                        mni[person_id]['referred_for_surgery'] = 'prompt_referral'
+                        mni[person_id]['referred_for_blood'] = 'prompt_referral'
+                    else:
+                        mni[person_id]['referred_for_surgery'] = 'delayed_referral'
+                        mni[person_id]['referred_for_blood'] = 'delayed_referral'
 
         def assessment_and_treatment_of_pph_uterine_atony():
             if outcome_of_request_for_consumables_pph:
-                if params['prob_cure_oxytocin'] > self.module.rng.random_sample():
-                    df.at[person_id, 'la_postpartum_haem_treatment'] = True
-                elif params['prob_cure_misoprostol'] > self.module.rng.random_sample():
-                        df.at[person_id, 'la_postpartum_haem_treatment'] = True
-                elif params['prob_cure_uterine_massage'] > self.module.rng.random_sample():
-                            df.at[person_id, 'la_postpartum_haem_treatment'] = True
+                if mni[person_id]['delivery_attended']:
+                    if params['prob_cure_oxytocin'] > self.module.rng.random_sample():
+                        df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
+                    elif params['prob_cure_misoprostol'] > self.module.rng.random_sample():
+                        df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
+                    elif params['prob_cure_uterine_massage'] > self.module.rng.random_sample():
+                                df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
+                    else:
+                        mni[person_id]['referred_for_surgery'] = 'prompt_referral'
+                        mni[person_id]['referred_for_blood'] = 'prompt_referral'
                 else:
-                    mni[person_id]['referred_for_surgery'] = True
-                    mni[person_id]['referred_for_blood'] = True
+                    if params['prob_cure_oxytocin'] > self.module.rng.random_sample():
+                        df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
+                    elif params['prob_cure_misoprostol'] > self.module.rng.random_sample():
+                         df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
+                    elif params['prob_cure_uterine_massage'] > self.module.rng.random_sample():
+                                df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
+                    else:
+                        mni[person_id]['referred_for_surgery'] = 'delayed_referral'
+                        mni[person_id]['referred_for_blood'] = 'delayed_referral'
 
-        if mni[person_id]['delivery_attended']:
-            if df.at[person_id, 'la_postpartum_haem']:
-                if mni[person_id]['source_pph'] == 'retained_placenta':
-                    assessment_and_treatment_of_pph_retained_placenta()
-                else:
-                    assessment_and_treatment_of_pph_uterine_atony()
+            if mni[person_id]['source_pph'] == 'retained_placenta':
+                assessment_and_treatment_of_pph_retained_placenta()
+            else:
+                assessment_and_treatment_of_pph_uterine_atony()
 
     # ============================================== REFERRAL =========================================================
-    #    if mni[person_id]['referred_for_surgery']:
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_SurgeryForLabourComplications,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=1))
-    #    if mni[person_id]['referred_for_blood']:
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_ReceivesBloodTransfusionFacilityLevel2,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=1))
+
+        if mni[person_id]['referred_for_surgery'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_SurgeryForLabourComplications,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+        if mni[person_id]['referred_for_blood'] != 'none':
+            self.sim.modules['HealthSystem'].schedule_hsi_event(HSI_Labour_ReceivesBloodTransfusionFacilityLevel2,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # TODO: modify based on complications?
         return actual_appt_footprint
