@@ -157,7 +157,7 @@ class ChronicSyndrome(Module):
             persons_id_with_symp = np.array(person_id_all_with_cs)[
                 self.rng.rand(len(person_id_all_with_cs))
                 < self.parameters["prob_of_symptoms"][symp]
-                ]
+            ]
 
             self.sim.modules["SymptomManager"].change_symptom(
                 person_id=list(persons_id_with_symp),
@@ -341,7 +341,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                 persons_id_with_symp = np.array(newcases_idx)[
                     self.module.rng.rand(len(newcases_idx))
                     < self.module.parameters["prob_of_symptoms"][symp]
-                    ]
+                ]
 
                 self.sim.modules["SymptomManager"].change_symptom(
                     person_id=list(persons_id_with_symp),
@@ -544,8 +544,8 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         )[0]
 
         consumables_needed = {
-            "Intervention_Package_Code": [{pkg_code1: 1}, {pkg_code2: 4}],
-            "Item_Code": [{item_code1: 1}, {item_code2: 10}],
+            "Intervention_Package_Code": {pkg_code1: 1, pkg_code2: 4},
+            "Item_Code": {item_code1: 1, item_code2: 10},
         }
 
         outcome_of_request_for_consumables = self.sim.modules[
