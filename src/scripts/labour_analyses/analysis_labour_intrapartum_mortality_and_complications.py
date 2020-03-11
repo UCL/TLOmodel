@@ -28,11 +28,17 @@ popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
+service_availability = ['*']
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+#sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+#                                           service_availability=service_availability,
+#                                           capabilities_coefficient=0.0,
+#                                           mode_appt_constraints=2))
+
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
