@@ -95,11 +95,9 @@ class PregnancySupervisor(Module):
                                                           'of her current pregnancy'),
         'ps_previous_stillbirth': Property(Types.BOOL, 'whether this woman has had any previous pregnancies end in '
                                                        'still birth'),  # consider if this should be an interger
-        'ps_htn_disorder_preg': Property(Types.CATEGORICAL,  'Hypertensive disorders of pregnancy: none, '
-                                                             'gestational hypertension, mild pre-eclampsia,'
-                                                             'severe pre-eclampsia, eclampsia,'
-                                                             ' HELLP syndrome',
-                                         categories=['none', 'gest_htn', 'mild_pe', 'severe_pe', 'eclampsia', 'HELLP']),
+        'ps_gestational_htn': Property(Types.BOOL, 'whether this woman has gestational hypertension'),
+        'ps_mild_pre_eclamp': Property(Types.BOOL, 'whether this woman has mild pre-eclampsia'),
+        'ps_severe_pre_eclamp': Property(Types.BOOL, 'whether this woman has severe pre-eclampsia'),
         'ps_prev_pre_eclamp': Property(Types.BOOL, 'whether this woman has experienced pre-eclampsia in a previous '
                                                    'pregnancy'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
@@ -149,7 +147,9 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_abortion_complication'].values[:] = 'none'
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
         df.loc[df.is_alive, 'ps_previous_stillbirth'] = False
-        df.loc[df.is_alive, 'ps_htn_disorder_preg'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_gestational_htn'] = False
+        df.loc[df.is_alive, 'ps_mild_pre_eclamp'] = False
+        df.loc[df.is_alive, 'ps_severe_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_gest_diab'] = False
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
@@ -182,7 +182,9 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_abortion_complication'] = 'none'
         df.at[child_id, 'ps_antepartum_still_birth'] = False
         df.at[child_id, 'ps_previous_stillbirth'] = False
-        df.at[child_id, 'ps_htn_disorder_preg'] = 'none'
+        df.at[child_id, 'ps_gestational_htn'] = False
+        df.at[child_id, 'ps_mild_pre_eclamp'] = False
+        df.at[child_id, 'ps_severe_pre_eclamp'] = False
         df.at[child_id, 'ps_prev_pre_eclamp'] = False
         df.at[child_id, 'ps_gest_diab'] = False
         df.at[child_id, 'ps_prev_gest_diab'] = False
