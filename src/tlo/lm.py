@@ -21,29 +21,35 @@ class Predictor(object):
         if external:
             assert property_name is not None, "Can't have an unnamed external predictor"
             # It will be an private column appended to the dataframe
-            self.property_name = f'__{self.property_name}__'
+            self.property_name = f"__{self.property_name}__"
 
         self.conditions = list()
         self.callback = None
         self.has_otherwise = False
 
-    def when(self, condition: Union[str, float, bool], value: float) -> 'Predictor':
+    def when(self, condition: Union[str, float, bool], value: float) -> "Predictor":
         assert self.callback is None, "Can't use `when` on Predictor with function"
         return self._coeff(condition=condition, coefficient=value)
 
-    def otherwise(self, value: float) -> 'Predictor':
-        assert self.property_name is not None, "Can't use `otherwise` condition on unnamed Predictor"
+    def otherwise(self, value: float) -> "Predictor":
+        assert (
+            self.property_name is not None
+        ), "Can't use `otherwise` condition on unnamed Predictor"
         assert self.callback is None, "Can't use `otherwise` on Predictor with function"
         return self._coeff(coefficient=value)
 
-    def apply(self, callback: Callable[[Any], float]) -> 'Predictor':
+    def apply(self, callback: Callable[[Any], float]) -> "Predictor":
         assert self.property_name is not None, "Can't use `apply` on unnamed Predictor"
-        assert len(self.conditions) == 0, "Can't specify `apply` on Predictor with when/otherwise conditions"
-        assert self.callback is None, "Can't specify more than one callback for a Predictor"
+        assert (
+            len(self.conditions) == 0
+        ), "Can't specify `apply` on Predictor with when/otherwise conditions"
+        assert (
+            self.callback is None
+        ), "Can't specify more than one callback for a Predictor"
         self.callback = callback
         return self
 
-    def _coeff(self, *, coefficient, condition=None) -> 'Predictor':
+    def _coeff(self, *, coefficient, condition=None) -> "Predictor":
         """Adds the coefficient for the Predictor. The arguments can be two:
                 `coeff(condition, value)` where the condition evaluates the property value to true/false
                 `coeff(value)` where the value is given to all unconditioned values of the property
@@ -58,23 +64,25 @@ class Predictor(object):
         # Otherwise, the condition is applied on a specific property
         if isinstance(condition, str):
             # Handle either a complex condition (begins with an operator) or implicit equality
-            if condition[0] in ['!', '=', '<', '>', '~', '(', '.']:
-                parsed_condition = f'({self.property_name}{condition})'
+            if condition[0] in ["!", "=", "<", ">", "~", "(", "."]:
+                parsed_condition = f"({self.property_name}{condition})"
             else:
                 # numeric values don't need to be quoted
                 if condition.isnumeric():
-                    parsed_condition = f'({self.property_name} == {condition})'
+                    parsed_condition = f"({self.property_name} == {condition})"
                 else:
                     parsed_condition = f'({self.property_name} == "{condition}")'
         elif isinstance(condition, bool):
             if condition:
-                parsed_condition = f'({self.property_name} == True)'
+                parsed_condition = f"({self.property_name} == True)"
             else:
-                parsed_condition = f'({self.property_name} == False)'
+                parsed_condition = f"({self.property_name} == False)"
         elif isinstance(condition, numbers.Number):
-            parsed_condition = f'({self.property_name} == {condition})'
+            parsed_condition = f"({self.property_name} == {condition})"
         elif condition is None:
-            assert not self.has_otherwise, "You can only give one unconditioned value to predictor"
+            assert (
+                not self.has_otherwise
+            ), "You can only give one unconditioned value to predictor"
             self.has_otherwise = True
             parsed_condition = None
         else:
@@ -97,7 +105,12 @@ class Predictor(object):
         if self.callback:
             # note that callback only works on single column
             output = df[self.property_name].apply(self.callback)
-            logger.debug('predictor: %s; function: %s; matched: %d', self.property_name, self.callback, len(df))
+            logger.debug(
+                "predictor: %s; function: %s; matched: %d",
+                self.property_name,
+                self.callback,
+                len(df),
+            )
             return output
 
         # keep a record of all rows matched by this predictor's conditions
@@ -106,24 +119,32 @@ class Predictor(object):
         for condition, value in self.conditions:
             # don't include rows that were matched by a previous condition
             if condition:
-                unmatched_condition = f'{condition} & (~@matched)'
+                unmatched_condition = f"{condition} & (~@matched)"
             else:
-                unmatched_condition = '~@matched'
+                unmatched_condition = "~@matched"
 
             # rows matching the current conditional
             mask = df.eval(unmatched_condition)
 
             # test if mask includes rows that were already matched by a previous condition
-            assert not (matched & mask).any(), f'condition "{unmatched_condition}" matches rows already matched'
+            assert not (
+                matched & mask
+            ).any(), f'condition "{unmatched_condition}" matches rows already matched'
 
             # update elements in the output series with the corresponding value for the condition
             output[mask] = value
 
-            logger.debug('predictor: %s; condition: %s; value: %s; matched rows: %d/%d',
-                         self.property_name, condition, value, mask.sum(), len(mask))
+            logger.debug(
+                "predictor: %s; condition: %s; value: %s; matched rows: %d/%d",
+                self.property_name,
+                condition,
+                value,
+                mask.sum(),
+                len(mask),
+            )
 
             # add this condition's matching rows to the list of matched rows
-            matched = (matched | mask)
+            matched = matched | mask
         return output
 
 
@@ -136,6 +157,7 @@ class LinearModelType(Enum):
     and the prediction is a probability.]
     'multiplicative' -> multiplies the effect_sizes from the predictors
     """
+
     ADDITIVE = auto()
     LOGISTIC = auto()
     MULTIPLICATIVE = auto()
@@ -146,10 +168,14 @@ class LinearModel(object):
         """
         A linear model has an intercept and zero or more Predictor variables.
         """
-        assert lm_type in LinearModelType, 'Model should be one of the prescribed LinearModelTypes'
+        assert (
+            lm_type in LinearModelType
+        ), "Model should be one of the prescribed LinearModelTypes"
         self.lm_type = lm_type
 
-        assert isinstance(intercept, (float, int)), "Intercept is not specified or wrong type."
+        assert isinstance(
+            intercept, (float, int)
+        ), "Intercept is not specified or wrong type."
         self.intercept = intercept
 
         self.predictors = list()
@@ -164,23 +190,30 @@ class LinearModel(object):
         if kwargs:
             new_columns = {}
             for column_name, value in kwargs.items():
-                new_columns[f'__{column_name}__'] = kwargs[column_name]
+                new_columns[f"__{column_name}__"] = kwargs[column_name]
             df = df.assign(**new_columns)
 
-        indicator_property_names_not_in_df = [p.property_name for p in self.predictors
-                                              if (p.property_name is not None)
-                                              and (p.property_name not in df.columns)]
+        indicator_property_names_not_in_df = [
+            p.property_name
+            for p in self.predictors
+            if (p.property_name is not None) and (p.property_name not in df.columns)
+        ]
 
-        assert not indicator_property_names_not_in_df,\
-            f"Predictor variables not in df: {indicator_property_names_not_in_df}"
+        assert (
+            not indicator_property_names_not_in_df
+        ), f"Predictor variables not in df: {indicator_property_names_not_in_df}"
 
-        assert all([p.property_name in df.columns
-                    for p in self.predictors
-                    if p.property_name is not None]), f"Predictor variables not in df"
+        assert all(
+            [
+                p.property_name in df.columns
+                for p in self.predictors
+                if p.property_name is not None
+            ]
+        ), f"Predictor variables not in df"
 
         # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
-        res_by_predictor[f'__intercept{id(self)}__'] = self.intercept
+        res_by_predictor[f"__intercept{id(self)}__"] = self.intercept
 
         for predictor in self.predictors:
             res_by_predictor[predictor] = predictor.predict(df)
@@ -200,4 +233,4 @@ class LinearModel(object):
             # print("Multiplicative Model: Prediction will be multiplication of each effect size.")
             return res_by_predictor.prod(axis=1, skipna=True)
 
-        raise ValueError(f'Unhandled linear model type: {self.lm_type}')
+        raise ValueError(f"Unhandled linear model type: {self.lm_type}")
