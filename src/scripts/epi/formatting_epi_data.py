@@ -10,7 +10,7 @@ find/replace: find alt 0010, replace ""
 doesn't remove all so have to do some manual checks
 remove any spaces or special characters in headers
 
-2012 is missing
+2012 is compiled from the raw data
 
 """
 from pathlib import Path
