@@ -1,5 +1,5 @@
 """
-This will run the Diarrhoea Module and plot the incidence rate of each pathogen by each age group.
+This will run the Pneumonia Module and plot the incidence rate of each pathogen by each age group.
 This will then be compared with:
     * The input incidence rate for each pathogen
     * The desired incidence rate for each pathogen
@@ -16,8 +16,8 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
-from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
-    symptommanager, healthburden
+from tlo.methods import contraception, demography, pneumonia, healthsystem, enhanced_lifestyle, \
+    symptommanager
 
 # %%
 outputpath = Path("./outputs")
@@ -40,9 +40,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
+sim.register(pneumonia.Pneumonia(resourcefilepath=resourcefilepath))
 
 logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(0)
@@ -54,7 +54,7 @@ output = parse_log_file(logfile)
 
 # %%
 # Calculate the "incidence rate" from the output counts of incidence
-counts = output['tlo.methods.diarrhoea']['incidence_count_by_pathogen']
+counts = output['tlo.methods.pneumonia']['incidence_count_by_pathogen']
 counts['year'] = pd.to_datetime(counts['date']).dt.year
 counts.drop(columns='date', inplace=True)
 counts.set_index(
@@ -98,47 +98,50 @@ for age_grp in ['0y', '1y', '2-4y']:
 
 # Load the incidence rate data to which we calibrate
 calibration_incidence_rate_0_year_olds = {
-    'rotavirus': 17.5245863 / 100.0,
-    'shigella': 11.7936462 / 100.0,
-    'adenovirus': 5.866180 / 100.0,
-    'cryptosporidium': 3.0886699 / 100.0,
-    'campylobacter': 9.8663257 / 100.0,
-    'ST-ETEC': 27.925146 / 100.0,
-    'sapovirus': 10.0972179 / 100.0,
-    'norovirus': 20.4864004 / 100.0,
-    'astrovirus': 5.4208352 / 100.0,
-    'tEPEC': 6.0822457 / 100.0
+    'RSV': 24.0979 / 100.0,
+    'rhinovirus': 1.7603 / 100.0,
+    'hMPV': 5.0381 / 100.0,
+    'parainfluenza': 4.7346 / 100.0,
+    'streptococcus': 2.8529 / 100.0,
+    'hib': 3.5813 / 100.0,
+    'TB': 4.0669 / 100.0,
+    'staphylococcus': 2.2459 / 100.0,
+    'influenza': 0.9712 / 100.0,
+    'jirovecii': 1.821 / 100.0,
+    'other_pathogens': 5.9486 / 100.0
 }
 
 calibration_incidence_rate_1_year_olds = {
-    'rotavirus': 9.7007598 / 100.0,
-    'shigella': 7.8794104 / 100.0,
-    'adenovirus': 5.8661803 / 100.0,
-    'cryptosporidium': 1.1792363 / 100.0,
-    'campylobacter': 2.7915478 / 100.0,
-    'ST-ETEC': 17.0477152 / 100.0,
-    'sapovirus': 13.2603114 / 100.0,
-    'norovirus': 6.6146727 / 100.0,
-    'astrovirus': 3.5974076 / 100.0,
-    'tEPEC': 2.2716889 / 100.0
+    'RSV': 5.62356 / 100.0,
+    'rhinovirus': 5.21208 / 100.0,
+    'hMPV': 2.16027 / 100.0,
+    'parainfluenza': 2.29743 / 100.0,
+    'streptococcus': 3.63474 / 100.0,
+    'hib': 2.29743 / 100.0,
+    'TB': 1.33731 / 100.0,
+    'staphylococcus': 0.30861 / 100.0,
+    'influenza': 0.99441 / 100.0,
+    'jirovecii': 0.13716 / 100.0,
+    'other_pathogens': 9.39546 / 100.0
 }
 
 calibration_incidence_rate_2_to_4_year_olds = {
-    'rotavirus': 0.9324 / 100.0,
-    'shigella': 9.3018 / 100.0,
-    'adenovirus': 0.6438 / 100.0,
-    'cryptosporidium': 0.4662 / 100.0,
-    'campylobacter': 0.4884 / 100.0,
-    'ST-ETEC': 1.9758 / 100.0,
-    'sapovirus': 0.555 / 100.0,
-    'norovirus': 0.0888 / 100.0,
-    'astrovirus': 0.1332 / 100.0,
-    'tEPEC': 0.1998 / 100.0
+    'RSV': 1.9866 / 100.0,
+    'rhinovirus': 1.91436 / 100.0,
+    'hMPV': 0.71036 / 100.0,
+    'parainfluenza': 0.81872 / 100.0,
+    'streptococcus': 1.10768 / 100.0,
+    'hib': 0.52976 / 100.0,
+    'TB': 0.71036 / 100.0,
+    'staphylococcus': 0.14448 / 100.0,
+    'influenza': 0.38528 / 100.0,
+    'jirovecii': 0.02408 / 100.0,
+    'other_pathogens': 3.39528 / 100.0
 }
 
 # Produce a set of line plot comparing to the calibration data
-fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
-for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
+fig, axes = plt.subplots(ncols=2, nrows=6, sharey=True)
+for ax_num, pathogen in enumerate(sim.modules['Pneumonia'].pathogens):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
     ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],
@@ -166,19 +169,19 @@ inc_mean['2-4y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_2_
 # 0 year-olds
 inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
 plt.title('Incidence Rate: 0 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("Pneumonia_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # 1 year-olds
 inc_mean.plot.bar(y=['1y_model_output', '1y_calibrating_data'])
 plt.title('Incidence Rate: 1 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("Pneumonia_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # 2-4 year-olds
 inc_mean.plot.bar(y=['2-4y_model_output', '2-4y_calibrating_data'])
 plt.title('Incidence Rate: 2-4 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("Pneumonia_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # ---------------------------- MODEL OUTPUT FOR MEAN DEATH RATE BY PATHOGEN ----------------------------
@@ -261,7 +264,7 @@ all_deaths['age_grp'] = all_deaths['age'].map(
 )
 deaths = all_deaths.groupby(by=['year', 'age_grp', 'cause']).size().reset_index()
 deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
-deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index)
+deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Pneumonia'].index)
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
 deaths.drop(deaths.index[deaths['year'] > 2015.0], inplace=True)

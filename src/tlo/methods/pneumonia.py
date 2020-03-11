@@ -33,7 +33,7 @@ class Pneumonia(Module):
         'staphylococcus',
         'influenza',
         'jirovecii',
-        'other pathogens'
+        'other_pathogens'
     }
 
     # Declare the severity levels of the disease:
@@ -43,6 +43,45 @@ class Pneumonia(Module):
     }
 
     PARAMETERS = {
+        'base_incidence_pneumonia_by_agecat': Parameter
+        (Types.REAL, 'overall incidence of pneumonia by age category'
+         ),
+        'pn_attributable_fraction_RSV': Parameter
+        (Types.REAL, 'attributable fraction of RSV causing pneumonia'
+         ),
+        'pn_attributable_fraction_rhinovirus': Parameter
+        (Types.REAL, 'attributable fraction of rhinovirus causing pneumonia'
+         ),
+        'pn_attributable_fraction_hmpv': Parameter
+        (Types.REAL, 'attributable fraction of hMPV causing pneumonia'
+         ),
+        'pn_attributable_fraction_parainfluenza': Parameter
+        (Types.REAL, 'attributable fraction of parainfluenza causing pneumonia'
+         ),
+        'pn_attributable_fraction_streptococcus': Parameter
+        (Types.REAL, 'attributable fraction of streptococcus causing pneumonia'
+         ),
+        'pn_attributable_fraction_hib': Parameter
+        (Types.REAL, 'attributable fraction of hib causing pneumonia'
+         ),
+        'pn_attributable_fraction_TB': Parameter
+        (Types.REAL, 'attributable fraction of TB causing pneumonia'
+         ),
+        'pn_attributable_fraction_staph': Parameter
+        (Types.REAL, 'attributable fraction of staphylococcus causing pneumonia'
+         ),
+        'pn_attributable_fraction_influenza': Parameter
+        (Types.REAL, 'attributable fraction of influenza causing pneumonia'
+         ),
+        'pn_attributable_fraction_jirovecii': Parameter
+        (Types.REAL, 'attributable fraction of jirovecii causing pneumonia'
+         ),
+        'pn_attributable_fraction_other_pathogens': Parameter
+        (Types.REAL, 'attributable fraction of jirovecii causing pneumonia'
+         ),
+        'pn_attributable_fraction_other_cause': Parameter
+        (Types.REAL, 'attributable fraction of jirovecii causing pneumonia'
+         ),
         'base_inc_rate_pneumonia_by_RSV': Parameter
         (Types.LIST, 'incidence of pneumonia caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
          ),
@@ -85,7 +124,7 @@ class Pneumonia(Module):
         'rr_ri_pneumonia_SAM': Parameter
         (Types.REAL, 'relative rate of pneumonia for severe malnutrition'
          ),
-        'rr_ri_pneumonia_excl_breast': Parameter
+        'rr_ri_pneumonia_excl_breastfeeding': Parameter
         (Types.REAL, 'relative rate of pneumonia for exclusive breastfeeding upto 6 months'
          ),
         'rr_ri_pneumonia_cont_breast': Parameter
@@ -100,17 +139,16 @@ class Pneumonia(Module):
         'rr_ri_pneumonia_hib_vaccine': Parameter
         (Types.REAL, 'relative rate of pneumonia for hib vaccine'
          ),
+        'rr_ri_pneumonia_influenza_vaccine': Parameter
+        (Types.REAL, 'relative rate of pneumonia for influenza vaccine'
+         ),
         'rr_progress_severe_pneum_viral': Parameter
         (Types.REAL, 'relative rate of pneumonia for viral pathogen'
          ),
-        'r_progress_to_severe_pneum': Parameter
-        (Types.REAL,
+        'r_progress_to_severe_pneumonia': Parameter
+        (Types.LIST,
          'probability of progressing from non-severe to severe pneumonia among children aged 2-11 months, '
          'HIV negative, no SAM'
-         ),
-        'rr_progress_severe_pneum_agelt2mo': Parameter
-        (Types.REAL,
-         'relative rate of progression to severe pneumonia for age <2 months'
          ),
         'rr_progress_severe_pneum_age12to23mo': Parameter
         (Types.REAL,
@@ -127,32 +165,29 @@ class Pneumonia(Module):
         (Types.REAL,
          'relative rate of progression to severe pneumonia for severe acute malnutrition'
          ),
-        'rr_progress_very_sev_pneum_viral': Parameter
-        (Types.REAL, 'relative rate of pneumonia for viral pathogen'
-         ),
-        'r_progress_to_very_sev_pneum': Parameter
+        'r_death_pneumonia': Parameter
         (Types.REAL,
-         'probability of progressing from non-severe to severe pneumonia among children aged 2-11 months, '
-         'HIV negative, no SAM'
+         'death rate of pneumonia'
          ),
-        'rr_progress_very_sev_pneum_agelt2mo': Parameter
+        'rr_death_pneumonia_agelt2mo': Parameter
         (Types.REAL,
-         'relative rate of progression to severe pneumonia for age <2 months'
+         'death rate of pneumonia'
          ),
-        'rr_progress_very_sev_pneum_age12to23mo': Parameter
+        'rr_death_pneumonia_age12to23mo': Parameter
         (Types.REAL,
-         'relative rate of progression to severe pneumonia for age 12 to 23 months'
+         'death rate of pneumonia'
          ),
-        'rr_progress_very_sev_pneum_age24to59mo': Parameter
-        (Types.REAL, 'relative rate of progression to severe pneumonia for age 24 to 59 months'
-         ),
-        'rr_progress_very_sev_pneum_HIV': Parameter
+        'rr_death_pneumonia_age24to59mo': Parameter
         (Types.REAL,
-         'relative risk of progression to severe pneumonia for HIV positive status'
+         'death rate of pneumonia'
          ),
-        'rr_progress_very_sev_pneum_SAM': Parameter
+        'rr_death_pneumonia_HIV': Parameter
         (Types.REAL,
-         'relative rate of progression to severe pneumonia for severe acute malnutrition'
+         'death rate of pneumonia'
+         ),
+        'rr_death_pneumonia_SAM': Parameter
+        (Types.REAL,
+         'death rate of pneumonia'
          ),
     }
 
@@ -239,7 +274,6 @@ class Pneumonia(Module):
         """ Setup parameters values used by the module
         """
         p = self.parameters
-        m = self.module
         self.load_parameters_from_dataframe(
             pd.read_excel(
                 Path(self.resourcefilepath) / 'ResourceFile_Childhood_Pneumonia.xlsx', sheet_name='Parameter_values'))
@@ -290,8 +324,8 @@ class Pneumonia(Module):
                                1.0,
                                Predictor('age_years')
                                .when('.between(0,0)', p['base_inc_rate_pneumonia_by_rhinovirus'][0])
-                               .when('.between(1,1)', p['base_inc_rate_pneumoniaa_by_rhinovirus'][1])
-                               .when('.between(2,4)', p['base_inc_rate_pneumoniaa_by_rhinovirus'][2])
+                               .when('.between(1,1)', p['base_inc_rate_pneumonia_by_rhinovirus'][1])
+                               .when('.between(2,4)', p['base_inc_rate_pneumonia_by_rhinovirus'][2])
                                .otherwise(0.0),
                                # Predictor('li_no_access_handwashing')
                                # .when(False, m.rr_diarrhoea_HHhandwashing),
@@ -524,9 +558,9 @@ class Pneumonia(Module):
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
                         Predictor('age_years')
-                        .when('.between(0,0)', p['r_progress_to_very_sev_penum'][0])
-                        .when('.between(1,1)', p['r_progress_to_very_sev_penum'][1])
-                        .when('.between(2,4)', p['r_progress_to_very_sev_penum'][2])
+                        .when('.between(0,0)', p['r_progress_to_severe_pneumonia'][0])
+                        .when('.between(1,1)', p['r_progress_to_severe_pneumonia'][1])
+                        .when('.between(2,4)', p['r_progress_to_severe_pneumonia'][2])
                         .otherwise(0.0),
                         # Predictor('has_hiv').when(True, m.rr_progress_very_sev_pneum_HIV),
                         # Predictor('malnutrition').when(True, m.rr_progress_very_sev_pneum_SAM),
@@ -683,47 +717,46 @@ class Pneumonia(Module):
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+        pass
 
-        logger.debug('This is pneumonia reporting my health values')
-        df = self.sim.population.props
-        p = self.parameters
-
-        total_daly_values = pd.Series(data=0.0, index=df.loc[df['is_alive']].index)
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('fast_breathing')
-        ] = self.daly_wts['daly_pneumonia']
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('chest_indrawing')
-        ] = self.daly_wts['daly_severe_pneumonia']
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('danger_signs')
-        ] = self.daly_wts['daly_severe_pneumonia']
-
-        # health_values = df.loc[df.is_alive, 'ri_specific_symptoms'].map({
-        #     'none': 0,
-        #     'pneumonia': p['daly_pneumonia'],
-        #     'severe pneumonia': p['daly_severe_pneumonia'],
-        #     'very severe pneumonia': p['daly_very_severe_pneumonia']
-        # })
-        # health_values.name = 'Pneumonia Symptoms'  # label the cause of this disability
-        # return health_values.loc[df.is_alive]  # returns the series
-
-        # Split out by pathogen that causes the pneumonia
-        dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
-                                                     'ri_last_pneumonia_pathogen'],
-                                              dtype='float')
-        daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0).drop(columns='none')
-
-        return daly_values_by_pathogen
+        # logger.debug('This is pneumonia reporting my health values')
+        # df = self.sim.population.props
+        # p = self.parameters
+        #
+        # total_daly_values = pd.Series(data=0.0, index=df.loc[df['is_alive']].index)
+        # total_daly_values.loc[
+        #     self.sim.modules['SymptomManager'].who_has('fast_breathing')
+        # ] = self.daly_wts['daly_pneumonia']
+        # total_daly_values.loc[
+        #     self.sim.modules['SymptomManager'].who_has('chest_indrawing')
+        # ] = self.daly_wts['daly_severe_pneumonia']
+        # total_daly_values.loc[
+        #     self.sim.modules['SymptomManager'].who_has('danger_signs')
+        # ] = self.daly_wts['daly_severe_pneumonia']
+        #
+        # # health_values = df.loc[df.is_alive, 'ri_specific_symptoms'].map({
+        # #     'none': 0,
+        # #     'pneumonia': p['daly_pneumonia'],
+        # #     'severe pneumonia': p['daly_severe_pneumonia'],
+        # #     'very severe pneumonia': p['daly_very_severe_pneumonia']
+        # # })
+        # # health_values.name = 'Pneumonia Symptoms'  # label the cause of this disability
+        # # return health_values.loc[df.is_alive]  # returns the series
+        #
+        # # Split out by pathogen that causes the pneumonia
+        # dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
+        #                                              'ri_last_pneumonia_pathogen'],
+        #                                       dtype='float')
+        # daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0).drop(columns='none')
+        #
+        # return daly_values_by_pathogen
 
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
-
 class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-        This is the main event that runs the acquisition of pathogens that cause Pneumonia.
+    """ This is the main event that runs the acquisition of pathogens that cause Pneumonia.
         It determines who is infected and when and schedules individual IncidentCase events to represent onset.
         A known issue is that pneumonia events are scheduled based on the risk of current age but occur a short time
         later when the children have aged.
@@ -782,10 +815,9 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
 
             # ----------------------- Determine outcomes for this case ----------------------
-            # duration_in_days_of_pneumonia = max(1, int(
-            #     m.mean_duration_in_days_of_pneumonia.predict(df.loc[[person_id]]).values[0] + \
-            #     (-2 + 4 * rng.rand())  # assumes uniform interval around mean duration with range 4 days
-            # ))
+            duration_in_days_of_pneumonia = max(1, int(5+ \
+                (-2 + 4 * rng.rand())  # assumes uniform interval around mean duration with range 4 days
+            ))
 
             # severity
             prob_prog_severe_pneumonia = m.progression_to_severe_pneumonia.predict(df.loc[[person_id]]).values[0]
@@ -860,7 +892,7 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
             df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
             date_of_onset_severe_pneumonia = max(self.sim.date, date_of_outcome - DateOffset(
-                days=self.module.parameters['days_onset_severe_pneumonia_before_death']))
+                days=3)) # self.module.parameters['days_onset_severe_pneumonia_before_death']))
             self.sim.schedule_event(SeverePneumoniaEvent(self.module, person_id),
                                     date_of_onset_severe_pneumonia)
         else:
@@ -900,7 +932,7 @@ class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
                     symptoms_for_this_person.append(symptom)
 
             date_of_death = self.sim.date\
-                            + DateOffset(days=self.module.parameters['days_onset_severe_pneumonia_before_death'])
+                            + DateOffset(days=2) #self.module.parameters['days_onset_severe_pneumonia_before_death'])
             df.at[person_id, 'ri_last_pneumonia_death_date'] = date_of_death
             self.sim.schedule_event(PneumoniaDeathEvent(self.module, person_id), date_of_death)
 
