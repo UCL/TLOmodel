@@ -43,7 +43,7 @@ class Epi(Module):
         For now, we are going to hard code them explicity
         """
         self.parameters["bcg_coverage"] = 0.8
-
+        self.parameters["bcg_baseline_coverage"] = 0.92
         # ---- Register this module ----
         # Register this disease module with the health system
         self.sim.modules["HealthSystem"].register_disease_module(self)
@@ -67,6 +67,17 @@ class Epi(Module):
         # Set default for properties
         df.loc[df.is_alive, "ep_bcg"] = False
 
+        # from 1981-2009 average bcg coverage is 92% (WHO estimates)
+        # by Jan 2010, anyone <28 years has 92% probability of being vaccinated
+        random_draw = self.rng.random_sample(size=len(df))
+        bcg_idx = df.index[
+            df.is_alive
+            & (df.age_years < 28)
+            & (random_draw < p["bcg_baseline_coverage"])
+        ]
+
+        df.loc[bcg_idx, "ep_bcg"] = True
+
     def initialise_simulation(self, sim):
 
         # add an event to log to screen
@@ -88,7 +99,12 @@ class Epi(Module):
 
         # assign bcg according to current coverage
         if self.rng.random_sample(size=1) < self.parameters["bcg_coverage"]:
-            df.at[child_id, "ep_bcg"] = True
+            bcg_appt = HSI_bcg(self, person_id=child_id)
+
+            # Request the health system to have this bcg vaccination appointment
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                bcg_appt, priority=1, topen=self.sim.date, tclose=None
+            )
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -113,10 +129,9 @@ class Epi(Module):
 # Health System Interaction Events
 
 
-class HSI_week6VaccineBundle(HSI_Event, IndividualScopeEventMixin):
+class HSI_bcg(HSI_Event, IndividualScopeEventMixin):
     """
-    gives the vaccines DTP-Hib-HepB, OPV, Pneumo, Rota
-    at the 6 week appointment if resources available
+    gives bcg vaccine 24 hours after birth or as soon as possible afterwards
     """
 
     def __init__(self, module, person_id):
@@ -125,155 +140,56 @@ class HSI_week6VaccineBundle(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # the_appt_footprint['AccidentsandEmerg'] = 0  # Plus, an amount of resources similar to an A&E
+        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_week6VaccineBundle"
+        self.TREATMENT_ID = "HSI_bcg"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(
-            "HSI_week6VaccineBundle: giving xpert test for person %d", person_id
-        )
+        logger.debug(f"HSI_bcg: giving bcg to {person_id}")
 
         df = self.sim.population.props
-        now = self.sim.date
-        p = self.sim.modules["Epi"].parameters
-
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        item_code1 = pd.unique(
-            consumables.loc[consumables["Item_Code"] == 152, "Intervention_Pkg_Code"]
-        )[0]
-
-        the_cons_footprint = {
-            "Intervention_Package_Code": [],
-            "Item_Code": [{item_code1: 1}],
-        }
-
-        is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint
-        )
-        if is_cons_available:
-            df.at[person_id, "ep_bcg"] = True
-
-    def did_not_run(self):
-        logger.debug("HSI_week6VaccineBundle: did not run")
-
-
-class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-
-    This event can be used to simulate the occurrence of an 'outreach' intervention.
-
-    NB. This needs to be created and run for each individual that benefits from the outreach campaign.
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, ChronicSyndrome)
-
-        logger.debug("Outreach event being created.")
-
-        # Define the necessary information for an HSI
-        # (These are blank when created; but these should be filled-in by the module that calls it)
-        self.TREATMENT_ID = "ChronicSyndrome_Outreach_Individual"
-
-        # APPP_FOOTPRINT: outreach event takes small amount of time for DCSA
-        appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        appt_footprint["ConWithDCSA"] = 0.5
-        self.EXPECTED_APPT_FOOTPRINT = appt_footprint
-
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0
-        self.ALERT_OTHER_DISEASES = ["*"]
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug("Outreach event running now for person: %s", person_id)
-
-        # Do here whatever happens during an outreach event with an individual
-        # ~~~~~~~~~~~~~~~~~~~~~~
 
         # Make request for some consumables
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"]
-                == "First line treatment for new TB cases for adults",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-        pkg_code2 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"]
-                == "MDR notification among previously treated patients",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
 
         item_code1 = pd.unique(
+            consumables.loc[consumables["Items"] == "BCG vaccine", "Item_Code",]
+        )[0]
+
+        item_code2 = pd.unique(
             consumables.loc[
-                consumables["Items"] == "Ketamine hydrochloride 50mg/ml, 10ml",
+                consumables["Items"]
+                == "Syringe, autodisposable, BCG, 0.1 ml, with needle",
                 "Item_Code",
             ]
         )[0]
-        item_code2 = pd.unique(
-            consumables.loc[consumables["Items"] == "Underpants", "Item_Code"]
+
+        item_code3 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Safety box for used syringes/needles, 5 liter",
+                "Item_Code",
+            ]
         )[0]
 
+        # assume 100 needles can be disposed of in each safety box
         consumables_needed = {
-            "Intervention_Package_Code": {pkg_code1: 1, pkg_code2: 4},
-            "Item_Code": {item_code1: 1, item_code2: 10},
+            "Intervention_Package_Code": {},
+            "Item_Code": {item_code1: 1, item_code2: 1, item_code3: 1},
         }
 
         outcome_of_request_for_consumables = self.sim.modules[
             "HealthSystem"
         ].request_consumables(hsi_event=self, cons_req_as_footprint=consumables_needed)
 
-        # answer comes back in the same format, but with quantities replaced with bools indicating availability
-        if outcome_of_request_for_consumables["Intervention_Package_Code"][pkg_code1]:
-            logger.debug("PkgCode1 is available, so use it.")
-        else:
-            logger.debug("PkgCode1 is not available, so can" "t use it.")
-
-        # Return the actual appt footprints
-        actual_appt_footprint = (
-            self.EXPECTED_APPT_FOOTPRINT
-        )  # The actual time take is double what is expected
-        actual_appt_footprint["ConWithDCSA"] = actual_appt_footprint["ConWithDCSA"] * 2
-
-        return actual_appt_footprint
+        if outcome_of_request_for_consumables:
+            df.at[person_id, "ep_bcg"] = True
 
     def did_not_run(self):
-        logger.debug("HSI_ChronicSyndrome_Outreach_Individual: did not run")
-        pass
-
-
-class HSI_ChronicSyndrome_PopulationWideBehaviourChange(
-    HSI_Event, PopulationScopeEventMixin
-):
-    """
-    This is a Population-Wide Health System Interaction Event - will change the variables to do with risk for
-    ChronicSyndrome
-    """
-
-    def __init__(self, module):
-        super().__init__(module)
-        assert isinstance(module, ChronicSyndrome)
-
-        # Define the necessary information for a Population level HSI
-        self.TREATMENT_ID = "ChronicSyndrome_PopulationWideBehaviourChange"
-
-    def apply(self, population, squeeze_factor):
-        logger.debug("This is HSI_ChronicSyndrome_PopulationWideBehaviourChange")
-
-        # As an example, we will reduce the chance of acquisition per year (due to behaviour change)
-        self.module.parameters["p_acquisition_per_year"] = (
-            self.module.parameters["p_acquisition_per_year"] * 0.5
-        )
+        logger.debug("HSI_bcg: did not run")
 
 
 # ---------------------------------------------------------------------------------
@@ -282,12 +198,30 @@ class HSI_ChronicSyndrome_PopulationWideBehaviourChange(
 
 class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """ There is no logging done here.
+        """ output vaccine coverage every year
         """
-        # run this event every month
+
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
-        assert isinstance(module, ChronicSyndrome)
+        assert isinstance(module, Epi)
 
     def apply(self, population):
-        pass
+        df = population.props
+        now = self.sim.date
+
+        # bcg vaccination coverage in <1 year old children
+        bcg = len(df[df.is_alive & df.ep_bcg & (df.age_years <= 1)])
+        infants = len(df[df.is_alive & (df.age_years <= 1)])
+
+        coverage = ((bcg / infants) * 100) if infants else 0
+        assert coverage <= 100
+
+        logger.info(
+            "%s|ep_bcg|%s",
+            now,
+            {
+                "epNumInfantsBcg": bcg,
+                "epNumInfantsEligibleBcg": infants,
+                "epBcgCoverage": coverage,
+            },
+        )
