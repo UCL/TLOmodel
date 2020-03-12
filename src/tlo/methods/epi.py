@@ -42,7 +42,7 @@ class Epi(Module):
         """Read parameter values from file, if required.
         For now, we are going to hard code them explicity
         """
-        self.parameters["p_coverage"] = 0.8
+        self.parameters["bcg_coverage"] = 0.8
 
         # ---- Register this module ----
         # Register this disease module with the health system
@@ -86,6 +86,10 @@ class Epi(Module):
         # Initialise all the properties that this module looks after:
         df.at[child_id, "ep_bcg"] = False
 
+        # assign bcg according to current coverage
+        if self.rng.random_sample(size=1) < self.parameters["bcg_coverage"]:
+            df.at[child_id, "ep_bcg"] = True
+
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -109,18 +113,15 @@ class Epi(Module):
 # Health System Interaction Events
 
 
-class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-    HSI_Event, IndividualScopeEventMixin
-):
+class HSI_week6VaccineBundle(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event.
-    It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
-    and is immediately provided with treatment.
+    gives the vaccines DTP-Hib-HepB, OPV, Pneumo, Rota
+    at the 6 week appointment if resources available
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, ChronicSyndrome)
+        assert isinstance(module, Epi)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -128,48 +129,38 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
         # the_appt_footprint['AccidentsandEmerg'] = 0  # Plus, an amount of resources similar to an A&E
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment"
+        self.TREATMENT_ID = "HSI_week6VaccineBundle"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(
-            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d.",
-            person_id,
-        )
-        logger.debug(
-            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-factor is %d.",
-            squeeze_factor,
+            "HSI_week6VaccineBundle: giving xpert test for person %d", person_id
         )
 
-        if squeeze_factor < 0.5:
-            # If squeeze factor is not too large:
-            logger.debug("Treatment will be provided.")
-            df = self.sim.population.props
-            treatmentworks = self.module.rng.rand() < self.module.parameters["p_cure"]
+        df = self.sim.population.props
+        now = self.sim.date
+        p = self.sim.modules["Epi"].parameters
 
-            if treatmentworks:
-                df.at[person_id, "cs_has_cs"] = False
-                df.at[person_id, "cs_status"] = "P"
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        item_code1 = pd.unique(
+            consumables.loc[consumables["Item_Code"] == 152, "Intervention_Pkg_Code"]
+        )[0]
 
-                # (in this we nullify the death event that has been scheduled.)
-                df.at[person_id, "cs_scheduled_date_death"] = pd.NaT
-                df.at[person_id, "cs_date_cure"] = self.sim.date
+        the_cons_footprint = {
+            "Intervention_Package_Code": [],
+            "Item_Code": [{item_code1: 1}],
+        }
 
-                # remove all symptoms instantly
-                self.sim.modules["SymptomManager"].clear_symptoms(
-                    person_id=person_id, disease_module=self.module
-                )
-        else:
-            # Squeeze factor is too large
-            logger.debug("Treatment will not be provided due to squeeze factor.")
+        is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint
+        )
+        if is_cons_available:
+            df.at[person_id, "ep_bcg"] = True
 
     def did_not_run(self):
-        logger.debug(
-            "HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run"
-        )
-        pass
+        logger.debug("HSI_week6VaccineBundle: did not run")
 
 
 class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMixin):
