@@ -33,10 +33,14 @@ class SymptomManager(Module):
         # Generic Symptoms: pre-defined and used in health seeking behaviour
         self.parameters['generic_symptoms'] = {
             'fever',
+
             'vomiting',
             'stomachache',
             'sore_throat',
             'respiratory_symptoms',
+            'difficult_breathing',
+            'fast_breathing',
+            'chest_indrawing',
             'headache',
             'skin_complaint',
             'dental_complaint',
