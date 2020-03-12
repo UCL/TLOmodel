@@ -69,3 +69,37 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 print("--- %s seconds ---" % (time.time() - start_time))
+
+# %% read the results
+
+# ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
+
+output = parse_log_file(logfile)
+model_bcg_coverage = output["tlo.methods.epi"]["ep_bcg"]
+model_date = pd.to_datetime(model_bcg_coverage.date)
+
+# ------------------------------------- DATA  ------------------------------------- #
+# import HIV data
+bcg_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_EPI.xlsx", sheet_name="WHO_bcgEstimates",
+)
+
+# select years included in simulation
+bcg_data = bcg_data.loc[(bcg_data.Year >= 2010) & (bcg_data.Year < end_date.year)]
+bcg_data_plot_years = pd.to_datetime(bcg_data.Year, format="%Y")
+
+# ------------------------------------- PLOTS  ------------------------------------- #
+
+plt.style.use("ggplot")
+
+# BCG coverage prevalence
+plt.plot(bcg_data_plot_years, bcg_data.bcg_coverage)
+plt.plot(model_date, model_bcg_coverage.epBcgCoverage)
+plt.title("BCG vaccine coverage")
+plt.xlabel("Year")
+plt.ylabel("Coverage")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(60, 100)
+plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.show()

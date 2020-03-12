@@ -20,9 +20,7 @@ import pandas as pd
 
 resourcefilepath = Path("./resources")
 
-epi = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_EPI_summary.xlsx", sheet_name=None,
-)
+epi = pd.read_excel(Path(resourcefilepath) / "ResourceFile_EPI.xlsx", sheet_name=None,)
 
 vax2010 = epi["epi2010"]
 vax2011 = epi["epi2011"]
