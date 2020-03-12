@@ -634,6 +634,10 @@ class Pneumonia(Module):
 
         # TODO: duration of ilness - mean 3.0 days (2.0-5.0 days) from PERCH
 
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
@@ -677,8 +681,7 @@ class Pneumonia(Module):
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(years=1))
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
