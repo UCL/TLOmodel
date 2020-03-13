@@ -24,12 +24,22 @@ class Epi(Module):
     PARAMETERS = {
         "bcg_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
         "pol1_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
+        "penta1_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
         # baseline vaccination coverage for general population
         "pol3_baseline_coverage": Parameter(
             Types.REAL, "baseline pol3 vaccination coverage for population"
         ),
         "bcg_baseline_coverage": Parameter(
             Types.REAL, "baseline bcg vaccination coverage for population"
+        ),
+        "dtp3_baseline_coverage": Parameter(
+            Types.REAL, "baseline dtp3 vaccination coverage for population"
+        ),
+        "HepB3_baseline_coverage": Parameter(
+            Types.REAL, "baseline HepB3 vaccination coverage for population"
+        ),
+        "Hib3_baseline_coverage": Parameter(
+            Types.REAL, "baseline Hib3 vaccination coverage for population"
         ),
     }
 
@@ -38,7 +48,22 @@ class Epi(Module):
         "ep_pol1": Property(Types.BOOL, "received first dose of OPV vaccine"),
         "ep_pol2": Property(Types.BOOL, "received second dose of OPV vaccine"),
         "ep_pol3": Property(
-            Types.BOOL, "received 3 doses of OPV vaccine - now protected"
+            Types.BOOL, "received three doses of OPV vaccine - now protected"
+        ),
+        "ep_dtp1": Property(Types.BOOL, "received first dose of DTP vaccine"),
+        "ep_dtp2": Property(Types.BOOL, "received second dose of DTP vaccine"),
+        "ep_dtp3": Property(
+            Types.BOOL, "received three doses of DTP vaccine - now protected"
+        ),
+        "ep_hib1": Property(Types.BOOL, "received first dose of Hib vaccine"),
+        "ep_hib2": Property(Types.BOOL, "received second dose of Hib vaccine"),
+        "ep_hib3": Property(
+            Types.BOOL, "received three doses of Hib vaccine - now protected"
+        ),
+        "ep_hep1": Property(Types.BOOL, "received first dose of HepB vaccine"),
+        "ep_hep2": Property(Types.BOOL, "received second dose of HepB vaccine"),
+        "ep_hep3": Property(
+            Types.BOOL, "received three doses of HepB vaccine - now protected"
         ),
     }
 
@@ -55,10 +80,14 @@ class Epi(Module):
 
         self.parameters["bcg_coverage"] = 0.8
         self.parameters["pol1_coverage"] = 0.8
+        self.parameters["penta1_coverage"] = 0.8
 
         # baseline coverage = average coverage estimates from 1980 (opv) or 1981 (bcg)
         self.parameters["pol3_baseline_coverage"] = 0.795
         self.parameters["bcg_baseline_coverage"] = 0.92
+        self.parameters["dtp3_baseline_coverage"] = 0.807
+        self.parameters["hepB3_baseline_coverage"] = 0.875
+        self.parameters["hib3_baseline_coverage"] = 0.875
 
         # ---- Register this module ----
         # Register this disease module with the health system
@@ -74,8 +103,19 @@ class Epi(Module):
         p = self.parameters
 
         # Set default for properties
-        df.loc[df.is_alive, "ep_bcg"] = False
-        df.loc[df.is_alive, "ep_pol3"] = False
+        df.at[df.is_alive, "ep_bcg"] = False
+        df.at[df.is_alive, "ep_pol1"] = False
+        df.at[df.is_alive, "ep_pol2"] = False
+        df.at[df.is_alive, "ep_pol3"] = False
+        df.at[df.is_alive, "ep_dtp1"] = False
+        df.at[df.is_alive, "ep_dtp2"] = False
+        df.at[df.is_alive, "ep_dtp3"] = False
+        df.at[df.is_alive, "ep_hib1"] = False
+        df.at[df.is_alive, "ep_hib2"] = False
+        df.at[df.is_alive, "ep_hib3"] = False
+        df.at[df.is_alive, "ep_hep1"] = False
+        df.at[df.is_alive, "ep_hep2"] = False
+        df.at[df.is_alive, "ep_hep3"] = False
 
         # BCG
         # from 1981-2009 average bcg coverage is 92% (WHO estimates)
@@ -88,7 +128,7 @@ class Epi(Module):
             & (random_draw < p["bcg_baseline_coverage"])
         ]
 
-        df.loc[bcg_idx, "ep_bcg"] = True
+        df.at[bcg_idx, "ep_bcg"] = True
 
         # Polio OPV
         # from 1980-2009 average pol3 coverage is 79.5% (WHO estimates): all 3 doses OPV
@@ -102,7 +142,20 @@ class Epi(Module):
             & (random_draw < p["pol3_baseline_coverage"])
         ]
 
-        df.loc[pol3_idx, "ep_pol3"] = True
+        df.at[pol3_idx, "ep_pol3"] = True
+
+        # DTP3
+        # available since 1980
+        random_draw = self.rng.random_sample(size=len(df))
+        pol3_idx = df.index[
+            df.is_alive
+            & (df.age_years < 29)
+            & (random_draw < p["dtp3_baseline_coverage"])
+            ]
+
+        df.at[pol3_idx, "ep_dtp3"] = True
+
+        # todo baseline vax coverage: DTP3	HepB3	Hib3
 
     def initialise_simulation(self, sim):
 
@@ -122,7 +175,18 @@ class Epi(Module):
 
         # Initialise all the properties that this module looks after:
         df.at[child_id, "ep_bcg"] = False
+        df.at[child_id, "ep_pol1"] = False
+        df.at[child_id, "ep_pol2"] = False
         df.at[child_id, "ep_pol3"] = False
+        df.at[child_id, "ep_dtp1"] = False
+        df.at[child_id, "ep_dtp2"] = False
+        df.at[child_id, "ep_dtp3"] = False
+        df.at[child_id, "ep_hib1"] = False
+        df.at[child_id, "ep_hib2"] = False
+        df.at[child_id, "ep_hib3"] = False
+        df.at[child_id, "ep_hep1"] = False
+        df.at[child_id, "ep_hep2"] = False
+        df.at[child_id, "ep_hep3"] = False
 
         # assign bcg according to current coverage
         # TODO use current coverage estimates by district
@@ -147,6 +211,19 @@ class Epi(Module):
                 pol1_appt,
                 priority=1,
                 topen=self.sim.date + DateOffset(days=1),
+                tclose=None,
+            )
+
+        # PENTA
+        # TODO use current coverage estimates by district
+        if self.rng.random_sample(size=1) < self.parameters["penta1_coverage"]:
+            penta1_appt = HSI_6WeekVaccines(self, person_id=child_id)
+
+            # Request the health system to have this bcg vaccination appointment
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                penta1_appt,
+                priority=1,
+                topen=self.sim.date + DateOffset(weeks=6),
                 tclose=None,
             )
 
@@ -290,6 +367,95 @@ class HSI_pol1(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         logger.debug("HSI_pol1: did not run")
+
+
+class HSI_6WeekVaccines(HSI_Event, IndividualScopeEventMixin):
+    """
+    gives DTP-Hib_HepB, OPV, Pneumococcal and Rotavirus vaccine 6 weeks after birth
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Epi)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "HSI_6WeekVaccines"
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(f"HSI_6WeekVaccines: giving bcg to {person_id}")
+
+        df = self.sim.population.props
+
+        if df.at[person_id, "ep_penta1"] == False:
+
+            # Make request for some consumables
+            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+            dtp_vax = pd.unique(
+                consumables.loc[consumables["Items"] == "DTP vaccine", "Item_Code",]
+            )[0]
+
+            hib_vax = pd.unique(
+                consumables.loc[consumables["Items"] == "Hib vaccine", "Item_Code",]
+            )[0]
+
+            hep_vax = pd.unique(
+                consumables.loc[
+                    consumables["Items"] == "Hepatitis B vaccine", "Item_Code",
+                ]
+            )[0]
+
+            syringe = pd.unique(
+                consumables.loc[
+                    consumables["Items"]
+                    == "Syringe, autodisposable, BCG, 0.1 ml, with needle",
+                    "Item_Code",
+                ]
+            )[0]
+
+            disposal = pd.unique(
+                consumables.loc[
+                    consumables["Items"]
+                    == "Safety box for used syringes/needles, 5 liter",
+                    "Item_Code",
+                ]
+            )[0]
+
+            # assume 100 needles can be disposed of in each safety box
+            consumables_needed = {
+                "Intervention_Package_Code": {},
+                "Item_Code": {
+                    dtp_vax: 1,
+                    hib_vax: 1,
+                    hep_vax: 1,
+                    syringe: 3,
+                    disposal: 1,
+                },
+            }
+
+            outcome_of_request_for_consumables = self.sim.modules[
+                "HealthSystem"
+            ].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed
+            )
+
+            if (
+                outcome_of_request_for_consumables["Item_Code"][dtp_vax]
+                & outcome_of_request_for_consumables["Item_Code"][syringe]
+            ):
+                logger.debug("DTP vax is available, so administer")
+
+                df.at[person_id, "ep_penta1"] = True
+
+    def did_not_run(self):
+        logger.debug("HSI_6WeekVaccines: did not run")
 
 
 # ---------------------------------------------------------------------------------
