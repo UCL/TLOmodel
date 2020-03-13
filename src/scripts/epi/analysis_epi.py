@@ -75,26 +75,32 @@ print("--- %s seconds ---" % (time.time() - start_time))
 # ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
 
 output = parse_log_file(logfile)
-model_bcg_coverage = output["tlo.methods.epi"]["ep_bcg"]
-model_date = pd.to_datetime(model_bcg_coverage.date)
+model_vax_coverage = output["tlo.methods.epi"]["ep_vaccine_coverage"]
+model_date = pd.to_datetime(model_vax_coverage.date)
 
 # ------------------------------------- DATA  ------------------------------------- #
-# import HIV data
-bcg_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_EPI.xlsx", sheet_name="WHO_bcgEstimates",
+# import vaccine coverage data
+coverage_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_EPI.xlsx", sheet_name="WHO_Estimates",
 )
 
 # select years included in simulation
-bcg_data = bcg_data.loc[(bcg_data.Year >= 2010) & (bcg_data.Year < end_date.year)]
-bcg_data_plot_years = pd.to_datetime(bcg_data.Year, format="%Y")
+# end_date +1 to get the final value
+coverage_data2010 = coverage_data.loc[
+    (coverage_data.Year >= 2010) & (coverage_data.Year < (end_date.year + 1))
+]
+coverage_data2010_years = pd.to_datetime(coverage_data2010.Year, format="%Y")
+coverage_data2010_years = coverage_data2010_years.values
+
 
 # ------------------------------------- PLOTS  ------------------------------------- #
 
 plt.style.use("ggplot")
 
 # BCG coverage prevalence
-plt.plot(bcg_data_plot_years, bcg_data.bcg_coverage)
-plt.plot(model_date, model_bcg_coverage.epBcgCoverage)
+plt.subplot(221)  # numrows, numcols, fignum
+plt.plot(coverage_data2010_years, coverage_data2010.BCG)
+plt.plot(model_date, model_vax_coverage.epBcgCoverage)
 plt.title("BCG vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
@@ -102,4 +108,17 @@ plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(60, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+
+# Pol3 coverage prevalence
+plt.subplot(222)  # numrows, numcols, fignum
+plt.plot(coverage_data2010_years, coverage_data2010.Pol3)
+plt.plot(model_date, model_vax_coverage.epPol3Coverage)
+plt.title("Pol3 vaccine coverage")
+plt.xlabel("Year")
+plt.ylabel("Coverage")
+plt.xticks(rotation=90)
+plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(60, 100)
+plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+
 plt.show()
