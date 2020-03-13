@@ -294,6 +294,7 @@ class Labour (Module):
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
+        mni = self.mother_and_newborn_info
 
         # Here we will include DALY weights if applicable...
 
@@ -310,6 +311,10 @@ class Labour (Module):
 # ======================================= LINEAR MODEL EQUATIONS ======================================================
         # Here we define the equations that will be used throughout this module using the linear model and stored them
         # as a parameter
+
+        # Defining external variables
+        # TODO: include external variables required within the linear model
+        #  result = my_lm.predict(df, year=self.sim.date.year)
 
         params['la_labour_equations'] =\
             {'parity': LinearModel(
@@ -417,6 +422,7 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_aph'],
                 Predictor('la_antepartum_haem_treatment').when(True, 0.5)),
+            #   Predictor('blood_transfusion_status', external=True).when(True, 0.20)),
 
              'antepartum_haem_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -2501,6 +2507,7 @@ class HSI_Labour_SurgeryForLabourComplicationsFacilityLevel1(HSI_Event, Individu
                 df.at[person_id, 'la_hysterectomy'] = True
             elif ~treatment_success_ur and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
                 df.at[person_id, 'la_uterine_rupture_treatment'] = 'delayed_treatment'
+                # todo: should this variable be turned on as well?
                 df.at[person_id, 'la_hysterectomy'] = True
 
         treatment_success_pph = params['success_rate_pph_surgery'] < self.module.rng.random_sample()
@@ -2518,6 +2525,8 @@ class HSI_Labour_SurgeryForLabourComplicationsFacilityLevel1(HSI_Event, Individu
                 df.at[person_id, 'la_hysterectomy'] = True
         # todo: this will possibly give women a hysterectomy if products are retained, thats not right?
         # todo: failed firstline PPH treatment should be more at risk of death?
+        # todo: should the successrate of removing a retained placenta be seperated?
+
 
     def did_not_run(self):
         person_id = self.target
