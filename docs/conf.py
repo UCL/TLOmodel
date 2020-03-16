@@ -2,7 +2,8 @@
 from __future__ import unicode_literals
 
 import os
-
+import sys
+sys.path.append(os.path.abspath("./_ext"))
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -14,6 +15,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
+    'properties',
 ]
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',
