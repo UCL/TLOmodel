@@ -426,8 +426,8 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_pph'],
                 Predictor('la_postpartum_haem_treatment').when('delayed_treatment', 0.25),
-                Predictor('la_postpartum_haem_treatment').when('prompt_treatment', 0.5)),
-                 #        Predictor('received_blood_transfusion', external=True).when(True, 0.20)),
+                Predictor('la_postpartum_haem_treatment').when('prompt_treatment', 0.5),
+                Predictor('received_blood_transfusion', external=True).when(True, 0.20)),
 
              'uterine_rupture_ip': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -753,9 +753,10 @@ class Labour (Module):
         params = self.parameters
 
         person = df.loc[[person_id]]
-        if eq == params['la_labour_equations']['antepartum_haem_death']:
+        if eq == params['la_labour_equations']['antepartum_haem_death'] or eq == params['la_labour_equations'][
+                 'postpartum_haem_pp_death']:
             has_rbt = mni[person_id]['received_blood_transfusion']
-            return self.rng.random_sample() < eq.predict(person, received_blood_transfusion=has_rbt)
+            return self.rng.random_sample() < eq.predict(person, received_blood_transfusion=has_rbt)[person_id]
         else:
             return self.rng.random_sample() < eq.predict(df.loc[[person_id]])[person_id]
 
@@ -1436,7 +1437,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabour'
+        self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1'
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['NormalDelivery'] = 1
 
@@ -1952,7 +1953,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2(HSI_Event, I
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
-        self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabour'
+        self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2'
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['NormalDelivery'] = 1
 
