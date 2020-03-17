@@ -1,8 +1,5 @@
-import logging
 import os
 from pathlib import Path
-
-import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -25,11 +22,6 @@ except NameError:
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
 popsize = 200
-
-
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.DEBUG)
 
 
 def test_no_symptoms_if_no_diseases():

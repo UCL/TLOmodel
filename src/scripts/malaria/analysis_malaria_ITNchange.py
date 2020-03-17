@@ -1,24 +1,25 @@
+import datetime
 import logging
 import os
 import time
 from pathlib import Path
-from tlo.analysis.utils import parse_log_file
-import datetime
+
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
     contraception,
-    healthburden,
-    healthsystem,
-    enhanced_lifestyle,
-    malaria,
-    dx_algorithm_child,
+    demography,
     dx_algorithm_adult,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
+    healthsystem,
+    malaria,
     symptommanager,
 )
 

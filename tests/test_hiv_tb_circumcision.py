@@ -1,29 +1,22 @@
-import logging
 import os
 from pathlib import Path
-import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    demography,
     contraception,
+    demography,
+    enhanced_lifestyle,
     healthburden,
     healthsystem,
     hiv,
-    enhanced_lifestyle,
     malecircumcision,
-    tb,
     symptommanager,
+    tb,
 )
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 50
-
-
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.INFO)
 
 
 def check_dtypes(simulation):

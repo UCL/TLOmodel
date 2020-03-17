@@ -2,13 +2,12 @@
 The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
 the health system following the onset of acute generic symptoms.
 """
+from tlo import DateOffset, logging
 from tlo.events import IndividualScopeEventMixin
-
+from tlo.methods import malaria
 # from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods import malaria
-from tlo.methods.malaria import HSI_Malaria_tx_compl_child, HSI_Malaria_tx_compl_adult
-from tlo import DateOffset, logging
+from tlo.methods.malaria import HSI_Malaria_tx_compl_adult, HSI_Malaria_tx_compl_child
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

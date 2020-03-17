@@ -6,11 +6,7 @@ import os
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import (
-    IndividualScopeEventMixin,
-    PopulationScopeEventMixin,
-    RegularEvent,
-)
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)

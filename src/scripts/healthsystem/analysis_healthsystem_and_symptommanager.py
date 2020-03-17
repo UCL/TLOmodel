@@ -1,6 +1,4 @@
 import datetime
-import logging
-import os
 from pathlib import Path
 
 from tlo import Date, Simulation
@@ -35,16 +33,7 @@ popsize = 2000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
-
-# Establish the logger
-logfile = outputpath + 'LogFile' + datestamp + '.log'
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
+logfile = sim.configure_logging('LogFile')
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -74,7 +63,6 @@ sim.register(chronicsyndrome.ChronicSyndrome())
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)

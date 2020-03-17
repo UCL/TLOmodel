@@ -1,20 +1,19 @@
-import logging
 import os
 from pathlib import Path
+
 import pandas as pd
-import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
-    demography,
     contraception,
-    healthburden,
-    healthsystem,
-    enhanced_lifestyle,
-    malaria,
-    dx_algorithm_child,
+    demography,
     dx_algorithm_adult,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    healthburden,
     healthseekingbehaviour,
+    healthsystem,
+    malaria,
     symptommanager,
 )
 
@@ -27,11 +26,6 @@ try:
 except NameError:
     # running interactively
     resourcefilepath = "resources"
-
-
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.DEBUG)
 
 
 def check_dtypes(simulation):
