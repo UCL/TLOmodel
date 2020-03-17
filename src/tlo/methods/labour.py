@@ -408,8 +408,8 @@ class Labour (Module):
              'antepartum_haem_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_aph'],
-                Predictor('la_antepartum_haem_treatment').when(True, 0.5)),
-                 #    Predictor('received_blood_transfusion', external=True).when(True, 0.20)),
+                Predictor('la_antepartum_haem_treatment').when(True, 0.5),
+                Predictor('received_blood_transfusion', external=True).when(True, 0.20)),
 
              'antepartum_haem_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -752,15 +752,12 @@ class Labour (Module):
         mni = self.mother_and_newborn_info
         params = self.parameters
 
-        # TODO: we need to explicitly set external variables for all linear equations used in the model
-    #    if eq == params['la_labour_equations']['antepartum_haem_death'] or eq == params['la_labour_' \
-    #                                                                                    'equations']['postpartum_' \
-    #                                                                                                 'haem_pp_death']:
-    #        return self.rng.random_sample() < eq.predict(df.loc[[person_id]][person_id],
-    #                                                     received_blood_transfusion=mni[person_id]['received_blood_'
-    #                                                                                               'transfusion'])
-    #   else:
-        return self.rng.random_sample() < eq.predict(df.loc[[person_id]])[person_id]
+        person = df.loc[[person_id]]
+        if eq == params['la_labour_equations']['antepartum_haem_death']:
+            has_rbt = mni[person_id]['received_blood_transfusion']
+            return self.rng.random_sample() < eq.predict(person, received_blood_transfusion=has_rbt)
+        else:
+            return self.rng.random_sample() < eq.predict(df.loc[[person_id]])[person_id]
 
     def set_home_birth_complications(self, individual_id, labour_stage, complication):
         """Uses the result of a linear equation to determine the probability of a certain complications and makes
