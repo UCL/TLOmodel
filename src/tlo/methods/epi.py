@@ -8,7 +8,6 @@ from tlo.events import (
     PopulationScopeEventMixin,
     RegularEvent,
 )
-from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -30,6 +29,9 @@ class Epi(Module):
         "penta1_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
         "penta2_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
         "penta3_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
+        "measles_rubella1_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
+        "measles_rubella2_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
+
         # baseline vaccination coverage for general population
         "opv3_baseline_coverage": Parameter(
             Types.REAL, "baseline opv3 vaccination coverage for population"
@@ -46,6 +48,12 @@ class Epi(Module):
         "Hib3_baseline_coverage": Parameter(
             Types.REAL, "baseline Hib3 vaccination coverage for population"
         ),
+        "measles_baseline_coverage": Parameter(
+            Types.REAL, "baseline measles vaccination coverage for population"
+        ),
+        "rubella_baseline_coverage": Parameter(
+            Types.REAL, "baseline rubella vaccination coverage for population"
+        ),
     }
 
     PROPERTIES = {
@@ -58,6 +66,8 @@ class Epi(Module):
             Types.INT, "number of doses of pneumococcal vaccine received"
         ),
         "ep_rota": Property(Types.INT, "number of doses of rotavirus vaccine received"),
+        "ep_measles": Property(Types.INT, "number of doses of measles vaccine received"),
+        "ep_rubella": Property(Types.INT, "number of doses of rubella vaccine received"),
     }
 
     # Declaration of the symptoms that this module will use
@@ -77,6 +87,7 @@ class Epi(Module):
         self.parameters["dtp3_baseline_coverage"] = 0.807
         self.parameters["hep3_baseline_coverage"] = 0.875
         self.parameters["hib3_baseline_coverage"] = 0.875
+        self.parameters["measles_baseline_coverage"] = 0.772
 
         # district-level coverage estimates from 2010 to go here
         self.parameters["bcg_coverage"] = 1
@@ -87,6 +98,9 @@ class Epi(Module):
         self.parameters["penta1_coverage"] = 1
         self.parameters["penta2_coverage"] = 1
         self.parameters["penta3_coverage"] = 1
+        self.parameters["measles_rubella1_coverage"] = 1
+        self.parameters["measles_rubella2_coverage"] = 1
+
 
         # ---- Register this module ----
         # Register this disease module with the health system
@@ -105,6 +119,8 @@ class Epi(Module):
         df.at[df.is_alive, "ep_hep"] = 0
         df.at[df.is_alive, "ep_pneumo"] = 0
         df.at[df.is_alive, "ep_rota"] = 0
+        df.at[df.is_alive, "ep_measles"] = 0
+        df.at[df.is_alive, "ep_rubella"] = 0
 
         # BCG
         # from 1981-2009 average bcg coverage is 92% (WHO estimates)
@@ -168,6 +184,19 @@ class Epi(Module):
 
         df.at[hib3_idx, "ep_hib"] = 3
 
+        # Measles
+        # available since 1980
+        # second dose only started in 2015
+        # by Jan 2010, anyone <=30 years has 77.2% prob of having vaccine
+        random_draw = self.rng.random_sample(size=len(df))
+        measles_idx = df.index[
+            df.is_alive
+            & (df.age_years <= 30)
+            & (random_draw < p["measles_baseline_coverage"])
+        ]
+
+        df.at[measles_idx, "ep_measles"] = 3
+
     def initialise_simulation(self, sim):
 
         # add an event to log to screen
@@ -192,6 +221,8 @@ class Epi(Module):
         df.at[child_id, "ep_hep"] = 0
         df.at[child_id, "ep_pneumo"] = 0
         df.at[child_id, "ep_rota"] = 0
+        df.at[child_id, "ep_measles"] = 0
+        df.at[child_id, "ep_rubella"] = 0
 
         # assign bcg according to current coverage
         # TODO use current coverage estimates by district
@@ -223,7 +254,7 @@ class Epi(Module):
         # PENTA1, OPV2, PNEUMO1, ROTA1
         # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < self.parameters["penta1_coverage"]:
-            penta1_appt = HSI_DTP_Hib_Hep_Vaccine(self, person_id=child_id)
+            penta1_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this bcg vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -236,7 +267,7 @@ class Epi(Module):
         # PENTA2, OPV3, PNEUMO2, ROTA2
         # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < self.parameters["penta2_coverage"]:
-            penta2_appt = HSI_DTP_Hib_Hep_Vaccine(self, person_id=child_id)
+            penta2_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this bcg vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -249,13 +280,39 @@ class Epi(Module):
         # PENTA3, OPV4, PNEUMO3
         # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < self.parameters["penta3_coverage"]:
-            penta3_appt = HSI_DTP_Hib_Hep_Vaccine(self, person_id=child_id)
+            penta3_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this bcg vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 penta3_appt,
                 priority=1,
                 topen=self.sim.date + DateOffset(weeks=14),
+                tclose=None,
+            )
+
+        # Measles, rubella - first dose
+        # TODO use current coverage estimates by district
+        if self.rng.random_sample(size=1) < self.parameters["measles_rubella1_coverage"]:
+            mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
+
+            # Request the health system to have this bcg vaccination appointment
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                mr_appt,
+                priority=1,
+                topen=self.sim.date + DateOffset(months=9),
+                tclose=None,
+            )
+
+        # Measles, rubella - second dose
+        # TODO use current coverage estimates by district
+        if self.rng.random_sample(size=1) < self.parameters["measles_rubella2_coverage"]:
+            mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
+
+            # Request the health system to have this bcg vaccination appointment
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                mr_appt,
+                priority=1,
+                topen=self.sim.date + DateOffset(months=15),
                 tclose=None,
             )
 
@@ -391,13 +448,13 @@ class HSI_opv1(HSI_Event, IndividualScopeEventMixin):
         ].request_consumables(hsi_event=self, cons_req_as_footprint=consumables_needed)
 
         if outcome_of_request_for_consumables:
-            df.at[person_id, "ep_opv"] = df.at[person_id, "ep_opv"] + 1
+            df.at[person_id, "ep_opv"] += 1
 
     def did_not_run(self):
         logger.debug("HSI_opv1: did not run")
 
 
-class HSI_DTP_Hib_Hep_Vaccine(HSI_Event, IndividualScopeEventMixin):
+class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
     """
     gives DTP-Hib_HepB, OPV, Pneumococcal and Rotavirus vaccine 6 weeks after birth
     """
@@ -411,13 +468,13 @@ class HSI_DTP_Hib_Hep_Vaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_DTP_Hib_Hep_Vaccine"
+        self.TREATMENT_ID = "HSI_DtpHibHepVaccine"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(f"HSI_DTP_Hib_Hep_Vaccine: requesting vaccines for {person_id}")
+        logger.debug(f"HSI_DtpHibHepVaccine: requesting vaccines for {person_id}")
 
         df = self.sim.population.props
 
@@ -479,15 +536,15 @@ class HSI_DTP_Hib_Hep_Vaccine(HSI_Event, IndividualScopeEventMixin):
         ):
             logger.debug(f"Penta vax is available, so administer to {person_id}")
 
-            df.at[person_id, "ep_dtp"] = df.at[person_id, "ep_dtp"] + 1
-            df.at[person_id, "ep_hib"] = df.at[person_id, "ep_hib"] + 1
-            df.at[person_id, "ep_hep"] = df.at[person_id, "ep_hep"] + 1
+            df.at[person_id, "ep_dtp"] += 1
+            df.at[person_id, "ep_hib"] += 1
+            df.at[person_id, "ep_hep"] += 1
 
         # check if OPV available
         if outcome_of_request_for_consumables["Item_Code"][opv]:
             logger.debug("OPV is available, so administer")
 
-            df.at[person_id, "ep_opv"] = df.at[person_id, "ep_opv"] + 1
+            df.at[person_id, "ep_opv"] += 1
 
         # check if pneumococcal vaccine available and current year 2012 onwards
         if (
@@ -499,7 +556,7 @@ class HSI_DTP_Hib_Hep_Vaccine(HSI_Event, IndividualScopeEventMixin):
                 f"Pneumococcal vaccine is available, so administer to {person_id}"
             )
 
-            df.at[person_id, "ep_pneumo"] = df.at[person_id, "ep_pneumo"] + 1
+            df.at[person_id, "ep_pneumo"] += 1
 
         # rotavirus - oral vaccine
         # only 2 doses rotavirus given (week 6 and 10)
@@ -529,10 +586,63 @@ class HSI_DTP_Hib_Hep_Vaccine(HSI_Event, IndividualScopeEventMixin):
                     f"Rotavirus vaccine is available, so administer to {person_id}"
                 )
 
-                df.at[person_id, "ep_rota"] = df.at[person_id, "ep_rota"] + 1
+                df.at[person_id, "ep_rota"] += 1
 
     def did_not_run(self):
-        logger.debug("HSI_DTP_Hib_Hep_Vaccine: did not run")
+        logger.debug("HSI_DtpHibHepVaccine: did not run")
+
+
+class HSI_MeaslesRubellaVaccine(HSI_Event, IndividualScopeEventMixin):
+    """
+    administers measles+rubella vaccine
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Epi)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "HSI_MeaslesRubellaVaccine"
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(f"HSI_MeaslesRubellaVaccine: giving measles+rubella vaccine to {person_id}")
+
+        df = self.sim.population.props
+
+        # Make request for some consumables
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables["Intervention_Pkg"] == "Measles rubella vaccine",
+                "Intervention_Pkg_Code",
+            ]
+        )[0]
+
+        consumables_needed = {
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules[
+            "HealthSystem"
+        ].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        if outcome_of_request_for_consumables:
+            df.at[person_id, "ep_measles"] += 1
+            df.at[person_id, "ep_rubella"] += 1
+
+    def did_not_run(self):
+        logger.debug("HSI_MeaslesRubellaVaccine: did not run")
 
 
 # ---------------------------------------------------------------------------------
@@ -589,6 +699,16 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         rota_coverage = ((rota2 / infants) * 100) if infants else 0
         assert rota_coverage <= 100
 
+        # measles vaccination coverage in <1 year old children - 1 dose
+        measles = len(df[df.is_alive & (df.ep_measles >= 1) & (df.age_years <= 1)])
+        measles_coverage = ((measles / infants) * 100) if infants else 0
+        assert measles_coverage <= 100
+
+        # rubella vaccination coverage in <1 year old children - 1 dose
+        rubella = len(df[df.is_alive & (df.ep_rubella >= 1) & (df.age_years <= 1)])
+        rubella_coverage = ((rubella / infants) * 100) if infants else 0
+        assert rubella_coverage <= 100
+
         logger.info(
             "%s|ep_vaccine_coverage|%s",
             now,
@@ -601,5 +721,7 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "epHep3Coverage": hep3_coverage,
                 "epPneumo3Coverage": pneumo3_coverage,
                 "epRota2Coverage": rota_coverage,
+                "epMeaslesCoverage": measles_coverage,
+                "epRubellaCoverage": rubella_coverage,
             },
         )
