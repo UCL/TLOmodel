@@ -420,10 +420,10 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
 
         prob_of_failure = p['contraception_failure']
 
-        # TODO: N.B edited by joe- was allowing pregnant women (at baseline) to become pregnant again!,
-        #  ~df.is_pregnant added
+        # TODO: N.B edited by joe- women who are in labour or have previously had a hysterectomy cannot get preganant
+        #  (eventually should remove women with hysterectomy from being oncontraception?)
         possible_to_fail = ((df.sex == 'F') &
-                            df.is_alive & ~df.is_pregnant & ~df.la_currently_in_labour &
+                            df.is_alive & ~df.is_pregnant & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy &
                             df.age_years.between(self.age_low, self.age_high) &
                             ~df.co_contraception.isin(['not_using', 'female_steralization']))
 
@@ -474,7 +474,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # get the subset of women from the population dataframe and relevant characteristics
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (
-            df.co_contraception == 'not_using') & ~df.la_currently_in_labour
+            df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)
