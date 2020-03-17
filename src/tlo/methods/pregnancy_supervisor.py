@@ -100,6 +100,7 @@ class PregnancySupervisor(Module):
         'ps_severe_pre_eclamp': Property(Types.BOOL, 'whether this woman has severe pre-eclampsia'),
         'ps_prev_pre_eclamp': Property(Types.BOOL, 'whether this woman has experienced pre-eclampsia in a previous '
                                                    'pregnancy'),
+        'ps_currently_hypertensive': Property(Types.BOOL, 'whether this woman is currently hypertensive'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
                                                   'during a previous pregnancy'),
@@ -151,6 +152,7 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_mild_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_severe_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
+        df.loc[df.is_alive, 'ps_currently_hypertensive'] = False
         df.loc[df.is_alive, 'ps_gest_diab'] = False
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
@@ -186,6 +188,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_mild_pre_eclamp'] = False
         df.at[child_id, 'ps_severe_pre_eclamp'] = False
         df.at[child_id, 'ps_prev_pre_eclamp'] = False
+        df.at[child_id, 'ps_currently_hypertensive'] = False
         df.at[child_id, 'ps_gest_diab'] = False
         df.at[child_id, 'ps_prev_gest_diab'] = False
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
