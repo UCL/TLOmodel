@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 12, 31)
+end_date = Date(2020, 12, 31)
 popsize = 500
 
 # Establish the simulation object
@@ -191,7 +191,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 plt.show()
