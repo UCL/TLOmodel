@@ -749,7 +749,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # density dependent establishment
         param_worm_fecundity = params['worms_fecundity']
-        established = self.sim.rng.random_sample(size=sum(where)) < np.exp(
+        established = self.module.rng.random_sample(size=sum(where)) < np.exp(
             df.loc[where,  f'{prefix}_aggregate_worm_burden'] * -param_worm_fecundity)
         to_establish = pd.DataFrame({'new_worms': draw_worms[(draw_worms > 0) & established]})
 
