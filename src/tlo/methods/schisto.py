@@ -302,7 +302,7 @@ def _assign_hsi_dates_initial(module, population, symptomatic_idx):
     """
     df = population.props
     params = module.sim.modules['Schisto'].parameters
-    healthsystem = module.sim.moodules['HealthSystem']
+    healthsystem = module.sim.modules['HealthSystem']
 
     for person_id in symptomatic_idx:
         will_seek_treatment = module.rng.rand() < params['prob_seeking_healthcare']
@@ -716,99 +716,49 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Schisto_Haematobium) or isinstance(module, Schisto_Mansoni)
 
     def apply(self, population):
+        params = self.module.parameters
+        prefix = self.module.prefix
         logger.debug('This is SchistoEvent, tracking the disease progression of the population.')
+        betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
+        R0 = params['R0']
 
         df = population.props
-        districts = self.module.parameters['list_of_districts']
+        where = df.is_alive
+        age_group = pd.cut(df.loc[where, 'age_years'], [0, 4, 14, 120], labels=['PSAC', 'SAC', 'Adults'],
+                           include_lowest=True)
+        age_group.name = 'age_group'
+        beta_by_age_group = pd.Series(betas, index=['PSAC', 'SAC', 'Adults'])
+        beta_by_age_group.index.name = 'age_group'
 
-        worms_dict = {}
-        # increase worm burden of people in each district
-        for distr in districts:
-            df_distr_indx = df.index[(df['is_alive']) & (df['district_of_residence'] == distr)]
-            if len(df_distr_indx):
-                new_worms = self.increase_worm_burden_distr(population, distr)  # this is a list
-                worms_dict.update(dict(zip(df_distr_indx, new_worms)))
+        # get the size of reservoir per district
+        mean_count_burden_district_age_group = df.loc[where].groupby(['district_of_residence', age_group])[
+            f'{prefix}_aggregate_worm_burden'].agg([np.mean, np.size])
+        district_count = df.loc[where].groupby(df.district_of_residence)['district_of_residence'].count()
+        beta_contribution_to_reservoir = mean_count_burden_district_age_group['mean'] * beta_by_age_group
+        to_get_weighted_mean = mean_count_burden_district_age_group['size'] / district_count
+        age_worm_burden = beta_contribution_to_reservoir * to_get_weighted_mean
+        reservoir = age_worm_burden.groupby(['district_of_residence']).sum()
 
-        # get indices of people who harboured new worms
-        # remove all indices for which there is no increment
-        worms_dict = {key: val for key, val in worms_dict.items() if val != 0}
-        worm_burden_increased = list(worms_dict.keys())
+        # harbouring new worms
+        contact_rates = age_group.map(beta_by_age_group)
+        harbouring_rates = df.loc[where,  f'{prefix}_harbouring_rate']
+        rates = harbouring_rates * contact_rates
+        worms_total = reservoir * R0
+        draw_worms = pd.Series(self.module.rng.poisson(df.loc[where, 'district_of_residence'].map(worms_total) * rates),
+                               index=df.index[where])
 
-        # schedule the time of new worms becoming mature
-        days_till_maturation = self.module.rng.uniform(30, 55, size=len(worm_burden_increased)).astype(int)
-        days_till_maturation = pd.to_timedelta(days_till_maturation, unit='D')
+        # density dependent establishment
+        param_worm_fecundity = params['worms_fecundity']
+        established = self.sim.rng.random_sample(size=sum(where)) < np.exp(
+            df.loc[where,  f'{prefix}_aggregate_worm_burden'] * -param_worm_fecundity)
+        to_establish = pd.DataFrame({'new_worms': draw_worms[(draw_worms > 0) & established]})
 
-        date_counter = 0
-        for person_index in worm_burden_increased:
-            new_worms = worms_dict[person_index]
-            maturation_event = SchistoMatureWorms(self.module, person_id=person_index, new_worms=new_worms)
-            event_date = self.sim.date + days_till_maturation[date_counter]
-            self.sim.schedule_event(maturation_event, event_date)
-            date_counter += 1
-
-    def calculate_reservoir_size(self, population, district):
-        """Calculates the size of the reservoir of infectious material in a given district
-        by multiplying the exposure rates beta and the worm burdens in each age group and then summing it up
-        :param population: population
-        :param district: one of the 32 Malawi districts
-        :returns district_reservoir: size of the reservoir for the given district
-        """
-        df = population.props
-        params = self.module.parameters
-        district_reservoir = 0
-        ppl_in_district = len(df.index[df['district_of_residence'] == district])
-        for age_group in ['PSAC', 'SAC', 'Adults']:
-            beta = params['beta_' + age_group]  # the input to the reservoir of the age group = contact rate
-            age_range = map_age_groups(age_group)
-            in_the_age_group = df.index[(df['district_of_residence'] == district) &
-                                        (df['age_years'].between(age_range[0], age_range[1]))]
-            if len(in_the_age_group):
-                age_worm_burden = df.loc[in_the_age_group, f'{self.module.prefix}_aggregate_worm_burden'].values.mean()
-                age_worm_burden *= beta  # to get contribution to the reservoir
-                age_worm_burden *= len(in_the_age_group) / ppl_in_district  # to get weighted mean
-            else:
-                age_worm_burden = 0
-            district_reservoir += age_worm_burden
-        return district_reservoir
-
-    def increase_worm_burden_distr(self, population, district):
-        """Randomly assigns newly acquired worms to each individual in the district from Poisson,
-        based on the calculated reservoir size and their harbouring and contact rates,
-        then draws from Bernoulli to determine if the worms will establish or not
-
-         :param population: population
-         :param district: one of the 32 Malawi districts
-         :returns allocated_new_worms: new worms acquired by the people in the given district
-         """
-
-        df = population.props
-        params = self.module.parameters
-        df_distr_idx = df.index[(df["district_of_residence"] == district) & (df.is_alive)]
-
-        # calculate the size of infectious material reservoir
-        reservoir = self.calculate_reservoir_size(population, district)
-        if reservoir == 0:
-            return [0] * len(df_distr_idx)
-        # assign appropriate Beta parameters
-        contact_rates = pd.Series(1, index=df_distr_idx)
-        for age_group in ['PSAC', 'SAC', 'Adults']:
-            age_range = map_age_groups(age_group)
-            multiplier = params['beta_' + age_group]  # Beta(age_group)
-            contact_rates.loc[df.age_years.between(age_range[0], age_range[1])] *= multiplier
-
-        #  draw new worms
-        harbouring_rates = df.loc[df_distr_idx, f'{self.module.prefix}_harbouring_rate'].values
-        rates = np.multiply(harbouring_rates, contact_rates)
-        allocated_new_worms = _draw_worms(self.module, reservoir, rates, district)
-        prob_of_establishment = list(
-            np.exp(
-                -params['worms_fecundity'] * df.loc[df_distr_idx, f'{self.module.prefix}_aggregate_worm_burden'].values
-            )
-        )
-        prob_of_establishment = [self.module.rng.choice([1, 0], p=[x, 1-x], size=1)[0] for x in prob_of_establishment]
-        prob_of_establishment = np.asarray(prob_of_establishment)  # zeroes and ones
-        allocated_new_worms = np.multiply(allocated_new_worms, prob_of_establishment)  # becomes 0 if 0 was drawn
-        return list(allocated_new_worms)
+        # schedule maturation of the established worms
+        to_establish['date_maturation'] = \
+            self.sim.date + pd.to_timedelta(self.module.rng.randint(30, 55, size=len(to_establish)), unit='D')
+        for index, row in to_establish.iterrows():
+            self.sim.schedule_event(SchistoMatureWorms(self.module, person_id=index,
+                                                       new_worms=row.new_worms), row.date_maturation)
 
 
 class SchistoMatureWorms(Event, IndividualScopeEventMixin):

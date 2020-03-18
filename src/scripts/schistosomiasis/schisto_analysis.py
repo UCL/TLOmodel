@@ -16,27 +16,11 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2012, 2, 1)
+    end_date = Date(2011, 2, 1)
     popsize = popsize
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
-    # # Establish the logger
-    # logfile = outputpath / ('LogFile' + datestamp + '.log')
-
-    # if os.path.exists(logfile):
-    #     os.remove(logfile)
-    # fh = logging.FileHandler(logfile)
-    # fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    # fh.setFormatter(fr)
-    # logging.getLogger().addHandler(fh)
-    #
-    # logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
-    # logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
-    # logging.getLogger("tlo.methods.healthburden").setLevel(logging.WARNING)
-    # logging.getLogger("tlo.methods.healthsystem").setLevel(logging.WARNING)
-    # logging.getLogger("tlo.methods.schisto").setLevel(logging.INFO)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -45,9 +29,9 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
     if haem:
-        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=True))
+        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
     if mansoni:
-        sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=True))
+        sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
 
     # Sets all modules to WARNING threshold, then alters schisto to INFO
     custom_levels = {"*": logging.WARNING,
@@ -68,7 +52,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     return sim, output
 
 
-sim, output = run_simulation(popsize=1000, haem=True, mansoni=True, mda_execute=True)
+sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
