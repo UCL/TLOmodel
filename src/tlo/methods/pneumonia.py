@@ -588,29 +588,12 @@ class Pneumonia(Module):
         #                                  (df.age_years < 5)] *= 1.9167
 
         # --------------------------------------------------------------------------------------------
-        # Make a dict containing the probability of symptoms onset given acquisition of pneumonia
-        self.prob_symptoms.update({
-            'non-severe': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 0
-            },
-            'severe': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            }
-        })
+        # Make a dict containing the probability of symptoms onset given acquisition
+
         # TODO: add the probabilities of symptoms by severity - in parameters
 
         # check that probability of symptoms have been declared for each severity level
-        assert self.severity == set(list(self.prob_symptoms.keys()))
+        # assert self.severity == set(list(self.prob_symptoms.keys()))
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the risk of dying due to pneumonia
