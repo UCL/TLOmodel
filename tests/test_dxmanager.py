@@ -3,7 +3,6 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
-
 from tlo.methods import (
     chronicsyndrome,
     contraception,
@@ -111,7 +110,7 @@ def test_create_dx_test_and_register():
         property='cs_status'
     )
 
-    dx_manager = DxManager()  # get new DxManager
+    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
 
     dx_manager.register_dx_test(
         my_test1=my_test1,
@@ -119,15 +118,29 @@ def test_create_dx_test_and_register():
     )
 
     dx_manager.register_dx_test(
-        my_list_of_tests=[my_test1, my_test2]
+        my_tuple_of_tests=(my_test1, my_test2)
     )
 
-    # create duplicate- should issue warning and not be added
+    # try to add the same test again under exactly the same name- should not throw error but not add another
     dx_manager.register_dx_test(
-        my_test2_diff_name_should_not_be_added=my_test2
+        my_test1=my_test1,
     )
 
     dx_manager.print_info_about_all_dx_tests()
+    assert 3 == len(dx_manager.dx_tests)
+
+    # Create duplicate of a test with a different name and same DxTest: should fail and not add a test
+    try:
+        dx_manager.register_dx_test(my_test2_diff_name_should_not_be_added=my_test2)
+    except ValueError:
+        pass
+    assert 3 == len(dx_manager.dx_tests)
+
+    # Create a duplicate of test: same name and different DxTest: should fail and not add a test
+    try:
+        dx_manager.register_dx_test(my_test1=DxTest(property='is_alive'))
+    except ValueError:
+        pass
     assert 3 == len(dx_manager.dx_tests)
 
 
@@ -148,43 +161,57 @@ def test_create_duplicate_test_that_should_be_ignored():
         specificity=0.95
     )
 
-    # Give the same test but under a different name: name only
-    dx_manager = DxManager()  # get new DxManager
-    dx_manager.register_dx_test(
-        my_test1=my_test1_property_only,
-        my_test1_copy=my_test1_property_only
-    )
+    # Give the same test but under a different name: only name provided - should fail and not add test
+    try:
+        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager.register_dx_test(
+            my_test1=my_test1_property_only,
+            my_test1_copy=my_test1_property_only
+        )
+    except ValueError:
+        pass
     assert len(dx_manager.dx_tests) == 1
 
-    # Give the same test but under a different name: name and consumbales provided
-    dx_manager = DxManager()  # get new DxManager
-    dx_manager.register_dx_test(
-        my_test1=my_test1_property_and_consumable,
-        my_test1_copy=my_test1_property_and_consumable
-    )
+    # Give the same test but under a different name: name and consumbales provided - should fail and not add test
+    try:
+        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager.register_dx_test(
+            my_test1=my_test1_property_and_consumable,
+            my_test1_copy=my_test1_property_and_consumable
+        )
+    except ValueError:
+        pass
     assert len(dx_manager.dx_tests) == 1
 
-    # Give the same test but under a different name: name and consumbales provided and sens/spec provided
-    dx_manager = DxManager()  # get new DxManager
-    dx_manager.register_dx_test(
-        my_test1=my_test1_property_and_consumable_and_sensspec,
-        my_test1_copy=my_test1_property_and_consumable_and_sensspec
-    )
+    # Give the same test but under a different name: name and consumbales provided and sens/spec provided:
+    #       --- should fail and not add test
+    try:
+        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager.register_dx_test(
+            my_test1=my_test1_property_and_consumable_and_sensspec,
+            my_test1_copy=my_test1_property_and_consumable_and_sensspec
+        )
+    except ValueError:
+        pass
     assert len(dx_manager.dx_tests) == 1
 
     # Give duplicated list of tests under different name: only one should be added
-    dx_manager = DxManager()  # get new DxManager
-    dx_manager.register_dx_test(
-        my_list_of_tests1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
-        my_list_of_tests1_copy=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only]
-    )
+    #       --- should throw error but add the one test
+    try:
+        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager.register_dx_test(
+            my_list_of_tests1=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only),
+            my_list_of_tests1_copy=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only)
+        )
+    except ValueError:
+        pass
     assert len(dx_manager.dx_tests) == 1
 
-    # Give list of test that use the same test components but in different order: both should be added
-    dx_manager = DxManager()  # get new DxManager
+    # Give list of test that use the same test components but in different order: both should be added, no errors
+    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
     dx_manager.register_dx_test(
-        my_list_of_tests1=[my_test1_property_and_consumable_and_sensspec, my_test1_property_only],
-        my_list_of_tests1_copy=[my_test1_property_only, my_test1_property_and_consumable_and_sensspec]
+        my_list_of_tests1=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only),
+        my_list_of_tests1_copy=(my_test1_property_only, my_test1_property_and_consumable_and_sensspec)
     )
 
     dx_manager.print_info_about_all_dx_tests()
@@ -198,7 +225,7 @@ def test_create_dx_test_and_run():
     )
 
     # Create new DxManager
-    dx_manager = DxManager()
+    dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register DxTest with DxManager:
     dx_manager.register_dx_test(my_test1=my_test1)
@@ -244,7 +271,7 @@ def test_create_dx_tests_with_consumable_usage():
     )
 
     # Create new DxManager
-    dx_manager = DxManager()
+    dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register the single and the compound tests with DxManager:
     dx_manager.register_dx_test(
@@ -285,7 +312,7 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
     )
 
     # Create new DxManager
-    dx_manager = DxManager()
+    dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register the single and the compound tests with DxManager:
     dx_manager.register_dx_test(
@@ -335,7 +362,7 @@ def test_run_batch_of_dx_test_in_one_call():
     )
 
     # Create new DxManager
-    dx_manager = DxManager()
+    dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register compound tests with DxManager:
     dx_manager.register_dx_test(my_test1=my_test1, my_test2=my_test2)
@@ -354,8 +381,8 @@ def test_run_batch_of_dx_test_in_one_call():
     assert result['my_test2'] == df.at[person_id, 'cs_has_cs']
 
 
-def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
-    # Create the test:
+def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution():
+    # Create the tests:
     my_test1_not_available = DxTest(
         cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_not_available,
         property='mi_status'
@@ -367,20 +394,20 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
     )
 
     # Create new DxManager
-    dx_manager = DxManager()
+    dx_manager = DxManager(sim.modules['HealthSystem'])
 
-    # Register list of tests with DxManager:
+    # Register tuple of tests with DxManager:
     dx_manager.register_dx_test(single_test_not_available=my_test1_not_available)
 
-    dx_manager.register_dx_test(list_of_tests_with_first_not_available=[
+    dx_manager.register_dx_test(tuple_of_tests_with_first_not_available=(
         my_test1_not_available,
         my_test2_is_available
-    ])
+    ))
 
-    dx_manager.register_dx_test(list_of_tests_with_first_available=[
+    dx_manager.register_dx_test(tuple_of_tests_with_first_available=(
         my_test2_is_available,
         my_test1_not_available
-    ])
+    ))
 
     # pick a person
     person_id = 0
@@ -391,25 +418,31 @@ def test_create_list_of_dx_tests_which_fail_and_require_chain_execution():
         dx_tests_to_run='single_test_not_available',
         hsi_event=hsi_event
     )
-
     assert result is None
 
-    # Run the list of test (when the first test fails): should return a result having run test2
-    result = dx_manager.run_dx_test(dx_tests_to_run='list_of_tests_with_first_not_available',
-                                    hsi_event=hsi_event
-                                    )
-    assert None is not result
+    # Run the tuple of test (when the first test fails): should return a result having run test1 and test2
+    result, tests_tried = dx_manager.run_dx_test(
+        dx_tests_to_run='tuple_of_tests_with_first_not_available',
+        hsi_event=hsi_event,
+        report_dxtest_tried=True
+    )
+    assert result is not None
     assert result == sim.population.props.at[person_id, 'mi_status']
+    assert len(tests_tried) == 2
+    assert tests_tried[my_test1_not_available] is False
+    assert tests_tried[my_test2_is_available] is True
 
-    # Run the list of tests (when the first test fails): should return a result having run test2 and not tried test1
-    result = dx_manager.run_dx_test(dx_tests_to_run='list_of_tests_with_first_available',
-                                    hsi_event=hsi_event
-                                    )
-    assert None is not result
-    assert result == sim.population.props.at[person_id, 'mi_status']
-
-    # TODO: report which test provided the result
-    # TODO: check that a second test is not run if the first provides result.
+    # Run the tuple of tests (when the first test fails): should return a result having run test2 and not tried test1
+    result, tests_tried = dx_manager.run_dx_test(
+        dx_tests_to_run='tuple_of_tests_with_first_available',
+        hsi_event=hsi_event,
+        report_dxtest_tried=True
+    )
+    assert result is not None
+    assert result, tests_tried == sim.population.props.at[person_id, 'mi_status']
+    assert len(tests_tried) == 1
+    assert tests_tried[my_test2_is_available] is True
+    assert my_test1_not_available not in tests_tried
 
 
 def test_create_dx_test_and_run_with_imperfect_sensitivity():
@@ -426,7 +459,7 @@ def test_create_dx_test_and_run_with_imperfect_sensitivity():
         )
 
         # Register DxTest with DxManager:
-        dx_manager = DxManager()
+        dx_manager = DxManager(sim.modules['HealthSystem'])
         dx_manager.register_dx_test(my_test=my_test)
 
         # Run it on all people and get a list of the results
@@ -437,7 +470,6 @@ def test_create_dx_test_and_run_with_imperfect_sensitivity():
                 dx_tests_to_run='my_test',
                 hsi_event=hsi_event
             )
-
             results.append(result_from_dx_manager)
 
         return results
@@ -470,7 +502,7 @@ def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity():
         )
 
         # Register DxTest with DxManager:
-        dx_manager = DxManager()
+        dx_manager = DxManager(sim.modules['HealthSystem'])
         dx_manager.register_dx_test(my_test=my_test)
 
         # Run it on all people and get a list of the results
@@ -500,6 +532,47 @@ def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity():
     assert 0.0 < sum(results) < len(results)
 
 
+def test_create_dx_test_and_run_with_cont_value_and_cutoff():
+    # This test is for a property represented by a continuous variable and the DxTest should return True if the value
+    # is above a certain threshold.
+
+    # Create a dataframe that has values known to be above or below the threshold (=0.0)
+    df = sim.population.props
+    df['AboveThreshold'] = 1.0
+    df['BelowThreshold'] = -1.0
+
+    my_test_on_above_threshold = DxTest(
+        property='AboveThreshold',
+        threshold=0.0
+    )
+
+    my_test_on_below_threshold = DxTest(
+        property='BelowThreshold',
+        threshold=0.0
+    )
+
+    # Register DxTest with DxManager:
+    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager.register_dx_test(my_test_on_above_threshold=my_test_on_above_threshold,
+                                my_test_on_below_threshold=my_test_on_below_threshold
+                                )
+
+    # Run it on one person and confirm the result is as expected
+    person_id = 0
+    hsi_event.target = person_id
+    result = dx_manager.run_dx_test(
+        dx_tests_to_run='my_test_on_above_threshold',
+        hsi_event=hsi_event
+    )
+    assert result is True
+
+    result = dx_manager.run_dx_test(
+        dx_tests_to_run='my_test_on_below_threshold',
+        hsi_event=hsi_event
+    )
+    assert result is False
+
+
 def test_create_dx_test_and_run_with_cont_dx_and_error():
     # Create a property in the sim.population.props dataframe for testing.
     # Make it zero for everyone
@@ -518,7 +591,7 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
     )
 
     # Create new DxManager
-    dx_manager = DxManager()
+    dx_manager = DxManager(sim.modules['HealthSystem'])
 
     # Register DxTest with DxManager:
     dx_manager.register_dx_test(
@@ -543,5 +616,3 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
 
     assert all([0.0 == e for e in result_from_test_with_zero_stdev])
     assert sum([abs(e) for e in result_from_test_with_nonzero_stdev]) > 0
-
-# TODO: REMOVE THE NEED TO PASS IN HEALTHSYSTEM
