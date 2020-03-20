@@ -266,8 +266,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code = pd.unique(consumables.loc[consumables
-                                             ['Intervention_Pkg'] == 'Clean practices and immediate essential newborn '
-                                                                     'care (in facility)',
+                                             ['Intervention_Pkg'] == '',
                                                                      'Intervention_Pkg_Code'])[0]
         pkg_code_bcg = pd.unique(consumables.loc[consumables[
                                                  'Intervention_Pkg'] == 'BCG vaccine', 'Intervention_Pkg_Code'])[0]
