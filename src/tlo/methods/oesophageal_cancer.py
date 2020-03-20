@@ -155,8 +155,8 @@ class Oesophageal_Cancer(Module):
         "init_prop_treatment_status_oes_cancer": Parameter(
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
         ),
-        "sensitivity_of_assessment_of_oes_cancer_with_dysphagia": Parameter(
-            Types.REAL, "sensitivity_of_assessment_of_oes_cancer_with_dysphagia"
+        "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
+            Types.REAL, "ssensitivity_of_endoscopy_for diagnosis of oes_cancer_with_dysphagia"
         ),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
         "daly_wt_oes_cancer_controlled": Parameter(
@@ -335,12 +335,13 @@ class Oesophageal_Cancer(Module):
 
         # Create the diagnostic representing the assessment for whether a person with dysphagia is diagnosed with
         # oes cancer
-        # todo: needs more consideration - I'm not sure we need to diagnostic test as we are assuming that if
-        # todo: dysphagia present then oes cancer is diagnosed (although see todo above)
+        # todo: necessary (but not sufficient) condition to present is dysphagia
+        # todo: diagnostic test is endoscopy (with biopsy testing)
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            assess_dysphagia=DxTest(
+            assess_dysphagia_for_oes_cancer=DxTest(
                 property='ca_oesophagus',
-                sensitivity=self.parameters['sensitivity_of_assessment_of_oes_cancer_with_dysphagia'],
+                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
             )
         )
 
