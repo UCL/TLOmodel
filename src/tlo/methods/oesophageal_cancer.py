@@ -387,35 +387,35 @@ class Oesophageal_Cancer(Module):
         disability_series_for_alive_persons.loc[df.is_alive &
                                                 ((df.ca_oesophagus == "low_grade_dysplasia") or
                                                 (df.ca_oesophagus == "high_grade_dysplasia")) &
-                                                df.ca.oesophagus_diagnosed] = 'daly_wt_oes_dysp_diagnosed'
+                                                df.ca.oesophagus_diagnosed == 'daly_wt_oes_dysp_diagnosed']
 
         disability_series_for_alive_persons.loc[df.is_alive &
                                                 ((df.ca_oesophagus == "stage1") or
                                                 (df.ca_oesophagus == "stage2") or (df.ca_oesophagus == "stage3"))
-                                                ] = 'daly_wt_oes_cancer_stage_1_3'
+                                                ] = 'daly_wt_oes_cancer_stage_1_3']
 
         disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage4")
-                                                ] = 'daly_wt_oes_cancer_stage4'
+                                                ] = 'daly_wt_oes_cancer_stage4']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia') & (df.ca_oesophagus == 'low_grade_dysplasia')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = 'daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia') & (df.ca_oesophagus == 'high_grade_dysplasia')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = 'daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage1') & (df.ca_oesophagus == 'stage1')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = 'daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage2') & (df.ca_oesophagus == 'stage2')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = 'daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage3') & (df.ca_oesophagus == 'stage3')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = 'daly_wt_treated_oes_cancer']
 
         return disability_series_for_alive_persons
 
