@@ -156,7 +156,7 @@ class Oesophageal_Cancer(Module):
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
         ),
         "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
-            Types.REAL, "ssensitivity_of_endoscopy_for diagnosis of oes_cancer_with_dysphagia"
+            Types.REAL, "ssensitivity of endoscopy_for diagnosis of oes_cancer_with_dysphagia"
         ),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
         "daly_wt_oes_cancer_controlled": Parameter(
@@ -172,10 +172,6 @@ class Oesophageal_Cancer(Module):
             Types.REAL, "disability weight for oesophageal cancer primary therapy - code 550"
         ),
     }
-
-    # todo:  Dysplasia is assumed to persist indefinitely so if diagnosis is not made as a result of an initial
-    # todo: presentation (diagnostic algorithm) there is a possibility  of re - presentation at a later  point at
-    # todo: which there is again a certain probability of diagnosis.
 
     PROPERTIES = {
         "ca_oesophagus": Property(
@@ -339,7 +335,7 @@ class Oesophageal_Cancer(Module):
         # todo: diagnostic test is endoscopy (with biopsy testing)
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            assess_dysphagia_for_oes_cancer=DxTest(
+            endoscopy_dysphagia_oes_cancer=DxTest(
                 property='ca_oesophagus',
                 sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
             )
