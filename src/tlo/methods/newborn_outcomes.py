@@ -7,6 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
+from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -272,6 +273,39 @@ class NewbornOutcomes(Module):
 
         event = NewbornOutcomesLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
+
+        # We define the diagnostic tests that will be called within the health system interactions
+        # Neonatal sepsis...
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_neonatal_sepsis_hc=DxTest(
+                property='nb_early_onset_neonatal_sepsis',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_neonatal_sepsis_hc'], ))
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_neonatal_sepsis_hp=DxTest(
+                property='nb_early_onset_neonatal_sepsis',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_neonatal_sepsis_hp'], ))
+
+        # Failure to transition...
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_failure_to_transition_hc=DxTest(
+                property='nb_failed_to_transition',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_ftt_hc'], ))
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_failure_to_transition_hp=DxTest(
+                property='nb_failed_to_transition',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_ftt_hp'], ))
+
+        # Low birth weight...
+        # todo: issue with this not working for categorical properties
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_low_birth_weight_hc=DxTest(
+                property='nb_low_birth_weight_status',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hc'], ))
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            assess_low_birth_weight_hp=DxTest(
+                property='nb_low_birth_weight_status',
+                sensitivity=self.parameters['sensitivity_of_assessment_of_lbw_hp'], ))
+
 
     def eval(self, eq, person_id):
         """Compares the result of a specific linear equation with a random draw providing a boolean for the outcome
@@ -641,19 +675,63 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
+        nci = self.module.newborn_care_info
+        params = self.module.parameters
+        df = self.sim.population.props
 
         logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel: child %d is '
                     'receiving care following delivery in a health facility on date %s', person_id, self.sim.date)
 
-# ----------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------------------
-# --------------------------------------- TETRACYCLINE EYE DROPS -------------------------------------------------------
 # --------------------------------- ANTIBIOTIC PROPHYLAXIS (MATERNAL RISK FACTORS)-------------------------------------
-    # --------------------------------- ANTIBIOTIC PROPHYLAXIS (MATERNAL RISK FACTORS)-------------------------------------
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         def prophylactic_interventions():
-            x='y'
+            # TODO: ANTIBIOTICS PROPHYLAXIS (!?!?!?!)
+            item_code_tetracycline = pd.unique(consumables.loc[consumables['Items'] == 'Tetracycline eye ointment '
+                                                                                       '1%_3.5_CMST', 'Item_Code'])[0]
+
+            item_code_vit_k = pd.unique(consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, '
+                                                                                '1 ml, inj._100_IDA', 'Item_Code'])[0]
+            item_code_vit_k_syringe = pd.unique(consumables.loc[consumables['Items'] == 'syringe luer 2 ml, with '
+                                                                                        'bypacked ndle 23G x 1.1/4',
+                                                                'Item_Code'])[0]
+            consumables_newborn_care = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_newborn_care, to_log=True)
+
+            # TETRACYCLINE
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][item_code_tetracycline]:
+                nci[person_id]['ongoing_sepsis_risk'] = nci[person_id]['ongoing_sepsis_risk'] * params[
+                    'rr_sepsis_tetracycline']
+            else:
+                logger.debug('This facility has no tetracycline and therefore was not given')
+
+            # VITAMIN K
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][item_code_vit_k,
+                                                                               item_code_vit_k_syringe]:
+                nci[person_id]['vit_k'] = True
+                # TODO: whats the point of this
+            else:
+                logger.debug('This facility has no vitamin K and therefore was not given')
+
+            # EARLY INITIATION OF BREAST FEEDING
+            if self.module.rng.random_sample() < params['prob_early_breastfeeding_hf']:
+                df.at[person_id, 'nb_early_breastfeeding'] = True
+                logger.debug('Neonate %d has started breastfeeding within 1 hour of birth', person_id)
+            else:
+                logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', person_id)
+                # TODO: variation between HC and HP?
+
+            # TODO: some consumables are counted within the delivery packages -i.e. chlorhex
+
         def kangaroo_mother_care():
             x= 'y'
+
+        # --------------------------------- RECALCULATE SEPSIS RISK -------------------------------------
+
         def neonatal_resuscitation():
             x= 'y'
         def management_newborn_sepsis():
