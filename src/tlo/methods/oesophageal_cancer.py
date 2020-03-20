@@ -156,7 +156,7 @@ class Oesophageal_Cancer(Module):
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
         ),
         "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
-            Types.REAL, "ssensitivity of endoscopy_for diagnosis of oes_cancer_with_dysphagia"
+            Types.REAL, "sensitivity of endoscopy_for diagnosis of oes_cancer_with_dysphagia"
         ),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
         "daly_wt_oes_cancer_controlled": Parameter(
@@ -180,6 +180,9 @@ class Oesophageal_Cancer(Module):
             "high_grade_dysplasia, stage1, stage2, stage3, stage4",
             categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
         ),
+        "ca_oesophagus_yn": Property(
+            Types.BOOL, "has oes dysplasia or cancer yes / no"
+        ),
         "ca_oesophagus_curative_treatment_requested": Property(
             Types.BOOL, "curative treatment requested of health care system this 3 month period"
         ),
@@ -193,7 +196,6 @@ class Oesophageal_Cancer(Module):
         ),
         "sy_dysphagia": Property(Types.BOOL, "has dysphagia"),
         "ca_oesophagus_diagnosed": Property(Types.BOOL, "diagnosed with oesophageal dysplasia / cancer"),
-        "ca_oesophageal_cancer_death": Property(Types.BOOL, "death from oesophageal cancer"),
         "ca_date_oes_cancer_diagnosis": Property(Types.DATE, "date incident oesophageal cancer"),
         "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment")
     }
@@ -242,6 +244,7 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
         df.loc[df.is_alive, "ca_oesophagus"] = "none"
+        df.loc[df.is_alive, "ca_oesophagus_yn"] = False
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment"] = "never"
         df.loc[df.is_alive, "ca_date_oes_cancer_diagnosis"] = pd.NaT
@@ -336,8 +339,8 @@ class Oesophageal_Cancer(Module):
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             endoscopy_dysphagia_oes_cancer=DxTest(
-                property='ca_oesophagus',
-                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
+                property='ca_oesophagus_yn',
+                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia']
             )
         )
 
@@ -348,6 +351,7 @@ class Oesophageal_Cancer(Module):
         """
         df = self.sim.population.props
         df.at[child_id, "ca_oesophagus"] = "none"
+        df.at[child_id, "ca_oesophagus_yn"] = False
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
         df.at[child_id, "ca_date_oes_cancer_diagnosis"] = pd_NaT
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
@@ -385,37 +389,44 @@ class Oesophageal_Cancer(Module):
         disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive],data=0.0)
 
         disability_series_for_alive_persons.loc[df.is_alive &
-                                                ((df.ca_oesophagus == "low_grade_dysplasia") or
-                                                (df.ca_oesophagus == "high_grade_dysplasia")) &
-                                                df.ca.oesophagus_diagnosed == 'daly_wt_oes_dysp_diagnosed']
+                                                (df.ca_oesophagus == "low_grade_dysplasia") &
+                                                df.ca_oesophagus_diagnosed] = 'daly_wt_oes_cancer_stage_1_3'
 
         disability_series_for_alive_persons.loc[df.is_alive &
-                                                ((df.ca_oesophagus == "stage1") or
-                                                (df.ca_oesophagus == "stage2") or (df.ca_oesophagus == "stage3"))
-                                                ] = 'daly_wt_oes_cancer_stage_1_3']
+                                                (df.ca_oesophagus == "high_grade_dysplasia") &
+                                                df.ca_oesophagus_diagnosed] = 'daly_wt_oes_cancer_stage_1_3'
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage1")
+                                                ] = 'daly_wt_oes_cancer_stage_1_3'
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage2")
+                                                ] = 'daly_wt_oes_cancer_stage_1_3'
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage3")
+                                                ] = 'daly_wt_oes_cancer_stage_1_3'
 
         disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage4")
-                                                ] = 'daly_wt_oes_cancer_stage4']
+                                                ] = 'daly_wt_oes_cancer_stage4'
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia') & (df.ca_oesophagus == 'low_grade_dysplasia')
-        ] = 'daly_wt_treated_oes_cancer']
+        ] = 'daly_wt_treated_oes_cancer'
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia') & (df.ca_oesophagus == 'high_grade_dysplasia')
-        ] = 'daly_wt_treated_oes_cancer']
+        ] = 'daly_wt_treated_oes_cancer'
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage1') & (df.ca_oesophagus == 'stage1')
-        ] = 'daly_wt_treated_oes_cancer']
+        ] = 'daly_wt_treated_oes_cancer'
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage2') & (df.ca_oesophagus == 'stage2')
-        ] = 'daly_wt_treated_oes_cancer']
+        ] = 'daly_wt_treated_oes_cancer'
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage3') & (df.ca_oesophagus == 'stage3')
-        ] = 'daly_wt_treated_oes_cancer']
+        ] = 'daly_wt_treated_oes_cancer'
 
         return disability_series_for_alive_persons
 
@@ -427,10 +438,11 @@ class Oesophageal_Cancer(Module):
         :return:
         """
         # Assess for oes cancer
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='assess_oes_cancer_dysphagia',
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='endoscopy_oes_cancer_dysphagia',
                                                                    hsi_event=hsi_event
                                                                    ):
             self.sim.population.props.at[person_id, 'ca_oesophagus_diagnosed'] = True
+
 
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -563,10 +575,10 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
             # generate the HSI Events whereby persons present for care and get treatment
             for person_id in idx:
-                # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
+                # For this person, determine when they will seek care (uniform distribution [0,91]days from now)
                 date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
                 # For this person, create the HSI Event for their presentation for care
-                hsi_present_for_care = HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(self.module, person_id)
+                hsi_present_for_care = HSI_Dysphagia_PresentForCare(self.module, person_id)
                 # Enter this event to the HealthSystem
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
@@ -595,7 +607,7 @@ class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "assess_dysphagia_for_oes_cancer"
+        self.TREATMENT_ID = "end_dysphagia_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []

@@ -11,7 +11,7 @@ from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 
 class HealthSystem(Module):

@@ -14,8 +14,8 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1000
+end_date = Date(2011, 1, 1)
+popsize = 10000
 
 
 @pytest.fixture(scope='module')

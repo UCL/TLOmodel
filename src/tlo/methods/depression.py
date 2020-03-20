@@ -402,7 +402,7 @@ class Depression(Module):
         self.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
         # Create the diagnostic representing the assessment for whether a person is diagnosed with depression
-        # NB. Specificity is assumed to be 100%
+        # NB. Specificity is assumed to be 1F00%
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             assess_depression=DxTest(
                 property='de_depr',

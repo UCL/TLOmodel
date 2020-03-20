@@ -32,7 +32,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 200
+popsize = 10000
 
 
 # Establish the simulation object
@@ -62,8 +62,16 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
+
+    custom_levels = {
+        'tlo.methods.demography': logging.CRITICAL,  # enable logging at INFO level
+        'tlo.methods.contraception': logging.CRITICAL,  # enable logging at INFO level
+    }
+
+
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
+
 
     # Run the simulation
     sim.make_initial_population(n=popsize)

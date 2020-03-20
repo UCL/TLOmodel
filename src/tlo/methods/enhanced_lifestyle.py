@@ -1147,11 +1147,11 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             if np.isnan(v):
                 bmi_proportions[k] = 0.0
 
-        logger.info(
-            '%s|bmi_proportions|%s',
-            self.sim.date,
-            bmi_proportions
-        )
+ #      logger.info(
+ #          '%s|bmi_proportions|%s',
+ #          self.sim.date,
+ #          bmi_proportions
+ #      )
 
         """
         logger.info('%s|li_urban|%s',
