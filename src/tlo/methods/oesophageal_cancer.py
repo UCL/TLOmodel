@@ -130,6 +130,9 @@ class Oesophageal_Cancer(Module):
         "rr_dysphagia_stage4": Parameter(
             Types.REAL, "rate ratio for dysphagia if have stage 4 oesophageal cancer"
         ),
+        "prob_present_dysphagia": Parameter(
+            Types.REAL, "probability of presenting if have dysphagia"
+        ),
         "init_prop_oes_cancer_stage": Parameter(
             Types.LIST,
             "initial proportions in ca_oesophagus categories for man aged 20 with no excess alcohol and no tobacco",
@@ -179,9 +182,6 @@ class Oesophageal_Cancer(Module):
             "oesophageal dysplasia / cancer stage: none, low_grade_dysplasia"
             "high_grade_dysplasia, stage1, stage2, stage3, stage4",
             categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
-        ),
-        "ca_oesophagus_yn": Property(
-            Types.BOOL, "has oes dysplasia or cancer yes / no"
         ),
         "ca_oesophagus_curative_treatment_requested": Property(
             Types.BOOL, "curative treatment requested of health care system this 3 month period"
@@ -244,13 +244,13 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
         df.loc[df.is_alive, "ca_oesophagus"] = "none"
-        df.loc[df.is_alive, "ca_oesophagus_yn"] = False
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment"] = "never"
         df.loc[df.is_alive, "ca_date_oes_cancer_diagnosis"] = pd.NaT
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment_requested"] = False
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
         df.loc[df.is_alive, "sy_dysphagia"] = False
+        df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
@@ -258,14 +258,14 @@ class Oesophageal_Cancer(Module):
         # create dataframe of the probabilities of ca_oesophagus status for 20 year old males, no ex alcohol, no tobacco
         p_oes_dys_can = pd.DataFrame(data=[m.init_prop_oes_cancer_stage], columns=cancer_stages, index=agege20_idx)
 
-        # create probabilities of oes dysplasia and oe cancer for all over age 20
+        # create probabilities of oes dysplasia and oes cancer for all over age 20
         p_oes_dys_can.loc[(df.sex == "F") & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
         p_oes_dys_can.loc[df.li_ex_alc & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_ex_alc
         p_oes_dys_can.loc[df.li_tob & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_tobacco
 
         # apply multiplier
-        p_oes_dys_can_age_muliplier = m.rp_oes_cancer_per_year_older ** (df.loc[agege20_idx, 'age_years'] - 20)
-        p_oes_dys_can = p_oes_dys_can.multiply(p_oes_dys_can_age_muliplier, axis="index")
+        p_oes_dys_can_age_multiplier = m.rp_oes_cancer_per_year_older ** (df.loc[agege20_idx, 'age_years'] - 20)
+        p_oes_dys_can = p_oes_dys_can.multiply(p_oes_dys_can_age_multiplier, axis="index")
 
         # add column for the probability of no cancer at start of dataframe
         p_oes_dys_can.insert(0, 'none', 1 - p_oes_dys_can.sum(axis=1))
@@ -310,6 +310,8 @@ class Oesophageal_Cancer(Module):
             set_diagnosed(stage)
 
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS_CURATIVE_TREATMENT AT BASELINE -------------------
+
+        # todo: check this working as intended
 
         def set_curative_treatment(stage):
             """sets the curative treatment flag for given stage of cancer"""
@@ -390,58 +392,59 @@ class Oesophageal_Cancer(Module):
 
         disability_series_for_alive_persons.loc[df.is_alive &
                                                 (df.ca_oesophagus == "low_grade_dysplasia") &
-                                                df.ca_oesophagus_diagnosed] = 'daly_wt_oes_cancer_stage_1_3'
+                                                df.ca_oesophagus_diagnosed] = self.parameters['daly_wt_oes_cancer_stage_1_3']
 
         disability_series_for_alive_persons.loc[df.is_alive &
                                                 (df.ca_oesophagus == "high_grade_dysplasia") &
-                                                df.ca_oesophagus_diagnosed] = 'daly_wt_oes_cancer_stage_1_3'
+                                                df.ca_oesophagus_diagnosed] = self.parameters['daly_wt_oes_cancer_stage_1_3']
 
         disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage1")
-                                                ] = 'daly_wt_oes_cancer_stage_1_3'
+                                                ] = self.parameters['daly_wt_oes_cancer_stage_1_3']
 
         disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage2")
-                                                ] = 'daly_wt_oes_cancer_stage_1_3'
+                                                ] = self.parameters['daly_wt_oes_cancer_stage_1_3']
 
         disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage3")
-                                                ] = 'daly_wt_oes_cancer_stage_1_3'
+                                                ] = self.parameters['daly_wt_oes_cancer_stage_1_3']
 
         disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage4")
-                                                ] = 'daly_wt_oes_cancer_stage4'
+                                                ] = self.parameters['daly_wt_oes_cancer_stage4']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia') & (df.ca_oesophagus == 'low_grade_dysplasia')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = self.parameters['daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia') & (df.ca_oesophagus == 'high_grade_dysplasia')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = self.parameters['daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage1') & (df.ca_oesophagus == 'stage1')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = self.parameters['daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage2') & (df.ca_oesophagus == 'stage2')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = self.parameters['daly_wt_treated_oes_cancer']
 
         disability_series_for_alive_persons.loc[df.is_alive
            & (df.ca_oesophagus_curative_treatment == 'stage3') & (df.ca_oesophagus == 'stage3')
-        ] = 'daly_wt_treated_oes_cancer'
+        ] = self.parameters['daly_wt_treated_oes_cancer']
 
         return disability_series_for_alive_persons
 
-    def do_when_dysphagia(self, person_id, hsi_event):
-        """
-        This is called by a generic HSI event when dysphagia is present
-        :param person_id:
-        :param hsi_event: The HSI event that has called this event
-        :return:
-        """
-        # Assess for oes cancer
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='endoscopy_oes_cancer_dysphagia',
-                                                                   hsi_event=hsi_event
-                                                                   ):
-            self.sim.population.props.at[person_id, 'ca_oesophagus_diagnosed'] = True
+#   def do_when_dysphagia(self, person_id, hsi_event):
+#       """
+#       This is called by a generic HSI event when dysphagia is present
+#       :param person_id:
+#       :param hsi_event: The HSI event that has called this event
+#       :return:
+#       """
+#       # Assess for oes cancer
+#       if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='endoscopy_oes_cancer_dysphagia',
+#                                                                  hsi_event=hsi_event
+#                                                                  ):
+#           self.sim.population.props.at[person_id, 'ca_oesophagus_diagnosed'] = True
+
 
 
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
@@ -468,19 +471,18 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
-        # create indexes of subgroups of people with different cancert statuses
+        # create indexes of subgroups of people with different cancer statuses
         ca_oes_current_none_idx = df.index[df.is_alive &
                                            (df.ca_oesophagus == "none") &
                                            (df.age_years >= 20)]
         ca_oes_current_low_grade_dysp_idx = df.index[df.is_alive &
-                                                     (df.ca_oesophagus == "low_grade_dysplasia") &
-                                                     (df.age_years >= 20)]
+                                                     (df.ca_oesophagus == "low_grade_dysplasia")]
         ca_oes_current_high_grade_dysp_idx = df.index[df.is_alive &
                                                       (df.ca_oesophagus == "high_grade_dysplasia") &
                                                       (df.age_years >= 20)]
-        ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1") & (df.age_years >= 20)]
-        ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2") & (df.age_years >= 20)]
-        ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3") & (df.age_years >= 20)]
+        ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1")]
+        ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2")]
+        ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3")]
 
         # updating for people aged over 20 with current status 'none'
         # create series of the parameter r_low_grade_dysplasia_none which is the probability of low grade dysplasia for
@@ -553,17 +555,38 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[selected, 'sy_dysphagia'] = True
             df.loc[selected, 'ca_date_oes_cancer_diagnosis'] = self.sim.date
 
-        update_dysphagia('low_grade_dysphagia', m.r_dysphagia_stage1 * m.rr_dysphagia_low_grade_dysp)
-        update_dysphagia('high_grade_dysphagia', m.r_dysphagia_stage1 * m.rr_dysphagia_high_grade_dysp)
+        update_dysphagia('low_grade_dysplasia', m.r_dysphagia_stage1 * m.rr_dysphagia_low_grade_dysp)
+        update_dysphagia('high_grade_dysplasia', m.r_dysphagia_stage1 * m.rr_dysphagia_high_grade_dysp)
         update_dysphagia('stage1', m.r_dysphagia_stage1)
         update_dysphagia('stage2', m.r_dysphagia_stage1 * m.rr_dysphagia_stage2)
         update_dysphagia('stage3', m.r_dysphagia_stage1 * m.rr_dysphagia_stage3)
         update_dysphagia('stage4', m.r_dysphagia_stage1 * m.rr_dysphagia_stage4)
 
+
+        # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_DIAGNOSED  -------------------
+        # update ca_oesophagus_diagnosed for those with dysphagia
+
+        def update_diagnosis_status(prob_present_dysphagia):
+            idx = df.index[df.is_alive & df.sy_dysphagia & ~df.ca_oesophagus_diagnosed]
+            selected = idx[prob_present_dysphagia > rng.random_sample(size=len(idx))]
+
+            # generate the HSI Events whereby persons present for care and get diagnosed
+            for person_id in selected:
+                # For this person, determine when they will seek care (uniform distribution [0,91]days from now)
+                date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
+                # For this person, create the HSI Event for their presentation for care
+                hsi_present_for_care = HSI_Dysphagia_PresentForCare(self.module, person_id)
+                # Enter this event to the HealthSystem
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
+                )
+
+
+        update_diagnosis_status(m.prob_present_dysphagia)
+
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
         # this uses the approach descibed in detail above for updating diagosis status
-
         def update_curative_treatment(current_stage, p_curative_treatment):
             idx = df.index[df.is_alive &
                            (df.ca_oesophagus == current_stage) &
@@ -605,9 +628,12 @@ class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "end_dysphagia_oes_cancer"
+        the_appt_footprint["Over5OPD"] = 1
+        the_appt_footprint['MinorSurg'] = 1
+        # todo: this appointment type for endoscopy and biopsy to be checked
+
+        # This requires one out patient appt  # Define the necessary information for an HSI
+        self.TREATMENT_ID = "assess_dysphagia"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
@@ -616,14 +642,16 @@ class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_diagnosed"] = True
         df.at[person_id, "ca_date_oes_cancer_diagnosis"] = self.sim.date
-
+        df.at[person_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = True
 
 class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
+
+        the_appt_footprint["Over5OPD"] = 1
+        the_appt_footprint["MajorSurg"] = 1
+
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -636,21 +664,14 @@ class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-    #todo: HSIs to add
+    #todo: HSIs to consideer
 """"
-Clinic appointment: (present with symptoms but) failure to diagnose 
-Clinic appointment: diagnosis 
 
 Attempt at curative treatment – pre surgery
 Attempt at curative treatment – surgery
 Attempt at curative treatment – chemotherapy clinic appointment
-Attempt at curative treatment – radiotherapy clinic appointment
-Attempt at curative treatment – initiation of endocrine treatment
 Clinic appointment: monitoring - no new action 
-
 Clinic appointment: initiate palliative care
-
-Pharmacy: drug pick up 
 
 """
 
@@ -736,4 +757,4 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #             n_received_trt_this_period_stage3, n_stage4_undiagnosed_oc, cum_deaths, n_alive, n_oc_death
         #             )
 
-        logger.info("%s|person_one|%s", self.sim.date, df.loc[0].to_dict())
+        logger.info("%s|person_zero|%s", self.sim.date, df.loc[0].to_dict())
