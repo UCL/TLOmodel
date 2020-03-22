@@ -87,31 +87,6 @@ class Oesophageal_Cancer(Module):
             Types.REAL,
             "probabilty per 3 months of death from oesophageal cancer mongst people with stage 4 oesophageal cancer",
         ),
-        "r_curative_treatment_low_grade_dysp": Parameter(
-            Types.REAL,
-            "probabilty per 3 months of receiving medical treatment aimed at cure if have low grade "
-            "dysplasia, given diagnosis (surgery, radiotherapy and/or chemotherapy",
-        ),
-        "rr_curative_treatment_high_grade_dysp": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have high grade "
-            "dysplasia, given diagnosis (surgery, radiotherapy and/or chemotherapy",
-        ),
-        "rr_curative_treatment_stage1": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have stage1, "
-            "given diagnosis (surgery, radiotherapy and/or chemotherapy",
-        ),
-        "rr_curative_treatment_stage2": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have stage2, "
-            "given diagnosis (surgery, radiotherapy and/or chemotherapy",
-        ),
-        "rr_curative_treatment_stage3": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have stage3, "
-            "given diagnosis (surgery, radiotherapy and/or chemotherapy",
-        ),
         "rr_dysphagia_low_grade_dysp": Parameter(
             Types.REAL, "probability per 3 months of dysphagia in a person with low grade oesophageal dysplasia"
         ),
@@ -183,9 +158,6 @@ class Oesophageal_Cancer(Module):
             "high_grade_dysplasia, stage1, stage2, stage3, stage4",
             categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
         ),
-        "ca_oesophagus_curative_treatment_requested": Property(
-            Types.BOOL, "curative treatment requested of health care system this 3 month period"
-        ),
         "ca_oesophagus_curative_treatment": Property(
             Types.CATEGORICAL,
             "oesophageal dysplasia / cancer stage at"
@@ -247,7 +219,6 @@ class Oesophageal_Cancer(Module):
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment"] = "never"
         df.loc[df.is_alive, "ca_date_oes_cancer_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "ca_oesophagus_curative_treatment_requested"] = False
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
         df.loc[df.is_alive, "sy_dysphagia"] = False
         df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
@@ -581,38 +552,34 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                     hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
                 )
 
-
         update_diagnosis_status(m.prob_present_dysphagia)
 
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
-        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
-        # this uses the approach descibed in detail above for updating diagosis status
-        def update_curative_treatment(current_stage, p_curative_treatment):
+        # update ca_oesophagus_curative_treatment for diagnosed, untreated people
+        # this uses the approach descibed in detail above for updating diagnosis status
+        def update_curative_treatment(current_stage):
             idx = df.index[df.is_alive &
                            (df.ca_oesophagus == current_stage) &
                            (df.age_years >= 20) &
                            df.ca_oesophagus_diagnosed &
                            (df.ca_oesophagus_curative_treatment == 'never')]
-            selected = idx[p_curative_treatment > rng.random_sample(size=len(idx))]
-            df.loc[selected, 'ca_oesophagus_curative_treatment_requested'] = True
 
-            # generate the HSI Events whereby persons present for care and get treatment
+            # generate the HSI Events whereby diagnosed person gets treatment
             for person_id in idx:
-                # For this person, determine when they will seek care (uniform distribution [0,91]days from now)
+                # For this person, determine when they will receive treatment (if there is health system capacity)
                 date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
-                # For this person, create the HSI Event for their presentation for care
-                hsi_present_for_care = HSI_Dysphagia_PresentForCare(self.module, person_id)
+                # For this person, create the HSI Event for their treatment
+                hsi_oes_cancer_curative_treatment = HSI_OesCancer_StartTreatment(self.module, person_id)
                 # Enter this event to the HealthSystem
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
+                    hsi_oes_cancer_curative_treatment , priority=0, topen=date_seeking_care, tclose=None
                 )
 
-        update_curative_treatment('low_grade_dysplasia', m.r_curative_treatment_low_grade_dysp)
-        update_curative_treatment('high_grade_dysplasia',
-                                  m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_high_grade_dysp)
-        update_curative_treatment('stage1', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage1)
-        update_curative_treatment('stage2', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage2)
-        update_curative_treatment('stage3', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage3)
+        update_curative_treatment('low_grade_dysplasia')
+        update_curative_treatment('high_grade_dysplasia')
+        update_curative_treatment('stage1')
+        update_curative_treatment('stage2')
+        update_curative_treatment('stage3')
 
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
