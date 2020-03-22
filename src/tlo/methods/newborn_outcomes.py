@@ -198,7 +198,7 @@ class NewbornOutcomes(Module):
         # All linear equations used in this module are stored within the nb_newborn_equations parameter below
 
         params = self.parameters
-
+        #  TODO: treatment effects in death equations
         params['nb_newborn_equations'] = {
 
             'neonatal_sepsis_home_birth': LinearModel(
@@ -686,7 +686,11 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ================================================
 
 class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
-    """."""
+    """ This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1. This event is scheduled by
+    the on_birth function of this module, automatically for neonates who delivered in facility and via a care seeking
+    equation for those delivered at home. This event manages initial care of newborns following birth at level 1
+    facilities. This event also houses assessment and treatment of complications following delivery (sepsis and failure
+    to transition). Eventually it will scheduled additional treatment for those who need it."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -694,9 +698,8 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
 
         self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1'
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['NormalDelivery'] = 1  # ???
+        the_appt_footprint['InpatientDays'] = 1  # ???
 
-        # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -711,8 +714,10 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
+        # This HSI follows a similar structure as Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1
+        # This function manages the administration of essential newborn care and prophylaxsis
         def prophylactic_interventions():
-            # TODO: ANTIBIOTICS PROPHYLAXIS (!?!?!?!)
+            # The required consumables are defined
             item_code_tetracycline = pd.unique(consumables.loc[consumables['Items'] == 'Tetracycline eye ointment '
                                                                                        '1%_3.5_CMST', 'Item_Code'])[0]
 
@@ -730,24 +735,33 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
                 hsi_event=self, cons_req_as_footprint=consumables_newborn_care, to_log=True)
 
             # CORD CARE
+            # Consumables for cord care are recorded in the labour module, as part of the skilled birth attendance
+            # package. This reduces the neonates risk of sepsis.
             nci[person_id]['ongoing_sepsis_risk'] = nci[person_id]['ongoing_sepsis_risk'] * params[
                 'rr_sepsis_cord_care']
 
+            # Tetracycline eye care and vitamin k prophylaxis are conditioned on the availability of consumables
+
             # TETRACYCLINE
             if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
+                logger.debug('Neonate %d has received tetracycline eye drops to reduce sepsis risk following a facility'
+                             'delivery', person_id)
                 nci[person_id]['ongoing_sepsis_risk'] = nci[person_id]['ongoing_sepsis_risk'] * params[
                     'rr_sepsis_tetracycline']
             else:
                 logger.debug('This facility has no tetracycline and therefore was not given')
 
             # VITAMIN K
-            if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k, item_code_vit_k_syringe]:
+            if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k] and \
+               outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]:
+                logger.debug('Neonate %d has received vitamin k prophylaxis following a facility delivery', person_id)
                 nci[person_id]['vit_k'] = True
                 # TODO: whats the point of this
             else:
                 logger.debug('This facility has no vitamin K and therefore was not given')
 
             # EARLY INITIATION OF BREAST FEEDING
+            # A probably that early breastfeeding will initiated in a facility is applied
             if self.module.rng.random_sample() < params['prob_early_breastfeeding_hf']:
                 df.at[person_id, 'nb_early_breastfeeding'] = True
                 logger.debug('Neonate %d has started breastfeeding within 1 hour of birth', person_id)
@@ -756,35 +770,48 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
                 # TODO: variation between HC and HP?
 
             # TODO: some consumables are counted within the delivery packages -i.e. chlorhex
+            # TODO: Determine if neonates are given antibiotics for maternal risk factors
 
+        # If this neonates delivery is attended, the function will run
         if nci[person_id]['delivery_attended']:
             prophylactic_interventions()
+        else:
+            # Otherwise they receives no benefit of prophylaxis
+            logger.debug('neonate %d received no prophylaxis as they were delivered unattended', person_id)
 
         # --------------------------------- RECALCULATE SEPSIS RISK -------------------------------------
 
+        # Following the administration of prophylaxis we determine if this neonate will develop sepsis
         if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis_facility_delivery'], person_id):
             df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
 
-            logger.info('Neonate %d has developed early onset sepsis following a facility delivery on date %s',
-                        person_id, self.sim.date)
+            logger.debug('Neonate %d has developed early onset sepsis following a facility delivery on date %s',
+                         person_id, self.sim.date)
             logger.info('%s|early_onset_nb_sep_hc|%s', self.sim.date, {'person_id': person_id})
 
+        # This function manages kangaroo mother care for low birth weight neonates
         def kangaroo_mother_care(facility_type):
+            # We determine if staff will correctly identify if the neonate is low birth weight, and then initiate KMC
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_low_birth_weight_'
             f'{facility_type}', hsi_event=self):
                 df.at[person_id, 'nb_kangaroo_mother_care'] = True
+                logger.debug('Neonate %d has been correctly identified as being low birth weight, and kangaroo mother '
+                             'care has been initiated', person_id, self.sim.date)
                 # TODO: KMC reduces risk of sepsis at discharge. Maybe shouldn't be applied here?
 
-        if nci[person_id]['delivery_attended'] and df.at[person_id, 'nb_low_birth_weight_status'] != \
-            'normal_birth_weight' and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
-                                       ~df.at[person_id, 'nb_failed_to_transition'] and
-                                       ~df.at[person_id, 'nb_encephalopathy'] != 'none'):
+        # Only stable neonates are assessed for KMC as per guidelines
+        if nci[person_id]['delivery_attended'] and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
+                                                    ~df.at[person_id, 'nb_failed_to_transition'] and
+                                                    df.at[person_id, 'nb_encephalopathy'] != 'none'):
+            # Likelihood of correctassessmentt and treatment varied by facility type
             if nci[person_id]['delivery_facility_type'] == 'health_centre':
                 kangaroo_mother_care('hc')
             elif nci[person_id]['delivery_facility_type'] == 'health_centre':
                 kangaroo_mother_care('hp')
 
+        # This function manages initiation of neonatal resuscitation
         def assessment_and_initiation_of_neonatal_resus(facility_type):
+            # Required consumables are defined
             pkg_code_resus = pd.unique(consumables.loc[consumables[
                                                          'Intervention_Pkg'] == 'Neonatal resuscitation '
                                                                                 '(institutional)',
@@ -795,11 +822,15 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_needed)
 
-            if outcome_of_request_for_consumables:
-                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
+            # We determine if staff will correctly identify this neonate will require resuscitation
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
                                                                            f'assess_failure_to_transition_'
                                                                            f'{facility_type}', hsi_event=self):
-                    if nci[person_id, 'delivery_attended']:
+
+                # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
+                # deliveries that are not attended
+                if outcome_of_request_for_consumables:
+                    if nci[person_id]['delivery_attended']:
                         df.at[person_id, 'nb_received_neonatal_resus'] = 'prompt_treatment'
                     else:
                         df.at[person_id, 'nb_received_neonatal_resus'] = 'delayed_treatment'
@@ -809,6 +840,8 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         if nci[person_id]['delivery_facility_type'] == 'hospital':
             assessment_and_initiation_of_neonatal_resus('hp')
 
+        # This function manages the assessment and treatment of neonatal sepsis, and follows the same structure as
+        # resuscitation
         def assessment_and_treatment_newborn_sepsis(facility_type):
             pkg_code_sep = pd.unique(consumables.loc[consumables[
                                                          'Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
@@ -822,7 +855,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
             if outcome_of_request_for_consumables:
                 if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_low_birth_weight_'
                    f'{facility_type}', hsi_event=self):
-                    if nci[person_id, 'delivery_attended']:
+                    if nci[person_id]['delivery_attended']:
                         df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'prompt_treatment'
                     else:
                         df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'delayed_treatment'
@@ -841,9 +874,9 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2(
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1'
+        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2'
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['NormalDelivery'] = 1  # ???
+        the_appt_footprint['InpatientDays'] = 1  # ???
 
         # Define the necessary information for an HSI
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
