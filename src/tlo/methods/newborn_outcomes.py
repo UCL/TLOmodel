@@ -79,6 +79,10 @@ class NewbornOutcomes(Module):
                         ' mother care for low birth weight infants delivered at home'),
         'prob_successful_resuscitation': Parameter(
             Types.REAL, 'probability newborn resuscitation will be successful'),
+        'rr_sepsis_tetracycline': Parameter(
+            Types.REAL, 'relative risk of neonatal sepsis following tetracycline ointment treatment'),
+        'rr_sepsis_cord_care': Parameter(
+            Types.REAL, 'relative risk of neonatal sepsis following chlorhexadine cord care'),
         'cfr_neonatal_sepsis': Parameter(
             Types.REAL, 'case fatality rate for a neonate due to neonatal sepsis'),
         'cfr_encephalopathy': Parameter(
@@ -89,6 +93,18 @@ class NewbornOutcomes(Module):
             Types.REAL, 'case fatality rate for a neonate following failure to transition'),
         'prob_care_seeking_for_complication': Parameter(
             Types.REAL, 'baseline probability that a mother will seek care for an unwell neonate following delivery'),
+        'sensitivity_of_assessment_of_neonatal_sepsis_hc': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 health centre'),
+        'sensitivity_of_assessment_of_neonatal_sepsis_hp': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment of neonatal sepsis in level 1 hospital'),
+        'sensitivity_of_assessment_of_ftt_hc': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment of failure to transition in level 1 health centre'),
+        'sensitivity_of_assessment_of_ftt_hp': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment of failure to transition in level 1 hospital'),
+        'sensitivity_of_assessment_of_lbw_hc': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 health centre'),
+        'sensitivity_of_assessment_of_lbw_hp': Parameter(
+            Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 hospital'),
     }
 
     PROPERTIES = {
@@ -102,8 +118,14 @@ class NewbornOutcomes(Module):
                                           categories=['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
+        'nb_treatment_for_neonatal_sepsis': Property(Types.CATEGORICAL, 'If this neonate has received treatment for '
+                                                                        'neonatal sepsis, and how promptly',
+                                                     categories=['none', 'prompt_treatment', 'delayed_treatment']),
         'nb_failed_to_transition': Property(Types.BOOL, 'whether this neonate has failed to transition to breathing on '
-                                                         'their own following birth'),
+                                                        'their own following birth'),
+        'nb_received_neonatal_resus': Property(Types.CATEGORICAL, 'If this neonate has received treatment for '
+                                                                        'neonatal sepsis, and how promptly',
+                                                     categories=['none', 'prompt_treatment', 'delayed_treatment']),
         'nb_encephalopathy': Property(Types.CATEGORICAL, 'None, mild encephalopathy, moderate encephalopathy, '
                                                          'severe encephalopathy',
                                       categories=['none', 'mild_enceph', 'moderate_enceph', 'severe_enceph']),
@@ -125,7 +147,8 @@ class NewbornOutcomes(Module):
                                                 categories=['small_for_gestational_age', 'average_for_gestational_age',
                                                             'large_for_gestational_age']),
         'nb_early_breastfeeding': Property(Types.BOOL, 'whether this neonate is exclusively breastfed after birth'),
-        'nb_kmc': Property(Types.BOOL, 'whether this neonate received kangaroo mother care following birth'),
+        'nb_kangaroo_mother_care': Property(Types.BOOL, 'whether this neonate received kangaroo mother care following '
+                                                        'birth'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
         'nb_death_after_birth_date': Property(Types.DATE, 'date on which the child died after birth'),
     }
@@ -255,14 +278,16 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_late_preterm'] = False
         df.loc[df.is_alive, 'nb_congenital_anomaly'].values[:] = 'none'
         df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
+        df.loc[df.is_alive, 'nb_treatment_for_neonatal_sepsis'].values[:] = 'none'
         df.loc[df.is_alive, 'nb_failed_to_transition'] = False
+        df.loc[df.is_alive, 'nb_received_neonatal_resus'].values[:] = 'none'
         df.loc[df.is_alive, 'nb_encephalopathy'].values[:] = 'none'
         df.loc[df.is_alive, 'nb_retinopathy_prem'].values[:] = 'none'
         df.loc[df.is_alive, 'nb_ongoing_impairment'].values[:] = 'none'
         df.loc[df.is_alive, 'nb_low_birth_weight_status'].values[:] = 'normal_birth_weight'
         df.loc[df.is_alive, 'nb_size_for_gestational_age'].values[:] = 'average_for_gestational_age'
         df.loc[df.is_alive, 'nb_early_breastfeeding'] = False
-        df.loc[df.is_alive, 'nb_kmc'] = False
+        df.loc[df.is_alive, 'nb_kangaroo_mother_care'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
         df.loc[df.is_alive, 'nb_death_after_birth_date'] = pd.NaT
 
@@ -405,7 +430,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         df.at[child_id, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
         df.at[child_id, 'nb_early_breastfeeding'] = False
-        df.at[child_id, 'nb_kmc'] = False
+        df.at[child_id, 'nb_kangaroo_mother_care'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
         df.at[child_id, 'nb_death_after_birth_date'] = pd.NaT
 
@@ -464,7 +489,9 @@ class NewbornOutcomes(Module):
                              'vit_k': False,
                              'tetra_eye_d': False,
                              'proph_abx': False,
-                             'ongoing_sepsis_risk': mni[mother_id]['risk_newborn_sepsis']}
+                             'ongoing_sepsis_risk': mni[mother_id]['risk_newborn_sepsis'],
+                             'delivery_attended':  mni[mother_id]['delivery_attended'],
+                             'delivery_facility_type': mni[mother_id]['delivery_facility_type']}
             # check this is carrying over correctly
 
             # TODO:  review in context of properties
@@ -682,7 +709,6 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel: child %d is '
                     'receiving care following delivery in a health facility on date %s', person_id, self.sim.date)
 
-# --------------------------------- ANTIBIOTIC PROPHYLAXIS (MATERNAL RISK FACTORS)-------------------------------------
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         def prophylactic_interventions():
@@ -692,8 +718,9 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
 
             item_code_vit_k = pd.unique(consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, '
                                                                                 '1 ml, inj._100_IDA', 'Item_Code'])[0]
-            item_code_vit_k_syringe = pd.unique(consumables.loc[consumables['Items'] == 'syringe luer 2 ml, with '
-                                                                                        'bypacked ndle 23G x 1.1/4',
+            item_code_vit_k_syringe = pd.unique(consumables.loc[consumables['Items'] == 'Syringe,  disposable 2ml,  '
+                                                                                        'hypoluer with 23g needle_each_'
+                                                                                        'CMST',
                                                                 'Item_Code'])[0]
             consumables_newborn_care = {
                 'Intervention_Package_Code': {},
@@ -702,16 +729,19 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=consumables_newborn_care, to_log=True)
 
+            # CORD CARE
+            nci[person_id]['ongoing_sepsis_risk'] = nci[person_id]['ongoing_sepsis_risk'] * params[
+                'rr_sepsis_cord_care']
+
             # TETRACYCLINE
-            if outcome_of_request_for_consumables['Intervention_Package_Code'][item_code_tetracycline]:
+            if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
                 nci[person_id]['ongoing_sepsis_risk'] = nci[person_id]['ongoing_sepsis_risk'] * params[
                     'rr_sepsis_tetracycline']
             else:
                 logger.debug('This facility has no tetracycline and therefore was not given')
 
             # VITAMIN K
-            if outcome_of_request_for_consumables['Intervention_Package_Code'][item_code_vit_k,
-                                                                               item_code_vit_k_syringe]:
+            if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k, item_code_vit_k_syringe]:
                 nci[person_id]['vit_k'] = True
                 # TODO: whats the point of this
             else:
@@ -727,15 +757,122 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
 
             # TODO: some consumables are counted within the delivery packages -i.e. chlorhex
 
-        def kangaroo_mother_care():
-            x= 'y'
+        if nci[person_id]['delivery_attended']:
+            prophylactic_interventions()
 
         # --------------------------------- RECALCULATE SEPSIS RISK -------------------------------------
 
-        def neonatal_resuscitation():
-            x= 'y'
-        def management_newborn_sepsis():
-            x='y'
+        if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis_facility_delivery'], person_id):
+            df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
+
+            logger.info('Neonate %d has developed early onset sepsis following a facility delivery on date %s',
+                        person_id, self.sim.date)
+            logger.info('%s|early_onset_nb_sep_hc|%s', self.sim.date, {'person_id': person_id})
+
+        def kangaroo_mother_care(facility_type):
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_low_birth_weight_'
+            f'{facility_type}', hsi_event=self):
+                df.at[person_id, 'nb_kangaroo_mother_care'] = True
+                # TODO: KMC reduces risk of sepsis at discharge. Maybe shouldn't be applied here?
+
+        if nci[person_id]['delivery_attended'] and df.at[person_id, 'nb_low_birth_weight_status'] != \
+            'normal_birth_weight' and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
+                                       ~df.at[person_id, 'nb_failed_to_transition'] and
+                                       ~df.at[person_id, 'nb_encephalopathy'] != 'none'):
+            if nci[person_id]['delivery_facility_type'] == 'health_centre':
+                kangaroo_mother_care('hc')
+            elif nci[person_id]['delivery_facility_type'] == 'health_centre':
+                kangaroo_mother_care('hp')
+
+        def assessment_and_initiation_of_neonatal_resus(facility_type):
+            pkg_code_resus = pd.unique(consumables.loc[consumables[
+                                                         'Intervention_Pkg'] == 'Neonatal resuscitation '
+                                                                                '(institutional)',
+                                                       'Intervention_Pkg_Code'])[0]
+
+            consumables_needed = {'Intervention_Package_Code': {pkg_code_resus: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+            if outcome_of_request_for_consumables:
+                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
+                                                                           f'assess_failure_to_transition_'
+                                                                           f'{facility_type}', hsi_event=self):
+                    if nci[person_id, 'delivery_attended']:
+                        df.at[person_id, 'nb_received_neonatal_resus'] = 'prompt_treatment'
+                    else:
+                        df.at[person_id, 'nb_received_neonatal_resus'] = 'delayed_treatment'
+
+        if nci[person_id]['delivery_facility_type'] == 'health_centre':
+            assessment_and_initiation_of_neonatal_resus('hc')
+        if nci[person_id]['delivery_facility_type'] == 'hospital':
+            assessment_and_initiation_of_neonatal_resus('hp')
+
+        def assessment_and_treatment_newborn_sepsis(facility_type):
+            pkg_code_sep = pd.unique(consumables.loc[consumables[
+                                                         'Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
+                                                     'Intervention_Pkg_Code'])[0]
+
+            consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed)
+
+            if outcome_of_request_for_consumables:
+                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_low_birth_weight_'
+                   f'{facility_type}', hsi_event=self):
+                    if nci[person_id, 'delivery_attended']:
+                        df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'prompt_treatment'
+                    else:
+                        df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'delayed_treatment'
+
+        if nci[person_id]['delivery_facility_type'] == 'health_centre':
+            assessment_and_treatment_newborn_sepsis('hc')
+        if nci[person_id]['delivery_facility_type'] == 'hospital':
+            assessment_and_treatment_newborn_sepsis('hp')
+
+        # ------------------------------ (To go here- referral for further care) ---------------------------------------
+
+class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2(HSI_Event, IndividualScopeEventMixin):
+    """."""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, NewbornOutcomes)
+
+        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1'
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['NormalDelivery'] = 1  # ???
+
+        # Define the necessary information for an HSI
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        nci = self.module.newborn_care_info
+        params = self.module.parameters
+        df = self.sim.population.props
+
+        logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2: child %d is '
+                    'receiving care following delivery in a health facility on date %s', person_id, self.sim.date)
+
+        if nci[person_id]['delivery_attended']:
+            self.module.prophylactic_interventions()
+
+        if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis_facility_delivery'], person_id):
+            df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
+
+            logger.info('Neonate %d has developed early onset sepsis following a facility delivery on date %s',
+                        person_id, self.sim.date)
+            logger.info('%s|early_onset_nb_sep_hc|%s', self.sim.date, {'person_id': person_id})
+
+        self.module.kangaroo_mother_care('hp')
+        self.module.assessment_and_initiation_of_neonatal_resus('hp')
+        self.module.assessment_and_treatment_newborn_sepsis('hp')
+
+        # ------------------------------ (To go here- referral for further care) ---------------------------------------
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
