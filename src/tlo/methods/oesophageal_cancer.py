@@ -403,21 +403,6 @@ class Oesophageal_Cancer(Module):
 
         return disability_series_for_alive_persons
 
-#   def do_when_dysphagia(self, person_id, hsi_event):
-#       """
-#       This is called by a generic HSI event when dysphagia is present
-#       :param person_id:
-#       :param hsi_event: The HSI event that has called this event
-#       :return:
-#       """
-#       # Assess for oes cancer
-#       if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='endoscopy_oes_cancer_dysphagia',
-#                                                                  hsi_event=hsi_event
-#                                                                  ):
-#           self.sim.population.props.at[person_id, 'ca_oesophagus_diagnosed'] = True
-
-
-
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all oesophagealcancer properties for population
@@ -567,12 +552,12 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             # generate the HSI Events whereby diagnosed person gets treatment
             for person_id in idx:
                 # For this person, determine when they will receive treatment (if there is health system capacity)
-                date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
+                date_oes_cancer_curative_treatment = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
                 # For this person, create the HSI Event for their treatment
                 hsi_oes_cancer_curative_treatment = HSI_OesCancer_StartTreatment(self.module, person_id)
                 # Enter this event to the HealthSystem
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_oes_cancer_curative_treatment , priority=0, topen=date_seeking_care, tclose=None
+                    hsi_oes_cancer_curative_treatment , priority=0, topen=date_oes_cancer_curative_treatment, tclose=None
                 )
 
         update_curative_treatment('low_grade_dysplasia')
@@ -616,18 +601,19 @@ class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        the_appt_footprint["Over5OPD"] = 1
-        the_appt_footprint["MajorSurg"] = 1
+        the_appt_footprint["Over5OPD"] = 3
+        the_appt_footprint["MajorSurg"] = 3
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
+        self.ACCEPTED_FACILITY_LEVEL = 3  # Enforces that this apppointment must happen at level 3
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = df.ca_oesophagus
+
+#       df.at[person_id, "ca_oesophagus_curative_treatment"] = df.ca_oesophagus
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
