@@ -501,7 +501,7 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeE
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code_sep = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] == 'Treatment of local infections (newborn)',
+                                                       'Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
                                                  'Intervention_Pkg_Code'])[0]
 
         consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
