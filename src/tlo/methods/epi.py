@@ -236,7 +236,7 @@ class Epi(Module):
         # assign bcg according to current coverage
         # TODO use current coverage estimates by district
         # some values are >1
-        if self.rng.random_sample(size=1) < ind_vax_coverage.BCG:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.BCG.values:
             bcg_appt = HSI_bcg(self, person_id=child_id)
 
             # Request the health system to have this bcg vaccination appointment
@@ -250,7 +250,7 @@ class Epi(Module):
         # assign OPV first dose according to current coverage
         # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
         # TODO use current coverage estimates by district
-        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
             opv1_appt = HSI_opv(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -262,7 +262,7 @@ class Epi(Module):
             )
 
         # OPV2
-        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
             opv2_appt = HSI_opv(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -274,7 +274,7 @@ class Epi(Module):
             )
 
         # OPV3
-        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
             opv3_appt = HSI_opv(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -286,7 +286,7 @@ class Epi(Module):
             )
 
         # OPV4
-        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
             opv4_appt = HSI_opv(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -297,10 +297,10 @@ class Epi(Module):
                 tclose=None,
             )
 
-        # DTP1 - up to and including 2012, then replaced by pentavalent vaccine
+        # DTP1_HepB - up to and including 2012, then replaced by pentavalent vaccine
         # TODO use current coverage estimates by district
-        if self.rng.random_sample(size=1) < ind_vax_coverage.DTP1:
-            dtp1_appt = HSI_DtpVaccine(self, person_id=child_id)
+        if self.rng.random_sample(size=1) < ind_vax_coverage.DTP1.values:
+            dtp1_appt = HSI_DtpHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -310,10 +310,10 @@ class Epi(Module):
                 tclose=None,
             )
 
-        # DTP2 - up to and including 2012
+        # DTP2_HepB - up to and including 2012
         # TODO use current coverage estimates by district
-        if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3:
-            dtp2_appt = HSI_DtpVaccine(self, person_id=child_id)
+        if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3.values:
+            dtp2_appt = HSI_DtpHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -323,10 +323,10 @@ class Epi(Module):
                 tclose=None,
             )
 
-        # DTP3 - up to and including 2012
+        # DTP3_HepB - up to and including 2012
         # TODO use current coverage estimates by district
-        if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3:
-            dtp3_appt = HSI_DtpVaccine(self, person_id=child_id)
+        if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3.values:
+            dtp3_appt = HSI_DtpHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -336,8 +336,44 @@ class Epi(Module):
                 tclose=None,
             )
 
+        # HIB1
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Hib3.values:
+            Hib1_appt = HSI_HibVaccine(self, person_id=child_id)
+
+            # Request the health system to have this vaccination appointment
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                Hib1_appt,
+                priority=1,
+                topen=self.sim.date + DateOffset(weeks=6),
+                tclose=None,
+            )
+
+        # Hib2
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Hib3.values:
+            Hib2_appt = HSI_HibVaccine(self, person_id=child_id)
+
+            # Request the health system to have this vaccination appointment
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                Hib2_appt,
+                priority=1,
+                topen=self.sim.date + DateOffset(weeks=10),
+                tclose=None,
+            )
+
+        # Hib3
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Hib3.values:
+            Hib3_appt = HSI_HibVaccine(self, person_id=child_id)
+
+            # Request the health system to have this vaccination appointment
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                Hib3_appt,
+                priority=1,
+                topen=self.sim.date + DateOffset(weeks=14),
+                tclose=None,
+            )
+
         # PNEUMO1
-        if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo1:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo1.values:
             pneumo1_appt = HSI_PneumoVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -349,7 +385,7 @@ class Epi(Module):
             )
 
         # PNEUMO2
-        if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo2:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo2.values:
             pneumo2_appt = HSI_PneumoVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -361,7 +397,7 @@ class Epi(Module):
             )
 
         # PNEUMO3
-        if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo3:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo3.values:
             pneumo3_appt = HSI_PneumoVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -373,7 +409,7 @@ class Epi(Module):
             )
 
         # ROTA1
-        if self.rng.random_sample(size=1) < ind_vax_coverage.Rotavirus1:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Rotavirus1.values:
             rota1_appt = HSI_RotaVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -385,7 +421,7 @@ class Epi(Module):
             )
 
         # ROTA2
-        if self.rng.random_sample(size=1) < ind_vax_coverage.Rotavirus2:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.Rotavirus2.values:
             rota2_appt = HSI_RotaVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -397,7 +433,7 @@ class Epi(Module):
             )
 
         # PENTA1
-        if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib1:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib1.values:
             penta1_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -409,7 +445,7 @@ class Epi(Module):
             )
 
         # PENTA2
-        if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3.values:
             penta2_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -421,7 +457,7 @@ class Epi(Module):
             )
 
         # PENTA3
-        if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3.values:
             penta3_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -434,7 +470,7 @@ class Epi(Module):
 
         # Measles, rubella - first dose, 2018 onwards
         # TODO use current coverage estimates by district
-        if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1_MR1:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1_MR1.values:
             mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
 
             # Request the health system to have this bcg vaccination appointment
@@ -447,7 +483,7 @@ class Epi(Module):
 
         # Measles, rubella - second dose
         # TODO use current coverage estimates by district
-        if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1_MR2:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.MCV2_MR2.values:
             mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
 
             # Request the health system to have this measles/rubella vaccination appointment
@@ -460,7 +496,7 @@ class Epi(Module):
 
         # Measles - first dose, only one dose pre-2017 and no rubella
         # TODO use current coverage estimates by district for measles single dose (no rubella)
-        if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1:
+        if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1.values:
             m_appt = HSI_MeaslesVaccine(self, person_id=child_id)
 
             # Request the health system to have this measles/rubella vaccination appointment
@@ -609,7 +645,7 @@ class HSI_opv(HSI_Event, IndividualScopeEventMixin):
         logger.debug("HSI_opv: did not run")
 
 
-class HSI_DtpVaccine(HSI_Event, IndividualScopeEventMixin):
+class HSI_DtpHepVaccine(HSI_Event, IndividualScopeEventMixin):
     """
     gives DTP vaccine 6 weeks after birth
     """
@@ -629,7 +665,7 @@ class HSI_DtpVaccine(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(f"HSI_DtpVaccine: requesting vaccines for {person_id}")
+        logger.debug(f"HSI_DtpHepVaccine: requesting vaccines for {person_id}")
 
         df = self.sim.population.props
 
@@ -639,6 +675,13 @@ class HSI_DtpVaccine(HSI_Event, IndividualScopeEventMixin):
         dtp_vax = pd.unique(
             consumables.loc[
                 consumables["Items"] == "DTP vaccine",
+                "Item_Code",
+            ]
+        )[0]
+
+        hep_vax = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Hepatitis B vaccine",
                 "Item_Code",
             ]
         )[0]
@@ -661,6 +704,7 @@ class HSI_DtpVaccine(HSI_Event, IndividualScopeEventMixin):
             "Intervention_Package_Code": {},
             "Item_Code": {
                 dtp_vax: 1,
+                hep_vax: 1,
                 syringe: 2,
                 disposal: 1,
             },
@@ -671,16 +715,14 @@ class HSI_DtpVaccine(HSI_Event, IndividualScopeEventMixin):
         ].request_consumables(hsi_event=self, cons_req_as_footprint=consumables_needed)
 
         # check if DTP and syringes available
-        if (
-            outcome_of_request_for_consumables["Item_Code"][dtp_vax]
-            & outcome_of_request_for_consumables["Item_Code"][syringe]
-        ):
-            logger.debug(f"DTP vax is available, so administer to {person_id}")
+        if outcome_of_request_for_consumables:
+            logger.debug(f"DTP_Hep vax is available, so administer to {person_id}")
 
             df.at[person_id, "ep_dtp"] += 1
+            df.at[person_id, "ep_hep"] += 1
 
     def did_not_run(self):
-        logger.debug("HSI_DtpVaccine: did not run")
+        logger.debug("HSI_DtpHepVaccine: did not run")
 
 
 class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
@@ -955,6 +997,80 @@ class HSI_PneumoVaccine(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         logger.debug("HSI_PneumoVaccine: did not run")
+
+class HSI_HibVaccine(HSI_Event, IndividualScopeEventMixin):
+    """
+    gives Hib vaccine 6, 10 and 14 weeks after birth
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Epi)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "HSI_HibVaccine"
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(f"HSI_HibVaccine: requesting vaccines for {person_id}")
+
+        df = self.sim.population.props
+
+        # Make request for some consumables
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        # Hib vaccine
+        hib_vax = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Hib vaccine", "Item_Code",
+            ]
+        )[0]
+
+        syringe = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Syringe, needle + swab", "Item_Code",
+            ]
+        )[0]
+
+        disposal = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Safety box for used syringes/needles, 5 liter",
+                "Item_Code",
+            ]
+        )[0]
+
+        # assume 100 needles can be disposed of in each safety box
+        consumables_needed = {
+            "Intervention_Package_Code": {},
+            "Item_Code": {
+                hib_vax: 1,
+                syringe: 2,
+                disposal: 1,
+            },
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules[
+            "HealthSystem"
+        ].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # check if pneumococcal vaccine available and current year 2012 onwards
+        if outcome_of_request_for_consumables:
+            logger.debug(
+                f"Hib vaccine is available, so administer to {person_id}"
+            )
+
+            df.at[person_id, "ep_hib"] += 1
+
+    def did_not_run(self):
+        logger.debug("HSI_HibVaccine: did not run")
 
 
 class HSI_MeaslesVaccine(HSI_Event, IndividualScopeEventMixin):
