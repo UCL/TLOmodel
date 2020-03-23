@@ -509,7 +509,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                            (df.ca_oesophagus == current_stage)]
             selected = idx[r_dysphagia > rng.random_sample(size=len(idx))]
             df.loc[selected, 'sy_dysphagia'] = True
-            df.loc[selected, 'ca_date_oes_cancer_diagnosis'] = self.sim.date
 
         update_dysphagia('low_grade_dysplasia', m.r_dysphagia_stage1 * m.rr_dysphagia_low_grade_dysp)
         update_dysphagia('high_grade_dysplasia', m.r_dysphagia_stage1 * m.rr_dysphagia_high_grade_dysp)
@@ -522,15 +521,14 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_DIAGNOSED  -------------------
         # update ca_oesophagus_diagnosed for those with dysphagia
 
-        def update_diagnosis_status(prob_present_dysphagia):
+        def update_diagnosis_status(p_present_dysphagia):
 
-            idx = df.index[df.is_alive & df.sy_dysphagia & ~df.ca_oesophagus_diagnosed &
-                           (df.ca_date_oes_cancer_diagnosis == pd.NaT)]
+            idx2 = df.index[df.is_alive & df.sy_dysphagia & ~df.ca_oesophagus_diagnosed]
 
-            selected = idx[prob_present_dysphagia > rng.random_sample(size=len(idx))]
+            selected2 = idx2[p_present_dysphagia > rng.random_sample(size=len(idx2))]
 
             # generate the HSI Events whereby persons present for care and get diagnosed
-            for person_id in selected:
+            for person_id in selected2:
                 # For this person, determine when they will seek care (uniform distribution [0,91]days from now)
                 date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
                 # For this person, create the HSI Event for their presentation for care
