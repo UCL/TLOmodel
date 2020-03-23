@@ -189,8 +189,14 @@ class Epi(Module):
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
 
-        all vaccinations are scheduled to occur with a probability dependent on the year and district
         birth doses occur within 24 hours of delivery
+
+        from 2010-2018 data on vaccine coverage are used to determine probability of receiving vaccine
+        vaccinations are scheduled to occur with a probability dependent on the year and district
+        from 2019 onwards, probability will be 1 and coverage determined by vaccine availability
+
+        how to stop consumables limiting vaccine availability before 2019??
+        don't use outcome_of_request_for_consumables - just assume it's received
 
         :param mother_id: the ID for the mother for this child
         :param child_id: the ID for the new child
@@ -207,6 +213,17 @@ class Epi(Module):
         df.at[child_id, "ep_rota"] = 0
         df.at[child_id, "ep_measles"] = 0
         df.at[child_id, "ep_rubella"] = 0
+
+        # this event runs at birth
+        # need child's district
+        # need current year
+        # look up coverage of every vaccine
+        # anything delivered after 12months needs the estimate from the folloiwng year
+        district = df.at[child_id, 'district_of_residence']
+        year = self.sim.date.year
+
+        # lookup the correct table of vaccine estimates for this child
+
 
         # assign bcg according to current coverage
         # TODO use current coverage estimates by district
