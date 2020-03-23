@@ -326,7 +326,7 @@ class Oesophageal_Cancer(Module):
         df.at[child_id, "ca_oesophagus"] = "none"
         df.at[child_id, "ca_oesophagus_yn"] = False
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
-        df.at[child_id, "ca_date_oes_cancer_diagnosis"] = pd_NaT
+        df.at[child_id, "ca_date_oes_cancer_diagnosis"] = pd.NaT
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
         df.at[child_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
         df.at[child_id, "ca_oesophagus_curative_treatment_requested"] = False
@@ -523,7 +523,10 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # update ca_oesophagus_diagnosed for those with dysphagia
 
         def update_diagnosis_status(prob_present_dysphagia):
-            idx = df.index[df.is_alive & df.sy_dysphagia & ~df.ca_oesophagus_diagnosed]
+
+            idx = df.index[df.is_alive & df.sy_dysphagia & ~df.ca_oesophagus_diagnosed &
+                           (df.ca_date_oes_cancer_diagnosis == pd.NaT)]
+
             selected = idx[prob_present_dysphagia > rng.random_sample(size=len(idx))]
 
             # generate the HSI Events whereby persons present for care and get diagnosed
@@ -601,7 +604,8 @@ class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        the_appt_footprint["Over5OPD"] = 3
+        # todo: return to this below
+        the_appt_footprint["Over5OPD"] = 1
         the_appt_footprint["MajorSurg"] = 3
 
         # Define the necessary information for an HSI
@@ -613,7 +617,7 @@ class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-#       df.at[person_id, "ca_oesophagus_curative_treatment"] = df.ca_oesophagus
+        df.at[person_id, "ca_oesophagus_curative_treatment"] = df.at[person_id, "ca_oesophagus"]
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
