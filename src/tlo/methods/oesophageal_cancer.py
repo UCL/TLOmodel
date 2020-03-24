@@ -83,6 +83,9 @@ class Oesophageal_Cancer(Module):
             "rate ratio for stage 4 oesophageal cancer for people with stage 3 "
             "oesophageal cancer if had curative treatment at stage 3",
         ),
+        "rate_palliative_care_stage4": Parameter(
+            Types.REAL, "prob palliative care this 3 month period if stage4"
+        ),
         "r_death_oesoph_cancer": Parameter(
             Types.REAL,
             "probabilty per 3 months of death from oesophageal cancer mongst people with stage 4 oesophageal cancer",
@@ -169,7 +172,8 @@ class Oesophageal_Cancer(Module):
         "sy_dysphagia": Property(Types.BOOL, "has dysphagia"),
         "ca_oesophagus_diagnosed": Property(Types.BOOL, "diagnosed with oesophageal dysplasia / cancer"),
         "ca_date_oes_cancer_diagnosis": Property(Types.DATE, "date incident oesophageal cancer"),
-        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment")
+        "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment"),
+        "ca_palliative_care": Property(Types.DATE, "receiving palliative care")
     }
 
     # Symptom that this module will use
@@ -222,6 +226,7 @@ class Oesophageal_Cancer(Module):
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
         df.loc[df.is_alive, "sy_dysphagia"] = False
         df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
+        df.loc[df.is_alive, "ca_palliative_care"] = False
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
@@ -295,6 +300,14 @@ class Oesophageal_Cancer(Module):
         # NOTE: excludes stage4 cancer
         for stage in cancer_stages[:-1]:
             set_curative_treatment(stage)
+
+        # -------------------- ASSIGN VALUES CA_PALLIATIVE_CARE AT BASELINE -------------------
+
+        # todo:
+
+
+
+
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -567,6 +580,30 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         update_curative_treatment('stage2')
         update_curative_treatment('stage3')
 
+
+
+        # -------------------- UPDATING VALUES OF CA_PALLIATIVE_CARE  -------------------
+
+        def update_palliative_care_status(p):
+
+            idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
+            selected3 = idx[p > rng.random_sample(size=len(idx))]
+
+            # generate the HSI Events whereby persons seek/need palliative care
+            for person_id in selected3:
+                # For this person, determine when they will seek/need palliative care
+                # (uniform distribution [0,91]days from now)
+                date_palliative_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
+                # For this person, create the HSI Event for their palliative care
+                hsi_cancer_palliative_care = HSI_Cancer_PalliativeCare(self.module, person_id)
+                # Enter this event to the HealthSystem
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_cancer_palliative_care, priority=0, topen=date_palliative_care, tclose=None
+                )
+
+        update_palliative_care_status(m.rate_palliative_care_stage4)
+
+
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
         selected_to_die = stage4_idx[m.r_death_oesoph_cancer > rng.random_sample(size=len(stage4_idx))]
@@ -618,17 +655,25 @@ class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "ca_oesophagus_curative_treatment"] = df.at[person_id, "ca_oesophagus"]
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
+class HSI_Cancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-    #todo: HSIs to consideer
-""""
+            # todo: return to this below
+            the_appt_footprint["Over5OPD"] = 1
 
-Attempt at curative treatment – pre surgery
-Attempt at curative treatment – surgery
-Attempt at curative treatment – chemotherapy clinic appointment
-Clinic appointment: monitoring - no new action 
-Clinic appointment: initiate palliative care
+            # Define the necessary information for an HSI
+            self.TREATMENT_ID = "cancer_palliative_care"
+            self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+            # todo: return to this below
+            self.ACCEPTED_FACILITY_LEVEL = 3  # Enforces that this apppointment must happen at level 3
+            self.ALERT_OTHER_DISEASES = []
 
-"""
+        def apply(self, person_id, squeeze_factor):
+            df = self.sim.population.props
+
+            df.at[person_id, "receiving_palliative_care"] = True
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
