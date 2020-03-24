@@ -54,6 +54,7 @@ class Epi(Module):
         "ep_rota": Property(Types.INT, "number of doses of rotavirus vaccine received"),
         "ep_measles": Property(Types.INT, "number of doses of measles vaccine received"),
         "ep_rubella": Property(Types.INT, "number of doses of rubella vaccine received"),
+        "ep_district_edited": Property(Types.STRING, "edited district of residence to match EPI district list")
     }
 
     # Declaration of the symptoms that this module will use
@@ -190,7 +191,7 @@ class Epi(Module):
     def initialise_simulation(self, sim):
 
         # add an event to log to screen
-        sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(days=364))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -204,12 +205,20 @@ class Epi(Module):
         how to stop consumables limiting vaccine availability before 2019??
         don't use outcome_of_request_for_consumables - just assume it's received
 
+        2012 data is patchy, no record of Hep vaccine but it was used before 2012
+        assume hepB3 coverage in 2012 same as 2011
+        same with Hib
+
         :param mother_id: the ID for the mother for this child
         :param child_id: the ID for the new child
         """
         df = self.sim.population.props  # shortcut to the population props dataframe
         p = self.parameters
         year = self.sim.date.year
+
+        # keep coverage estimates for 2018 for now
+        if year > 2018:
+            year = 2018
 
         # Initialise all the properties that this module looks after:
         df.at[child_id, "ep_bcg"] = False
@@ -222,19 +231,39 @@ class Epi(Module):
         df.at[child_id, "ep_measles"] = 0
         df.at[child_id, "ep_rubella"] = 0
 
-        # this event runs at birth
-        # need child's district
-        # need current year
+        # rename districts to match EPI data
+        df.at[child_id, "ep_district_edited"] = df.at[child_id, "district_of_residence"]
+
+        if df.at[child_id, "ep_district_edited"] == "Lilongwe City":
+            df.at[child_id, "ep_district_edited"] = "Lilongwe"
+
+        elif df.at[child_id, "ep_district_edited"] == "Blantyre City":
+            df.at[child_id, "ep_district_edited"] = "Blantyre"
+
+        elif df.at[child_id, "ep_district_edited"] == "Zomba City":
+            df.at[child_id, "ep_district_edited"] = "Zomba"
+
+        elif df.at[child_id, "ep_district_edited"] == "Mzuzu City":
+            df.at[child_id, "ep_district_edited"] = "Mzimba"
+
+        elif df.at[child_id, "ep_district_edited"] == "Mzuzu":
+            df.at[child_id, "ep_district_edited"] = "Mzimba"
+
+        elif df.at[child_id, "ep_district_edited"] == "Nkhata Bay":
+            df.at[child_id, "ep_district_edited"] = "Mzimba"
+
         # look up coverage of every vaccine
         # anything delivered after 12months needs the estimate from the following year
-        district = df.at[child_id, 'district_of_residence']
+        district = df.at[child_id, 'ep_district_edited']
+        # todo note: Mzuzu is not in EPI database (Mzimba)
 
         # lookup the correct table of vaccine estimates for this child
         vax_coverage = p["district_vaccine_coverage"]
         ind_vax_coverage = vax_coverage.loc[(vax_coverage.District == district) & (vax_coverage.Year == year)]
+        # print(district)
+        assert not ind_vax_coverage.empty
 
         # assign bcg according to current coverage
-        # TODO use current coverage estimates by district
         # some values are >1
         if self.rng.random_sample(size=1) < ind_vax_coverage.BCG.values:
             bcg_appt = HSI_bcg(self, person_id=child_id)
@@ -249,7 +278,6 @@ class Epi(Module):
 
         # assign OPV first dose according to current coverage
         # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
-        # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
             opv1_appt = HSI_opv(self, person_id=child_id)
 
@@ -298,7 +326,6 @@ class Epi(Module):
             )
 
         # DTP1_HepB - up to and including 2012, then replaced by pentavalent vaccine
-        # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < ind_vax_coverage.DTP1.values:
             dtp1_appt = HSI_DtpHepVaccine(self, person_id=child_id)
 
@@ -311,7 +338,6 @@ class Epi(Module):
             )
 
         # DTP2_HepB - up to and including 2012
-        # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3.values:
             dtp2_appt = HSI_DtpHepVaccine(self, person_id=child_id)
 
@@ -324,7 +350,6 @@ class Epi(Module):
             )
 
         # DTP3_HepB - up to and including 2012
-        # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3.values:
             dtp3_appt = HSI_DtpHepVaccine(self, person_id=child_id)
 
@@ -434,6 +459,7 @@ class Epi(Module):
 
         # PENTA1
         if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib1.values:
+            # print("PENTA1 TRUE")
             penta1_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -441,11 +467,14 @@ class Epi(Module):
                 penta1_appt,
                 priority=1,
                 topen=self.sim.date + DateOffset(weeks=6),
-                tclose=None,
+                tclose=None
             )
+        # else:
+        #     print(ind_vax_coverage.DTPHepHib1.values, "Penta1 FALSE")
 
         # PENTA2
         if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3.values:
+            # print("PENTA2 TRUE")
             penta2_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -455,9 +484,13 @@ class Epi(Module):
                 topen=self.sim.date + DateOffset(weeks=10),
                 tclose=None,
             )
+        # else:
+        #     print(ind_vax_coverage.DTPHepHib3.values, "Penta2 FALSE")
 
         # PENTA3
+        # print (ind_vax_coverage.DTPHepHib3.values)
         if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3.values:
+            # print("PENTA3 TRUE")
             penta3_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
 
             # Request the health system to have this vaccination appointment
@@ -467,9 +500,10 @@ class Epi(Module):
                 topen=self.sim.date + DateOffset(weeks=14),
                 tclose=None,
             )
+        # else:
+            # print(ind_vax_coverage.DTPHepHib3.values, "Penta3 FALSE")
 
         # Measles, rubella - first dose, 2018 onwards
-        # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1_MR1.values:
             mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
 
@@ -482,7 +516,6 @@ class Epi(Module):
             )
 
         # Measles, rubella - second dose
-        # TODO use current coverage estimates by district
         if self.rng.random_sample(size=1) < ind_vax_coverage.MCV2_MR2.values:
             mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
 
@@ -495,7 +528,6 @@ class Epi(Module):
             )
 
         # Measles - first dose, only one dose pre-2017 and no rubella
-        # TODO use current coverage estimates by district for measles single dose (no rubella)
         if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1.values:
             m_appt = HSI_MeaslesVaccine(self, person_id=child_id)
 
@@ -727,7 +759,7 @@ class HSI_DtpHepVaccine(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
     """
-    gives DTP-Hib_HepB, OPV, Pneumococcal and Rotavirus vaccine 6 weeks after birth
+    gives DTP-Hib_HepB vaccine
     """
 
     def __init__(self, module, person_id):
@@ -759,18 +791,6 @@ class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
             ]
         )[0]
 
-        # OPV - oral vaccine
-        opv = pd.unique(
-            consumables.loc[consumables["Items"] == "Polio vaccine", "Item_Code",]
-        )[0]
-
-        # pneumococcal vaccine
-        pneumo_vax = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Pneumococcal vaccine", "Item_Code",
-            ]
-        )[0]
-
         syringe = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Syringe, needle + swab", "Item_Code",
@@ -789,8 +809,6 @@ class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
             "Intervention_Package_Code": {},
             "Item_Code": {
                 penta_vax: 1,
-                opv: 1,
-                pneumo_vax: 1,
                 syringe: 2,
                 disposal: 1,
             },
@@ -810,54 +828,8 @@ class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "ep_dtp"] += 1
             df.at[person_id, "ep_hib"] += 1
             df.at[person_id, "ep_hep"] += 1
-
-        # check if OPV available
-        if outcome_of_request_for_consumables["Item_Code"][opv]:
-            logger.debug("OPV is available, so administer")
-
-            df.at[person_id, "ep_opv"] += 1
-
-        # check if pneumococcal vaccine available and current year 2012 onwards
-        if (
-            (self.sim.date.year >= 2012)
-            & outcome_of_request_for_consumables["Item_Code"][pneumo_vax]
-            & outcome_of_request_for_consumables["Item_Code"][syringe]
-        ):
-            logger.debug(
-                f"Pneumococcal vaccine is available, so administer to {person_id}"
-            )
-
-            df.at[person_id, "ep_pneumo"] += 1
-
-        # rotavirus - oral vaccine
-        # only 2 doses rotavirus given (week 6 and 10)
-        # available from 2012 onwards
-        if (df.at[person_id, "ep_rota"] < 2) & (self.sim.date.year >= 2012):
-
-            rotavirus_vax = pd.unique(
-                consumables.loc[
-                    consumables["Items"] == "Rotavirus vaccine", "Item_Code",
-                ]
-            )[0]
-
-            consumables_needed = {
-                "Intervention_Package_Code": {},
-                "Item_Code": {rotavirus_vax: 1},
-            }
-
-            # check if rotavirus vaccine available
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed
-            )
-
-            if outcome_of_request_for_consumables["Item_Code"][rotavirus_vax]:
-                logger.debug(
-                    f"Rotavirus vaccine is available, so administer to {person_id}"
-                )
-
-                df.at[person_id, "ep_rota"] += 1
+        else:
+            logger.debug(f"Penta vax is not available for person {person_id}")
 
     def did_not_run(self):
         logger.debug("HSI_DtpHibHepVaccine: did not run")
@@ -919,6 +891,8 @@ class HSI_RotaVaccine(HSI_Event, IndividualScopeEventMixin):
                 )
 
                 df.at[person_id, "ep_rota"] += 1
+            else:
+                logger.debug(f"Rotavirus vaccine is not available for person {person_id}")
 
     def did_not_run(self):
         logger.debug("HSI_RotaVaccine: did not run")

@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
+end_date = Date(2025, 12, 31)
 popsize = 500
 
 # Establish the simulation object
@@ -45,7 +45,7 @@ sim.register(
     healthsystem.HealthSystem(
         resourcefilepath=resourcefilepath,
         service_availability=service_availability,
-        mode_appt_constraints=0,
+        mode_appt_constraints=2,  # no constraints by officer type/time
         ignore_cons_constraints=True,
         ignore_priority=True,
         capabilities_coefficient=1.0,
@@ -77,6 +77,7 @@ print("--- %s seconds ---" % (time.time() - start_time))
 output = parse_log_file(logfile)
 model_vax_coverage = output["tlo.methods.epi"]["ep_vaccine_coverage"]
 model_date = pd.to_datetime(model_vax_coverage.date)
+model_date = model_date.apply(lambda x: x.year)
 
 # ------------------------------------- DATA  ------------------------------------- #
 # import vaccine coverage data
@@ -90,8 +91,9 @@ coverage_data2010 = coverage_data.loc[
     (coverage_data.Year >= 2010) & (coverage_data.Year < (end_date.year + 1))
 ]
 coverage_data2010_years = pd.to_datetime(coverage_data2010.Year, format="%Y")
-coverage_data2010_years = coverage_data2010_years.values
+# coverage_data2010_years = coverage_data2010_years.values
 
+coverage_data2010_years = coverage_data2010_years.apply(lambda x: x.year)
 
 # ------------------------------------- PLOTS  ------------------------------------- #
 
@@ -105,7 +107,7 @@ plt.title("BCG vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
@@ -117,7 +119,7 @@ plt.title("DTP3 vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
@@ -129,7 +131,7 @@ plt.title("OPV3 vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
@@ -141,7 +143,7 @@ plt.title("Hib3 vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.show()
@@ -154,7 +156,7 @@ plt.title("Hep3 vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
@@ -166,7 +168,7 @@ plt.title("Pneumo3 vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
@@ -178,7 +180,7 @@ plt.title("Rotavirus2 vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 100)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
@@ -190,7 +192,7 @@ plt.title("Measles vaccine coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
