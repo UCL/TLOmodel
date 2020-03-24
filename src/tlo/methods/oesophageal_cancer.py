@@ -136,6 +136,9 @@ class Oesophageal_Cancer(Module):
         "init_prop_treatment_status_oes_cancer": Parameter(
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
         ),
+        "init_prob_palliative_care": Parameter(
+            Types.REAL, "initial probability of being under palliative care if stage 4"
+        ),
         "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
             Types.REAL, "sensitivity of endoscopy_for diagnosis of oes_cancer_with_dysphagia"
         ),
@@ -198,6 +201,7 @@ class Oesophageal_Cancer(Module):
             self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
             sequlae_code=550
             )
+            # todo: lower disability weight if palliative care
             self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
             sequlae_code=549
             )
@@ -303,11 +307,9 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- ASSIGN VALUES CA_PALLIATIVE_CARE AT BASELINE -------------------
 
-        # todo:
-
-
-
-
+            idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
+            selected = idx[m.init_prob_palliative_care > rng.random_sample(size=len(idx))]
+            df.loc[selected, "ca_palliative_care"] = True
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -337,7 +339,7 @@ class Oesophageal_Cancer(Module):
         """
         df = self.sim.population.props
         df.at[child_id, "ca_oesophagus"] = "none"
-        df.at[child_id, "ca_oesophagus_yn"] = False
+        df.at[child_id, "ca_palliative_care"] = False
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
         df.at[child_id, "ca_date_oes_cancer_diagnosis"] = pd.NaT
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
@@ -585,8 +587,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING VALUES OF CA_PALLIATIVE_CARE  -------------------
 
         def update_palliative_care_status(p):
-
-            idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
+            idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4") & (~df.ca_palliative_care)]
             selected3 = idx[p > rng.random_sample(size=len(idx))]
 
             # generate the HSI Events whereby persons seek/need palliative care
@@ -632,6 +633,7 @@ class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_diagnosed"] = True
         df.at[person_id, "ca_date_oes_cancer_diagnosis"] = self.sim.date
+        # todo: why this below overwritten before it shows on log ?
         df.at[person_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = True
 
 class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -673,7 +675,7 @@ class HSI_Cancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         def apply(self, person_id, squeeze_factor):
             df = self.sim.population.props
 
-            df.at[person_id, "receiving_palliative_care"] = True
+            df.at[person_id, "ca_palliative_care"] = True
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -691,6 +693,8 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # get some summary statistics
         df = population.props
+
+        n_palliative_care = (df.is_alive & df.ca_palliative_care).sum()
         # n_alive = df.is_alive.sum()
         # n_alive_ge20 = (df.is_alive & (df.age_years >= 20)).sum()
         # n_incident_low_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
@@ -757,4 +761,6 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #             n_received_trt_this_period_stage3, n_stage4_undiagnosed_oc, cum_deaths, n_alive, n_oc_death
         #             )
 
-        logger.info("%s|person_zero|%s", self.sim.date, df.loc[0].to_dict())
+        logger.info("%s| n_palliative_care |%s", self.sim.date, n_palliative_care)
+
+#       logger.info("%s|person_zero|%s", self.sim.date, df.loc[0].to_dict())
