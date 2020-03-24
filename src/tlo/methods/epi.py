@@ -576,7 +576,7 @@ class HSI_bcg(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_bcg"
+        self.TREATMENT_ID = "Vaccine_bcg"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -644,7 +644,7 @@ class HSI_opv(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_opv"
+        self.TREATMENT_ID = "Vaccine_opv"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -691,7 +691,7 @@ class HSI_DtpHepVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_DtpVaccine"
+        self.TREATMENT_ID = "Vaccine_Dtp"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -771,7 +771,7 @@ class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_DtpHibHepVaccine"
+        self.TREATMENT_ID = "Vaccine_DtpHibHep"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -849,7 +849,7 @@ class HSI_RotaVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_RotaVaccine"
+        self.TREATMENT_ID = "Vaccine_Rota"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -912,7 +912,7 @@ class HSI_PneumoVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_PneumoVaccine"
+        self.TREATMENT_ID = "Vaccine_Pneumo"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -972,6 +972,7 @@ class HSI_PneumoVaccine(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         logger.debug("HSI_PneumoVaccine: did not run")
 
+
 class HSI_HibVaccine(HSI_Event, IndividualScopeEventMixin):
     """
     gives Hib vaccine 6, 10 and 14 weeks after birth
@@ -986,7 +987,7 @@ class HSI_HibVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_HibVaccine"
+        self.TREATMENT_ID = "Vaccine_Hib"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -1061,7 +1062,7 @@ class HSI_MeaslesVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_MeaslesVaccine"
+        self.TREATMENT_ID = "Vaccine_Measles"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
@@ -1118,7 +1119,7 @@ class HSI_MeaslesRubellaVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "HSI_MeaslesRubellaVaccine"
+        self.TREATMENT_ID = "Vaccine_MeaslesRubella"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
