@@ -307,9 +307,10 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- ASSIGN VALUES CA_PALLIATIVE_CARE AT BASELINE -------------------
 
-            idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
-            selected = idx[m.init_prob_palliative_care > rng.random_sample(size=len(idx))]
-            df.loc[selected, "ca_palliative_care"] = True
+        idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
+        selected = idx[m.init_prob_palliative_care > rng.random_sample(size=len(idx))]
+        df.loc[selected, "ca_palliative_care"] = True
+
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -695,6 +696,8 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         n_palliative_care = (df.is_alive & df.ca_palliative_care).sum()
+        n_stage4 = (df.is_alive & (df.ca_oesophagus == 'stage4')).sum()
+
         # n_alive = df.is_alive.sum()
         # n_alive_ge20 = (df.is_alive & (df.age_years >= 20)).sum()
         # n_incident_low_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
@@ -762,5 +765,6 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #             )
 
         logger.info("%s| n_palliative_care |%s", self.sim.date, n_palliative_care)
+        logger.info("%s| n_stage4 |%s", self.sim.date, n_stage4)
 
 #       logger.info("%s|person_zero|%s", self.sim.date, df.loc[0].to_dict())
