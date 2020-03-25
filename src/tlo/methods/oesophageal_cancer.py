@@ -202,7 +202,7 @@ class Oesophageal_Cancer(Module):
             self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
             sequlae_code=550
             )
-            # todo: lower disability weight if palliative care
+            # todo: lower disability weight if palliative care (or higher if no palliative care)
             self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
             sequlae_code=549
             )
@@ -293,8 +293,6 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS_CURATIVE_TREATMENT AT BASELINE -------------------
 
-        # todo: check this working as intended
-
         def set_curative_treatment(stage):
             """sets the curative treatment flag for given stage of cancer"""
             idx = df.index[df.is_alive & (df.ca_oesophagus == stage) & df.ca_oesophagus_diagnosed]
@@ -325,8 +323,6 @@ class Oesophageal_Cancer(Module):
 
         # Create the diagnostic representing the assessment for whether a person with dysphagia is diagnosed with
         # oes cancer
-        # todo: necessary (but not sufficient) condition to present is dysphagia
-        # todo: diagnostic test is endoscopy (with biopsy testing)
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             endoscopy_dysphagia_oes_cancer=DxTest(
@@ -560,7 +556,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people
         # this uses the approach descibed in detail above for updating diagnosis status
         def update_curative_treatment(current_stage):
-# todo: to disallow treatment changed age cut off below from 20 to 200
+
+        # todo: to disallow treatment for calibration purposes changed age cut off below from 20 to 200
             idx = df.index[df.is_alive &
                            (df.ca_oesophagus == current_stage) &
                            (df.age_years >= 200) &
@@ -639,7 +636,6 @@ class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_diagnosed"] = True
         df.at[person_id, "ca_date_oes_cancer_diagnosis"] = self.sim.date
-        # todo: why this below overwritten before it shows on log ?
         df.at[person_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = True
 
 class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -775,9 +771,9 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 #       logger.info("%s|person_zero|%s", self.sim.date, df.loc[0].to_dict())
 
-
+        # ---------------------------------------------------------------------------------------------------
         # set ca_incident_oes_cancer_diagnosis_this_3_month_period back to False so is False for next 3 month
-        # period
+        # period (this was not working when placed higher up
 
         idx = df.index[df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period]
         df.loc[idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
@@ -785,3 +781,4 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         idx = df.index[df.is_alive & df.ca_oesophageal_cancer_death]
         df.loc[idx, "ca_oesophageal_cancer_death"] = False
 
+        # ---------------------------------------------------------------------------------------------------
