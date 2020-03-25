@@ -255,6 +255,7 @@ class Oesophageal_Cancer(Module):
         # check the categories match and line up
         assert df.ca_oesophagus.cat.categories.all() == p_oes_dys_can.columns.all()
 
+        # understand why occasional negative values for p_oes_dys_can
         # for each row, make a choice
         stage = p_oes_dys_can.apply(lambda p_oes: rng.choice(p_oes_dys_can.columns, p=p_oes), axis=1)
 
