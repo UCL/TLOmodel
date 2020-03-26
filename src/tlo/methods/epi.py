@@ -257,135 +257,119 @@ class Epi(Module):
         # ----------------------------------- 2010-2018 -----------------------------------
 
         # from 2010-2018 use the reported vaccine coverage values and schedule individual events (not HSI)
-        if year > 2018:
+        if year <= 2018:
 
             # lookup the correct table of vaccine estimates for this child
             vax_coverage = p["district_vaccine_coverage"]
             ind_vax_coverage = vax_coverage.loc[(vax_coverage.District == district) & (vax_coverage.Year == year)]
-            # print(district)
+            print(district)
+            print(child_id)
             assert not ind_vax_coverage.empty
 
             # schedule bcg birth dose according to current coverage
             # some values are >1
             if self.rng.random_sample(size=1) < ind_vax_coverage.BCG.values:
 
-                bcg_event = BcgEvent(self.module, child_id)
+                bcg_event = BcgEvent(self, child_id)
                 self.sim.schedule_event(bcg_event, self.sim.date + DateOffset(days=1))
+            else:
+                print("BCG - FALSE")
 
             # assign OPV first dose according to current coverage
             # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
             if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
-                opv1_event = OpvEvent(self.module, child_id)
+                opv1_event = OpvEvent(self, child_id)
                 self.sim.schedule_event(opv1_event, self.sim.date + DateOffset(days=1))
+            else:
+                print("OPV1 - FALSE")
 
             # OPV2
+            # coverage estimates for 3 doses reported, use these for doses 2-4
             if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
-                opv2_event = OpvEvent(self.module, child_id)
+                opv2_event = OpvEvent(self, child_id)
                 self.sim.schedule_event(opv2_event, self.sim.date + DateOffset(weeks=6))
-
-            # OPV3
-            if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
-                opv3_event = OpvEvent(self.module, child_id)
-                self.sim.schedule_event(opv3_event, self.sim.date + DateOffset(weeks=10))
-
-            # OPV4
-            if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
-                opv4_event = OpvEvent(self.module, child_id)
-                self.sim.schedule_event(opv4_event, self.sim.date + DateOffset(weeks=14))
+                self.sim.schedule_event(opv2_event, self.sim.date + DateOffset(weeks=10))
+                self.sim.schedule_event(opv2_event, self.sim.date + DateOffset(weeks=14))
 
             # DTP1_HepB - up to and including 2012, then replaced by pentavalent vaccine
             if self.rng.random_sample(size=1) < ind_vax_coverage.DTP1.values:
-                dtp1_event = DTP_HepEvent(self.module, child_id)
+                dtp1_event = DTP_HepEvent(self, child_id)
                 self.sim.schedule_event(dtp1_event, self.sim.date + DateOffset(weeks=6))
+            else:
+                print("DTP1 - FALSE")
 
             # DTP2_HepB - up to and including 2012
+            # second doses not reported - same coverage for second and third doses
             if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3.values:
-                dtp2_event = DTP_HepEvent(self.module, child_id)
+                dtp2_event = DTP_HepEvent(self, child_id)
                 self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(weeks=10))
-
-            # DTP3_HepB - up to and including 2012
-            if self.rng.random_sample(size=1) < ind_vax_coverage.DTP3.values:
-                dtp3_event = DTP_HepEvent(self.module, child_id)
-                self.sim.schedule_event(dtp3_event, self.sim.date + DateOffset(weeks=14))
+                self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(weeks=14))
+            else:
+                print("DTP2 - FALSE")
 
             # HIB1
             if self.rng.random_sample(size=1) < ind_vax_coverage.Hib3.values:
-                hib1_event = HibEvent(self.module, child_id)
-                self.sim.schedule_event(hib1_event, self.sim.date + DateOffset(weeks=6))
+                hib_event = HibEvent(self, child_id)
+                self.sim.schedule_event(hib_event, self.sim.date + DateOffset(weeks=6))
+                self.sim.schedule_event(hib_event, self.sim.date + DateOffset(weeks=10))
+                self.sim.schedule_event(hib_event, self.sim.date + DateOffset(weeks=14))
 
-            # Hib2
-            if self.rng.random_sample(size=1) < ind_vax_coverage.Hib3.values:
-                hib2_event = HibEvent(self.module, child_id)
-                self.sim.schedule_event(hib2_event, self.sim.date + DateOffset(weeks=10))
-
-            # Hib3
-            if self.rng.random_sample(size=1) < ind_vax_coverage.Hib3.values:
-                hib3_event = HibEvent(self.module, child_id)
-                self.sim.schedule_event(hib3_event, self.sim.date + DateOffset(weeks=14))
-
-            # PNEUMO1
+            # PNEUMO1 - all three doses reported separately
             if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo1.values:
-                pneumo1_event = PneumococcalEvent(self.module, child_id)
+                pneumo1_event = PneumococcalEvent(self, child_id)
                 self.sim.schedule_event(pneumo1_event, self.sim.date + DateOffset(weeks=6))
+            else:
+                print("PNEUMO - FALSE")
 
             # PNEUMO2
             if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo2.values:
-                pneumo2_event = PneumococcalEvent(self.module, child_id)
+                pneumo2_event = PneumococcalEvent(self, child_id)
                 self.sim.schedule_event(pneumo2_event, self.sim.date + DateOffset(weeks=10))
 
             # PNEUMO3
             if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo3.values:
-                pneumo3_event = PneumococcalEvent(self.module, child_id)
+                pneumo3_event = PneumococcalEvent(self, child_id)
                 self.sim.schedule_event(pneumo3_event, self.sim.date + DateOffset(weeks=14))
+            else:
+                print("PNEUMO3 - FALSE")
 
-            # ROTA1
+            # ROTA1 - doses 1 and 2 reported separately
             if self.rng.random_sample(size=1) < ind_vax_coverage.Rotavirus1.values:
-                rota1_event = RotavirusEvent(self.module, child_id)
+                rota1_event = RotavirusEvent(self, child_id)
                 self.sim.schedule_event(rota1_event, self.sim.date + DateOffset(weeks=6))
 
             # ROTA2
             if self.rng.random_sample(size=1) < ind_vax_coverage.Rotavirus2.values:
-                rota2_event = RotavirusEvent(self.module, child_id)
+                rota2_event = RotavirusEvent(self, child_id)
                 self.sim.schedule_event(rota2_event, self.sim.date + DateOffset(weeks=10))
 
             # PENTA1
             if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib1.values:
                 # print("PENTA1 TRUE")
-                penta1_event = DTP_Hib_HepEvent(self.module, child_id)
+                penta1_event = DTP_Hib_HepEvent(self, child_id)
                 self.sim.schedule_event(penta1_event, self.sim.date + DateOffset(weeks=6))
             # else:
             #     print(ind_vax_coverage.DTPHepHib1.values, "Penta1 FALSE")
 
-            # PENTA2
+            # PENTA2 - second dose not reported so use 3 dose coverage
             if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3.values:
-                # print("PENTA2 TRUE")
-                penta2_event = DTP_Hib_HepEvent(self.module, child_id)
+                penta2_event = DTP_Hib_HepEvent(self, child_id)
                 self.sim.schedule_event(penta2_event, self.sim.date + DateOffset(weeks=10))
-            # else:
-            #     print(ind_vax_coverage.DTPHepHib3.values, "Penta2 FALSE")
-
-            # PENTA3
-            # print (ind_vax_coverage.DTPHepHib3.values)
-            if self.rng.random_sample(size=1) < ind_vax_coverage.DTPHepHib3.values:
-                # print("PENTA3 TRUE")
-                penta3_event = DTP_Hib_HepEvent(self.module, child_id)
-                self.sim.schedule_event(penta3_event, self.sim.date + DateOffset(weeks=14))
-            # else:
-                # print(ind_vax_coverage.DTPHepHib3.values, "Penta3 FALSE")
+                self.sim.schedule_event(penta2_event, self.sim.date + DateOffset(weeks=14))
 
             # Measles, rubella - first dose, 2018 onwards
             if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1_MR1.values:
-                mr1_event = MeaslesRubellaEvent(self.module, child_id)
+                mr1_event = MeaslesRubellaEvent(self, child_id)
                 self.sim.schedule_event(mr1_event, self.sim.date + DateOffset(months=9))
 
             # Measles, rubella - second dose
             if self.rng.random_sample(size=1) < ind_vax_coverage.MCV2_MR2.values:
-                mr1_event = MeaslesRubellaEvent(self.module, child_id)
+                mr1_event = MeaslesRubellaEvent(self, child_id)
                 self.sim.schedule_event(mr1_event, self.sim.date + DateOffset(months=15))
 
             # Measles - first dose, only one dose pre-2017 and no rubella
             if self.rng.random_sample(size=1) < ind_vax_coverage.MCV1.values:
-                m1_event = MeaslesEvent(self.module, child_id)
+                m1_event = MeaslesEvent(self, child_id)
                 self.sim.schedule_event(m1_event, self.sim.date + DateOffset(months=9))
 
         # ----------------------------------- 2019 onwards -----------------------------------
