@@ -76,7 +76,7 @@ class Epi(Module):
         )
         p["baseline_coverage"] = workbook["WHO_Estimates"]
         p["district_vaccine_coverage"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_EPI_summary.csv"
+            Path(self.resourcefilepath) / "ResourceFile_EPI_summary_formatted.csv"
         )
 
         # tmp values for current vaccine coverage
@@ -217,30 +217,30 @@ class Epi(Module):
         p = self.parameters
         year = self.sim.date.year
 
-        # rename districts to match EPI data
-        df.at[child_id, "ep_district_edited"] = df.at[child_id, "district_of_residence"]
-
-        if df.at[child_id, "ep_district_edited"] == "Lilongwe City":
-            df.at[child_id, "ep_district_edited"] = "Lilongwe"
-
-        elif df.at[child_id, "ep_district_edited"] == "Blantyre City":
-            df.at[child_id, "ep_district_edited"] = "Blantyre"
-
-        elif df.at[child_id, "ep_district_edited"] == "Zomba City":
-            df.at[child_id, "ep_district_edited"] = "Zomba"
-
-        elif df.at[child_id, "ep_district_edited"] == "Mzuzu City":
-            df.at[child_id, "ep_district_edited"] = "Mzimba"
-
-        elif df.at[child_id, "ep_district_edited"] == "Mzuzu":
-            df.at[child_id, "ep_district_edited"] = "Mzimba"
-
-        elif df.at[child_id, "ep_district_edited"] == "Nkhata Bay":
-            df.at[child_id, "ep_district_edited"] = "Mzimba"
+        # # rename districts to match EPI data
+        # df.at[child_id, "ep_district_edited"] = df.at[child_id, "district_of_residence"]
+        #
+        # if df.at[child_id, "ep_district_edited"] == "Lilongwe City":
+        #     df.at[child_id, "ep_district_edited"] = "Lilongwe"
+        #
+        # elif df.at[child_id, "ep_district_edited"] == "Blantyre City":
+        #     df.at[child_id, "ep_district_edited"] = "Blantyre"
+        #
+        # elif df.at[child_id, "ep_district_edited"] == "Zomba City":
+        #     df.at[child_id, "ep_district_edited"] = "Zomba"
+        #
+        # elif df.at[child_id, "ep_district_edited"] == "Mzuzu City":
+        #     df.at[child_id, "ep_district_edited"] = "Mzimba"
+        #
+        # elif df.at[child_id, "ep_district_edited"] == "Mzuzu":
+        #     df.at[child_id, "ep_district_edited"] = "Mzimba"
+        #
+        # elif df.at[child_id, "ep_district_edited"] == "Nkhata Bay":
+        #     df.at[child_id, "ep_district_edited"] = "Mzimba"
 
         # look up coverage of every vaccine
         # anything delivered after 12months needs the estimate from the following year
-        district = df.at[child_id, 'ep_district_edited']
+        district = df.at[child_id, 'district_of_residence']
         # todo note: Mzuzu is not in EPI database (Mzimba)
 
         # Initialise all the properties that this module looks after:
@@ -272,16 +272,16 @@ class Epi(Module):
 
                 bcg_event = BcgEvent(self, child_id)
                 self.sim.schedule_event(bcg_event, self.sim.date + DateOffset(days=1))
-            else:
-                print("BCG - FALSE")
+            # else:
+            #     print("BCG - FALSE")
 
             # assign OPV first dose according to current coverage
             # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
             if self.rng.random_sample(size=1) < ind_vax_coverage.OPV3.values:
                 opv1_event = OpvEvent(self, child_id)
                 self.sim.schedule_event(opv1_event, self.sim.date + DateOffset(days=1))
-            else:
-                print("OPV1 - FALSE")
+            # else:
+            #     print("OPV1 - FALSE")
 
             # OPV2
             # coverage estimates for 3 doses reported, use these for doses 2-4
@@ -295,8 +295,8 @@ class Epi(Module):
             if self.rng.random_sample(size=1) < ind_vax_coverage.DTP1.values:
                 dtp1_event = DTP_HepEvent(self, child_id)
                 self.sim.schedule_event(dtp1_event, self.sim.date + DateOffset(weeks=6))
-            else:
-                print("DTP1 - FALSE")
+            # else:
+            #     print("DTP1 - FALSE")
 
             # DTP2_HepB - up to and including 2012
             # second doses not reported - same coverage for second and third doses
@@ -304,8 +304,8 @@ class Epi(Module):
                 dtp2_event = DTP_HepEvent(self, child_id)
                 self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(weeks=10))
                 self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(weeks=14))
-            else:
-                print("DTP2 - FALSE")
+            # else:
+            #     print("DTP2 - FALSE")
 
             # HIB1
             if self.rng.random_sample(size=1) < ind_vax_coverage.Hib3.values:
@@ -318,8 +318,8 @@ class Epi(Module):
             if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo1.values:
                 pneumo1_event = PneumococcalEvent(self, child_id)
                 self.sim.schedule_event(pneumo1_event, self.sim.date + DateOffset(weeks=6))
-            else:
-                print("PNEUMO - FALSE")
+            # else:
+            #     print("PNEUMO - FALSE")
 
             # PNEUMO2
             if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo2.values:
@@ -330,8 +330,8 @@ class Epi(Module):
             if self.rng.random_sample(size=1) < ind_vax_coverage.Pneumo3.values:
                 pneumo3_event = PneumococcalEvent(self, child_id)
                 self.sim.schedule_event(pneumo3_event, self.sim.date + DateOffset(weeks=14))
-            else:
-                print("PNEUMO3 - FALSE")
+            # else:
+            #     print("PNEUMO3 - FALSE")
 
             # ROTA1 - doses 1 and 2 reported separately
             if self.rng.random_sample(size=1) < ind_vax_coverage.Rotavirus1.values:

@@ -1,9 +1,8 @@
 """
 This file processes the data from the Malawi EPI JRF
-It modifies ResourceFile_EPI_summary to match the master district list:
-plus some lovely plots
+It modifies ResourceFile_EPI_summary district list to match the master district list:
 
-pre-processing:
+pre-processing from the JRF Reports:
 in excel remove the multiline entries in headers
 find/replace: find alt 0010, replace ""
 doesn't remove all so have to do some manual checks
@@ -80,6 +79,8 @@ for i in np.arange(0, len(map_districts)):
 
 len(epi_formatted['District'].unique())
 print(epi_formatted['District'].unique())
+
+epi_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_EPI_summary_formatted.csv')
 
 
 
