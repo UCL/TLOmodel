@@ -29,7 +29,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2018, 12, 31)
-popsize = 100
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -108,7 +108,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(2010, 2025)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # DTP3 coverage
@@ -120,7 +120,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(2010, 2025)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # OPV3 coverage
@@ -132,7 +132,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(2010, 2025)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Hib3 coverage
@@ -144,7 +144,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(2010, 2025)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.show()
 
@@ -157,7 +157,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(2010, 2025)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Pneumo3 coverage
@@ -169,7 +169,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(2010, 2025)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Rotavirus2 coverage
@@ -181,7 +181,7 @@ plt.xlabel("Year")
 plt.ylabel("Coverage")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(2010, 2025)
-plt.gca().set_ylim(0, 100)
+plt.gca().set_ylim(0, 110)
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Measles coverage (1 dose)

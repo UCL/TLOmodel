@@ -1313,55 +1313,59 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        infants = len(df[df.is_alive & (df.age_years <= 1)])
+        birth_dose_denom = len(df[df.is_alive & (df.age_years <= 1)])
+
+        # the eligible group for coverage estimates will be those from 14 weeks and older
+        # younger infants won't have had the three-dose course yet
+        infants_denom = len(df[df.is_alive & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
 
         # bcg vaccination coverage in <1 year old children
         bcg = len(df[df.is_alive & df.ep_bcg & (df.age_years <= 1)])
-        bcg_coverage = ((bcg / infants) * 100) if infants else 0
+        bcg_coverage = ((bcg / birth_dose_denom) * 100) if birth_dose_denom else 0
         assert bcg_coverage <= 100
 
         # dtp3 vaccination coverage in <1 year old children
-        dtp3 = len(df[df.is_alive & (df.ep_dtp >= 3) & (df.age_years <= 1)])
-        dtp3_coverage = ((dtp3 / infants) * 100) if infants else 0
+        dtp3 = len(df[df.is_alive & (df.ep_dtp >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
+        dtp3_coverage = ((dtp3 / infants_denom) * 100) if infants_denom else 0
         assert dtp3_coverage <= 100
 
         # opv3 vaccination coverage in <1 year old children
-        opv3 = len(df[df.is_alive & (df.ep_opv >= 3) & (df.age_years <= 1)])
-        opv3_coverage = ((opv3 / infants) * 100) if infants else 0
+        opv3 = len(df[df.is_alive & (df.ep_opv >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
+        opv3_coverage = ((opv3 / infants_denom) * 100) if infants_denom else 0
         assert opv3_coverage <= 100
 
         # hib3 vaccination coverage in <1 year old children
-        hib3 = len(df[df.is_alive & (df.ep_hib >= 3) & (df.age_years <= 1)])
-        hib3_coverage = ((hib3 / infants) * 100) if infants else 0
+        hib3 = len(df[df.is_alive & (df.ep_hib >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
+        hib3_coverage = ((hib3 / infants_denom) * 100) if infants_denom else 0
         assert hib3_coverage <= 100
 
         # hep3 vaccination coverage in <1 year old children
-        hep3 = len(df[df.is_alive & (df.ep_hep >= 3) & (df.age_years <= 1)])
-        hep3_coverage = ((hep3 / infants) * 100) if infants else 0
+        hep3 = len(df[df.is_alive & (df.ep_hep >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
+        hep3_coverage = ((hep3 / infants_denom) * 100) if infants_denom else 0
         assert hep3_coverage <= 100
 
         # pneumo3 vaccination coverage in <1 year old children
-        pneumo3 = len(df[df.is_alive & (df.ep_pneumo >= 3) & (df.age_years <= 1)])
-        pneumo3_coverage = ((pneumo3 / infants) * 100) if infants else 0
+        pneumo3 = len(df[df.is_alive & (df.ep_pneumo >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
+        pneumo3_coverage = ((pneumo3 / infants_denom) * 100) if infants_denom else 0
         assert pneumo3_coverage <= 100
 
         # rota vaccination coverage in <1 year old children
-        rota2 = len(df[df.is_alive & (df.ep_rota >= 2) & (df.age_years <= 1)])
-        rota_coverage = ((rota2 / infants) * 100) if infants else 0
+        rota2 = len(df[df.is_alive & (df.ep_rota >= 2) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
+        rota_coverage = ((rota2 / infants_denom) * 100) if infants_denom else 0
         assert rota_coverage <= 100
 
         # measles vaccination coverage in <2 year old children - 1 dose
         # first dose is at 9 months, second dose is 15 months
-        # so check coverage in 1-2 year olds
-        toddlers = len(df[df.is_alive & (df.age_years >= 1) & (df.age_years <= 2)])
+        # so check coverage in 15 month -2 year olds
+        toddlers = len(df[df.is_alive & (df.age_exact_years >= 1.25) & (df.age_years <= 2)])
 
-        measles = len(df[df.is_alive & (df.ep_measles >= 1) & (df.age_years >= 1) & (df.age_years <= 2)])
+        measles = len(df[df.is_alive & (df.ep_measles >= 1) & (df.age_exact_years >= 1.25) & (df.age_years <= 2)])
         measles_coverage = ((measles / toddlers) * 100) if toddlers else 0
         assert measles_coverage <= 100
 
         # rubella vaccination coverage in <2 year old children - 1 dose
         # first dose is at 9 months, second dose is 15 months
-        rubella = len(df[df.is_alive & (df.ep_rubella >= 1) & (df.age_years >= 1) & (df.age_years <= 2)])
+        rubella = len(df[df.is_alive & (df.ep_rubella >= 1) & (df.age_exact_years >= 1.25) & (df.age_years <= 2)])
         rubella_coverage = ((rubella / toddlers) * 100) if toddlers else 0
         assert rubella_coverage <= 100
 
@@ -1369,7 +1373,7 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             "%s|ep_vaccine_coverage|%s",
             now,
             {
-                "epNumInfantsUnder1": infants,
+                "epNumInfantsUnder1": infants_denom,
                 "epBcgCoverage": bcg_coverage,
                 "epDtp3Coverage": dtp3_coverage,
                 "epOpv3Coverage": opv3_coverage,
