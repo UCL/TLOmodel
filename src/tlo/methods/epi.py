@@ -55,6 +55,7 @@ class Epi(Module):
         "ep_measles": Property(Types.INT, "number of doses of measles vaccine received"),
         "ep_rubella": Property(Types.INT, "number of doses of rubella vaccine received"),
         "ep_hpv": Property(Types.INT, "number of doses of hpv vaccine received"),
+        "ep_td": Property(Types.INT, "number of doses of tetanus/diphtheria vaccine received by pregnant women"),
     }
 
     # Declaration of the symptoms that this module will use
@@ -112,6 +113,7 @@ class Epi(Module):
         df.at[df.is_alive, "ep_measles"] = 0
         df.at[df.is_alive, "ep_rubella"] = 0
         df.at[df.is_alive, "ep_hpv"] = 0
+        df.at[df.is_alive, "ep_td"] = 0
 
         # BCG
         # from 1981-2009 average bcg coverage is 92% (WHO estimates)
@@ -235,6 +237,7 @@ class Epi(Module):
         df.at[child_id, "ep_measles"] = 0
         df.at[child_id, "ep_rubella"] = 0
         df.at[child_id, "ep_hpv"] = 0
+        df.at[child_id, "ep_td"] = 0
 
         # ----------------------------------- 2010-2018 -----------------------------------
 
@@ -1171,6 +1174,62 @@ class HSI_HpvVaccine(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         logger.debug("HSI_HpvVaccine: did not run")
+
+
+# TODO this will be called by the antenatal care module as part of routine care
+# currently not implemented
+class HSI_TdVaccine(HSI_Event, IndividualScopeEventMixin):
+    """
+    gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care
+    recommended 2+ doses (WHO)
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Epi)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "Vaccine_Td"
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(f"HSI_TdVaccine: giving Td vaccine to {person_id}")
+
+        df = self.sim.population.props
+
+        # Make request for some consumables
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        # note this vaccine may not contain diphtheria - it should!
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables["Intervention_Pkg"] == "Tetanus toxoid (pregnant women)",
+                "Intervention_Pkg_Code",
+            ]
+        )[0]
+
+        consumables_needed = {
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules[
+            "HealthSystem"
+        ].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        if outcome_of_request_for_consumables:
+            df.at[person_id, "ep_td"] += 1
+
+    def did_not_run(self):
+        logger.debug("HSI_TdVaccine: did not run")
 
 # ---------------------------------------------------------------------------------
 # LOGGING
