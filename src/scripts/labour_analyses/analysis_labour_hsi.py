@@ -67,6 +67,20 @@ facility_delivery_births.plot.bar(y='FBR', stacked=True)
 plt.title("Yearly Facility Delivery Rate")
 plt.show()
 
+# Caesarean Section Rates
+caesareans_df = output['tlo.methods.labour']['caesarean_section']
+caesareans_df['date'] = pd.to_datetime(caesareans_df['date'])
+caesareans_df['year'] = caesareans_df['date'].dt.year
+caesareans_by_year = caesareans_df.groupby(['year'])['person_id'].size()
+
+caesarean_births = pd.concat((caesareans_by_year, all_births_by_year), axis=1)
+caesarean_births.columns = ['caesareans_by_year', 'all_births']
+caesarean_births['CBR'] = caesarean_births['caesareans_by_year'] / \
+                          caesarean_births['all_births'] * 100
+
+caesarean_births.plot.bar(y='CBR', stacked=True)
+plt.title("Yearly Total Caesarean Delivery Rate")
+plt.show()
 
 # % of women who sought care following comps (not just labour onset)
 # Met need? (by signal function)

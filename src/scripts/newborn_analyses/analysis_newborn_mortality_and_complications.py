@@ -24,7 +24,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 1000
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -116,24 +116,21 @@ def incidence_analysis(complication, birth_denominator):
     else:
         print(f'no cases of {complication} in this simulation run')
 
+incidence_analysis('early_preterm', 100)
+
+incidence_analysis('late_preterm', 100)
+
 incidence_analysis('low_birth_weight_newborn', 100)
+
 incidence_analysis('small_for_gestational_age_newborn', 100)
 
+# Incidence of Neonatal Sepsis
+incidence_analysis('early_onset_nb_sep', 1000)
 
-   # TODO: maternal deaths by each contributing cause
+# Incidence of Failure to transition
+incidence_analysis('nb_failed_to_transition', 1000)
 
-# Incidence of Obstructed Labour
-#incidence_analysis('obstructed_labour', 1000)
+# Incidence of encephalopathy
+incidence_analysis('neonatal_enceph', 1000)
 
-# Incidence of Uterine Rupture
-#incidence_analysis('uterine_rupture', 1000)
-
-# Incidence of Antepartum Haemorrhage
-#incidence_analysis('antepartum_haem', 1000)
-
-# Incidence of Intrapartum Eclampsia
-#incidence_analysis('eclampsia', 1000)
-
-# Incidence of Intrapartum direct maternal sepsis
-#incidence_analysis('sepsis', 1000)
 
