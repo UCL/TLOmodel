@@ -14,7 +14,7 @@ from tlo.methods import (
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 100
+popsize = 500
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -23,9 +23,9 @@ except NameError:
     resourcefilepath = "resources"
 
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.DEBUG)
+# @pytest.fixture(autouse=True)
+# def disable_logging():
+#     logging.disable(logging.DEBUG)
 
 
 def check_dtypes(simulation):
@@ -36,8 +36,7 @@ def check_dtypes(simulation):
 
 
 # @pytest.fixture(scope='module')
-def test_sims(tmpdir):
-    service_availability = []
+def test_no_health_system(tmpdir):
 
     sim = Simulation(start_date=start_date)
 
@@ -45,14 +44,14 @@ def test_sims(tmpdir):
     sim.register(
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
-            service_availability=service_availability,
+            service_availability=[],
             mode_appt_constraints=2,  # no constraints by officer type/time
             ignore_cons_constraints=True,
             ignore_priority=True,
             capabilities_coefficient=1.0,
-            disable=True,
+            disable=False
         )
-    )  # disables the health system constraints so all HSI events run
+    )
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
@@ -63,13 +62,13 @@ def test_sims(tmpdir):
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
-    # check scheduled malaria deaths occurring only due to severe malaria (not clinical or asym)
     df = sim.population.props
 
-    # check no vaccines being administered
-    assert not df.ep_bcg.all()
-    assert (df.ep_dtp == 0).all()
-    assert (df.ep_opv == 0).all()
-    assert (df.ep_hep == 0).all()
-    assert (df.ep_hib == 0).all()
-    assert (df.ep_rota == 0).all()
+    # check no vaccines being administered through health system
+    # only hpv currently, all others start as individual events
+    assert (df.ep_hpv == 0).all()
+
+    # check only 3 doses max of dtp
+    assert (df.ep_dtp <= 3).all()
+    assert (df.ep_pneumo <= 3).all()
+

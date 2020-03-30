@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import os
 from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
@@ -23,23 +22,10 @@ class Epi(Module):
     """
 
     PARAMETERS = {
-        "bcg_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "opv1_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "opv2_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "opv3_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "opv4_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "penta1_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "penta2_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "penta3_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "measles_rubella1_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-        "measles_rubella2_coverage": Parameter(Types.REAL, "dummy vax coverage value"),
-
-        "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "reported vaccine coverage estimates by district"),
-
-        # baseline vaccination coverage
         "baseline_coverage": Parameter(
-            Types.REAL, "baseline vaccination coverage (all vaccines)"
-        )
+            Types.DATA_FRAME, "baseline vaccination coverage (all vaccines)"
+        ),
+        "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "coverage of each vaccine type by year and district")
     }
 
     PROPERTIES = {
@@ -80,19 +66,6 @@ class Epi(Module):
             Path(self.resourcefilepath) / "ResourceFile_EPI_summary_formatted.csv"
         )
 
-        # tmp values for current vaccine coverage
-        # also limited by consumables stocks
-        p["bcg_coverage"] = 1
-        p["opv1_coverage"] = 1
-        p["opv2_coverage"] = 1
-        p["opv3_coverage"] = 1
-        p["opv4_coverage"] = 1
-        p["penta1_coverage"] = 1
-        p["penta2_coverage"] = 1
-        p["penta3_coverage"] = 1
-        p["measles_rubella1_coverage"] = 1
-        p["measles_rubella2_coverage"] = 1
-
         # ---- Register this module ----
         # Register this disease module with the health system
         self.sim.modules["HealthSystem"].register_disease_module(self)
@@ -130,7 +103,7 @@ class Epi(Module):
         # what happens with the nan values in the df for vaccine coverage (age >30)??
         # seems fine!!
         # will have a susceptible older population though
-        # use same random draw for all vaccines - will induce correlations
+        # use same random draw value for all vaccines - will induce correlations (good)
         # there are individuals who have high probability of getting all vaccines
         # some individuals will have consistently poor coverage
         random_draw = self.rng.random_sample(size=len(df_vaccine_baseline))
@@ -1260,32 +1233,32 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         bcg_coverage = ((bcg / birth_dose_denom) * 100) if birth_dose_denom else 0
         assert bcg_coverage <= 100
 
-        # dtp3 vaccination coverage in <1 year old children
+        # dtp3 vaccination coverage in children aged between 14 weeks and 1 year
         dtp3 = len(df[df.is_alive & (df.ep_dtp >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
         dtp3_coverage = ((dtp3 / infants_denom) * 100) if infants_denom else 0
         assert dtp3_coverage <= 100
 
-        # opv3 vaccination coverage in <1 year old children
+        # opv3 vaccination coverage in children aged between 14 weeks and 1 year
         opv3 = len(df[df.is_alive & (df.ep_opv >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
         opv3_coverage = ((opv3 / infants_denom) * 100) if infants_denom else 0
         assert opv3_coverage <= 100
 
-        # hib3 vaccination coverage in <1 year old children
+        # hib3 vaccination coverage in children aged between 14 weeks and 1 yearn
         hib3 = len(df[df.is_alive & (df.ep_hib >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
         hib3_coverage = ((hib3 / infants_denom) * 100) if infants_denom else 0
         assert hib3_coverage <= 100
 
-        # hep3 vaccination coverage in <1 year old children
+        # hep3 vaccination coverage in children aged between 14 weeks and 1 yearn
         hep3 = len(df[df.is_alive & (df.ep_hep >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
         hep3_coverage = ((hep3 / infants_denom) * 100) if infants_denom else 0
         assert hep3_coverage <= 100
 
-        # pneumo3 vaccination coverage in <1 year old children
+        # pneumo3 vaccination coverage in children aged between 14 weeks and 1 year
         pneumo3 = len(df[df.is_alive & (df.ep_pneumo >= 3) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
         pneumo3_coverage = ((pneumo3 / infants_denom) * 100) if infants_denom else 0
         assert pneumo3_coverage <= 100
 
-        # rota vaccination coverage in <1 year old children
+        # rota vaccination coverage in <1 children aged between 14 weeks and 1 year
         rota2 = len(df[df.is_alive & (df.ep_rota >= 2) & (df.age_years <= 1) & (df.age_exact_years >= 0.27)])
         rota_coverage = ((rota2 / infants_denom) * 100) if infants_denom else 0
         assert rota_coverage <= 100
