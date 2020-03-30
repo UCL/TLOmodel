@@ -1149,7 +1149,7 @@ class HSI_HpvVaccine(HSI_Event, IndividualScopeEventMixin):
 
             pkg_code1 = pd.unique(
                 consumables.loc[
-                    consumables["Intervention_Pkg"] == "HPV Vaccine",
+                    consumables["Intervention_Pkg"] == "HPV vaccine",
                     "Intervention_Pkg_Code",
                 ]
             )[0]
@@ -1246,6 +1246,14 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         rubella_coverage = ((rubella / toddlers) * 100) if toddlers else 0
         assert rubella_coverage <= 100
 
+        # HPV vaccination coverage in adolescent girls - 1 dose
+        # first dose is at 9 years
+        # check coverage in girls aged 10-12
+        adol_girls = len(df[df.is_alive & (df.age_exact_years >= 10) & (df.age_years <= 12)])
+        hpv = len(df[df.is_alive & (df.ep_hpv >= 1) & (df.age_exact_years >= 10) & (df.age_years <= 12)])
+        hpv_coverage = ((hpv / adol_girls) * 100) if adol_girls else 0
+        assert hpv_coverage <= 100
+
         logger.info(
             "%s|ep_vaccine_coverage|%s",
             now,
@@ -1260,5 +1268,6 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "epRota2Coverage": rota_coverage,
                 "epMeaslesCoverage": measles_coverage,
                 "epRubellaCoverage": rubella_coverage,
+                "epHpvCoverage": hpv_coverage
             },
         )
