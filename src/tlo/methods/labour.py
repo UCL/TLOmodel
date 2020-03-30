@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -120,6 +121,8 @@ class Labour (Module):
             Types.REAL, 'baseline probability of a child developing sepsis following birth'),
         'prob_neonatal_birth_asphyxia': Parameter(
             Types.REAL, 'baseline probability of a child developing neonatal encephalopathy following delivery'),
+
+        # ================================= HEALTH CARE SEEKING PARAMETERS ===========================================
         'odds_homebirth': Parameter(
             Types.REAL, 'odds of a woman delivering in at home when in labour'),
         'or_homebirth_unmarried': Parameter(
@@ -130,6 +133,50 @@ class Labour (Module):
             Types.REAL, 'odds ratio of a woman delivering at home whose wealth level is 5'),
         'or_homebirth_urban': Parameter(
             Types.REAL, 'odds ratio of a woman delivering at home when she lives in a urban setting'),
+        'odds_deliver_in_health_centre': Parameter(
+            Types.REAL, 'odds of a woman delivering in a health centre compared to a hospital'),
+        'rrr_hc_delivery_age_25_29': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 25-29 delivering in a health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_age_30_34': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 30-34 delivering in a health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_age_35_39': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 35-39 delivering in a health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_age_40_44': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 40-44 delivering in a health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_age_45_49': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 45-49 delivering in a health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_rural': Parameter(
+            Types.REAL, 'relative risk ratio for a woman living in a rural setting delivery in a health centre compared'
+                        'to a hospital'),
+        'rrr_hc_delivery_parity_3_to_4': Parameter(
+            Types.REAL, 'relative risk ratio for a woman with a parity of 3-4 delivering in a health centre compared to'
+                        'a hospital'),
+        'rrr_hc_delivery_parity_>4': Parameter(
+            Types.REAL, 'relative risk ratio of a woman with a parity >4 delivering in health centre compared to a '
+                        'hospital'),
+        'rrr_hc_delivery_married': Parameter(
+            Types.REAL, 'relative risk ratio of a married woman delivering in a health centre compared to a hospital'),
+        'odds_deliver_at_home': Parameter(
+            Types.REAL, 'odds of a woman delivering at home compared to a hospital'),
+        'rrr_hb_delivery_age_35_39': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 35-39 delivering at home compared to a '
+                        'hospital'),
+        'rrr_hb_delivery_age_40_44': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 40-44 delivering at home compared to a hospital'),
+        'rrr_hb_delivery_age_45_49': Parameter(
+            Types.REAL, 'relative risk ratio for a woman aged 45-49 delivering at home compared to a hospital'),
+
+        'rrr_hb_delivery_parity_3_to_4': Parameter(
+            Types.REAL, 'relative risk ratio for a woman with a parity of 3-4 delivering at home compared to'
+                        'a hospital'),
+        'rrr_hb_delivery_parity_>4': Parameter(
+            Types.REAL, 'relative risk ratio of a woman with a parity >4 delivering at home compared to a '
+                        'hospital'),
         'odds_careseeking_for_complication': Parameter(
             Types.REAL, 'odds of a woman seeking skilled assistance after developing a complication at a home birth'),
         'or_comp_careseeking_wealth_2': Parameter(
@@ -458,6 +505,43 @@ class Labour (Module):
                                                                                        params['or_homebirth_wealth_5']),
                  # wealth levels in the paper are different
                 Predictor('li_urban').when(True, params['or_homebirth_urban'])),
+
+             'probability_delivery_health_centre': LinearModel(
+                LinearModelType.LOGISTIC,
+                params['odds_deliver_in_health_centre'],
+                Predictor('age_years').when('.between(24,30)', params['rrr_hc_delivery_age_25_29'])
+                                      .when('.between(29,35)', params['rrr_hc_delivery_age_30_34'])
+                                      .when('.between(34,40)', params['rrr_hc_delivery_age_35_39'])
+                                      .when('.between(39,45)', params['rrr_hc_delivery_age_40_44'])
+                                      .when('.between(44,50)', params['rrr_hc_delivery_age_45_49']),
+                Predictor('li_urban').when(False, params['rrr_hc_delivery_rural']),
+                Predictor('la_parity').when('.between(2,5)', params['rrr_hc_delivery_parity_3_to_4'])
+                                      .when('>4', params['rrr_hc_delivery_parity_>4']),
+                Predictor('li_mar_stat').when('2', params['rrr_hc_delivery_married'])),
+
+
+                # TODO: education level not included as only 'secondary' was a significant influence and li_ed_level
+                #  groups secondary and higher (uni+) which was none significant in the model)
+                # TODO: wealth level not included as DHS separates wealth in 4 categories, TLO into 5
+                # TODO: being widowed not included as DHS seperates past marriage into widowed, divorced or no longer
+                #  living together, TLO just 'past' marriage
+
+             'probability_delivery_at_home': LinearModel(
+                LinearModelType.LOGISTIC,
+                params['odds_deliver_at_home'],
+                Predictor('age_years').when('.between(34,40)', params['rrr_hb_delivery_age_35_39'])
+                                      .when('.between(39,45)', params['rrr_hb_delivery_age_40_44'])
+                                      .when('.between(44,50)', params['rrr_hb_delivery_age_45_49']),
+                Predictor('la_parity').when('.between(2,5)', params['rrr_hb_delivery_parity_3_to_4'])
+                                      .when('>4', params['rrr_hb_delivery_parity_>4'])),
+
+                # TODO: as above with wealth
+                # TODO: as above with marriage
+
+                'probability_delivery_home': LinearModel(
+                LinearModelType.LOGISTIC,
+                params['odds_careseeking_for_complication'],
+                Predictor('li_wealth').when('2', params['or_comp_careseeking_wealth_2'])),
 
              'care_seeking_for_complication': LinearModel(
                 LinearModelType.LOGISTIC,
@@ -807,7 +891,8 @@ class Labour (Module):
 
         # todo: this will also need to change with external variables in linear model function
         # Check only women delivering at a facility have this function applied
-        assert mni[individual_id]['delivery_setting'] == 'facility_delivery'
+        assert mni[individual_id]['delivery_setting'] == 'health_centre' or mni[individual_id]['delivery_setting'] == \
+               'hospital'
 
         mni[individual_id][f'risk_{labour_stage}_{complication}'] = \
             params['la_labour_equations'][f'{complication}_{labour_stage}'].predict(df.loc[[individual_id]]
@@ -824,7 +909,7 @@ class Labour (Module):
         params = self.parameters
 
         # Ensure women delivering at home are not having complications set this way
-        assert mni[person_id]['delivery_setting'] == 'facility_delivery'
+        assert mni[person_id]['delivery_setting'] == 'health_centre' or mni[person_id]['delivery_setting'] == 'hospital'
         if labour_stage == 'ip':
             if rng.random_sample() < mni[person_id][f'risk_{labour_stage}_{complication}']:
                 df.at[person_id, f'la_{complication}'] = True
@@ -906,8 +991,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # begins
             mni[individual_id] = {'labour_state': None,
                                   # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or Post Term (POTL)
-                                  'delivery_setting': None,  # Facility Delivery (FD) or Home Birth (HB)
-                                  'delivery_facility_type': None,  # health_centre, hospital, regional_hospital
+                                  'delivery_setting': None,  # home_birth, health_centre, hospital
                                   'delivery_attended': False,  # True or False
                                   'corticosteroids_given': False,
                                   'risk_ip_obstructed_labour': params['prob_pl_ol'],
@@ -995,47 +1079,71 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
 # ======================================= PROBABILITY OF HOME DELIVERY =================================================
 
-            # TODO: Incorporate results of Wingston's multinomial logistic regression equation
-            facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(self.module,
-                                                                                              person_id=individual_id)
+            # TODO: we excluded 'other' from the equations so this isnt right?
+            if person.la_current_labour_successful_induction == 'not_induced':
+                prob_hb_delivery = params['la_labour_equations']['probability_delivery_at_home'].predict(
+                    df.loc[[individual_id]])[individual_id]
+                prob_hc_delivery = params['la_labour_equations']['probability_delivery_health_centre'].predict(
+                    df.loc[[individual_id]])[individual_id]
 
-            # As women who have presented for induction are already in a facility we exclude them, then apply a
-            # probability of home birth
-            if self.module.eval(params['la_labour_equations']['care_seeking'], individual_id) & \
-               (person.la_current_labour_successful_induction == 'not_induced'):
+                #    prob_hp_delivery = 1 - (prob_hc_delivery + prob_hb_delivery)
 
-                mni[individual_id]['delivery_setting'] = 'home_birth'
-                self.sim.schedule_event(LabourAtHomeEvent(self.module, individual_id), self.sim.date)
+                # Normalize the results of the regression equations
+                norm_hb = (prob_hb_delivery - 0.00001) / (1 - 0.00001)
+                norm_hc = (prob_hc_delivery - 0.00001) / (1 - 0.00001)
+                prob_hp_delivery = 1 - (norm_hc + norm_hb)
 
-                logger.debug('This is LabourEvent,  person %d will not seek care in labour and will deliver at '
-                             'home', individual_id)
+                facility_types = ['home_birth', 'health_centre', 'hospital']
+                probabilities = [norm_hb, norm_hc, prob_hp_delivery]
+                print(probabilities)
+                mni[individual_id]['delivery_setting'] = self.module.rng.choice(facility_types, p=probabilities)
 
-                logger.info('%s|home_birth|%s', self.sim.date,
-                            {'person_id': individual_id})
-            else:
-                mni[individual_id]['delivery_setting'] = 'facility_delivery'
-                logger.info(
-                        'This is LabourOnsetEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour on date'
-                        ' %s for person %d as they have chosen to seek care for delivery', self.sim.date, individual_id)
+                # Check all women's 'delivery setting' is set
+                assert mni[individual_id]['delivery_setting'] is not None
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
+                if mni[individual_id]['delivery_setting'] == 'health_centre':
+                    health_centre_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1\
+                    (self.module, person_id=individual_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery,
+                                                                        priority=0,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(days=1))
+
+                    logger.info('This is LabourOnsetEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour '
+                                'on date %s for person %d as they have chosen to seek care at a health centre for '
+                                'delivery', self.sim.date, individual_id)
+
+                elif mni[individual_id]['delivery_setting'] == 'hospital':
+                    non_referral_hospital_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(
+                        self.module, person_id=individual_id)
+                    # todo: allow attendance at higher level facility
+        #            referral_hospital_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2(
+        #            self.module, person_id=individual_id)
+        #            delivery_setting = self.module.rng.choice([non_referral_hospital_delivery,
+        #                                                           referral_hospital_delivery])
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(non_referral_hospital_delivery,
+                                                                        priority=0,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(days=1))
+                else:
+                    logger.info('This is LabourOnsetEvent, person %d as they has chosen not to seek care at a health '
+                                'centre for delivery and will give birth at home on date %s', self.sim.date,
+                                individual_id)
+
+            # TODO: Determine how we will deal with induction (they should be scheduled to attend a certain facility
+            #  level)
 
             # Here we schedule delivery care for women who have already sought care for induction, whether or not
             # that induction was successful (they would already be at a facility)
             if (person.la_current_labour_successful_induction == 'failed_induction') or \
                (person.la_current_labour_successful_induction == 'successful_induction'):
+                facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1 \
+                    (self.module, person_id=individual_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
                                                                     priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
-                logger.info('%s|facility_delivery|%s', self.sim.date,
-                            {'person_id': individual_id})
 
-                # Check all women's 'delivery setting' is set
-                assert mni[individual_id]['delivery_setting'] is not None
 
 # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ==========================================
 
@@ -1187,7 +1295,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                 self.module.set_home_birth_complications(individual_id, labour_stage='pp', complication='eclampsia')
 
             # If a woman has delivered in a facility we schedule her to now receive additional care following birth
-            if mni[individual_id]['delivery_setting'] == 'facility_delivery':
+            if mni[individual_id]['delivery_setting'] == 'hom':
 
                 logger.info('This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartumPeriod for person '
                             '%d on date %s', individual_id, self.sim.date)
@@ -1460,10 +1568,16 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         # Women who developed a complication at home, then presented to a facility for delivery, are counted as
         # facility deliveries
         if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
-            mni[person_id]['delivery_setting'] = 'facility_delivery'
+            mni[person_id]['delivery_setting'] = 'health_centre'
+            # TODO: this needs correcting (i.e. where will they seek care)
 
-        logger.info('%s|facility_delivery|%s', self.sim.date,
-                    {'person_id': person_id})
+        if mni[person_id]['delivery_setting'] == 'health_centre':
+            logger.info('%s|health_centre_delivery|%s', self.sim.date,
+                        {'person_id': person_id})
+
+        elif mni[person_id]['delivery_setting'] == 'hospital':
+            logger.info('%s|hospital_delivery|%s', self.sim.date,
+                        {'person_id': person_id})
 
         # ============================== STORING COMPLICATION RISKS IN MNI ========================================
 
@@ -1490,13 +1604,6 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         # centres and hospitals are mixed, but their capabilities and quality of delivery care differ considerably.
         # Currently are using this dummy code to differentiated between the two facility types
 
-        if self.module.rng.random_sample() > params['dummy_prob_health_centre']:
-            mni[person_id]['delivery_facility_type'] = 'health_centre'
-            logger.debug('mother %d is delivering in a health centre', person_id)
-        else:
-            mni[person_id]['delivery_facility_type'] = 'hospital'
-            logger.debug('mother %d is delivering in a level 1 hospital', person_id)
-
         # On presentation to the HSI, we use the squeeze factor to determine if this woman will receive delivery
         # care from a health care professional, or if she will delivered unassisted in a facility
         if squeeze_factor > params['squeeze_factor_threshold_delivery_attendance']:
@@ -1510,9 +1617,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
             logger.debug('mother %d is delivering with assistance at a level 1 health facility', person_id)
 
         # Run checks that key facility properties in the mni have been set
-        assert mni[person_id]['delivery_facility_type'] is not None
         assert mni[person_id]['delivery_attended'] is not None
-        assert mni[person_id]['delivery_setting'] == 'facility_delivery'
+        assert mni[person_id]['delivery_setting'] != 'home_birth'
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         # TODO: define consumables inside the module and just call within the HSI
@@ -1719,9 +1825,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
 
         # We use variable sensitivity of the assessment of these complications by facility type (to mimic
         # gradient in quality)
-        if mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_setting'] == 'health_centre':
                 assessment_and_treatment_of_obstructed_labour('hc')
-        if mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_setting'] == 'hospital':
                 assessment_and_treatment_of_obstructed_labour('hp')
 
     # ---------------------------------------------- Maternal Sepsis: -------------------------------------------------
@@ -1749,9 +1855,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 logger.debug('mother %d has not had their sepsis identified during delivery and will not be treated',
                              person_id)
 
-        if mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_setting'] == 'health_centre':
                 assessment_and_treatment_of_maternal_sepsis('hc')
-        if mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_setting'] == 'hospital':
                 assessment_and_treatment_of_maternal_sepsis('hp')
 
     # --------------------------------------------------- Maternal Hypertension ---------------------------------------
@@ -1780,9 +1886,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                                  'not be treated', person_id)
 
         # However we assume that only women who are having an attended delivery will have their hypertension identified
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_setting'] == 'health_centre':
             assessment_and_treatment_of_hypertension('hc')
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_setting'] == 'hospital':
             assessment_and_treatment_of_hypertension('hp')
 
     # ------------------------------------------------- Severe pre-eclampsia ------------------------------------------
@@ -1810,9 +1916,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                              'not be treated', person_id)
 
         # We assume that only women who are having an attended delivery will have their severe pre-eclampsia identified
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_setting'] == 'health_centre':
             assessment_and_treatment_of_severe_pre_eclampsia('hc')
-        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_attended'] and mni[person_id]['delivery_setting'] == 'hospital':
             assessment_and_treatment_of_severe_pre_eclampsia('hp')
 
     # ------------------------------------------------ ECLAMPSIA  ------------------------------------------------------
@@ -1864,9 +1970,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         # Whilst we assume a difference in sensitivity of assessment between health centres and hospitals, we assume
         # women who are delivering unattended have the same likelihood of treatment due to the presentation of this
         # condition
-        if mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_setting'] == 'health_centre':
             assessment_and_plan_for_referral_antepartum_haemorrhage('hc', 'referral')
-        if mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_setting'] == 'hospital':
             assessment_and_plan_for_referral_antepartum_haemorrhage('hp', 'treatment')
 
     # ------------------------------------------------ UTERINE RUPTURE ------------------------------------------------
@@ -1890,9 +1996,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 logger.debug('mother %d has not had their uterine_rupture identified during delivery and will not be '
                              'referred for treatment', person_id)
 
-        if mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_setting'] == 'health_centre':
             assessment_and_plan_for_referral_uterine_rupture('hc', 'referral')
-        if mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_setting'] == 'hospital':
             assessment_and_plan_for_referral_uterine_rupture('hp', 'treatment')
 
     #
@@ -1973,9 +2079,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2(HSI_Event, I
         # todo: check this is only capturing true FDs i.e. the event has actually ran
 
         if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
-            mni[person_id]['delivery_setting'] = 'facility_delivery'
+            mni[person_id]['delivery_setting'] = 'hospital'
 
-        logger.info('%s|facility_delivery|%s', self.sim.date,
+        logger.info('%s|hospital_delivery|%s', self.sim.date,
                     {'person_id': person_id})
 
         # The structure of this event mirrors HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1. There is no
@@ -1983,10 +2089,6 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2(HSI_Event, I
 
         # ============================== STORING COMPLICATION RISKS IN MNI ========================================
         if ~mni[person_id]['sought_care_for_complication']:
-            self.module.calculate_complication_risk_facility_delivery(person_id, complication='obstructed_labour',
-                                                                      labour_stage='ip')
-            self.module.calculate_complication_risk_facility_delivery(person_id, complication='eclampsia',
-                                                                      labour_stage='ip')
             self.module.calculate_complication_risk_facility_delivery(person_id, complication='antepartum_haem',
                                                                       labour_stage='ip')
             self.module.calculate_complication_risk_facility_delivery(person_id, complication='sepsis',
@@ -2004,11 +2106,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2(HSI_Event, I
             mni[person_id]['delivery_attended'] = True
             logger.debug('mother %d is delivering with assistance at a level 1 health facility', person_id)
 
-        mni[person_id]['delivery_facility_type'] = 'hospital'
-
-        assert mni[person_id]['delivery_facility_type'] is not None
         assert mni[person_id]['delivery_attended'] is not None
-        assert mni[person_id]['delivery_setting'] == 'facility_delivery'
+        assert mni[person_id]['delivery_setting'] != 'home_birth'
 
         if mni[person_id]['delivery_attended'] and ~mni[person_id]['sought_care_for_complication']:
             self.module.prophylactic_labour_interventions()
@@ -2121,7 +2220,8 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
         # Although we change the delivery setting variable to 'facility_delivery' we do not include women who present
         # for care following birth, due to complications, as facility deliveries
         if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
-            mni[person_id]['delivery_setting'] = 'facility_delivery'
+            # TODO: include choice of delivery setting into complication equation
+            mni[person_id]['delivery_setting'] = 'health_centre'
 
         # ================================= STORING COMPLICATION RISKS IN MNI ==========================================
         # As with  HSI_Labour_PresentsForSkilledAttendanceInLabour we start by calculating and storing each womans
@@ -2208,9 +2308,9 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1(HSI_Event, Indivi
                              person_id)
 
         # todo: will this not double run this event on women who are already septic?
-        if mni[person_id]['delivery_facility_type'] == 'health_centre':
+        if mni[person_id]['delivery_setting'] == 'health_centre':
             assessment_and_treatment_of_maternal_sepsis('hc')
-        if mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_setting'] == 'hospital':
             assessment_and_treatment_of_maternal_sepsis('hp')
 
     # ------------------------------------------------ ECLAMPSIA  -----------------------------------------------------
@@ -2348,7 +2448,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel2(HSI_Event, Indivi
         df = self.sim.population.props
 
         if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
-            mni[person_id]['delivery_setting'] = 'facility_delivery'
+            mni[person_id]['delivery_setting'] = 'hospital'
 
         logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing skilled attendance '
                     'following birth for person %d', person_id)
@@ -2378,7 +2478,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel2(HSI_Event, Indivi
                 self.module.set_complications_during_facility_birth(person_id, complication='sepsis', labour_stage='pp')
 
     # ===================================== COMPLICATION ASSESSMENT ===========================================
-        if mni[person_id]['delivery_facility_type'] == 'hospital':
+        if mni[person_id]['delivery_setting'] == 'hospital':
             self.module.assessment_and_treatment_of_maternal_sepsis('hp')
 
         self.module.assessment_and_treatment_of_eclampsia()
@@ -2431,6 +2531,8 @@ class HSI_Labour_CaesareanSectionFacilityLevel1(HSI_Event, IndividualScopeEventM
 
         logger.info('This is HSI_Labour_CaesareanSection: Person %d will now undergo delivery via Caesarean Section',
                     person_id)
+        logger.info('%s|caesarean_section|%s', self.sim.date,
+                    {'person_id': person_id})
 
         # We define the consumables needed for this event
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2496,6 +2598,8 @@ class HSI_Labour_CaesareanSectionFacilityLevel2(HSI_Event, IndividualScopeEventM
 
         logger.info('This is HSI_Labour_CaesareanSection: Person %d will now undergo delivery via Caesarean Section',
                     person_id)
+        logger.info('%s|caesarean_section|%s', self.sim.date,
+                    {'person_id': person_id})
 
         # We define the consumables needed for this event
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
