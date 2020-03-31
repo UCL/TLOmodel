@@ -173,6 +173,7 @@ class Module:
     # Subclasses may declare this dictionary to specify properties of individuals.
     # We give an empty definition here as default.
     PROPERTIES = {}
+    ''' .. properties:: Declaration in base class. '''
 
     # The explicit attributes of the module. We list these so we can distinguish dynamic
     # parameters created from the PARAMETERS specification.
@@ -190,6 +191,7 @@ class Module:
         self.rng = np.random.RandomState()
         self.name = name or self.__class__.__name__
         self.sim = None
+        ''' .. properties:: second Declaration in base class. '''
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame):
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary

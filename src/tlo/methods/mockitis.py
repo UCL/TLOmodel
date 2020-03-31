@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+
+
 class Mockitis(Module):
     """
     This is a dummy infectious disease.
@@ -49,6 +51,8 @@ class Mockitis(Module):
         'mi_date_cure': Property(
             Types.DATE, 'Date an infected individual was cured')
     }
+    ''' .. properties:: in Mockitis. '''
+
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {

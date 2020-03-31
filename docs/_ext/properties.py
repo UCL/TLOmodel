@@ -73,6 +73,11 @@ def process_properties_nodes(app, doctree, fromdocname):
     # Augment each properties with a backlink to the original location.
     env = app.builder.env
 
+    # From the bugfix
+    if not hasattr(env, 'properties_all_properties'):
+        #env.todo_all_todos = []
+        env.properties_all_properties = []
+
     for node in doctree.traverse(propertieslist):
         if not app.config.properties_include_properties:
             node.replace_self([])
