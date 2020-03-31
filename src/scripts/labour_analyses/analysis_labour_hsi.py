@@ -22,7 +22,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 1000
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -46,26 +46,70 @@ sim.simulate(end_date=end_date)
 # Get the output from the logfile
 output = parse_log_file(logfile)
 
+# def organise_logging_dataframe(module, logging_df):
+#    df = output[f'tlo.methods.{module}'][f'{logging_df}']
+#   df['date'] = pd.to_datetime(all_births_df['date'])
+#   df['year'] = df['date'].dt.year
+#   df_by_year = df.groupby(['year'])['child'].size()
+#   return df_by_year
+
+# organise_logging_dataframe('demography','on_birth')
+
 # All births (not clear if this should be live births)
 all_births_df = output['tlo.methods.demography']['on_birth']
 all_births_df['date'] = pd.to_datetime(all_births_df['date'])
 all_births_df['year'] = all_births_df['date'].dt.year
 all_births_by_year = all_births_df.groupby(['year'])['child'].size()
 
-# Facility Deliveries
-facility_deliveries = output['tlo.methods.labour']['facility_delivery']
-facility_deliveries['date'] = pd.to_datetime(facility_deliveries['date'])
-facility_deliveries['year'] = facility_deliveries['date'].dt.year
-facility_by_year = facility_deliveries.groupby(['year'])['person_id'].size()
+# Hospital Deliveries
+hospital_deliveries = output['tlo.methods.labour']['hospital_delivery']
+hospital_deliveries['date'] = pd.to_datetime(hospital_deliveries['date'])
+hospital_deliveries['year'] = hospital_deliveries['date'].dt.year
+hospital_deliveries_by_year = hospital_deliveries.groupby(['year'])['person_id'].size()
 
-facility_delivery_births = pd.concat((facility_by_year, all_births_by_year), axis=1)
-facility_delivery_births.columns = ['facility_deliveries', 'all_births']
-facility_delivery_births['FBR'] = facility_delivery_births['facility_deliveries'] /\
-                                  facility_delivery_births['all_births'] * 100
+hospital_deliveries_births = pd.concat((hospital_deliveries_by_year, all_births_by_year), axis=1)
+hospital_deliveries_births.columns = ['hospital_deliveries', 'all_births']
+hospital_deliveries_births['HDR'] = hospital_deliveries_births['hospital_deliveries'] / \
+                                    hospital_deliveries_births['all_births'] * 100
 
-facility_delivery_births.plot.bar(y='FBR', stacked=True)
-plt.title("Yearly Facility Delivery Rate")
+hospital_deliveries_births.plot.bar(y='HDR', stacked=True)
+plt.title("Yearly HD Rate")
 plt.show()
+
+# Health Centre Deliveries
+health_centre_deliveries = output['tlo.methods.labour']['health_centre_delivery']
+health_centre_deliveries['date'] = pd.to_datetime(health_centre_deliveries['date'])
+health_centre_deliveries['year'] = health_centre_deliveries['date'].dt.year
+health_centre_deliveries_by_year = health_centre_deliveries.groupby(['year'])['person_id'].size()
+
+health_centre_births = pd.concat((health_centre_deliveries_by_year, all_births_by_year), axis=1)
+health_centre_births.columns = ['health_centre_deliveries', 'all_births']
+health_centre_births['HCR'] = health_centre_births['health_centre_deliveries'] / \
+                              health_centre_births['all_births'] * 100
+
+health_centre_births.plot.bar(y='HCR', stacked=True)
+plt.title("Yearly HC Rate")
+plt.show()
+
+# Home Births
+home_births = output['tlo.methods.labour']['home_birth']
+home_births['date'] = pd.to_datetime(home_births['date'])
+home_births['year'] = home_births['date'].dt.year
+home_births_by_year = home_births.groupby(['year'])['person_id'].size()
+
+home_births_births = pd.concat((home_births_by_year, all_births_by_year), axis=1)
+home_births_births.columns = ['home_births', 'all_births']
+home_births_births['HBR'] = home_births_births['home_births'] / \
+                            home_births_births['all_births'] * 100
+
+# delivery_setting_rates = pd.concat((hospital_deliveries_births, health_centre_births, home_births_births), axis=1)
+# delivery_setting_rates.drop(('hospital_deliveries', 'all_births', ' health_centre_deliveries', 'all_births',
+#                             'home_births', 'all_births'), axis=1)
+# x= 'y'
+home_births_births.plot.bar(y='HBR', stacked=True)
+plt.title("Yearly HB Rate")
+plt.show()
+
 
 # Caesarean Section Rates
 caesareans_df = output['tlo.methods.labour']['caesarean_section']
