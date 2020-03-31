@@ -27,8 +27,36 @@ class Labour (Module):
 
     PARAMETERS = {
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================
+
+        'intercept_parity_lr2010': Parameter(
+            Types.REAL, 'intercept value for linear regression equation predicating womens parity at 2010 baseline'),
+        'effect_age_parity_lr2010': Parameter(
+            Types.REAL, 'effect of an increase in age by 1 year in the linear regression equation predicating '
+                        'womens parity at 2010 baseline'),
+        'effect_mar_stat_2_parity_lr2010': Parameter(
+            Types.REAL, 'effect of a change in marriage status from comparison (level 1) in the linear '
+                        'regression equation predicating womens parity at 2010 baseline'),
+        'effect_mar_stat_3_parity_lr2010': Parameter(
+            Types.REAL, 'effect of a change in marriage status from comparison (level 1) in the linear '
+                        'regression equation predicating womens parity at 2010 baseline'),
+        'effect_wealth_lev_5_parity_lr2010': Parameter(
+            Types.REAL, 'effect of a change in wealth status from comparison (level 1) in the linear '
+                        'regression equation predicating womens parity at 2010 baseline'),
+        'effect_wealth_lev_4_parity_lr2010': Parameter(
+            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+                        'parity at 2010 base line'),
+        'effect_wealth_lev_3_parity_lr2010': Parameter(
+            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+                        'parity at 2010 base line'),
+        'effect_wealth_lev_2_parity_lr2010': Parameter(
+            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+                        'parity at 2010 base line'),
+        'effect_wealth_lev_1_parity_lr2010': Parameter(
+            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+                        'parity at 2010 base line'),
         'prob_pl_ol': Parameter(
-            Types.REAL, 'probability of a woman entering prolonged/obstructed labour'),
+            Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
+                        'parity at 2010 base line'),
         'rr_PL_OL_nuliparity': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they are nuliparous'),
         'rr_PL_OL_para_more3': Parameter(
@@ -123,16 +151,6 @@ class Labour (Module):
             Types.REAL, 'baseline probability of a child developing neonatal encephalopathy following delivery'),
 
         # ================================= HEALTH CARE SEEKING PARAMETERS ===========================================
-        'odds_homebirth': Parameter(
-            Types.REAL, 'odds of a woman delivering in at home when in labour'),
-        'or_homebirth_unmarried': Parameter(
-            Types.REAL, 'odds ratio of an unmarried woman delivering at home when in labour'),
-        'or_homebirth_wealth_4': Parameter(
-            Types.REAL, 'odds ratio of a woman delivering at home whose wealth level is 4'),
-        'or_homebirth_wealth_5': Parameter(
-            Types.REAL, 'odds ratio of a woman delivering at home whose wealth level is 5'),
-        'or_homebirth_urban': Parameter(
-            Types.REAL, 'odds ratio of a woman delivering at home when she lives in a urban setting'),
         'odds_deliver_in_health_centre': Parameter(
             Types.REAL, 'odds of a woman delivering in a health centre compared to a hospital'),
         'rrr_hc_delivery_age_25_29': Parameter(
@@ -184,8 +202,6 @@ class Labour (Module):
                         'a home birth '),
 
         # ================================= TREATMENT PARAMETERS =====================================================
-        'prob_successful_induction': Parameter(
-            Types.REAL, 'probability of that induction of labour will be successful'),
         'rr_maternal_sepsis_clean_delivery': Parameter(
             Types.REAL, 'relative risk of maternal sepsis following clean birth practices employed in a facility'),
         'rr_newborn_sepsis_clean_delivery': Parameter(
@@ -269,10 +285,6 @@ class Labour (Module):
         'la_due_date_current_pregnancy': Property(Types.DATE, 'The date on which a newly pregnant woman is scheduled to'
                                                               ' go into labour'),
         'la_currently_in_labour': Property(Types.BOOL, 'whether this woman is currently in labour'),
-        'la_current_labour_successful_induction': Property(Types.CATEGORICAL, 'Not Induced, Successful Induction, '
-                                                                              'Failed Induction',
-                                                           categories=['not_induced', 'successful_induction',
-                                                                       'failed_induction']),
         'la_intrapartum_still_birth': Property(Types.BOOL, 'whether this womans most recent pregnancy has ended '
                                                            'in a stillbirth'),
         'la_parity': Property(Types.REAL, 'total number of previous deliveries'),
@@ -347,18 +359,21 @@ class Labour (Module):
         # Here we define the equations that will be used throughout this module using the linear model and stored them
         # as a parameter
 
-        # TODO: include external variables required within the linear model
         # TODO: finalise predictors in all models
 
         params['la_labour_equations'] =\
             {'parity': LinearModel(
                 LinearModelType.ADDITIVE,
-                -3,
-                Predictor('age_years').apply(lambda age_years: (age_years * 0.22)),
-                Predictor('li_mar_stat').when('2', 0.91).when('3', 0.16),
-                Predictor('li_wealth').when('5', -0.13).when('4', -0.13).when('3', -0.26).when('2', -0.37).when('1',
-                                                                                                                -0.9)),
-                # TODO: first draft from rough regression of 2010 DHS data, rounded in code to ensure whole numbers
+                params['intercept_parity_lr2010'],
+                Predictor('age_years').apply(lambda age_years: (age_years * params['intercept_parity_lr2010'])),
+                Predictor('li_mar_stat').when('2', params['effect_mar_stat_2_parity_lr2010'])
+                                        .when('3', params['effect_mar_stat_3_parity_lr2010']),
+                Predictor('li_wealth').when('5', params['effect_wealth_lev_5_parity_lr2010'])
+                                      .when('4', params['effect_wealth_lev_4_parity_lr2010'])
+                                      .when('3', params['effect_wealth_lev_3_parity_lr2010'])
+                                      .when('2', params['effect_wealth_lev_2_parity_lr2010'])
+                                      .when('1', params['effect_wealth_lev_1_parity_lr2010'])),
+                # TODO: first draft from rough regression of 2010 DHS data (will need to be finalised)
 
              'early_preterm_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -495,17 +510,6 @@ class Labour (Module):
                 Predictor('la_uterine_rupture_treatment').when(True, 0.5),
                 Predictor('la_maternal_death_in_labour').when(True, 2)),
 
-             'care_seeking': LinearModel(
-                LinearModelType.LOGISTIC,  # TODO: rough cut paper, would seeking care be better than % home birth?
-                params['odds_homebirth'],
-                Predictor('li_mar_stat').when('1', params['or_homebirth_unmarried']).when('3',
-                                                                                          params['or_homebirth'
-                                                                                                 '_unmarried']),
-                Predictor('li_wealth').when('4', params['or_homebirth_wealth_4']).when('5',
-                                                                                       params['or_homebirth_wealth_5']),
-                 # wealth levels in the paper are different
-                Predictor('li_urban').when(True, params['or_homebirth_urban'])),
-
              'probability_delivery_health_centre': LinearModel(
                 LinearModelType.LOGISTIC,
                 params['odds_deliver_in_health_centre'],
@@ -554,7 +558,6 @@ class Labour (Module):
         df = population.props
         params = self.parameters
 
-        df.loc[df.is_alive, 'la_current_labour_successful_induction'] = 'not_induced'
         df.loc[df.is_alive, 'la_currently_in_labour'] = False
         df.loc[df.is_alive, 'la_intrapartum_still_birth'] = False
         df.loc[df.is_alive, 'la_parity'] = 0
@@ -675,7 +678,6 @@ class Labour (Module):
 
         df.at[child_id, 'la_due_date_current_pregnancy'] = pd.NaT
         df.at[child_id, 'la_currently_in_labour'] = False
-        df.at[child_id, 'la_current_labour_successful_induction'] = 'not_induced'
         df.at[child_id, 'la_intrapartum_still_birth'] = False
         df.at[child_id, 'la_parity'] = 0
         df.at[child_id, 'la_previous_cs_delivery'] = False
@@ -891,8 +893,8 @@ class Labour (Module):
 
         # todo: this will also need to change with external variables in linear model function
         # Check only women delivering at a facility have this function applied
-        assert mni[individual_id]['delivery_setting'] == 'health_centre' or mni[individual_id]['delivery_setting'] == \
-               'hospital'
+        assert mni[individual_id]['delivery_setting'] == 'health_centre' or mni[individual_id]['delivery_setting']\
+               == 'hospital'
 
         mni[individual_id][f'risk_{labour_stage}_{complication}'] = \
             params['la_labour_equations'][f'{complication}_{labour_stage}'].predict(df.loc[[individual_id]]
@@ -910,6 +912,7 @@ class Labour (Module):
 
         # Ensure women delivering at home are not having complications set this way
         assert mni[person_id]['delivery_setting'] == 'health_centre' or mni[person_id]['delivery_setting'] == 'hospital'
+
         if labour_stage == 'ip':
             if rng.random_sample() < mni[person_id][f'risk_{labour_stage}_{complication}']:
                 df.at[person_id, f'la_{complication}'] = True
@@ -941,7 +944,7 @@ class Labour (Module):
                 # within the mni
                 if complication == 'postpartum_haem':
                     mni[person_id]['source_pph'] = self.rng.choice(['uterine_atony', 'retained_placenta'],
-                                                                            size=1, p=params['prob_pph_source'])
+                                                                   size=1, p=params['prob_pph_source'])
                     random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
                                                     p=params['severity_maternal_haemorrhage'])
                     if random_choice == 'non_severe':
@@ -972,7 +975,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
-        mni = self.module.mother_and_newborn_info
 
         # Here we populate the maternal and newborn info dictionary with baseline values before the womans labour begins
         mni = self.module.mother_and_newborn_info
@@ -1042,16 +1044,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
         if person.is_pregnant & person.is_alive & (person.la_due_date_current_pregnancy == self.sim.date):
             df.at[individual_id, 'la_currently_in_labour'] = True
 
-            # If a woman has been induced/attempted induction she will already be in a facility therefore delivery_
-            # setting is set to facility
-            if (person.la_current_labour_successful_induction == 'failed_induction') or \
-               (person.la_current_labour_successful_induction == 'successful_induction'):
-                mni[individual_id]['delivery_setting'] = 'facility_delivery'
-
-            # We then store her induction status if successful
-            if person.la_current_labour_successful_induction == 'successful_induction':
-                mni[individual_id]['induced_labour'] = True
-
             # Now we use gestational age to categorise the 'labour_state'
             if 37 <= person.ps_gestational_age_in_weeks < 42:
                 mni[individual_id]['labour_state'] = 'term_labour'
@@ -1079,71 +1071,50 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
 # ======================================= PROBABILITY OF HOME DELIVERY =================================================
 
-            # TODO: we excluded 'other' from the equations so this isnt right?
-            if person.la_current_labour_successful_induction == 'not_induced':
-                prob_hb_delivery = params['la_labour_equations']['probability_delivery_at_home'].predict(
-                    df.loc[[individual_id]])[individual_id]
-                prob_hc_delivery = params['la_labour_equations']['probability_delivery_health_centre'].predict(
-                    df.loc[[individual_id]])[individual_id]
+            #    prob_hb_delivery = params['la_labour_equations']['probability_delivery_at_home'].predict(
+            #        df.loc[[individual_id]])[individual_id]
+            #    prob_hc_delivery = (params['la_labour_equations']['probability_delivery_health_centre'].predict(
+            #    df.loc[[individual_id]])[individual_id]) - prob_hb_delivery
 
-                #    prob_hp_delivery = 1 - (prob_hc_delivery + prob_hb_delivery)
+            if self.module.eval(params['la_labour_equations']['probability_delivery_at_home'], individual_id):
+                mni[individual_id]['delivery_setting'] = 'home_birth'
+                # TODO: is this the right probability?
+            elif self.module.eval(params['la_labour_equations']['probability_delivery_health_centre'], individual_id):
+                mni[individual_id]['delivery_setting'] = 'health_centre'
+            else:
+                mni[individual_id]['delivery_setting'] = 'hospital'
 
-                # Normalize the results of the regression equations
-                norm_hb = (prob_hb_delivery - 0.00001) / (1 - 0.00001)
-                norm_hc = (prob_hc_delivery - 0.00001) / (1 - 0.00001)
-                prob_hp_delivery = 1 - (norm_hc + norm_hb)
+            # Check all women's 'delivery setting' is set
+            assert mni[individual_id]['delivery_setting'] is not None
 
-                facility_types = ['home_birth', 'health_centre', 'hospital']
-                probabilities = [norm_hb, norm_hc, prob_hp_delivery]
-                print(probabilities)
-                mni[individual_id]['delivery_setting'] = self.module.rng.choice(facility_types, p=probabilities)
+            if mni[individual_id]['delivery_setting'] == 'health_centre':
+                health_centre_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(self.module,
+                                                                                                       person_id=
+                                                                                                       individual_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery, priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1))
 
-                # Check all women's 'delivery setting' is set
-                assert mni[individual_id]['delivery_setting'] is not None
+                logger.info('This is LabourOnsetEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour on '
+                            'date %s for person %d as they have chosen to seek care at a health centre for delivery',
+                            self.sim.date, individual_id)
 
-                if mni[individual_id]['delivery_setting'] == 'health_centre':
-                    health_centre_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1\
-                    (self.module, person_id=individual_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery,
-                                                                        priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
+            elif mni[individual_id]['delivery_setting'] == 'hospital':
+                non_referral_hospital_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(
+                    self.module, person_id=individual_id)
+            #  todo: allow attendance at higher level facility
 
-                    logger.info('This is LabourOnsetEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour '
-                                'on date %s for person %d as they have chosen to seek care at a health centre for '
-                                'delivery', self.sim.date, individual_id)
-
-                elif mni[individual_id]['delivery_setting'] == 'hospital':
-                    non_referral_hospital_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(
-                        self.module, person_id=individual_id)
-                    # todo: allow attendance at higher level facility
         #            referral_hospital_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel2(
         #            self.module, person_id=individual_id)
         #            delivery_setting = self.module.rng.choice([non_referral_hospital_delivery,
         #                                                           referral_hospital_delivery])
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(non_referral_hospital_delivery,
-                                                                        priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
-                else:
-                    logger.info('This is LabourOnsetEvent, person %d as they has chosen not to seek care at a health '
-                                'centre for delivery and will give birth at home on date %s', self.sim.date,
-                                individual_id)
 
-            # TODO: Determine how we will deal with induction (they should be scheduled to attend a certain facility
-            #  level)
-
-            # Here we schedule delivery care for women who have already sought care for induction, whether or not
-            # that induction was successful (they would already be at a facility)
-            if (person.la_current_labour_successful_induction == 'failed_induction') or \
-               (person.la_current_labour_successful_induction == 'successful_induction'):
-                facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1 \
-                    (self.module, person_id=individual_id)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(facility_delivery,
-                                                                    priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(non_referral_hospital_delivery, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
-
+            else:
+                logger.info('This is LabourOnsetEvent, person %d as they has chosen not to seek care at a health centre'
+                            'for delivery and will give birth at home on date %s', self.sim.date, individual_id)
 
 # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ==========================================
 
@@ -1160,10 +1131,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
 
             logger.debug('This is LabourOnsetEvent scheduling a potential death on date %s for mother %d',
                          self.sim.date, individual_id)
-
-            # Here we set the due date of women who have been induced to pd.NaT so they dont go into labour twice
-            if person.la_current_labour_successful_induction != 'not_induced':
-                df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
@@ -1187,6 +1154,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # Condition the event on women being alive
         if df.at[individual_id, 'is_alive']:
+            logger.info('%s|home_birth|%s', self.sim.date,
+                        {'mother_id': individual_id})
 
             # ===================================  APPLICATION OF COMPLICATIONS =======================================
 
@@ -1208,9 +1177,11 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
             facility_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(self.module,
                                                                                               person_id=individual_id)
 
-            if df.at[individual_id, 'la_obstructed_labour'] or df.at[individual_id, 'la_antepartum_haem'] or df.at[
-                individual_id, 'la_sepsis'] or df.at[individual_id, 'la_eclampsia'] or \
-                df.at[individual_id, 'la_uterine_rupture']:
+            if df.at[individual_id, 'la_obstructed_labour'] \
+                or df.at[individual_id, 'la_antepartum_haem'] \
+                or df.at[individual_id, 'la_sepsis']\
+                or df.at[individual_id, 'la_eclampsia'] \
+                or df.at[individual_id, 'la_uterine_rupture']:
                 if self.module.eval(params['la_labour_equations']['care_seeking_for_complication'], individual_id):
                     mni[individual_id]['sought_care_for_complication'] = True
                     logger.debug('mother %d will now seek care for a complication that has developed during labour '
@@ -1306,6 +1277,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
             # If a woman has delivered at home and develops a complication, we now determine if she will seek care using
             # an equation from the linear model
+            # TODO: this, again, will schedule the event a second time for anyone who develops sepsis or eclampsia ip
             elif mni[individual_id]['delivery_setting'] == 'home_birth'and (df.at[individual_id, 'la_sepsis'] or
                                                                             df.at[individual_id, 'la_eclampsia'] or
                                                                             df.at[individual_id, 'la_postpartum_haem']):
