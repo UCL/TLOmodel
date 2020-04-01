@@ -39,43 +39,53 @@ class Diarrhoea(Module):
     PARAMETERS = {
         'base_inc_rate_diarrhoea_by_rotavirus':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year)  of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
+                      'incidence rate (per person-year)'
+                      ' of diarrhoea caused by rotavirus in age groups 0-11, 12-23, 24-59 months '
                       ),
         'base_inc_rate_diarrhoea_by_shigella':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by shigella spp in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by shigella spp in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_adenovirus':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_cryptosporidium':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_campylobacter':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_ST-ETEC':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_sapovirus':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by sapovirus in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by sapovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_norovirus':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by norovirus in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by norovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_astrovirus':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_diarrhoea_by_tEPEC':
             Parameter(Types.LIST,
-                      'incidence rate (per person-year) of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
+                      'incidence rate (per person-year) '
+                      'of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
                       ),
         'rr_diarrhoea_HHhandwashing':
             Parameter(Types.REAL, 'relative rate of diarrhoea with household handwashing with soap'
@@ -404,10 +414,12 @@ class Diarrhoea(Module):
 
         # Check that every value has been read-in successfully
         for param_name, type in self.PARAMETERS.items():
-            assert param_name in self.parameters, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+            assert param_name in self.parameters, f'Parameter "{param_name}" ' \
+                f'is not read in correctly from the resourcefile.'
             assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
             assert isinstance(self.parameters[param_name],
-                              type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+                              type.python_type), f'Parameter "{param_name}" ' \
+                f'is not read in correctly from the resourcefile.'
 
         # Get DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
@@ -1142,7 +1154,6 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
     def apply(self, population):
-        df = self.sim.population.props
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
         counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
@@ -1280,7 +1291,8 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
     This is a treatment for diarrhoea with some dehydration at outpatient setting through IMCI
     """
     # some dehydration with no other severe classification - PLAN B
-    # if child has a severe classification - refer urgently to hospital and gic=ving ORS on the way, advise on breastfeeding
+    # if child has a severe classification -
+    # refer urgently to hospital and gic=ving ORS on the way, advise on breastfeeding
     # advise on follow up in 5 days
 
     def __init__(self, module, person_id):
