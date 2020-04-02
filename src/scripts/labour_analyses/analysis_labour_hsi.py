@@ -95,7 +95,7 @@ plt.show()
 home_births = output['tlo.methods.labour']['home_birth']
 home_births['date'] = pd.to_datetime(home_births['date'])
 home_births['year'] = home_births['date'].dt.year
-home_births_by_year = home_births.groupby(['year'])['person_id'].size()
+home_births_by_year = home_births.groupby(['year'])['mother_id'].size()
 
 home_births_births = pd.concat((home_births_by_year, all_births_by_year), axis=1)
 home_births_births.columns = ['home_births', 'all_births']
