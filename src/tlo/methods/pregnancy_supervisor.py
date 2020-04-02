@@ -157,7 +157,6 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
 
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """

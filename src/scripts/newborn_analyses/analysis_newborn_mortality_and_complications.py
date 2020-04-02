@@ -24,7 +24,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 10000
+popsize = 5000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
