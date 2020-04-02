@@ -165,6 +165,7 @@ class hiv(Module):
         'hv_behaviour_change': Property(Types.BOOL, 'Exposed to hiv prevention counselling'),
 
     }
+    ''' .. properties:: in hiv. '''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.

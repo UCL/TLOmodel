@@ -1,6 +1,6 @@
 """
 Contraception module covering baseline fertility, contraception methods use, failure (pregnancy),
-Switching contraceptive methods, and discontiuation rates by age
+Switching contraceptive methods, and discontinuation rates by age
 please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Pregnancy.pdf
 for conceptual diagram
 """
@@ -77,6 +77,7 @@ class Contraception(Module):
                                            'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL, 'Unintended pregnancies following contraception failure')
     }
+    ''' .. properties:: in Contraception. '''
 
     def read_parameters(self, data_folder):
         """

@@ -115,6 +115,7 @@ class Depression(Module):
         'de_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'de_cc': Property(Types.BOOL, 'whether has chronic condition'),
     }
+    ''' .. properties:: in Depression. '''
 
     def read_parameters(self, data_folder):
         # Update parameters from the resource dataframe

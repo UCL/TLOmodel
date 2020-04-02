@@ -28,6 +28,7 @@ class HealthSeekingBehaviour(Module):
 
     # No properties to declare
     PROPERTIES = {}
+    ''' .. properties:: in HealthSeekingBehaviour. '''
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)

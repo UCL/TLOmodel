@@ -45,6 +45,7 @@ class health_system_tb(Module):
         'tb_date_treatedMDR': Property(Types.DATE, 'date tb MDR treatment started'),
         'request_mdr_regimen': Property(Types.BOOL, 'request for mdr treatment'),
     }
+    ''' .. properties:: in health_system_tb class (File: tb_hs_engagement.py). '''
 
     def read_parameters(self, data_folder):
         # TODO: if events run every 3months, probabilities need to be 3-monthly

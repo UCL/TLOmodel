@@ -46,6 +46,7 @@ class male_circumcision(Module):
             categories=[0, 1, 2, 3, 4],
         ),
     }
+    ''' .. properties:: in male_circumcision. '''
 
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(os.path.join(self.resourcefilepath, 'ResourceFile_HIV.xlsx'), sheet_name=None)

@@ -191,7 +191,6 @@ class Module:
         self.rng = np.random.RandomState()
         self.name = name or self.__class__.__name__
         self.sim = None
-        ''' .. properties:: second Declaration in base class. '''
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame):
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary

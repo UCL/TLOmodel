@@ -17,6 +17,7 @@ class SymptomManager(Module):
     """
 
     PROPERTIES = dict()  # give blank definition of parameters here. It's updated in 'pre_initialise_population'
+    ''' .. properties:: in SymptomManager. '''
 
     PARAMETERS = {
         'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
@@ -93,8 +94,8 @@ class SymptomManager(Module):
                        duration_in_days=None, date_of_onset=None):
         """
         This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.
-        The sy_ property contains a set of of the disease_module names that currenly cause the symptom.
-        Check if the set is empty or not to determine if the sympton is currently present.
+        The sy_ property contains a set of of the disease_module names that currently cause the symptom.
+        Check if the set is empty or not to determine if the symptom is currently present.
 
         :param date_of_onset: Date for the symptoms to start
         :param duration_in_days: If self-resolving, duration of symptoms

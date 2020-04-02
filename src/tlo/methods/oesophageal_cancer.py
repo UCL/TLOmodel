@@ -210,6 +210,8 @@ class Oesophageal_Cancer(Module):
         "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment"),
         "ca_disability": Property(Types.REAL, "disability weight this three month period"),
     }
+    ''' .. properties:: in Oesophageal_Cancer. '''
+
     TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
 
     def read_parameters(self, data_folder):

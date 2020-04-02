@@ -36,6 +36,7 @@ class BehaviourChange(Module):
         'behaviour_change': Property(Types.BOOL, 'Exposed to hiv prevention counselling'),
         'date_behaviour_change': Property(Types.DATE, 'date of behavioural counselling')
     }
+    ''' .. properties:: in BehaviourChange (HIV). '''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.

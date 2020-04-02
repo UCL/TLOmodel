@@ -69,6 +69,7 @@ class Demography(Module):
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
         'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
     }
+    ''' .. properties:: in Demography. '''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.

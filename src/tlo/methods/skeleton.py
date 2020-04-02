@@ -47,6 +47,7 @@ class Skeleton(Module):
     PROPERTIES = {
         'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
+    ''' .. properties:: in Skeleton. '''
 
     # Declare the non-generic symptoms that this module will use.
     # It will not be able to use any that are not declared here. They do not need to be unique to this module.

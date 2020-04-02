@@ -106,6 +106,7 @@ class Epilepsy(Module):
         'ep_unified_symptom_code': Property(Types.CATEGORICAL, '', categories=['0', '1', '2', '3']),
         'ep_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
     }
+    ''' .. properties:: in Epilepsy. '''
 
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antiepileptic'

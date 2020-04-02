@@ -314,6 +314,7 @@ class Lifestyle(Module):
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
     }
+    ''' .. properties:: in Lifestyle. '''
 
     def read_parameters(self, data_folder):
         p = self.parameters

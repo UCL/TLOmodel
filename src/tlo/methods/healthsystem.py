@@ -48,6 +48,7 @@ class HealthSystem(Module):
             Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
         )
     }
+    ''' .. properties:: in HealthSystem. '''
 
     def __init__(
         self,

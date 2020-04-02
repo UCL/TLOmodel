@@ -52,6 +52,7 @@ class ChronicSyndrome(Module):
         'cs_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
+    ''' .. properties:: in ChronicSyndrome. '''
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
@@ -257,7 +258,7 @@ class ChronicSyndrome(Module):
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
-    # This event is occuring regularly at one monthly intervals
+    # This event is occurring regularly at one monthly intervals
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))

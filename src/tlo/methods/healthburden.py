@@ -35,6 +35,7 @@ class HealthBurden(Module):
     }
 
     PROPERTIES = {}
+    ''' .. properties:: in HealthBurden. '''
 
     def read_parameters(self, data_folder):
         p = self.parameters

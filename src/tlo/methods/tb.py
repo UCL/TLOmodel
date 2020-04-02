@@ -116,9 +116,9 @@ class tb(Module):
         'tb_request_mdr_regimen': Property(Types.BOOL, 'request for mdr treatment'),
         'tb_on_ipt': Property(Types.BOOL, 'if currently on ipt'),
         'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
-        'tb_date_death': Property(Types.DATE, 'date of death from tb')
-
+        'tb_date_death': Property(Types.DATE, 'date of death from tb'),
     }
+    ''' .. properties:: in tb. '''
 
     def read_parameters(self, data_folder):
 
