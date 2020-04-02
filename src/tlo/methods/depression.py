@@ -99,6 +99,7 @@ class Depression(Module):
             Types.REAL, 'daly_wt_moderate_episode_major_depressive_disorder ' '- code 933'
         ),
     }
+    ''' .. parameters:: in Depression class. '''
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
@@ -115,7 +116,7 @@ class Depression(Module):
         'de_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'de_cc': Property(Types.BOOL, 'whether has chronic condition'),
     }
-    ''' .. properties:: in Depression. '''
+    ''' .. properties:: in Depression class. '''
 
     def read_parameters(self, data_folder):
         # Update parameters from the resource dataframe

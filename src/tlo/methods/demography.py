@@ -48,6 +48,7 @@ class Demography(Module):
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
     }
+    ''' .. parameters:: in Demography class. '''
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -69,7 +70,7 @@ class Demography(Module):
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
         'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
     }
-    ''' .. properties:: in Demography. '''
+    ''' .. properties:: in Demography class. '''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.

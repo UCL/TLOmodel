@@ -9,8 +9,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-
-
 class Mockitis(Module):
     """
     This is a dummy infectious disease.
@@ -37,7 +35,7 @@ class Mockitis(Module):
         'daly_wts': Parameter(
             Types.DICT, 'DALY weights for conditions'),
     }
-    ''' .. parameters:: in Mockitis. '''
+    ''' .. parameters:: in Mockitis class. '''
 
     PROPERTIES = {
         'mi_is_infected': Property(
@@ -52,7 +50,7 @@ class Mockitis(Module):
         'mi_date_cure': Property(
             Types.DATE, 'Date an infected individual was cured')
     }
-    ''' .. properties:: in Mockitis. '''
+    ''' .. properties:: in Mockitis class. '''
 
 
     # Declaration of the symptoms that this module will use

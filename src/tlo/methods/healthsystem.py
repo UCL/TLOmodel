@@ -42,13 +42,14 @@ class HealthSystem(Module):
         'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
         'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
     }
+    ''' .. parameters:: in HealthSystem class. '''
 
     PROPERTIES = {
         'hs_dist_to_facility': Property(
             Types.REAL, 'The distance for each person to their nearest clinic (of any type)'
         )
     }
-    ''' .. properties:: in HealthSystem. '''
+    ''' .. properties:: in HealthSystem class. '''
 
     def __init__(
         self,

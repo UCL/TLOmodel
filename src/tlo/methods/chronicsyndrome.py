@@ -42,6 +42,7 @@ class ChronicSyndrome(Module):
         ),
         'daly_wts': Parameter(Types.DICT, 'DALY weights for conditions'),
     }
+    ''' .. parameters:: in ChronicSyndrome class. '''
 
     PROPERTIES = {
         'cs_has_cs': Property(Types.BOOL, 'Current status of mockitis'),
@@ -52,7 +53,7 @@ class ChronicSyndrome(Module):
         'cs_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
-    ''' .. properties:: in ChronicSyndrome. '''
+    ''' .. properties:: in ChronicSyndrome class. '''
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {

@@ -51,6 +51,7 @@ class Contraception(Module):
                                      2010 to 2100'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
     }
+    ''' .. parameters:: in Contraception class. '''
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -77,7 +78,7 @@ class Contraception(Module):
                                            'Date of the last pregnancy of this individual'),
         'co_unintended_preg': Property(Types.BOOL, 'Unintended pregnancies following contraception failure')
     }
-    ''' .. properties:: in Contraception. '''
+    ''' .. properties:: in Contraception class. '''
 
     def read_parameters(self, data_folder):
         """

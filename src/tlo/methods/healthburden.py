@@ -33,9 +33,10 @@ class HealthBurden(Module):
         'Age_Limit_For_YLL': Property(Types.REAL,
                                       'The age up to which deaths are recorded as having induced a lost of life years')
     }
+    ''' .. parameters:: in HealthBurden class. '''
 
     PROPERTIES = {}
-    ''' .. properties:: in HealthBurden. '''
+    ''' .. properties:: in HealthBurden class. '''
 
     def read_parameters(self, data_folder):
         p = self.parameters

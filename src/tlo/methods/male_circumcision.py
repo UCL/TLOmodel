@@ -29,6 +29,7 @@ class male_circumcision(Module):
         'prop_muslim': Parameter(Types.REAL, 'proportion of population muslim'),
         'daly_wt_circumcision': Parameter(Types.REAL, 'DALY weight for circumcision'),
     }
+    ''' .. parameters:: in male_circumcision class. '''
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -46,7 +47,7 @@ class male_circumcision(Module):
             categories=[0, 1, 2, 3, 4],
         ),
     }
-    ''' .. properties:: in male_circumcision. '''
+    ''' .. properties:: in male_circumcision class. '''
 
     def read_parameters(self, data_folder):
         workbook = pd.read_excel(os.path.join(self.resourcefilepath, 'ResourceFile_HIV.xlsx'), sheet_name=None)

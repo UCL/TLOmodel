@@ -169,11 +169,12 @@ class Module:
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
     PARAMETERS = {}
+    ''' .. parameters:: Declaration in base class Module. '''
 
     # Subclasses may declare this dictionary to specify properties of individuals.
     # We give an empty definition here as default.
     PROPERTIES = {}
-    ''' .. properties:: Declaration in base class. '''
+    ''' .. properties:: Declaration in base class Module. '''
 
     # The explicit attributes of the module. We list these so we can distinguish dynamic
     # parameters created from the PARAMETERS specification.

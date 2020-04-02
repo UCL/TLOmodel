@@ -261,6 +261,7 @@ class Lifestyle(Module):
             Types.DATE, 'Date of campaign start for alcohol reduction'
         ),
     }
+    ''' .. parameters:: in Lifestyle class. '''
 
     # Properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -314,7 +315,7 @@ class Lifestyle(Module):
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
     }
-    ''' .. properties:: in Lifestyle. '''
+    ''' .. properties:: in Lifestyle class. '''
 
     def read_parameters(self, data_folder):
         p = self.parameters

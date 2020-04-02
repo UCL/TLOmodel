@@ -37,6 +37,7 @@ class Skeleton(Module):
         'parameter_a': Parameter(
             Types.REAL, 'Description of parameter a'),
     }
+    ''' .. parameters:: in Skeleton class. '''
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -47,7 +48,7 @@ class Skeleton(Module):
     PROPERTIES = {
         'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
-    ''' .. properties:: in Skeleton. '''
+    ''' .. properties:: in Skeleton class. '''
 
     # Declare the non-generic symptoms that this module will use.
     # It will not be able to use any that are not declared here. They do not need to be unique to this module.

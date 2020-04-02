@@ -28,6 +28,8 @@ class health_system_tb(Module):
         'prob_tb_mdr_treatment': Parameter(Types.REAL, 'probability of individual starting mdr treatment'),
 
     }
+    ''' .. parameters:: in health_system_tb class (File: tb_hs_engagement.py). '''
+
     # TODO: add in treatment history property - ever_treated [boolean]
     PROPERTIES = {
         'tb_ever_tested': Property(Types.BOOL, 'ever had a tb test'),

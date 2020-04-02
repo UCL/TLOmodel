@@ -17,11 +17,12 @@ class SymptomManager(Module):
     """
 
     PROPERTIES = dict()  # give blank definition of parameters here. It's updated in 'pre_initialise_population'
-    ''' .. properties:: in SymptomManager. '''
+    ''' .. properties:: in SymptomManager class. '''
 
     PARAMETERS = {
         'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
     }
+    ''' .. parameters:: in SymptomManager class. '''
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)

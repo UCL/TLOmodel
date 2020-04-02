@@ -25,10 +25,11 @@ class HealthSeekingBehaviour(Module):
 
     # No parameters to declare
     PARAMETERS = {}
+    ''' .. parameters:: in HealthSeekingBehaviour class. '''
 
     # No properties to declare
     PROPERTIES = {}
-    ''' .. properties:: in HealthSeekingBehaviour. '''
+    ''' .. properties:: in HealthSeekingBehaviour class. '''
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)

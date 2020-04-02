@@ -28,6 +28,7 @@ class BehaviourChange(Module):
     PARAMETERS = {
         'p_behaviour': Parameter(Types.REAL, 'Probability that an individual is exposed to behavioural interventions ')
     }
+    ''' .. parameters:: in BehaviourChange (HIV) class. '''
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -36,7 +37,7 @@ class BehaviourChange(Module):
         'behaviour_change': Property(Types.BOOL, 'Exposed to hiv prevention counselling'),
         'date_behaviour_change': Property(Types.DATE, 'date of behavioural counselling')
     }
-    ''' .. properties:: in BehaviourChange (HIV). '''
+    ''' .. properties:: in BehaviourChange (HIV) class. '''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.

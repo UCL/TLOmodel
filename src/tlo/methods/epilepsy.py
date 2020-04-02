@@ -78,6 +78,7 @@ class Epilepsy(Module):
             Types.REAL, 'disability weight for less severe epilepsy' 'controlled phase - code 862'
         ),
     }
+    ''' .. parameters:: in Epilepsy class. '''
 
     """
     860,Severe epilepsy,'Epilepsy, seizures >= once a month','has sudden seizures one or more times
@@ -106,7 +107,7 @@ class Epilepsy(Module):
         'ep_unified_symptom_code': Property(Types.CATEGORICAL, '', categories=['0', '1', '2', '3']),
         'ep_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
     }
-    ''' .. properties:: in Epilepsy. '''
+    ''' .. properties:: in Epilepsy class. '''
 
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antiepileptic'

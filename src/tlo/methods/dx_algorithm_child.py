@@ -19,10 +19,11 @@ class DxAlgorithmChild(Module):
 
     # Define parameters
     PARAMETERS = {}
+    ''' .. parameters:: in DxAlgorithmChild class. '''
 
     # No Properties to define
     PROPERTIES = {}
-    ''' .. properties:: in DxAlgorithmChild. '''
+    ''' .. properties:: in DxAlgorithmChild class. '''
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.

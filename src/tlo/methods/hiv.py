@@ -133,6 +133,7 @@ class hiv(Module):
         # Parameter(Types.DATA_FRAME, 'relative change in testing if previously positive versus never tested'),
         # 'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
     }
+    ''' .. parameters:: in hiv class. '''
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -165,7 +166,7 @@ class hiv(Module):
         'hv_behaviour_change': Property(Types.BOOL, 'Exposed to hiv prevention counselling'),
 
     }
-    ''' .. properties:: in hiv. '''
+    ''' .. properties:: in hiv class. '''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.

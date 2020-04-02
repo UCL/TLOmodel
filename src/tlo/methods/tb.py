@@ -82,6 +82,7 @@ class tb(Module):
         'daly_wt_resistant_tb_hiv_mild_anaemia':
             Parameter(Types.REAL, 'Multidrug resistant Tuberculosis, HIV infected and anemia, mild'),
     }
+    ''' .. parameters:: in tb class. '''
 
     PROPERTIES = {
         'tb_inf': Property(Types.CATEGORICAL,
@@ -118,7 +119,7 @@ class tb(Module):
         'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
         'tb_date_death': Property(Types.DATE, 'date of death from tb'),
     }
-    ''' .. properties:: in tb. '''
+    ''' .. properties:: in tb class. '''
 
     def read_parameters(self, data_folder):
 

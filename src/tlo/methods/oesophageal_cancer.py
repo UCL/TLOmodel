@@ -164,6 +164,7 @@ class Oesophageal_Cancer(Module):
             Types.REAL, "disability weight for oesophageal cancer primary therapy - code 550"
         ),
     }
+    ''' .. parameters:: in Oesophageal_Cancer class. '''
 
     # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
     # medication, has a chronic disease that requires medication every day and causes some
@@ -210,7 +211,7 @@ class Oesophageal_Cancer(Module):
         "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment"),
         "ca_disability": Property(Types.REAL, "disability weight this three month period"),
     }
-    ''' .. properties:: in Oesophageal_Cancer. '''
+    ''' .. properties:: in Oesophageal_Cancer class. '''
 
     TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
 
