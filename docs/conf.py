@@ -17,6 +17,7 @@ extensions = [
     'sphinx.ext.viewcode',
     #'PROPERTIES',
     'properties',
+    'parameters',
 ]
 if os.getenv('SPELLCHECK'):
     extensions += 'sphinxcontrib.spelling',
@@ -55,6 +56,7 @@ napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
 #todo_include_todos = False
+parameters_include_parameters = True
 properties_include_properties = True
 
 autodoc_default_flags = ['members', 'special-members', 'show-inheritance']

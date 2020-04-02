@@ -37,6 +37,7 @@ class Mockitis(Module):
         'daly_wts': Parameter(
             Types.DICT, 'DALY weights for conditions'),
     }
+    ''' .. parameters:: in Mockitis. '''
 
     PROPERTIES = {
         'mi_is_infected': Property(

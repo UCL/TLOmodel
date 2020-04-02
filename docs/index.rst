@@ -3,7 +3,7 @@ Contents
 ========
 
 .. toctree::
-   :maxdepth: 20
+   :maxdepth: 2
 
    readme
    installation
