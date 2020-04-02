@@ -1,6 +1,7 @@
 tlo.methods
 ===========
 .. Unfortunately we can't use a wildcard, but have to list each module separately.
+.. See answer on https://stackoverflow.com/questions/11508290/sphinx-using-automodule-to-find-submodules
 .. Please add modules where necessary, keeping the list in alphabetical order.
 
 .. automodule:: tlo.methods.chronicsyndrome
