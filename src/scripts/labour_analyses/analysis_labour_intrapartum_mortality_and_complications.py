@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 10000
+end_date = Date(2015, 1, 1)
+popsize = 5000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -87,7 +87,7 @@ plt.show()
 # Intrapartum MMR:
 mmr_df = pd.concat((death_by_cause, live_births_by_year), axis=1)
 mmr_df.columns = ['maternal_deaths', 'live_births']
-mmr_df['MMR'] = mmr_df['maternal_deaths']/mmr_df['live_births'] * 100000
+mmr_df['MMR'] = (mmr_df['maternal_deaths']/mmr_df['live_births']) * 100000
 
 mmr_df.plot.bar(y='MMR', stacked=True)
 plt.title("Yearly Intrapartum Maternal Mortality Rate")
@@ -111,7 +111,7 @@ plt.show()
 # Intrapartum SBR:
 sbr_df = pd.concat((death_by_cause, live_births_by_year), axis=1)
 sbr_df.columns = ['intrapartum_stillbirths', 'all_births']
-sbr_df['SBR'] = sbr_df['intrapartum_stillbirths']/sbr_df['all_births'] * 1000
+sbr_df['SBR'] = (sbr_df['intrapartum_stillbirths']/sbr_df['all_births']) * 1000
 
 sbr_df.plot.bar(y='SBR', stacked=True)
 plt.title("Yearly Stillbirth Rate")
@@ -130,7 +130,8 @@ def incidence_analysis(complication, birth_denominator):
 
         complication_df = pd.concat((complication_per_year, all_births_by_year), axis=1)
         complication_df.columns = ['complication_cases', 'all_births']
-        complication_df[f'{complication}_incidence'] = complication_df['complication_cases'] / complication_df['all_births'] * birth_denominator
+        complication_df[f'{complication}_incidence'] = (complication_df['complication_cases'] / complication_df[
+            'all_births']) * birth_denominator
 
         complication_df.plot.bar(y=f'{complication}_incidence', stacked=True)
         plt.title(f"Yearly {complication} Incidence per {birth_denominator} births")
@@ -151,9 +152,14 @@ incidence_analysis('uterine_rupture', 1000)
 # Incidence of Antepartum Haemorrhage
 incidence_analysis('antepartum_haem', 1000)
 
-# Incidence of Intrapartum Eclampsia
-incidence_analysis('eclampsia', 1000)
+# Incidence of All stage Eclampsia
 
-# Incidence of Intrapartum direct maternal sepsis
+incidence_analysis('eclampsia', 1000)
+# TODO: seperate pp
+
+# Incidence of All stage direct maternal sepsis
 incidence_analysis('sepsis', 1000)
+# TODO: seperate pp
+
+incidence_analysis('postpartum_haem', 1000)
 
