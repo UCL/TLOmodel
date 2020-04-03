@@ -643,6 +643,112 @@ class Labour (Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
+        # ============================= Define consumable for HSIs ====================================================
+        # Here all the consumables required within the labour health system interactions are defined and packaged as
+        # parameters
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code_uncomplicated_delivery = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Vaginal delivery - skilled attendance',
+                            'Intervention_Pkg_Code'])[0]
+
+        pkg_code_clean_delivery_kit = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Clean practices and immediate essential newborn care '
+                                                               '(in facility)', 'Intervention_Pkg_Code'])[0]
+
+        item_code_abx_prom = pd.unique(
+            consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
+
+        pkg_code_pprom = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM', 'Intervention_Pkg_Code'])[0]
+
+        item_code_steroids_prem_dexamethasone = pd.unique(
+            consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
+
+        item_code_steroids_prem_betamethasone = pd.unique(
+            consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
+
+        item_code_antibiotics_gbs_proph = pd.unique(
+            consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
+
+        pkg_code_severe_preeclampsia = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia', 'Intervention_Pkg_Code'])[0]
+
+        pkg_code_obstructed_labour = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Management of obstructed labour',
+                            'Intervention_Pkg_Code'])[0]
+
+        item_code_forceps = pd.unique(consumables.loc[consumables['Items'] == 'Forceps, obstetric', 'Item_Code'])[0]
+
+        item_code_vacuum = pd.unique(consumables.loc[consumables['Items'] == 'Vacuum, obstetric', 'Item_Code'])[0]
+
+        pkg_code_sepsis = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
+                            'Intervention_Pkg_Code'])[0]
+
+        pkg_code_severe_hypertension = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia', 'Intervention_Pkg_Code'])[0]
+
+        pkg_code_eclampsia = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia', 'Intervention_Pkg_Code'])[0]
+
+        pkg_code_am = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Active management of the 3rd stage of labour',
+                            'Intervention_Pkg_Code'])[0]
+
+        pkg_code_pph = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum hemorrhage',
+                            'Intervention_Pkg_Code'])[0]
+
+        pkg_code_cs = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Cesearian Section with indication (with complication)',
+                            'Intervention_Pkg_Code'])[0]
+
+        item_code_blood = pd.unique(
+            consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
+
+        item_code_bt_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
+
+        item_code_bt_test = pd.unique(
+            consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
+
+        item_code_bt_gs = pd.unique(
+            consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
+                            'Item_Code'])[0]
+
+        self.consumables ={
+            'consumables_prophylaxis_and_attended_delivery': {'Intervention_Package_Code':
+                                                            {pkg_code_uncomplicated_delivery: 1,
+                                                             pkg_code_clean_delivery_kit: 1, pkg_code_pprom: 1},
+             'Item_Code': {item_code_abx_prom: 3, item_code_steroids_prem_dexamethasone: 5,
+                           item_code_steroids_prem_betamethasone: 2, item_code_antibiotics_gbs_proph: 3}},
+
+            'consumables_needed_spe': {'Intervention_Package_Code': {pkg_code_severe_preeclampsia: 1},
+                                       'Item_Code': {}},
+
+            'consumables_obstructed_labour': {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
+                                              'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}},
+
+            'consumables_needed_sepsis': {'Intervention_Package_Code': {pkg_code_sepsis: 1}, 'Item_Code': {}},
+
+            'consumables_needed_htn': {'Intervention_Package_Code': {pkg_code_severe_hypertension: 1},
+                                       'Item_Code': {}},
+
+            'consumables_needed_eclampsia': {'Intervention_Package_Code': {pkg_code_eclampsia: 1}, 'Item_Code': {}},
+
+            'consumables_needed_amtsl': {'Intervention_Package_Code': {pkg_code_am: 1}, 'Item_Code': {}},
+
+            'consumables_needed_pph': {'Intervention_Package_Code': {pkg_code_pph: 1}, 'Item_Code': {}},
+
+            'consumables_needed_cs': {'Intervention_Package_Code': {pkg_code_cs: 1}, 'Item_Code': {}},
+
+            'consumables_needed_bt': {'Intervention_Package_Code': {}, 'Item_Code': {item_code_blood: 2,
+                                                                                     item_code_bt_needle: 1,
+                                                                                     item_code_bt_test: 1,
+                                                                                     item_code_bt_gs: 2}}
+        }
+
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # We register all the dx_tests needed within the labour HSI events. dx_tests in this module represent assessment
         # and correct diagnosis of key complication, leading to treatment or referral for treatment.
@@ -723,41 +829,6 @@ class Labour (Module):
             assess_for_treatment_uterine_rupture_hp=DxTest(
                 property='la_uterine_rupture',
                 sensitivity=self.parameters['sensitivity_of_treatment_assessment_of_uterine_rupture_hp'], ))
-
-    # =============================== DEFINING CONSUMABLES NEEDED FOR HEALTH SYSTEM INTERACTION EVENTS ================
-        # TODO: Work out where I can define and call consumables to make the labour code less messy
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code_uncomplicated_delivery = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Vaginal delivery - skilled attendance',
-                            'Intervention_Pkg_Code'])[0]
-
-        pkg_code_clean_delivery_kit = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Clean practices and immediate essential newborn care '
-                                                                 '(in facility)', 'Intervention_Pkg_Code'])[0]
-
-        item_code_abx_prom = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
-
-        pkg_code_pprom = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM', 'Intervention_Pkg_Code'])[0]
-
-        item_code_steroids_prem_dexamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
-
-        item_code_steroids_prem_betamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
-
-        item_code_antibiotics_gbs_proph = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
-
-        consumables_prophylaxis_and_attended_delivery = {
-            'Intervention_Package_Code': {pkg_code_uncomplicated_delivery: 1, pkg_code_clean_delivery_kit: 1,
-                                      pkg_code_pprom: 1},
-            'Item_Code': {item_code_abx_prom: 3, item_code_steroids_prem_dexamethasone: 5,
-                          item_code_steroids_prem_betamethasone: 2, item_code_antibiotics_gbs_proph: 3}}
-
 
     def on_birth(self, mother_id, child_id):
 
@@ -1780,11 +1851,12 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
 
             # we check if consumables are available then administered prophylactic interventions accordingly:
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_attended_delivery, to_log=True)
-
+                hsi_event=self, cons_req_as_footprint=consumables_attended_delivery,
+                to_log=True)
             # Clean birth practices...
             # We query if the consumables specific to each intervention are available...
-            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_clean_delivery_kit]:
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][
+                pkg_code_clean_delivery_kit]:
                 # And apply the effect of these intervention on the mother and newborns risk of sepsis
                 mni[person_id]['risk_ip_sepsis'] = mni[person_id]['risk_ip_sepsis'] * \
                     params['rr_maternal_sepsis_clean_delivery']
