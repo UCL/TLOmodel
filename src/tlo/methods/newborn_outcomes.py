@@ -281,7 +281,7 @@ class NewbornOutcomes(Module):
              LinearModelType.MULTIPLICATIVE,
              params['cfr_preterm_birth'],
              Predictor('age_years').when('.between(0,2)', 1)),
-            #  TODO: Treatment Effects
+            #  TODO: Treatment Effects (STEROIDS - external variable)
 
             'care_seeking_for_complication': LinearModel(
              LinearModelType.MULTIPLICATIVE,

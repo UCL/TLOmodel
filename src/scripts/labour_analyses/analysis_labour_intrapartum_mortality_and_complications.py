@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 10000
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -145,6 +145,10 @@ def incidence_analysis(complication, birth_denominator):
 
 # Incidence of Obstructed Labour
 incidence_analysis('obstructed_labour', 1000)
+dataframe = output['tlo.methods.labour']['obstructed_labour']
+dataframe['date'] = pd.to_datetime(dataframe['date'])
+dataframe['year'] = dataframe['date'].dt.year
+complication_per_year = dataframe.groupby(['year'])['person_id'].size()
 
 # Incidence of Uterine Rupture
 incidence_analysis('uterine_rupture', 1000)
