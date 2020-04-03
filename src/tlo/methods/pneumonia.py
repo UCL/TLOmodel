@@ -202,10 +202,15 @@ class Pneumonia(Module):
                                                'severity of pneumonia disease',
                                                categories=list(severity) + ['none']),
 
+        # ---- The true underlying condition ----
+        'ri_true_underlying_condition': Property(Types.CATEGORICAL,
+                                               'true underlying condition',
+                                               categories=['pneumonia', 'bronchiolitis']),
+
         # ---- Internal variables to schedule onset and deaths due to pneumonia ----
-        'ri_last_pneumonia_date_of_onset': Property(Types.DATE, 'date of onset of last pneumonia event'),
-        'ri_last_pneumonia_recovered_date': Property(Types.DATE, 'date of recovery from last pneumonia event'),
-        'ri_last_pneumonia_death_date': Property(Types.DATE, 'date of death caused by last pneumonia event'),
+        'ri_last_ALRI_date_of_onset': Property(Types.DATE, 'date of onset of last pneumonia event'),
+        'ri_last_ALRI_recovered_date': Property(Types.DATE, 'date of recovery from last pneumonia event'),
+        'ri_last_ALRI_death_date': Property(Types.DATE, 'date of death caused by last pneumonia event'),
 
         # ---- Temporary Variables: To be replaced with the properties of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
@@ -236,7 +241,11 @@ class Pneumonia(Module):
         self.resourcefilepath = resourcefilepath
 
         # dict to hold equations in for the incidence of pathogens:
-        self.incidence_equations_by_pathogen = dict()
+        self.incidence_pneumonia_equations_by_pathogen = dict()
+        self.incidence_bronchiolitis_equations_by_pathogen = dict()
+
+        # list of 2 empty dictionaries above
+        self.incidence_equations_pneumonia_and_bronchiolitis = []
 
         # Linear Model for predicting the progression of disease from non-severe to severe pneumonia:
         self.progression_to_severe_pneumonia = LinearModel
@@ -296,7 +305,7 @@ class Pneumonia(Module):
         # Make a dict to hold the equations that govern the probability that a person acquires pneumonia
         # that is caused (primarily) by a pathogen
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'RSV': LinearModel(LinearModelType.MULTIPLICATIVE,
                                1.0,
                                Predictor('age_years')
@@ -319,7 +328,7 @@ class Pneumonia(Module):
                                )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'rhinovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                1.0,
                                Predictor('age_years')
@@ -342,7 +351,7 @@ class Pneumonia(Module):
                                )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'hMPV': LinearModel(LinearModelType.MULTIPLICATIVE,
                                 1.0,
                                 Predictor('age_years')
@@ -365,7 +374,7 @@ class Pneumonia(Module):
                                 )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'parainfluenza': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('age_years')
@@ -388,7 +397,7 @@ class Pneumonia(Module):
                                          )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'streptococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('age_years')
@@ -411,7 +420,7 @@ class Pneumonia(Module):
                                          )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'hib': LinearModel(LinearModelType.MULTIPLICATIVE,
                                1.0,
                                Predictor('age_years')
@@ -434,7 +443,7 @@ class Pneumonia(Module):
                                )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'TB': LinearModel(LinearModelType.MULTIPLICATIVE,
                               1.0,
                               Predictor('age_years')
@@ -458,7 +467,7 @@ class Pneumonia(Module):
                               )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'staphylococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                           1.0,
                                           Predictor('age_years')
@@ -481,7 +490,7 @@ class Pneumonia(Module):
                                           )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'influenza': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
@@ -504,7 +513,7 @@ class Pneumonia(Module):
                                      )
         })
 
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
             'jirovecii': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
@@ -526,7 +535,149 @@ class Pneumonia(Module):
                                      # when(False, m.rr_diarrhoea_excl_breast)
                                      )
         })
-        self.incidence_equations_by_pathogen.update({
+        self.incidence_pneumonia_equations_by_pathogen.update({
+            'other_pathogens': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                           1.0,
+                                           Predictor('age_years')
+                                           .when('.between(0,0)', p['base_inc_rate_pneumonia_by_other_pathogens'][0])
+                                           .when('.between(1,1)', p['base_inc_rate_pneumonia_by_other_pathogens'][1])
+                                           .when('.between(2,4)', p['base_inc_rate_pneumonia_by_other_pathogens'][2])
+                                           .otherwise(0.0),
+                                           # Predictor('li_no_access_handwashing')
+                                           # .when(False, m.rr_diarrhoea_HHhandwashing),
+                                           # Predictor('li_no_clean_drinking_water').
+                                           # when(False, m.rr_diarrhoea_clean_water),
+                                           # Predictor('li_unimproved_sanitation').
+                                           # when(False, m.rr_diarrhoea_improved_sanitation),
+                                           # # Predictor('hv_inf').
+                                           # # when(True, m.rr_diarrhoea_HIV),
+                                           # Predictor('malnutrition').
+                                           # when(True, m.rr_diarrhoea_SAM),
+                                           # Predictor('exclusive_breastfeeding').
+                                           # when(False, m.rr_diarrhoea_excl_breast)
+                                           )
+        })
+
+        # --------------------------------------------------------------------------------------------
+        # Make a dict to hold the equations that govern the probability that a person acquires pneumonia
+        # that is caused (primarily) by a pathogen
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'RSV': LinearModel(LinearModelType.MULTIPLICATIVE,
+                               1.0,
+                               Predictor('age_years')
+                               .when('.between(0,0)', p['base_inc_rate_pneumonia_by_RSV'][0])
+                               .when('.between(1,1)', p['base_inc_rate_pneumonia_by_RSV'][1])
+                               .when('.between(2,4)', p['base_inc_rate_pneumonia_by_RSV'][2])
+                               .otherwise(0.0),
+                               # Predictor('li_no_access_handwashing')
+                               # .when(False, m.rr_diarrhoea_HHhandwashing),
+                               # Predictor('li_no_clean_drinking_water').
+                               # when(False, m.rr_diarrhoea_clean_water),
+                               # Predictor('li_unimproved_sanitation').
+                               # when(False, m.rr_diarrhoea_improved_sanitation),
+                               # # Predictor('hv_inf').
+                               # # when(True, m.rr_diarrhoea_HIV),
+                               # Predictor('malnutrition').
+                               # when(True, m.rr_diarrhoea_SAM),
+                               # Predictor('exclusive_breastfeeding').
+                               # when(False, m.rr_diarrhoea_excl_breast)
+                               )
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'rhinovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                      1.0,
+                                      Predictor('age_years')
+                                      .when('.between(0,0)', p['base_inc_rate_pneumonia_by_rhinovirus'][0])
+                                      .when('.between(1,1)', p['base_inc_rate_pneumonia_by_rhinovirus'][1])
+                                      .when('.between(2,4)', p['base_inc_rate_pneumonia_by_rhinovirus'][2])
+                                      .otherwise(0.0),
+                                      # Predictor('li_no_access_handwashing')
+                                      # .when(False, m.rr_diarrhoea_HHhandwashing),
+                                      # Predictor('li_no_clean_drinking_water').
+                                      # when(False, m.rr_diarrhoea_clean_water),
+                                      # Predictor('li_unimproved_sanitation').
+                                      # when(False, m.rr_diarrhoea_improved_sanitation),
+                                      # # Predictor('hv_inf').
+                                      # # when(True, m.rr_diarrhoea_HIV),
+                                      # Predictor('malnutrition').
+                                      # when(True, m.rr_diarrhoea_SAM),
+                                      # Predictor('exclusive_breastfeeding').
+                                      # when(False, m.rr_diarrhoea_excl_breast)
+                                      )
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'hMPV': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                1.0,
+                                Predictor('age_years')
+                                .when('.between(0,0)', p['base_inc_rate_pneumonia_by_hMPV'][0])
+                                .when('.between(1,1)', p['base_inc_rate_pneumonia_by_hMPV'][1])
+                                .when('.between(2,4)', p['base_inc_rate_pneumonia_by_hMPV'][2])
+                                .otherwise(0.0),
+                                # Predictor('li_no_access_handwashing')
+                                # .when(False, m.rr_diarrhoea_HHhandwashing),
+                                # Predictor('li_no_clean_drinking_water').
+                                # when(False, m.rr_diarrhoea_clean_water),
+                                # Predictor('li_unimproved_sanitation').
+                                # when(False, m.rr_diarrhoea_improved_sanitation),
+                                # # Predictor('hv_inf').
+                                # # when(True, m.rr_diarrhoea_HIV),
+                                # Predictor('malnutrition').
+                                # when(True, m.rr_diarrhoea_SAM),
+                                # Predictor('exclusive_breastfeeding').
+                                # when(False, m.rr_diarrhoea_excl_breast)
+                                )
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'parainfluenza': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                         1.0,
+                                         Predictor('age_years')
+                                         .when('.between(0,0)', p['base_inc_rate_pneumonia_by_parainfluenza'][0])
+                                         .when('.between(1,1)', p['base_inc_rate_pneumonia_by_parainfluenza'][1])
+                                         .when('.between(2,4)', p['base_inc_rate_pneumonia_by_parainfluenza'][2])
+                                         .otherwise(0.0),
+                                         # Predictor('li_no_access_handwashing')
+                                         # .when(False, m.rr_diarrhoea_HHhandwashing),
+                                         # Predictor('li_no_clean_drinking_water').
+                                         # when(False, m.rr_diarrhoea_clean_water),
+                                         # Predictor('li_unimproved_sanitation').
+                                         # when(False, m.rr_diarrhoea_improved_sanitation),
+                                         # # Predictor('hv_inf').
+                                         # # when(True, m.rr_diarrhoea_HIV),
+                                         # Predictor('malnutrition').
+                                         # when(True, m.rr_diarrhoea_SAM),
+                                         # Predictor('exclusive_breastfeeding').
+                                         # when(False, m.rr_diarrhoea_excl_breast)
+                                         )
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'streptococcus': LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'hib': LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'TB': LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'staphylococcus': LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'influenza': LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        })
+
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
+            'jirovecii': LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+        })
+        self.incidence_bronchiolitis_equations_by_pathogen.update({
             'other_pathogens': LinearModel(LinearModelType.MULTIPLICATIVE,
                                            1.0,
                                            Predictor('age_years')
@@ -550,7 +701,12 @@ class Pneumonia(Module):
         })
 
         # check that equations have been declared for each pathogens
-        assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
+        assert self.pathogens == set(list(self.incidence_pneumonia_equations_by_pathogen.keys()))
+
+        self.incidence_equations_pneumonia_and_bronchiolitis.append\
+            (self.incidence_pneumonia_equations_by_pathogen)
+        self.incidence_equations_pneumonia_and_bronchiolitis.append\
+            (self.incidence_bronchiolitis_equations_by_pathogen)
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the progression to severe pneumonia
@@ -681,8 +837,6 @@ class Pneumonia(Module):
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(years=1))
 
-
-
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
@@ -775,19 +929,20 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         m = self.module
         rng = self.module.rng
-        p = self.module.parameters
 
         # Compute the incidence rate for each person getting pneumonia and then convert into a probability
         # getting all children that do not have pneumonia currently
         mask_could_get_new_pneumonia_event = \
-            df['is_alive'] & (df['age_years'] < 5) & ((df['ri_last_pneumonia_recovered_date'] <= self.sim.date) |
-                                                      pd.isnull(df['ri_last_pneumonia_recovered_date']))
+            df['is_alive'] & (df['age_years'] < 5) & ((df['ri_last_ALRI_recovered_date'] <= self.sim.date) |
+                                                      pd.isnull(df['ri_last_ALRI_recovered_date']))
 
         inc_of_acquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_pneumonia_event].index)
 
-        for pathogen in m.pathogens:
-            inc_of_acquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen]\
-                .predict(df.loc[mask_could_get_new_pneumonia_event])
+        for disease in m.incidence_equations_pneumonia_and_bronchiolitis:
+            inc_of_acquiring_pathogen[disease] = m.incidence_equations_pneumonia_and_bronchiolitis[disease]\
+                    .predict(df.loc[mask_could_get_new_pneumonia_event])
+            # inc_of_acquiring_pathogen[pathogen] = m.incidence_bronchiolitis_equations_by_pathogen[pathogen]\
+            #     .predict(df.loc[mask_could_get_new_pneumonia_event])
 
         # Convert the incidence rates that are predicted by the model into risk of an event occurring before the next
         # polling event
