@@ -52,7 +52,6 @@ class Mockitis(Module):
     }
     ''' .. properties:: in Mockitis class. '''
 
-
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
         'weird_sense_of_deja_vu',       # will not trigger any health seeking behaviour

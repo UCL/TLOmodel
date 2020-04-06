@@ -1,4 +1,5 @@
-# Based on "todo" Sphinx extension tutorial, https://www.sphinx-doc.org/en/master/development/tutorials/todo.html
+# Based on "todo" Sphinx extension tutorial,
+# https://www.sphinx-doc.org/en/master/development/tutorials/todo.html
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
@@ -6,7 +7,8 @@ from sphinx.locale import _
 from sphinx.util.docutils import SphinxDirective
 
 
-#  properties inherits from Admonition because it should be handled like a note or warning,
+#  properties inherits from Admonition because
+#  it should be handled like a note or warning,
 class properties(nodes.Admonition, nodes.Element):
     pass
 
@@ -41,7 +43,8 @@ class propertiesDirective(SphinxDirective):
 
         properties_node = properties('\n'.join(self.content))
         properties_node += nodes.title(_('properties'), _('properties'))
-        self.state.nested_parse(self.content, self.content_offset, properties_node)
+        self.state.nested_parse(self.content, self.content_offset,
+                                properties_node)
 
         if not hasattr(self.env, 'properties_all_properties'):
             self.env.properties_all_properties = []
@@ -60,8 +63,10 @@ def purge_properties(app, env, docname):
     if not hasattr(env, 'properties_all_properties'):
         return
 
-    env.properties_all_properties = [properties for properties in env.properties_all_properties
-                          if properties['docname'] != docname]
+    env.properties_all_properties = [properties
+                                     for properties
+                                     in env.properties_all_properties
+                                     if properties['docname'] != docname]
 
 
 def process_properties_nodes(app, doctree, fromdocname):
@@ -75,7 +80,6 @@ def process_properties_nodes(app, doctree, fromdocname):
 
     # From the bugfix
     if not hasattr(env, 'properties_all_properties'):
-        #env.todo_all_todos = []
         env.properties_all_properties = []
 
     for node in doctree.traverse(propertieslist):
@@ -89,7 +93,8 @@ def process_properties_nodes(app, doctree, fromdocname):
             para = nodes.paragraph()
             filename = env.doc2path(properties_info['docname'], base=None)
             description = (
-                _('(The original entry is located in %s, line %d and can be found ') %
+                _('(The original entry is located in %s, line %d'
+                  ' and can be found ') %
                 (filename, properties_info['lineno']))
             para += nodes.Text(description, description)
 
@@ -130,4 +135,3 @@ def setup(app):
         'parallel_read_safe': True,
         'parallel_write_safe': True,
     }
-

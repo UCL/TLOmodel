@@ -1,4 +1,5 @@
-# Based on "todo" Sphinx extension tutorial, https://www.sphinx-doc.org/en/master/development/tutorials/todo.html
+# Based on "todo" Sphinx extension tutorial,
+# https://www.sphinx-doc.org/en/master/development/tutorials/todo.html
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
@@ -6,7 +7,8 @@ from sphinx.locale import _
 from sphinx.util.docutils import SphinxDirective
 
 
-#  parameters inherits from Admonition because it should be handled like a note or warning,
+#  parameters inherits from Admonition because
+#  it should be handled like a note or warning,
 class parameters(nodes.Admonition, nodes.Element):
     pass
 
@@ -41,7 +43,8 @@ class parametersDirective(SphinxDirective):
 
         parameters_node = parameters('\n'.join(self.content))
         parameters_node += nodes.title(_('parameters'), _('parameters'))
-        self.state.nested_parse(self.content, self.content_offset, parameters_node)
+        self.state.nested_parse(self.content, self.content_offset,
+                                parameters_node)
 
         if not hasattr(self.env, 'parameters_all_parameters'):
             self.env.parameters_all_parameters = []
@@ -60,8 +63,10 @@ def purge_parameters(app, env, docname):
     if not hasattr(env, 'parameters_all_parameters'):
         return
 
-    env.parameters_all_parameters = [parameters for parameters in env.parameters_all_parameters
-                          if parameters['docname'] != docname]
+    env.parameters_all_parameters = [parameters
+                                     for parameters
+                                     in env.parameters_all_parameters
+                                     if parameters['docname'] != docname]
 
 
 def process_parameters_nodes(app, doctree, fromdocname):
@@ -75,7 +80,6 @@ def process_parameters_nodes(app, doctree, fromdocname):
 
     # From the bugfix
     if not hasattr(env, 'parameters_all_parameters'):
-        #env.todo_all_todos = []
         env.parameters_all_parameters = []
 
     for node in doctree.traverse(parameterslist):
@@ -89,7 +93,8 @@ def process_parameters_nodes(app, doctree, fromdocname):
             para = nodes.paragraph()
             filename = env.doc2path(parameters_info['docname'], base=None)
             description = (
-                _('(The original entry is located in %s, line %d and can be found ') %
+                _('(The original entry is located in %s, line %d '
+                  'and can be found ') %
                 (filename, parameters_info['lineno']))
             para += nodes.Text(description, description)
 
@@ -130,4 +135,3 @@ def setup(app):
         'parallel_read_safe': True,
         'parallel_write_safe': True,
     }
-
