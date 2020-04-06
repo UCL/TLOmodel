@@ -559,6 +559,7 @@ class Pneumonia(Module):
         })
 
         # --------------------------------------------------------------------------------------------
+        # FOR BRONCHIOLITIS
         # Make a dict to hold the equations that govern the probability that a person acquires pneumonia
         # that is caused (primarily) by a pathogen
 
