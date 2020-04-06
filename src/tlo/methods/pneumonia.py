@@ -939,6 +939,10 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         inc_of_acquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_pneumonia_event].index)
 
+        # for pathogen in m.pathogens:
+        #     inc_of_acquiring_pathogen[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
+        #         .predict(df.loc[mask_could_get_new_pneumonia_event])
+
         for disease in m.incidence_equations_pneumonia_and_bronchiolitis:
             inc_of_acquiring_pathogen[disease] = m.incidence_equations_pneumonia_and_bronchiolitis[disease]\
                     .predict(df.loc[mask_could_get_new_pneumonia_event])
