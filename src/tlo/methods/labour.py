@@ -247,6 +247,8 @@ class Labour (Module):
             Types.REAL, 'probability of manual removal of retained products arresting a post partum haemorrhage'),
         'success_rate_pph_surgery': Parameter(
             Types.REAL, 'probability of surgery for postpartum haemorrhage being successful'),
+        'success_rate_surgical_removal_placenta': Parameter(
+            Types.REAL, 'probability of surgery for retained placenta being successful'),
         'success_rate_uterine_repair': Parameter(
             Types.REAL, 'probability repairing a ruptured uterus surgically'),
         'prob_successful_assisted_vaginal_delivery': Parameter(
@@ -1888,7 +1890,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                 hsi_event=self, cons_req_as_footprint=consumables_attended_delivery,
                 to_log=True)
 
-            # Clean birth practices...
+            # Clean birth Kits...
             # We query if the consumables specific to each intervention are available...
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_uncomplicated_delivery]:
                 # And apply the effect of these intervention on the mother and newborns risk of sepsis
@@ -2204,8 +2206,10 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
 
     # ------------------------------------------------ UTERINE RUPTURE ------------------------------------------------
         # We now calculate and apply the risk of uterine rupture
-        self.module.set_complications_during_facility_birth_intrapartum(person_id, complication='uterine_rupture',
-                                                                        labour_stage='ip')
+        # Women who will undergo caesarean section for cannot develop uterine rupture
+        if mni[person_id]['referred_for_cs'] != 'none':
+            self.module.set_complications_during_facility_birth_intrapartum(person_id, complication='uterine_rupture',
+                                                                            labour_stage='ip')
 
         # Similarly treatment of uterine rupture requires comprehensive services, therefore the dx test is for assemenet
         # for referral
@@ -3013,12 +3017,32 @@ class HSI_Labour_SurgeryForLabourComplicationsFacilityLevel1(HSI_Event, Individu
         logger.info('This is HSI_Labour_SurgeryForLabourComplicationsFacilityLevel1: Person %d will now undergo surgery'
                     'for complications developed in labour', person_id)
 
-        #TODO: Consumables...
+        # TODO: Consumable arent currently correct
+        # Todo: decide if to condition on the availability of the whole package....
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        dummy_surg_pkg_code = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+                                        'Cesearian Section with indication (with complication)',
+                                                        'Intervention_Pkg_Code'])[0]
+
+        consumables_needed_surgery = {'Intervention_Package_Code': {dummy_surg_pkg_code: 1}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed_surgery)
+
+        if outcome_of_request_for_consumables:
+            logger.debug('Consumables required for surgery are available and therefore have been used')
+        else:
+            logger.debug('Consumables required for surgery are unavailable and therefore have not been used')
 
         # Interventions...
         treatment_success_ur = params['success_rate_uterine_repair'] < self.module.rng.random_sample()
 
-        if df.at[person_id, 'la_uterine_rupture']:
+        # Uterine Repair...
+        # TODO: Need to quantify that failed repair leading to hysterectomy is likely associated with worse outcomes?
+
+        if df.at[person_id, 'la_uterine_rupture'] and df.at[person_id, 'la_uterine_rupture_treatment'] == 'none':
             if treatment_success_ur and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
                 df.at[person_id, 'la_uterine_rupture_treatment'] = 'prompt_treatment'
             elif treatment_success_ur and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
@@ -3028,26 +3052,36 @@ class HSI_Labour_SurgeryForLabourComplicationsFacilityLevel1(HSI_Event, Individu
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
             elif ~treatment_success_ur and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
                 df.at[person_id, 'la_uterine_rupture_treatment'] = 'delayed_treatment'
-                # todo: should this variable be turned on as well?
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         treatment_success_pph = params['success_rate_pph_surgery'] < self.module.rng.random_sample()
+        treatment_success_surgical_removal = params['success_rate_surgical_removal_placenta'] < \
+                                             self.module.rng.random_sample()
 
-        if df.at[person_id, 'la_postpartum_haem']:
+        # Surgery for refractory atonic uterus...
+        # TODO: as above
+        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['uterine_atony']:
             if treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
             elif treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
             elif ~treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
+                # nb. evidence suggests uterine preserving surgery vs hysterectomy have comparable outcomes in LMICs
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
             elif ~treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
-        # todo: this will possibly give women a hysterectomy if products are retained, thats not right?
-        # todo: failed firstline PPH treatment should be more at risk of death?
-        # todo: should the successrate of removing a retained placenta be seperated?
 
+        # Surgery for retained placenta...
+        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta']:
+            if treatment_success_surgical_removal and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
+                df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
+            elif treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
+                df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
+            elif ~treatment_success_pph:
+                logger.debug('Surgical intervention for mothers %d postpartum haemorrhage has been unsuccessful',
+                             person_id)
 
     def did_not_run(self):
         person_id = self.target
@@ -3079,13 +3113,35 @@ class HSI_Labour_SurgeryForLabourComplicationsFacilityLevel2(HSI_Event, Individu
         mni = self.module.mother_and_newborn_info
         params = self.module.parameters
 
-        logger.info('This is HSI_Labour_SurgeryForLabourComplicationsFacilityLevel1: Person %d will now undergo surgery'
+        logger.info('This is HSI_Labour_SurgeryForLabourComplicationsFacilityLeve2: Person %d will now undergo surgery'
                     'for complications developed in labour', person_id)
+
+        # TODO: Consumable arent currently correct
+        # Todo: decide if to condition on the availability of the whole package....
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        dummy_surg_pkg_code = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+                                                        'Cesearian Section with indication (with complication)',
+                                                        'Intervention_Pkg_Code'])[0]
+
+        consumables_needed_surgery = {'Intervention_Package_Code': {dummy_surg_pkg_code: 1}, 'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed_surgery)
+
+        if outcome_of_request_for_consumables:
+            logger.debug('Consumables required for surgery are available and therefore have been used')
+        else:
+            logger.debug('Consumables required for surgery are unavailable and therefore have not been used')
 
         # Interventions...
         treatment_success_ur = params['success_rate_uterine_repair'] < self.module.rng.random_sample()
 
-        if df.at[person_id, 'la_uterine_rupture']:
+        # Uterine Repair...
+        # TODO: Need to quantify that failed repair leading to hysterectomy is likely associated with worse outcomes?
+
+        if df.at[person_id, 'la_uterine_rupture'] and df.at[person_id, 'la_uterine_rupture_treatment'] == 'none':
             if treatment_success_ur and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
                 df.at[person_id, 'la_uterine_rupture_treatment'] = 'prompt_treatment'
             elif treatment_success_ur and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
@@ -3098,18 +3154,33 @@ class HSI_Labour_SurgeryForLabourComplicationsFacilityLevel2(HSI_Event, Individu
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         treatment_success_pph = params['success_rate_pph_surgery'] < self.module.rng.random_sample()
+        treatment_success_surgical_removal = params['success_rate_surgical_removal_placenta'] < \
+                                             self.module.rng.random_sample()
 
-        if df.at[person_id, 'la_postpartum_haem']:
+        # Surgery for refractory atonic uterus...
+        # TODO: as above
+        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['uterine_atony']:
             if treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
             elif treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
             elif ~treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
+                # nb. evidence suggests uterine preserving surgery vs hysterectomy have comparable outcomes in LMICs
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
             elif ~treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
                 df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
                 df.at[person_id, 'la_has_had_hysterectomy'] = True
+
+        # Surgery for retained placenta...
+        if df.at[person_id, 'la_postpartum_haem'] and mni[person_id]['retained_placenta']:
+            if treatment_success_surgical_removal and mni[person_id]['referred_for_surgery'] == 'prompt_referral':
+                df.at[person_id, 'la_postpartum_haem_treatment'] = 'prompt_treatment'
+            elif treatment_success_pph and mni[person_id]['referred_for_surgery'] == 'delayed_referral':
+                df.at[person_id, 'la_postpartum_haem_treatment'] = 'delayed_treatment'
+            elif ~treatment_success_pph:
+                logger.debug('Surgical intervention for mothers %d postpartum haemorrhage has been unsuccessful',
+                             person_id)
 
     def did_not_run(self):
         person_id = self.target
