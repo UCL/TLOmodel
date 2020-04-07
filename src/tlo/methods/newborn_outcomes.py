@@ -109,7 +109,10 @@ class NewbornOutcomes(Module):
         'cfr_failed_to_transition': Parameter(
             Types.REAL, 'case fatality rate for a neonate following failure to transition'),
         'cfr_preterm_birth': Parameter(
-            Types.REAL, 'case fatality rate for a neonate following failure to transition'),
+            Types.REAL, 'case fatality rate for a neonate born prematurely'),
+        'rr_preterm_death_steroids': Parameter(
+            Types.REAL, 'relative risk of death for preterm neonates following administration of antenatal '
+                        'corticosteroids'),
         'prob_care_seeking_for_complication': Parameter(
             Types.REAL, 'baseline probability that a mother will seek care for an unwell neonate following delivery'),
         'sensitivity_of_assessment_of_neonatal_sepsis_hc': Parameter(
@@ -182,7 +185,6 @@ class NewbornOutcomes(Module):
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
-        nci = self.newborn_care_info
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['nb_daly_weights'] = {
@@ -253,24 +255,25 @@ class NewbornOutcomes(Module):
              Predictor('nb_early_onset_neonatal_sepsis').when(True,  params['odds_enceph_neonatal_sepsis']),
              Predictor('sex').when('M',  params['odds_enceph_males']),
              Predictor('mother_obstructed_labour', external=True).when(True, params['odds_enceph_obstructed_labour']),
+             # TODO: should this be untreated OL?
              Predictor('mother_gestational_htn', external=True).when(True, params['odds_enceph_hypertension']),
              Predictor('mother_mild_pre_eclamp', external=True).when(True, params['odds_enceph_hypertension']),
              Predictor('mother_severe_pre_eclamp', external=True).when(True, params['odds_enceph_hypertension'])),
 
             'encephalopathy_death': LinearModel(
              LinearModelType.MULTIPLICATIVE,
-             params['cfr_encephalopathy'],),
-            #  TODO: Treatment Effects
+             params['cfr_encephalopathy'],
+             Predictor('nb_encephalopathy').when('moderate', 2).when('severe', 3),
+             Predictor('nb_received_neonatal_resus').when(True, 0.7)),
 
             'failure_to_transition': LinearModel(
              LinearModelType.MULTIPLICATIVE,
-             params['prob_failure_to_transition'],
-             Predictor('age_years').when('.between(0,2)', 1)),
+             params['prob_failure_to_transition']),
 
             'failed_to_transition_death': LinearModel(
              LinearModelType.MULTIPLICATIVE,
-             params['cfr_failed_to_transition'],),
-            #  TODO: Treatment Effects
+             params['cfr_failed_to_transition'],
+             Predictor('nb_received_neonatal_resus').when(True, 0.7)),
 
             'retinopathy': LinearModel(
              LinearModelType.MULTIPLICATIVE,
@@ -280,13 +283,11 @@ class NewbornOutcomes(Module):
             'preterm_birth_death': LinearModel(
              LinearModelType.MULTIPLICATIVE,
              params['cfr_preterm_birth'],
-             Predictor('age_years').when('.between(0,2)', 1)),
-            #  TODO: Treatment Effects (STEROIDS - external variable)
+             Predictor('received_antenatal_steroids', external=True).when('True', params['rr_preterm_death_steroids'])),
 
             'care_seeking_for_complication': LinearModel(
              LinearModelType.MULTIPLICATIVE,
-             params['prob_care_seeking_for_complication'],
-             Predictor('age_years').when('.between(0,2)', 1))
+             params['prob_care_seeking_for_complication'])
 
         }
 
@@ -302,7 +303,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_treatment_for_neonatal_sepsis'] = 'none'
         df.loc[df.is_alive, 'nb_neonatal_sepsis_disab'] = 'none'
         df.loc[df.is_alive, 'nb_failed_to_transition'] = False
-        df.loc[df.is_alive, 'nb_received_neonatal_resus'] = 'none'
+        df.loc[df.is_alive, ''] = 'none'
         df.loc[df.is_alive, 'nb_encephalopathy'] = 'none'
         df.loc[df.is_alive, 'nb_encephalopathy_disab'] = 'none'
         df.loc[df.is_alive, 'nb_retinopathy_prem'] = 'none'
@@ -360,6 +361,7 @@ class NewbornOutcomes(Module):
         params = self.parameters
         df = self.sim.population.props
         nci = self.newborn_care_info
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
         mother_id = df.loc[person_id, 'mother_id']
         person = df.loc[[person_id]]
 
@@ -381,6 +383,11 @@ class NewbornOutcomes(Module):
                                                                mother_gestational_htn=gestational_htn,
                                                                mother_mild_pre_eclamp=mild_pre_eclampsia,
                                                                mother_severe_pre_eclamp=severe_pre_eclampsia)[person_id]
+
+        if eq == params['nb_newborn_equations']['preterm_birth_death']:
+            steroid_status = mni[mother_id]['corticosteroids_given']
+            return self.rng.random_sample(size=1) < eq.predict(person, received_antenatal_steroids=steroid_status)[
+                person_id]
 
         else:
             # If there are no external variables in the equation the calculation is as follows
@@ -408,7 +415,7 @@ class NewbornOutcomes(Module):
                                                      scale=20, size=10000) 
         # todo: size needs to be yearly births of the specific gestation?
 
-        # Then we calculate the 10th and 90th percentile, these are the case definiation for 'small for gestational age'
+        # Then we calculate the 10th and 90th percentile, these are the case definition for 'small for gestational age'
         # and 'large for gestational age'
         small_for_gestational_age_cutoff = np.percentile(birth_weight_distribution, 10)
         large_for_gestational_age_cutoff = np.percentile(birth_weight, 90)
@@ -463,7 +470,8 @@ class NewbornOutcomes(Module):
 
         # We check that the baby has survived labour and has been delivered (even if the mother hasnt)
         if (df.at[mother_id, 'is_alive'] & ~df.at[mother_id, 'la_intrapartum_still_birth']) or \
-           (~df.at[mother_id, 'is_alive'] & ~df.at[mother_id, 'la_intrapartum_still_birth']):
+           (~df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_maternal_death_in_labour'] &
+            ~df.at[mother_id, 'la_intrapartum_still_birth']):
             mni = self.sim.modules['Labour'].mother_and_newborn_info
             m = mni[mother_id]
 
@@ -502,15 +510,12 @@ class NewbornOutcomes(Module):
             logger.info('%s|late_preterm|%s', self.sim.date,
                         {'age': df.at[child_id, 'age_years'],
                          'person_id': child_id})
-        else:
-            df.at[child_id, 'nb_early_preterm'] = False
-            df.at[child_id, 'nb_late_preterm'] = False
 
         # Check no children born at term or postterm women are incorrectly categorised as preterm
-        if m['labour_state'] == 'TL':
+        if m['labour_state'] == 'term_labour':
             assert ~df.at[child_id, 'nb_early_preterm']
             assert ~df.at[child_id, 'nb_late_preterm']
-        if m['labour_state'] == 'POTL':
+        if m['labour_state'] == 'postterm_labour':
             assert ~df.at[child_id, 'nb_early_preterm']
             assert ~df.at[child_id, 'nb_late_preterm']
 
@@ -592,7 +597,6 @@ class NewbornOutcomes(Module):
 
                     # Check all encephalopathy cases receive a grade
                     assert df.at[child_id, 'nb_encephalopathy'] != 'none'
-                    # todo: correct to only apply to term infants only?
 
             # -------------------------------------- PRETERM BIRTH COMPS... ------------------------------------------
             # retinopathy is a specific complication of prematurity that we do apply explicitly to map with DALYs
@@ -636,7 +640,7 @@ class NewbornOutcomes(Module):
             # If this neonate was delivered at home and develops a complications we determine the likelihood of care
             # seeking
 
-            # TODO: care seeking just for preterm birth?
+            # TODO: should we trigger women to seek care for preterm infants?
             if (m['delivery_setting'] == 'home_birth') & (child.nb_failed_to_transition or
                                                           child.nb_early_onset_neonatal_sepsis or
                                                           child.nb_encephalopathy != 'none'):
@@ -656,6 +660,7 @@ class NewbornOutcomes(Module):
     # ============================================ BREAST FEEDING AT HOME ============================================
             # Using DHS data we apply a one of probability that women who deliver at home will initiate breastfeeding
             # within one hour of birth
+            # We assume that neonates with complications will not start breastfeeding within one hour
             if (m['delivery_setting'] == 'home_birth') and (~child.nb_failed_to_transition and
                                                             ~child.nb_early_onset_neonatal_sepsis and
                                                             (child.nb_encephalopathy == 'none')):
@@ -824,8 +829,12 @@ class NewbornDisabilityEvent(Event, IndividualScopeEventMixin):
                                                                                          p=params['prob_severe_enceph_'
                                                                                                   'disabilities'])
 
-        # TODO: ISSUE- newborn could get DALY from 2 conditions  (preterm + septic), pick the worst and stick?
-        # TODO: eventually congenital anomalies dalys should be here
+        # TODO: ISSUE- DALY weight conditions are the same for each complication, a neonate could develop impairment
+        #  from multiple complications. Currently we would map these weights cummulitively for a neonate, is that
+        #  correct?
+
+        # TODO: Congenital anomaly DALYs = > 300 different individual weights - to discuss with the team (a high number
+        #  to do with congenital hear anomalies which we dont model) - maybe to be its own little module.
 
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ================================================
         # TODO: HSIs that purely take up inpatient time? i.e. blank HSI that fires consecutively to show IP time
@@ -856,14 +865,6 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
 
         logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel: child %d is '
                     'receiving care following delivery in a health facility on date %s', person_id, self.sim.date)
-
-        #     if nci[person_id]['delivery_setting'] == 'home_birth' and nci[person_id]['sought_care_for_complications']:
-        #   if self.module.rng.random_sample() > params['dummy_prob_health_centre']:
-        #       nci[person_id]['delivery_setting'] = 'health_centre'
-        #       logger.debug('neonate %d has been presented for care in a health centre following delivery', person_id)
-        #   else:
-        #       nci[person_id]['delivery_setting'] = 'hospital'
-        #       logger.debug('mother %d is delivering in a level 1 hospital', person_id)
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
@@ -910,7 +911,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
                outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]:
                 logger.debug('Neonate %d has received vitamin k prophylaxis following a facility delivery', person_id)
                 nci[person_id]['vit_k'] = True
-                # TODO: whats the point of this
+                # TODO: this variable currently doesnt affect outcomes
             else:
                 logger.debug('This facility has no vitamin K and therefore was not given')
 
@@ -956,7 +957,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         if nci[person_id]['delivery_attended'] and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
                                                     ~df.at[person_id, 'nb_failed_to_transition'] and
                                                     df.at[person_id, 'nb_encephalopathy'] != 'none'):
-            # Likelihood of correctassessmentt and treatment varied by facility type
+            # Likelihood of correct assessmentt and treatment varied by facility type
             if nci[person_id]['delivery_setting'] == 'health_centre':
                 kangaroo_mother_care('hc')
             elif nci[person_id]['delivery_setting'] == 'health_centre':
