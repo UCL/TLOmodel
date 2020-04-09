@@ -255,7 +255,7 @@ class NewbornOutcomes(Module):
              Predictor('nb_early_onset_neonatal_sepsis').when(True,  params['odds_enceph_neonatal_sepsis']),
              Predictor('sex').when('M',  params['odds_enceph_males']),
              Predictor('mother_obstructed_labour', external=True).when(True, params['odds_enceph_obstructed_labour']),
-             # TODO: should this be untreated OL?
+             # TODO: should this be untreated OL? - check the wiki for how to do this (series)
              Predictor('mother_gestational_htn', external=True).when(True, params['odds_enceph_hypertension']),
              Predictor('mother_mild_pre_eclamp', external=True).when(True, params['odds_enceph_hypertension']),
              Predictor('mother_severe_pre_eclamp', external=True).when(True, params['odds_enceph_hypertension'])),

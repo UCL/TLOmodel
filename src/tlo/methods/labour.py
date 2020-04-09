@@ -411,7 +411,7 @@ class Labour (Module):
              'early_preterm_birth': LinearModel(
                 LinearModelType.LOGISTIC,
                 params['odds_early_ptb'],
-                Predictor('age_years').when('.between(15,20)', params['or_early_ptb_age<20']),
+                Predictor('age_years').when('.between(15,19)', params['or_early_ptb_age<20']),
                 Predictor('la_has_previously_delivered_preterm').when(True, params['or_early_ptb_prev_ptb'])),
 
              'late_preterm_birth': LinearModel(
@@ -956,6 +956,8 @@ class Labour (Module):
         #    health_values_df = health_values_df.multiply(scaling_factor, axis=0)
 
         return health_values_df
+
+    # todo: average monthly weighting - this will now be done by TIM H
 
     # ===================================== LABOUR SCHEDULER ==========================================================
 
