@@ -3199,25 +3199,21 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
-        # n.b. this is all cause/time-point maternal death (will need to be focused intrapartum)
-
-        # Maternal Mortality Ratio
+        # Previous Year...
         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-        live_births_sum = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
 
-        maternal_deaths = len(df.index[df.la_maternal_death_in_labour & (df.la_maternal_death_in_labour_date > one_year_prior) &
-                                       (df.la_maternal_death_in_labour_date < self.sim.date)])
+        # Denominators...
+        # todo this is currently all births
+        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
 
-    #    if maternal_deaths == 0:
-    #        mmr = 0
-    #    else:
-    #        mmr = maternal_deaths/live_births_sum * 100000
+        total_ip_maternal_deaths_last_year = len(df.index[df.la_maternal_death_in_labour & (
+            df.la_maternal_death_in_labour_date > one_year_prior) & (df.la_maternal_death_in_labour_date <
+                                                                     self.sim.date)])
 
-    #    logger.info(f'The maternal mortality for this year date %s is {mmr} per 100,000 live births', self.sim.date)
+        def zero_out_nan(x):
+            return x if not np.isnan(x) else 0
 
-        # Facility Delivery Rate
+        dict_for_output = {'intrapartum_mmr': zero_out_nan(total_ip_maternal_deaths_last_year/
+                                                           total_births_last_year * 100000)}
+        logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
-        # Still Birth Rate
-        # Perinatal Mortality
-        # Disease Incidence
-        # Intervention incidence
