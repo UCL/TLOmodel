@@ -25,8 +25,8 @@ class Labour (Module):
         # This dictionary will store additional information around delivery and birth
         self.mother_and_newborn_info = dict()
 
-        # This dictionary will store consumable packages used in the HSI
-        self.consumables_labour = dict()
+        # This dictionary will track incidence of complications of labour
+        self.LabourComplicationTracker = dict()
 
     PARAMETERS = {
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================
@@ -659,113 +659,15 @@ class Labour (Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # ============================= Define consumable for HSIs ====================================================
-        # Here all the consumables required within the labour health system interactions are defined and packaged as
-        # parameters  # TODO: this isn't currently being used
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code_uncomplicated_delivery = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Vaginal delivery - skilled attendance',
-                            'Intervention_Pkg_Code'])[0]
-
-        pkg_code_clean_delivery_kit = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Clean practices and immediate essential newborn care '
-                                                               '(in facility)', 'Intervention_Pkg_Code'])[0]
-
-        item_code_abx_prom = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
-
-        pkg_code_pprom = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM', 'Intervention_Pkg_Code'])[0]
-
-        item_code_steroids_prem_dexamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
-
-        item_code_steroids_prem_betamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
-
-        item_code_antibiotics_gbs_proph = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
-
-        pkg_code_severe_preeclampsia = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia', 'Intervention_Pkg_Code'])[0]
-
-        pkg_code_obstructed_labour = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of obstructed labour',
-                            'Intervention_Pkg_Code'])[0]
-
-        item_code_forceps = pd.unique(consumables.loc[consumables['Items'] == 'Forceps, obstetric', 'Item_Code'])[0]
-
-        item_code_vacuum = pd.unique(consumables.loc[consumables['Items'] == 'Vacuum, obstetric', 'Item_Code'])[0]
-
-        pkg_code_sepsis = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
-                            'Intervention_Pkg_Code'])[0]
-
-        pkg_code_severe_hypertension = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia', 'Intervention_Pkg_Code'])[0]
-
-        pkg_code_eclampsia = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia', 'Intervention_Pkg_Code'])[0]
-
-        pkg_code_am = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Active management of the 3rd stage of labour',
-                            'Intervention_Pkg_Code'])[0]
-
-        pkg_code_pph = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum hemorrhage',
-                            'Intervention_Pkg_Code'])[0]
-
-        pkg_code_cs = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Cesearian Section with indication (with complication)',
-                            'Intervention_Pkg_Code'])[0]
-
-        item_code_blood = pd.unique(
-            consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-
-        item_code_bt_needle = pd.unique(
-            consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
-
-        item_code_bt_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
-
-        item_code_bt_gs = pd.unique(
-            consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-                            'Item_Code'])[0]
-
-        self.consumables_labour = {
-            'consumables_prophylaxis_and_attended_delivery':
-                {'Intervention_Package_Code': {pkg_code_uncomplicated_delivery: 1,
-                                               pkg_code_clean_delivery_kit: 1,
-                                               pkg_code_pprom: 1},
-                 'Item_Code': {item_code_abx_prom: 3, item_code_steroids_prem_dexamethasone: 5,
-                               item_code_steroids_prem_betamethasone: 2,
-                               item_code_antibiotics_gbs_proph: 3}},
-
-            'consumables_needed_spe': {'Intervention_Package_Code': {pkg_code_severe_preeclampsia: 1},
-                                       'Item_Code': {}},
-
-            'consumables_obstructed_labour': {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
-                                              'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}},
-
-            'consumables_needed_sepsis': {'Intervention_Package_Code': {pkg_code_sepsis: 1}, 'Item_Code': {}},
-
-            'consumables_needed_htn': {'Intervention_Package_Code': {pkg_code_severe_hypertension: 1},
-                                       'Item_Code': {}},
-
-            'consumables_needed_eclampsia': {'Intervention_Package_Code': {pkg_code_eclampsia: 1}, 'Item_Code': {}},
-
-            'consumables_needed_amtsl': {'Intervention_Package_Code': {pkg_code_am: 1}, 'Item_Code': {}},
-
-            'consumables_needed_pph': {'Intervention_Package_Code': {pkg_code_pph: 1}, 'Item_Code': {}},
-
-            'consumables_needed_cs': {'Intervention_Package_Code': {pkg_code_cs: 1}, 'Item_Code': {}},
-
-            'consumables_needed_bt': {'Intervention_Package_Code': {}, 'Item_Code': {item_code_blood: 2,
-                                                                                     item_code_bt_needle: 1,
-                                                                                     item_code_bt_test: 1,
-                                                                                     item_code_bt_gs: 2}}
-        }
+        # Create complication tracker
+        self.LabourComplicationTracker = {'obstructed_labour': 0,
+                                          'antepartum_haem': 0,
+                                          'sepsis': 0,
+                                          'eclampsia': 0,
+                                          'uterine_rupture': 0,
+                                          'postpartum_haem': 0,
+                                          'sepsis_postpartum': 0,
+                                          'eclampsia_postpartum': 0}
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # We register all the dx_tests needed within the labour HSI events. dx_tests in this module represent assessment
@@ -1048,6 +950,7 @@ class Labour (Module):
 
         if self.eval(params['la_labour_equations'][f'{complication}_{labour_stage}'], individual_id):
             df.at[individual_id, f'la_{complication}'] = True
+            self.LabourComplicationTracker[f'{complication}'] += 1
 
             if complication == 'antepartum_haem':
                 # Severity of bleeding is assigned if a woman is experience an antepartum haemorrhage to map to DALY
@@ -1102,6 +1005,7 @@ class Labour (Module):
             logger.info(f'%s|{complication}|%s', self.sim.date,
                         {'age': df.at[individual_id, 'age_years'],
                          'person_id': individual_id})
+            self.LabourComplicationTracker = {f'{complication}': +1}
 
     def calculate_complication_risk_facility_delivery(self, individual_id, complication, labour_stage):
         """This function is called at the beginning of a facility delivery to calculate a woman's risk of each
@@ -1141,6 +1045,7 @@ class Labour (Module):
 
         if rng.random_sample() < mni[person_id][f'risk_{labour_stage}_{complication}']:
             df.at[person_id, f'la_{complication}'] = True
+            self.LabourComplicationTracker[f'{complication}'] += 1
 
             if complication == 'antepartum_haem':
                 random_choice = self.rng.choice(['non_severe', 'severe'], size=1, p=params[
@@ -1170,6 +1075,7 @@ class Labour (Module):
         params = self.parameters
 
         if rng.random_sample() < mni[person_id][f'risk_{labour_stage}_{complication}']:
+            self.LabourComplicationTracker[f'{complication}'] += 1
             if complication == 'sepsis' or complication == 'eclampsia':
                 df.at[person_id, f'la_{complication}_postpartum'] = True
 
@@ -1437,8 +1343,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
             # modified by skilled birth attendance for women delivering in a facility
             # Here labour_stage 'ip' means intrapartum
 
-            self.module.set_home_birth_complications_intrapartum(individual_id, labour_stage='ip', complication=
-                                                                 'obstructed_labour')
+            self.module.set_home_birth_complications_intrapartum(individual_id, labour_stage='ip',
+                                                                 complication='obstructed_labour')
             self.module.set_home_birth_complications_intrapartum(individual_id, labour_stage='ip', complication=
                                                                  'antepartum_haem')
             self.module.set_home_birth_complications_intrapartum(individual_id, labour_stage='ip', complication=
@@ -3194,7 +3100,8 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """This is LabourLoggingEvent. Currently it calculates and produces a yearly output of maternal mortality (maternal
     deaths per 100,000 live births). It is incomplete"""
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         df = self.sim.population.props
@@ -3210,10 +3117,39 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.la_maternal_death_in_labour_date > one_year_prior) & (df.la_maternal_death_in_labour_date <
                                                                      self.sim.date)])
 
-        def zero_out_nan(x):
-            return x if not np.isnan(x) else 0
+        # yearly number of complications
+        ol = self.module.LabourComplicationTracker['obstructed_labour']
+        aph = self.module.LabourComplicationTracker['antepartum_haem']
+        ur = self.module.LabourComplicationTracker['uterine_rupture']
+        ec = self.module.LabourComplicationTracker['eclampsia']
+        ec_pp = self.module.LabourComplicationTracker['eclampsia_postpartum']
+        pph = self.module.LabourComplicationTracker['postpartum_haem']
+        sep = self.module.LabourComplicationTracker['sepsis']
+        sep_pp = self.module.LabourComplicationTracker['sepsis_postpartum']
 
-        dict_for_output = {'intrapartum_mmr': zero_out_nan(total_ip_maternal_deaths_last_year/
-                                                           total_births_last_year * 100000)}
+        # def zero_out_nan(x):
+        #    return x if not np.isnan(x) else 0
+
+        dict_for_output = {'intrapartum_mmr': total_ip_maternal_deaths_last_year/
+                                                           total_births_last_year * 100000,
+                           'ol_incidence': ol / total_births_last_year * 100,
+                           'aph_incidence': aph / total_births_last_year * 100,
+                           'ur_incidence': ur / total_births_last_year * 100,
+                           'ec_incidence': ec + ec_pp / total_births_last_year * 100,
+                           'sep_incidence': sep + sep_pp / total_births_last_year * 100,
+                           'pph_incidence': pph / total_births_last_year * 100,
+                           }
+        # SBR, fd rate
+
+
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
+        # Reset the EventTracker
+        self.module.LabourComplicationTracker = {'obstructed_labour': 0,
+                                                 'antepartum_haem': 0,
+                                                 'sepsis': 0,
+                                                 'eclampsia': 0,
+                                                 'uterine_rupture': 0,
+                                                 'postpartum_haem': 0,
+                                                 'sepsis_postpartum': 0,
+                                                 'eclampsia_postpartum': 0}
