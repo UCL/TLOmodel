@@ -22,8 +22,12 @@ class NewbornOutcomes(Module):
         super().__init__(name)
 
         self.resourcefilepath = resourcefilepath
+
         # This dictionary will store information related to the neonates delivery
         self.newborn_care_info = dict()
+
+        # This dictionary will track incidence of complications of following birth
+        self.NewbornComplicationTracker = dict()
 
     PARAMETERS = {
         'base_incidence_low_birth_weight': Parameter(
@@ -303,7 +307,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_treatment_for_neonatal_sepsis'] = 'none'
         df.loc[df.is_alive, 'nb_neonatal_sepsis_disab'] = 'none'
         df.loc[df.is_alive, 'nb_failed_to_transition'] = False
-        df.loc[df.is_alive, ''] = 'none'
+        df.loc[df.is_alive, 'nb_received_neonatal_resus'] = 'none'
         df.loc[df.is_alive, 'nb_encephalopathy'] = 'none'
         df.loc[df.is_alive, 'nb_encephalopathy_disab'] = 'none'
         df.loc[df.is_alive, 'nb_retinopathy_prem'] = 'none'
@@ -320,6 +324,12 @@ class NewbornOutcomes(Module):
     def initialise_simulation(self, sim):
         event = NewbornOutcomesLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
+
+        self.NewbornComplicationTracker = {'neonatal_sepsis': 0,
+                                           'mild_enceph': 0,
+                                           'moderate_enceph': 0,
+                                           'severe_enceph': 0,
+                                           'failed_to_transition': 0}
 
         # We define the diagnostic tests that will be called within the health system interactions. As with Labour, the
         # sensitivity of these tests varies between facility type
@@ -469,8 +479,8 @@ class NewbornOutcomes(Module):
         nci = self.newborn_care_info
 
         # We check that the baby has survived labour and has been delivered (even if the mother hasnt)
-        if (df.at[mother_id, 'is_alive'] & ~df.at[mother_id, 'la_intrapartum_still_birth']) or \
-           (~df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_maternal_death_in_labour'] &
+        if (df.at[mother_id, 'is_alive'] and ~df.at[mother_id, 'la_intrapartum_still_birth']) or \
+           (~df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_maternal_death_in_labour'] and
             ~df.at[mother_id, 'la_intrapartum_still_birth']):
             mni = self.sim.modules['Labour'].mother_and_newborn_info
             m = mni[mother_id]
@@ -565,6 +575,7 @@ class NewbornOutcomes(Module):
             if m['delivery_setting'] == 'home_birth' and self.eval(params['nb_newborn_equations'][
                                                                        'neonatal_sepsis_home_birth'], child_id):
                 df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
+                self.NewbornComplicationTracker['neonatal_sepsis'] += 1
 
                 logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
                             child_id, self.sim.date)
@@ -590,10 +601,13 @@ class NewbornOutcomes(Module):
                     severity_enceph = self.rng.choice(('mild', 'moderate', 'severe'), p=params['prob_enceph_severity'])
                     if severity_enceph == 'mild':
                         df.at[child_id, 'nb_encephalopathy'] = 'mild_enceph'
+                        self.NewbornComplicationTracker['mild_enceph'] += 1
                     elif severity_enceph == 'moderate':
                         df.at[child_id, 'nb_encephalopathy'] = 'moderate_enceph'
+                        self.NewbornComplicationTracker['moderate_enceph'] += 1
                     else:
                         df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
+                        self.NewbornComplicationTracker['severe_enceph'] += 1
 
                     # Check all encephalopathy cases receive a grade
                     assert df.at[child_id, 'nb_encephalopathy'] != 'none'
@@ -612,6 +626,8 @@ class NewbornOutcomes(Module):
             if df.at[child_id, 'nb_encephalopathy'] != 'none':
                 # (cally tan) All encephalopathic children will need some form of neonatal resuscitation
                 df.at[child_id, 'nb_failed_to_transition'] = True
+                self.NewbornComplicationTracker['failed_to_transition'] += 1
+
                 logger.info('%s|failed_to_transition|%s', self.sim.date, {'person_id': child_id})
                 logger.debug(f'Neonate %d has failed to transition from foetal to neonatal state and is not breathing '
                              f'following delivery', child_id)
@@ -619,6 +635,7 @@ class NewbornOutcomes(Module):
             elif self.eval(params['nb_newborn_equations']['failure_to_transition'], child_id):
                 df.at[child_id, 'nb_failed_to_transition'] = True
                 logger.info('%s|failed_to_transition|%s', self.sim.date, {'person_id': child_id})
+                self.NewbornComplicationTracker['failed_to_transition'] += 1
                 logger.debug(f'Neonate %d has failed to transition from foetal to neonatal state and is not breathing '
                              f'following delivery', child_id)
 
@@ -679,10 +696,6 @@ class NewbornOutcomes(Module):
             self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=3))
             logger.info('This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person %d', child_id)
 
-            # In the rare instance that a baby has been delivered following a mothers death in labour, we now delete
-            # the mni dictionary record for that woman
-            if m['death_in_labour']:
-                del mni[mother_id]
 
     def on_hsi_alert(self, person_id, treatment_id):
 
@@ -737,6 +750,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         child = df.loc[individual_id]
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
 
         # Check the correct amount of time has passed between birth and the death event
         assert (self.sim.date - df.at[individual_id, 'date_of_birth']) == pd.to_timedelta(3, unit='D')
@@ -771,6 +785,11 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
         #   first 48 hours
         # TODO: use append to add cause of death to mni?
 
+        # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
+        # is done here as we use variables from the mni as predictors in some of the above equations
+        mother_id = df.loc[individual_id, 'mother_id']
+        if df.at[mother_id, 'la_maternal_death_in_labour']:
+            del mni[mother_id]
 
 class NewbornDisabilityEvent(Event, IndividualScopeEventMixin):
     """ This is NewbornDisabilityEvent. It is scheduled by NewbornDeathEvent for surviving neonates. This event
@@ -1066,34 +1085,66 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is NewbornOutcomesLoggingEvent. Currently it produces a yearly output of neonatal and infant mortality.
     It is incomplete as both neonatal and infant mortality will be effected by deaths outside of this module """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         df = self.sim.population.props
 
-        # Here we calculated the infant mortality rate, deaths in the first year of life per 1000 live births
+        # Previous Year...
         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
-        live_births_sum = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
 
-        cumm_deaths = len(df.index[df.nb_death_after_birth & (df.nb_death_after_birth_date > one_year_prior) &
-                          (df.nb_death_after_birth_date < self.sim.date)])
+        # Denominators...
+        # todo this is currently all births
+        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
 
-        if cumm_deaths == 0:
-            imr = 0
-        else:
-            imr = cumm_deaths / live_births_sum * 1000
+        newborn_deaths = len(df.index[df.nb_death_after_birth & (df.nb_death_after_birth_date > one_year_prior) &
+                                      (df.nb_death_after_birth_date < self.sim.date)])
 
-        logger.info(f'The infant mortality ratio on date %s for this year is {imr} per 1000 live births',
-                    self.sim.date)
+        early_preterm_births = len(df.index[df.nb_early_preterm & (df.date_of_birth > one_year_prior) &
+                                            (df.date_of_birth < self.sim.date)])
 
-        # Here we calculated the neonatal mortality rate, deaths in the 28 days of life per 1000 live births
-        neonatal_deaths = len(df.index[~df.is_alive & ((df.nb_death_after_birth_date - df.date_of_birth)
-                                       < pd.Timedelta(28, unit='D'))])
+        late_preterm_births = len(df.index[df.nb_late_preterm & (df.date_of_birth > one_year_prior) &
+                                           (df.date_of_birth < self.sim.date)])
 
-        if neonatal_deaths == 0:
-            nmr = 0
-        else:
-            nmr = cumm_deaths / live_births_sum * 1000
+        total_preterm_births = early_preterm_births + late_preterm_births
 
-        logger.info(f'The neonatal mortality ratio on date %s for this year is {nmr} per 1000 live births',
-                    self.sim.date)
+        low_birth_weight = len(df.index[(df.nb_low_birth_weight_status != 'normal_birth_weight') & (df.date_of_birth >
+                                                                                                    one_year_prior) &
+                                        (df.date_of_birth < self.sim.date)])
+
+        small_for_gestational_age = len(df.index[(df.nb_size_for_gestational_age == 'small_for_gestational_age') &
+                                                 (df.date_of_birth >one_year_prior) &(df.date_of_birth <
+                                                                                      self.sim.date)])
+
+        # yearly number of complications
+        sepsis = self.module.NewbornComplicationTracker['neonatal_sepsis']
+        mild_enceph = self.module.NewbornComplicationTracker['mild_enceph']
+        mod_enceph = self.module.NewbornComplicationTracker['moderate_enceph']
+        severe_enceph = self.module.NewbornComplicationTracker['severe_enceph']
+        all_enceph = mild_enceph + mod_enceph + severe_enceph
+        ftt = self.module.NewbornComplicationTracker['failed_to_transition']
+
+        dict_for_output = {'nmr_early': newborn_deaths/total_births_last_year * 1000,
+                           'early_preterm_births': early_preterm_births / total_births_last_year * 100,
+                           'late_preterm_births': late_preterm_births / total_births_last_year * 100,
+                           'total_preterm_births': total_preterm_births / total_births_last_year * 100,
+                           'low_birth_weight': low_birth_weight / total_births_last_year * 100,
+                           'small_for_gestational_age': small_for_gestational_age / total_births_last_year * 100,
+                           'sepsis_incidence': sepsis / total_births_last_year * 100,
+                           'mild_enceph_incidence': mild_enceph / total_births_last_year * 100,
+                           'mod_enceph_incidence': mod_enceph / total_births_last_year * 100,
+                           'severe_enceph_incidence': severe_enceph / total_births_last_year * 100,
+                           'total_enceph_incidence': all_enceph / total_births_last_year * 100,
+                           'ftt_incidence': ftt / total_births_last_year * 100,
+                           }
+        # TODO: health system outputs, check denominators
+
+        logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
+
+        # Reset the EventTracker
+        self.module.NewbornComplicationTracker = {'neonatal_sepsis': 0,
+                                                  'mild_enceph': 0,
+                                                  'moderate_enceph': 0,
+                                                  'severe_enceph': 0,
+                                                  'failed_to_transition': 0}
