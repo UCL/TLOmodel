@@ -984,14 +984,14 @@ class Labour (Module):
         if self.eval(params['la_labour_equations'][f'{complication}_{labour_stage}'], individual_id):
             if complication == 'sepsis' or complication == 'eclampsia':
                 df.at[individual_id, f'la_{complication}_postpartum'] = True
-                self.LabourComplicationTracker = {f'{complication}_postpartum': +1}
+                self.LabourComplicationTracker[f'{complication}_postpartum'] += 1
                 df.at[individual_id, f'la_{complication}_disab'] = True
 
             if complication == 'postpartum_haem':
                 # Severity of bleeding is assigned if a woman experiences a postpartum haemorrhage to map to DALY
                 # weights
                 df.at[individual_id, f'la_{complication}'] = True
-                self.LabourComplicationTracker = {f'{complication}': +1}
+                self.LabourComplicationTracker[f'{complication}'] += 1
 
                 mni[individual_id]['source_pph'] = self.rng.choice(['uterine_atony', 'retained_placenta'],
                                                                    size=1, p=params['prob_pph_source'])
