@@ -88,92 +88,131 @@ class Pneumonia(Module):
         'pn_attributable_fraction_other_cause': Parameter
         (Types.REAL, 'attributable fraction of jirovecii causing pneumonia'
          ),
-        'base_inc_rate_pneumonia_by_RSV': Parameter
+        'base_inc_rate_ALRI_by_RSV': Parameter
         (Types.LIST, 'incidence of pneumonia caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
          ),
-        'base_inc_rate_pneumonia_by_rhinovirus': Parameter
+        'base_inc_rate_ALRI_by_rhinovirus': Parameter
         (Types.LIST, 'incidence of pneumonia caused by rhinovirus in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_hMPV': Parameter
+        'base_inc_rate_ALRI_by_hMPV': Parameter
         (Types.LIST, 'incidence of pneumonia caused by hMPV in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_parainfluenza': Parameter
+        'base_inc_rate_ALRI_by_parainfluenza': Parameter
         (Types.LIST, 'incidence of pneumonia caused by parainfluenza in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_streptococcus': Parameter
+        'base_inc_rate_ALRI_by_streptococcus': Parameter
         (Types.LIST, 'incidence of pneumonia caused by streptoccocus 40/41 in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_hib': Parameter
+        'base_inc_rate_ALRI_by_hib': Parameter
         (Types.LIST, 'incidence of pneumonia caused by hib in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_TB': Parameter
+        'base_inc_rate_ALRI_by_TB': Parameter
         (Types.LIST, 'incidence of pneumonia caused by TB in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_staphylococcus': Parameter
+        'base_inc_rate_ALRI_by_staphylococcus': Parameter
         (Types.LIST, 'incidence of pneumonia caused by Staphylococcus aureus in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_influenza': Parameter
+        'base_inc_rate_ALRI_by_influenza': Parameter
         (Types.LIST, 'incidence of pneumonia caused by influenza in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_pneumonia_by_jirovecii': Parameter
+        'base_inc_rate_ALRI_by_jirovecii': Parameter
         (Types.LIST, 'incidence of pneumonia caused by P. jirovecii in age groups 0-11, 12-59 months'
          ),
-        'base_inc_rate_pneumonia_by_other_pathogens': Parameter
+        'base_inc_rate_ALRI_by_other_pathogens': Parameter
         (Types.LIST, 'incidence of pneumonia caused by other pathogens in age groups 0-11, 12-59 months'
          ),
-        'rr_ri_pneumonia_HHhandwashing': Parameter
+        'rr_ALRI_HHhandwashing': Parameter
         (Types.REAL, 'relative rate of pneumonia with household handwashing with soap'
          ),
-        'rr_ri_pneumonia_HIV': Parameter
+        'rr_ALRI_HIV': Parameter
         (Types.REAL, 'relative rate of pneumonia for HIV positive status'
          ),
-        'rr_ri_pneumonia_SAM': Parameter
+        'rr_ALRI_SAM': Parameter
         (Types.REAL, 'relative rate of pneumonia for severe malnutrition'
          ),
-        'rr_ri_pneumonia_excl_breastfeeding': Parameter
+        'rr_ALRI_excl_breastfeeding': Parameter
         (Types.REAL, 'relative rate of pneumonia for exclusive breastfeeding upto 6 months'
          ),
-        'rr_ri_pneumonia_cont_breast': Parameter
+        'rr_ALRI_cont_breast': Parameter
         (Types.REAL, 'relative rate of pneumonia for continued breastfeeding 6 months to 2 years'
          ),
-        'rr_ri_pneumonia_indoor_air_pollution': Parameter
+        'rr_ALRI_indoor_air_pollution': Parameter
         (Types.REAL, 'relative rate of pneumonia for indoor air pollution'
          ),
-        'rr_ri_pneumonia_pneumococcal_vaccine': Parameter
+        'rr_ALRI_pneumococcal_vaccine': Parameter
         (Types.REAL, 'relative rate of pneumonia for pneumonococcal vaccine'
          ),
-        'rr_ri_pneumonia_hib_vaccine': Parameter
+        'rr_ALRI_hib_vaccine': Parameter
         (Types.REAL, 'relative rate of pneumonia for hib vaccine'
          ),
-        'rr_ri_pneumonia_influenza_vaccine': Parameter
+        'rr_ALRI_influenza_vaccine': Parameter
         (Types.REAL, 'relative rate of pneumonia for influenza vaccine'
          ),
-        'rr_progress_severe_pneum_viral': Parameter
-        (Types.REAL, 'relative rate of pneumonia for viral pathogen'
+        'p_symptomatic_RSV_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of RSV infections causing pneumonia'
+         ),
+        'p_symptomatic_rhinovirus_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of rhinovirus infections causing pneumonia'
+         ),
+        'p_symptomatic_hMPV_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of hMPV infections causing pneumonia'
+         ),
+        'p_symptomatic_parainfluenza_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of parainfluenza infections causing pneumonia'
+         ),
+        'p_symptomatic_streptococcus_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of streptococcus infections causing pneumonia'
+         ),
+        'p_symptomatic_hib_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of hib infections causing pneumonia'
+         ),
+        'p_symptomatic_TB_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of TB infections causing pneumonia'
+         ),
+        'p_symptomatic_staphylococcus_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of staphylococcus infections causing pneumonia'
+         ),
+        'p_symptomatic_influenza_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of influenza infections causing pneumonia'
+         ),
+        'p_symptomatic_jirovecii_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of jirovecii infections causing pneumonia'
+         ),
+        'p_symptomatic_other_pathogens_inf_causing_pneumonia': Parameter
+        (Types.LIST, 'proportion of other_pathogens infections causing pneumonia'
          ),
         'r_progress_to_severe_pneumonia': Parameter
         (Types.LIST,
-         'probability of progressing from non-severe to severe pneumonia among children aged 2-11 months, '
+         'probability of progressing from non-severe to severe pneumonia by age category '
          'HIV negative, no SAM'
          ),
-        'rr_progress_severe_pneum_age12to23mo': Parameter
-        (Types.REAL,
-         'relative rate of progression to severe pneumonia for age 12 to 23 months'
+        'r_progress_to_severe_bronchiolitis': Parameter
+        (Types.LIST,
+         'probability of progressing from non-severe to severe bronchiolitis  by age category  '
+         'HIV negative, no SAM'
          ),
-        'rr_progress_severe_pneum_age24to59mo': Parameter
-        (Types.REAL, 'relative rate of progression to severe pneumonia for age 24 to 59 months'
-         ),
-        'rr_progress_severe_pneum_HIV': Parameter
+        # 'rr_progress_severe_pneum_age12to23mo': Parameter
+        # (Types.REAL,
+        #  'relative rate of progression to severe pneumonia for age 12 to 23 months'
+        #  ),
+        # 'rr_progress_severe_pneum_age24to59mo': Parameter
+        # (Types.REAL, 'relative rate of progression to severe pneumonia for age 24 to 59 months'
+        #  ),
+        'rr_progress_clinical_severe_pneumonia_HIV': Parameter
         (Types.REAL,
          'relative risk of progression to severe pneumonia for HIV positive status'
          ),
-        'rr_progress_severe_pneum_SAM': Parameter
+        'rr_progress_clinical_severe_pneumonia_SAM': Parameter
         (Types.REAL,
          'relative rate of progression to severe pneumonia for severe acute malnutrition'
          ),
         'r_death_pneumonia': Parameter
         (Types.REAL,
          'death rate of pneumonia'
+         ),
+        'r_death_bronchiolitis': Parameter
+        (Types.REAL,
+         'death rate of bronchiolitis'
          ),
         'rr_death_pneumonia_agelt2mo': Parameter
         (Types.REAL,
@@ -256,7 +295,7 @@ class Pneumonia(Module):
         self.progression_to_clinical_severe_penumonia = dict()
 
         # Linear Model for predicting the risk of death:
-        self.risk_of_death_pneumonia = LinearModel
+        self.risk_of_death_clinical_severe_pneumonia = dict()
 
         # dict to hold the probability of onset of different types of symptom given a pathgoen:
         self.prob_symptoms = dict()
@@ -496,6 +535,31 @@ class Pneumonia(Module):
                                      # when(False, m.rr_diarrhoea_excl_breast)
                                      )
         })
+        self.incidence_equations_by_pathogen.update({
+            'influenza': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                          1.0,
+                                          Predictor('age_years')
+                                          .when('.between(0,0)', p['base_inc_rate_ALRI_by_influenza'][0])
+                                          .when('.between(1,1)', p['base_inc_rate_ALRI_by_influenza'][1])
+                                          .when('.between(2,4)', p['base_inc_rate_ALRI_by_influenza'][2])
+                                          .otherwise(0.0),
+                                          # Predictor('li_no_access_handwashing')
+                                          # .when(False, m.rr_diarrhoea_HHhandwashing),
+                                          # Predictor('li_no_clean_drinking_water').
+                                          # Predictor('li_no_access_handwashing')
+                                          # .when(False, m.rr_diarrhoea_HHhandwashing),
+                                          # Predictor('li_no_clean_drinking_water').
+                                          # when(False, m.rr_diarrhoea_clean_water),
+                                          # Predictor('li_unimproved_sanitation').
+                                          # when(False, m.rr_diarrhoea_improved_sanitation),
+                                          # # Predictor('hv_inf').
+                                          # # when(True, m.rr_diarrhoea_HIV),
+                                          # Predictor('malnutrition').
+                                          # when(True, m.rr_diarrhoea_SAM),
+                                          # Predictor('exclusive_breastfeeding').
+                                          # when(False, m.rr_diarrhoea_excl_breast)
+                                          )
+        })
 
         self.incidence_equations_by_pathogen.update({
             'jirovecii': LinearModel(LinearModelType.MULTIPLICATIVE,
@@ -543,7 +607,7 @@ class Pneumonia(Module):
         })
 
         # check that equations have been declared for each pathogens
-        assert self.pathogens == set(list(self.incidence_pneumonia_equations_by_pathogen.keys()))
+        assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
 
         # --------------------------------------------------------------------------------------------
         # Linear models for determining the underlying condition as pneumonia caused by each pathogen
@@ -667,6 +731,9 @@ class Pneumonia(Module):
                                            )
         })
 
+        # check that equations have been declared for each pathogens
+        assert self.pathogens == set(list(self.pathogens_causing_pneumonia_as_underlying_condition.keys()))
+
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the progression to severe pneumonia
         self.progression_to_clinical_severe_penumonia.update({
@@ -692,7 +759,6 @@ class Pneumonia(Module):
                                          # Predictor('has_hiv').when(True, m.rr_progress_very_sev_pneum_HIV),
                                          # Predictor('malnutrition').when(True, m.rr_progress_very_sev_pneum_SAM),
                                          )
-
         })
 
 
@@ -744,23 +810,42 @@ class Pneumonia(Module):
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the risk of dying due to pneumonia
-        # self.risk_of_death_pneumonia = \
-        #     LinearModel(LinearModelType.MULTIPLICATIVE,
-        #                 1.0,
-        #                 Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
-        #                 .when('non-severe', 0) # zero probability of dying if non-severe
-        #                 .when('severe', 0.9)
-        #                 # .when('persistent', p['cfr_persistent_diarrhoea']),
-        #                 # Predictor('age_years')  ##          <--- fill in
-        #                 # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
-        #                 # .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
-        #                 # .otherwise(0.0)
-        #                 ##          < --- TODO: add in current_severe_dehyration
-        #                 # # Predictor('hv_inf').
-        #                 # # when(True, m.rr_diarrhoea_HIV),
-        #                 # Predictor('malnutrition').
-        #                 # when(True, m.rr_diarrhoea_SAM)
-        #                 )
+        self.risk_of_death_clinical_severe_pneumonia.update({
+            'pneumonia': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                     1.0,
+                                     Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
+                                     .when('non-severe', 0)  # zero probability of dying if non-severe
+                                     .when('severe', 0.9)
+                                     #                 # .when('persistent', p['cfr_persistent_diarrhoea']),
+                                     #                 # Predictor('age_years')  ##          <--- fill in
+                                     #                 # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
+                                     #                 # .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
+                                     #                 # .otherwise(0.0)
+                                     #                 ##          < --- TODO: add in current_severe_dehyration
+                                     #                 # # Predictor('hv_inf').
+                                     #                 # # when(True, m.rr_diarrhoea_HIV),
+                                     #                 # Predictor('malnutrition').
+                                     #                 # when(True, m.rr_diarrhoea_SAM)
+                                     )
+        })
+        self.risk_of_death_clinical_severe_pneumonia.update({
+            'bronchiolitis': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                         1.0,
+                                         Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
+                                         .when('non-severe', 0)  # zero probability of dying if non-severe
+                                         .when('severe', 0.9)
+                                         #                 # .when('persistent', p['cfr_persistent_diarrhoea']),
+                                         #                 # Predictor('age_years')  ##          <--- fill in
+                                         #                 # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
+                                         #                 # .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
+                                         #                 # .otherwise(0.0)
+                                         #                 ##          < --- TODO: add in current_severe_dehyration
+                                         #                 # # Predictor('hv_inf').
+                                         #                 # # when(True, m.rr_diarrhoea_HIV),
+                                         #                 # Predictor('malnutrition').
+                                         #                 # when(True, m.rr_diarrhoea_SAM)
+                                         )
+        })
 
         # TODO: duration of ilness - mean 3.0 days (2.0-5.0 days) from PERCH/hopsitalization days
 
@@ -805,7 +890,7 @@ class Pneumonia(Module):
         """
 
         # Schedule the main polling event (to first occur immidiately)
-        sim.schedule_event(PneumoniaPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(AcuteLowerRespiratoryInfectionPollingEvent(self), sim.date + DateOffset(months=0))
 
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -885,7 +970,7 @@ class Pneumonia(Module):
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
-class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the main event that runs the acquisition of pathogens that cause Pneumonia.
         It determines who is infected and when and schedules individual IncidentCase events to represent onset.
         A known issue is that pneumonia events are scheduled based on the risk of current age but occur a short time
@@ -909,14 +994,11 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df['is_alive'] & (df['age_years'] < 5) & ((df['ri_last_ALRI_recovered_date'] <= self.sim.date) |
                                                       pd.isnull(df['ri_last_ALRI_recovered_date']))
 
-        inc_of_acquiring_ALRI = m.incidence_equations_by_pathogen.predict(df.loc[mask_could_get_new_ALRI_event])
+        inc_of_acquiring_ALRI = pd.DataFrame(index=df.loc[mask_could_get_new_ALRI_event].index)
 
         for pathogen in m.pathogens:
             inc_of_acquiring_ALRI[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_ALRI_event])
-
-        # risk_of_acuiring_disease = pd.DataFrame(index=mask_could_get_new_ALRI_event,
-        #                                         columns=['pneumonia', 'bronchiolitis'])
 
         # Convert the incidence rates that are predicted by the model into risk of an event occurring before the next
         # polling event
@@ -934,6 +1016,15 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         person_id_that_acquire_pathogen = prob_of_acquiring_any_pathogen.index[
             rng.rand(len(prob_of_acquiring_any_pathogen)) < prob_of_acquiring_any_pathogen
             ]
+
+        # Determine which disease a pathogen will cause:
+        prob_pathogen_causing_pneumonia = pd.DataFrame(index=df.loc[person_id_that_acquire_pathogen].index)
+        for pathogen in m.pathogens:
+            prob_pathogen_causing_pneumonia[pathogen] = m.pathogens_causing_pneumonia_as_underlying_condition[pathogen]\
+                .predict(df.loc[person_id_that_acquire_pathogen])
+            pneumonia = self.sim.rng.random_sample() < prob_pathogen_causing_pneumonia
+            bronchiolitis = self.sim.rng.random_sample() > prob_pathogen_causing_pneumonia
+
         # Determine which pathogen each person will acquire (among those who will get a pathogen)
         # and create the event for the onset of new infection
         for person_id in person_id_that_acquire_pathogen:
@@ -942,38 +1033,21 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
             pathogen = rng.choice(probs_of_acquiring_pathogen.columns,
                                   p=normalised_p_by_pathogen)
-            # ----------------------- Allocate the underlying condition caused by pathogen ----------------------
-            prob_pathogen_causing_pneumonia = \
-                m.pathogens_causing_pneumonia_as_underlying_condition.predict(df.loc[[person_id]]).values[0]
-            for pathogen in m.pathogens:
-                prob_pathogen_causing_pneumonia[pathogen] = \
-                    m.pathogens_causing_pneumonia_as_underlying_condition[pathogen]\
-                        .predict(df.loc[[person_id]]).values[0]
-                # disease = rng.choice(prob_pathogen_causing_pneumonia.columns,
 
-            # # ----------------------- Allocate the underlying condition caused by the pathogen ----------------------
-            # if pathogen == 'RSV':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[0.4, 0.6])
-            # if pathogen == 'rhinovirus':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[0.4, 0.6])
-            # if pathogen == 'hMPV':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[0.4, 0.6])
-            # if pathogen == 'parainfluenza':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[0.4, 0.6])
-            # if pathogen == 'streptococcus':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[1, 0])
-            # if pathogen == 'hib':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[1, 0])
-            # if pathogen == 'TB':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[1, 0])
-            # if pathogen == 'staphylococcus':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[1, 0])
-            # if pathogen == 'influenza':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[0.4, 0.6])
-            # if pathogen == 'jirovecii':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[1, 0])
-            # if pathogen == 'other_pathogens':
-            #     underlying_condition = rng.choice(['pneumonia', 'bronchiolitis'], p=[0.4, 0.6])
+            # ----------------------- Allocate the underlying condition caused by pathogen ----------------------
+
+
+            if prob_pathogen_causing_pneumonia == [True]:
+                pob_progress_clinical_severe = \
+                    m.progression_to_clinical_severe_penumonia['pneumonia'].predict(df.loc[[person_id]]).values[0]
+            else:
+                pob_progress_clinical_severe = \
+                    m.progression_to_clinical_severe_penumonia['bronchiolitis'].predict(df.loc[[person_id]]).values[0]
+
+            # death
+            risk_of_death = m.risk_of_death_clinical_severe_pneumonia[diseases].predict(df.loc[[person_id]]).values[0]
+            will_die = rng.rand() < risk_of_death
+
 
             # ----------------------- Allocate a date of onset of ALRI ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
