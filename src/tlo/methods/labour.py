@@ -984,12 +984,15 @@ class Labour (Module):
         if self.eval(params['la_labour_equations'][f'{complication}_{labour_stage}'], individual_id):
             if complication == 'sepsis' or complication == 'eclampsia':
                 df.at[individual_id, f'la_{complication}_postpartum'] = True
+                self.LabourComplicationTracker = {f'{complication}_postpartum': +1}
                 df.at[individual_id, f'la_{complication}_disab'] = True
 
             if complication == 'postpartum_haem':
                 # Severity of bleeding is assigned if a woman experiences a postpartum haemorrhage to map to DALY
                 # weights
                 df.at[individual_id, f'la_{complication}'] = True
+                self.LabourComplicationTracker = {f'{complication}': +1}
+
                 mni[individual_id]['source_pph'] = self.rng.choice(['uterine_atony', 'retained_placenta'],
                                                                    size=1, p=params['prob_pph_source'])
                 random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
@@ -1005,7 +1008,6 @@ class Labour (Module):
             logger.info(f'%s|{complication}|%s', self.sim.date,
                         {'age': df.at[individual_id, 'age_years'],
                          'person_id': individual_id})
-            self.LabourComplicationTracker = {f'{complication}': +1}
 
     def calculate_complication_risk_facility_delivery(self, individual_id, complication, labour_stage):
         """This function is called at the beginning of a facility delivery to calculate a woman's risk of each
@@ -1075,13 +1077,14 @@ class Labour (Module):
         params = self.parameters
 
         if rng.random_sample() < mni[person_id][f'risk_{labour_stage}_{complication}']:
-            self.LabourComplicationTracker[f'{complication}'] += 1
             if complication == 'sepsis' or complication == 'eclampsia':
                 df.at[person_id, f'la_{complication}_postpartum'] = True
+                self.LabourComplicationTracker[f'{complication}_postpartum'] += 1
 
             # If the woman will experience postpartum bleeding we determine the source of the bleed and store
             # within the mni
             elif complication == 'postpartum_haem':
+                self.LabourComplicationTracker[f'{complication}'] += 1
                 df.at[person_id, f'la_{complication}'] = True
                 mni[person_id]['source_pph'] = self.rng.choice(['uterine_atony', 'retained_placenta'],
                                                                size=1, p=params['prob_pph_source'])
@@ -3139,7 +3142,7 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'sep_incidence': sep + sep_pp / total_births_last_year * 100,
                            'pph_incidence': pph / total_births_last_year * 100,
                            }
-        # SBR, fd rate
+        # TODO: SBR, health system outputs, check denominators
 
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
