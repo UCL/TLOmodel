@@ -812,7 +812,7 @@ class Pneumonia(Module):
         # Create the linear model for the risk of dying due to pneumonia
         self.risk_of_death_clinical_severe_pneumonia.update({
             'pneumonia': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                     1.0,
+                                     0.7,
                                      Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
                                      .when('non-severe', 0)  # zero probability of dying if non-severe
                                      .when('severe', 0.9)
@@ -830,10 +830,10 @@ class Pneumonia(Module):
         })
         self.risk_of_death_clinical_severe_pneumonia.update({
             'bronchiolitis': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                         1.0,
+                                         0.6,
                                          Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
                                          .when('non-severe', 0)  # zero probability of dying if non-severe
-                                         .when('severe', 0.9)
+                                         .when('severe', 0.6)
                                          #                 # .when('persistent', p['cfr_persistent_diarrhoea']),
                                          #                 # Predictor('age_years')  ##          <--- fill in
                                          #                 # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
@@ -1018,36 +1018,35 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             ]
 
         # Determine which disease a pathogen will cause:
-        prob_pathogen_causing_pneumonia = pd.DataFrame(index=df.loc[person_id_that_acquire_pathogen].index)
+        prob_pathogen_causing_pneumonia = pd.DataFrame(index=df.loc[person_id_that_acquire_pathogen].index,
+                                                       columns=['pneumonia', 'bronchiolitis'])
         for pathogen in m.pathogens:
-            prob_pathogen_causing_pneumonia[pathogen] = m.pathogens_causing_pneumonia_as_underlying_condition[pathogen]\
-                .predict(df.loc[person_id_that_acquire_pathogen])
-            pneumonia = self.sim.rng.random_sample() < prob_pathogen_causing_pneumonia
-            bronchiolitis = self.sim.rng.random_sample() > prob_pathogen_causing_pneumonia
+            prob_pathogen_causing_pneumonia['pneumonia'] = \
+                m.pathogens_causing_pneumonia_as_underlying_condition[pathogen].predict(
+                df.loc[person_id_that_acquire_pathogen])
+            prob_pathogen_causing_pneumonia['bronchiolitis'] = 1 - prob_pathogen_causing_pneumonia['pneumonia']
+
+        # Determine the severity a disease will reach:
+        prob_progress_clinical_severe_case = pd.DataFrame(index=df.loc[person_id_that_acquire_pathogen].index,
+                                                          columns=['non-severe', 'severe'])
+        for disease in m.diseases:
+            prob_progress_clinical_severe_case['severe'] = \
+                m.progression_to_clinical_severe_penumonia[disease].predict(df.loc[person_id_that_acquire_pathogen])
+            prob_progress_clinical_severe_case['non-severe'] = 1 - prob_progress_clinical_severe_case['severe']
 
         # Determine which pathogen each person will acquire (among those who will get a pathogen)
         # and create the event for the onset of new infection
         for person_id in person_id_that_acquire_pathogen:
             # ----------------------- Allocate a pathogen to the person ----------------------
             p_by_pathogen = probs_of_acquiring_pathogen.loc[person_id].values
+            print(sum(p_by_pathogen))
             normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
-            pathogen = rng.choice(probs_of_acquiring_pathogen.columns,
-                                  p=normalised_p_by_pathogen)
+            print(sum(normalised_p_by_pathogen))
+            pathogen = rng.choice(probs_of_acquiring_pathogen.columns, p=normalised_p_by_pathogen)
 
             # ----------------------- Allocate the underlying condition caused by pathogen ----------------------
-
-
-            if prob_pathogen_causing_pneumonia == [True]:
-                pob_progress_clinical_severe = \
-                    m.progression_to_clinical_severe_penumonia['pneumonia'].predict(df.loc[[person_id]]).values[0]
-            else:
-                pob_progress_clinical_severe = \
-                    m.progression_to_clinical_severe_penumonia['bronchiolitis'].predict(df.loc[[person_id]]).values[0]
-
-            # death
-            risk_of_death = m.risk_of_death_clinical_severe_pneumonia[diseases].predict(df.loc[[person_id]]).values[0]
-            will_die = rng.rand() < risk_of_death
-
+            p_disease_by_pathogen = prob_pathogen_causing_pneumonia.loc[person_id].values
+            underlying_condition = rng.choice(prob_pathogen_causing_pneumonia.columns, p=p_disease_by_pathogen)
 
             # ----------------------- Allocate a date of onset of ALRI ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
@@ -1063,23 +1062,14 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
                     symptoms_for_this_person.append(symptom)
 
             # ----------------------- Determine outcomes for this case ----------------------
-            # severity
-            pob_progress_clinical_severe = m.progression_to_clinical_severe_penumonia.predict(df.loc[[person_id]]).values[0]
-            if underlying_condition == 'pneumonia':
-                prob_prog_severe_pneumonia = m.progression_to_severe_pneumonia.predict(df.loc[[person_id]]).values[0]
-                severity = rng.choice(['non-severe', 'severe'],
-                                      p=[1 - prob_prog_severe_pneumonia, prob_prog_severe_pneumonia])
-                # death
-                risk_of_death = m.risk_of_death_pneumonia.predict(df.loc[[person_id]]).values[0]
-                will_die = rng.rand() < risk_of_death
+            # severity of the disease ----------------------
+            p_severity_by_disease = prob_progress_clinical_severe_case.loc[person_id].values
+            severity = rng.choice(prob_progress_clinical_severe_case.columns, p=p_severity_by_disease)
 
-            if underlying_condition == 'bronchiolitis':
-                prob_prog_severe_bronchiolitis = m.progression_to_severe_bronchiolitis.predict(df.loc[[person_id]]).values[0]
-                severity = rng.choice(['non-severe', 'severe'],
-                                      p=[1 - prob_prog_severe_bronchiolitis, prob_prog_severe_bronchiolitis])
-                # death
-                risk_of_death = m.risk_of_death_bronchiolitis.predict(df.loc[[person_id]]).values[0]
-                will_die = rng.rand() < risk_of_death
+            # death status ----------------------
+            risk_of_death = m.risk_of_death_clinical_severe_pneumonia[underlying_condition].predict(
+                df.loc[[person_id]]).values[0]
+            will_die = rng.rand() < risk_of_death
 
             # ----------------------- Create the event for the onset of infection -------------------
             # NB. The symptoms are scheduled by the SymptomManager to 'autoresolve' after the duration
@@ -1115,6 +1105,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
 
         # The event should not run if the person is not currently alive
         if not df.at[person_id, 'is_alive']:
