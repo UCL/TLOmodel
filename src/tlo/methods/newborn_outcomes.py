@@ -753,6 +753,9 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
         # Using the set_neonatal_death_status function, defined above, it is determined if newborns who have experienced
         # complications will die because of them.
 
+        # TODO: Main issue- as ALL encephalopathic neonates also experience failure to transition, they shouldnt go
+        #  through both death equations? need to combine? or just have the risk of death applied once?
+
         if child.nb_early_onset_neonatal_sepsis:
             self.module.set_neonatal_death_status(individual_id, cause='neonatal_sepsis')
 
@@ -851,9 +854,22 @@ class NewbornDisabilityEvent(Event, IndividualScopeEventMixin):
         # TODO: Congenital anomaly DALYs = > 300 different individual weights - to discuss with the team (a high number
         #  to do with congenital hear anomalies which we dont model) - maybe to be its own little module.
 
+
+class NewbornDiseaseResetEvent(Event, IndividualScopeEventMixin):
+    """ """
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        # TODO: Is an event like this needed for this module, depends on how we're logging cases. Not all complications
+        #  in this module resolve
+
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ================================================
         # TODO: HSIs that purely take up inpatient time? i.e. blank HSI that fires consecutively to show IP time
-
 
 class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1. This event is scheduled by

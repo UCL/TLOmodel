@@ -131,14 +131,24 @@ class Labour (Module):
             Types.REAL, 'case fatality rate for uterine rupture in labour'),
         'prob_still_birth_obstructed_labour': Parameter(
             Types.REAL, 'probability of a still birth following obstructed labour where the mother survives'),
+        'rr_still_birth_ol_maternal_death': Parameter(
+            Types.REAL, 'relative risk of still birth following a maternal death due to obstructed labour'),
         'prob_still_birth_antepartum_haem': Parameter(
             Types.REAL, 'probability of a still birth following antepartum haemorrhage where the mother survives'),
+        'rr_still_birth_aph_maternal_death': Parameter(
+            Types.REAL, 'relative risk of still birth following a maternal death due to an antepartum haemorrhage'),
         'prob_still_birth_sepsis': Parameter(
             Types.REAL, 'probability of a still birth following sepsis in labour where the mother survives'),
+        'rr_still_birth_sepsis_maternal_death': Parameter(
+            Types.REAL, 'relative risk of still birth following a maternal death due to sepsis'),
         'prob_still_birth_uterine_rupture': Parameter(
             Types.REAL, 'probability of a still birth following uterine rupture in labour where the mother survives'),
+        'rr_still_birth_ur_maternal_death': Parameter(
+            Types.REAL, 'relative risk of still birth following a maternal death due to uterine rupture'),
         'prob_still_birth_eclampsia': Parameter(
             Types.REAL, 'probability of still birth following eclampsia in labour where the mother survives'),
+        'rr_still_birth_eclampsia_maternal_death': Parameter(
+            Types.REAL, 'relative risk of still birth following a maternal death due to eclampsia'),
         'prob_still_birth_severe_pre_eclamp': Parameter(
             Types.REAL, 'probability of still birth following severe pre eclampsia in labour where the mother survives'),
         'prob_pp_eclampsia': Parameter(
@@ -253,8 +263,7 @@ class Labour (Module):
             Types.REAL, 'probability repairing a ruptured uterus surgically'),
         'prob_successful_assisted_vaginal_delivery': Parameter(
             Types.REAL, 'probability of successful assisted vaginal delivery'),
-        'dummy_prob_health_centre': Parameter(
-            Types.REAL, 'dummy probability that a level 1 facility is a health centre'),
+
         'squeeze_factor_threshold_delivery_attendance': Parameter(
             Types.REAL, 'dummy squeeze factor threshold after which delivery will not be attended '),
         'squeeze_factor_threshold_sba_did_not_run': Parameter(
@@ -295,6 +304,40 @@ class Labour (Module):
         'sensitivity_of_treatment_assessment_of_uterine_rupture_hp': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment by birth attendant for uterine rupture in a level 1 '
                         'hospital'),
+        'obstructed_labour_delayed_treatment_effect_sb': Parameter(
+            Types.REAL, 'effect of delayed treatment for obstructed labour on risk of intrapartum stillbirth'),
+        'obstructed_labour_prompt_treatment_effect_sb': Parameter(
+            Types.REAL, 'effect of prompt treatment for obstructed labour on risk of intrapartum stillbirth'),
+        'sepsis_delayed_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of delayed treatment for sepsis on risk of maternal death'),
+        'sepsis_prompt_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of prompt treatment for sepsis on risk of maternal death'),
+        'sepsis_delayed_treatment_effect_sb': Parameter(
+            Types.REAL, 'effect of delayed treatment for sepsis on risk of intrapartum stillbirth'),
+        'sepsis_prompt_treatment_effect_sb': Parameter(
+            Types.REAL, 'effect of prompt treatment for sepsis on risk of intrapartum stillbirth'),
+        'eclampsia_treatment_effect_severe_pe': Parameter(
+            Types.REAL, 'effect of treatment for severe pre eclampsia on risk of eclampsia'),
+        'eclampsia_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of treatment for eclampsia on risk of maternal death'),
+        'eclampsia_treatment_effect_sb': Parameter(
+            Types.REAL, 'effect of treatment for eclampsia on risk of intrapartum stillbirth'),
+        'aph_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of treatment for antepartum haemorrhage on risk of maternal death'),
+        'aph_bt_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of blood transfusion treatment for antepartum haemorrhage on risk of maternal death'),
+        'aph_treatment_effect_sb': Parameter(
+            Types.REAL, 'effect of treatment for antepartum haemorrhage on risk of intrapartum stillbirth'),
+        'pph_delayed_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of delayed treatment of postpartum haemorrhage on risk of maternal death'),
+        'pph_prompt_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of prompt treatment of postpartum haemorrhage on risk of maternal death'),
+        'pph_bt_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of blood transfusion treatment for postpartum haemorrhage on risk of maternal death'),
+        'ur_treatment_effect_md': Parameter(
+            Types.REAL, 'effect of treatment for uterine rupture on risk of maternal death '),
+        'ur_treatment_effect_sb': Parameter(
+            Types.REAL, 'effect of treatment for uterine rupture on risk of intrapartum stillbirth'),
 
         # ================================= DALY WEIGHT PARAMETERS =====================================================
         'daly_wt_haemorrhage_moderate': Parameter(
@@ -390,8 +433,6 @@ class Labour (Module):
         # Here we define the equations that will be used throughout this module using the linear model and stored them
         # as a parameter
 
-        # TODO: finalise predictors in all models
-
         params['la_labour_equations'] =\
             {'parity': LinearModel(
                 LinearModelType.ADDITIVE,
@@ -406,7 +447,7 @@ class Labour (Module):
                                       .when('2', -0.37)  # params['effect_wealth_lev_2_parity_lr2010'])
                                       .when('1', -0.9)),  # params['effect_wealth_lev_1_parity_lr2010'])),
                 # TODO: first draft from rough regression of 2010 DHS data (will need to be finalised)
-                # TODO: parameters are messing this equation up (sending all parities minus)
+                # TODO: parameters are messing this equation up (sending all parities minus?)
 
              'early_preterm_birth': LinearModel(
                 LinearModelType.LOGISTIC,
@@ -438,9 +479,12 @@ class Labour (Module):
              'obstructed_labour_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_still_birth_obstructed_labour'],
-                Predictor('la_obstructed_labour_treatment').when('prompt_treatment', 0.5),
-                Predictor('la_obstructed_labour_treatment').when('delayed_treatment', 0.25),
-                Predictor('la_maternal_death_in_labour').when(True, 3)),
+                Predictor('la_maternal_death_in_labour').when(True, params['rr_still_birth_ol_maternal_death']),
+                Predictor('la_obstructed_labour_treatment').when('prompt_treatment', params['obstructed_labour_prompt_'
+                                                                                            'treatment_effect_sb']),
+                Predictor('la_obstructed_labour_treatment').when('delayed_treatment', params['obstructed_labour_'
+                                                                                             'delayed_treatment_effect_'
+                                                                                             'sb'])),
 
              'sepsis_ip': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -451,8 +495,9 @@ class Labour (Module):
              'sepsis_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_sepsis'],
-                Predictor('la_sepsis_treatment').when('prompt_treatment', 0.5),
-                Predictor('la_sepsis_treatment').when('delayed_treatment', 0.25)),
+                Predictor('la_sepsis_treatment').when('prompt_treatment', params['sepsis_prompt_treatment_effect_md']),
+                Predictor('la_sepsis_treatment').when('delayed_treatment', params['sepsis_delayed_treatment_effect_'
+                                                                                  'md'])),
 
              'sepsis_pp': LinearModel(
                 LinearModelType.LOGISTIC,
@@ -468,16 +513,18 @@ class Labour (Module):
              'sepsis_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_sepsis'],
-                Predictor('la_sepsis_treatment').when('prompt_treatment', 0.5),
-                Predictor('la_sepsis_treatment').when('delayed_treatment', 0.25)),
+                Predictor('la_sepsis_treatment').when('prompt_treatment', params['sepsis_prompt_treatment_effect_md']),
+                Predictor('la_sepsis_treatment').when('delayed_treatment', params['sepsis_delayed_treatment_effect_'
+                                                                                   'md'])),
                 # DUMMY, copy from above
 
              'sepsis_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_still_birth_sepsis'],
-                Predictor('la_sepsis_treatment').when('prompt_treatment', 0.5),
-                Predictor('la_sepsis_treatment').when('delayed_treatment', 0.25),
-                Predictor('la_maternal_death_in_labour').when(True, 3)),
+                Predictor('la_maternal_death_in_labour').when(True, params['rr_still_birth_sepsis_maternal_death']),
+                Predictor('la_sepsis_treatment').when('prompt_treatment', params['sepsis_prompt_treatment_effect_sb']),
+                Predictor('la_sepsis_treatment').when('delayed_treatment', params['sepsis_delayed_treatment_effect_'
+                                                                                  'sb'])),
 
              'eclampsia_ip': LinearModel(
                 LinearModelType.LOGISTIC,
@@ -486,21 +533,22 @@ class Labour (Module):
                 Predictor('age_years').when('>35', params['or_ip_eclampsia_35']),
                 Predictor('la_parity').when('0', params['or_ip_eclampsia_nullip']),
                 Predictor('ps_gest_diab').when(True, params['or_ip_eclampsia_gest_diab']),
-                Predictor('la_severe_pre_eclampsia_treatment').when(True, 0.5)),
+                Predictor('la_severe_pre_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_severe_'
+                                                                                 'pe'])),
                 # todo: study combines eclampsia and pre-eclampsia as primary outcome?
                 # todo: chronic htn strong predictor
 
              'eclampsia_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_eclampsia'],
-                Predictor('la_eclampsia_treatment').when(True, 0.5)),
+                Predictor('la_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_md'])),
 
              'eclampsia_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_still_birth_eclampsia'],
-                Predictor('la_eclampsia_treatment').when(True, 0.5),
-                Predictor('la_maternal_death_in_labour').when(True, 3)),
-                 
+                Predictor('la_maternal_death_in_labour').when(True, params['rr_still_birth_eclampsia_maternal_death']),
+                Predictor('la_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_sb'])),
+
              'eclampsia_pp': LinearModel(
                 LinearModelType.LOGISTIC,
                 params['odds_ip_eclampsia'],
@@ -508,12 +556,13 @@ class Labour (Module):
                 Predictor('age_years').when('>35', params['or_ip_eclampsia_35']),
                 Predictor('la_parity').when('0', params['or_ip_eclampsia_nullip']),
                 Predictor('ps_gest_diab').when(True, params['or_ip_eclampsia_gest_diab']),
-                Predictor('la_severe_pre_eclampsia_treatment').when(True, 0.5)),
+                Predictor('la_severe_pre_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_severe_'
+                                                                                 'pe'])),
 
              'eclampsia_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_eclampsia'],
-                Predictor('la_eclampsia_treatment').when(True, 0.5)),
+                Predictor('la_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_md'])),
 
              'severe_pre_eclamp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -531,14 +580,15 @@ class Labour (Module):
              'antepartum_haem_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_aph'],
-                Predictor('la_antepartum_haem_treatment').when(True, 0.5),
-                Predictor('received_blood_transfusion', external=True).when(True, 0.20)),
+                Predictor('la_antepartum_haem_treatment').when(True, params['aph_treatment_effect_md']),
+                Predictor('received_blood_transfusion', external=True).when(True, params['aph_bt_treatment_effect_'
+                                                                                         'md'])),
 
              'antepartum_haem_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_still_birth_antepartum_haem'],
-                Predictor('la_antepartum_haem_treatment').when(True, 0.5),
-                Predictor('la_maternal_death_in_labour').when(True, 3)),
+                Predictor('la_maternal_death_in_labour').when(True, params['rr_still_birth_aph_maternal_death']),
+                Predictor('la_antepartum_haem_treatment').when(True, params['aph_treatment_effect_sb'])),
 
              'postpartum_haem_pp': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -548,9 +598,12 @@ class Labour (Module):
              'postpartum_haem_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_pph'],
-                Predictor('la_postpartum_haem_treatment').when('delayed_treatment', 0.25),
-                Predictor('la_postpartum_haem_treatment').when('prompt_treatment', 0.5),
-                Predictor('received_blood_transfusion', external=True).when(True, 0.20)),
+                Predictor('la_postpartum_haem_treatment').when('delayed_treatment', params['pph_delayed_treatment_'
+                                                                                           'effect_md']),
+                Predictor('la_postpartum_haem_treatment').when('prompt_treatment', params['pph_prompt_treatment_effect'
+                                                                                          '_md']),
+                Predictor('received_blood_transfusion', external=True).when(True, params['pph_bt_treatment_effect_'
+                                                                                         'md'])),
 
              'uterine_rupture_ip': LinearModel(
                 LinearModelType.LOGISTIC,
@@ -563,13 +616,13 @@ class Labour (Module):
              'uterine_rupture_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_uterine_rupture'],
-                Predictor('la_uterine_rupture_treatment').when(True, 0.5)),
+                Predictor('la_uterine_rupture_treatment').when(True, params['ur_treatment_effect_md'])),
              
              'uterine_rupture_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_uterine_rupture'],
-                Predictor('la_uterine_rupture_treatment').when(True, 0.5),
-                Predictor('la_maternal_death_in_labour').when(True, 2)),
+                Predictor('la_maternal_death_in_labour').when(True, params['rr_still_birth_ur_maternal_death']),
+                Predictor('la_uterine_rupture_treatment').when(True, params['ur_treatment_effect_sb'])),
 
              'probability_delivery_health_centre': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -793,11 +846,6 @@ class Labour (Module):
         # Log only live births:
         if ~mother.la_intrapartum_still_birth:
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
-            logger.info('%s|live_births|%s',
-                        self.sim.date,
-                        {'mother': mother_id,
-                         'child': child_id,
-                         'mother_age': df.at[mother_id, 'age_years']})
 
         if mother.la_intrapartum_still_birth:
             #  N.B this will only record intrapartum stillbirth
@@ -809,9 +857,7 @@ class Labour (Module):
             df.at[mother_id, 'la_intrapartum_still_birth'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
+        """ This is called whenever there is an HSI event commissioned by one of the other disease modules."""
 
         logger.info('This is Labour, being alerted about a health system interaction '
                     'person %d for: %s', person_id, treatment_id)
@@ -923,8 +969,8 @@ class Labour (Module):
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
         params = self.parameters
-
         person = df.loc[[person_id]]
+
         # We define specific external variables used as predictors in the equations defined below
         has_rbt = mni[person_id]['received_blood_transfusion']
         mode_of_delivery = mni[person_id]['mode_of_delivery']
@@ -1103,6 +1149,19 @@ class Labour (Module):
 
             logger.debug(f'This is HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1: person %d has '
                          f'developed {complication} following delivery at facility level 1', person_id)
+
+    def treatment_checker(self, individual_id):
+        """This function runs at the end of intrapartum and post partum HSIs to ensure only women with the appropriate
+        complication are treated. Misdiagnosis is not currently accounted for"""
+
+        df = self.sim.population.props
+        mother = df.loc[individual_id]
+
+        assert not (~mother.la_sepsis or ~mother.la_sepsis_postpartum) and mother.la_sepsis_treatment
+        assert not (~mother.la_eclampsia or ~mother.la_eclampsia_postpartum) and mother.la_eclampsia_treatment
+        assert not ~mother.la_antepartum_haem and mother.la_antepartum_haem_treatment
+        assert not ~mother.la_uterine_rupture and mother.la_uterine_rupture_treatment
+        assert not ~mother.la_postpartum_haem and mother.la_postpartum_haem_treatment
 
     def set_maternal_death_status_intrapartum(self, individual_id, cause):
         """This function calculates an associated risk of death for a woman who has experience a complication during
@@ -1640,7 +1699,7 @@ class DisabilityResetEvent (Event, IndividualScopeEventMixin):
 
 class DiseaseResetEvent (Event, IndividualScopeEventMixin):
     """This is the DiseaseResetEvent. It is scheduled by the PostPartumDeathEvent. This event resets a woman's
-    disease properties within the data frame """
+    disease and treatment properties within the data frame """
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
@@ -1663,6 +1722,15 @@ class DiseaseResetEvent (Event, IndividualScopeEventMixin):
             df.at[individual_id, 'la_eclampsia'] = False
             df.at[individual_id, 'la_eclampsia_postpartum'] = False
             df.at[individual_id, 'la_postpartum_haem'] = False
+
+            df.at[individual_id, 'la_sepsis_treatment'] = False
+            df.at[individual_id, 'la_obstructed_labour_treatment'] = False
+            df.at[individual_id, 'la_antepartum_haem_treatment'] = False
+            df.at[individual_id, 'la_uterine_rupture_treatment'] = False
+            df.at[individual_id, 'la_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
+            df.at[individual_id, 'la_postpartum_haem_treatment'] = False
 
             del mni[individual_id]
 
@@ -3133,6 +3201,8 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # def zero_out_nan(x):
         #    return x if not np.isnan(x) else 0
 
+        # TODO: division by zero crashes code on small runs
+
         dict_for_output = {'intrapartum_mmr': total_ip_maternal_deaths_last_year/
                                                            total_births_last_year * 100000,
                            'ol_incidence': ol / total_births_last_year * 100,
@@ -3143,7 +3213,6 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'pph_incidence': pph / total_births_last_year * 100,
                            }
         # TODO: SBR, health system outputs, check denominators
-
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
