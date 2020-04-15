@@ -1217,16 +1217,18 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
 
-        if df.at[individual_id, 'is_alive']:
+        # Debug logging to highlight the women who have miscarried/had an abortion/stillbirth who still come to the
+        # event. We also immediately delete their mni
+        person = df.loc[individual_id]
+        if person.is_alive and ~df.at[individual_id, 'is_pregnant']:
+            logger.debug('person %d has just reached LabourOnsetEvent on %s but is no longer pregnant',
+                         individual_id, self.sim.date)
+
+        if person.is_alive and person.is_pregnant and person.la_due_date_current_pregnancy == self.sim.date and \
+            person.ps_gestational_age_in_weeks > 22:
             logger.debug('person %d has just reached LabourOnsetEvent on %s', individual_id, self.sim.date)
 
-            # Here we check only women who have reached their due date are going into labour and no women are in labour
-            # before 24 weeks
-            assert df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date
-
-            # As ps_gestational_age_in_weeks is updated in a weekly event, it is possible for this property to read 23 -
-            # when it is actually a womans 24th week of gestation - need a more permanent fix
-            assert df.at[individual_id, 'ps_gestational_age_in_weeks'] > 22
+            df.at[individual_id, 'la_currently_in_labour'] = True
 
             # Here we populate the maternal and newborn info dictionary with baseline values before the womans labour
             # begins
@@ -1251,7 +1253,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'risk_newborn_ba': params['prob_neonatal_birth_asphyxia'],
                                   #  Should this just be risk of asphyxia
                                   'mode_of_delivery': 'vaginal_delivery',  # vaginal_delivery, instrumental,
-                                                                           # caesarean_section
+                                  # caesarean_section
                                   'sought_care_for_complication': False,
                                   'referred_for_cs': 'none',  # 'none', 'prompt_referral', 'late_referral'
                                   'referred_for_blood': 'none',  # 'none', 'prompt_referral', 'late_referral'
@@ -1263,27 +1265,15 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'cause_of_stillbirth_in_labour': [],
                                   'death_postpartum': False}  # True (T) or False (F)
 
-# ===================================== LABOUR STATE  ==================================================================
-        # Debug logging to highlight the women who have miscarried/had an abortion/stillbirth who still come to the
-        # event. We also immediately delete their mni
-        person = df.loc[individual_id]
-        if person.is_alive and ~df.at[individual_id, 'is_pregnant']:
-            logger.debug('person %d has just reached LabourOnsetEvent on %s but is no longer pregnant',
-                         individual_id, self.sim.date)
-            del mni[individual_id]
+    # ===================================== LABOUR STATE  ==================================================================
 
-        # TODO: As PregnancySupervisor event updates GA weekly, some women will present to this event with a gestation
-        #  of > threshold number, but their GA hasn't been updated in the df (hence altered GA thresholds below)
-
-        # The event is conditioned on the woman being pregnant, today being her due date and being alive
-        # We don't use assert functions to ensure the due date is correct as women who lose their pregnancy will still
-        # have this event scheduled
-        if person.is_pregnant & person.is_alive & (person.la_due_date_current_pregnancy == self.sim.date):
-            df.at[individual_id, 'la_currently_in_labour'] = True
+    # TODO: As PregnancySupervisor event updates GA weekly, some women will present to this event with a gestation
+    #  of > threshold number, but their GA hasn't been updated in the df (hence altered GA thresholds below)
 
             # Now we use gestational age to categorise the 'labour_state'
             if 37 <= person.ps_gestational_age_in_weeks < 42:
                 mni[individual_id]['labour_state'] = 'term_labour'
+
 
             # Here we allow a woman to go into early preterm labour with a gestational age of 23 (limit is 24) to
             # account for PregnancySupervisor only updating weekly
