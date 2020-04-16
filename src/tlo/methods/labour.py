@@ -1715,11 +1715,11 @@ class DiseaseResetEvent (Event, IndividualScopeEventMixin):
 
             df.at[individual_id, 'la_sepsis_treatment'] = 'none'
             df.at[individual_id, 'la_obstructed_labour_treatment'] = 'none'
-            df.at[individual_id, 'la_antepartum_haem_treatment'] = 'none'
-            df.at[individual_id, 'la_uterine_rupture_treatment'] = 'none'
-            df.at[individual_id, 'la_eclampsia_treatment'] = 'none'
-            df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = 'none'
-            df.at[individual_id, 'la_maternal_hypertension_treatment'] = 'none'
+            df.at[individual_id, 'la_antepartum_haem_treatment'] = False
+            df.at[individual_id, 'la_uterine_rupture_treatment'] = False
+            df.at[individual_id, 'la_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
             df.at[individual_id, 'la_postpartum_haem_treatment'] = 'none'
 
             del mni[individual_id]
