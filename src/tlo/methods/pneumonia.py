@@ -1039,9 +1039,9 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
         for person_id in person_id_that_acquire_pathogen:
             # ----------------------- Allocate a pathogen to the person ----------------------
             p_by_pathogen = probs_of_acquiring_pathogen.loc[person_id].values
-            print(sum(p_by_pathogen))
+            # print(sum(p_by_pathogen))
             normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
-            print(sum(normalised_p_by_pathogen))
+            # print(sum(normalised_p_by_pathogen))
             pathogen = rng.choice(probs_of_acquiring_pathogen.columns, p=normalised_p_by_pathogen)
 
             # ----------------------- Allocate the underlying condition caused by pathogen ----------------------
@@ -1052,7 +1052,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
             # duration
             duration_in_days_of_pneumonia = max(1, int(
-                5 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
+                7 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
 
             # ----------------------- Allocate symptoms to onset of pneumonia ----------------------
             possible_symptoms_by_severity = m.prob_symptoms['non-severe']
@@ -1061,15 +1061,15 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
                 if rng.rand() < prob:
                     symptoms_for_this_person.append(symptom)
 
-            # ----------------------- Determine outcomes for this case ----------------------
-            # severity of the disease ----------------------
-            p_severity_by_disease = prob_progress_clinical_severe_case.loc[person_id].values
-            severity = rng.choice(prob_progress_clinical_severe_case.columns, p=p_severity_by_disease)
-
-            # death status ----------------------
-            risk_of_death = m.risk_of_death_clinical_severe_pneumonia[underlying_condition].predict(
-                df.loc[[person_id]]).values[0]
-            will_die = rng.rand() < risk_of_death
+            # # ----------------------- Determine outcomes for this case ----------------------
+            # # severity of the disease ----------------------
+            # p_severity_by_disease = prob_progress_clinical_severe_case.loc[person_id].values
+            # severity = rng.choice(prob_progress_clinical_severe_case.columns, p=p_severity_by_disease)
+            #
+            # # death status ----------------------
+            # risk_of_death = m.risk_of_death_clinical_severe_pneumonia[underlying_condition].predict(
+            #     df.loc[[person_id]]).values[0]
+            # will_die = rng.rand() < risk_of_death
 
             # ----------------------- Create the event for the onset of infection -------------------
             # NB. The symptoms are scheduled by the SymptomManager to 'autoresolve' after the duration
@@ -1080,9 +1080,9 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
                     person_id=person_id,
                     pathogen=pathogen,
                     disease=underlying_condition,
-                    severity=severity,
+                    # severity=severity,
                     duration_in_days=duration_in_days_of_pneumonia,
-                    will_die=will_die,
+                    # will_die=will_die,
                     symptoms=symptoms_for_this_person
                 ),
                 date=date_onset
@@ -1094,18 +1094,19 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
     This Event is for the onset of the infection that causes pneumonia.
     """
 
-    def __init__(self, module, person_id, pathogen, severity, disease, duration_in_days, will_die, symptoms):
+    def __init__(self, module, person_id, pathogen, disease, duration_in_days, symptoms):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
-        self.severity = severity
+        # self.severity = severity
         self.disease = disease
         self.duration_in_days = duration_in_days
-        self.will_die = will_die
+        # self.will_die = will_die
         self.symptoms = symptoms
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
+        rng = self.module.rng
 
         # The event should not run if the person is not currently alive
         if not df.at[person_id, 'is_alive']:
@@ -1114,7 +1115,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         # Update the properties in the dataframe:
         df.at[person_id, 'ri_last_pneumonia_pathogen'] = self.pathogen
         df.at[person_id, 'ri_last_pneumonia_date_of_onset'] = self.sim.date
-        df.at[person_id, 'ri_last_pneumonia_severity'] = self.severity
+        df.at[person_id, 'ri_last_pneumonia_severity'] = 'non-severe'
         df.at[person_id, 'ri_true_underlying_condition'] = self.disease
 
         # Onset symptoms:
@@ -1127,15 +1128,22 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
                 duration_in_days=self.duration_in_days
             )
 
-        # Determine timing of outcome (either recovery or death)
+        # Determine progression to 'severe clinical pneumonia'
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
-        if self.will_die:
+        prob_progress_clinical_severe_case = pd.DataFrame(index=[person_id])
+        for disease in m.diseases:
+            prob_progress_clinical_severe_case = \
+                m.progression_to_clinical_severe_penumonia[disease].predict(df.loc[[person_id]]).values[0]
+        will_progress_to_severe = rng.rand() < prob_progress_clinical_severe_case
+
+        if will_progress_to_severe:
             df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
             df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
-            date_of_onset_severe_pneumonia = max(self.sim.date, date_of_outcome - DateOffset(
-                days=3)) # self.module.parameters['days_onset_severe_pneumonia_before_death']))
-            self.sim.schedule_event(SeverePneumoniaEvent(self.module, person_id),
-                                    date_of_onset_severe_pneumonia)
+            date_onset_clinical_severe = self.module.sim.date + DateOffset(
+                days=np.random.randint(2, self.duration_in_days))
+            self.sim.schedule_event(SeverePneumoniaEvent(self.module, person_id,
+                                                         duration_in_days=self.duration_in_days),
+                                    date_onset_clinical_severe)
         else:
             df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
             df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
@@ -1151,15 +1159,19 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
 
 class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
         """
-            This Event is for the onset of Severe Pneumonia. This occurs a set number of days prior to death (for untreated
-            children). It sets the property 'gi_current_severe_dehydration' to True and schedules the death.
+            This Event is for the onset of Clinical Severe Pneumonia. For some untreated children,
+            this occurs a set number of days after onset of disease.
+            It sets the property 'ri_last_pneumonia_severity' to 'severe' and schedules the death.
             """
 
-        def __init__(self, module, person_id):
+        def __init__(self, module, person_id, duration_in_days):
             super().__init__(module, person_id=person_id)
+            self.duration_in_days = duration_in_days
 
         def apply(self, person_id):
             df = self.sim.population.props  # shortcut to the dataframe
+            m = self.module
+            rng = self.module.rng
 
             # terminate the event if the person has already died.
             if not df.at[person_id, 'is_alive']:
@@ -1172,10 +1184,23 @@ class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
                 if self.module.rng.rand() < prob:
                     symptoms_for_this_person.append(symptom)
 
-            date_of_death = self.sim.date\
-                            + DateOffset(days=2) #self.module.parameters['days_onset_severe_pneumonia_before_death'])
-            df.at[person_id, 'ri_last_pneumonia_death_date'] = date_of_death
-            self.sim.schedule_event(PneumoniaDeathEvent(self.module, person_id), date_of_death)
+            # Determine death outcome
+            date_of_outcome = \
+                df.at[person_id, 'ri_last_pneumonia_date_of_onset'] + DateOffset(days=self.duration_in_days)
+            prob_death_by_disease = pd.DataFrame(index=[person_id])
+            for disease in m.diseases:
+                prob_death_by_disease = \
+                    m.risk_of_death_clinical_severe_pneumonia[disease].predict(df.loc[[person_id]]).values[0]
+            death_outcome = rng.rand() < prob_death_by_disease
+
+            if death_outcome:
+                df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
+                df.at[person_id, 'ri_last_pneumonia_death_date'] = date_of_outcome
+                self.sim.schedule_event(PneumoniaDeathEvent(self.module, person_id),
+                                        date_of_outcome)
+            else:
+                df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
+                df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
 
 
 class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
