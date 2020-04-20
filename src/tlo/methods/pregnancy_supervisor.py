@@ -20,59 +20,7 @@ class PregnancySupervisor(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    PARAMETERS = {
-        'prob_pregnancy_factors': Parameter(
-            Types.DATA_FRAME, 'Data frame containing probabilities of key outcomes/complications associated with the '
-                              'antenatal period'),
-        'base_prev_pe': Parameter(
-            Types.REAL, 'relative risk of miscarriage for women who have previously miscarried'),
-        'base_prev_gest_htn': Parameter(
-            Types.REAL, 'relative risk of miscarriage for women who have previously miscarried'),
-        'base_prev_gest_diab': Parameter(
-            Types.REAL, 'relative risk of miscarriage for women who have previously miscarried'),
-        'rr_miscarriage_prevmiscarriage': Parameter(
-            Types.REAL, 'relative risk of miscarriage for women who have previously miscarried'),
-        'rr_miscarriage_35': Parameter(
-            Types.REAL, 'relative risk of miscarriage for women who is over 35 years old'),
-        'rr_miscarriage_3134': Parameter(
-            Types.REAL, 'relative risk of miscarriage for women who is between 31 and 34 years old'),
-        'rr_miscarriage_grav4': Parameter(
-            Types.REAL, 'relative risk of miscarriage for women who has a gravidity of greater than 4'),
-        'rr_pre_eclamp_nulip': Parameter(
-            Types.REAL, 'relative risk of pre-eclampsia in nuliparous women'),
-        'rr_pre_eclamp_prev_pe': Parameter(
-            Types.REAL, 'relative risk of pre- eclampsia in women who have previous suffered from pre-eclampsia'),
-        'rr_gest_diab_overweight': Parameter(
-            Types.REAL, 'relative risk of gestational diabetes in women who are overweight at time of pregnancy'),
-        'rr_gest_diab_stillbirth': Parameter(
-            Types.REAL, 'relative risk of gestational diabetes in women who have previously had a still birth'),
-        'rr_gest_diab_prevdiab': Parameter(
-            Types.REAL, 'relative risk of gestational diabetes in women who suffered from gestational diabetes in '
-                        'previous pregnancy'),
-        'rr_gest_diab_chron_htn': Parameter(
-            Types.REAL, 'relative risk of gestational diabetes in women who suffer from chronic hypertension'),
-        'prob_ectopic_pregnancy': Parameter(
-            Types.REAL, 'probability that a womans current pregnancy is ectopic'),
-        'level_of_symptoms_ep': Parameter(
-            Types.REAL, 'Level of symptoms that the individual will have'),
-        'prob_multiples': Parameter(
-            Types.REAL, 'probability that a woman is currently carrying more than one pregnancy'),
-        'prob_pa_complications': Parameter(
-            Types.REAL, 'probability that a woman who has had an induced abortion will experience any complications'),
-        'prob_pa_complication_type': Parameter(
-            Types.REAL, 'List of probabilities that determine what type of complication a woman who has had an abortion'
-                        ' will experience'),
-        'r_mild_pe_gest_htn': Parameter(
-            Types.REAL, 'probability per month that a woman will progress from gestational hypertension to mild '
-                        'pre-eclampsia'),
-        'r_severe_pe_mild_pe': Parameter(
-            Types.REAL, 'probability per month that a woman will progress from mild pre-eclampsia to severe '
-                        'pre-eclampsia'),
-        'r_eclampsia_severe_pe': Parameter(
-            Types.REAL, 'probability per month that a woman will progress from severe pre-eclampsia to eclampsia'),
-        'r_hellp_severe_pe': Parameter(
-            Types.REAL, 'probability per month that a woman will progress from severe pre-eclampsia to HELLP syndrome'),
-    }
+    PARAMETERS = {}
 
     PROPERTIES = {
         'ps_gestational_age_in_weeks': Property(Types.INT, 'current gestational age, in weeks, of this womans '
@@ -112,21 +60,9 @@ class PregnancySupervisor(Module):
 
     def read_parameters(self, data_folder):
         params = self.parameters
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
-                            sheet_name='parameter_values')
-        self.load_parameters_from_dataframe(dfd)
-
-        # These parameters presently hard coded for ease. Both may be deleted following epi review.
-        params['level_of_symptoms_ep'] = pd.DataFrame(
-            data={'level_of_symptoms_ep': ['none',
-                                           'abdominal pain',
-                                           'abdominal pain plus bleeding',
-                                           'shock'], 'probability': [0.25, 0.25, 0.25, 0.25]})  # DUMMY
-
-        params['type_pa_complication'] = pd.DataFrame(
-            data={'type_pa_complication': ['haem',
-                                           'sepsis',
-                                           'haem_sepsis'], 'probability': [0.5, 0.3, 0.2]})
+        #    dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
+        #                        sheet_name='parameter_values_old')
+        #    self.load_parameters_from_dataframe(dfd)
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
