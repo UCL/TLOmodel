@@ -615,8 +615,7 @@ class Pneumonia(Module):
             'RSV': LinearModel(LinearModelType.MULTIPLICATIVE,
                                1.0,
                                Predictor('ri_last_ALRI_pathogen')
-                               .when('RSV', 1.0)
-                               .otherwise(0.0),
+                               .when('is not RSV', 0.0),
                                Predictor('age_years')
                                .when('.between(0,0)', p['p_symptomatic_RSV_inf_causing_pneumonia'][0])
                                .when('.between(1,1)', p['p_symptomatic_RSV_inf_causing_pneumonia'][1])
@@ -628,8 +627,7 @@ class Pneumonia(Module):
             'rhinovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('ri_last_ALRI_pathogen')
-                                      .when('rhinovirus', 1.0)
-                                      .otherwise(0.0),
+                                      .when('is not rhinovirus', 0.0),
                                       Predictor('age_years')
                                       .when('.between(0,0)', p['p_symptomatic_rhinovirus_inf_causing_pneumonia'][0])
                                       .when('.between(1,1)', p['p_symptomatic_rhinovirus_inf_causing_pneumonia'][1])
@@ -641,8 +639,7 @@ class Pneumonia(Module):
             'hMPV': LinearModel(LinearModelType.MULTIPLICATIVE,
                                 1.0,
                                 Predictor('ri_last_ALRI_pathogen')
-                                .when('hMPV', 1.0)
-                                .otherwise(0.0),
+                                .when('is not hMPV', 0.0),
                                 Predictor('age_years')
                                 .when('.between(0,0)', p['p_symptomatic_hMPV_inf_causing_pneumonia'][0])
                                 .when('.between(1,1)', p['p_symptomatic_hMPV_inf_causing_pneumonia'][1])
@@ -654,8 +651,7 @@ class Pneumonia(Module):
             'parainfluenza': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('ri_last_ALRI_pathogen')
-                                         .when('parainfluenza', 1.0)
-                                         .otherwise(0.0),
+                                         .when('is not parainfluenza', 0.0),
                                          Predictor('age_years')
                                          .when('.between(0,0)',
                                                p['p_symptomatic_parainfluenza_inf_causing_pneumonia'][0])
@@ -672,8 +668,7 @@ class Pneumonia(Module):
             'streptococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('ri_last_ALRI_pathogen')
-                                         .when('streptococcus', 1.0)
-                                         .otherwise(0.0),
+                                         .when('is not streptococcus', 0.0),
                                          Predictor('age_years')
                                          .when('.between(0,0)',
                                                p['p_symptomatic_streptococcus_inf_causing_pneumonia'][0])
@@ -688,8 +683,7 @@ class Pneumonia(Module):
             'hib': LinearModel(LinearModelType.MULTIPLICATIVE,
                                1.0,
                                Predictor('ri_last_ALRI_pathogen')
-                               .when('hib', 1.0)
-                               .otherwise(0.0),
+                               .when('is not hib', 0.0),
                                Predictor('age_years')
                                .when('.between(0,0)', p['p_symptomatic_hib_inf_causing_pneumonia'][0])
                                .when('.between(1,1)', p['p_symptomatic_hib_inf_causing_pneumonia'][1])
@@ -701,8 +695,7 @@ class Pneumonia(Module):
             'TB': LinearModel(LinearModelType.MULTIPLICATIVE,
                               1.0,
                               Predictor('ri_last_ALRI_pathogen')
-                              .when('TB', 1.0)
-                              .otherwise(0.0),
+                              .when('is not TB', 0.0),
                               Predictor('age_years')
                               .when('.between(0,0)', p['p_symptomatic_TB_inf_causing_pneumonia'][0])
                               .when('.between(1,1)', p['p_symptomatic_TB_inf_causing_pneumonia'][1])
@@ -715,8 +708,7 @@ class Pneumonia(Module):
             'staphylococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                           1.0,
                                           Predictor('ri_last_ALRI_pathogen')
-                                          .when('staphylococcus', 1.0)
-                                          .otherwise(0.0),
+                                          .when('is not staphylococcus', 0.0),
                                           Predictor('age_years')
                                           .when('.between(0,0)',
                                                 p['p_symptomatic_staphylococcus_inf_causing_pneumonia'][0])
@@ -731,8 +723,7 @@ class Pneumonia(Module):
             'influenza': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('ri_last_ALRI_pathogen')
-                                     .when('influenza', 1.0)
-                                     .otherwise(0.0),
+                                     .when('is not influenza', 0.0),
                                      Predictor('age_years')
                                      .when('.between(0,0)', p['p_symptomatic_influenza_inf_causing_pneumonia'][0])
                                      .when('.between(1,1)', p['p_symptomatic_influenza_inf_causing_pneumonia'][1])
@@ -744,8 +735,7 @@ class Pneumonia(Module):
             'jirovecii': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('ri_last_ALRI_pathogen')
-                                     .when('jirovecii', 1.0)
-                                     .otherwise(0.0),
+                                     .when('is not jirovecii', 0.0),
                                      Predictor('age_years')
                                      .when('.between(0,0)', p['p_symptomatic_jirovecii_inf_causing_pneumonia'][0])
                                      .when('.between(1,1)', p['p_symptomatic_jirovecii_inf_causing_pneumonia'][1])
@@ -757,8 +747,7 @@ class Pneumonia(Module):
             'other_pathogens': LinearModel(LinearModelType.MULTIPLICATIVE,
                                            1.0,
                                            Predictor('ri_last_ALRI_pathogen')
-                                           .when('other_pathogens', 1.0)
-                                           .otherwise(0.0),
+                                           .when('is not other_pathogens', 0.0),
                                            Predictor('age_years')
                                            .when('.between(0,0)',
                                                  p['p_symptomatic_other_pathogens_inf_causing_pneumonia'][0])
@@ -852,7 +841,7 @@ class Pneumonia(Module):
         self.risk_of_death_clinical_severe_pneumonia.update({
             'pneumonia': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      0.7,
-                                     Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
+                                     Predictor('ri_last_clinical_severity')  ##          <--- fill in
                                      .when('non-severe', 0)  # zero probability of dying if non-severe
                                      .when('severe', 0.9)
                                      #                 # .when('persistent', p['cfr_persistent_diarrhoea']),
@@ -870,7 +859,7 @@ class Pneumonia(Module):
         self.risk_of_death_clinical_severe_pneumonia.update({
             'bronchiolitis': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          0.6,
-                                         Predictor('ri_last_pneumonia_severity')  ##          <--- fill in
+                                         Predictor('ri_last_clinical_severity')  ##          <--- fill in
                                          .when('non-severe', 0)  # zero probability of dying if non-severe
                                          .when('severe', 0.6)
                                          #                 # .when('persistent', p['cfr_persistent_diarrhoea']),
@@ -999,7 +988,7 @@ class Pneumonia(Module):
         #
         # # Split out by pathogen that causes the pneumonia
         # dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
-        #                                              'ri_last_pneumonia_pathogen'],
+        #                                              'ri_last_ALRI_pathogen'],
         #                                       dtype='float')
         # daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0).drop(columns='none')
         #
@@ -1053,25 +1042,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
 
         # Determine which persons will acquire any pathogen:
         person_id_that_acquire_pathogen = prob_of_acquiring_any_pathogen.index[
-            rng.rand(len(prob_of_acquiring_any_pathogen)) < prob_of_acquiring_any_pathogen
-            ]
-
-        # # Determine which disease a pathogen will cause:
-        # prob_pathogen_causing_pneumonia = pd.DataFrame(index=df.loc[person_id_that_acquire_pathogen].index,
-        #                                                columns=['pneumonia', 'bronchiolitis'])
-        # for pathogen in m.pathogens:
-        #     prob_pathogen_causing_pneumonia['pneumonia'] = \
-        #         m.pathogens_causing_pneumonia_as_underlying_condition[pathogen].predict(
-        #         df.loc[person_id_that_acquire_pathogen])
-        #     prob_pathogen_causing_pneumonia['bronchiolitis'] = 1 - prob_pathogen_causing_pneumonia['pneumonia']
-        #
-        # # Determine the severity a disease will reach:
-        # prob_progress_clinical_severe_case = pd.DataFrame(index=df.loc[person_id_that_acquire_pathogen].index,
-        #                                                   columns=['non-severe', 'severe'])
-        # for disease in m.diseases:
-        #     prob_progress_clinical_severe_case['severe'] = \
-        #         m.progression_to_clinical_severe_penumonia[disease].predict(df.loc[person_id_that_acquire_pathogen])
-        #     prob_progress_clinical_severe_case['non-severe'] = 1 - prob_progress_clinical_severe_case['severe']
+            rng.rand(len(prob_of_acquiring_any_pathogen)) < prob_of_acquiring_any_pathogen]
 
         # Determine which pathogen each person will acquire (among those who will get a pathogen)
         # and create the event for the onset of new infection
@@ -1082,10 +1053,6 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
             normalised_p_by_pathogen = p_by_pathogen / sum(p_by_pathogen)
             # print(sum(normalised_p_by_pathogen))
             pathogen = rng.choice(probs_of_acquiring_pathogen.columns, p=normalised_p_by_pathogen)
-
-            # ----------------------- Allocate the underlying condition caused by pathogen ----------------------
-            # p_disease_by_pathogen = prob_pathogen_causing_pneumonia.loc[person_id].values
-            # underlying_condition = rng.choice(prob_pathogen_causing_pneumonia.columns, p=p_disease_by_pathogen)
 
             # ----------------------- Allocate a date of onset of ALRI ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
@@ -1100,16 +1067,6 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
                 if rng.rand() < prob:
                     symptoms_for_this_person.append(symptom)
 
-            # # ----------------------- Determine outcomes for this case ----------------------
-            # # severity of the disease ----------------------
-            # p_severity_by_disease = prob_progress_clinical_severe_case.loc[person_id].values
-            # severity = rng.choice(prob_progress_clinical_severe_case.columns, p=p_severity_by_disease)
-            #
-            # # death status ----------------------
-            # risk_of_death = m.risk_of_death_clinical_severe_pneumonia[underlying_condition].predict(
-            #     df.loc[[person_id]]).values[0]
-            # will_die = rng.rand() < risk_of_death
-
             # ----------------------- Create the event for the onset of infection -------------------
             # NB. The symptoms are scheduled by the SymptomManager to 'autoresolve' after the duration
             #       of the pneumonia.
@@ -1118,10 +1075,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
                     module=self.module,
                     person_id=person_id,
                     pathogen=pathogen,
-                    # disease=underlying_condition,
-                    # severity=severity,
                     duration_in_days=duration_in_days_of_pneumonia,
-                    # will_die=will_die,
                     symptoms=symptoms_for_this_person
                 ),
                 date=date_onset
@@ -1136,10 +1090,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
     def __init__(self, module, person_id, pathogen, duration_in_days, symptoms):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
-        # self.severity = severity
-        # self.disease = disease
         self.duration_in_days = duration_in_days
-        # self.will_die = will_die
         self.symptoms = symptoms
 
     def apply(self, person_id):
@@ -1154,7 +1105,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         # Update the properties in the dataframe:
         df.at[person_id, 'ri_last_ALRI_pathogen'] = self.pathogen
         df.at[person_id, 'ri_last_ALRI_date_of_onset'] = self.sim.date
-        df.at[person_id, 'ri_last_clinical_severity'] = 'non-severe'
+        df.at[person_id, 'ri_last_clinical_severity'] = 'non-severe' # all disease start as non-severe symptoms
 
         # Onset symptoms:
         for symptom in self.symptoms:
@@ -1167,10 +1118,8 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             )
 
         # Determine which disease a pathogen will cause
-        prob_pathogen_causing_pneumonia = pd.DataFrame(index=[person_id])
-        for pathogen in m.pathogens:
-            prob_pathogen_causing_pneumonia = \
-                m.pathogens_causing_pneumonia_as_underlying_condition[pathogen].predict((df.loc[[person_id]]).values[0])
+        prob_pathogen_causing_pneumonia = \
+            m.pathogens_causing_pneumonia_as_underlying_condition[self.pathogen].predict(df.loc[[person_id]]).values[0]
         will_have_pneumonia = rng.rand() < prob_pathogen_causing_pneumonia
         if will_have_pneumonia:
             df.at[person_id, 'ri_true_underlying_condition'] = 'pneumonia'
@@ -1210,7 +1159,7 @@ class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
         """
             This Event is for the onset of Clinical Severe Pneumonia. For some untreated children,
             this occurs a set number of days after onset of disease.
-            It sets the property 'ri_last_pneumonia_severity' to 'severe' and schedules the death.
+            It sets the property 'ri_last_clinical_severity' to 'severe' and schedules the death.
             """
 
         def __init__(self, module, person_id, duration_in_days):
@@ -1294,7 +1243,7 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
                                                                   cause='Pneumonia_' + df.at[
-                                                                      person_id, 'ri_last_pneumonia_pathogen']
+                                                                      person_id, 'ri_last_ALRI_pathogen']
                                                                   ), self.sim.date)
 
 
