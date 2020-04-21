@@ -434,8 +434,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                             ~df.la_currently_in_labour &
                             ~df.la_has_had_hysterectomy &
                             df.age_years.between(self.age_low, self.age_high) &
-                            ~df.co_contraception.isin(['not_using', 'female_steralization'])
-                            & df.date_of_last_pregnancy.isin([pd.NaT]))
+                            ~df.co_contraception.isin(['not_using', 'female_steralization']))
 
         prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
