@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 1000
+end_date = Date(2016, 1, 1)
+popsize = 20000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -56,27 +56,27 @@ stats['year'] = stats['date'].dt.year
 # todo: set index as year? restructure to year only?
 # where can i output this too for analyses
 
-stats.plot.bar(x='year', y='ol_incidence', stacked=True)
-plt.title("Yearly Obstructed Labour Rate")
-plt.show()
+#stats.plot.bar(x='year', y='ol_incidence', stacked=True)
+#plt.title("Yearly Obstructed Labour Rate")
+#plt.show()
 
-stats.plot.bar(x='year', y='aph_incidence', stacked=True)
-plt.title("Yearly Antepartum Haemorrhage Rate")
-plt.show()
+#stats.plot.bar(x='year', y='aph_incidence', stacked=True)
+#plt.title("Yearly Antepartum Haemorrhage Rate")
+#plt.show()
 
-stats.plot.bar(x='year', y='ur_incidence', stacked=True)
-plt.title("Yearly Uterine Rupture Rate")
-plt.show()
+#stats.plot.bar(x='year', y='ur_incidence', stacked=True)
+#plt.title("Yearly Uterine Rupture Rate")
+#plt.show()
 
-stats.plot.bar(x='year', y='ec_incidence', stacked=True)
-plt.title("Yearly Eclampsia Rate")
-plt.show()
+#stats.plot.bar(x='year', y='ec_incidence', stacked=True)
+#plt.title("Yearly Eclampsia Rate")
+#plt.show()
 
-stats.plot.bar(x='year', y='sep_incidence', stacked=True)
-plt.title("Yearly Sepsis Rate")
-plt.show()
+#stats.plot.bar(x='year', y='sep_incidence', stacked=True)
+#plt.title("Yearly Sepsis Rate")
+#plt.show()
 
-stats.plot.bar(x='year', y='pph_incidence', stacked=True)
-plt.title("Yearly PPH Rate")
-plt.show()
+#stats.plot.bar(x='year', y='pph_incidence', stacked=True)
+#plt.title("Yearly PPH Rate")
+#plt.show()
 
