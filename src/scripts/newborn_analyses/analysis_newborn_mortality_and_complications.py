@@ -53,32 +53,32 @@ stats = output['tlo.methods.newborn_outcomes']['summary_stats']
 stats['date'] = pd.to_datetime(stats['date'])
 stats['year'] = stats['date'].dt.year
 
-stats.plot.bar(x='year', y='nmr_early', stacked=True)
-plt.title("Yearly NMR following birth")
-plt.show()
+#stats.plot.bar(x='year', y='nmr_early', stacked=True)
+#plt.title("Yearly NMR following birth")
+#plt.show()
 
-stats.plot.bar(x='year', y='total_preterm_births', stacked=True)
-plt.title("Yearly Preterm Birth Incidence")
-plt.show()
+#stats.plot.bar(x='year', y='total_preterm_births', stacked=True)
+#plt.title("Yearly Preterm Birth Incidence")
+#plt.show()
 
-stats.plot.bar(x='year', y='low_birth_weight', stacked=True)
-plt.title("Yearly Low Birth Weight Incidence")
-plt.show()
+#stats.plot.bar(x='year', y='low_birth_weight', stacked=True)
+#plt.title("Yearly Low Birth Weight Incidence")
+#plt.show()
 
-stats.plot.bar(x='year', y='small_for_gestational_age', stacked=True)
-plt.title("Yearly Small For Gestational Age Incidence")
-plt.show()
+#stats.plot.bar(x='year', y='small_for_gestational_age', stacked=True)
+#plt.title("Yearly Small For Gestational Age Incidence")
+#plt.show()
 
-stats.plot.bar(x='year', y='sepsis_incidence', stacked=True)
-plt.title("Yearly Early Onset Sepsis Incidence")
-plt.show()
+#stats.plot.bar(x='year', y='sepsis_incidence', stacked=True)
+#plt.title("Yearly Early Onset Sepsis Incidence")
+#plt.show()
 
-stats.plot.bar(x='year', y='total_enceph_incidence', stacked=True)
-plt.title("Yearly Encephalopathy Incidence")
-plt.show()
+#stats.plot.bar(x='year', y='total_enceph_incidence', stacked=True)
+#plt.title("Yearly Encephalopathy Incidence")
+#plt.show()
 
-stats.plot.bar(x='year', y='ftt_incidence', stacked=True)
-plt.title("Yearly Failure To Transition Incidence")
-plt.show()
+#stats.plot.bar(x='year', y='ftt_incidence', stacked=True)
+#plt.title("Yearly Failure To Transition Incidence")
+#plt.show()
 
 

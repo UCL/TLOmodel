@@ -1677,6 +1677,11 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         self.module.postpartum_characteristics_checker(individual_id)
 
         # Check the same number of women who went into labour have reached the final event (minus those who died)
+        print(len(self.module.women_in_labour))
+        print(self.module.women_in_labour)
+        print(len(df.index[df.is_alive & df.la_currently_in_labour]))
+        print(df.index[df.is_alive & df.la_currently_in_labour])
+
         assert len(self.module.women_in_labour) == len(df.index[df.is_alive & df.la_currently_in_labour])
 
         # We apply the same structure as with the LabourDeathEvent to women who experience postpartum complications
@@ -1745,7 +1750,7 @@ class DisabilityResetEvent (Event, IndividualScopeEventMixin):
 
         # Here we turn off all the properties which are used to count DALYs
         if df.at[individual_id, 'is_alive']:
-            logger.debug('person %d is having their disability status reset', individual_id)
+            logger.debug('person %d is having their disability status reset on date %s', individual_id, self.sim.date)
 
             df.at[individual_id, 'la_sepsis_disab'] = False
             df.at[individual_id, 'la_obstructed_labour_disab'] = False
