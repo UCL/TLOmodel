@@ -1225,6 +1225,7 @@ class Labour (Module):
         assert mother.la_currently_in_labour
         assert mother.ps_gestational_age_in_weeks == 0
 
+
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """This is the LabourOnsetEvent. It is scheduled by the set_date_of_labour function. It represents the start of a
     womans labour. Here we assign a "type" of labour based on gestation (i.e. early preterm), we create a dictionary to
@@ -1631,6 +1632,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
 
         # Schedule death for women who die in labour
         if mni[individual_id]['death_in_labour']:
+            self.module.women_in_labour.remove(individual_id)
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='labour'), self.sim.date)
             # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id]
@@ -1674,6 +1676,9 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(8, unit='D')
         self.module.postpartum_characteristics_checker(individual_id)
 
+        # Check the same number of women who went into labour have reached the final event (minus those who died)
+        assert len(self.module.women_in_labour) == len(df.index[df.is_alive & df.la_currently_in_labour])
+
         # We apply the same structure as with the LabourDeathEvent to women who experience postpartum complications
         # Check the woman is currently alive
         if df.at[individual_id, 'is_alive']:
@@ -1687,6 +1692,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                 self.module.set_maternal_death_status_postpartum(individual_id, cause='sepsis')
 
             if mni[individual_id]['death_postpartum']:
+                self.module.women_in_labour.remove(individual_id)
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='postpartum labour'), self.sim.date)
 
@@ -1705,6 +1711,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             else:
                 # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to
                 # false
+                self.module.women_in_labour.remove(individual_id)
                 self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id),
                                         self.sim.date + DateOffset(weeks=1))
                 # TODO: Consider how best to deal with complications that are long lasting.
@@ -1714,9 +1721,8 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                               'labour_profile': mni[individual_id]})
 
             # End the period of current labour
-
+            # should this be for everyone?
             df.at[individual_id, 'la_currently_in_labour'] = False
-            self.module.women_in_labour.remove(individual_id)
 
 
 class DisabilityResetEvent (Event, IndividualScopeEventMixin):
@@ -1730,11 +1736,12 @@ class DisabilityResetEvent (Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         # TODO: Confirm this allows enough time for model to count DALYs before resetting
-        print(individual_id)
-        print(pd.to_timedelta((self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']), unit='D'))
 
-
-        #assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(32, unit='D')
+        # Check the correct amount of time has passed between labour onset and DisabilityResetEvent and that only women
+        # post-pregnancy are coming to this event
+        assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(32, unit='D')
+        assert ~df.at[individual_id, 'is_pregnant']
+        assert individual_id not in self.module.women_in_labour
 
         # Here we turn off all the properties which are used to count DALYs
         if df.at[individual_id, 'is_alive']:
@@ -1759,8 +1766,11 @@ class DiseaseResetEvent (Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         mni = self.module.mother_and_newborn_info
 
-        # This event ensures that for women who have survived delivery but have suffered a complication in which
-        # treatment was unsuccessful have their diseases variables reset
+        # Check the correct amount of time has passed between labour onset and DiseaseResetEvent and that only women
+        # post-pregnancy are coming to this event
+        assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(15, unit='D')
+        assert ~df.at[individual_id, 'is_pregnant']
+        assert individual_id not in self.module.women_in_labour
 
         if df.at[individual_id, 'is_alive']:
             logger.debug('person %d is having their maternal disease status reset', individual_id)
