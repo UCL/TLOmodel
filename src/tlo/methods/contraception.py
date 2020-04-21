@@ -437,7 +437,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                             ~df.co_contraception.isin(['not_using', 'female_steralization']) &
                             (pd.isnull(df.la_due_date_current_pregnancy) | (self.sim.date >
                                                                             df.la_due_date_current_pregnancy +
-                                                                            pd.to_timedelta(1, unit='M'))))
+                                                                            pd.to_timedelta(32, unit='D'))))
 
         prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
@@ -488,7 +488,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & \
                  (df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy &\
                  (pd.isnull(df.la_due_date_current_pregnancy) | (self.sim.date > df.la_due_date_current_pregnancy +
-                                                                 pd.to_timedelta(1, unit='M')))
+                                                                 pd.to_timedelta(32, unit='D')))
 
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
