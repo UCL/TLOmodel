@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -228,7 +229,9 @@ class Contraception(Module):
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
-        df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
+        # TODO- commented out by joe, this way women always keep the date on which they most recently became pregnant,
+        #  it is over written for new pregnancy
+        # df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
 
         # Initiation of mother's contraception after birth (was previously Init2 event)
         # Notes: decide what contraceptive method they have (including not_using, according to
@@ -420,12 +423,19 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
 
         prob_of_failure = p['contraception_failure']
 
-        # TODO: N.B edited by joe- women who are in labour or have previously had a hysterectomy cannot get preganant
-        #  (eventually should remove women with hysterectomy from being oncontraception?)
+        # TODO: N.B edited by joe- women who are in labour, have been pregnant in the last month or have previously had
+        #  a hysterectomy cannot get pregnant(eventually should remove women with hysterectomy from being on
+        #  contraception?)
+        one_month_prior = self.sim.date - np.timedelta64(1, 'M')
+
         possible_to_fail = ((df.sex == 'F') &
-                            df.is_alive & ~df.is_pregnant & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy &
+                            df.is_alive &
+                            ~df.is_pregnant &
+                            ~df.la_currently_in_labour &
+                            ~df.la_has_had_hysterectomy &
                             df.age_years.between(self.age_low, self.age_high) &
-                            ~df.co_contraception.isin(['not_using', 'female_steralization']))
+                            ~df.co_contraception.isin(['not_using', 'female_steralization'])
+                            & df.date_of_last_pregnancy.isin([pd.NaT]))
 
         prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
@@ -473,8 +483,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df = population.props  # get the population dataframe
 
         # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (
-            df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy
+        subset = (df.sex == 'F') & \
+                 df.is_alive & \
+                 df.age_years.between(self.age_low, self.age_high) & \
+                 ~df.is_pregnant & \
+                 ( df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy
+
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)
