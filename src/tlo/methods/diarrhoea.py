@@ -766,8 +766,8 @@ class Diarrhoea(Module):
             LinearModelType.ADDITIVE,
             0.0,
             Predictor('gi_last_diarrhoea_pathogen')
-            .when('rotavirus', 0.5)  ##          <--- fill in
-            .when('shigella', 0.5)
+            .when('rotavirus', 5)  ##          <--- fill in
+            .when('shigella', 5)
             .when('adenovirus', 0.5)
             .when('cryptosporidium', 0.5)
             .when('campylobacter', 0.5)
@@ -1053,6 +1053,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         else:
             age_grp = '5+y'
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
+
 
 class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
     """
