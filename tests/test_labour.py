@@ -21,14 +21,13 @@ from tlo.methods import (
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 20000
+popsize = 1000
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 
 @pytest.fixture(scope='module')
 def simulation():
-
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
     sim = Simulation(start_date=start_date)
@@ -56,7 +55,6 @@ def simulation():
 
 
 def test_run(simulation):
-
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 

@@ -652,21 +652,19 @@ class NewbornOutcomes(Module):
             # seeking
 
             # TODO: Should preterm birth be considered a complication that may trigger care seeking?
-                #    if (m['delivery_setting'] == 'home_birth') & (child.nb_failed_to_transition or
-                #                                          child.nb_early_onset_neonatal_sepsis or
-                #                                          child.nb_encephalopathy != 'none'):
-                #    if self.eval(params['nb_newborn_equations']['care_seeking_for_complication'], child_id):
-                #        nci[child_id]['sought_care_for_complication'] = True
-                #        event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(self,
-                #                                                                                          person_id=
-                #                                                                                          child_id)
-                #        self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
-                #                                                            topen=self.sim.date,
-                #                                                            tclose=self.sim.date + DateOffset(days=1))
+            if (m['delivery_setting'] == 'home_birth') & (child.nb_failed_to_transition or
+                                                          child.nb_early_onset_neonatal_sepsis or
+                                                          child.nb_encephalopathy != 'none'):
+                if self.eval(params['nb_newborn_equations']['care_seeking_for_complication'], child_id):
+                    nci[child_id]['sought_care_for_complication'] = True
+                    event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(self, person_id=
+                                                                                                            child_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date,
+                                                                            tclose=self.sim.date + DateOffset(days=1))
 
-                #        logger.debug('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesSkilledAttendance'
-                #                     'FollowingBirthFacilityLevel1 for child %d whose mother has sought care after a '
-            #                     'complication has developed following a home_birth', child_id)
+                    logger.debug('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesSkilledAttendance'
+                                 'FollowingBirthFacilityLevel1 for child %d whose mother has sought care after a '
+                                 'complication has developed following a home_birth', child_id)
 
     # ============================================ BREAST FEEDING AT HOME ============================================
             # Using DHS data we apply a one of probability that women who deliver at home will initiate breastfeeding
