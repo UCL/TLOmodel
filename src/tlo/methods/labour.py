@@ -438,6 +438,7 @@ class Labour (Module):
 # ======================================= LINEAR MODEL EQUATIONS ======================================================
         # Here we define the equations that will be used throughout this module using the linear model and stored them
         # as a parameter
+        # TODO: predictors commented out for analysis
 
         params['la_labour_equations'] =\
             {'parity': LinearModel(
@@ -592,8 +593,8 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_aph'],
                 Predictor('la_antepartum_haem_treatment').when(True, params['aph_treatment_effect_md']),
-                Predictor('received_blood_transfusion', external=True).when(True, params['aph_bt_treatment_effect_'
-                                                                                        'md'])),
+                Predictor('received_blood_transfusion', external=True).when(True, params['aph_bt_treatment_effect'
+                                                                                         '_md'])),
 
              'antepartum_haem_stillbirth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -611,7 +612,7 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_pph'],
                 Predictor('la_postpartum_haem_treatment').when('delayed_treatment', params['pph_delayed_treatment_'
-                                                                                          'effect_md']),
+                                                                                           'effect_md']),
                 Predictor('la_postpartum_haem_treatment').when('prompt_treatment', params['pph_prompt_treatment_'
                                                                                           'effect_md']),
                 Predictor('received_blood_transfusion', external=True).when(True, params['pph_bt_treatment_effect_'
@@ -1282,8 +1283,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'eclampsia_pp': False,
                                   'postpartum_haem_pp': False,
                                   'source_pph': None,  # Uterine Atony (UA) or Retained Products/Placenta (RPP)
-                                  'risk_newborn_sepsis': params['prob_neonatal_sepsis'],
-                                  'risk_newborn_ba': params['prob_neonatal_birth_asphyxia'],
                                   #  Should this just be risk of asphyxia
                                   'mode_of_delivery': 'vaginal_delivery',  # vaginal_delivery, instrumental,
                                   # caesarean_section
