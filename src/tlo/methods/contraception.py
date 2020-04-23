@@ -426,7 +426,6 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
         # TODO: N.B edited by joe- women who are in labour, have been pregnant in the last month or have previously had
         #  a hysterectomy cannot get pregnant(eventually should remove women with hysterectomy from being on
         #  contraception?)
-        one_month_prior = self.sim.date - np.timedelta64(1, 'M')
 
         possible_to_fail = ((df.sex == 'F') &
                             df.is_alive &

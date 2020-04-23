@@ -1,75 +1,33 @@
-import os
-import pandas as pd
+"""This analysis file produces all mortality outputs"""
+
 import datetime
 from pathlib import Path
 
-import pytest
-
+import matplotlib.pyplot as plt
+import pandas as pd
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    antenatal_care,
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthsystem,
-    labour,
-    newborn_outcomes,
-    pregnancy_supervisor,
+from tlo.analysis.utils import (
+    parse_log_file,
 )
+from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
+    pregnancy_supervisor, antenatal_care, \
+    healthburden
 
-# Where will outputs go
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+# %%
+outputpath = Path("./outputs")
+resourcefilepath = Path("./resources")
 
-# date-stamp to label log files and any other outputs
+# Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# The resource files
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = 'resources'
+# %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 200
+popsize = 1000
 
 
-def check_dtypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
-
-def test_run():
-    sim = Simulation(start_date=start_date)
-
-    # Register the core modules
-
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']))
-
-    sim.seed_rngs(0)
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
-
-
-def test_run_health_system_events_wont_run():
+def sim_without_health_system():
     sim = Simulation(start_date=start_date)
 
     # Register the core modules
@@ -88,12 +46,52 @@ def test_run_health_system_events_wont_run():
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2))
 
+    sim.seed_rngs(0)
+
+    # Run the simulation
+    logfile = sim.configure_logging(filename="LogFile")
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+
+    output = parse_log_file(logfile)
+
+    stats = output['tlo.methods.labour']['summary_stats']
+    stats['date'] = pd.to_datetime(stats['date'])
+    stats['year'] = stats['date'].dt.year
+    return stats
+
+def sim_with_health_system():
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules
+
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+    sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*']))
 
     sim.seed_rngs(0)
 
     # Run the simulation
+    logfile = sim.configure_logging(filename="LogFile")
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    check_dtypes(sim)
-    # todo: some logic here to confirm that all women are now delivering at home due to high squeeze
+
+    output = parse_log_file(logfile)
+
+    stats_health_system = output['tlo.methods.labour']['summary_stats']
+    stats_health_system['date'] = pd.to_datetime(stats_health_system['date'])
+    stats_health_system['year'] = stats_health_system['date'].dt.year
+    return stats_health_system
+
+
+
