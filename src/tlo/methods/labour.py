@@ -438,7 +438,8 @@ class Labour (Module):
 # ======================================= LINEAR MODEL EQUATIONS ======================================================
         # Here we define the equations that will be used throughout this module using the linear model and stored them
         # as a parameter
-        # TODO: predictors commented out for analysis
+        # TODO: Predictors that may affect incidence are currently commented out for testing, predictors which denote
+        #  treatment effect are left in
 
         params['la_labour_equations'] =\
             {'parity': LinearModel(
@@ -453,8 +454,9 @@ class Labour (Module):
                                       .when('3', -0.26)  # params['effect_wealth_lev_3_parity_lr2010'])
                                       .when('2', -0.37)  # params['effect_wealth_lev_2_parity_lr2010'])
                                       .when('1', -0.9)),  # params['effect_wealth_lev_1_parity_lr2010'])),
-                # TODO: first draft from rough regression of 2010 DHS data (will need to be finalised)
-                # TODO: parameters are messing this equation up (sending all parities minus?)
+                # TODO:  This equation first draft from rough regression of 2010 DHS data (will need to be finalised)
+                # TODO: For some reason using parameters, with the exact same values, is making the result come out as
+                #  a minus figure and I cant work out why
 
              'early_preterm_birth': LinearModel(
                LinearModelType.LOGISTIC,
@@ -497,8 +499,8 @@ class Labour (Module):
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_ip_sepsis']),
                 # Predictor('la_obstructed_labour').when(True, params['rr_ip_sepsis_pl_ol'])),
-                # todo: less data on intrapartum sepsis risk factors? maybe dont include
-                # todo: risk of sepsis should be continued from labour to immediate PP, currently prophyactic
+                # TODO: There is less data on intrapartum sepsis risk factors? maybe dont include
+                # TODO: Risk of sepsis should be continued from labour to immediate PP, currently prophyactic
                 #  interventions only act on risk of pp sepsis
 
                 'sepsis_death': LinearModel(
@@ -521,7 +523,7 @@ class Labour (Module):
                 # Predictor('delivery_type', external=True).when('instrumental', params['or_pp_sepsis_avd'])
                 #                                         .when('caesarean_section', params['or_pp_sepsis_cs']),
                 # Predictor('ps_premature_rupture_of_membranes').when(True, params['or_pp_sepsis_prom'])),
-                # todo: study doesnt give post-partum time period, this may be better in postpartum module?
+                # TODO: The study which these predictors are taken from  doesnt define the 'post-partum' period time
 
              'sepsis_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -547,8 +549,8 @@ class Labour (Module):
                 # Predictor('ps_gest_diab').when(True, params['or_ip_eclampsia_gest_diab']),
                 # Predictor('la_severe_pre_eclampsia_treatment').when(True, params['eclampsia_treatment_effect_severe_'
                 #                                                                 'pe'])),
-                # todo: study combines eclampsia and pre-eclampsia as primary outcome?
-                # todo: chronic htn strong predictor
+                # TODO: This study combines eclampsia and pre-eclampsia as primary outcome so may not be suitable?
+                # TODO: include the effect of chronic hypertension on eclampsia
 
              'eclampsia_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -624,7 +626,8 @@ class Labour (Module):
                 #   Predictor('la_parity').when('>4', params['or_ur_grand_multip']),
                 #   Predictor('la_previous_cs_delivery').when(True, params['or_ur_prev_cs']),
                 #   Predictor('la_obstructed_labour').when(True, params['or_ur_ref_ol'])),
-                # todo: la_obstructed_labour_treatment to be a predictor that reduces likelihood of uterine rupture
+                # TODO: to include la_obstructed_labour_treatment to be a predictor that reduces likelihood of uterine
+                #  rupture?
 
              'uterine_rupture_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -649,8 +652,8 @@ class Labour (Module):
                 # Predictor('la_parity').when('.between(2,5)', params['rrr_hc_delivery_parity_3_to_4'])
                 #                      .when('>4', params['rrr_hc_delivery_parity_>4']),
                 # Predictor('li_mar_stat').when('2', params['rrr_hc_delivery_married'])),
-                # TODO: predictors not included due to mismatch between study LR model output and categorisation of TLO
-                #  model variables - education, wealth  and marital status
+                # TODO: Certain predictors within wingston's model are not included due to mismatch between study LR
+                #  model output and categorisation of TLO model variables - education, wealth  and marital status
 
              'probability_delivery_at_home': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -671,7 +674,7 @@ class Labour (Module):
                 LinearModelType.LOGISTIC,
                 params['odds_careseeking_for_complication']),
                 # Predictor('li_wealth').when('2', params['or_comp_careseeking_wealth_2'])),
-                # TODO: include ANC
+                # TODO: include ANC as a predictor for care seeking with a complication
              }
 
     def initialise_population(self, population):
@@ -711,7 +714,7 @@ class Labour (Module):
         df.loc[df.is_alive, 'la_maternal_death_in_labour_date'] = pd.NaT
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE ----------------------------------------------------------
-    # We assign parity to all women of reproductive age at baseline
+        # We assign parity to all women of reproductive age at baseline
         df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14), 'la_parity'] = \
             np.around(params['la_labour_equations']['parity'].predict(df.loc[df.is_alive & (df.sex == 'F') &
                                                                              (df.age_years > 14)]))
@@ -719,16 +722,18 @@ class Labour (Module):
 
     def initialise_simulation(self, sim):
 
+        # We set the LoggingEvent to run a the last day of each year to produce statistics for that year
         event = LabourLoggingEvent(self)
-        # TODO: ensure the logger runs on the end of the day of the last day of the month
         sim.schedule_event(event, sim.date + DateOffset(days=364))
 
+        # And we schedule the LabourCheckEvent to run monthly and perform checks on the dataframe and maternal and
+        # newborn info dictionary
         event = LabourCheckEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=1))
 
-        # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
+        # Create a list to store women who are currently in labour, for checking purposes
         self.women_in_labour = []
 
         # Create complication tracker
@@ -741,18 +746,24 @@ class Labour (Module):
                                           'sepsis_postpartum': 0,
                                           'eclampsia_postpartum': 0}
 
+        # and the delivery information tracker
         self.LabourDeliveryInformationTracker = {'home_birth': 0,
                                                  'health_centre_birth': 0,
                                                  'hospital_birth': 0,
-                                                 'caesarean_section': 0}
+                                                 'caesarean_section': 0,
+                                                 'early_preterm': 0,
+                                                 'late_preterm': 0,
+                                                 'post_term': 0,
+                                                 'term': 0}
+
+        # TODO: having these as two separate trackers is probably not necessary, and there may even be a neater/more
+        #  accurate way of tracking things but this has been helpful for debugging
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # We register all the dx_tests needed within the labour HSI events. dx_tests in this module represent assessment
         # and correct diagnosis of key complication, leading to treatment or referral for treatment.
 
         # Sensitivity of testing varies between health centres and hospitals...
-
-        # todo: could these be shortened with a function to register?
 
         # Obstructed Labour diagnosis
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -794,8 +805,7 @@ class Labour (Module):
             assess_hypertension_hp=DxTest(
                 property='ps_currently_hypertensive',
                 sensitivity=self.parameters['sensitivity_of_assessment_of_hypertension_hp'], ))
-        # todo: are we ok to turn on ps_currently_hypertensive for new onset eclampsia? Or will it already be true from
-        #  PS module
+        # TODO: Ensure the variable ps_currently_hypertensive is turned on in the case of new onset eclampsia
 
         # severe pre-eclampsia diagnosis
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -867,7 +877,8 @@ class Labour (Module):
         # If a mothers labour has resulted in an intrapartum still birth her child is still generated by the simulation
         # but the death is recorded through the InstantaneousDeath function
 
-        # Log only live births:
+        # Store only live births to a mother parity
+        # TODO: consider the benefit of a gravidity property (total pregnancies)
         if ~mother.la_intrapartum_still_birth:
             df.at[mother_id, 'la_parity'] += 1  # Only live births contribute to parity
 
@@ -928,8 +939,7 @@ class Labour (Module):
         health_values_df = health_values_df.multiply(scaling_factor, axis=0)
 
         return health_values_df
-
-    # todo: average monthly weighting - this will now be done by TIM H
+    # TODO: await change of formatting for DALYs by Tim H (?)
 
     # ===================================== LABOUR SCHEDULER ==========================================================
 
@@ -951,17 +961,26 @@ class Labour (Module):
         lptb_prob = params['la_labour_equations']['late_preterm_birth'].predict(df.loc[[individual_id]])[individual_id]
         ptl_prob = params['la_labour_equations']['post_term_birth'].predict(df.loc[[individual_id]])[individual_id]
 
-        # TODO: early/late PTL are outputs from a multinomial regression (not ours)- so we cant use Asifs new method?
+        # TODO: see PR notes for issue with changing rates of preterm birth
+        # TODO: the use of this format for the equation is probably inappropriate as the probabilities are taken from a
+        #  number of separate analysis, not one multinomial regression
 
-        # We then use a random draw to determine if the woman will go into preterm labour and how early she will deliver
-        # We store this draw as a variable so the result can be compared against both probabilities
-        random_draw = self.rng.random_sample()
-        if random_draw < eptb_prob:
+        denom = 1 + eptb_prob + lptb_prob
+        prob_ep = eptb_prob / denom
+        prob_lp = lptb_prob / denom
+        prob_term = 1 / denom
+
+        labour_type = ['early_preterm', 'late_preterm', 'term']
+        probabilities = [prob_ep, prob_lp, prob_term]
+        random_draw = self.rng.choice(labour_type, p=probabilities)
+
+        # Depending on the result from the random draw we determine in how many weeks this woman will go into labour
+        if random_draw == 'early_preterm':
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta((self.rng.randint(24, 33)),
                                                                                      unit='W')
 
-        elif random_draw < (lptb_prob + eptb_prob):
+        elif random_draw == 'late_preterm':
             df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta((self.rng.randint(34, 36)),
                                                                                      unit='W')
@@ -986,6 +1005,7 @@ class Labour (Module):
                                 df.at[individual_id, 'la_due_date_current_pregnancy'])
 
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
+    # The following functions are called throughout the Labour module and HSIs
 
     def eval(self, eq, person_id):
         """Compares the result of a specific linear equation with a random draw providing a boolean for the outcome
@@ -1003,6 +1023,8 @@ class Labour (Module):
         received_abx_for_pprom = mni[person_id]['abx_for_pprom_given']
         received_amtsl = mni[person_id]['amtsl_given']
 
+        # The appropriate external variables are then passed to the linear model depending on the equation being
+        # evaluated
         if eq == params['la_labour_equations']['sepsis_pp']:
             return self.rng.random_sample() < eq.predict(person,
                                                          received_clean_delivery=received_clean_delivery,
@@ -1018,6 +1040,7 @@ class Labour (Module):
             return self.rng.random_sample() < eq.predict(person, received_blood_transfusion=has_rbt)[person_id]
 
         else:
+            # If there are no external variables in the model we simply return....
             return self.rng.random_sample() < eq.predict(df.loc[[person_id]])[person_id]
 
     def set_home_birth_complications_intrapartum(self, individual_id, complication, labour_stage):
@@ -1028,9 +1051,12 @@ class Labour (Module):
         mni = self.mother_and_newborn_info
         params = self.parameters
 
+        # Check only women who are having a homebirth are passed to this function
         assert mni[individual_id]['delivery_setting'] == 'home_birth'
 
         if self.eval(params['la_labour_equations'][f'{complication}_{labour_stage}'], individual_id):
+            # If the woman will experience a complication we make changes to the data frame and store the complication
+            # in a tracker
             df.at[individual_id, f'la_{complication}'] = True
             self.LabourComplicationTracker[f'{complication}'] += 1
 
@@ -1092,10 +1118,11 @@ class Labour (Module):
 
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
-        rng = self.rng
         params = self.parameters
 
-        # Ensure women delivering at home are not having complications set this way
+        # TODO: this was previously significantly different from the set_home_birth_complications_intrapartum function
+        #  but could possibly now be combined
+
         assert mni[person_id]['delivery_setting'] == 'health_centre' or mni[person_id]['delivery_setting'] == 'hospital'
 
         if self.eval(params['la_labour_equations'][f'{complication}_{labour_stage}'], person_id):
@@ -1122,8 +1149,9 @@ class Labour (Module):
         appropriate changes to the data frame"""
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
-        rng = self.rng
         params = self.parameters
+
+        # TODO: as above
 
         assert mni[person_id]['delivery_setting'] == 'health_centre' or mni[person_id]['delivery_setting'] == 'hospital'
 
@@ -1158,6 +1186,7 @@ class Labour (Module):
         mni = self.mother_and_newborn_info
         params = self.parameters
 
+        # First we determine if this woman will die of the complication defined in the function
         if self.eval(params['la_labour_equations'][f'{cause}_death'], individual_id):
             logger.debug(f'{cause} has contributed to person %d death during labour', individual_id)
 
@@ -1166,7 +1195,8 @@ class Labour (Module):
             df.at[individual_id, 'la_maternal_death_in_labour'] = True
             df.at[individual_id, 'la_maternal_death_in_labour_date'] = self.sim.date
 
-        # A risk of stillbirth is calculated, maternal death is a predictor and set very high if true.
+        #  And then a risk of stillbirth is calculated, maternal death is a used as a predictor and set very high if
+        #  true
         if self.eval(params['la_labour_equations'][f'{cause}_stillbirth'], individual_id):
             logger.debug(f'person %d has experienced a still birth following {cause} in labour')
 
@@ -1304,21 +1334,30 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     #  of > threshold number, but their GA hasn't been updated in the df (hence altered GA thresholds below)
 
             # Now we use gestational age to categorise the 'labour_state'
-            if 37 <= person.ps_gestational_age_in_weeks < 42:
+            if person.ps_gestational_age_in_weeks < 42 and person.ps_gestational_age_in_weeks >= 37:
+                self.module.LabourDeliveryInformationTracker['term'] += 1
+
                 mni[individual_id]['labour_state'] = 'term_labour'
 
             # Here we allow a woman to go into early preterm labour with a gestational age of 23 (limit is 24) to
             # account for PregnancySupervisor only updating weekly
-            elif 23 <= person.ps_gestational_age_in_weeks < 34:
+            elif person.ps_gestational_age_in_weeks < 34 and person.ps_gestational_age_in_weeks >= 23:
                 mni[individual_id]['labour_state'] = 'early_preterm_labour'
+                self.module.LabourDeliveryInformationTracker['early_preterm'] += 1
+
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
-            elif 37 > person.ps_gestational_age_in_weeks >= 34:
+            elif person.ps_gestational_age_in_weeks >= 34 and person.ps_gestational_age_in_weeks < 37:
                 mni[individual_id]['labour_state'] = 'late_preterm_labour'
+                self.module.LabourDeliveryInformationTracker['late_preterm'] += 1
+
                 df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
             elif person.ps_gestational_age_in_weeks > 41:
                 mni[individual_id]['labour_state'] = 'postterm_labour'
+                self.module.LabourDeliveryInformationTracker['post_term'] += 1
+
+            # TODO: again please see notes regarding issue with preterm birth
 
             # We check all women have had their labour state set
             assert mni[individual_id]['labour_state'] is not None
@@ -1373,14 +1412,15 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             else:
                 non_referral_hospital_delivery = HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(
                     self.module, person_id=individual_id)
-                #  todo: currently we are only scheduling lower level hospital deliveries
+
+                #  TODO: currently we are only scheduling lower level hospital deliveries, unsure how to best proceed
+                #   in allowing women to choose between facility level 1 and 2 hospital deliveries
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(non_referral_hospital_delivery, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
 # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ==========================================
-
             # We schedule all women to move through the death event where those who have developed a complication
             # that hasn't been treated or treatment has failed will have a case fatality rate applied
             self.sim.schedule_event(LabourDeathEvent(self.module, individual_id), self.sim.date + DateOffset(days=3))
@@ -1414,15 +1454,14 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
         assert mni[individual_id]['delivery_setting'] == 'home_birth'
         self.module.labour_characteristics_checker(individual_id)
 
-        # Condition the event on women being alive
+        # Condition the event on women being alive and log the birth in a tracker
         if df.at[individual_id, 'is_alive']:
             logger.debug('person %d has is now going to deliver at home', individual_id)
             self.module.LabourDeliveryInformationTracker['home_birth'] += 1
 
             # ===================================  APPLICATION OF COMPLICATIONS =======================================
             # Using the complication_application function we move through each complication in turn determining if a
-            # woman will experience any of these if she has delivered at home, and storing the risk so it can be
-            # modified by skilled birth attendance for women delivering in a facility
+            # woman will experience any of these if she has delivered at home
             # Here labour_stage 'ip' means intrapartum
 
             self.module.set_home_birth_complications_intrapartum(individual_id, labour_stage='ip',
@@ -1456,9 +1495,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                                                                             topen=self.sim.date,
                                                                             tclose=self.sim.date + DateOffset(days=1))
 
-            # TODO: this equation only determines if the woman seeks care, not at what level
-            # TODO: at what point do these women enter the HSI, or should there maybe be a different one? And what
-            #  about facility level selection
+            # TODO: This equation only determines if the woman seeks care, not at what level they seek care. I think a
+            #  more in-depth look at the literature is required
 
 
 class BirthEvent(Event, IndividualScopeEventMixin):
@@ -1560,7 +1598,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=1))
                     logger.debug('mother %d will now seek care for a complication that has developed following labour '
-                                'on date %s', individual_id, self.sim.date)
+                                 'on date %s', individual_id, self.sim.date)
 
             # We schedule all women to then go through the death event where those with untreated/unsuccessfully treated
             # complications may experience death
@@ -1812,7 +1850,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
         # facility deliveries
         if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
             mni[person_id]['delivery_setting'] = 'health_centre'
-        # TODO: currently dont have choice of facility level in complication care seeking equation
+        # TODO: currently dont have choice of facility level in complication care-seeking equation
 
         # Delivery setting is captured in the DeliverySettingTracker, processed by the logger and reset yearly
         if mni[person_id]['delivery_setting'] == 'health_centre':
@@ -1933,8 +1971,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
                     mni[person_id]['corticosteroids_given'] = True
                     logger.debug('This facility has provided corticosteroids for mother %d who is in preterm labour',
                                  person_id)
-                else:
-                    logger.debug('This facility has no steroids for women in preterm labour.')
+            else:
+                logger.debug('This facility has no steroids for women in preterm labour.')
 
             # Prophylactic antibiotics for women who have gone into preterm labour...
             if mni[person_id]['labour_state'] == 'early_preterm_labour' or mni[person_id]['labour_state'] == \
@@ -2033,8 +2071,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1(HSI_Event, I
             consumables_obstructed_labour = {'Intervention_Package_Code': {pkg_code_obstructed_labour: 1},
                                              'Item_Code': {item_code_forceps: 1, item_code_vacuum: 1}}
 
-            # TODO: currently were using one effectiveness paramter for this treatment, therefore we would need to
-            #  condition on either of these peices of equipment
+            # TODO: Currently were using one effectiveness parameter for this treatment, therefore we would need to
+            #  condition on either of these pieces of equipment
             # TODO: as Ol pkg is very comprehensive, may be a bad idea to condition on this- will refine
 
             outcome_of_request_for_consumables_ol = self.sim.modules['HealthSystem'].request_consumables(
@@ -2902,6 +2940,7 @@ class HSI_Labour_ReceivesBloodTransfusionFacilityLevel1(HSI_Event, IndividualSco
         logger.info('This is HSI_Labour_ReceivesBloodTransfusionFacilityLevel1: Person %d will now receive a blood '
                     'transfusion following haemorrhage/blood loss delivery', person_id)
         # TODO: should this package be the minimum amount of blood needed? Also plts/ffp?
+
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         item_code_bt1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
         item_code_bt2 = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
@@ -3207,6 +3246,8 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
+        # TODO: Wont be outputting all these stats/ numbers obviously, just for debugging at the moment
+
         # Previous Year...
         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
         total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
@@ -3235,6 +3276,12 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         health_centre = self.module.LabourDeliveryInformationTracker['hospital_birth']
         cs_deliveries = self.module.LabourDeliveryInformationTracker['caesarean_section']
         dummy_deliveries = home + hospital + health_centre
+
+        ept = self.module.LabourDeliveryInformationTracker['early_preterm']
+        lpt = self.module.LabourDeliveryInformationTracker['late_preterm']
+        pt = self.module.LabourDeliveryInformationTracker['post_term']
+        t = self.module.LabourDeliveryInformationTracker['term']
+        total = ept + lpt + pt + t
 
         # TODO: division by zero crashes code on small runs
 
@@ -3273,6 +3320,11 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             'sep_cases_pp': sep_pp,
                             'pph_cases': pph}
 
+        deliveries = {'ept':ept/yearly_births *100,
+                      'lpt':lpt/yearly_births *100,
+                      'term':t/yearly_births *100,
+                      'post_term':pt/yearly_births *100,}
+
         # TODO: SBR, health system outputs, check denominators
 
         # logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
@@ -3289,7 +3341,10 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                  'eclampsia_postpartum': 0}
 
         self.module.LabourDeliveryInformationTracker = {'home_birth': 0,
-                                                        'health_centre_birth': 0,
-                                                        'hospital_birth': 0,
-                                                        'caesarean_section':0}
-
+                                                 'health_centre_birth': 0,
+                                                 'hospital_birth': 0,
+                                                 'caesarean_section': 0,
+                                                 'early_preterm':0,
+                                                 'late_preterm':0,
+                                                 'post_term':0,
+                                                 'term':0}
