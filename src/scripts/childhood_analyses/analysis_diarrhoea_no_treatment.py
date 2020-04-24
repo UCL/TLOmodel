@@ -264,7 +264,7 @@ deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
 deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index)
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
-deaths.drop(deaths.index[deaths['year'] > 2015.0], inplace=True)
+deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
 deaths = deaths.pivot(values='count', columns='age_grp', index='year')
 
 # Death Rate = death count (by year, by age-group) / person-years

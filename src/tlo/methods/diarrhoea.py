@@ -340,12 +340,15 @@ class Diarrhoea(Module):
                                                        'watery',
                                                        'bloody']),
 
-        # ---- Classification of whether the dehydration that may be caused is currently severe  ----
-        'gi_current_severe_dehydration': Property(Types.BOOL,
-                                                  'Whether any dehydration that is caused is severe currently'),
+        # ---- Classification of severity of the dehydration caused ----
+        'gi_last_diarrhoea_dehydration': Property(Types.CATEGORICAL,
+                                                  'Severity of dehydration of last episode of diarrhoea',
+                                                  categories=['none',
+                                                              'some', 'severe']),
 
         # ---- Internal variables to schedule onset and deaths due to diarrhoea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
+        'gi_last_diarrhoea_duration': Property(Types.REAL, 'number of days of last episode of diarrhoea'),
         'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of diarrhoea'),
         'gi_last_diarrhoea_death_date': Property(Types.DATE, 'date of death caused by last episode of diarrhoea'),
 
@@ -361,7 +364,7 @@ class Diarrhoea(Module):
     }
 
     # Declare symptoms that this module will cause:
-    SYMPTOMS = {'diarrhoea', 'fever', 'vomiting', 'dehydration'}
+    SYMPTOMS = {'diarrhoea', 'bloody_stool', 'fever', 'vomiting', 'dehydration'}
     # Todo: decide if we want dehydration to be a symptom: currently it is not doing very much: just taken to signify
     #  non-severe dehydration and is onset immididstely when diarrhoea is onset
 
@@ -674,6 +677,7 @@ class Diarrhoea(Module):
         self.prob_symptoms.update({
             'rotavirus': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_rotavirus'],
                 'fever': p['fever_by_rotavirus'],
                 'vomiting': p['vomiting_by_rotavirus'],
                 'dehydration': p['dehydration_by_rotavirus'],
@@ -681,6 +685,7 @@ class Diarrhoea(Module):
 
             'shigella': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_shigella'],
                 'fever': p['fever_by_shigella'],
                 'vomiting': p['vomiting_by_shigella'],
                 'dehydration': p['dehydration_by_shigella'],
@@ -688,6 +693,7 @@ class Diarrhoea(Module):
 
             'adenovirus': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_adenovirus'],
                 'fever': p['fever_by_adenovirus'],
                 'vomiting': p['vomiting_by_adenovirus'],
                 'dehydration': p['dehydration_by_adenovirus'],
@@ -695,6 +701,7 @@ class Diarrhoea(Module):
 
             'cryptosporidium': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_cryptosporidium'],
                 'fever': p['fever_by_cryptosporidium'],
                 'vomiting': p['vomiting_by_cryptosporidium'],
                 'dehydration': p['dehydration_by_cryptosporidium'],
@@ -702,6 +709,7 @@ class Diarrhoea(Module):
 
             'campylobacter': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_campylobacter'],
                 'fever': p['fever_by_campylobacter'],
                 'vomiting': p['vomiting_by_campylobacter'],
                 'dehydration': p['dehydration_by_campylobacter'],
@@ -709,6 +717,7 @@ class Diarrhoea(Module):
 
             'ST-ETEC': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_ST-ETEC'],
                 'fever': p['fever_by_ST-ETEC'],
                 'vomiting': p['vomiting_by_ST-ETEC'],
                 'dehydration': p['dehydration_by_ST-ETEC'],
@@ -716,6 +725,7 @@ class Diarrhoea(Module):
 
             'sapovirus': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_sapovirus'],
                 'fever': p['fever_by_sapovirus'],
                 'vomiting': p['vomiting_by_sapovirus'],
                 'dehydration': p['dehydration_by_sapovirus'],
@@ -723,6 +733,7 @@ class Diarrhoea(Module):
 
             'norovirus': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_norovirus'],
                 'fever': p['fever_by_norovirus'],
                 'vomiting': p['vomiting_by_norovirus'],
                 'dehydration': p['dehydration_by_norovirus'],
@@ -730,6 +741,7 @@ class Diarrhoea(Module):
 
             'astrovirus': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_astrovirus'],
                 'fever': p['fever_by_astrovirus'],
                 'vomiting': p['vomiting_by_astrovirus'],
                 'dehydration': p['dehydration_by_astrovirus'],
@@ -737,6 +749,7 @@ class Diarrhoea(Module):
 
             'tEPEC': {
                 'diarrhoea': 1.0,
+                'bloody_stool': 1 - p['proportion_AWD_by_tEPEC'],
                 'fever': p['fever_by_rotavirus'],
                 'vomiting': p['vomiting_by_tEPEC'],
                 'dehydration': p['dehydration_by_tEPEC'],
@@ -761,6 +774,10 @@ class Diarrhoea(Module):
                         Predictor('gi_last_diarrhoea_type')
                         .when('watery', p['case_fatality_rate_AWD'])
                         .when('bloody', p['case_fatality_rate_dysentery']),
+                        Predictor('gi_last_diarrhoea_duration')
+                        .when('>13', 0.0035),
+                        Predictor('gi_last_diarrhoea_dehydration')
+                        .when('severe', 0.05),
                         # .when('persistent', p['cfr_persistent_diarrhoea']),
                         # Predictor('age_years')  ##          <--- fill in
                         # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
@@ -822,10 +839,11 @@ class Diarrhoea(Module):
         # ---- Key Current Status Classification Properties ----
         df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
         df['gi_last_diarrhoea_type'].values[:] = 'none'
-        df['gi_current_severe_dehydration'] = False
+        df['gi_last_diarrhoea_dehydration'] = 'none'
 
         # ---- Internal values ----
         df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
+        df['gi_last_diarrhoea_duration'] = np.nan
         df['gi_last_diarrhoea_recovered_date'] = pd.NaT
         df['gi_last_diarrhoea_death_date'] = pd.NaT
 
@@ -895,7 +913,7 @@ class Diarrhoea(Module):
             = self.daly_wts['moderate_diarrhoea']
 
         total_daly_values.loc[
-            self.sim.population.props['gi_current_severe_dehydration']
+            self.sim.population.props['gi_last_diarrhoea_dehydration'] == 'severe'
         ] \
             = self.daly_wts['severe_diarrhoea']
 
@@ -975,15 +993,11 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # ----------------------- Determine outcomes for this case ----------------------
             duration_in_days_of_diarrhoea = max(1, int(
                 m.mean_duration_in_days_of_diarrhoea.predict(df.loc[[person_id]]).values[0] +
-                (-2 + 7 * rng.rand())  # assumes uniform interval around mean duration with range 4 days
+                (-2 + 7 * rng.rand())  # assumes uniform interval around mean duration
             ))
 
-            prob_diarrhoea_is_watery = m.prob_diarrhoea_is_watery.predict(df.loc[[person_id]]).values[0]
-            type_of_diarrhoea = rng.choice(['watery', 'bloody'],
-                                           p=[prob_diarrhoea_is_watery, 1 - prob_diarrhoea_is_watery])
-
-            risk_of_death = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
-            will_die = rng.rand() < risk_of_death
+            # risk_of_death = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
+            # will_die = rng.rand() < risk_of_death
 
             # ----------------------- Allocate symptoms to onset of diarrhoea ----------------------
             possible_symptoms_for_this_pathogen = m.prob_symptoms[pathogen]
@@ -1000,9 +1014,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     module=self.module,
                     person_id=person_id,
                     pathogen=pathogen,
-                    type=type_of_diarrhoea,
                     duration_in_days=duration_in_days_of_diarrhoea,
-                    will_die=will_die,
                     symptoms=symptoms_for_this_person
                 ),
                 date=date_onset
@@ -1014,16 +1026,15 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
     This Event is for the onset of the infection that causes diarrhoea.
     """
 
-    def __init__(self, module, person_id, pathogen, type, duration_in_days, will_die, symptoms):
+    def __init__(self, module, person_id, pathogen, duration_in_days, symptoms):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
-        self.type = type
         self.duration_in_days = duration_in_days
-        self.will_die = will_die
         self.symptoms = symptoms
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
 
         # The event should not run if the person is not currently alive
         if not df.at[person_id, 'is_alive']:
@@ -1032,7 +1043,17 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Update the properties in the dataframe:
         df.at[person_id, 'gi_last_diarrhoea_pathogen'] = self.pathogen
         df.at[person_id, 'gi_last_diarrhoea_date_of_onset'] = self.sim.date
-        df.at[person_id, 'gi_last_diarrhoea_type'] = self.type
+        df.at[person_id, 'gi_last_diarrhoea_duration'] = self.duration_in_days
+
+        if 'bloody_stool' in self.symptoms:
+            df.at[person_id, 'gi_last_diarrhoea_type'] = 'bloody'
+        else:
+            df.at[person_id, 'gi_last_diarrhoea_type'] = 'watery'
+
+        if 'dehydration' in self.symptoms:
+            df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'some'
+        else:
+            df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
 
         # Onset symptoms:
         for symptom in self.symptoms:
@@ -1044,15 +1065,23 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 duration_in_days=self.duration_in_days
             )
 
-        # Determine timing of outcome (either recovery or death)
+        # Determine the progress to severe dehydration
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
-        if self.will_die:
+        if df.at[person_id, 'gi_last_diarrhoea_dehydration'] == 'some':
+            prob_severe_dehydration = self.module.rng.rand() < 0.3
+            if prob_severe_dehydration:
+                self.sim.schedule_event(DiarrhoeaSevereDehydrationEvent(self.module, person_id, symptoms=self.symptoms),
+                                        max(self.sim.date, date_of_outcome - DateOffset(
+                                            days=(3 * m.rng.rand()))))
+
+        # Determine timing of outcome (either recovery or death)
+        prob_death_by_diarrhoea = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
+        death_outcome = m.rng.rand() < prob_death_by_diarrhoea
+        if death_outcome:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
             df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-            date_of_onset_severe_dehydration = max(self.sim.date, date_of_outcome - DateOffset(
-                days=self.module.parameters['days_onset_severe_dehydration_before_death']))
-            self.sim.schedule_event(DiarrhoeaSevereDehydrationEvent(self.module, person_id),
-                                    date_of_onset_severe_dehydration)
+            self.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id),
+                                    date_of_outcome)
         else:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_of_outcome
             df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
@@ -1067,27 +1096,20 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
 
 
 class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
-    """
-    This Event is for the onset of Severe Dehydration. This occurs a set number of days prior to death (for untreated
-    children). It sets the property 'gi_current_severe_dehydration' to True and schedules the death.
-    """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, symptoms):
         super().__init__(module, person_id=person_id)
+        self.symptoms = symptoms
 
     def apply(self, person_id):
-        df = self.sim.population.props  # shortcut to the dataframe
+        logger.debug("DiarrhoeaSevereDehydrationEvent: Severe dehydration in person %d", person_id)
+        df = self.sim.population.props
 
         # terminate the event if the person has already died.
         if not df.at[person_id, 'is_alive']:
             return
 
-        df.at[person_id, 'gi_current_severe_dehydration'] = True
-
-        date_of_death = self.sim.date + DateOffset(days=
-                                                   self.module.parameters['days_onset_severe_dehydration_before_death'])
-        df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_death
-        self.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id), date_of_death)
+        df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
 
 
 class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
@@ -1276,7 +1298,7 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self, cons_req_as_footprint=the_consumables_needed)
         logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
-        if is_cons_available:
+        if is_cons_available['Intervention_Package_Code']['pkg_code_uncomplic_diarrhoea']:
             logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
