@@ -130,7 +130,7 @@ def _initialise_population(module, population):
     _assign_initial_worm_burden(module, population)
 
     # assign infection statuses
-    df[f'{prefix}_infection_status'].values[:] = df.apply(
+    df.loc[df.is_alive, f'{prefix}_infection_status'] = df[df.is_alive].apply(
         lambda x: _intensity_of_infection(module, x['age_years'], x[f'{prefix}_aggregate_worm_burden']),
         axis=1
     )
@@ -577,7 +577,6 @@ class Schisto_Haematobium(Module):
         df = self.sim.population.props
         health_values = df.loc[df.is_alive,
                                'sh_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
-        health_values.name = 'Schisto_Haematobium_Symptoms'    # label the cause of this disability
 
         return health_values.loc[df.is_alive]   # returns the series
 
@@ -665,7 +664,6 @@ class Schisto_Mansoni(Module):
         df = self.sim.population.props
         health_values = \
             df.loc[df.is_alive, 'sm_symptoms'].apply(lambda x: self.sim.modules['Schisto'].add_DALYs_from_symptoms(x))
-        health_values.name = 'Schisto_Mansoni_Symptoms'    # label the cause of this disability
 
         return health_values.loc[df.is_alive]   # returns the series
 
@@ -925,32 +923,34 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
         if 'Schisto_Mansoni' in self.sim.modules.keys():
             prefixes.append('sm')
 
-        if df.loc[person_id, 'is_alive']:
-            for prefix in prefixes:
-                if df.loc[person_id,  f'{prefix}_infection_status'] != 'Non-infected':
+        if not df.loc[person_id, 'is_alive']:
+            return
 
-                    # check if they experienced symptoms, and if yes, treat them
-                    df.loc[person_id, f'{prefix}_symptoms'] = np.nan
-                    # if isinstance(df.loc[person_id, prefix + '_symptoms'], list):
-                    #     df.loc[person_id, prefix + '_symptoms'] = np.nan
+        for prefix in prefixes:
+            if df.loc[person_id,  f'{prefix}_infection_status'] != 'Non-infected':
 
-                    # calculate the duration of the prevalent period
-                    prevalent_duration = count_days_this_year(self.sim.date, df.loc[
-                        person_id, f'{prefix}_start_of_prevalent_period'])
-                    df.loc[person_id, f'{prefix}_prevalent_days_this_year'] += prevalent_duration
-                    df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
+                # check if they experienced symptoms, and if yes, treat them
+                df.loc[person_id, f'{prefix}_symptoms'] = np.nan
+                # if isinstance(df.loc[person_id, prefix + '_symptoms'], list):
+                #     df.loc[person_id, prefix + '_symptoms'] = np.nan
 
-                    # calculate the duration of the high-intensity infection
-                    if df.loc[person_id, f'{prefix}_infection_status'] == 'High-infection':
-                        high_infection_duration = count_days_this_year(self.sim.date, df.loc[
-                            person_id, f'{prefix}_start_of_high_infection'])
-                        df.loc[person_id, f'{prefix}_high_inf_days_this_year'] += high_infection_duration
-                        df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
+                # calculate the duration of the prevalent period
+                prevalent_duration = count_days_this_year(self.sim.date, df.loc[
+                    person_id, f'{prefix}_start_of_prevalent_period'])
+                df.loc[person_id, f'{prefix}_prevalent_days_this_year'] += prevalent_duration
+                df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
 
-                    df.loc[person_id, f'{prefix}_aggregate_worm_burden'] = 0  # PZQ_efficacy = 100% for now
-                    df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
+                # calculate the duration of the high-intensity infection
+                if df.loc[person_id, f'{prefix}_infection_status'] == 'High-infection':
+                    high_infection_duration = count_days_this_year(self.sim.date, df.loc[
+                        person_id, f'{prefix}_start_of_high_infection'])
+                    df.loc[person_id, f'{prefix}_high_inf_days_this_year'] += high_infection_duration
                     df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
-                    df.loc[person_id, f'{prefix}_infection_status'] = 'Non-infected'
+
+                df.loc[person_id, f'{prefix}_aggregate_worm_burden'] = 0  # PZQ_efficacy = 100% for now
+                df.loc[person_id, f'{prefix}_start_of_prevalent_period'] = pd.NaT
+                df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
+                df.loc[person_id, f'{prefix}_infection_status'] = 'Non-infected'
 
         # the general Schisto module properties
         df.loc[person_id, 'ss_scheduled_hsi_date'] = pd.NaT
