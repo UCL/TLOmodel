@@ -601,7 +601,7 @@ class Schisto_Mansoni(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.prefix = 'sm'
-        assert symptoms_and_HSI in [True, False]
+        assert isinstance(symptoms_and_HSI, bool)
         self.symptoms_and_HSI = symptoms_and_HSI
 
     PARAMETERS = _define_parameters()
