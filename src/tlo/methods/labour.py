@@ -459,18 +459,18 @@ class Labour (Module):
                 #  a minus figure and I cant work out why
 
              'early_preterm_birth': LinearModel(
-               LinearModelType.LOGISTIC,
+               LinearModelType.MULTIPLICATIVE,
                params['odds_early_ptb']),
                 # Predictor('age_years').when('.between(15,19)', params['or_early_ptb_age<20']),
                 # Predictor('la_has_previously_delivered_preterm').when(True, params['or_early_ptb_prev_ptb'])),
 
              'late_preterm_birth': LinearModel(
-                LinearModelType.LOGISTIC,
+                LinearModelType.MULTIPLICATIVE,
                 params['odds_late_ptb']),
                 # Predictor('la_has_previously_delivered_preterm').when(True, params['or_late_ptb_prev_ptb'])),
 
              'post_term_birth': LinearModel(
-                LinearModelType.LOGISTIC,
+                LinearModelType.MULTIPLICATIVE,
                 params['odds_post_term_labour']),
                 # Predictor('li_bmi').when('>24', params['rrr_ptl_bmi_more25']),
                 # Predictor('li_mar_stat').when('1', params['rrr_ptl_not_married'])
