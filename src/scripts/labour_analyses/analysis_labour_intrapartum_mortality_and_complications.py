@@ -3,9 +3,8 @@
 import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -56,27 +55,26 @@ stats['year'] = stats['date'].dt.year
 # todo: set index as year? restructure to year only?
 # where can i output this too for analyses
 
-#stats.plot.bar(x='year', y='ol_incidence', stacked=True)
-#plt.title("Yearly Obstructed Labour Rate")
-#plt.show()
+# stats.plot.bar(x='year', y='ol_incidence', stacked=True)
+# plt.title("Yearly Obstructed Labour Rate")
+# plt.show()
 
-#stats.plot.bar(x='year', y='aph_incidence', stacked=True)
-#plt.title("Yearly Antepartum Haemorrhage Rate")
-#plt.show()
+# stats.plot.bar(x='year', y='aph_incidence', stacked=True)
+# plt.title("Yearly Antepartum Haemorrhage Rate")
+# plt.show()
 
-#stats.plot.bar(x='year', y='ur_incidence', stacked=True)
-#plt.title("Yearly Uterine Rupture Rate")
-#plt.show()
+# stats.plot.bar(x='year', y='ur_incidence', stacked=True)
+# plt.title("Yearly Uterine Rupture Rate")
+# plt.show()
 
-#stats.plot.bar(x='year', y='ec_incidence', stacked=True)
-#plt.title("Yearly Eclampsia Rate")
-#plt.show()
+# stats.plot.bar(x='year', y='ec_incidence', stacked=True)
+# plt.title("Yearly Eclampsia Rate")
+# plt.show()
 
-#stats.plot.bar(x='year', y='sep_incidence', stacked=True)
-#plt.title("Yearly Sepsis Rate")
-#plt.show()
+# stats.plot.bar(x='year', y='sep_incidence', stacked=True)
+# plt.title("Yearly Sepsis Rate")
+# plt.show()
 
-#stats.plot.bar(x='year', y='pph_incidence', stacked=True)
-#plt.title("Yearly PPH Rate")
-#plt.show()
-
+# stats.plot.bar(x='year', y='pph_incidence', stacked=True)
+# plt.title("Yearly PPH Rate")
+# plt.show()

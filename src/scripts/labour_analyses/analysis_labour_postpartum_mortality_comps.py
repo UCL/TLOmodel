@@ -3,9 +3,7 @@
 import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -53,4 +51,3 @@ output = parse_log_file(logfile)
 # Incidence of Postpartum Haemorrhage
 # Incidence of Postpartum Eclampsia
 # Incidence of Postpartum direct maternal sepsis
-

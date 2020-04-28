@@ -5,8 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.methods import (
     antenatal_care,
     contraception,
