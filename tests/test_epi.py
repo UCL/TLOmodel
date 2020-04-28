@@ -117,8 +117,17 @@ def test_epi_scheduling_hsi_events(tmpdir):
     # 2010-2018 vaccines administered through individual events
     ep_out = output["tlo.methods.epi"]["ep_vaccine_coverage"]
 
-    #TODO have to select 2019 onwards
+    # check vaccine coverage is above 0 for all vaccine types
     assert not (ep_out.epBcgCoverage > 0).all()
+    assert not (ep_out.epDtp3Coverage > 0).all()
+    assert not (ep_out.epOpv3Coverage > 0).all()
+    assert not (ep_out.epHib3Coverage > 0).all()
+    assert not (ep_out.epHep3Coverage > 0).all()
+    assert not (ep_out.epPneumo3Coverage > 0).all()
+    assert not (ep_out.epRota2Coverage > 0).all()
+    assert not (ep_out.epMeaslesCoverage > 0).all()
+    assert not (ep_out.epRubellaCoverage > 0).all()
+    assert not (ep_out.epHpvCoverage > 0).all()
 
     # check only 3 doses max of dtp/pneumo
     assert (df.ep_dtp <= 3).all()
