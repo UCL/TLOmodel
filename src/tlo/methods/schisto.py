@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 
@@ -1225,29 +1225,22 @@ class SchistoPrevalentDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         # adding unfinished infections
         prefixes = []
-        if 'Schisto_Haematobium' in self.sim.modules.keys():
+        if 'Schisto_Haematobium' in self.sim.modules:
             prefixes.append('sh')
-        if 'Schisto_Mansoni' in self.sim.modules.keys():
+        if 'Schisto_Mansoni' in self.sim.modules:
             prefixes.append('sm')
 
-        df_alive = df[df.is_alive].copy()
-
         for prefix in prefixes:
-            still_infected = df_alive.index[~df_alive[f'{prefix}_start_of_prevalent_period'].isna()]
-            for person_id in still_infected:
-                prevalent_duration = count_days_this_year(self.sim.date,
-                                                          df_alive.loc[person_id,
-                                                                       f'{prefix}_start_of_prevalent_period'])
-                df_alive.loc[person_id, f'{prefix}_prevalent_days_this_year'] += prevalent_duration
-            still_high_infected = df_alive.index[~df_alive[f'{prefix}_start_of_high_infection'].isna()]
-            for person_id in still_high_infected:
-                high_inf_duration = count_days_this_year(self.sim.date,
-                                                         df_alive.loc[person_id,
-                                                                      f'{prefix}_start_of_high_infection'])
-                df_alive.loc[person_id, f'{prefix}_high_inf_days_this_year'] += high_inf_duration
+            # still infected
+            condition, duration = self.days_in_year(df, f'{prefix}_start_of_prevalent_period', self.sim.date)
+            df.loc[condition, f'{prefix}_prevalent_days_this_year'] += duration
+
+            # still high infected
+            condition, duration = self.days_in_year(df, f'{prefix}_start_of_high_infection', self.sim.date)
+            df.loc[condition, f'{prefix}_high_inf_days_this_year'] += duration
 
             for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
-                count_states = self.count_prev_years_age(prefix, df_alive, age_group)
+                count_states = self.count_prev_years_age(prefix, df, age_group)
                 log_string = '%s|' + age_group + '_PrevalentYears' + '|%s'
                 logger.info(log_string, self.sim.date.date(),
                             {
@@ -1260,18 +1253,23 @@ class SchistoPrevalentDaysLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             })
 
             # clear so that it's ready for next year
-            df[f'{prefix}_prevalent_days_this_year'] = 0
-            df[f'{prefix}_high_inf_days_this_year'] = 0
+            df.loc[df.is_alive, f'{prefix}_prevalent_days_this_year'] = 0
+            df.loc[df.is_alive, f'{prefix}_high_inf_days_this_year'] = 0
 
-    def count_prev_years_age(self, prefix, df_age, age):
+    def days_in_year(self, df, dt_column, end_date):
+        condition = df.is_alive & (~df[dt_column].isna())
+        duration_start = df.loc[condition, dt_column].where(df[dt_column].dt.year == end_date.year,
+                                                            Date(end_date.year, 1, 1))
+        duration = end_date - duration_start
+        return condition, duration.dt.days
+
+    def count_prev_years_age(self, prefix, df, age):
         # sum up for each age_group
         age_range = map_age_groups(age)  # returns a tuple
-        idx = df_age.index[df_age['age_years'].between(age_range[0], age_range[1])]
-        Tot_pop_alive = len(idx)
-        Prevalent_years_this_year_total = \
-            df_age.loc[idx, f'{prefix}_prevalent_days_this_year'].values.sum() / 365  # get years only
-        High_infection_years_this_year_total = \
-            df_age.loc[idx, f'{prefix}_high_inf_days_this_year'].values.sum() / 365
+        cond = df.is_alive & df['age_years'].between(age_range[0], age_range[1])
+        Tot_pop_alive = sum(cond)
+        Prevalent_years_this_year_total = df.loc[cond, f'{prefix}_prevalent_days_this_year'].values.sum() / 365
+        High_infection_years_this_year_total = df.loc[cond, f'{prefix}_high_inf_days_this_year'].values.sum() / 365
         Prevalent_years_per_100 = Prevalent_years_this_year_total * 100 / Tot_pop_alive
         High_infection_years_per_100 = High_infection_years_this_year_total * 100 / Tot_pop_alive
         count_states = {'Prevalent_years_this_year_total': Prevalent_years_this_year_total,
