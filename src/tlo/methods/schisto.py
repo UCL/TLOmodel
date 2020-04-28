@@ -54,8 +54,7 @@ def add_elements(el1, el2):
     """
     if isinstance(el1, list):
         return el1 + el2
-    else:
-        return el2
+    return el2
 
 # ---------------------------------------------------------------------------------------------------------
 #   functions common to both schisto modules
@@ -739,7 +738,7 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
 
         # harbouring new worms
         contact_rates = age_group.map(beta_by_age_group)
-        harbouring_rates = df.loc[where,  f'{prefix}_harbouring_rate']
+        harbouring_rates = df.loc[where, f'{prefix}_harbouring_rate']
         rates = harbouring_rates * contact_rates
         worms_total = reservoir * R0
         draw_worms = pd.Series(self.module.rng.poisson(df.loc[where, 'district_of_residence'].map(worms_total) * rates),
@@ -748,7 +747,8 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         # density dependent establishment
         param_worm_fecundity = params['worms_fecundity']
         established = self.module.rng.random_sample(size=sum(where)) < np.exp(
-            df.loc[where,  f'{prefix}_aggregate_worm_burden'] * -param_worm_fecundity)
+            df.loc[where, f'{prefix}_aggregate_worm_burden'] * -param_worm_fecundity
+        )
         to_establish = pd.DataFrame({'new_worms': draw_worms[(draw_worms > 0) & established]})
 
         # schedule maturation of the established worms
@@ -927,7 +927,7 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
             return
 
         for prefix in prefixes:
-            if df.loc[person_id,  f'{prefix}_infection_status'] != 'Non-infected':
+            if df.loc[person_id, f'{prefix}_infection_status'] != 'Non-infected':
 
                 # check if they experienced symptoms, and if yes, treat them
                 df.loc[person_id, f'{prefix}_symptoms'] = np.nan
