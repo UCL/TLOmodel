@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -118,16 +118,16 @@ def test_epi_scheduling_hsi_events(tmpdir):
     ep_out = output["tlo.methods.epi"]["ep_vaccine_coverage"]
 
     # check vaccine coverage is above 0 for all vaccine types
-    assert not (ep_out.epBcgCoverage > 0).all()
-    assert not (ep_out.epDtp3Coverage > 0).all()
-    assert not (ep_out.epOpv3Coverage > 0).all()
-    assert not (ep_out.epHib3Coverage > 0).all()
-    assert not (ep_out.epHep3Coverage > 0).all()
-    assert not (ep_out.epPneumo3Coverage > 0).all()
-    assert not (ep_out.epRota2Coverage > 0).all()
-    assert not (ep_out.epMeaslesCoverage > 0).all()
-    assert not (ep_out.epRubellaCoverage > 0).all()
-    assert not (ep_out.epHpvCoverage > 0).all()
+    assert (ep_out.epBcgCoverage > 0).any()
+    assert (ep_out.epDtp3Coverage > 0).any()
+    assert (ep_out.epOpv3Coverage > 0).any()
+    assert (ep_out.epHib3Coverage > 0).any()
+    assert (ep_out.epHep3Coverage > 0).any()
+    assert (ep_out.epPneumo3Coverage > 0).any()
+    assert (ep_out.epRota2Coverage > 0).any()
+    assert (ep_out.epMeaslesCoverage > 0).any()
+    assert (ep_out.epRubellaCoverage > 0).any()
+    assert (ep_out.epHpvCoverage > 0).any()
 
     # check only 3 doses max of dtp/pneumo
     assert (df.ep_dtp <= 3).all()

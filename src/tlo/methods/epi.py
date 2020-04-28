@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from datetime import datetime
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import (
@@ -167,9 +168,9 @@ class Epi(Module):
     def initialise_simulation(self, sim):
 
         # add an event to log to screen
-        sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(years=1))
         # HPV vaccine given from 2018 onwards
-        sim.schedule_event(HpvScheduleEvent(self), sim.date + DateOffset(years=8))
+        sim.schedule_event(HpvScheduleEvent(self), pd.to_datetime("2018/01/01", format="%Y/%m/%d"))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
