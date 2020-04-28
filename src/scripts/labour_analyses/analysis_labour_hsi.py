@@ -3,7 +3,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -130,4 +130,3 @@ plt.show()
 # Met need? (by signal function)
 # Crude number of each signal function/intervention?
 # Number of women who are sent home to deliver because higher squeeze threshold is applied
-

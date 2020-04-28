@@ -1,12 +1,9 @@
 import os
-import pandas as pd
 import datetime
 from pathlib import Path
 
-import pytest
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -87,8 +84,6 @@ def test_run_health_system_events_wont_run():
                                            service_availability=['*'],
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2))
-
-
     sim.seed_rngs(0)
 
     # Run the simulation

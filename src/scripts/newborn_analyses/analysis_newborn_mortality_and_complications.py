@@ -3,15 +3,14 @@
 import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
-    pregnancy_supervisor, antenatal_care, \
-    healthburden
+    pregnancy_supervisor, antenatal_care
+
 
 # %%
 outputpath = Path("./outputs")
@@ -52,4 +51,3 @@ output = parse_log_file(logfile)
 stats = output['tlo.methods.newborn_outcomes']['summary_stats']
 stats['date'] = pd.to_datetime(stats['date'])
 stats['year'] = stats['date'].dt.year
-

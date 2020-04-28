@@ -397,7 +397,7 @@ class NewbornOutcomes(Module):
             mild_pre_eclampsia = df.at[mother_id, 'ps_mild_pre_eclamp']
             severe_pre_eclampsia = df.at[mother_id, 'ps_severe_pre_eclamp']
 
-            return self.rng.random_sample(size=1) < eq.predict(person, # mother_obstructed_labour=obstructed_labour,
+            return self.rng.random_sample(size=1) < eq.predict(person,  # mother_obstructed_labour=obstructed_labour,
                                                                mother_gestational_htn=gestational_htn,
                                                                mother_mild_pre_eclamp=mild_pre_eclampsia,
                                                                mother_severe_pre_eclamp=severe_pre_eclampsia)[person_id]
@@ -431,7 +431,7 @@ class NewbornOutcomes(Module):
         # We randomly draw this newborns weight from a normal distribution around the mean for their gestation
         birth_weight = np.random.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=20)
         birth_weight_distribution = np.random.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location],
-                                                     scale=20, size=10000) 
+                                                     scale=20, size=10000)
         # TODO: Unsure what value to use for the size parameter of the ND random draw, number of newborns of that
         #  gestation born on average per year?
 
@@ -568,7 +568,7 @@ class NewbornOutcomes(Module):
                     self.NewbornComplicationTracker['neonatal_sepsis'] += 1
 
                     logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
-                            child_id, self.sim.date)
+                                child_id, self.sim.date)
 
             # ---------------------------------------- ENCEPHALOPATHY.... --------------------------------------------
             # Term neonates then have a risk of encephalopathy applied
@@ -801,7 +801,7 @@ class NewbornDisabilityEvent(Event, IndividualScopeEventMixin):
         if child.is_alive:
             # Neonates who dont develop any complications do not accrue any DALYs
             if ~child.nb_early_preterm and ~child.nb_late_preterm and child.nb_encephalopathy \
-            == 'none' and ~child.nb_early_onset_neonatal_sepsis and ~child.nb_failed_to_transition:
+             == 'none' and ~child.nb_early_onset_neonatal_sepsis and ~child.nb_failed_to_transition:
                 logger.debug('This is NewbornDisabilityEvent, person %d has not accrued any DALYs following delivery',
                              individual_id)
             else:
@@ -856,8 +856,7 @@ class NewbornDiseaseResetEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
+        print(individual_id)
 
         # TODO: Is an event like this needed for this module, depends on how we're logging cases. Not all complications
         #  in this module resolve
@@ -978,8 +977,8 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         # This function manages kangaroo mother care for low birth weight neonates
         def kangaroo_mother_care(facility_type):
             # We determine if staff will correctly identify if the neonate is low birth weight, and then initiate KMC
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_low_birth_weight_'
-            f'{facility_type}', hsi_event=self):
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+             dx_tests_to_run=f'assess_low_birth_weight_{facility_type}', hsi_event=self):
                 df.at[person_id, 'nb_kangaroo_mother_care'] = True
                 self.module.NewbornComplicationTracker['kmc'] += 1
 
@@ -1000,20 +999,19 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         # This function manages initiation of neonatal resuscitation
         def assessment_and_initiation_of_neonatal_resus(facility_type):
             # Required consumables are defined
-            pkg_code_resus = pd.unique(consumables.loc[consumables[
-                                                         'Intervention_Pkg'] == 'Neonatal resuscitation '
-                                                                                '(institutional)',
-                                                       'Intervention_Pkg_Code'])[0]
+            # pkg_code_resus = pd.unique(consumables.loc[consumables[
+            #                                             'Intervention_Pkg'] == 'Neonatal resuscitation '
+            #                                                                    '(institutional)',
+            #                                           'Intervention_Pkg_Code'])[0]
 
-            consumables_needed = {'Intervention_Package_Code': {pkg_code_resus: 1}, 'Item_Code': {}}
+            # consumables_needed = {'Intervention_Package_Code': {pkg_code_resus: 1}, 'Item_Code': {}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #   hsi_event=self, cons_req_as_footprint=consumables_needed)
 
             # We determine if staff will correctly identify this neonate will require resuscitation
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
-                                                                           f'assess_failure_to_transition_'
-                                                                           f'{facility_type}', hsi_event=self):
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+              dx_tests_to_run=f'assess_failure_to_transition_{facility_type}', hsi_event=self):
 
                 # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
                 # deliveries that are not attended
@@ -1035,26 +1033,26 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         # This function manages the assessment and treatment of neonatal sepsis, and follows the same structure as
         # resuscitation
         def assessment_and_treatment_newborn_sepsis(facility_type):
-            pkg_code_sep = pd.unique(consumables.loc[consumables[
-                                                         'Intervention_Pkg'] == 'Newborn sepsis - full supportive care',
-                                                     'Intervention_Pkg_Code'])[0]
+            # pkg_code_sep = pd.unique(consumables.loc[consumables[
+            #                                             'Intervention_Pkg'] == 'Newborn sepsis - full supportive
+            #                                             care',
+            #                                         'Intervention_Pkg_Code'])[0]
 
-            consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
+            # consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed)
+            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            #     hsi_event=self, cons_req_as_footprint=consumables_needed)
 
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_neonatal_sepsis_'
-                   f'{facility_type}', hsi_event=self):
-                    # TODO: as above
-                    #if outcome_of_request_for_consumables:
-                    if nci[person_id]['delivery_attended']:
-                            df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'prompt_treatment'
-                            self.module.NewbornComplicationTracker['sep_treatment'] += 1
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+              dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=self):
+                #  if outcome_of_request_for_consumables:
+                if nci[person_id]['delivery_attended']:
+                    df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'prompt_treatment'
+                    self.module.NewbornComplicationTracker['sep_treatment'] += 1
 
-                    else:
-                        df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'delayed_treatment'
-                        self.module.NewbornComplicationTracker['sep_treatment'] += 1
+                else:
+                    df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'delayed_treatment'
+                    self.module.NewbornComplicationTracker['sep_treatment'] += 1
 
         if nci[person_id]['delivery_setting'] == 'health_centre':
             assessment_and_treatment_newborn_sepsis('hc')
@@ -1062,6 +1060,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
             assessment_and_treatment_newborn_sepsis('hp')
 
         # ------------------------------ (To go here- referral for further care) ---------------------------------------
+
 
 class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2(HSI_Event, IndividualScopeEventMixin):
     """This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2. This event is scheduled by
@@ -1125,6 +1124,9 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.to_datetime(df['date_of_birth'])
         yearly_births = len(dfx.index[dfx.dt.year == self.sim.date.year])
 
+        if yearly_births == 0:
+            yearly_births = 1
+
         newborn_deaths = len(df.index[df.nb_death_after_birth & (df.nb_death_after_birth_date > one_year_prior) &
                                       (df.nb_death_after_birth_date < self.sim.date)])
 
@@ -1158,24 +1160,23 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sepsis_treatment = self.module.NewbornComplicationTracker['sep_treatment']
         resus = self.module.NewbornComplicationTracker['resus']
-        tetra_cycline = self.module.NewbornComplicationTracker['t_e_d']
+    #    tetra_cycline = self.module.NewbornComplicationTracker['t_e_d']
 
         dict_for_output = {'neonatal_deaths': newborn_deaths,
-                           'checker_deaths':death,
-                           'sepsis_deaths_crude':sepsis_death,
-                           'ftt_deaths_crude':ftt_death,
-                           'preterm_deaths':preterm_death,
+                           'checker_deaths': death,
+                           'sepsis_deaths_crude': sepsis_death,
+                           'ftt_deaths_crude': ftt_death,
+                           'preterm_deaths': preterm_death,
                            'nmr_early': newborn_deaths/yearly_births * 1000,
                            'early_preterm_births': early_preterm_births,
                            'late_preterm_births': late_preterm_births,
                            'total_preterm_births': total_preterm_births,
-                           'tptb_incidence':total_preterm_births/yearly_births *100,
+                           'tptb_incidence': total_preterm_births/yearly_births * 100,
                            'low_birth_weight': low_birth_weight / yearly_births * 100,
                            'small_for_gestational_age': small_for_gestational_age / yearly_births * 100,
                            'sepsis_crude': sepsis,
                            'sepsis_incidence': sepsis / yearly_births * 100,
-                           'sepsis_treatment_crude': sepsis_treatment,
-                           'sepsis_treatment_rate': sepsis_treatment/sepsis * 100,
+                           'seps is_treatment_crude': sepsis_treatment,
                            'mild_enceph_incidence': mild_enceph / yearly_births * 100,
                            'mod_enceph_incidence': mod_enceph / yearly_births * 100,
                            'severe_enceph_incidence': severe_enceph / yearly_births * 100,
@@ -1183,7 +1184,7 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'ftt_crude': ftt,
                            'ftt_incidence': ftt / yearly_births * 100,
                            'resus_crude': resus,
-                           'resus_rate': resus / ftt * 100,
+                           # 'resus_rate': resus / ftt * 100,
                            }
         # TODO: health system outputs, check denominators
 
@@ -1204,4 +1205,3 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                            'neonatal_sepsis_death': 0,
                                            'preterm_birth_death': 0,
                                            }
-

@@ -1,9 +1,7 @@
-from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
@@ -53,9 +51,9 @@ class PregnancySupervisor(Module):
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
                                                   'during a previous pregnancy'),
         'ps_premature_rupture_of_membranes': Property(Types.BOOL, 'whether this woman has experience rupture of '
-                                                                  'membranes before the onset of labour. If this is <37 '
-                                                                  'weeks from gestation the woman has preterm premature '
-                                                                  'rupture of membranes'),
+                                                                  'membranes before the onset of labour. If this is '
+                                                                  '<37 weeks from gestation the woman has preterm '
+                                                                  'premature rupture of membranes'),
     }
 
     def read_parameters(self, data_folder):
