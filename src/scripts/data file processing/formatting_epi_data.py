@@ -80,7 +80,7 @@ for i in np.arange(0, len(map_districts)):
 len(epi_formatted['District'].unique())
 print(epi_formatted['District'].unique())
 
-epi_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_EPI_summary_formatted.csv')
+epi_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_EPI_vaccine_coverage.csv')
 
 
 

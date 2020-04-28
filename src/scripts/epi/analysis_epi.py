@@ -27,7 +27,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
+end_date = Date(2015, 12, 31)
 popsize = 500
 
 # Establish the simulation object
@@ -80,9 +80,9 @@ model_date = model_date.apply(lambda x: x.year)
 
 # ------------------------------------- DATA  ------------------------------------- #
 # import vaccine coverage data
-coverage_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_EPI.xlsx", sheet_name="WHO_Estimates",
-)
+coverage_data = pd.read_csv(
+            Path(resourcefilepath) / "ResourceFile_EPI_WHO_estimates.csv"
+        )
 
 # select years included in simulation
 # end_date +1 to get the final value
