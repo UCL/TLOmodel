@@ -36,8 +36,7 @@ class Epi(Module):
         "ep_hib": Property(Types.INT, "number of doses of Hib vaccine received"),
         "ep_hep": Property(Types.INT, "number of doses of HepB vaccine received"),
         "ep_pneumo": Property(
-            Types.INT, "number of doses of pneumococcal vaccine received"
-        ),
+            Types.INT, "number of doses of pneumococcal vaccine received"),
         "ep_rota": Property(Types.INT, "number of doses of rotavirus vaccine received"),
         "ep_measles": Property(Types.INT, "number of doses of measles vaccine received"),
         "ep_rubella": Property(Types.INT, "number of doses of rubella vaccine received"),
@@ -730,13 +729,13 @@ class HSI_bcg(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        if df.at[person_id, "ep_bcg"] == False:
+        if not df.at[person_id, "ep_bcg"]:
 
             # Make request for some consumables
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
             item_code1 = pd.unique(
-                consumables.loc[consumables["Items"] == "BCG vaccine", "Item_Code",]
+                consumables.loc[consumables["Items"] == "BCG vaccine", "Item_Code"]
             )[0]
 
             item_code2 = pd.unique(
