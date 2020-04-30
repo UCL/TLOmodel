@@ -5,11 +5,11 @@ specification for parameters and properties, and the base Module class for
 disease modules.
 """
 import json
+import typing
 from enum import Enum, auto
 
 import numpy as np
 import pandas as pd
-import typing
 
 
 class Types(Enum):
