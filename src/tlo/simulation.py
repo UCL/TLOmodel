@@ -95,21 +95,25 @@ class Simulation:
             module.sim = self
             module.read_parameters('')  # TODO: Use a proper data_folder - or remove the 'data_folder' as not used
 
-    def seed_rngs(self, seed):
+    def seed_rngs(self, seed=None):
         """Seed the random number generator (RNG) for the Simulation instance and registered modules
 
         The Simulation instance has its RNG seeded with the supplied value. Each module has its own
         RNG with its own state, which is seeded using a random integer drawn from the (newly seeded)
         Simulation RNG
 
-        :param seed: the seed for the Simulation RNG
+        :param seed: the seed for the Simulation RNG. If seed is not provided, a random seed will be
+            used.
         """
-        self.rng.seed(seed)
+        if not seed:
+            seed = np.random.randint(2 ** 31 - 1)
+
         logger.info("Simulation RNG user seed %d", seed)
+        self.rng.seed(seed)
         for module in self.modules.values():
             module_seed = self.rng.randint(2 ** 31 - 1)
             logger.info("%s RNG auto seed %d", module.name, module_seed)
-            module.rng.seed(module_seed)
+            module.rng = np.random.RandomState(module_seed)
 
     def make_initial_population(self, *, n):
         """Create the initial population to simulate.

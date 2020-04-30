@@ -9,6 +9,7 @@ from enum import Enum, auto
 
 import numpy as np
 import pandas as pd
+import typing
 
 
 class Types(Enum):
@@ -187,7 +188,7 @@ class Module:
         :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
         self.parameters = {}
-        self.rng = np.random.RandomState()
+        self.rng: typing.Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
         self.sim = None
 
