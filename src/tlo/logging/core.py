@@ -117,20 +117,21 @@ class Logger:
         :param description: description of this log type
         """
         # message level less than than the logger level, early exit
-        if eval(level) < self._std_logger.level:
+        if level < self._std_logger.level:
             return
 
         data = self._convert_log_data(data)
         tlo_logger = getLogger('tlo')
         # create record to allow for handler filtering
         record = FilterRecord(self.name)
+        levelname = _logging.getLevelName(level)
 
         header = {}
         if key not in self.keys:
             # new log key, so create header json row
             self.keys.add(key)
             header = {"type": "header",
-                      "level": level,
+                      "level": levelname,
                       "module": self.name,
                       "key": key,
                       # using type().__name__ so both pandas and stdlib types can be used
@@ -178,7 +179,7 @@ class Logger:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.critical(msg, *args, **kwargs)
         else:
-            self._try_log_message(level="CRITICAL", key=key, data=data, description=description)
+            self._try_log_message(level=_logging.CRITICAL, key=key, data=data, description=description)
 
     def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
               description=None, **kwargs):
@@ -187,7 +188,7 @@ class Logger:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.debug(msg, *args, **kwargs)
         else:
-            self._try_log_message(level="DEBUG", key=key, data=data, description=description)
+            self._try_log_message(level=_logging.DEBUG, key=key, data=data, description=description)
 
     def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
              description=None, **kwargs):
@@ -196,7 +197,7 @@ class Logger:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.info(msg, *args, **kwargs)
         else:
-            self._try_log_message(level="INFO", key=key, data=data, description=description)
+            self._try_log_message(level=_logging.INFO, key=key, data=data, description=description)
 
     def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                 description=None, **kwargs):
@@ -205,7 +206,7 @@ class Logger:
             self._mixed_logging_check(is_structured=False)
             self._std_logger.warning(msg, *args, **kwargs)
         else:
-            self._try_log_message(level="WARNING", key=key, data=data, description=description)
+            self._try_log_message(level=_logging.WARNING, key=key, data=data, description=description)
 
     def removeFilter(self, fltr):
         self._std_logger.removeFilter(fltr)
