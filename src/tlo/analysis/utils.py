@@ -6,7 +6,7 @@ from ast import literal_eval
 import pandas as pd
 
 from tlo import logging, util
-from tlo.logging.reader import LogData, LogRow
+from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
@@ -80,8 +80,7 @@ def parse_log_file(filepath, level="INFO"):
         for line in log_file:
             # only parse json entities
             if line.startswith('{'):
-                packet = LogRow(line)
-                log_data.parse_log_row(packet, level)
+                log_data.parse_log_line(line, level)
             else:
                 oldstyle_loglines.append(line)
 

@@ -68,7 +68,7 @@ class Simulation:
         """
         # clear logging environment
         logging.init_logging()
-        logging.inject_into_logger(self)
+        logging.set_simulation(self)
 
         if custom_levels:
             if not self.modules:

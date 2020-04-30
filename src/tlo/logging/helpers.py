@@ -47,7 +47,7 @@ def init_logging():
     _logging.basicConfig(level=_logging.WARNING)
 
 
-def inject_into_logger(simulation):
+def set_simulation(simulation):
     """
     Inject simulation into logger for structured logging, called by the simulation
     :param simulation:
