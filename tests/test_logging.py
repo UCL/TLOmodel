@@ -127,6 +127,9 @@ class TestStdLibLogging:
         # messages should not be written to log
         assert [] == lines
 
+        # enable logging again
+        logging.disable(0)
+
 
 class TestStructuredLogging:
     @pytest.mark.parametrize("message_level", ["logging.DEBUG", "logging.INFO", "logging.WARNING", "logging.CRITICAL"])
@@ -205,6 +208,7 @@ class TestConvertLogData:
 def test_mixed_logging():
     """Logging with both oldstyle and structured logging should raise an error"""
     logger = logging.getLogger('tlo.test.logger')
+    logger.setLevel(logging.INFO)
     with pytest.raises(ValueError):
         logger.info("stdlib method")
         logger.info(key="structured", data={"key": 10})

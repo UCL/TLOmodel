@@ -19,13 +19,6 @@ def getLogger(name='tlo'):
     return _LOGGERS[name]
 
 
-class FilterRecord:
-    """Class to allow stdlib handler filtering"""
-    def __init__(self, name):
-        self.name = name
-        self.nlen = len(name)
-
-
 class Logger:
     """
     TLO logging facade so that logging can be intercepted and customised
@@ -49,7 +42,7 @@ class Logger:
         self.logged_structured = False
 
     def __repr__(self):
-        return f'<tlo Logger containing {self._std_logger}>'
+        return f'<TLO Logger containing {self._std_logger}>'
 
     @property
     def handlers(self):
@@ -61,16 +54,6 @@ class Logger:
         for handler in handlers:
             self._std_logger.handlers.append(handler)
 
-    @property
-    def filters(self):
-        return self._std_logger.filters
-
-    @filters.setter
-    def filters(self, filters):
-        self._std_logger.filters.clear()
-        for filter in filters:
-            self._std_logger.filters.append(filter)
-
     def addHandler(self, hdlr):
         self._std_logger.addHandler(hdlr=hdlr)
 
@@ -78,7 +61,6 @@ class Logger:
         """Reset logger attributes to an unset state"""
         # clear all logger settings
         self.handlers.clear()
-        self.filters.clear()
         self.keys.clear()
         self.simulation = None
         # boolean attributes used for now, can be removed after transition to structured logging
@@ -121,17 +103,13 @@ class Logger:
             return
 
         data = self._convert_log_data(data)
-        tlo_logger = getLogger('tlo')
-        # create record to allow for handler filtering
-        record = FilterRecord(self.name)
-        levelname = _logging.getLevelName(level)
 
         header = {}
         if key not in self.keys:
             # new log key, so create header json row
             self.keys.add(key)
             header = {"type": "header",
-                      "level": levelname,
+                      "level": _logging.getLevelName(level),
                       "module": self.name,
                       "key": key,
                       # using type().__name__ so both pandas and stdlib types can be used
@@ -141,17 +119,17 @@ class Logger:
         # create data json row
         row = {"type": "data",
                "module": self.name, "key": key,
-               "date": tlo_logger.simulation.date.isoformat(),
+               "date": getLogger('tlo').simulation.date.isoformat(),
                "values": list(data.values())}
 
-        # for each handler, write json data if allowed
-        for handler in tlo_logger.handlers:
-            if handler.filter(record):
-                if header:
-                    json.dump(header, handler.stream)
-                    handler.stream.write(handler.terminator)
-                json.dump(row, handler.stream, cls=encoding.PandasEncoder)
-                handler.stream.write(handler.terminator)
+        out = ""
+        if header:
+            out = json.dumps(header) + "\n"
+        out += json.dumps(row, cls=encoding.PandasEncoder)
+        return out
+
+    def _make_old_style_msg(self, level, msg):
+        return '%s|%s|%s' % (level, self.name, msg)
 
     def _mixed_logging_check(self, is_structured: bool):
         """Set booleans for logging type and throw exception if both types of logging haven't been used"""
@@ -168,51 +146,53 @@ class Logger:
         """Log strucured message, if key or data are None, then throw exception"""
         if key and data:
             self._mixed_logging_check(is_structured=True)
-            self._log_message(level=level, key=key, data=data, description=description)
+            return self._log_message(level=level, key=key, data=data, description=description)
         else:
             raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
 
     def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                  description=None, **kwargs):
-        # std logger branch can be removed once transition is completed
-        if msg or msg == []:
-            self._mixed_logging_check(is_structured=False)
-            self._std_logger.critical(msg, *args, **kwargs)
-        else:
-            self._try_log_message(level=_logging.CRITICAL, key=key, data=data, description=description)
+        if self._std_logger.isEnabledFor(CRITICAL):
+            # std logger branch can be removed once transition is completed
+            if msg or msg == []:
+                self._mixed_logging_check(is_structured=False)
+                self._std_logger.critical(self._make_old_style_msg('CRITICAL', msg), *args, **kwargs)
+            else:
+                msg = self._try_log_message(level=CRITICAL, key=key, data=data, description=description)
+                self._std_logger.critical(msg)
 
     def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
               description=None, **kwargs):
-        # std logger branch can be removed once transition is completed
-        if msg or msg == []:
-            self._mixed_logging_check(is_structured=False)
-            self._std_logger.debug(msg, *args, **kwargs)
-        else:
-            self._try_log_message(level=_logging.DEBUG, key=key, data=data, description=description)
+        if self._std_logger.isEnabledFor(DEBUG):
+            # std logger branch can be removed once transition is completed
+            if msg or msg == []:
+                self._mixed_logging_check(is_structured=False)
+                self._std_logger.debug(self._make_old_style_msg('DEBUG', msg), *args, **kwargs)
+            else:
+                msg = self._try_log_message(level=DEBUG, key=key, data=data, description=description)
+                self._std_logger.debug(msg)
 
     def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
              description=None, **kwargs):
-        # std logger branch can be removed once transition is completed
-        if msg or msg == []:
-            self._mixed_logging_check(is_structured=False)
-            self._std_logger.info(msg, *args, **kwargs)
-        else:
-            self._try_log_message(level=_logging.INFO, key=key, data=data, description=description)
+        if self._std_logger.isEnabledFor(INFO):
+            # std logger branch can be removed once transition is completed
+            if msg or msg == []:
+                self._mixed_logging_check(is_structured=False)
+                self._std_logger.info(self._make_old_style_msg('INFO', msg), *args, **kwargs)
+            else:
+                msg = self._try_log_message(level=INFO, key=key, data=data, description=description)
+                self._std_logger.info(msg)
 
     def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                 description=None, **kwargs):
-        # std logger branch can be removed once transition is completed
-        if msg or msg == []:
-            self._mixed_logging_check(is_structured=False)
-            self._std_logger.warning(msg, *args, **kwargs)
-        else:
-            self._try_log_message(level=_logging.WARNING, key=key, data=data, description=description)
-
-    def removeFilter(self, fltr):
-        self._std_logger.removeFilter(fltr)
-
-    def removeHandler(self, hdlr):
-        self._std_logger.removeHandler(hdlr)
+        if self._std_logger.isEnabledFor(WARNING):
+            # std logger branch can be removed once transition is completed
+            if msg or msg == []:
+                self._mixed_logging_check(is_structured=False)
+                self._std_logger.warning(self._make_old_style_msg('WARNING', msg), *args, **kwargs)
+            else:
+                msg = self._try_log_message(level=WARNING, key=key, data=data, description=description)
+                self._std_logger.warning(msg)
 
 
 CRITICAL = _logging.CRITICAL
@@ -221,5 +201,5 @@ FATAL = _logging.FATAL
 INFO = _logging.INFO
 WARNING = _logging.WARNING
 
-_FORMATTER = _logging.Formatter('%(levelname)s|%(name)s|%(message)s')
+_FORMATTER = _logging.Formatter('%(message)s')
 _LOGGERS = {'tlo': Logger('tlo', WARNING)}
