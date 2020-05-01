@@ -147,8 +147,7 @@ class Logger:
         if key and data:
             self._mixed_logging_check(is_structured=True)
             return self._log_message(level=level, key=key, data=data, description=description)
-        else:
-            raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
+        raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
 
     def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
                  description=None, **kwargs):
