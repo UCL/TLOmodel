@@ -1,5 +1,8 @@
+import collections
 import os
 from pathlib import Path
+
+import pytest
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
@@ -26,64 +29,80 @@ except NameError:
     # running interactively
     resourcefilepath = Path('./resources')
 
-# Establish the simulation object
-sim = Simulation(start_date=Date(year=2010, month=1, day=1))
+@pytest.fixture(scope='module')
+def bundle():
+    Bundle = collections.namedtuple('Bundle',
+                                    ['simulation',
+                                     'cons_req_as_footprint_for_consumable_that_is_not_available',
+                                     'cons_req_as_footprint_for_consumable_that_is_available',
+                                     'hsi_event',
+                                     'item_code_for_consumable_that_is_not_available',
+                                     'item_code_for_consumable_that_is_available'])
+    # Establish the simulation object
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
-# Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(mockitis.Mockitis())
-sim.register(chronicsyndrome.ChronicSyndrome())
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
 
-# Run the simulation and flush the logger
-sim.seed_rngs(0)
-sim.make_initial_population(n=2000)
-sim.simulate(end_date=Date(year=2010, month=1, day=31))
-
-
-# Create a dummy HSI event from which the use of diagnostics can be tested
-class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        self.TREATMENT_ID = 'Dummy'
-        self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
-        self.ACCEPTED_FACILITY_LEVEL = 0
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        pass
+    # Run the simulation and flush the logger
+    sim.seed_rngs(0)
+    sim.make_initial_population(n=2000)
+    sim.simulate(end_date=Date(year=2010, month=1, day=31))
 
 
-hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=-99)
+    # Create a dummy HSI event from which the use of diagnostics can be tested
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = sim.modules['HealthSystem'].get_blank_appt_footprint()
+            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ALERT_OTHER_DISEASES = []
 
-# Create consumable codes that are always and never available
-cons = sim.modules['HealthSystem'].cons_item_code_availability_today
-item_code_for_consumable_that_is_not_available = 0
-item_code_for_consumable_that_is_available = 1
+        def apply(self, person_id, squeeze_factor):
+                                                       pass
 
-cons.loc[item_code_for_consumable_that_is_not_available, cons.columns] = False
-cons.loc[item_code_for_consumable_that_is_available, cons.columns] = True
 
-assert sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
-    item_code_for_consumable_that_is_available].all()
-assert not sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
-    item_code_for_consumable_that_is_not_available].any()
+    hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=-99)
 
-cons_req_as_footprint_for_consumable_that_is_not_available = consumables_needed = {
-    'Intervention_Package_Code': {},
-    'Item_Code': {item_code_for_consumable_that_is_not_available: 1},
-}
+    # Create consumable codes that are always and never available
+    cons = sim.modules['HealthSystem'].cons_item_code_availability_today
+    item_code_for_consumable_that_is_not_available = 0
+    item_code_for_consumable_that_is_available = 1
 
-cons_req_as_footprint_for_consumable_that_is_available = consumables_needed = {
-    'Intervention_Package_Code': {},
-    'Item_Code': {item_code_for_consumable_that_is_available: 1},
-}
+    cons.loc[item_code_for_consumable_that_is_not_available, cons.columns] = False
+    cons.loc[item_code_for_consumable_that_is_available, cons.columns] = True
+
+    assert sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
+        item_code_for_consumable_that_is_available].all()
+    assert not sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
+        item_code_for_consumable_that_is_not_available].any()
+
+    cons_req_as_footprint_for_consumable_that_is_not_available = consumables_needed = {
+        'Intervention_Package_Code': {},
+        'Item_Code': {item_code_for_consumable_that_is_not_available: 1},
+    }
+
+    cons_req_as_footprint_for_consumable_that_is_available = consumables_needed = {
+        'Intervention_Package_Code': {},
+        'Item_Code': {item_code_for_consumable_that_is_available: 1},
+    }
+
+    return Bundle(sim,
+                  cons_req_as_footprint_for_consumable_that_is_not_available,
+                  cons_req_as_footprint_for_consumable_that_is_available,
+                  hsi_event,
+                  item_code_for_consumable_that_is_not_available,
+                  item_code_for_consumable_that_is_available)
 
 
 # --------------------------------------------------------------------------
@@ -101,7 +120,9 @@ def test_create_dx_test():
     assert isinstance(hashed, int)
 
 
-def test_create_dx_test_and_register():
+def test_create_dx_test_and_register(bundle):
+    simulation = bundle.simulation
+
     my_test1 = DxTest(
         property='mi_status'
     )
@@ -110,7 +131,7 @@ def test_create_dx_test_and_register():
         property='cs_status'
     )
 
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager(simulation.modules['HealthSystem'])  # get new DxManager
 
     dx_manager.register_dx_test(
         my_test1=my_test1,
@@ -144,7 +165,10 @@ def test_create_dx_test_and_register():
     assert 3 == len(dx_manager.dx_tests)
 
 
-def test_create_duplicate_test_that_should_be_ignored():
+def test_create_duplicate_test_that_should_be_ignored(bundle):
+    simulation = bundle.simulation
+    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+
     my_test1_property_only = DxTest(
         property='mi_status'
     )
@@ -163,7 +187,7 @@ def test_create_duplicate_test_that_should_be_ignored():
 
     # Give the same test but under a different name: only name provided - should fail and not add test
     try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager = DxManager(simulation.modules['HealthSystem'])  # get new DxManager
         dx_manager.register_dx_test(
             my_test1=my_test1_property_only,
             my_test1_copy=my_test1_property_only
@@ -174,7 +198,7 @@ def test_create_duplicate_test_that_should_be_ignored():
 
     # Give the same test but under a different name: name and consumbales provided - should fail and not add test
     try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager = DxManager(simulation.modules['HealthSystem'])  # get new DxManager
         dx_manager.register_dx_test(
             my_test1=my_test1_property_and_consumable,
             my_test1_copy=my_test1_property_and_consumable
@@ -186,7 +210,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     # Give the same test but under a different name: name and consumbales provided and sens/spec provided:
     #       --- should fail and not add test
     try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager = DxManager(simulation.modules['HealthSystem'])  # get new DxManager
         dx_manager.register_dx_test(
             my_test1=my_test1_property_and_consumable_and_sensspec,
             my_test1_copy=my_test1_property_and_consumable_and_sensspec
@@ -198,7 +222,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     # Give duplicated list of tests under different name: only one should be added
     #       --- should throw error but add the one test
     try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+        dx_manager = DxManager(simulation.modules['HealthSystem'])  # get new DxManager
         dx_manager.register_dx_test(
             my_list_of_tests1=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only),
             my_list_of_tests1_copy=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only)
@@ -208,7 +232,7 @@ def test_create_duplicate_test_that_should_be_ignored():
     assert len(dx_manager.dx_tests) == 1
 
     # Give list of test that use the same test components but in different order: both should be added, no errors
-    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager = DxManager(simulation.modules['HealthSystem'])  # get new DxManager
     dx_manager.register_dx_test(
         my_list_of_tests1=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only),
         my_list_of_tests1_copy=(my_test1_property_only, my_test1_property_and_consumable_and_sensspec)
@@ -218,20 +242,23 @@ def test_create_duplicate_test_that_should_be_ignored():
     assert len(dx_manager.dx_tests) == 2
 
 
-def test_create_dx_test_and_run():
+def test_create_dx_test_and_run(bundle):
+    simulation = bundle.simulation
+    hsi_event = bundle.hsi_event
+
     # Create the test:
     my_test1 = DxTest(
         property='mi_status'
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager(simulation.modules['HealthSystem'])
 
     # Register DxTest with DxManager:
     dx_manager.register_dx_test(my_test1=my_test1)
 
     # Run it and check the result:
-    df = sim.population.props
+    df = simulation.population.props
     for person_id in df.loc[df.is_alive].index:
         hsi_event.target = person_id
         result_from_dx_manager = dx_manager.run_dx_test(
@@ -241,7 +268,7 @@ def test_create_dx_test_and_run():
         assert result_from_dx_manager == df.at[person_id, 'mi_status']
 
     # Run it and check the result - getting a dict returned rather than a single value
-    df = sim.population.props
+    df = simulation.population.props
     for person_id in df.loc[df.is_alive].index:
         hsi_event.target = person_id
         result_from_dx_manager = dx_manager.run_dx_test(
@@ -253,7 +280,12 @@ def test_create_dx_test_and_run():
         assert result_from_dx_manager['my_test1'] == df.at[person_id, 'mi_status']
 
 
-def test_create_dx_tests_with_consumable_usage():
+def test_create_dx_tests_with_consumable_usage(bundle):
+    simulation = bundle.simulation
+    cons_req_as_footprint_for_consumable_that_is_not_available = bundle.cons_req_as_footprint_for_consumable_that_is_not_available
+    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    hsi_event = bundle.hsi_event
+
     # Create the test:
     my_test1_not_available = DxTest(
         cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_not_available,
@@ -271,7 +303,7 @@ def test_create_dx_tests_with_consumable_usage():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager(simulation.modules['HealthSystem'])
 
     # Register the single and the compound tests with DxManager:
     dx_manager.register_dx_test(
@@ -299,7 +331,12 @@ def test_create_dx_tests_with_consumable_usage():
                                               )
 
 
-def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
+def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
+    simulation = bundle.simulation
+    hsi_event = bundle.hsi_event
+    item_code_for_consumable_that_is_not_available = bundle.item_code_for_consumable_that_is_not_available
+    item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available
+
     # Create the test:
     my_test1_not_available = DxTest(
         cons_req_as_item_code=item_code_for_consumable_that_is_not_available,
@@ -312,7 +349,7 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager(simulation.modules['HealthSystem'])
 
     # Register the single and the compound tests with DxManager:
     dx_manager.register_dx_test(
@@ -335,7 +372,9 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only():
                                               )
 
 
-def test_hash_from_footprint_and_hash_from_item_code():
+def test_hash_from_footprint_and_hash_from_item_code(bundle):
+    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available
     my_test_using_item_code = DxTest(
         cons_req_as_item_code=item_code_for_consumable_that_is_available,
         property='mi_status'
@@ -349,7 +388,10 @@ def test_hash_from_footprint_and_hash_from_item_code():
     assert hash(my_test_using_item_code) == hash(my_test_using_footprint)
 
 
-def test_run_batch_of_dx_test_in_one_call():
+def test_run_batch_of_dx_test_in_one_call(bundle):
+    simulation = bundle.simulation
+    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    hsi_event = bundle.hsi_event
     # Create the dx_test
     my_test1 = DxTest(
         cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_available,
@@ -362,7 +404,7 @@ def test_run_batch_of_dx_test_in_one_call():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager(simulation.modules['HealthSystem'])
 
     # Register compound tests with DxManager:
     dx_manager.register_dx_test(my_test1=my_test1, my_test2=my_test2)
@@ -376,12 +418,16 @@ def test_run_batch_of_dx_test_in_one_call():
     assert isinstance(result, dict)
     assert list(result.keys()) == ['my_test1', 'my_test2']
 
-    df = sim.population.props
+    df = simulation.population.props
     assert result['my_test1'] == df.at[person_id, 'mi_status']
     assert result['my_test2'] == df.at[person_id, 'cs_has_cs']
 
 
-def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution():
+def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution(bundle):
+    simulation = bundle.simulation
+    cons_req_as_footprint_for_consumable_that_is_not_available = bundle.cons_req_as_footprint_for_consumable_that_is_not_available
+    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    hsi_event = bundle.hsi_event
     # Create the tests:
     my_test1_not_available = DxTest(
         cons_req_as_footprint=cons_req_as_footprint_for_consumable_that_is_not_available,
@@ -394,7 +440,7 @@ def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager(simulation.modules['HealthSystem'])
 
     # Register tuple of tests with DxManager:
     dx_manager.register_dx_test(single_test_not_available=my_test1_not_available)
@@ -427,7 +473,7 @@ def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution():
         report_dxtest_tried=True
     )
     assert result is not None
-    assert result == sim.population.props.at[person_id, 'mi_status']
+    assert result == simulation.population.props.at[person_id, 'mi_status']
     assert len(tests_tried) == 2
     assert tests_tried[my_test1_not_available] is False
     assert tests_tried[my_test2_is_available] is True
@@ -439,15 +485,17 @@ def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution():
         report_dxtest_tried=True
     )
     assert result is not None
-    assert result, tests_tried == sim.population.props.at[person_id, 'mi_status']
+    assert result, tests_tried == simulation.population.props.at[person_id, 'mi_status']
     assert len(tests_tried) == 1
     assert tests_tried[my_test2_is_available] is True
     assert my_test1_not_available not in tests_tried
 
 
-def test_create_dx_test_and_run_with_imperfect_sensitivity():
+def test_create_dx_test_and_run_with_imperfect_sensitivity(bundle):
+    simulation = bundle.simulation
+    hsi_event = bundle.hsi_event
     # Create a property in the sim.population.props dataframe for testing
-    df = sim.population.props
+    df = simulation.population.props
     df['AllTrue'] = True
 
     # Create the tests and determine performance
@@ -459,7 +507,7 @@ def test_create_dx_test_and_run_with_imperfect_sensitivity():
         )
 
         # Register DxTest with DxManager:
-        dx_manager = DxManager(sim.modules['HealthSystem'])
+        dx_manager = DxManager(simulation.modules['HealthSystem'])
         dx_manager.register_dx_test(my_test=my_test)
 
         # Run it on all people and get a list of the results
@@ -488,9 +536,11 @@ def test_create_dx_test_and_run_with_imperfect_sensitivity():
     assert 0.0 < sum(results) < len(results)
 
 
-def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity():
+def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity(bundle):
+    simulation = bundle.simulation
+    hsi_event = bundle.hsi_event
     # Create a property in the sim.population.props dataframe for testing
-    df = sim.population.props
+    df = simulation.population.props
     df['AllFalse'] = False
 
     # Create the tests and determine performance
@@ -502,7 +552,7 @@ def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity():
         )
 
         # Register DxTest with DxManager:
-        dx_manager = DxManager(sim.modules['HealthSystem'])
+        dx_manager = DxManager(simulation.modules['HealthSystem'])
         dx_manager.register_dx_test(my_test=my_test)
 
         # Run it on all people and get a list of the results
@@ -532,12 +582,14 @@ def test_create_dx_test_and_run_with_bool_dx_and_imperfect_specificity():
     assert 0.0 < sum(results) < len(results)
 
 
-def test_create_dx_test_and_run_with_cont_value_and_cutoff():
+def test_create_dx_test_and_run_with_cont_value_and_cutoff(bundle):
+    simulation = bundle.simulation
+    hsi_event = bundle.hsi_event
     # This test is for a property represented by a continuous variable and the DxTest should return True if the value
     # is above a certain threshold.
 
     # Create a dataframe that has values known to be above or below the threshold (=0.0)
-    df = sim.population.props
+    df = simulation.population.props
     df['AboveThreshold'] = 1.0
     df['BelowThreshold'] = -1.0
 
@@ -552,7 +604,7 @@ def test_create_dx_test_and_run_with_cont_value_and_cutoff():
     )
 
     # Register DxTest with DxManager:
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager(simulation.modules['HealthSystem'])
     dx_manager.register_dx_test(my_test_on_above_threshold=my_test_on_above_threshold,
                                 my_test_on_below_threshold=my_test_on_below_threshold
                                 )
@@ -573,10 +625,12 @@ def test_create_dx_test_and_run_with_cont_value_and_cutoff():
     assert result is False
 
 
-def test_create_dx_test_and_run_with_cont_dx_and_error():
+def test_create_dx_test_and_run_with_cont_dx_and_error(bundle):
+    simulation = bundle.simulation
+    hsi_event = bundle.hsi_event
     # Create a property in the sim.population.props dataframe for testing.
     # Make it zero for everyone
-    df = sim.population.props
+    df = simulation.population.props
     df['AllZero'] = 0.0
 
     # Create the tests:
@@ -591,7 +645,7 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
     )
 
     # Create new DxManager
-    dx_manager = DxManager(sim.modules['HealthSystem'])
+    dx_manager = DxManager(simulation.modules['HealthSystem'])
 
     # Register DxTest with DxManager:
     dx_manager.register_dx_test(
@@ -600,7 +654,7 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
     )
 
     # Run each test and check the result:
-    df = sim.population.props
+    df = simulation.population.props
     result_from_test_with_zero_stdev = list()
     result_from_test_with_nonzero_stdev = list()
 
