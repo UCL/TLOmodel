@@ -29,6 +29,7 @@ except NameError:
     # running interactively
     resourcefilepath = Path('./resources')
 
+
 @pytest.fixture(scope='module')
 def bundle():
     Bundle = collections.namedtuple('Bundle',
@@ -58,7 +59,6 @@ def bundle():
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2010, month=1, day=31))
 
-
     # Create a dummy HSI event from which the use of diagnostics can be tested
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
@@ -69,8 +69,7 @@ def bundle():
             self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
-                                                       pass
-
+            pass
 
     hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=-99)
 
@@ -87,12 +86,12 @@ def bundle():
     assert not sim.modules['HealthSystem'].cons_item_code_availability_today.loc[
         item_code_for_consumable_that_is_not_available].any()
 
-    cons_req_as_footprint_for_consumable_that_is_not_available = consumables_needed = {
+    cons_req_as_footprint_for_consumable_that_is_not_available = {
         'Intervention_Package_Code': {},
         'Item_Code': {item_code_for_consumable_that_is_not_available: 1},
     }
 
-    cons_req_as_footprint_for_consumable_that_is_available = consumables_needed = {
+    cons_req_as_footprint_for_consumable_that_is_available = {
         'Intervention_Package_Code': {},
         'Item_Code': {item_code_for_consumable_that_is_available: 1},
     }
@@ -167,7 +166,8 @@ def test_create_dx_test_and_register(bundle):
 
 def test_create_duplicate_test_that_should_be_ignored(bundle):
     simulation = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    cons_req_as_footprint_for_consumable_that_is_available = \
+        bundle.cons_req_as_footprint_for_consumable_that_is_available
 
     my_test1_property_only = DxTest(
         property='mi_status'
@@ -282,8 +282,10 @@ def test_create_dx_test_and_run(bundle):
 
 def test_create_dx_tests_with_consumable_usage(bundle):
     simulation = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_not_available = bundle.cons_req_as_footprint_for_consumable_that_is_not_available
-    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    cons_req_as_footprint_for_consumable_that_is_not_available = \
+        bundle.cons_req_as_footprint_for_consumable_that_is_not_available
+    cons_req_as_footprint_for_consumable_that_is_available = \
+        bundle.cons_req_as_footprint_for_consumable_that_is_available
     hsi_event = bundle.hsi_event
 
     # Create the test:
@@ -373,7 +375,8 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
 
 
 def test_hash_from_footprint_and_hash_from_item_code(bundle):
-    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    cons_req_as_footprint_for_consumable_that_is_available = \
+        bundle.cons_req_as_footprint_for_consumable_that_is_available
     item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available
     my_test_using_item_code = DxTest(
         cons_req_as_item_code=item_code_for_consumable_that_is_available,
@@ -390,7 +393,8 @@ def test_hash_from_footprint_and_hash_from_item_code(bundle):
 
 def test_run_batch_of_dx_test_in_one_call(bundle):
     simulation = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    cons_req_as_footprint_for_consumable_that_is_available = \
+        bundle.cons_req_as_footprint_for_consumable_that_is_available
     hsi_event = bundle.hsi_event
     # Create the dx_test
     my_test1 = DxTest(
@@ -425,8 +429,10 @@ def test_run_batch_of_dx_test_in_one_call(bundle):
 
 def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution(bundle):
     simulation = bundle.simulation
-    cons_req_as_footprint_for_consumable_that_is_not_available = bundle.cons_req_as_footprint_for_consumable_that_is_not_available
-    cons_req_as_footprint_for_consumable_that_is_available = bundle.cons_req_as_footprint_for_consumable_that_is_available
+    cons_req_as_footprint_for_consumable_that_is_not_available = \
+        bundle.cons_req_as_footprint_for_consumable_that_is_not_available
+    cons_req_as_footprint_for_consumable_that_is_available = \
+        bundle.cons_req_as_footprint_for_consumable_that_is_available
     hsi_event = bundle.hsi_event
     # Create the tests:
     my_test1_not_available = DxTest(
