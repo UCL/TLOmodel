@@ -42,7 +42,7 @@ def simulation():
 
 def __check_properties(df):
     # Here we check none of the properties created in labour are set to True for males or under 15s
-    assert not (((df.sex == 'M') | df.age_years < 15) & (~df.la_due_date_current_pregnancy.isna() |
+    assert not (((df.sex == 'M') | (df.age_years < 15)) & (~df.la_due_date_current_pregnancy.isna() |
                                                          df.la_currently_in_labour |
                                                          (df.la_current_labour_successful_induction != 'not_induced') |
                                                          df.la_intrapartum_still_birth | df.la_previous_cs_delivery |
@@ -69,11 +69,11 @@ def test_initial_population(simulation):
 
 
 def test_simulate(simulation):
-   simulation.simulate(end_date=end_date)
+    simulation.simulate(end_date=end_date)
 
 
 def test_final_population(simulation):
-   __check_properties(simulation.population.props)
+    __check_properties(simulation.population.props)
 
 
 def test_dypes(simulation):
