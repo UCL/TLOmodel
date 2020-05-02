@@ -272,7 +272,7 @@ class NewbornOutcomes(Module):
     def eval(self, eq, person_id):
         """Compares the result of a specific linear equation with a random draw providing a boolean for the outcome
         under examination"""
-        return self.rng.random_sample(size=1) < eq.predict(self.sim.population.props.loc[[person_id]])[person_id]
+        return self.rng.random_sample() < eq.predict(self.sim.population.props.loc[[person_id]])[person_id]
 
     def set_neonatal_death_status(self, individual_id, cause):
         """This function  is called for neonates that have experienced a complication after birth and determines if it
@@ -284,7 +284,7 @@ class NewbornOutcomes(Module):
             df.at[individual_id, 'nb_death_after_birth'] = True
             df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
 
-            logger.debug(F'This is NewbornOutcomes scheduling a death for person %d on date %s who died due to {cause}'
+            logger.debug(f'This is NewbornOutcomes scheduling a death for person %d on date %s who died due to {cause}'
                          'complications following birth', individual_id, self.sim.date)
 
     def on_birth(self, mother_id, child_id):
@@ -544,7 +544,7 @@ class NewbornOutcomes(Module):
                                                           (child.nb_encephalopathy == 'severe_enceph')):
 
                 prob = 0.75  # magic number represents dummy care seeking value
-                random = self.rng.random_sample(size=1)
+                random = self.rng.random_sample()
                 if random < prob:
                     event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self.module, person_id=child_id)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
