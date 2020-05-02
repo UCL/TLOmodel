@@ -1,25 +1,17 @@
 import datetime
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.methods import (
-    chronicsyndrome,
     contraception,
     demography,
     depression,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    mockitis,
     symptommanager,
 )
-from tlo.methods.depression import compute_key_outputs_for_last_3_years
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

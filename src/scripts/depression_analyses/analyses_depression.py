@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     chronicsyndrome,
@@ -107,6 +107,7 @@ effect_of_intvs_df = pd.DataFrame(data={'Intvs_On': results_health_system_disabl
 # %% Run a comparison in which the effectiveness of interventions for depression at turned up to implausible levels
 #       in order to check that the effect of the interventions is working. Also with mockitis
 #       and chronicsyndrome so allowing further opportunities for diagnosing depression
+
 
 def run_simulation_with_intvs_maximised():
     """

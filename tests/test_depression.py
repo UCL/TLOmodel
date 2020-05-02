@@ -12,9 +12,10 @@ from tlo.methods import (
     depression,
     enhanced_lifestyle,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
     symptommanager,
-    healthseekingbehaviour)
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'

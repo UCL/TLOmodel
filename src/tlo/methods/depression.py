@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 from tlo.methods.dxmanager import DxTest
@@ -188,8 +188,10 @@ class Depression(Module):
     SYMPTOMS = {'em_Injuries_From_Self_Harm'}
 
     def read_parameters(self, data_folder):
-        self.load_parameters_from_dataframe(pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_ap_th.xlsx',
-                                                          sheet_name='parameter_values'))
+        self.load_parameters_from_dataframe(
+            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_ap_th.xlsx',
+                          sheet_name='parameter_values')
+        )
         p = self.parameters
 
         # Build the Linear Models:
@@ -711,8 +713,8 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         })
 
         logger.info('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[10].to_dict())
+                    self.sim.date,
+                    df.loc[10].to_dict())
 
         # Reset the EventTracker
         self.module.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
