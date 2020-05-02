@@ -2,7 +2,6 @@ import os
 import time
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
@@ -22,12 +21,9 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 1000
 
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-
 
 @pytest.fixture(scope='module')
 def simulation():
-
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -44,45 +40,40 @@ def simulation():
     return sim
 
 
-def test_run(simulation):
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
-
-
 def __check_properties(df):
     # Here we check none of the properties created in labour are set to True for males or under 15s
-    assert not (df.sex == 'M' or df.age_year < 15) and (df.la_due_date_current_pregnancy != pd.NaT or
-                                                        df.la_currently_in_labour or
-                                                        df.la_current_labour_successful_induction != 'none' or
-                                                        df.la_intrapartum_still_birth or df.la_previous_cs_delivery
-                                                        or df.la_has_previously_delivered_preterm or
-                                                        df.la_obstructed_labour or df.la_obstructed_labour_disab
-                                                        or df.la_antepartum_haem or df.la_antepartum_haem_disab or
-                                                        df.la_uterine_rupture or df.la_uterine_rupture_disab or
-                                                        df.la_sepsis or df.la_sepsis_disab or df.la_eclampsia or
-                                                        df.la_eclampsia_disab or df.la_postpartum_haem or
-                                                        df.la_postpartum_haem_disab or df.la_maternal_death or
-                                                        df.la_maternal_death_date != pd.NaT)
+    assert not (((df.sex == 'M') | df.age_years < 15) & (~df.la_due_date_current_pregnancy.isna() |
+                                                         df.la_currently_in_labour |
+                                                         (df.la_current_labour_successful_induction != 'not_induced') |
+                                                         df.la_intrapartum_still_birth | df.la_previous_cs_delivery |
+                                                         df.la_has_previously_delivered_preterm |
+                                                         df.la_obstructed_labour | df.la_obstructed_labour_disab |
+                                                         df.la_antepartum_haem | df.la_antepartum_haem_disab |
+                                                         df.la_uterine_rupture | df.la_uterine_rupture_disab |
+                                                         df.la_sepsis | df.la_sepsis_disab | df.la_eclampsia |
+                                                         df.la_eclampsia_disab | df.la_postpartum_haem |
+                                                         df.la_postpartum_haem_disab | df.la_maternal_death |
+                                                         (~df.la_maternal_death_date.isna()))).any()
 
     # Here we check that neither men nor under 15s can have a parity of >0
-    assert not df.sex == 'M' and df.la_parity > 0
-    assert not df.age_years < 15 and df.la_parity > 0
+    assert not ((df.sex == 'M') & (df.la_parity > 0)).any()
+    assert not ((df.age_years < 15) & (df.la_parity > 0)).any()
 
 
-# def test_make_initial_population(simulation):
-#    simulation.make_initial_population(n=popsize)
+def test_make_initial_population(simulation):
+    simulation.make_initial_population(n=popsize)
 
 
-# def test_initial_population(simulation):
-#    __check_properties(simulation.population.props)
+def test_initial_population(simulation):
+    __check_properties(simulation.population.props)
 
 
-# def test_simulate(simulation):
-#    simulation.simulate(end_date=end_date)
+def test_simulate(simulation):
+   simulation.simulate(end_date=end_date)
 
 
-# def test_final_population(simulation):
-#    __check_properties(simulation.population.props)
+def test_final_population(simulation):
+   __check_properties(simulation.population.props)
 
 
 def test_dypes(simulation):
@@ -99,7 +90,8 @@ def test_dypes(simulation):
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
-    test_run(simulation)
+    simulation.make_initial_population(n=popsize)
+    simulation.simulate(end_date=end_date)
     t1 = time.time()
     print('Time taken', t1 - t0)
     test_dypes(simulation)
