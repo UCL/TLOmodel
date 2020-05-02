@@ -191,17 +191,17 @@ class TestConvertLogData:
 
     @pytest.mark.parametrize("iterable_data", [[1, 2], {1, 2}, (1, 2)])
     def test_convert_iterable_to_dict(self, iterable_data):
-        output = self.logger._convert_log_data(iterable_data)
+        output = self.logger._get_data_as_dict(iterable_data)
         assert self.expected_output == output
 
     def test_convert_df_to_dict(self):
         df = pd.DataFrame({'item_1': [1], 'item_2': [2]})
-        output = self.logger._convert_log_data(df)
+        output = self.logger._get_data_as_dict(df)
 
         assert self.expected_output == output
 
     def test_string_to_dict(self):
-        output = self.logger._convert_log_data("strings")
+        output = self.logger._get_data_as_dict("strings")
         assert {'message': 'strings'} == output
 
 

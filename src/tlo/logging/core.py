@@ -70,7 +70,7 @@ class Logger:
     def setLevel(self, level):
         self._std_logger.setLevel(level)
 
-    def _convert_log_data(self, data):
+    def _get_data_as_dict(self, data):
         """Convert log data to a dictionary if it isn't already"""
         if isinstance(data, dict):
             return data
@@ -102,7 +102,7 @@ class Logger:
         if level < self._std_logger.level:
             return
 
-        data = self._convert_log_data(data)
+        data = self._get_data_as_dict(data)
 
         header = {}
         if key not in self.keys:
@@ -118,7 +118,8 @@ class Logger:
 
         # create data json row
         row = {"type": "data",
-               "module": self.name, "key": key,
+               "module": self.name,
+               "key": key,
                "date": getLogger('tlo').simulation.date.isoformat(),
                "values": list(data.values())}
 
