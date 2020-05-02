@@ -42,18 +42,32 @@ def simulation():
 
 def __check_properties(df):
     # Here we check none of the properties created in labour are set to True for males or under 15s
-    assert not (((df.sex == 'M') | (df.age_years < 15)) & (~df.la_due_date_current_pregnancy.isna() |
-                                                           df.la_currently_in_labour |
-                                                           (df.la_current_labour_successful_induction != 'not_induced') |
-                                                           df.la_intrapartum_still_birth | df.la_previous_cs_delivery |
-                                                           df.la_has_previously_delivered_preterm |
-                                                           df.la_obstructed_labour | df.la_obstructed_labour_disab |
-                                                           df.la_antepartum_haem | df.la_antepartum_haem_disab |
-                                                           df.la_uterine_rupture | df.la_uterine_rupture_disab |
-                                                           df.la_sepsis | df.la_sepsis_disab | df.la_eclampsia |
-                                                           df.la_eclampsia_disab | df.la_postpartum_haem |
-                                                           df.la_postpartum_haem_disab | df.la_maternal_death |
-                                                           (~df.la_maternal_death_date.isna()))).any()
+    assert not ((
+                    (df.sex == 'M') | (df.age_years < 15)
+                ) &
+                (
+                    df.la_antepartum_haem |
+                    df.la_antepartum_haem_disab |
+                    (df.la_current_labour_successful_induction != 'not_induced') |
+                    df.la_currently_in_labour |
+                    ~df.la_due_date_current_pregnancy.isna() |
+                    df.la_eclampsia |
+                    df.la_eclampsia_disab |
+                    df.la_has_previously_delivered_preterm |
+                    df.la_intrapartum_still_birth |
+                    df.la_maternal_death |
+                    ~df.la_maternal_death_date.isna() |
+                    df.la_obstructed_labour |
+                    df.la_obstructed_labour_disab |
+                    df.la_postpartum_haem |
+                    df.la_postpartum_haem_disab |
+                    df.la_previous_cs_delivery |
+                    df.la_sepsis |
+                    df.la_sepsis_disab |
+                    df.la_uterine_rupture |
+                    df.la_uterine_rupture_disab
+                )
+                ).any()
 
     # Here we check that neither men nor under 15s can have a parity of >0
     assert not ((df.sex == 'M') & (df.la_parity > 0)).any()
