@@ -195,8 +195,8 @@ class Depression(Module):
         p = self.parameters
 
         # Build the Linear Models:
-        self.LinearModels = dict()
-        self.LinearModels['Depression_At_Population_Initialisation'] = LinearModel(
+        self.linearModels = dict()
+        self.linearModels['Depression_At_Population_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'],
             Predictor('de_cc').when(True, p['init_rp_depr_cc']),
@@ -209,26 +209,26 @@ class Depression(Module):
                 .otherwise(p['init_rp_depr_agege60'])
         )
 
-        self.LinearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel(
+        self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('age_years').apply(
                 lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']),
         )
 
-        self.LinearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel(
+        self.linearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * p['init_rp_ever_depr_per_year_older_f']),
         )
 
-        self.LinearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel(
+        self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression']).otherwise(0.0)
         )
 
-        self.LinearModels['Using_AntiDepressants_Initialisation'] = LinearModel(
+        self.linearModels['Using_AntiDepressants_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['init_pr_antidepr_curr_depr']),
@@ -236,19 +236,19 @@ class Depression(Module):
                              p['init_rp_antidepr_ever_depr_not_curr'])
         )
 
-        self.LinearModels['Ever_Talking_Therapy_Initialisation'] = LinearModel(
+        self.linearModels['Ever_Talking_Therapy_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['init_pr_ever_talking_therapy_if_diagnosed'],
             Predictor('de_ever_diagnosed_depression').when(False, 0)
         )
 
-        self.LinearModels['Ever_Self_Harmed_Initialisation'] = LinearModel(
+        self.linearModels['Ever_Self_Harmed_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['init_pr_ever_self_harmed_if_ever_depr'],
             Predictor('de_ever_depr').when(False, 0)
         )
 
-        self.LinearModels['Risk_of_Depression_Onset_per3mo'] = LinearModel(
+        self.linearModels['Risk_of_Depression_Onset_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['base_3m_prob_depr'],
             Predictor('de_cc').when(True, p['rr_depr_cc']),
@@ -262,7 +262,7 @@ class Depression(Module):
             Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
         )
 
-        self.LinearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel(
+        self.linearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
@@ -271,19 +271,19 @@ class Depression(Module):
             Predictor('de_ever_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
-        self.LinearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel(
+        self.linearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
                                 .when(False, p['prob_3m_stop_antidepr'])
         )
 
-        self.LinearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
+        self.linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['prob_3m_selfharm_depr']
         )
 
-        self.LinearModels['Risk_of_Suicide_per3mo'] = LinearModel(
+        self.linearModels['Risk_of_Suicide_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['prob_3m_suicide_depr_m'],
             Predictor('sex').when('F', p['rr_suicide_depr_f'])
@@ -318,7 +318,7 @@ class Depression(Module):
         :param df: The dataframe
         :return: Series with same index containing outcomes (bool)
         """
-        return self.rng.rand(len(df)) < lm.predict(df)
+        return self.rng.random_sample(len(df)) < lm.predict(df)
 
     def initialise_population(self, population):
         df = population.props
@@ -338,7 +338,7 @@ class Depression(Module):
 
         # Assign initial 'current depression' status
         df.loc[df['is_alive'], 'de_depr'] = self.apply_linear_model(
-            self.LinearModels['Depression_At_Population_Initialisation'],
+            self.linearModels['Depression_At_Population_Initialisation'],
             df.loc[df['is_alive']]
         )
         # If currently depressed, set the date on which this episode began to the start of the simulation
@@ -353,11 +353,11 @@ class Depression(Module):
         # Assign initial 'ever depression' status (uses separate LinearModels for Males and Females due to the nature
         # of the model that is specified)
         df.loc[(df['is_alive'] & (df['sex'] == 'M')), 'de_ever_depr'] = self.apply_linear_model(
-            self.LinearModels['Depression_Ever_At_Population_Initialisation_Males'],
+            self.linearModels['Depression_Ever_At_Population_Initialisation_Males'],
             df.loc[(df['is_alive'] & (df['sex'] == 'M'))]
         )
         df.loc[(df['is_alive'] & (df['sex'] == 'F')), 'de_ever_depr'] = self.apply_linear_model(
-            self.LinearModels['Depression_Ever_At_Population_Initialisation_Females'],
+            self.linearModels['Depression_Ever_At_Population_Initialisation_Females'],
             df.loc[(df['is_alive'] & (df['sex'] == 'F'))]
         )
 
@@ -367,26 +367,26 @@ class Depression(Module):
 
         # Assign initial 'ever diagnosed' status
         df.loc[df['is_alive'], 'de_ever_diagnosed_depression'] = self.apply_linear_model(
-            self.LinearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'],
+            self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'],
             df.loc[df['is_alive']]
         )
 
         # Assign initial 'de_ever_talk_ther' status
         df.loc[df['is_alive'], 'de_ever_talk_ther'] = self.apply_linear_model(
-             self.LinearModels['Ever_Talking_Therapy_Initialisation'],
+             self.linearModels['Ever_Talking_Therapy_Initialisation'],
              df.loc[df['is_alive']]
         )
 
         # Assign initial 'de_ever_non_fatal_self_harm_event' status
         df.loc[df['is_alive'], 'de_ever_non_fatal_self_harm_event'] = self.apply_linear_model(
-             self.LinearModels['Ever_Self_Harmed_Initialisation'],
+             self.linearModels['Ever_Self_Harmed_Initialisation'],
              df.loc[df['is_alive']]
         )
 
         # Assign initial 'using anti-depressants' status to those who are currently depressed and diagnosed
         df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression'], 'de_on_antidepr'] = \
             self.apply_linear_model(
-                self.LinearModels['Using_AntiDepressants_Initialisation'],
+                self.linearModels['Using_AntiDepressants_Initialisation'],
                 df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
         )
 
@@ -401,7 +401,7 @@ class Depression(Module):
         sim.schedule_event(DepressionLoggingEvent(self), sim.date)
 
         # Create Tracker for the number of SelfHarm and Suicide events
-        self.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
+        self.eventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
         # Create the diagnostic representing the assessment for whether a person is diagnosed with depression
         # NB. Specificity is assumed to be 100%
@@ -502,6 +502,7 @@ class Depression(Module):
 
             # Provide talking therapy (at the same facility level as the HSI event that is calling)
             # (This can occur even if the person has already had talking therapy before)
+            print('scheduling the event')
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_TalkingTherapy(module=self,
                                                         person_id=person_id,
@@ -510,6 +511,7 @@ class Depression(Module):
                 topen=self.sim.date
             )
 
+            print('scheduling second event')
             # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Start_Antidepressant(module=self,
@@ -554,7 +556,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -----------------------------------------------------------------------------------------------------
         # Determine who will be onset with depression among those who are not currently depressed
         onset_depression = apply_linear_model(
-            self.module.LinearModels['Risk_of_Depression_Onset_per3mo'],
+            self.module.linearModels['Risk_of_Depression_Onset_per3mo'],
             df.loc[df['is_alive'] & ~df['de_depr']]
         )
 
@@ -570,7 +572,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -----------------------------------------------------------------------------------------------------
         # Determine resolution of depression for those with depression (but not depression that has onset just now)
         resolved_depression = apply_linear_model(
-            self.module.LinearModels['Risk_of_Depression_Resolution_per3mo'],
+            self.module.linearModels['Risk_of_Depression_Resolution_per3mo'],
             df.loc[df['is_alive'] & df['de_depr'] & ~df.index.isin(onset_depression.loc[onset_depression].index)]
         )
         df.loc[resolved_depression.loc[resolved_depression].index, 'de_depr'] = False
@@ -580,7 +582,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -----------------------------------------------------------------------------------------------------
         # Determine cessation of use of antidepressants among those who are currently taking them.
         stop_using_antidepressants = apply_linear_model(
-            self.module.LinearModels['Risk_of_Stopping_Antidepressants_per3mo'],
+            self.module.linearModels['Risk_of_Stopping_Antidepressants_per3mo'],
             df.loc[df['is_alive'] & df['de_on_antidepr']]
         )
         df.loc[stop_using_antidepressants.loc[stop_using_antidepressants].index, 'de_on_antidepr'] = False
@@ -588,7 +590,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -----------------------------------------------------------------------------------------------------
         # Schedule Self-harm events for those with current depression (individual level events)
         will_self_harm_in_next_3mo = apply_linear_model(
-            self.module.LinearModels['Risk_of_SelfHarm_per3mo'],
+            self.module.linearModels['Risk_of_SelfHarm_per3mo'],
             df.loc[df['is_alive'] & df['de_depr']]
         )
         for person_id in will_self_harm_in_next_3mo.loc[will_self_harm_in_next_3mo].index:
@@ -597,7 +599,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Schedule Suicide events for those with current depression (individual level events)
         will_suicide_in_next_3mo = apply_linear_model(
-            self.module.LinearModels['Risk_of_Suicide_per3mo'],
+            self.module.linearModels['Risk_of_Suicide_per3mo'],
             df.loc[df['is_alive'] & df['de_depr']]
         )
         for person_id in will_suicide_in_next_3mo.loc[will_suicide_in_next_3mo].index:
@@ -618,7 +620,7 @@ class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        self.module.EventsTracker['SelfHarmEvents'] += 1
+        self.module.eventsTracker['SelfHarmEvents'] += 1
         self.sim.population.props.at[person_id, 'de_ever_non_fatal_self_harm_event'] = True
 
         # Add the outward symptom to the SymptomManager. This will result in emergency care being sought
@@ -643,7 +645,7 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return
 
-        self.module.EventsTracker['SuicideEvents'] += 1
+        self.module.eventsTracker['SuicideEvents'] += 1
         self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
 
 
@@ -708,8 +710,8 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 2) Log number of Self-Harm and Suicide Events since the last logging event
         logger.info('%s|event_counts|%s', self.sim.date, {
-            'SelfHarmEvents': self.module.EventsTracker['SelfHarmEvents'],
-            'SuicideEvents': self.module.EventsTracker['SuicideEvents'],
+            'SelfHarmEvents': self.module.eventsTracker['SelfHarmEvents'],
+            'SuicideEvents': self.module.eventsTracker['SuicideEvents'],
         })
 
         logger.info('%s|person_one|%s',
@@ -717,7 +719,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df.loc[10].to_dict())
 
         # Reset the EventTracker
-        self.module.EventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
+        self.module.eventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -745,7 +747,9 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
+        print('applying talking therapy')
         if squeeze_factor == 0.0:
+            print('no squeeze factor done')
             self.sim.population.props.at[person_id, 'de_ever_talk_ther'] = True
         else:
             # If squeeze_factor non-zero then do nothing and do not take up any time.

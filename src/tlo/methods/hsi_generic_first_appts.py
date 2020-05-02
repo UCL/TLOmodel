@@ -63,14 +63,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
-
-            diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
-
             # It's a child:
             logger.debug('Run the ICMI algorithm for this child')
 
             # Get the diagnosis from the algorithm
-            diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
+            diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
             # Do something based on this diagnosis...
             if diagnosis == 'measles':
@@ -84,9 +81,10 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             # ---- ASSESS FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:
-                if (squeeze_factor == 0.0) and (self.module.rng.rand() < self.sim.modules['Depression'].parameters[
-                                                                'pr_assessed_for_depression_in_generic_appt_level1']):
-                    self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+                depr = self.sim.modules['Depression']
+                if (squeeze_factor == 0.0) and (self.module.rng.random() <
+                                                depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
+                    depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # -------------------------------
 
     def did_not_run(self):

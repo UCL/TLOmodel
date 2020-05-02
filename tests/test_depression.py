@@ -30,17 +30,17 @@ def test_configuration_of_properties():
     sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
-    sim.make_initial_population(n=20000)
+    sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2015, month=1, day=1))
     # --------------------------------------------------------------------------
 
@@ -107,38 +107,39 @@ def test_hsi_functions(tmpdir):
     #   --- people should have both talking therapies and antidepressants
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population.
-
     sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        mode_appt_constraints=0,
-        ignore_cons_constraints=True))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0,
+                                           ignore_cons_constraints=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
+
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
-    sim.make_initial_population(n=2000)
+    sim.make_initial_population(n=20000)
+
+    df = sim.population.props
 
     # zero-out all instances of current or ever depression, or ever talking therapies
-    sim.population.props['de_depr'] = False
-    sim.population.props['de_ever_depr'] = False
-    sim.population.props['de_date_init_most_rec_depr'] = pd.NaT
-    sim.population.props['de_date_depr_resolved'] = pd.NaT
-    sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
-    sim.population.props['de_ever_diagnosed_depression'] = False
-    sim.population.props['de_on_antidepr'] = False
-    sim.population.props['de_ever_talk_ther'] = False
-    sim.population.props['de_ever_non_fatal_self_harm_event'] = False
+    df['de_depr'] = False
+    df['de_ever_depr'] = False
+    df['de_date_init_most_rec_depr'] = pd.NaT
+    df['de_date_depr_resolved'] = pd.NaT
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_ever_diagnosed_depression'] = False
+    df['de_on_antidepr'] = False
+    df['de_ever_talk_ther'] = False
+    df['de_ever_non_fatal_self_harm_event'] = False
 
-    sim.simulate(end_date=Date(year=2012, month=1, day=1))
+    sim.simulate(end_date=Date(year=2015, month=1, day=1))
     # --------------------------------------------------------------------------
 
     df = sim.population.props
@@ -164,31 +165,33 @@ def test_hsi_functions_no_medication_available(tmpdir):
     sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        mode_appt_constraints=0))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
+
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
 
+    df = sim.population.props
+
     # zero-out all instances of current or ever depression, or ever talking therapies
-    sim.population.props['de_depr'] = False
-    sim.population.props['de_ever_depr'] = False
-    sim.population.props['de_date_init_most_rec_depr'] = pd.NaT
-    sim.population.props['de_date_depr_resolved'] = pd.NaT
-    sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
-    sim.population.props['de_ever_diagnosed_depression'] = False
-    sim.population.props['de_on_antidepr'] = False
-    sim.population.props['de_ever_talk_ther'] = False
-    sim.population.props['de_ever_non_fatal_self_harm_event'] = False
+    df['de_depr'] = False
+    df['de_ever_depr'] = False
+    df['de_date_init_most_rec_depr'] = pd.NaT
+    df['de_date_depr_resolved'] = pd.NaT
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_ever_diagnosed_depression'] = False
+    df['de_on_antidepr'] = False
+    df['de_ever_talk_ther'] = False
+    df['de_ever_non_fatal_self_harm_event'] = False
 
     # zero-out the availability of the consumable that is required for the treatment of antidepressants
     item_code = sim.modules['Depression'].parameters['anti_depressant_medication_item_code']
@@ -224,33 +227,35 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        mode_appt_constraints=2,
-        ignore_cons_constraints=True,
-        capabilities_coefficient=0.0))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=2,
+                                           ignore_cons_constraints=True,
+                                           capabilities_coefficient=0.0),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
+
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
 
+    df = sim.population.props
+
     # zero-out all instances of current or ever depression, or ever talking therapies
-    sim.population.props['de_depr'] = False
-    sim.population.props['de_ever_depr'] = False
-    sim.population.props['de_date_init_most_rec_depr'] = pd.NaT
-    sim.population.props['de_date_depr_resolved'] = pd.NaT
-    sim.population.props['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
-    sim.population.props['de_ever_diagnosed_depression'] = False
-    sim.population.props['de_on_antidepr'] = False
-    sim.population.props['de_ever_talk_ther'] = False
-    sim.population.props['de_ever_non_fatal_self_harm_event'] = False
+    df['de_depr'] = False
+    df['de_ever_depr'] = False
+    df['de_date_init_most_rec_depr'] = pd.NaT
+    df['de_date_depr_resolved'] = pd.NaT
+    df['de_intrinsic_3mo_risk_of_depr_resolution'] = np.NaN
+    df['de_ever_diagnosed_depression'] = False
+    df['de_on_antidepr'] = False
+    df['de_ever_talk_ther'] = False
+    df['de_ever_non_fatal_self_harm_event'] = False
 
     sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
