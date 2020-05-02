@@ -17,7 +17,6 @@ from tlo.methods import (
     pregnancy_supervisor,
 )
 
-workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -49,9 +48,8 @@ def test_run(simulation):
     simulation.simulate(end_date=end_date)
 
 
-def __check_properties(df):
-    pass
-    # TODO: TBC
+# def __check_properties(df):
+#     pass
 
 
 # def test_make_initial_population(simulation):

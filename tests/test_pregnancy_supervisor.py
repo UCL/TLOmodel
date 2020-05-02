@@ -47,9 +47,8 @@ def test_run(simulation):
     simulation.simulate(end_date=end_date)
 
 
-def __check_properties(df):
-    pass
-    # TODO: TBC
+# def __check_properties(df):
+#     pass
 
 
 # def test_make_initial_population(simulation):
