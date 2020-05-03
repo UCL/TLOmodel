@@ -200,13 +200,13 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'],
             Predictor('de_cc').when(True, p['init_rp_depr_cc']),
-            Predictor('li_wealth').when('isin([4,5])', p['init_rp_depr_wealth45']),
-            Predictor().when('(sex=="F") & (de_recently_pregnant==True)', p['init_rp_depr_f_rec_preg']),
-            Predictor().when('(sex=="F") & (de_recently_pregnant==False)', p['init_rp_depr_f_not_rec_preg']),
+            Predictor('li_wealth').when('.isin([4,5])', p['init_rp_depr_wealth45']),
+            Predictor().when('(sex=="F") & de_recently_pregnant', p['init_rp_depr_f_rec_preg']),
+            Predictor().when('(sex=="F") & ~de_recently_pregnant', p['init_rp_depr_f_not_rec_preg']),
             Predictor('age_years').when('.between(0, 14)', 0)
-                .when('.between(15, 19)', 1.0)
-                .when('.between(20, 59)', p['init_rp_depr_age2059'])
-                .otherwise(p['init_rp_depr_agege60'])
+                                  .when('.between(15, 19)', 1.0)
+                                  .when('.between(20, 59)', p['init_rp_depr_age2059'])
+                                  .otherwise(p['init_rp_depr_agege60'])
         )
 
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel(
@@ -225,14 +225,15 @@ class Depression(Module):
         self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
-            Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression']).otherwise(0.0)
+            Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression'])
+                                     .otherwise(0.0)
         )
 
         self.linearModels['Using_AntiDepressants_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             1.0,
             Predictor('de_depr').when(True, p['init_pr_antidepr_curr_depr']),
-            Predictor().when('de_depr==False & de_ever_diagnosed_depression==True',
+            Predictor().when('~de_depr & de_ever_diagnosed_depression',
                              p['init_rp_antidepr_ever_depr_not_curr'])
         )
 
@@ -252,12 +253,12 @@ class Depression(Module):
             LinearModelType.MULTIPLICATIVE,
             p['base_3m_prob_depr'],
             Predictor('de_cc').when(True, p['rr_depr_cc']),
-            Predictor('age_years')  .when('.between(0, 14)', 0)
-                                    .when('.between(15, 19)', p['rr_depr_age1519'])
-                                    .when('>=60', p['rr_depr_agege60']),
-            Predictor('li_wealth').when('isin([4,5])', p['rr_depr_wealth45']),
-            Predictor().when('(sex=="F") & (de_recently_pregnant==True)', p['rr_depr_female'] * p['rr_depr_pregnancy']),
-            Predictor().when('(sex=="F") & (de_recently_pregnant==False)', p['rr_depr_female']),
+            Predictor('age_years').when('.between(0, 14)', 0)
+                                  .when('.between(15, 19)', p['rr_depr_age1519'])
+                                  .when('>=60', p['rr_depr_agege60']),
+            Predictor('li_wealth').when('.isin([4,5])', p['rr_depr_wealth45']),
+            Predictor('sex').when('F', p['rr_depr_female']),
+            Predictor('de_recently_pregnant').when(True, p['rr_depr_pregnancy']),
             Predictor('de_ever_depr').when(True, p['rr_depr_prev_epis']),
             Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
         )
