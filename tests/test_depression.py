@@ -121,10 +121,12 @@ def test_hsi_functions(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
+    # sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
-    sim.make_initial_population(n=20000)
+    sim.make_initial_population(n=2000)
 
     df = sim.population.props
 
