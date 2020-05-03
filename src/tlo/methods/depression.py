@@ -502,7 +502,6 @@ class Depression(Module):
 
             # Provide talking therapy (at the same facility level as the HSI event that is calling)
             # (This can occur even if the person has already had talking therapy before)
-            print('scheduling the event')
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_TalkingTherapy(module=self,
                                                         person_id=person_id,
@@ -511,7 +510,6 @@ class Depression(Module):
                 topen=self.sim.date
             )
 
-            print('scheduling second event')
             # Initiate person on anti-depressants (at the same facility level as the HSI event that is calling)
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Depression_Start_Antidepressant(module=self,
@@ -747,9 +745,7 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        print('applying talking therapy')
         if squeeze_factor == 0.0:
-            print('no squeeze factor done')
             self.sim.population.props.at[person_id, 'de_ever_talk_ther'] = True
         else:
             # If squeeze_factor non-zero then do nothing and do not take up any time.
