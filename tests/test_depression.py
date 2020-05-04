@@ -12,6 +12,8 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthburden,
     healthsystem,
+    labour,
+    pregnancy_supervisor,
 )
 
 start_date = Date(2010, 1, 1)
@@ -24,14 +26,15 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
     return sim
@@ -54,4 +57,5 @@ if __name__ == '__main__':
     simulation = simulation()
     test_run(simulation)
     t1 = time.time()
+    test_dtypes(simulation)
     print('Time taken', t1 - t0)
