@@ -126,6 +126,23 @@ class Predictor(object):
             matched = (matched | mask)
         return output
 
+    def __str__(self):
+        if self.property_name and self.property_name.startswith('__'):
+            name = f'{self.property_name.strip("__")} (external)'
+        else:
+            name = self.property_name
+        if self.callback:
+            return f"{name} -> callback({self.callback})"
+        out = []
+        previous_condition = None
+        for condition, value in self.conditions:
+            if condition is None:
+                out.append(f'{" " * len(previous_condition)} -> {value} (otherwise)')
+            else:
+                out.append(f"{condition} -> {value}")
+                previous_condition = condition
+        return "\n  ".join(out)
+
 
 class LinearModelType(Enum):
     """
@@ -201,3 +218,20 @@ class LinearModel(object):
             return res_by_predictor.prod(axis=1, skipna=True)
 
         raise ValueError(f'Unhandled linear model type: {self.lm_type}')
+
+    @staticmethod
+    def multiplicative(*predictors: Predictor):
+        """Returns a multplicative LinearModel with intercept=1.0
+
+        :param predictors: One or more Predictor objects defining the model
+        """
+        return LinearModel(LinearModelType.MULTIPLICATIVE, 1.0, *predictors)
+
+    def __str__(self):
+        out = "LinearModel(\n"\
+              f"  {self.lm_type},\n"\
+              f"  intercept = {self.intercept},\n"
+        for predictor in self.predictors:
+            out += f'  {predictor}\n'
+        out += ")"
+        return out

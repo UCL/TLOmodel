@@ -416,3 +416,17 @@ def test_using_int_as_intercept():
         0
     )
     assert isinstance(eq, LinearModel)
+
+
+def test_multiplicative_helper():
+    predictor1 = Predictor('column1').when(True, 1)
+    predictor2 = Predictor('column2').when(True, 2)
+    eq = LinearModel.multiplicative(
+        predictor1,
+        predictor2
+    )
+    assert isinstance(eq, LinearModel)
+    assert eq.lm_type == LinearModelType.MULTIPLICATIVE
+    assert eq.intercept == 1.0
+    assert eq.predictors[0] == predictor1
+    assert eq.predictors[1] == predictor2
