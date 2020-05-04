@@ -3,6 +3,7 @@ General utility functions for TLO analysis
 """
 from ast import literal_eval
 
+import numpy as np
 import pandas as pd
 
 from tlo import logging, util
@@ -29,14 +30,22 @@ def parse_line(line):
     :return: a dictionary with parsed line
     """
     parts = line.split('|')
+
     if len(parts) != 5:
         return None
+
     logger.debug('%s', line)
+
+    try:
+        parsed = literal_eval(parts[4])
+    except ValueError:
+        parsed = eval(parts[4], {'Timestamp': pd.Timestamp, 'nan': np.nan, 'NaT': pd.NaT})
+
     info = {
         'logger': parts[1],
         'sim_date': parts[2],
         'key': parts[3],
-        'object': literal_eval(parts[4])
+        'object': parsed
     }
     logger.debug('%s', info)
     return info
