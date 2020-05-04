@@ -22,8 +22,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 10000
+end_date = Date(2013, 1, 1)
+popsize = 1000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -48,9 +48,19 @@ sim.simulate(end_date=end_date)
 # Get the output from the logfile
 output = parse_log_file(logfile)
 
-stats = output['tlo.methods.labour']['summary_stats']
-stats['date'] = pd.to_datetime(stats['date'])
-stats['year'] = stats['date'].dt.year
+stats_incidence = output['tlo.methods.labour']['summary_stats_incidence']
+stats_incidence['date'] = pd.to_datetime(stats_incidence['date'])
+stats_incidence['year'] = stats_incidence['date'].dt.year
+
+stats_crude = output['tlo.methods.labour']['summary_stats_crude_cases']
+stats_crude['date'] = pd.to_datetime(stats_crude['date'])
+stats_crude['year'] = stats_crude['date'].dt.year
+
+stats_deliveries = output['tlo.methods.labour']['summary_stats_deliveries']
+stats_deliveries['date'] = pd.to_datetime(stats_deliveries['date'])
+stats_deliveries['year'] = stats_deliveries['date'].dt.year
+
+
 
 # todo: set index as year? restructure to year only?
 # where can i output this too for analyses
