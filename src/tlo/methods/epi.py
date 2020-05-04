@@ -58,9 +58,12 @@ class Epi(Module):
 
         p = self.parameters
 
-        p["baseline_coverage"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_EPI_WHO_estimates.csv"
+        workbook = pd.read_excel(
+            Path(self.resourcefilepath) / "ResourceFile_EPI_WHO_estimates.xlsx",
         )
+
+        p["baseline_coverage"] = workbook.WHO_estimates
+        p["vaccine_schedule"] = workbook.vaccine_schedule
 
         p["district_vaccine_coverage"] = pd.read_csv(
             Path(self.resourcefilepath) / "ResourceFile_EPI_vaccine_coverage.csv"
@@ -227,7 +230,7 @@ class Epi(Module):
             # some values are >1
             if self.rng.rand(1) < ind_vax_coverage.BCG.values:
 
-                bcg_event = BcgEvent(self, child_id)
+                bcg_event = BcgVaccineEvent(self, child_id)
                 self.sim.schedule_event(bcg_event, self.sim.date + DateOffset(days=1))
 
             # assign OPV first dose according to current coverage
@@ -246,79 +249,79 @@ class Epi(Module):
 
             # DTP1_HepB - up to and including 2012, then replaced by pentavalent vaccine
             if self.rng.rand(1) < ind_vax_coverage.DTP1.values:
-                dtp1_event = DTP_HepEvent(self, child_id)
+                dtp1_event = DTP_HepVaccineEvent(self, child_id)
                 self.sim.schedule_event(dtp1_event, self.sim.date + DateOffset(weeks=6))
 
             # DTP2_HepB - up to and including 2012
             # second doses not reported - same coverage for second and third doses
             if self.rng.rand(1) < ind_vax_coverage.DTP3.values:
-                dtp2_event = DTP_HepEvent(self, child_id)
+                dtp2_event = DTP_HepVaccineEvent(self, child_id)
                 self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(weeks=10))
                 self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(weeks=14))
 
             # HIB1
             if self.rng.rand(1) < ind_vax_coverage.Hib3.values:
-                hib_event = HibEvent(self, child_id)
+                hib_event = HibVaccineEvent(self, child_id)
                 self.sim.schedule_event(hib_event, self.sim.date + DateOffset(weeks=6))
                 self.sim.schedule_event(hib_event, self.sim.date + DateOffset(weeks=10))
                 self.sim.schedule_event(hib_event, self.sim.date + DateOffset(weeks=14))
 
             # PNEUMO1 - all three doses reported separately
             if self.rng.rand(1) < ind_vax_coverage.Pneumo1.values:
-                pneumo1_event = PneumococcalEvent(self, child_id)
+                pneumo1_event = PneumococcalVaccineEvent(self, child_id)
                 self.sim.schedule_event(pneumo1_event, self.sim.date + DateOffset(weeks=6))
 
             # PNEUMO2
             if self.rng.rand(1) < ind_vax_coverage.Pneumo2.values:
-                pneumo2_event = PneumococcalEvent(self, child_id)
+                pneumo2_event = PneumococcalVaccineEvent(self, child_id)
                 self.sim.schedule_event(pneumo2_event, self.sim.date + DateOffset(weeks=10))
 
             # PNEUMO3
             if self.rng.rand(1) < ind_vax_coverage.Pneumo3.values:
-                pneumo3_event = PneumococcalEvent(self, child_id)
+                pneumo3_event = PneumococcalVaccineEvent(self, child_id)
                 self.sim.schedule_event(pneumo3_event, self.sim.date + DateOffset(weeks=14))
 
             # ROTA1 - doses 1 and 2 reported separately
             if self.rng.rand(1) < ind_vax_coverage.Rotavirus1.values:
-                rota1_event = RotavirusEvent(self, child_id)
+                rota1_event = RotavirusVaccineEvent(self, child_id)
                 self.sim.schedule_event(rota1_event, self.sim.date + DateOffset(weeks=6))
 
             # ROTA2
             if self.rng.rand(1) < ind_vax_coverage.Rotavirus2.values:
-                rota2_event = RotavirusEvent(self, child_id)
+                rota2_event = RotavirusVaccineEvent(self, child_id)
                 self.sim.schedule_event(rota2_event, self.sim.date + DateOffset(weeks=10))
 
             # PENTA1
             if self.rng.rand(1) < ind_vax_coverage.DTPHepHib1.values:
                 # print("PENTA1 TRUE")
-                penta1_event = DTP_Hib_HepEvent(self, child_id)
+                penta1_event = DTP_Hib_HepVaccineEvent(self, child_id)
                 self.sim.schedule_event(penta1_event, self.sim.date + DateOffset(weeks=6))
 
             # PENTA2 - second dose not reported so use 3 dose coverage
             if self.rng.rand(1) < ind_vax_coverage.DTPHepHib3.values:
-                penta2_event = DTP_Hib_HepEvent(self, child_id)
+                penta2_event = DTP_Hib_HepVaccineEvent(self, child_id)
                 self.sim.schedule_event(penta2_event, self.sim.date + DateOffset(weeks=10))
                 self.sim.schedule_event(penta2_event, self.sim.date + DateOffset(weeks=14))
 
             # Measles, rubella - first dose, 2018 onwards
             if self.rng.rand(1) < ind_vax_coverage.MCV1_MR1.values:
-                mr1_event = MeaslesRubellaEvent(self, child_id)
+                mr1_event = MeaslesRubellaVaccineEvent(self, child_id)
                 self.sim.schedule_event(mr1_event, self.sim.date + DateOffset(months=9))
 
             # Measles, rubella - second dose
             if self.rng.rand(1) < ind_vax_coverage.MCV2_MR2.values:
-                mr1_event = MeaslesRubellaEvent(self, child_id)
+                mr1_event = MeaslesRubellaVaccineEvent(self, child_id)
                 self.sim.schedule_event(mr1_event, self.sim.date + DateOffset(months=15))
 
             # Measles - first dose, only one dose pre-2017 and no rubella
             if self.rng.rand(1) < ind_vax_coverage.MCV1.values:
-                m1_event = MeaslesEvent(self, child_id)
+                m1_event = MeaslesVaccineEvent(self, child_id)
                 self.sim.schedule_event(m1_event, self.sim.date + DateOffset(months=9))
 
         # ----------------------------------- 2019 onwards -----------------------------------
         else:
             # schedule bcg - now dependent on health system capacity / stocks
-            bcg_appt = HSI_bcg(self, person_id=child_id)
+            bcg_appt = Hsi_BcgVaccine(self, person_id=child_id)
 
             # Request the health system to have this bcg vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -506,7 +509,7 @@ class Epi(Module):
 # ---------------------------------------------------------------------------------
 
 # BCG
-class BcgEvent(Event, IndividualScopeEventMixin):
+class BcgVaccineEvent(Event, IndividualScopeEventMixin):
     """ give BCG vaccine at birth
     """
 
@@ -534,7 +537,7 @@ class OpvEvent(Event, IndividualScopeEventMixin):
 
 
 # DTP_Hep
-class DTP_HepEvent(Event, IndividualScopeEventMixin):
+class DTP_HepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hep vaccine
     """
 
@@ -549,7 +552,7 @@ class DTP_HepEvent(Event, IndividualScopeEventMixin):
 
 
 # DTP_Hib_Hep
-class DTP_Hib_HepEvent(Event, IndividualScopeEventMixin):
+class DTP_Hib_HepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hib_Hep vaccine
     """
 
@@ -565,7 +568,7 @@ class DTP_Hib_HepEvent(Event, IndividualScopeEventMixin):
 
 
 # Rotavirus
-class RotavirusEvent(Event, IndividualScopeEventMixin):
+class RotavirusVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Rotavirus vaccine
     """
 
@@ -579,7 +582,7 @@ class RotavirusEvent(Event, IndividualScopeEventMixin):
 
 
 # Penumococcal vaccine (PCV)
-class PneumococcalEvent(Event, IndividualScopeEventMixin):
+class PneumococcalVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Pneumococcal vaccine
     """
 
@@ -593,7 +596,7 @@ class PneumococcalEvent(Event, IndividualScopeEventMixin):
 
 
 # Hib vaccine
-class HibEvent(Event, IndividualScopeEventMixin):
+class HibVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Haemophilus influenza B vaccine
     """
 
@@ -607,7 +610,7 @@ class HibEvent(Event, IndividualScopeEventMixin):
 
 
 # Measles vaccine
-class MeaslesEvent(Event, IndividualScopeEventMixin):
+class MeaslesVaccineEvent(Event, IndividualScopeEventMixin):
     """ give measles vaccine
     """
 
@@ -621,7 +624,7 @@ class MeaslesEvent(Event, IndividualScopeEventMixin):
 
 
 # Measles/Rubella vaccine
-class MeaslesRubellaEvent(Event, IndividualScopeEventMixin):
+class MeaslesRubellaVaccineEvent(Event, IndividualScopeEventMixin):
     """ give measles/rubella vaccine
     """
 
@@ -705,7 +708,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------
 
 
-class HSI_bcg(HSI_Event, IndividualScopeEventMixin):
+class Hsi_BcgVaccine(HSI_Event, IndividualScopeEventMixin):
     """
     gives bcg vaccine 24 hours after birth or as soon as possible afterwards
     """
