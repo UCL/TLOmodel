@@ -298,7 +298,7 @@ class NewbornOutcomes(Module):
 
         # mni dictionary is deleted on maternal death/disease reset. Condition on mother being alive to read in mni
         # from labour
-        if df.at[mother_id, 'is_alive'] or (~df.at[mother_id, 'is_alive'] &
+        if df.at[mother_id, 'is_alive'] or (~df.at[mother_id, 'is_alive'] & df.at[mother_id, 'la_maternal_death'] &
                                             ~df.at[mother_id, 'la_intrapartum_still_birth']):
             mni = self.sim.modules['Labour'].mother_and_newborn_info
             m = mni[mother_id]
