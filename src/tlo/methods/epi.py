@@ -63,9 +63,6 @@ class Epi(Module):
 
         p = self.parameters
 
-        # workbook = pd.read_excel(
-        #     Path(self.resourcefilepath) / "ResourceFile_EPI_WHO_estimates.xlsx", sheet_name=None,
-        # )
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
                                               'ResourceFile_EPI_WHO_estimates.xlsx'), sheet_name=None)
 
@@ -239,126 +236,126 @@ class Epi(Module):
             if self.rng.rand(1) < ind_vax_coverage.BCG.values:
 
                 bcg_event = BcgVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "bcg", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "bcg", "date_administration_days"].values[0]
                 self.sim.schedule_event(bcg_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # assign OPV first dose according to current coverage
             # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
             if self.rng.rand(1) < ind_vax_coverage.OPV3.values:
                 opv1_event = OpvEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "opv1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "opv1", "date_administration_days"].values[0]
                 self.sim.schedule_event(opv1_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # OPV2-4
             # coverage estimates for 3 doses reported, use these for doses 2-4
             if self.rng.rand(1) < ind_vax_coverage.OPV3.values:
                 opv2_event = OpvEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "opv2", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "opv2", "date_administration_days"].values[0]
                 self.sim.schedule_event(opv2_event, self.sim.date + DateOffset(days=scheduled_date))
 
-                scheduled_date = vax_date.loc[vax_date.vaccine == "opv3", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "opv3", "date_administration_days"].values[0]
                 self.sim.schedule_event(opv2_event, self.sim.date + DateOffset(days=scheduled_date))
 
-                scheduled_date = vax_date.loc[vax_date.vaccine == "opvIpv4", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "opvIpv4", "date_administration_days"].values[0]
                 self.sim.schedule_event(opv2_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # DTP1_HepB - up to and including 2012, then replaced by pentavalent vaccine
             if self.rng.rand(1) < ind_vax_coverage.DTP1.values:
                 dtp1_event = DTP_HepVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"].values[0]
                 self.sim.schedule_event(dtp1_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # DTP2_HepB - up to and including 2012
             # second doses not reported - same coverage for second and third doses
             if self.rng.rand(1) < ind_vax_coverage.DTP3.values:
                 dtp2_event = DTP_HepVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"].values[0]
                 self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(days=scheduled_date))
 
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"].values[0]
                 self.sim.schedule_event(dtp2_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # HIB1
             if self.rng.rand(1) < ind_vax_coverage.Hib3.values:
                 hib_event = HibVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"].values[0]
                 self.sim.schedule_event(hib_event, self.sim.date + DateOffset(days=scheduled_date))
 
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"].values[0]
                 self.sim.schedule_event(hib_event, self.sim.date + DateOffset(days=scheduled_date))
 
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"].values[0]
                 self.sim.schedule_event(hib_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # PNEUMO1 - all three doses reported separately
             if self.rng.rand(1) < ind_vax_coverage.Pneumo1.values:
                 pneumo1_event = PneumococcalVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo1", "date_administration_days"].values[0]
                 self.sim.schedule_event(pneumo1_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # PNEUMO2
             if self.rng.rand(1) < ind_vax_coverage.Pneumo2.values:
                 pneumo2_event = PneumococcalVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo2", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo2", "date_administration_days"].values[0]
                 self.sim.schedule_event(pneumo2_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # PNEUMO3
             if self.rng.rand(1) < ind_vax_coverage.Pneumo3.values:
                 pneumo3_event = PneumococcalVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo3", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo3", "date_administration_days"].values[0]
                 self.sim.schedule_event(pneumo3_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # ROTA1 - doses 1 and 2 reported separately
             if self.rng.rand(1) < ind_vax_coverage.Rotavirus1.values:
                 rota1_event = RotavirusVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "rota1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "rota1", "date_administration_days"].values[0]
                 self.sim.schedule_event(rota1_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # ROTA2
             if self.rng.rand(1) < ind_vax_coverage.Rotavirus2.values:
                 rota2_event = RotavirusVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "rota2", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "rota2", "date_administration_days"].values[0]
                 self.sim.schedule_event(rota2_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # PENTA1
             if self.rng.rand(1) < ind_vax_coverage.DTPHepHib1.values:
                 # print("PENTA1 TRUE")
                 penta1_event = DTP_Hib_HepVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"].values[0]
                 self.sim.schedule_event(penta1_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # PENTA2 - second dose not reported so use 3 dose coverage
             if self.rng.rand(1) < ind_vax_coverage.DTPHepHib3.values:
                 penta2_event = DTP_Hib_HepVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"].values[0]
                 self.sim.schedule_event(penta2_event, self.sim.date + DateOffset(days=scheduled_date))
 
-                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"].values[0]
                 self.sim.schedule_event(penta2_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # Measles, rubella - first dose, 2018 onwards
             if self.rng.rand(1) < ind_vax_coverage.MCV1_MR1.values:
                 mr1_event = MeaslesRubellaVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "MR1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "MR1", "date_administration_days"].values[0]
                 self.sim.schedule_event(mr1_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # Measles, rubella - second dose
             if self.rng.rand(1) < ind_vax_coverage.MCV2_MR2.values:
                 mr1_event = MeaslesRubellaVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "MR2", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "MR2", "date_administration_days"].values[0]
                 self.sim.schedule_event(mr1_event, self.sim.date + DateOffset(days=scheduled_date))
 
             # Measles - first dose, only one dose pre-2017 and no rubella
             if self.rng.rand(1) < ind_vax_coverage.MCV1.values:
                 m1_event = MeaslesVaccineEvent(self, child_id)
-                scheduled_date = vax_date.loc[vax_date.vaccine == "MR1", "date_administration_days"][0]
+                scheduled_date = vax_date.loc[vax_date.vaccine == "MR1", "date_administration_days"].values[0]
                 self.sim.schedule_event(m1_event, self.sim.date + DateOffset(days=scheduled_date))
 
         # ----------------------------------- 2019 onwards -----------------------------------
         else:
             # schedule bcg - now dependent on health system capacity / stocks
             bcg_appt = Hsi_BcgVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "bcg", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "bcg", "date_administration_days"].values[0]
 
             # Request the health system to have this bcg vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -371,7 +368,7 @@ class Epi(Module):
             # OPV
             # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
             opv1_appt = HSI_opv(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "opv1", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "opv1", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -383,7 +380,7 @@ class Epi(Module):
 
             # OPV2
             opv2_appt = HSI_opv(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "opv2", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "opv2", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -395,7 +392,7 @@ class Epi(Module):
 
             # OPV3
             opv3_appt = HSI_opv(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "opv3", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "opv3", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -407,7 +404,7 @@ class Epi(Module):
 
             # OPV4
             opv4_appt = HSI_opv(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "opvIpv4", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "opvIpv4", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -419,7 +416,7 @@ class Epi(Module):
 
             # PNEUMO1
             pneumo1_appt = HSI_PneumoVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo1", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo1", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -431,7 +428,7 @@ class Epi(Module):
 
             # PNEUMO2
             pneumo2_appt = HSI_PneumoVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo2", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo2", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -443,7 +440,7 @@ class Epi(Module):
 
             # PNEUMO3
             pneumo3_appt = HSI_PneumoVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo3", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "pneumo3", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -455,7 +452,7 @@ class Epi(Module):
 
             # ROTA1
             rota1_appt = HSI_RotaVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "rota1", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "rota1", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -467,7 +464,7 @@ class Epi(Module):
 
             # ROTA2
             rota2_appt = HSI_RotaVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "rota2", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "rota2", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -479,7 +476,7 @@ class Epi(Module):
 
             # PENTA1
             penta1_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep1", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -491,7 +488,7 @@ class Epi(Module):
 
             # PENTA2
             penta2_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep2", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -503,7 +500,7 @@ class Epi(Module):
 
             # PENTA3
             penta3_appt = HSI_DtpHibHepVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "dtpHibHep3", "date_administration_days"].values[0]
 
             # Request the health system to have this vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -515,7 +512,7 @@ class Epi(Module):
 
             # Measles, rubella - first dose, 2018 onwards
             mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "MR1", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "MR1", "date_administration_days"].values[0]
 
             # Request the health system to have this bcg vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -527,7 +524,7 @@ class Epi(Module):
 
             # Measles, rubella - second dose
             mr_appt = HSI_MeaslesRubellaVaccine(self, person_id=child_id)
-            scheduled_date = vax_date.loc[vax_date.vaccine == "MR2", "date_administration_days"][0]
+            scheduled_date = vax_date.loc[vax_date.vaccine == "MR2", "date_administration_days"].values[0]
 
             # Request the health system to have this measles/rubella vaccination appointment
             self.sim.modules["HealthSystem"].schedule_hsi_event(

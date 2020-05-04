@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import datetime
 import matplotlib.pyplot as plt
+import os
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -80,9 +81,10 @@ model_date = model_date.apply(lambda x: x.year)
 
 # ------------------------------------- DATA  ------------------------------------- #
 # import vaccine coverage data
-coverage_data = pd.read_csv(
-            Path(resourcefilepath) / "ResourceFile_EPI_WHO_estimates.csv"
-        )
+workbook = pd.read_excel(os.path.join(resourcefilepath,
+                                      'ResourceFile_EPI_WHO_estimates.xlsx'), sheet_name=None)
+
+coverage_data = workbook["WHO_estimates"]
 
 # select years included in simulation
 # end_date +1 to get the final value
