@@ -430,3 +430,37 @@ def test_multiplicative_helper():
     assert eq.intercept == 1.0
     assert eq.predictors[0] == predictor1
     assert eq.predictors[1] == predictor2
+
+
+def test_outcomes():
+    import numpy as np
+
+    prob = 0.5
+    OR_X = 2
+    OR_Y = 5
+
+    odds = prob / (1 - prob)
+
+    eq = LinearModel(
+        LinearModelType.LOGISTIC,
+        odds,
+        Predictor('FactorX').when(True, OR_X),
+        Predictor('FactorY').when(True, OR_Y)
+    )
+
+    df = pd.DataFrame(data={
+        'FactorX': [False, True, False, True],
+        'FactorY': [False, False, True, True]
+    }, index=['row1', 'row2', 'row3', 'row4'])
+
+    rng = np.random.RandomState(0)
+
+    pred = eq.predict(df, rng=rng)
+
+    assert isinstance(pred, pd.Series)
+    assert pred.dtype == bool
+    assert (pred.index == df.index).all()
+
+    pred = eq.predict(df.iloc[[0]], rng=rng)
+    assert not isinstance(pred, pd.Series)
+    assert isinstance(pred, np.bool_)

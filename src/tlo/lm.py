@@ -174,7 +174,7 @@ class LinearModel(object):
             assert isinstance(predictor, Predictor)
             self.predictors.append(predictor)
 
-    def predict(self, df: pd.DataFrame, **kwargs) -> pd.Series:
+    def predict(self, df: pd.DataFrame, rng: np.random.RandomState = None, **kwargs) -> pd.Series:
         """Will call each Predictor's `predict` methods passing the supplied dataframe"""
 
         # addition external variables used in the model but not part of the population dataframe
@@ -205,19 +205,32 @@ class LinearModel(object):
         # Do appropriate transformation on output
         if self.lm_type is LinearModelType.ADDITIVE:
             # print("Linear Model: Prediction will be sum of each effect size.")
-            return res_by_predictor.sum(axis=1, skipna=True)
+            res_by_predictor = res_by_predictor.sum(axis=1, skipna=True)
 
         elif self.lm_type is LinearModelType.LOGISTIC:
             # print("Logistic Regression Model: Prediction will be transform to probabilities. " \
             #       "Intercept assumed to be Odds and effect sizes assumed to be Odds Ratios.")
             odds = res_by_predictor.prod(axis=1, skipna=True)
-            return odds / (1 + odds)
+            res_by_predictor = odds / (1 + odds)
 
         elif self.lm_type is LinearModelType.MULTIPLICATIVE:
             # print("Multiplicative Model: Prediction will be multiplication of each effect size.")
-            return res_by_predictor.prod(axis=1, skipna=True)
+            res_by_predictor = res_by_predictor.prod(axis=1, skipna=True)
 
-        raise ValueError(f'Unhandled linear model type: {self.lm_type}')
+        else:
+            raise ValueError(f'Unhandled linear model type: {self.lm_type}')
+
+        # if the user supplied a random number generator then they want outcomes, not probabilities
+        if rng:
+            outcome = rng.random_sample(len(res_by_predictor)) < res_by_predictor
+            # pop the boolean out of the series if we have a single row, otherwise return the series
+            if len(outcome) == 1:
+                return outcome.iloc[0]
+            else:
+                return outcome
+
+        # return the raw result from the model
+        return res_by_predictor
 
     @staticmethod
     def multiplicative(*predictors: Predictor):
