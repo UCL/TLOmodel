@@ -5,7 +5,14 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthsystem,
+    labour,
+    pregnancy_supervisor,
+)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
@@ -15,9 +22,17 @@ popsize = 200
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    service_availability = ['*']
+
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+
     sim.seed_rngs(0)
     return sim
 
