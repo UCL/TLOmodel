@@ -121,7 +121,8 @@ def test_hsi_functions(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
-    # sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+    # Make detection of depression perfect in order that at least case is picked up with this population size.
+    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
 
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
@@ -177,6 +178,9 @@ def test_hsi_functions_no_medication_available(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
+    # Make detection of depression perfect in order that at least case is picked up with this population size.
+    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
@@ -199,14 +203,14 @@ def test_hsi_functions_no_medication_available(tmpdir):
     item_code = sim.modules['Depression'].parameters['anti_depressant_medication_item_code']
     sim.modules['HealthSystem'].prob_unique_item_codes_available.loc[item_code] = 0.0
 
-    sim.simulate(end_date=Date(year=2012, month=1, day=1))
+    sim.simulate(end_date=Date(year=2015, month=1, day=1))
     # --------------------------------------------------------------------------
 
     df = sim.population.props
 
     output = parse_log_file(f)
 
-    # Check that there have been been some cases of Talking Therapy and anti-depressants
+    # Check that there have been been some cases of Talking Therapy but no-one on anti-depressants
     assert df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
 
@@ -241,6 +245,9 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
+    # Make detection of depression perfect in order that at least case is picked up with this population size.
+    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.seed_rngs(0)
@@ -259,7 +266,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     df['de_ever_talk_ther'] = False
     df['de_ever_non_fatal_self_harm_event'] = False
 
-    sim.simulate(end_date=Date(year=2012, month=1, day=1))
+    sim.simulate(end_date=Date(year=2015, month=1, day=1))
     # --------------------------------------------------------------------------
 
     df = sim.population.props
