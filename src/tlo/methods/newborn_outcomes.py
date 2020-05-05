@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import math
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -34,6 +35,9 @@ class NewbornOutcomes(Module):
             Types.REAL, 'baseline incidence of low birth weight for neonates'),
         'mean_birth_weights': Parameter(
             Types.LIST, 'list of mean birth weights from gestational age at birth 24-41 weeks'),
+        'standard_deviation_birth_weights': Parameter(
+            Types.LIST, 'list of standard deviations associated with mean birth weights from gestational age at '
+                        'birth 24-41 weeks'),
         'prob_disability_<28wks': Parameter(
             Types.LIST, 'list of prevalence of levels of disability for neonates born at less than 28 weeks'),
         'prob_disability_28_32wks': Parameter(
@@ -421,24 +425,24 @@ class NewbornOutcomes(Module):
 
         # TODO: We dont have data for mean birth weight after 41 weeks, so currently convert gestational age of >41 to
         #  41
-        if gestation_at_birth > 41:
-            gestation_at_birth = 41
 
         # Mean birth weights for each gestational age are listed in a parameter starting at 24 weeks
         # We select the correct mean birth weight from the parameter
-        mean_birth_weight_list_location = gestation_at_birth - 24
+        mean_birth_weight_list_location = min(41, gestation_at_birth) - 24
+        standard_deviation = params['standard_deviation_birth_weights'][mean_birth_weight_list_location]
 
         # We randomly draw this newborns weight from a normal distribution around the mean for their gestation
-        birth_weight = np.random.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location], scale=20)
+        birth_weight = np.random.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location],
+                                        scale=standard_deviation)
         birth_weight_distribution = np.random.normal(loc=params['mean_birth_weights'][mean_birth_weight_list_location],
-                                                     scale=20, size=10000)
+                                                     scale=standard_deviation, size=10000)
         # TODO: Unsure what value to use for the size parameter of the ND random draw, number of newborns of that
         #  gestation born on average per year?
 
         # Then we calculate the 10th and 90th percentile, these are the case definition for 'small for gestational age'
         # and 'large for gestational age'
         small_for_gestational_age_cutoff = np.percentile(birth_weight_distribution, 10)
-        large_for_gestational_age_cutoff = np.percentile(birth_weight, 90)
+        large_for_gestational_age_cutoff = np.percentile(birth_weight_distribution, 90)
 
         # Make the appropriate changes to the data frame and log accordingly
         if birth_weight > 2500:
@@ -473,6 +477,78 @@ class NewbornOutcomes(Module):
 
             logger.debug(F'This is NewbornOutcomes scheduling a death for person %d on date %s who died due to {cause}'
                          'complications following birth', individual_id, self.sim.date)
+
+# ======================================== HSI INTERVENTION FUNCTIONS =================================================
+
+    def kangaroo_mother_care(self, hsi_event, facility_type):
+        df = self.sim.population.props
+        person_id = hsi_event.target
+
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run=f'assess_low_birth_weight_{facility_type}', hsi_event=hsi_event):
+
+            df.at[person_id, 'nb_kangaroo_mother_care'] = True
+            self.NewbornComplicationTracker['kmc'] += 1
+
+            logger.debug('Neonate %d has been correctly identified as being low birth weight, and kangaroo mother '
+                         'care has been initiated', person_id, self.sim.date)
+            # TODO: KMC reduces risk of sepsis at discharge. Maybe shouldn't be applied here?
+
+    def assessment_and_initiation_of_neonatal_resus(self, hsi_event, facility_type):
+        df = self.sim.population.props
+        nci = self.newborn_care_info
+        person_id = hsi_event.target
+        # Required consumables are defined
+        # pkg_code_resus = pd.unique(consumables.loc[consumables[
+        #                                             'Intervention_Pkg'] == 'Neonatal resuscitation '
+        #                                                                    '(institutional)',
+        #                                           'Intervention_Pkg_Code'])[0]
+
+        # consumables_needed = {'Intervention_Package_Code': {pkg_code_resus: 1}, 'Item_Code': {}}
+
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #   hsi_event=hsi_event, cons_req_as_footprint=consumables_needed)
+
+        # We determine if staff will correctly identify this neonate will require resuscitation
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+           dx_tests_to_run=f'assess_failure_to_transition_{facility_type}', hsi_event=hsi_event):
+
+            # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
+            # deliveries that are not attended
+            # TODO: outcome_of_request_for_consumables is always false here, so commented out for now
+            # if outcome_of_request_for_consumables:
+            if nci[person_id]['delivery_attended']:
+                df.at[person_id, 'nb_received_neonatal_resus'] = 'prompt_treatment'
+                self.NewbornComplicationTracker['resus'] += 1
+
+            else:
+                df.at[person_id, 'nb_received_neonatal_resus'] = 'delayed_treatment'
+                self.NewbornComplicationTracker['resus'] += 1
+
+    def assessment_and_treatment_newborn_sepsis(self, hsi_event, facility_type):
+        df = self.sim.population.props
+        nci = self.newborn_care_info
+        person_id = hsi_event.target
+        # pkg_code_sep = pd.unique(consumables.loc[consumables[
+        #                                             'Intervention_Pkg'] == 'Newborn sepsis - full supportive
+        #                                             care',
+        #                                         'Intervention_Pkg_Code'])[0]
+
+        # consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
+
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=hsi_event, cons_req_as_footprint=consumables_needed)
+
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+           dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=hsi_event):
+            #  if outcome_of_request_for_consumables:
+            if nci[person_id]['delivery_attended']:
+                df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'prompt_treatment'
+                self.NewbornComplicationTracker['sep_treatment'] += 1
+
+            else:
+                df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'delayed_treatment'
+                self.NewbornComplicationTracker['sep_treatment'] += 1
 
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module sets properties of the newborn, including prematurity status, schedules
@@ -533,24 +609,23 @@ class NewbornOutcomes(Module):
         # Here we apply the prevalence of congenital birth anomalies in infants who have survived to delivery
         # TODO: this will be replaced by further work on CA
         if child.is_alive and ~m['stillbirth_in_labour']:
-            if self.rng.random_sample() < params['prob_congenital_ba']:
-                etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
-                probabilities = params['prob_cba_type']
-                random_choice = self.rng.choice(etiology, size=1, p=probabilities)
-                df.at[child_id, 'nb_congenital_anomaly'] = random_choice
 
-        # For all newborns we first generate a dictionary that will store the prophylactic interventions then receive at
-        # birth if delivered in a facility and additional information
-
-            # Set up NCI dictionary
+            #  Next we populate the newborn info dictionary with relevant parameters
             nci[child_id] = {'ga_at_birth': df.at[mother_id, 'ps_gestational_age_in_weeks'],
                              'cord_care': False,
                              'vit_k': False,
                              'tetra_eye_d': False,
                              'proph_abx': False,
-                             'delivery_attended':  mni[mother_id]['delivery_attended'],
+                             'delivery_attended': mni[mother_id]['delivery_attended'],
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'sought_care_for_complication': False}
+
+            # Determine if this child will be born with a congeintal anomaly
+            if self.rng.random_sample() < params['prob_congenital_ba']:
+                etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
+                probabilities = params['prob_cba_type']
+                random_choice = self.rng.choice(etiology, size=1, p=probabilities)
+                df.at[child_id, 'nb_congenital_anomaly'] = random_choice
 
     # =================================== BIRTH-WEIGHT AND SIZE FOR GESTATIONAL AGE ===================================
             # The set birth weight function is used to determine this newborns birth weight and size for gestational age
@@ -625,16 +700,27 @@ class NewbornOutcomes(Module):
     # ======================================= SCHEDULING NEWBORN CARE  ================================================
         # Neonates who were delivered in a facility are automatically scheduled to receive care after birth
 
-            if m['delivery_setting'] == 'health_centre' or m['delivery_setting'] == 'hospital':
-                event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(self,
-                                                                                                  person_id=child_id)
+            if m['delivery_setting'] == 'health_centre':
+                event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(
+                    self, person_id=child_id, facility_level_of_this_hsi=1)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
                 logger.debug('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesSkilledAttendance'
                              'FollowingBirthFacilityLevel1 for child %d following a facility delivery', child_id)
-                # TODO: currently level 2 event is not ever scheduled
+
+            elif m['delivery_setting'] == 'hospital':
+                event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(
+                    self, person_id=child_id, facility_level_of_this_hsi=int(self.rng.choice([1, 2])))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1))
+
+                logger.debug('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesSkilledAttendance'
+                             'FollowingBirthFacilityLevel1 for child %d following a facility delivery', child_id)
+
+                # todo: we're randomly allocating type of facility here, which is wrong
 
     # ========================================== CARE SEEKING  ======================================================
             # If this neonate was delivered at home and develops a complications we determine the likelihood of care
@@ -647,8 +733,9 @@ class NewbornOutcomes(Module):
                 if self.eval(params['nb_newborn_equations']['care_seeking_for_complication'], child_id):
                     nci[child_id]['sought_care_for_complication'] = True
 
-                    event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
-                        self, person_id=child_id)
+                    event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(
+                        self, person_id=child_id, facility_level_of_this_hsi=int(self.rng.choice([1, 2])))
+                        # TODO: same issue as above
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         event, priority=0, topen=self.sim.date, tclose=self.sim.date + DateOffset(days=1))
@@ -861,27 +948,26 @@ class NewbornDiseaseResetEvent(Event, IndividualScopeEventMixin):
         # TODO: Is an event like this needed for this module, depends on how we're logging cases. Not all complications
         #  in this module resolve
 
-# ================================ HEALTH SYSTEM INTERACTION EVENTS ================================================
-        # TODO: HSIs that purely take up inpatient time? i.e. blank HSI that fires consecutively to show IP time
+# TODO: HSIs that purely take up inpatient time? i.e. blank HSI that fires consecutively to show IP time
 
 
-class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
-    """ This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1. This event is scheduled by
+class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, IndividualScopeEventMixin):
+    """ This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth This event is scheduled by
     the on_birth function of this module, automatically for neonates who delivered in facility and via a care seeking
-    equation for those delivered at home. This event manages initial care of newborns following birth at level 1
-    facilities. This event also houses assessment and treatment of complications following delivery (sepsis and failure
+    equation for those delivered at home. This event manages initial care of newborns following birth. This event also houses assessment and treatment of complications following delivery (sepsis and failure
     to transition). Eventually it will scheduled additional treatment for those who need it."""
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
-        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1'
+        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendance'
+
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['InpatientDays'] = 1  # TODO: confirm best appt footprint to use
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -889,15 +975,15 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
         params = self.module.parameters
         df = self.sim.population.props
 
-        logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel: child %d is '
+        logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth: child %d is '
                     'receiving care following delivery in a health facility on date %s', person_id, self.sim.date)
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # This HSI follows a similar structure as Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1
         # This function manages the administration of essential newborn care and prophylaxis
+        if nci[person_id]['delivery_attended']:
 
-        def prophylactic_interventions():
             # The required consumables are defined
             item_code_tetracycline = pd.unique(consumables.loc[consumables['Items'] == 'Tetracycline eye ointment '
                                                                                        '1%_3.5_CMST', 'Item_Code'])[0]
@@ -952,19 +1038,15 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
                 logger.debug('Neonate %d has started breastfeeding within 1 hour of birth', person_id)
             else:
                 logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', person_id)
-                # TODO: should initiation of breastfeeding vary between health centres and hospitals
 
+            # TODO: should initiation of breastfeeding vary between health centres and hospitals
             # TODO: Determine if neonates are given antibiotics for maternal risk factors
 
-        # If this neonates delivery is attended, the function will run
-        if nci[person_id]['delivery_attended']:
-            prophylactic_interventions()
         else:
             # Otherwise they receives no benefit of prophylaxis
             logger.debug('neonate %d received no prophylaxis as they were delivered unattended', person_id)
 
-        # --------------------------------- RECALCULATE SEPSIS RISK -------------------------------------
-
+        # --------------------------------- RECALCULATE SEPSIS RISK --------------------------------------------------
         # Following the administration of prophylaxis we determine if this neonate will develop sepsis
         if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis'], person_id):
             df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
@@ -974,138 +1056,37 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel1(
                          person_id, self.sim.date)
             logger.info('%s|early_onset_nb_sep|%s', self.sim.date, {'person_id': person_id})
 
-        # This function manages kangaroo mother care for low birth weight neonates
-        def kangaroo_mother_care(facility_type):
-            # We determine if staff will correctly identify if the neonate is low birth weight, and then initiate KMC
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-             dx_tests_to_run=f'assess_low_birth_weight_{facility_type}', hsi_event=self):
-                df.at[person_id, 'nb_kangaroo_mother_care'] = True
-                self.module.NewbornComplicationTracker['kmc'] += 1
-
-                logger.debug('Neonate %d has been correctly identified as being low birth weight, and kangaroo mother '
-                             'care has been initiated', person_id, self.sim.date)
-                # TODO: KMC reduces risk of sepsis at discharge. Maybe shouldn't be applied here?
-
+        # --------------------------------------- INTERVENTIONS ------------------------------------------------------
         # Only stable neonates are assessed for KMC as per guidelines
         if nci[person_id]['delivery_attended'] and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
                                                     ~df.at[person_id, 'nb_failed_to_transition'] and
                                                     df.at[person_id, 'nb_encephalopathy'] != 'none'):
             # Likelihood of correct assessment and treatment varied by facility type
             if nci[person_id]['delivery_setting'] == 'health_centre':
-                kangaroo_mother_care('hc')
-            elif nci[person_id]['delivery_setting'] == 'health_centre':
-                kangaroo_mother_care('hp')
+                self.module.kangaroo_mother_care(self, 'hc')
+            elif nci[person_id]['delivery_setting'] == 'hospital':
+                self.module.kangaroo_mother_care(self, 'hp')
 
         # This function manages initiation of neonatal resuscitation
-        def assessment_and_initiation_of_neonatal_resus(facility_type):
-            # Required consumables are defined
-            # pkg_code_resus = pd.unique(consumables.loc[consumables[
-            #                                             'Intervention_Pkg'] == 'Neonatal resuscitation '
-            #                                                                    '(institutional)',
-            #                                           'Intervention_Pkg_Code'])[0]
-
-            # consumables_needed = {'Intervention_Package_Code': {pkg_code_resus: 1}, 'Item_Code': {}}
-
-            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            #   hsi_event=self, cons_req_as_footprint=consumables_needed)
-
-            # We determine if staff will correctly identify this neonate will require resuscitation
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-              dx_tests_to_run=f'assess_failure_to_transition_{facility_type}', hsi_event=self):
-
-                # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
-                # deliveries that are not attended
-                # TODO: outcome_of_request_for_consumables is always false here, so commented out for now
-                # if outcome_of_request_for_consumables:
-                if nci[person_id]['delivery_attended']:
-                    df.at[person_id, 'nb_received_neonatal_resus'] = 'prompt_treatment'
-                    self.module.NewbornComplicationTracker['resus'] += 1
-
-                else:
-                    df.at[person_id, 'nb_received_neonatal_resus'] = 'delayed_treatment'
-                    self.module.NewbornComplicationTracker['resus'] += 1
-
         if nci[person_id]['delivery_setting'] == 'health_centre':
-            assessment_and_initiation_of_neonatal_resus('hc')
+            self.module.assessment_and_initiation_of_neonatal_resus(self, 'hc')
         if nci[person_id]['delivery_setting'] == 'hospital':
-            assessment_and_initiation_of_neonatal_resus('hp')
+            self.module.assessment_and_initiation_of_neonatal_resus(self, 'hp')
 
         # This function manages the assessment and treatment of neonatal sepsis, and follows the same structure as
         # resuscitation
-        def assessment_and_treatment_newborn_sepsis(facility_type):
-            # pkg_code_sep = pd.unique(consumables.loc[consumables[
-            #                                             'Intervention_Pkg'] == 'Newborn sepsis - full supportive
-            #                                             care',
-            #                                         'Intervention_Pkg_Code'])[0]
-
-            # consumables_needed = {'Intervention_Package_Code': {pkg_code_sep: 1}, 'Item_Code': {}}
-
-            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            #     hsi_event=self, cons_req_as_footprint=consumables_needed)
-
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-              dx_tests_to_run=f'assess_neonatal_sepsis_{facility_type}', hsi_event=self):
-                #  if outcome_of_request_for_consumables:
-                if nci[person_id]['delivery_attended']:
-                    df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'prompt_treatment'
-                    self.module.NewbornComplicationTracker['sep_treatment'] += 1
-
-                else:
-                    df.at[person_id, 'nb_treatment_for_neonatal_sepsis'] = 'delayed_treatment'
-                    self.module.NewbornComplicationTracker['sep_treatment'] += 1
-
         if nci[person_id]['delivery_setting'] == 'health_centre':
-            assessment_and_treatment_newborn_sepsis('hc')
+            self.module.assessment_and_treatment_newborn_sepsis(self,'hc')
         if nci[person_id]['delivery_setting'] == 'hospital':
-            assessment_and_treatment_newborn_sepsis('hp')
+            self.module.assessment_and_treatment_newborn_sepsis(self, 'hp')
 
-        # ------------------------------ (To go here- referral for further care) ---------------------------------------
+    def did_not_run(self):
+        person_id = self.target
 
+        logger.debug('Neonate %d did not receive care after birth as the squeeze factor was too high', person_id)
+        return False
 
-class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2. This event is scheduled by
-    the on_birth function of this module, automatically for neonates who delivered in facility and via a care seeking
-    equation for those delivered at home. This event manages initial care of newborns following birth at level 2
-    facilities. This event also houses assessment and treatment of complications following delivery (sepsis and failure
-    to transition). Eventually it will scheduled additional treatment for those who need it"""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, NewbornOutcomes)
-
-        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1  # ???
-
-        # Define the necessary information for an HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 2
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        nci = self.module.newborn_care_info
-        params = self.module.parameters
-        df = self.sim.population.props
-
-        logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirthFacilityLevel2: child %d is '
-                    'receiving care following delivery in a health facility on date %s', person_id, self.sim.date)
-
-        if nci[person_id]['delivery_attended']:
-            self.module.prophylactic_interventions()
-
-        if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis_facility_delivery'], person_id):
-            df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
-            self.module.NewbornComplicationTracker['neonatal_sepsis'] += 1
-
-            logger.info('Neonate %d has developed early onset sepsis following a facility delivery on date %s',
-                        person_id, self.sim.date)
-            logger.info('%s|early_onset_nb_sep|%s', self.sim.date, {'person_id': person_id})
-
-        self.module.kangaroo_mother_care('hp')
-        self.module.assessment_and_initiation_of_neonatal_resus('hp')
-        self.module.assessment_and_treatment_newborn_sepsis('hp')
-
-        # ------------------------------ (To go here- referral for further care) ---------------------------------------
+    # ------------------------------ (To go here- referral for further care) ---------------------------------------
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
