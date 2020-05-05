@@ -6,6 +6,7 @@ import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     contraception,
     demography,
@@ -14,7 +15,7 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager,
+    symptommanager, labour, pregnancy_supervisor,
 )
 
 try:
@@ -37,11 +38,13 @@ def test_configuration_of_properties():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
-    sim.simulate(end_date=Date(year=2015, month=1, day=1))
+    sim.simulate(end_date=Date(year=2013, month=1, day=1))
     # --------------------------------------------------------------------------
 
     # Check types of columns
@@ -119,10 +122,16 @@ def test_hsi_functions(tmpdir):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
-    # Make detection of depression perfect in order that at least case is picked up with this population size.
-    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+    # Make it more likely that individual with depression seeks care
+    sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
+    sim.modules['Depression'].linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
+    )
 
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
@@ -142,7 +151,7 @@ def test_hsi_functions(tmpdir):
     df['de_ever_talk_ther'] = False
     df['de_ever_non_fatal_self_harm_event'] = False
 
-    sim.simulate(end_date=Date(year=2015, month=1, day=1))
+    sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
 
     df = sim.population.props
@@ -176,10 +185,16 @@ def test_hsi_functions_no_medication_available(tmpdir):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
-    # Make detection of depression perfect in order that at least case is picked up with this population size.
-    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+    # Make it more likely that individual with depression seeks care
+    sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
+    sim.modules['Depression'].linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
+    )
 
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
@@ -203,7 +218,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
     item_code = sim.modules['Depression'].parameters['anti_depressant_medication_item_code']
     sim.modules['HealthSystem'].prob_unique_item_codes_available.loc[item_code] = 0.0
 
-    sim.simulate(end_date=Date(year=2015, month=1, day=1))
+    sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
 
     df = sim.population.props
@@ -243,10 +258,16 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
-    # Make detection of depression perfect in order that at least case is picked up with this population size.
-    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
+    # Make it more likely that individual with depression seeks care
+    sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
+    sim.modules['Depression'].linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
+        LinearModelType.MULTIPLICATIVE,
+        sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
+    )
 
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
@@ -266,7 +287,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     df['de_ever_talk_ther'] = False
     df['de_ever_non_fatal_self_harm_event'] = False
 
-    sim.simulate(end_date=Date(year=2015, month=1, day=1))
+    sim.simulate(end_date=Date(year=2012, month=1, day=1))
     # --------------------------------------------------------------------------
 
     df = sim.population.props
