@@ -15,7 +15,9 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    symptommanager, labour, pregnancy_supervisor,
+    labour,
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 try:
