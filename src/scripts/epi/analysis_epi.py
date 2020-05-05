@@ -14,6 +14,10 @@ from tlo.methods import (
     healthsystem,
     enhanced_lifestyle,
     epi,
+    antenatal_care,
+    labour,
+    newborn_outcomes,
+    pregnancy_supervisor
 )
 
 start_time = time.time()
@@ -28,7 +32,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
+end_date = Date(2020, 12, 31)
 popsize = 500
 
 # Establish the simulation object
@@ -51,8 +55,13 @@ sim.register(
         capabilities_coefficient=0.0,
         disable=True,
     )
-)  # disables the health system constraints so all HSI events run
+)
+# disables the health system constraints so all HSI events run
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(epi.Epi(resourcefilepath=resourcefilepath))
