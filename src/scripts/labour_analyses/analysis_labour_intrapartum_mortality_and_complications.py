@@ -22,8 +22,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 1000
+end_date = Date(2014, 1, 1)
+popsize = 20000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -32,8 +32,13 @@ service_availability = ['*']
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+#                                       service_availability=['*'],
+#                                       capabilities_coefficient=0.0,
+#                                       mode_appt_constraints=2))
+
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
@@ -59,6 +64,10 @@ stats_crude['year'] = stats_crude['date'].dt.year
 stats_deliveries = output['tlo.methods.labour']['summary_stats_deliveries']
 stats_deliveries['date'] = pd.to_datetime(stats_deliveries['date'])
 stats_deliveries['year'] = stats_deliveries['date'].dt.year
+
+stats_nb = output['tlo.methods.newborn_outcomes']['summary_stats']
+stats_nb['date'] = pd.to_datetime(stats_nb['date'])
+stats_nb['year'] = stats_nb['date'].dt.year
 
 
 
