@@ -189,7 +189,7 @@ class Depression(Module):
 
     def read_parameters(self, data_folder):
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_ap_th.xlsx',
+            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
                           sheet_name='parameter_values')
         )
         p = self.parameters
