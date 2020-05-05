@@ -209,32 +209,24 @@ class Depression(Module):
                                   .otherwise(p['init_rp_depr_agege60'])
         )
 
-        self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
+        self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
             Predictor('age_years').apply(
-                lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']),
+                lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']
+            )
         )
 
-        self.linearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
-            Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * p['init_rp_ever_depr_per_year_older_f']),
+        self.linearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel.multiplicative(
+            Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * p['init_rp_ever_depr_per_year_older_f'])
         )
 
-        self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
+        self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel.multiplicative(
             Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression'])
                                      .otherwise(0.0)
         )
 
-        self.linearModels['Using_AntiDepressants_Initialisation'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
+        self.linearModels['Using_AntiDepressants_Initialisation'] = LinearModel.multiplicative(
             Predictor('de_depr').when(True, p['init_pr_antidepr_curr_depr']),
-            Predictor().when('~de_depr & de_ever_diagnosed_depression',
-                             p['init_rp_antidepr_ever_depr_not_curr'])
+            Predictor().when('~de_depr & de_ever_diagnosed_depression', p['init_rp_antidepr_ever_depr_not_curr'])
         )
 
         self.linearModels['Ever_Talking_Therapy_Initialisation'] = LinearModel(
@@ -263,18 +255,14 @@ class Depression(Module):
             Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
         )
 
-        self.linearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
+        self.linearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel.multiplicative(
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
             Predictor('de_cc').when(True, p['rr_resol_depr_cc']),
             Predictor('de_on_antidepr').when(True, p['rr_resol_depr_on_antidepr']),
             Predictor('de_ever_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
-        self.linearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1.0,
+        self.linearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel.multiplicative(
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
                                 .when(False, p['prob_3m_stop_antidepr'])
         )
