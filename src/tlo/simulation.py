@@ -231,6 +231,25 @@ class EventQueue:
         date, count, event = heapq.heappop(self.queue)
         return event, date
 
+    def find_events_for_person(self, person_id: int):
+        """Find the events in the queue for a particular person.
+        :param person_id: the person_id of interest
+        :returns list of tuples (date_of_event, event) for that person_id in the queue.
+
+        NB. This is for debugging and testing only - not for use in real simulations as it is slow
+        """
+        list_of_events = list()
+
+        for ev_tuple in self.queue:
+            date = ev_tuple[0]
+            event = ev_tuple[2]
+            target = event.target
+            if isinstance(target, int):
+                if target == person_id:
+                    list_of_events.append((date, event))
+
+        return list_of_events
+
     def __len__(self):
         """:return: the length of the queue"""
         return len(self.queue)

@@ -174,6 +174,7 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         """This is where progression of diseases will be handled"""
+        pass
 
     # ============================= PROGRESSION OF PREGNANCY DISEASES ==========================================
     # Progression of pregnancy diseases will live here
