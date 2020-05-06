@@ -1962,6 +1962,22 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             logger.debug('This is LabourOnsetEvent scheduling a potential death on date %s for mother %d',
                          self.sim.date, individual_id)
 
+            # Here we run a check to ensure at the end of the preliminary labour event, women have the appropriate
+            # future events scheduled
+            events = self.sim.event_queue.find_events_for_person(person_id=individual_id)
+            hsi_events = self.sim.modules['HealthSystem'].find_events_for_person(person_id=individual_id)
+
+    #        assert 'LabourDeathEvent' in events[0][1]
+    #        assert BirthEvent in events
+
+            # if mni[individual_id]['delivery_setting'] == 'homebirth':
+            #    assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour not in hsi_events
+            #    assert LabourAtHomeEvent in events
+
+            #else:
+            #    assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour in hsi_events
+            #    assert LabourAtHomeEvent not in events
+
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
     """This is the LabourAtHomeEvent. It is scheduled by the LabourOnsetEvent for women who will not seek care. This
