@@ -31,17 +31,17 @@ except NameError:
 sim = Simulation(start_date=Date(year=2010, month=1, day=1))
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-sim.register(mockitis.Mockitis())
-sim.register(chronicsyndrome.ChronicSyndrome())
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             contraception.Contraception(resourcefilepath=resourcefilepath),
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             labour.Labour(resourcefilepath=resourcefilepath),
+             mockitis.Mockitis(),
+             chronicsyndrome.ChronicSyndrome())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)

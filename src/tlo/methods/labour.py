@@ -979,7 +979,7 @@ class Labour (Module):
 
     def set_date_of_labour(self, individual_id):
         """This function, called by the contraception module, uses linear equations to determine a womans likelihood of
-        preterm, postterm or term labour and sets their future date of labour accordingly"""
+        """
 
         df = self.sim.population.props
         params = self.parameters
