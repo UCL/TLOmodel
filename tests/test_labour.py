@@ -20,7 +20,7 @@ from tlo.methods import (
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
-popsize = 3000
+popsize = 10000
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -36,7 +36,7 @@ def simulation():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
     sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
+    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
     sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
