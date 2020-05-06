@@ -105,7 +105,7 @@ class Simulation:
         :param seed: the seed for the Simulation RNG. If seed is not provided, a random seed will be
             used.
         """
-        if not seed:
+        if seed is None:
             seed = np.random.randint(2 ** 31 - 1)
 
         logger.info("Simulation RNG user seed %d", seed)
