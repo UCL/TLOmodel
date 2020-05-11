@@ -6,7 +6,10 @@ from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
+#from tlo.methods.labour import HSI_Labour_PresentsForSkilledBirthAttendanceInLabour, \
+#    HSI_Labour_ReceivesCareForPostpartumPeriod
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -182,6 +185,20 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # simple diagnosis to work out which HSI event to trigger
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+
+        # -----  COMPLICATION DURING BIRTH  -----
+        if 'em_complication_during_birth' in symptoms:
+            event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+                module=self.sim.modules['Labour'], person_id=person_id,
+                facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+        # -----  COMPLICATION AFTER BIRTH  -----
+        if 'em_complication_following_birth' in symptoms:
+            event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+                    module=self.sim.modules['Labour'], person_id=person_id,
+                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  SUSPECTED DEPRESSION  -----
         if 'em_Injuries_From_Self_Harm' in symptoms:

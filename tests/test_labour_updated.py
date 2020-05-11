@@ -34,6 +34,7 @@ end_date = Date(2012, 1, 1)
 popsize = 2000
 
 
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
@@ -92,3 +93,4 @@ def test_run_health_system_events_wont_run():
 
     check_dtypes(sim)
     # todo: some logic here to confirm that all women are now delivering at home due to high squeeze
+

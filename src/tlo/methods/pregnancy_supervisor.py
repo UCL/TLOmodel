@@ -163,6 +163,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Application of pregnancy complications will occur here
 
 
+
 class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancyDiseaseProgressionEvent. It runs every 4 weeks and determines if women who have a disease
     of pregnancy will undergo progression to the next stage. This event will need to be recoded using the

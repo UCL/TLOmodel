@@ -15,7 +15,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor,
+    pregnancy_supervisor
 )
 
 start_date = Date(2010, 1, 1)
