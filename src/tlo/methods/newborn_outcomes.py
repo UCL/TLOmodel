@@ -485,7 +485,7 @@ class NewbornOutcomes(Module):
         person_id = hsi_event.target
 
         if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run=f'assess_low_birth_weight_{facility_type}', hsi_event=hsi_event):
+          dx_tests_to_run=f'assess_low_birth_weight_{facility_type}', hsi_event=hsi_event):
 
             df.at[person_id, 'nb_kangaroo_mother_care'] = True
             self.NewbornComplicationTracker['kmc'] += 1
@@ -644,6 +644,9 @@ class NewbornOutcomes(Module):
 
                     logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
                                 child_id, self.sim.date)
+
+            # TODO: if we only apply sepsis risk to HBs here, only septic homebirths will have a higher risk of being
+            #  born with encephalopathy- which isnt right
 
             # ---------------------------------------- ENCEPHALOPATHY.... --------------------------------------------
             # Term neonates then have a risk of encephalopathy applied
@@ -945,8 +948,7 @@ class NewbornDiseaseResetEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         print(individual_id)
 
-        # TODO: Is an event like this needed for this module, depends on how we're logging cases. Not all complications
-        #  in this module resolve
+        # TODO: reset sepsis and enceph variables (disability will store impairment)
 
 # TODO: HSIs that purely take up inpatient time? i.e. blank HSI that fires consecutively to show IP time
 
@@ -982,24 +984,25 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
 
         # This HSI follows a similar structure as Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1
         # This function manages the administration of essential newborn care and prophylaxis
-        if nci[person_id]['delivery_attended']:
+        if df.at[person_id, 'is_alive']:
+            if nci[person_id]['delivery_attended']:
 
-            # The required consumables are defined
-            item_code_tetracycline = pd.unique(consumables.loc[consumables['Items'] == 'Tetracycline eye ointment '
-                                                                                       '1%_3.5_CMST', 'Item_Code'])[0]
+                # The required consumables are defined
+                item_code_tetracycline = pd.unique(consumables.loc[consumables['Items'] == 'Tetracycline eye ointment '
+                                                                   '1%_3.5_CMST', 'Item_Code'])[0]
 
-            item_code_vit_k = pd.unique(consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, '
-                                                                                '1 ml, inj._100_IDA', 'Item_Code'])[0]
-            item_code_vit_k_syringe = pd.unique(consumables.loc[consumables['Items'] == 'Syringe,  disposable 2ml,  '
-                                                                                        'hypoluer with 23g needle_each_'
-                                                                                        'CMST',
-                                                                'Item_Code'])[0]
-            consumables_newborn_care = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
+                item_code_vit_k = pd.unique(consumables.loc[consumables['Items'] ==
+                                                            'vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA',
+                                                            'Item_Code'])[0]
+                item_code_vit_k_syringe = pd.unique(
+                    consumables.loc[consumables['Items'] == 'Syringe,  disposable 2ml,  hypoluer with 23g needle_each_'
+                                                            'CMST', 'Item_Code'])[0]
+                consumables_newborn_care = {
+                    'Intervention_Package_Code': {},
+                    'Item_Code': {item_code_tetracycline: 1, item_code_vit_k: 1, item_code_vit_k_syringe: 1}}
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_newborn_care, to_log=True)
+                outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self, cons_req_as_footprint=consumables_newborn_care, to_log=True)
 
             # ------------------------------------------ CORD CARE -------------------------------------------------
             # Consumables for cord care are recorded in the labour module, as part of the skilled birth attendance
@@ -1082,8 +1085,15 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
 
     def did_not_run(self):
         person_id = self.target
-
+        params = self.module.parameters
+        df = self.sim.population.props
         logger.debug('Neonate %d did not receive care after birth as the squeeze factor was too high', person_id)
+        # TODO: then we need to apply risk of sepsis here?
+
+        if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis'], person_id):
+            df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
+            self.module.NewbornComplicationTracker['neonatal_sepsis'] += 1
+
         return False
 
     # ------------------------------ (To go here- referral for further care) ---------------------------------------

@@ -43,7 +43,7 @@ sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
 sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
+sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
 
 logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(1)
