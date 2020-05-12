@@ -11,7 +11,6 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
-"""this is a chnage i am making on my brnach"""
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -825,7 +824,33 @@ class RTI(Module):
         'rt_date_inj': Property(Types.DATE, 'date of latest injury')
     }
     # generic symptom for severely traumatic injuries, mild injuries accounted for in generic symptoms under 'injury'
-    SYMPTOMS = {'em_severe_trauma'}
+    SYMPTOMS = {'em_severe_trauma',   # Generic for severe injuries.
+                'bleeding from wound',
+                'bruising around trauma site',
+                'severe pain at trauma site',
+                'swelling around trauma site',
+                'redness or warmth around trauma site',
+                'blurred vision',
+                'restlessness',
+                'irritability',
+                'loss of balance',
+                'stiffness in neck',
+                'pupils not reacting to light',
+                'confusion',
+                'excessive drowsiness',
+                'fainting',
+                'excessive salivation',
+                'difficulty swallowing',
+                'nosebleed',
+                'breathing difficulty',
+                'audible signs of injury',
+                'uneven chest rise',
+                'seat belt marks',
+                'visual deformity',
+                'open fracture',
+                'limitation of movement',
+                'inability to walk',
+                }
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
