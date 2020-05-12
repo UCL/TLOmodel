@@ -11,12 +11,14 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # ================Put inj randomizer function here for now====================================
 
@@ -44,7 +46,7 @@ def injrandomizer(number):
     for n in range(0, number):
         # Reset the distribution of body regions which can injured.
         injlocdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/'
-                                 'TLOmodel/resources//ResourceFile_InjuredBodyRegionPercentage.csv', delimiter=',')
+                                   'TLOmodel/resources//ResourceFile_InjuredBodyRegionPercentage.csv', delimiter=',')
 
         ninjdecide = np.random.uniform(0, sum(totalinjdist))
         # This generates a random number which will decide how many injuries the person will have,
@@ -478,7 +480,8 @@ def injrandomizer(number):
     injuryais = injdf['Injury AIS string'].str.split(expand=True)
     injurydescription = injurylocations + injurycategories + injuryais
     for (columnname, columndata) in injurydescription.iteritems():
-        injurydescription.rename(columns={injurydescription.columns[columnname]: "Injury "+str(columnname+1)}, inplace=True)
+        injurydescription.rename(columns={injurydescription.columns[columnname]: "Injury " + str(columnname + 1)},
+                                 inplace=True)
 
     return injdf, injurydescription
 
@@ -824,7 +827,8 @@ class RTI(Module):
         'rt_date_inj': Property(Types.DATE, 'date of latest injury')
     }
     # generic symptom for severely traumatic injuries, mild injuries accounted for in generic symptoms under 'injury'
-    SYMPTOMS = {'em_severe_trauma',   # Generic for severe injuries.
+    SYMPTOMS = {'em_severe_trauma',  # Generic for severe injuries.
+                # Fracture
                 'bleeding from wound',
                 'bruising around trauma site',
                 'severe pain at trauma site',
@@ -850,6 +854,23 @@ class RTI(Module):
                 'open fracture',
                 'limitation of movement',
                 'inability to walk',
+                # TBI
+                'periorbital ecchymosis',
+                'hemorrhagic shock',
+                'hyperbilirubinemia',
+                'abnormal posturing',
+                'nausea',
+                'fatigue',
+                'loss of consciousness',
+                'coma',
+                'seizures',
+                'tinnitus',
+                'sensitive to light',
+                'slurred speech',
+                'personality change',
+                'paralysis',
+                'loss of vision on one side',
+                'weakness in one half of body'
                 }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -1112,12 +1133,6 @@ class RTI(Module):
                 sequlae_code=1735
             )
 
-
-
-
-
-
-
     # Declare the non-generic symptoms that this module will use.
     # It will not be able to use any that are not declared here. They do not need to be unique to this module.
     # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
@@ -1143,8 +1158,6 @@ class RTI(Module):
         df.loc[df.is_alive & 'rt_post_med_death'] = False  # default: no death after medical intervention
         df.loc[df.is_alive & 'rt_disability'] = 0  # default: no DALY
         df.loc[df.is_alive & 'rt_date_inj'] = pd.NaT
-
-
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to this simulation
@@ -1208,7 +1221,6 @@ class RTI(Module):
 # ---------------------------------------------------------------------------------------------------------
 
 class RTIEvent(RegularEvent, PopulationScopeEventMixin):
-
     """A skeleton class for an event
 
     Regular events automatically reschedule themselves at a fixed frequency,
@@ -1305,8 +1317,6 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             'daly_wt_bilateral_lower_limb_amputation_with_treatment']
         self.daly_wt_bilateral_lower_limb_amputation_without_treatment = p[
             'daly_wt_bilateral_lower_limb_amputation_without_treatment']
-
-
 
     def apply(self, population):
         """Apply this event to the population.
