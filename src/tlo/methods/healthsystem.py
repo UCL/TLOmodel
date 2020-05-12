@@ -1,13 +1,12 @@
 import heapq as hp
 import inspect
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 import tlo
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.dxmanager import DxManager
 
@@ -108,7 +107,7 @@ class HealthSystem(Module):
         logger.info('----------------------------------------------------------------------')
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
-        self.dx_manager = DxManager()
+        self.dx_manager = DxManager(self)
 
     def read_parameters(self, data_folder):
 
@@ -674,37 +673,7 @@ class HealthSystem(Module):
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # 0) Check the format of the cons_req_as_footprint:
-
-        # Format is as follows:
-        #     * dict with two keys; Intervention_Package_Code and Item_Code
-        #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
-        #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
-        #     e.g.
-        #     cons_footprint = {
-        #                 'Intervention_Package_Code': {my_pkg_code: 1},
-        #                 'Item_Code': {my_item_code: 10}, {another_item_code: 1}
-        #     }
-
-        # check basic formatting
-        assert 'Intervention_Package_Code' in cons_req_as_footprint
-        assert 'Item_Code' in cons_req_as_footprint
-        assert type(cons_req_as_footprint['Intervention_Package_Code']) is dict
-        assert type(cons_req_as_footprint['Item_Code']) is dict
-
-        # check that consumables being required are in the database:
-        consumables = self.parameters['Consumables']
-
-        # Check packages
-        for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
-            assert pkg_code in consumables['Intervention_Pkg_Code'].values
-            assert type(pkg_quant) is int
-            assert pkg_quant > 0
-
-        # Check items
-        for itm_code, itm_quant in cons_req_as_footprint['Item_Code'].items():
-            assert itm_code in consumables['Item_Code'].values
-            assert type(itm_quant) is int
-            assert itm_quant > 0
+        self.check_consumables_footprint_format(cons_req_as_footprint)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if self.disable:
@@ -794,6 +763,44 @@ class HealthSystem(Module):
         output['Item_Code'] = items_availability
 
         return output
+
+    def check_consumables_footprint_format(self, cons_req_as_footprint):
+        """
+        This function runs some check on the cons_footprint to ensure its in the right format
+        :param cons_footprint:
+        :return:
+        """
+
+        # Format is as follows:
+        #     * dict with two keys; Intervention_Package_Code and Item_Code
+        #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
+        #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
+        #     e.g.
+        #     cons_footprint = {
+        #                 'Intervention_Package_Code': {my_pkg_code: 1},
+        #                 'Item_Code': {my_item_code: 10}, {another_item_code: 1}
+        #     }
+
+        # check basic formatting
+        assert 'Intervention_Package_Code' in cons_req_as_footprint
+        assert 'Item_Code' in cons_req_as_footprint
+        assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
+        assert isinstance(cons_req_as_footprint['Item_Code'], dict)
+
+        # check that consumables being required are in the database:
+        consumables = self.parameters['Consumables']
+
+        # Check packages
+        for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
+            assert pkg_code in consumables['Intervention_Pkg_Code'].values
+            assert isinstance(pkg_quant, int)
+            assert pkg_quant > 0
+
+        # Check items
+        for itm_code, itm_quant in cons_req_as_footprint['Item_Code'].items():
+            assert itm_code in consumables['Item_Code'].values
+            assert isinstance(itm_quant, int)
+            assert itm_quant > 0
 
     def get_consumables_as_individual_items(self, cons_footprint):
         """
@@ -1110,7 +1117,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # Update load factors:
                         updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
                         df_footprints_of_all_individual_level_hsi_event.loc[updated_call.index, ev_num] = updated_call
-                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                        squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
                             all_calls_today=df_footprints_of_all_individual_level_hsi_event,
                             current_capabilities=current_capabilities,
                         )
@@ -1206,12 +1213,14 @@ class HSI_Event:
 
 
 class HSIEventWrapper(Event):
-    # This is wrapper that contains an HSI event.
-    # It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
-    # be passed to the main simulation scheduler.
-    # When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+    """This is wrapper that contains an HSI event.
 
-    def __init__(self, hsi_event):
+    It is used when the healthsystem is 'disabled' and all HSI events sent to the health system scheduler should
+    be passed to the main simulation scheduler.
+    When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
+    """
+    def __init__(self, hsi_event, *args, **kwargs):
+        super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
 
     def run(self):
