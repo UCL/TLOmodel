@@ -51,7 +51,7 @@ def test_of_example_usage():
         Predictor('sy_vomiting').when(True, 0.00001).otherwise(0.00002)
     )
 
-    eq.predict(EXAMPLE_DF)
+    print(eq.predict(EXAMPLE_DF))
 
     # Logistic model
     eq = LinearModel(
