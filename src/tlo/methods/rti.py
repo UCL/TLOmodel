@@ -802,10 +802,6 @@ class RTI(Module):
                                       'Injury status relating to road traffic injury: none, mild, moderate, severe',
                                       categories=['none', 'mild', 'severe'],
                                       ),
-        # ============================= Specific injury details for the more generic injury types are stored as 2
-        # character strings 'ab' with the first, 'a' being one of the following:
-        # h - head, f - face, n - neck, t - thorax, a - abdomen, s - spine, u - upper extremity and l - lower extremity.
-        # and 'b' being a number from 1 to 6 representing the AIS severity score of that injury
         'rt_fracture': Property(Types.BOOL, 'fractured bone resulting from RTI'),
         'rt_dislocation': Property(Types.BOOL, 'dislocated joint resulting from RTI'),
         'rt_tbi': Property(Types.CATEGORICAL, 'traumatic brain injury resulting from RTI, mild, moderate, severe',
@@ -834,14 +830,14 @@ class RTI(Module):
                 'severe pain at trauma site',
                 'swelling around trauma site',
                 'redness or warmth around trauma site',
-                'blurred vision',
+                'visual disturbances',
                 'restlessness',
                 'irritability',
                 'loss of balance',
-                'stiffness in neck',
-                'pupils not reacting to light',
+                'stiffness',
+                'abnormal pupil behaviour/reflexes',
                 'confusion',
-                'excessive drowsiness',
+                'fatigue',
                 'fainting',
                 'excessive salivation',
                 'difficulty swallowing',
@@ -850,17 +846,15 @@ class RTI(Module):
                 'audible signs of injury',
                 'uneven chest rise',
                 'seat belt marks',
-                'visual deformity',
-                'open fracture',
+                'visual deformity of body part',
                 'limitation of movement',
                 'inability to walk',
                 # TBI
                 'periorbital ecchymosis',
-                'hemorrhagic shock',
+                'shock',
                 'hyperbilirubinemia',
                 'abnormal posturing',
                 'nausea',
-                'fatigue',
                 'loss of consciousness',
                 'coma',
                 'seizures',
@@ -869,8 +863,40 @@ class RTI(Module):
                 'slurred speech',
                 'personality change',
                 'paralysis',
-                'loss of vision on one side',
-                'weakness in one half of body'
+                'weakness in one half of body',
+                # Dislocation
+                'numbness in lower back and lower limbs',
+                'muscle spasms',
+                'hypermobile patella'
+                # Soft tissue injury
+                'ataxia',
+                'coughing up blood',
+                'stridor',
+                'subcutaneous air',
+                'blue discoloration of skin or lips',
+                'pressure in chest',
+                'rapid breathing',
+                # Internal organ injury
+                'low blood pressure',
+                'Bluish discoloration of the belly',
+                'Right-sided abdominal pain and right shoulder pain',
+                'Blood in the urine',
+                'Left arm and shoulder pain',
+                'rigid abdomen',
+                'cyanosis',
+                'heart palpitations',
+                'pain in the left shoulder or left side of the chest',
+                'difficulty urinating',
+                'urine leakage',
+                'abdominal distension',
+                'rectal bleeding',
+                # Internal bleeding
+                'sweaty skin',
+                # Spinal cord injury
+                'inability to control bladder',
+                'inability to control bowel',
+                'unnatural positioning of the head',
+                # Amputation - limb's bloody gone
                 }
 
     def __init__(self, name=None, resourcefilepath=None):
