@@ -2,6 +2,7 @@ import datetime
 from pathlib import Path
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
@@ -27,8 +28,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 10000
+end_date = Date(2012, 1, 1)
+popsize = 500
 
 # Establish the simulation object and set the seed
 sim = Simulation(start_date=start_date)
@@ -47,7 +48,18 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath)
              )
 
+# Establish the logger
+logfile = sim.configure_logging(filename="LogFile")
+
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
+
+# %% Demonstrate the burden and the interventions
+output = parse_log_file(logfile)
+
+
+
+
+# %% Demonstrate the impact of the interventions
 
