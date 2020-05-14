@@ -7,9 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
+from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -81,52 +83,33 @@ class Oesophageal_Cancer(Module):
             "rate ratio for stage 4 oesophageal cancer for people with stage 3 "
             "oesophageal cancer if had curative treatment at stage 3",
         ),
+        "rate_palliative_care_stage4": Parameter(
+            Types.REAL, "prob palliative care this 3 month period if stage4"
+        ),
         "r_death_oesoph_cancer": Parameter(
             Types.REAL,
             "probabilty per 3 months of death from oesophageal cancer mongst people with stage 4 oesophageal cancer",
         ),
-        "r_curative_treatment_low_grade_dysp": Parameter(
-            Types.REAL,
-            "probabilty per 3 months of receiving medical treatment aimed at cure if have low grade "
-            "dysplasia, given diagnosis (surgery, radiotherapy and/or chemotherapy",
+        "rr_dysphagia_low_grade_dysp": Parameter(
+            Types.REAL, "probability per 3 months of dysphagia in a person with low grade oesophageal dysplasia"
         ),
-        "rr_curative_treatment_high_grade_dysp": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have high grade "
-            "dysplasia, given diagnosis (surgery, radiotherapy and/or chemotherapy",
+        "rr_dysphagia_high_grade_dysp": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have high grade oesophageal dysplasia"
         ),
-        "rr_curative_treatment_stage1": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have stage1, "
-            "given diagnosis (surgery, radiotherapy and/or chemotherapy",
+        "r_dysphagia_stage1": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 1 oesophageal cancer"
         ),
-        "rr_curative_treatment_stage2": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have stage2, "
-            "given diagnosis (surgery, radiotherapy and/or chemotherapy",
+        "rr_dysphagia_stage2": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 2 oesophageal cancer"
         ),
-        "rr_curative_treatment_stage3": Parameter(
-            Types.REAL,
-            "relative rate of receiving medical treatment aimed at cure if have stage3, "
-            "given diagnosis (surgery, radiotherapy and/or chemotherapy",
+        "rr_dysphagia_stage3": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 3 oesophageal cancer"
         ),
-        "rr_diagnosis_low_grade_dysp": Parameter(
-            Types.REAL, "probability per 3 months of diagnosis in a person with low grade oesophageal dysplasia"
+        "rr_dysphagia_stage4": Parameter(
+            Types.REAL, "rate ratio for dysphagia if have stage 4 oesophageal cancer"
         ),
-        "rr_diagnosis_high_grade_dysp": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high grade oesophageal dysplasia"
-        ),
-        "r_diagnosis_stage1": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 1 oesophageal cancer"
-        ),
-        "rr_diagnosis_stage2": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 2 oesophageal cancer"
-        ),
-        "rr_diagnosis_stage3": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 3 oesophageal cancer"
-        ),
-        "rr_diagnosis_stage4": Parameter(
-            Types.REAL, "rate ratio for diagnosis if have high stage 4 oesophageal cancer"
+        "prob_present_dysphagia": Parameter(
+            Types.REAL, "probability of presenting if have dysphagia"
         ),
         "init_prop_oes_cancer_stage": Parameter(
             Types.LIST,
@@ -144,11 +127,20 @@ class Oesophageal_Cancer(Module):
         "rp_oes_cancer_ex_alc": Parameter(
             Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer "
         ),
-        "init_prop_diagnosed_oes_cancer_by_stage": Parameter(
+        "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer diagnosed"
+        ),
+        "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of people with diagnosed oesophageal cancer with dysplasia"
         ),
         "init_prop_treatment_status_oes_cancer": Parameter(
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
+        ),
+        "init_prob_palliative_care": Parameter(
+            Types.REAL, "initial probability of being under palliative care if stage 4"
+        ),
+        "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
+            Types.REAL, "sensitivity of endoscopy_for diagnosis of oes_cancer_with_dysphagia"
         ),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
         "daly_wt_oes_cancer_controlled": Parameter(
@@ -165,34 +157,12 @@ class Oesophageal_Cancer(Module):
         ),
     }
 
-    # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
-    # medication, has a chronic disease that requires medication every day and causes some
-    # worry but minimal interference with daily activities., 0.049, 0.031, 0.072
-    #
-    # 548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers,
-    # end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong
-    # medication to avoid constant pain. The person has no appetite, feels nauseous, and needs
-    # to spend most of the day in bed.", 0.54, 0.377, 0.687
-    #
-    # 549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme
-    # fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
-    #
-    # 550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and
-    # primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193,
-    # 0.399
-
-    # Next we declare the properties of individuals that this module provides.
-    # Again each has a name, type and description. In addition, properties may be marked
-    # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         "ca_oesophagus": Property(
             Types.CATEGORICAL,
             "oesophageal dysplasia / cancer stage: none, low_grade_dysplasia"
             "high_grade_dysplasia, stage1, stage2, stage3, stage4",
             categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
-        ),
-        "ca_oesophagus_curative_treatment_requested": Property(
-            Types.BOOL, "curative treatment requested of health care system this 3 month period"
         ),
         "ca_oesophagus_curative_treatment": Property(
             Types.CATEGORICAL,
@@ -202,39 +172,46 @@ class Oesophageal_Cancer(Module):
             "high grade dysplasia, stage 1, stage 2, stage 3",
             categories=["never", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3"],
         ),
+        "sy_dysphagia": Property(Types.BOOL, "has dysphagia"),
         "ca_oesophagus_diagnosed": Property(Types.BOOL, "diagnosed with oesophageal dysplasia / cancer"),
-        "ca_oesophageal_cancer_death": Property(Types.BOOL, "death from oesophageal cancer"),
-        "ca_incident_oes_cancer_diagnosis_this_3_month_period": Property(
-            Types.BOOL, "incident oesophageal cancer" "diagnosis this 3 month period"
-        ),
+        "ca_date_oes_cancer_diagnosis": Property(Types.DATE, "date incident oesophageal cancer"),
         "ca_date_treatment_oesophageal_cancer": Property(Types.DATE, "date of receiving attempted curative treatment"),
-        "ca_disability": Property(Types.REAL, "disability weight this three month period"),
+        "ca_palliative_care": Property(Types.DATE, "receiving palliative care"),
+        "ca_oesophageal_cancer_death": Property(Types.BOOL, "death from oes cancer this 3 month period")
     }
-    TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
+
+    # Symptom that this module will use
+    # NB. The 'em_' prefix means that the onset of this symptom leads to an GenericEmergencyAppt
+    SYMPTOMS = {'sy_dysphagia'}
+
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
         """
         # Update parameters from the resource dataframe
         dfd = pd.read_excel(
-            Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx", sheet_name="parameter_values"
+            Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer_mar20_ap.xlsx", sheet_name="parameter_values"
         )
         self.load_parameters_from_dataframe(dfd)
 
+        # Get DALY weight values:
+
         if "HealthBurden" in self.sim.modules.keys():
-            # get the DALY weight - 547-550 are the sequale codes for oesophageal cancer
-            self.parameters["daly_wt_oes_cancer_controlled"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=547
+            # get the DALY weight for oes cancer
+            self.parameters["daly_wt_oes_dysp_diagnosed"] = 0.03
+            self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            sequlae_code=550
             )
-            self.parameters["daly_wt_oes_cancer_terminal"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=548
+            # todo: lower disability weight if palliative care (or higher if no palliative care)
+            self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            sequlae_code=549
             )
-            self.parameters["daly_wt_oes_cancer_metastatic"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=549
+            self.parameters["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            sequlae_code=547
             )
-            self.parameters["daly_wt_oes_cancer_primary_therapy"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                sequlae_code=550
-            )
+
+            # Register this disease module with the health system
+            self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -250,11 +227,12 @@ class Oesophageal_Cancer(Module):
         df.loc[df.is_alive, "ca_oesophagus"] = "none"
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment"] = "never"
-        df.loc[df.is_alive, "ca_oesophageal_cancer_death"] = False
-        df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
-        df.loc[df.is_alive, "ca_disability"] = 0
-        df.loc[df.is_alive, "ca_oesophagus_curative_treatment_requested"] = False
+        df.loc[df.is_alive, "ca_date_oes_cancer_diagnosis"] = pd.NaT
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
+        df.loc[df.is_alive, "sy_dysphagia"] = False
+        df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
+        df.loc[df.is_alive, "ca_palliative_care"] = False
+        df.loc[df.is_alive, "ca_oesophageal_cancer_death"] = False
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
@@ -262,14 +240,14 @@ class Oesophageal_Cancer(Module):
         # create dataframe of the probabilities of ca_oesophagus status for 20 year old males, no ex alcohol, no tobacco
         p_oes_dys_can = pd.DataFrame(data=[m.init_prop_oes_cancer_stage], columns=cancer_stages, index=agege20_idx)
 
-        # create probabilities of oes dysplasia and oe cancer for all over age 20
+        # create probabilities of oes dysplasia and oes cancer for all over age 20
         p_oes_dys_can.loc[(df.sex == "F") & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
         p_oes_dys_can.loc[df.li_ex_alc & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_ex_alc
         p_oes_dys_can.loc[df.li_tob & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_tobacco
 
         # apply multiplier
-        p_oes_dys_can_age_muliplier = m.rp_oes_cancer_per_year_older ** (df.loc[agege20_idx, 'age_years'] - 20)
-        p_oes_dys_can = p_oes_dys_can.multiply(p_oes_dys_can_age_muliplier, axis="index")
+        p_oes_dys_can_age_multiplier = m.rp_oes_cancer_per_year_older ** (df.loc[agege20_idx, 'age_years'] - 20)
+        p_oes_dys_can = p_oes_dys_can.multiply(p_oes_dys_can_age_multiplier, axis="index")
 
         # add column for the probability of no cancer at start of dataframe
         p_oes_dys_can.insert(0, 'none', 1 - p_oes_dys_can.sum(axis=1))
@@ -277,22 +255,38 @@ class Oesophageal_Cancer(Module):
         # check the categories match and line up
         assert df.ca_oesophagus.cat.categories.all() == p_oes_dys_can.columns.all()
 
+        # understand why occasional negative values for p_oes_dys_can
         # for each row, make a choice
         stage = p_oes_dys_can.apply(lambda p_oes: rng.choice(p_oes_dys_can.columns, p=p_oes), axis=1)
 
         # set for those that have cancer
         df.loc[stage.index[stage != 'none'], 'ca_oesophagus'] = stage[stage != 'none']
 
-        # -------------------- ASSIGN VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
+        # -------------------- ASSIGN VALUES SY_DYSPHAGIA AT BASELINE --------------------------------
+
+        def set_dysphagia(stage):
+            """samples dysphagia status based on stage of cancer"""
+            # get the positional offset of the stage (from definition of category in PROPERTIES)
+            offset = df.ca_oesophagus.cat.categories.get_loc(stage) - 1
+            # get the probability of dysphagia  this stage of cancer
+            p_dysphagia = m.init_prop_dysphagia_oes_cancer_by_stage[offset]
+            # randomly select some to have been diagnosed
+            subset = df.is_alive & (df.ca_oesophagus == stage)
+            df.loc[subset, 'sy_dysphagia'] = rng.random_sample(size=subset.sum()) < p_dysphagia
+
+        for stage in cancer_stages:
+            set_dysphagia(stage)
+
+        # -------------------- ASSIGN VALUES OESOPHAGEAL_CANCER_DIAGNOSED AT BASELINE --------------------------------
 
         def set_diagnosed(stage):
             """samples diagnosed status based on stage of cancer"""
             # get the positional offset of the stage (from definition of category in PROPERTIES)
             offset = df.ca_oesophagus.cat.categories.get_loc(stage) - 1
-            # get the probability of diagnosis at this stage of cancer
-            p_diagnosed = m.init_prop_diagnosed_oes_cancer_by_stage[offset]
+            # get the probability of diagnosis at this stage of cancer, given sy_dysphagia
+            p_diagnosed = m.init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage[offset]
             # randomly select some to have been diagnosed
-            subset = df.is_alive & (df.ca_oesophagus == stage)
+            subset = df.is_alive & (df.ca_oesophagus == stage) & df.sy_dysphagia
             df.loc[subset, 'ca_oesophagus_diagnosed'] = rng.random_sample(size=subset.sum()) < p_diagnosed
 
         for stage in cancer_stages:
@@ -312,6 +306,13 @@ class Oesophageal_Cancer(Module):
         for stage in cancer_stages[:-1]:
             set_curative_treatment(stage)
 
+        # -------------------- ASSIGN VALUES CA_PALLIATIVE_CARE AT BASELINE -------------------
+
+        idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
+        selected = idx[m.init_prob_palliative_care > rng.random_sample(size=len(idx))]
+        df.loc[selected, "ca_palliative_care"] = True
+
+
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
@@ -320,8 +321,16 @@ class Oesophageal_Cancer(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         event = OesCancerLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
+
+        # Create the diagnostic representing the assessment for whether a person with dysphagia is diagnosed with
+        # oes cancer
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            endoscopy_dysphagia_oes_cancer=DxTest(
+                property='ca_oesophagus_yn',
+                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia']
+            )
+        )
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -330,13 +339,15 @@ class Oesophageal_Cancer(Module):
         """
         df = self.sim.population.props
         df.at[child_id, "ca_oesophagus"] = "none"
+        df.at[child_id, "ca_palliative_care"] = False
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
+        df.at[child_id, "ca_date_oes_cancer_diagnosis"] = pd.NaT
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
-        df.at[child_id, "ca_oesophageal_cancer_death"] = False
         df.at[child_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
-        df.at[child_id, "ca_disability"] = 0
         df.at[child_id, "ca_oesophagus_curative_treatment_requested"] = False
         df.at[child_id, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
+        df.at[child_id, "sy_dysphagia"] = False
+        df.at[child_id, "ca_oesophageal_cancer_death"] = False
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
@@ -344,9 +355,7 @@ class Oesophageal_Cancer(Module):
         # And report it on the unified symptomology scale
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
-        # todo: currently diagnosis can just occur at some point - need to create properties for
-        # todo: symptoms such as dysphagia and then symptoms that are caused by later stage cancers
-        # todo: and let these determine presentation to the health system (and hence diagnosis)
+
         return pd.Series("1", index=df.index[df.is_alive])
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -365,9 +374,50 @@ class Oesophageal_Cancer(Module):
         # the past month
         #       logger.debug('This is Oesophageal Cancer reporting my health values')
         df = self.sim.population.props  # shortcut to population properties dataframe
-        disability_series_for_alive_persons = df.loc[df["is_alive"], "ca_disability"]
-        return disability_series_for_alive_persons
 
+        disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive],data=0.0)
+
+        disability_series_for_alive_persons.loc[df.is_alive &
+                                                (df.ca_oesophagus == "low_grade_dysplasia") &
+                                                df.ca_oesophagus_diagnosed] = self.parameters['daly_wt_oes_cancer_stage_1_3']
+
+        disability_series_for_alive_persons.loc[df.is_alive &
+                                                (df.ca_oesophagus == "high_grade_dysplasia") &
+                                                df.ca_oesophagus_diagnosed] = self.parameters['daly_wt_oes_cancer_stage_1_3']
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage1")
+                                                ] = self.parameters['daly_wt_oes_cancer_stage_1_3']
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage2")
+                                                ] = self.parameters['daly_wt_oes_cancer_stage_1_3']
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage3")
+                                                ] = self.parameters['daly_wt_oes_cancer_stage_1_3']
+
+        disability_series_for_alive_persons.loc[df.is_alive & (df.ca_oesophagus == "stage4")
+                                                ] = self.parameters['daly_wt_oes_cancer_stage4']
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia') & (df.ca_oesophagus == 'low_grade_dysplasia')
+        ] = self.parameters['daly_wt_treated_oes_cancer']
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia') & (df.ca_oesophagus == 'high_grade_dysplasia')
+        ] = self.parameters['daly_wt_treated_oes_cancer']
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'stage1') & (df.ca_oesophagus == 'stage1')
+        ] = self.parameters['daly_wt_treated_oes_cancer']
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'stage2') & (df.ca_oesophagus == 'stage2')
+        ] = self.parameters['daly_wt_treated_oes_cancer']
+
+        disability_series_for_alive_persons.loc[df.is_alive
+           & (df.ca_oesophagus_curative_treatment == 'stage3') & (df.ca_oesophagus == 'stage3')
+        ] = self.parameters['daly_wt_treated_oes_cancer']
+
+        return disability_series_for_alive_persons
 
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -385,33 +435,24 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-        # TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
-
         df = population.props
         m = self.module
         rng = m.rng
 
-        # set ca_oesophageal_cancer_death back to False after death
-        df.loc[df.is_alive, "ca_oesophageal_cancer_death"] = False
-        df.loc[df.is_alive, "ca_disability"] = 0
-        #       df['ca_oesophagus_curative_treatment_requested'] = False
-        df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
-
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
-        # create indexes of subgroups of people with different cancert statuses
+        # create indexes of subgroups of people with different cancer statuses
         ca_oes_current_none_idx = df.index[df.is_alive &
                                            (df.ca_oesophagus == "none") &
                                            (df.age_years >= 20)]
         ca_oes_current_low_grade_dysp_idx = df.index[df.is_alive &
-                                                     (df.ca_oesophagus == "low_grade_dysplasia") &
-                                                     (df.age_years >= 20)]
+                                                     (df.ca_oesophagus == "low_grade_dysplasia")]
         ca_oes_current_high_grade_dysp_idx = df.index[df.is_alive &
                                                       (df.ca_oesophagus == "high_grade_dysplasia") &
                                                       (df.age_years >= 20)]
-        ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1") & (df.age_years >= 20)]
-        ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2") & (df.age_years >= 20)]
-        ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3") & (df.age_years >= 20)]
+        ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1")]
+        ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2")]
+        ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3")]
 
         # updating for people aged over 20 with current status 'none'
         # create series of the parameter r_low_grade_dysplasia_none which is the probability of low grade dysplasia for
@@ -449,11 +490,12 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # updating for people aged over 20 with current stage to next stage
         def progress_stage(index, current_stage, next_stage, r_next_stage, rr_curative_treatment):
-            """helper function to progress people at given stage to next stage"""
+
             eff_prob_next_stage = pd.Series(r_next_stage, index=index)
+
             eff_prob_next_stage.loc[df.is_alive &
-                                    (df.ca_oesophagus == current_stage) &
-                                    (df.age_years >= 20) &
+                                   (df.ca_oesophagus == current_stage) &
+                                   (df.age_years >= 20) &
                                     (df.ca_oesophagus_curative_treatment == current_stage)
                                     ] *= rr_curative_treatment
             selected = index[eff_prob_next_stage > rng.random_sample(size=len(eff_prob_next_stage))]
@@ -475,206 +517,172 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                        'stage3', 'stage4',
                        m.r_stage4_stage3, m.rr_stage4_undergone_curative_treatment)
 
-        # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
-        # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation
-        # todo: for diagnosis
-
-        # update diagnosis status for undiagnosed people with low grade dysplasia
-
-        def update_diagnosis(current_stage, r_diagnosis):
+        # -------------------- UPDATING OF SY_DYSPHAGIA OVER TIME --------------------------------
+        def update_dysphagia(current_stage, r_dysphagia):
             idx = df.index[df.is_alive &
-                           (df.ca_oesophagus == current_stage) &
-                           (df.age_years >= 20) &
-                           ~df.ca_oesophagus_diagnosed]
-            selected = idx[r_diagnosis > rng.random_sample(size=len(idx))]
-            df.loc[selected, 'ca_oesophagus_diagnosed'] = True
-            df.loc[selected, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = True
+                           (df.ca_oesophagus == current_stage)]
+            selected = idx[r_dysphagia > rng.random_sample(size=len(idx))]
+            df.loc[selected, 'sy_dysphagia'] = True
 
-        update_diagnosis('low_grade_dysplasia', m.r_diagnosis_stage1 * m.rr_diagnosis_low_grade_dysp)
-        update_diagnosis('high_grade_dysplasia', m.r_diagnosis_stage1 * m.rr_diagnosis_high_grade_dysp)
-        update_diagnosis('stage1', m.r_diagnosis_stage1)
-        update_diagnosis('stage2', m.r_diagnosis_stage1 * m.rr_diagnosis_stage2)
-        update_diagnosis('stage3', m.r_diagnosis_stage1 * m.rr_diagnosis_stage3)
-        update_diagnosis('stage4', m.r_diagnosis_stage1 * m.rr_diagnosis_stage4)
+        update_dysphagia('low_grade_dysplasia', m.r_dysphagia_stage1 * m.rr_dysphagia_low_grade_dysp)
+        update_dysphagia('high_grade_dysplasia', m.r_dysphagia_stage1 * m.rr_dysphagia_high_grade_dysp)
+        update_dysphagia('stage1', m.r_dysphagia_stage1)
+        update_dysphagia('stage2', m.r_dysphagia_stage1 * m.rr_dysphagia_stage2)
+        update_dysphagia('stage3', m.r_dysphagia_stage1 * m.rr_dysphagia_stage3)
+        update_dysphagia('stage4', m.r_dysphagia_stage1 * m.rr_dysphagia_stage4)
 
-        # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
-        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
-        # this uses the approach descibed in detail above for updating diagosis status
 
-        def update_curative_treatment(current_stage, p_curative_treatment):
-            idx = df.index[df.is_alive &
-                           (df.ca_oesophagus == current_stage) &
-                           (df.age_years >= 20) &
-                           df.ca_oesophagus_diagnosed &
-                           (df.ca_oesophagus_curative_treatment == 'never')]
-            selected = idx[p_curative_treatment > rng.random_sample(size=len(idx))]
-            df.loc[selected, 'ca_oesophagus_curative_treatment_requested'] = True
+        # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_DIAGNOSED  -------------------
+        # update ca_oesophagus_diagnosed for those with dysphagia
 
-            # generate the HSI Events whereby persons present for care and get treatment
-            for person_id in idx:
-                # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
+        def update_diagnosis_status(p_present_dysphagia):
+
+            idx2 = df.index[df.is_alive & df.sy_dysphagia & ~df.ca_oesophagus_diagnosed]
+            selected2 = idx2[p_present_dysphagia > rng.random_sample(size=len(idx2))]
+
+            # generate the HSI Events whereby persons present for care and get diagnosed
+            for person_id in selected2:
+                # For this person, determine when they will seek care (uniform distribution [0,91]days from now)
                 date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
                 # For this person, create the HSI Event for their presentation for care
-                hsi_present_for_care = HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(self.module, person_id)
+                hsi_present_for_care = HSI_Dysphagia_PresentForCare(self.module, person_id)
                 # Enter this event to the HealthSystem
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
                 )
 
-        update_curative_treatment('low_grade_dysplasia', m.r_curative_treatment_low_grade_dysp)
-        update_curative_treatment('high_grade_dysplasia',
-                                  m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_high_grade_dysp)
-        update_curative_treatment('stage1', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage1)
-        update_curative_treatment('stage2', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage2)
-        update_curative_treatment('stage3', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage3)
+        update_diagnosis_status(m.prob_present_dysphagia)
 
-        # -------------------- DISABLITY -----------------------------------------------------------
+        # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
+        # update ca_oesophagus_curative_treatment for diagnosed, untreated people
+        # this uses the approach descibed in detail above for updating diagnosis status
+        def update_curative_treatment(current_stage):
 
-        # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
-        # medication, has a chronic disease that requires medication every day and causes some
-        # worry but minimal interference with daily activities., 0.049, 0.031, 0.072
-        #
-        # 548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers,
-        # end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong
-        # medication to avoid constant pain. The person has no appetite, feels nauseous, and needs
-        # to spend most of the day in bed.", 0.54, 0.377, 0.687
-        #
-        # 549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme
-        # fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
-        #
-        # 550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and
-        # primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193,
-        # 0.399
+        # todo: to disallow treatment for calibration purposes changed age cut off below from 20 to 200
+            idx = df.index[df.is_alive &
+                           (df.ca_oesophagus == current_stage) &
+                           (df.age_years >= 200) &
+                           df.ca_oesophagus_diagnosed &
+                           (df.ca_oesophagus_curative_treatment == 'never')]
 
-        # assume disability does not depend on whether diagnosed but may want to change in future
-        # todo: note these disability weights don't map fully to cancer stages - may need to re-visit these
-        # todo: choices below at some point
-        # todo: I think the m.daly_wt_oes_cancer_primary_therapy etc being read in are not being
-        # todo: recognised as REAL - need to covert to REAL so can take linear combinations of them below
-        disability_lookup = {
-            'low_grade_dysplasia': 0.01,
-            'high_grade_dysplasis': 0.01,
-            'stage1': m.daly_wt_oes_cancer_controlled,
-            'stage2': m.daly_wt_oes_cancer_primary_therapy,
-            'stage3': m.daly_wt_oes_cancer_primary_therapy,
-            'stage4': m.daly_wt_oes_cancer_metastatic,
-        }
+            # generate the HSI Events whereby diagnosed person gets treatment
+            for person_id in idx:
+                # For this person, determine when they will receive treatment (if there is health system capacity)
+                date_oes_cancer_curative_treatment = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
+                # For this person, create the HSI Event for their treatment
+                hsi_oes_cancer_curative_treatment = HSI_OesCancer_StartTreatment(self.module, person_id)
+                # Enter this event to the HealthSystem
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_oes_cancer_curative_treatment , priority=0, topen=date_oes_cancer_curative_treatment, tclose=None
+                )
 
-        for stage, weight in disability_lookup.items():
-            df.loc[df.is_alive & (df.ca_oesophagus == stage), 'ca_disability'] = weight
+        update_curative_treatment('low_grade_dysplasia')
+        update_curative_treatment('high_grade_dysplasia')
+        update_curative_treatment('stage1')
+        update_curative_treatment('stage2')
+        update_curative_treatment('stage3')
+
+
+
+        # -------------------- UPDATING VALUES OF CA_PALLIATIVE_CARE  -------------------
+
+        def update_palliative_care_status(p):
+            idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4") & (~df.ca_palliative_care)]
+            selected3 = idx[p > rng.random_sample(size=len(idx))]
+
+            # generate the HSI Events whereby persons seek/need palliative care
+            for person_id in selected3:
+                # For this person, determine when they will seek/need palliative care
+                # (uniform distribution [0,91]days from now)
+                date_palliative_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
+                # For this person, create the HSI Event for their palliative care
+                hsi_cancer_palliative_care = HSI_Cancer_PalliativeCare(self.module, person_id)
+                # Enter this event to the HealthSystem
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_cancer_palliative_care, priority=0, topen=date_palliative_care, tclose=None
+                )
+
+        update_palliative_care_status(m.rate_palliative_care_stage4)
+
 
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
+
         selected_to_die = stage4_idx[m.r_death_oesoph_cancer > rng.random_sample(size=len(stage4_idx))]
+
         df.loc[selected_to_die, "ca_oesophageal_cancer_death"] = True
+
         for individual_id in selected_to_die:
             self.sim.schedule_event(
                 demography.InstantaneousDeath(self.module, individual_id, "Oesophageal_cancer"), self.sim.date
             )
 
 
-class HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-    It is appointment at which someone with low grade oes dysplasia is treated.
-    """
 
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # Get the consumables required
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_low_grade_oes_dysplasia"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 0
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "low_grade_dysplasia"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
-
-
-class HSI_OesCancer_StartTreatmentHighGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
+class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
+        the_appt_footprint["Over5OPD"] = 1
+        the_appt_footprint['MinorSurg'] = 1
+        # todo: this appointment type for endoscopy and biopsy to be checked
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_high_grade_oes_dysplasia"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "high_grade_dysplasia"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
-
-
-class HSI_OesCancer_StartTreatmentStage1OesCancer(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_stage1_oes_cancer"
+        # This requires one out patient appt  # Define the necessary information for an HSI
+        self.TREATMENT_ID = "assess_dysphagia"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage1"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
+        df.at[person_id, "ca_oesophagus_diagnosed"] = True
+        df.at[person_id, "ca_date_oes_cancer_diagnosis"] = self.sim.date
+        df.at[person_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = True
 
-
-class HSI_OesCancer_StartTreatmentStage2OesCancer(HSI_Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
+
+        # todo: return to this below
+        the_appt_footprint["Over5OPD"] = 1
+        the_appt_footprint["MajorSurg"] = 3
+
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_stage2_oes_cancer"
+        self.TREATMENT_ID = "start_treatment_oes_cancer"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
+        self.ACCEPTED_FACILITY_LEVEL = 3  # Enforces that this apppointment must happen at level 3
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage2"
+
+        df.at[person_id, "ca_oesophagus_curative_treatment"] = df.at[person_id, "ca_oesophagus"]
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
+class HSI_Cancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-class HSI_OesCancer_StartTreatmentStage3OesCancer(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        # todo this below will change to another type of appointment
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_stage3_oes_cancer"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
-        self.ALERT_OTHER_DISEASES = []
+            # todo: return to this below
+            the_appt_footprint["Over5OPD"] = 1
 
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage3"
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
+            # Define the necessary information for an HSI
+            self.TREATMENT_ID = "cancer_palliative_care"
+            self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+            # todo: return to this below
+            self.ACCEPTED_FACILITY_LEVEL = 3  # Enforces that this apppointment must happen at level 3
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            df = self.sim.population.props
+
+            df.at[person_id, "ca_palliative_care"] = True
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    """Handles lifestyle logging"""
+    """Handles logging"""
 
     def __init__(self, module):
         """schedule logging to repeat every 3 months
@@ -688,70 +696,90 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # get some summary statistics
         df = population.props
-        # n_alive = df.is_alive.sum()
-        # n_alive_ge20 = (df.is_alive & (df.age_years >= 20)).sum()
-        # n_incident_low_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-        #                             & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
-        # n_incident_high_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-        #                             & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
-        # n_incident_oc_stage1_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-        #                             & (df.ca_oesophagus == 'stage1')).sum()
-        # n_incident_oc_stage2_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-        #                             & (df.ca_oesophagus == 'stage2')).sum()
-        # n_incident_oc_stage3_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-        #                             & (df.ca_oesophagus == 'stage3')).sum()
-        # n_incident_oc_stage4_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-        #                             & (df.ca_oesophagus == 'stage4')).sum()
-        # n_incident_oes_cancer_diagnosis = n_incident_oc_stage1_diag \
-        #                                   + n_incident_oc_stage2_diag + n_incident_oc_stage3_diag + \
-        #                                   n_incident_oc_stage4_diag
-        # n_low_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
-        # n_high_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
-        # n_stage1_oc = (df.is_alive & (df.ca_oesophagus == 'stage1')).sum()
-        # n_stage2_oc = (df.is_alive & (df.ca_oesophagus == 'stage2')).sum()
-        # n_stage3_oc = (df.is_alive & (df.ca_oesophagus == 'stage3')).sum()
-        # n_stage4_oc = (df.is_alive & (df.ca_oesophagus == 'stage4')).sum()
-        # n_stage4_undiagnosed_oc = (df.is_alive & (df.ca_oesophagus == 'stage4') & ~df.ca_oesophagus_diagnosed).sum()
-        # n_low_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed &
-        # (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
-        # n_high_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed
-        # & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
-        # n_stage1_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage1')).sum()
-        # n_stage2_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage2')).sum()
-        # n_stage3_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage3')).sum()
-        # n_stage4_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage4')).sum()
-        # n_received_trt_this_period_low_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
-        #                                     & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
-        # n_received_trt_this_period_high_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
-        #                                     & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
-        # n_received_trt_this_period_stage1 = (df.is_alive & (df.ca_oesophagus == 'stage1')
-        #                                     & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
-        # n_received_trt_this_period_stage2 = (df.is_alive & (df.ca_oesophagus == 'stage2')
-        #                                     & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
-        # n_received_trt_this_period_stage3 = (df.is_alive &
-        # (df.ca_oesophagus == 'stage3') & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
-        # n_oc_death = df.ca_oesophageal_cancer_death.sum()
-        # cum_deaths = (~df.is_alive).sum()
-        # logger.info('%s| n_alive_ge20 |%s| n_incident_oes_cancer_diagnosis|%s| n_incident_low_grade_dys_diag|%s| '
-        #             'n_incident_high_grade_dys_diag|%s| n_incident_oc_stage1_diag|%s| '
-        #             'n_incident_oc_stage2_diag|%s| n_incident_oc_stage3_diag|%s|n_incident_oc_stage4_diag|%s| '
-        #             'n_low_grade_dysplasia|%s| n_high_grade_dysplasia|%s|  n_stage1_oc|%s| n_stage2_oc|%s| '
-        #             'n_stage3_oc|%s| n_stage4_oc|%s| n_low_grade_dysplasia_diag|%s| n_high_grade_dysplasia_diag'
-        #             '|%s| n_stage1_oc_diag|%s| n_stage2_oc_diag|%s| n_stage3_oc_diag|%s| n_stage4_oc_diag |%s|'
-        #             'n_received_trt_this_period_low_grade_dysplasia |%s| '
-        #             'n_received_trt_this_period_high_grade_dysplasia'
-        #             '|%s| n_received_trt_this_period_stage1|%s| n_received_trt_this_period_stage2|%s|'
-        #             'n_received_trt_this_period_stage3|%s|n_stage4_undiagnosed_oc|%s| cum_deaths |%s |n_alive|%s|'
-        #             'n_oc_death|%s',
-        #             self.sim.date, n_alive_ge20, n_incident_oes_cancer_diagnosis, n_incident_low_grade_dys_diag,
-        #             n_incident_high_grade_dys_diag, n_incident_oc_stage1_diag,
-        #             n_incident_oc_stage2_diag, n_incident_oc_stage3_diag,n_incident_oc_stage4_diag,
-        #             n_low_grade_dysplasia, n_high_grade_dysplasia,  n_stage1_oc, n_stage2_oc,
-        #             n_stage3_oc, n_stage4_oc, n_low_grade_dysplasia_diag, n_high_grade_dysplasia_diag,
-        #             n_stage1_oc_diag, n_stage2_oc_diag, n_stage3_oc_diag, n_stage4_oc_diag,
-        #             n_received_trt_this_period_low_grade_dysplasia, n_received_trt_this_period_high_grade_dysplasia,
-        #             n_received_trt_this_period_stage1, n_received_trt_this_period_stage2,
-        #             n_received_trt_this_period_stage3, n_stage4_undiagnosed_oc, cum_deaths, n_alive, n_oc_death
-        #             )
 
-        logger.info("%s|person_one|%s", self.sim.date, df.loc[0].to_dict())
+        n_palliative_care = (df.is_alive & df.ca_palliative_care).sum()
+        n_stage4 = (df.is_alive & (df.ca_oesophagus == 'stage4')).sum()
+
+        n_alive = df.is_alive.sum()
+        n_alive_ge20 = (df.is_alive & (df.age_years >= 20)).sum()
+        n_incident_low_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                     & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
+        n_incident_high_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                     & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
+        n_incident_oc_stage1_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                     & (df.ca_oesophagus == 'stage1')).sum()
+        n_incident_oc_stage2_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                    & (df.ca_oesophagus == 'stage2')).sum()
+        n_incident_oc_stage3_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                     & (df.ca_oesophagus == 'stage3')).sum()
+        n_incident_oc_stage4_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                     & (df.ca_oesophagus == 'stage4')).sum()
+        n_incident_oes_cancer_diagnosis = n_incident_oc_stage1_diag \
+                                           + n_incident_oc_stage2_diag + n_incident_oc_stage3_diag + \
+                                           n_incident_oc_stage4_diag
+        n_low_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
+        n_high_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
+        n_stage1_oc = (df.is_alive & (df.ca_oesophagus == 'stage1')).sum()
+        n_stage2_oc = (df.is_alive & (df.ca_oesophagus == 'stage2')).sum()
+        n_stage3_oc = (df.is_alive & (df.ca_oesophagus == 'stage3')).sum()
+        n_stage4_oc = (df.is_alive & (df.ca_oesophagus == 'stage4')).sum()
+        n_stage4_undiagnosed_oc = (df.is_alive & (df.ca_oesophagus == 'stage4') & ~df.ca_oesophagus_diagnosed).sum()
+        n_low_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed &
+        (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
+        n_high_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed
+                    & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
+        n_stage1_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage1')).sum()
+        n_stage2_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage2')).sum()
+        n_stage3_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage3')).sum()
+        n_stage4_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage4')).sum()
+        n_received_trt_this_period_low_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
+                                             & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
+        n_received_trt_this_period_high_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
+                                             & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
+        n_received_trt_this_period_stage1 = (df.is_alive & (df.ca_oesophagus == 'stage1')
+                                             & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
+        n_received_trt_this_period_stage2 = (df.is_alive & (df.ca_oesophagus == 'stage2')
+                                             & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
+        n_received_trt_this_period_stage3 = (df.is_alive &
+            (df.ca_oesophagus == 'stage3') & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
+        n_oc_death = df.ca_oesophageal_cancer_death.sum()
+        cum_deaths = (~df.is_alive).sum()
+
+        logger.info('%s| n_alive_ge20 |%s| n_incident_oes_cancer_diagnosis|%s| n_incident_low_grade_dys_diag|%s| '
+                     'n_incident_high_grade_dys_diag|%s| n_incident_oc_stage1_diag|%s| '
+                     'n_incident_oc_stage2_diag|%s| n_incident_oc_stage3_diag|%s|n_incident_oc_stage4_diag|%s| '
+                     'n_low_grade_dysplasia|%s| n_high_grade_dysplasia|%s|  n_stage1_oc|%s| n_stage2_oc|%s| '
+                     'n_stage3_oc|%s| n_stage4_oc|%s| n_low_grade_dysplasia_diag|%s| n_high_grade_dysplasia_diag'
+                     '|%s| n_stage1_oc_diag|%s| n_stage2_oc_diag|%s| n_stage3_oc_diag|%s| n_stage4_oc_diag |%s|'
+                     'n_received_trt_this_period_low_grade_dysplasia |%s| '
+                     'n_received_trt_this_period_high_grade_dysplasia'
+                     '|%s| n_received_trt_this_period_stage1|%s| n_received_trt_this_period_stage2|%s|'
+                     'n_received_trt_this_period_stage3|%s|n_stage4_undiagnosed_oc|%s| cum_deaths |%s |n_alive|%s|'
+                     'n_oc_death|%s',
+                     self.sim.date, n_alive_ge20, n_incident_oes_cancer_diagnosis, n_incident_low_grade_dys_diag,
+                     n_incident_high_grade_dys_diag, n_incident_oc_stage1_diag,
+                     n_incident_oc_stage2_diag, n_incident_oc_stage3_diag,n_incident_oc_stage4_diag,
+                     n_low_grade_dysplasia, n_high_grade_dysplasia,  n_stage1_oc, n_stage2_oc,
+                     n_stage3_oc, n_stage4_oc, n_low_grade_dysplasia_diag, n_high_grade_dysplasia_diag,
+                     n_stage1_oc_diag, n_stage2_oc_diag, n_stage3_oc_diag, n_stage4_oc_diag,
+                     n_received_trt_this_period_low_grade_dysplasia, n_received_trt_this_period_high_grade_dysplasia,
+                     n_received_trt_this_period_stage1, n_received_trt_this_period_stage2,
+                     n_received_trt_this_period_stage3, n_stage4_undiagnosed_oc, cum_deaths, n_alive, n_oc_death
+                     )
+
+#       logger.info("%s| n_palliative_care |%s", self.sim.date, n_palliative_care)
+#       logger.info("%s| n_stage4 |%s", self.sim.date, n_stage4)
+
+#       logger.info("%s|person_zero|%s", self.sim.date, df.loc[0].to_dict())
+
+        # ---------------------------------------------------------------------------------------------------
+        # set ca_incident_oes_cancer_diagnosis_this_3_month_period back to False so is False for next 3 month
+        # period (this was not working when placed higher up
+
+        idx = df.index[df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period]
+        df.loc[idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
+
+        idx = df.index[df.is_alive & df.ca_oesophageal_cancer_death]
+        df.loc[idx, "ca_oesophageal_cancer_death"] = False
+
+        # ---------------------------------------------------------------------------------------------------

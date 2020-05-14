@@ -14,8 +14,8 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 170000
 
 
 @pytest.fixture(scope='module')
@@ -31,7 +31,7 @@ def simulation():
 
     sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
+#   sim.seed_rngs(0)
     return sim
 
 
@@ -53,3 +53,5 @@ if __name__ == '__main__':
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
+
+
