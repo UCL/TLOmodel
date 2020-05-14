@@ -15,13 +15,14 @@ from tlo.methods import (
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 170000
+popsize = 5000
 
 
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
@@ -31,7 +32,6 @@ def simulation():
 
     sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
 
-#   sim.seed_rngs(0)
     return sim
 
 

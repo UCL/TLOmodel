@@ -9,7 +9,7 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     oesophageal_cancer,
-)
+    pregnancy_supervisor, labour, healthseekingbehaviour, symptommanager)
 
 # import matplotlib.pyplot as plt
 # import numpy as np
@@ -25,37 +25,29 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # The resource files
 resourcefilepath = Path("./resources")
 
+# Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 10000
 
-# Establish the simulation object
+# Establish the simulation object and set the seed
 sim = Simulation(start_date=start_date)
-
-# Establish the logger
-# logfile = outputpath + 'LogFile' + datestamp + '.log'
-
-# if os.path.exists(logfile):
-#    os.remove(logfile)
-# fh = logging.FileHandler(logfile)
-# fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-# fh.setFormatter(fr)
-# logging.getLogger().addHandler(fh)
-
-# logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
-
+sim.seed_rngs(0)
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             contraception.Contraception(resourcefilepath=resourcefilepath),
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             labour.Labour(resourcefilepath=resourcefilepath),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath)
+             )
 
-# Run the simulation and flush the logger
-# sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# fh.flush()
+
