@@ -714,7 +714,7 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         dict_for_output = {
             # -- Current Status --
 
-            # should be just count_values on ; ca_oesophagus - for those who have and have not been diagnosed
+            # TODO: should be just count_values on ; ca_oesophagus - for those who have and have not been diagnosed
 
 
             'n_stage4': (df.is_alive & (df.ca_oesophagus == 'stage4')).sum(),
