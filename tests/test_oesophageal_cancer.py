@@ -55,3 +55,16 @@ if __name__ == '__main__':
     print('Time taken', t1 - t0)
 
 
+"""Other tests:
+
+* that the ca_oesophagus and ca_oesophagus_any properties alwasy correspond - initiatio or after simulation
+
+* that no one has oes_cancer at age less than 20 -- initiation or after simulation
+
+* That the dates of thing in the properites are in right order where appropriate: ca_date_oes_cancer_diagnosis < ca_date_treatment_oesophageal_cancer < ca_date_palliative_care
+
+* To check the working of the HSI, good shortcut would be to increase the baseline risk of cancer:
+
+
+
+"""

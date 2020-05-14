@@ -55,11 +55,11 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 
-# %% Demonstrate the burden and the interventions
+# %% TODO : Demonstrate the burden and the interventions
 output = parse_log_file(logfile)
 
 
 
 
-# %% Demonstrate the impact of the interventions
+# %% TODO: Demonstrate the impact of the interventions
 
