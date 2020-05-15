@@ -798,21 +798,65 @@ class RTI(Module):
 
     PROPERTIES = {
         'rt_road_traffic_inc': Property(Types.BOOL, 'involved in a road traffic injury'),
-        'rt_roadtrafficinj': Property(Types.CATEGORICAL,
-                                      'Injury status relating to road traffic injury: none, mild, moderate, severe',
-                                      categories=['none', 'mild', 'severe'],
-                                      ),
-        'rt_fracture': Property(Types.BOOL, 'fractured bone resulting from RTI'),
-        'rt_dislocation': Property(Types.BOOL, 'dislocated joint resulting from RTI'),
+        'rt_injseverity': Property(Types.CATEGORICAL,
+                                   'Injury status relating to road traffic injury: none, mild, moderate, severe',
+                                   categories=['none', 'mild', 'severe'],
+                                   ),
+        'rt_fracture': Property(Types.CATEGORICAL, 'fractured bone resulting from RTI',
+                                categories=['none', 'foot', 'hip', 'patella/tibia/fibula/ankle', 'pelvis',
+                                            'femur other than femoral neck', 'clavicle, scapula, humerus', 'hand/wrist',
+                                            'radius/ulna', 'vertebrae', 'fractured ribs', 'flail chest', 'mandible',
+                                            'nasal', 'zygomatic', 'unspfacial', 'basilar skull', 'unspskull'
+                                            ]),
+        'rt_fracture_diagnosed': Property(Types.BOOL, 'fractured bone diagnosed'),
+        'rt_fracture_treated': Property(Types.BOOL, 'fractured bone treated'),
+        'rt_dislocation': Property(Types.CATEGORICAL, 'dislocated joint resulting from RTI',
+                                   categories=['none', 'atlanto-axial subluxation', 'atlanto-occipital subluxation',
+                                               'hip', 'knee', 'shoulder']),
+        'rt_dislocation_diagnosed': Property(Types.BOOL, 'dislocated joint diagnosed'),
+        'rt_dislocation_treated': Property(Types.BOOL, 'dislocated joint treated'),
         'rt_tbi': Property(Types.CATEGORICAL, 'traumatic brain injury resulting from RTI, mild, moderate, severe',
-                           categories=['none', 'mild', 'moderate', 'severe']),
-        'rt_soft': Property(Types.BOOL, 'soft tissue injury resulting from RTI.'),
-        'rt_ioi': Property(Types.BOOL, 'internal organ injury resulting from RTI.'),
-        'rt_intbleed': Property(Types.BOOL, 'internal bleeding resulting from RTI.'),
+                           categories=['none', 'epidural hematoma', 'subdural hemtaoma', 'subarachnoid haemorrhage',
+                                       'contusion', 'intraventricular haemorrhage', 'diffuse axonal injury',
+                                       'subgaleal hematoma', 'midline shift']),
+        'rt_tbi_diagnosed': Property(Types.BOOL, 'traumatic brain injury diagnosed'),
+        'rt_tbi_treated': Property(Types.BOOL, 'traumatic brain injury treated'),
+        'rt_tbi_recovered': Property(Types.BOOL, 'recovery from traumatic brain injury'),
+        'rt_soft': Property(Types.CATEGORICAL, 'soft tissue injury resulting from RTI.',
+                            categories=['none', 'unspface', 'vertebral artery laceration', 'pharynx contusion',
+                                        'chest wall lacerations/avulsions', 'closed pneumothorax',
+                                        'open pneumothorax', 'subcutaneous emphysema']),
+        'rt_soft_diagnosed': Property(Types.BOOL, 'soft tissue injury resulting from RTI diagnosed'),
+        'rt_soft_treated': Property(Types.BOOL, 'soft tissue injury treated'),
+        'rt_ioi': Property(Types.CATEGORICAL, 'internal organ injury resulting from RTI.',
+                           categories=['none', 'lung contusion', 'diaphragm rupture', 'spleen', 'urinary bladder',
+                                       'intestines', 'liver', 'urethra', 'stomach', 'colon', 'kidney']),
+        'rt_ioi_diagnosed': Property(Types.BOOL, 'internal organ injury diagnosed'),
+        'rt_ioi_treated': Property(Types.BOOL, 'internal organ injury treated'),
+        'rt_intbleed': Property(Types.CATEGORICAL, 'internal bleeding resulting from RTI.',
+                                categories=['none', 'sternomastoid m. hemorrhage',
+                                            'supraclavicular triangle Hemorrhage', 'posterior triangle hemorrhage',
+                                            'anterior vertebral vessel hemorrhage', 'hematoma in carotid sheath',
+                                            'carotid sheath hemorrhage', 'neck muscle hemorrhage',
+                                            'chest wall bruises/haematoma', 'haemothorax']),
+        'rt_intbleed_diagnosed': Property(Types.BOOL, 'internal bleeding diagnosed'),
+        'rt_intbleed_treated': Property(Types.BOOL, 'internal bleeding treated'),
         'rt_sci': Property(Types.CATEGORICAL, 'spinal cord injury from RTI at neck/below neck level',
                            categories=['none', 'neck', 'below neck']),
-        'rt_amp': Property(Types.BOOL, 'limb amputation from RTI.'),
+        'rt_sci_diagnosed': Property(Types.BOOL, 'spinal cord injury from RTI diagnosed'),
+        'rt_sci_treated': Property(Types.BOOL, 'spinal cord injury from RTI treated'),
+        'rt_sci_recovered': Property(Types.BOOL, 'recovery from spinal cord injury'),
+        'rt_amp': Property(Types.CATEGORICAL, 'amputation from RTI.',
+                           categories=['none', 'thumb', 'finger', 'unilateral upper limb', 'bilateral upper limb',
+                                       'toe', 'unilateral lower limb', 'bilateral lower limb']),
+        'rt_amp_diagnosed': Property(Types.BOOL, 'amputation from RTI diagnosed'),
+        'rt_amp_treated': Property(Types.BOOL, 'amputation from RTI treated'),
+        'rt_wound': Property(Types.BOOL, 'wound from rti.'),
+        'rt_wound_diagnosed': Property(Types.BOOL, 'wound diagnosed'),
+        'rt_wound_treated': Property(Types.BOOL, 'wound treated'),
         'rt_eye_inj': Property(Types.BOOL, 'eye injury from RTI'),
+        'rt_eye_inj_diagnosed': Property(Types.BOOL, 'eye injury from RTI diagnosed'),
+        'rt_eye_inj_treated': Property(Types.BOOL, 'eye injury from RTI treated'),
         'rt_perm_disability': Property(Types.BOOL, 'whether the injuries from an RTI result in permanent disability'),
         'rt_polytrauma': Property(Types.BOOL, 'polytrauma from RTI'),
         'rt_imm_death': Property(Types.BOOL, 'death at scene True/False'),
@@ -822,82 +866,8 @@ class RTI(Module):
         'rt_disability': Property(Types.REAL, 'disability weight for current month'),
         'rt_date_inj': Property(Types.DATE, 'date of latest injury')
     }
+
     # generic symptom for severely traumatic injuries, mild injuries accounted for in generic symptoms under 'injury'
-    SYMPTOMS = {'em_severe_trauma',  # Generic for severe injuries.
-                # Fracture
-                'bleeding from wound',
-                'bruising around trauma site',
-                'severe pain at trauma site',
-                'swelling around trauma site',
-                'redness or warmth around trauma site',
-                'visual disturbances',
-                'restlessness',
-                'irritability',
-                'loss of balance',
-                'stiffness',
-                'abnormal pupil behaviour/reflexes',
-                'confusion',
-                'fatigue',
-                'fainting',
-                'excessive salivation',
-                'difficulty swallowing',
-                'nosebleed',
-                'breathing difficulty',
-                'audible signs of injury',
-                'uneven chest rise',
-                'seat belt marks',
-                'visual deformity of body part',
-                'limitation of movement',
-                'inability to walk',
-                # TBI
-                'periorbital ecchymosis',
-                'shock',
-                'hyperbilirubinemia',
-                'abnormal posturing',
-                'nausea',
-                'loss of consciousness',
-                'coma',
-                'seizures',
-                'tinnitus',
-                'sensitive to light',
-                'slurred speech',
-                'personality change',
-                'paralysis',
-                'weakness in one half of body',
-                # Dislocation
-                'numbness in lower back and lower limbs',
-                'muscle spasms',
-                'hypermobile patella'
-                # Soft tissue injury
-                'ataxia',
-                'coughing up blood',
-                'stridor',
-                'subcutaneous air',
-                'blue discoloration of skin or lips',
-                'pressure in chest',
-                'rapid breathing',
-                # Internal organ injury
-                'low blood pressure',
-                'Bluish discoloration of the belly',
-                'Right-sided abdominal pain and right shoulder pain',
-                'Blood in the urine',
-                'Left arm and shoulder pain',
-                'rigid abdomen',
-                'cyanosis',
-                'heart palpitations',
-                'pain in the left shoulder or left side of the chest',
-                'difficulty urinating',
-                'urine leakage',
-                'abdominal distension',
-                'rectal bleeding',
-                # Internal bleeding
-                'sweaty skin',
-                # Spinal cord injury
-                'inability to control bladder',
-                'inability to control bowel',
-                'unnatural positioning of the head',
-                # Amputation - limb's bloody gone
-                }
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
@@ -1163,21 +1133,120 @@ class RTI(Module):
     # It will not be able to use any that are not declared here. They do not need to be unique to this module.
     # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
 
+    SYMPTOMS = {'em_severe_trauma',  # Generic for severe injuries.
+                # Fracture
+                'bleeding from wound',
+                'bruising around trauma site',
+                'severe pain at trauma site',
+                'swelling around trauma site',
+                'redness or warmth around trauma site',
+                'visual disturbances',
+                'restlessness',
+                'irritability',
+                'loss of balance',
+                'stiffness',
+                'abnormal pupil behaviour/reflexes',
+                'confusion',
+                'fatigue',
+                'fainting',
+                'excessive salivation',
+                'difficulty swallowing',
+                'nosebleed',
+                'breathing difficulty',
+                'audible signs of injury',
+                'uneven chest rise',
+                'seat belt marks',
+                'visual deformity of body part',
+                'limitation of movement',
+                'inability to walk',
+                # TBI
+                'periorbital ecchymosis',
+                'shock',
+                'hyperbilirubinemia',
+                'abnormal posturing',
+                'nausea',
+                'loss of consciousness',
+                'coma',
+                'seizures',
+                'tinnitus',
+                'sensitive to light',
+                'slurred speech',
+                'personality change',
+                'paralysis',
+                'weakness in one half of body',
+                # Dislocation
+                'numbness in lower back and lower limbs',
+                'muscle spasms',
+                'hypermobile patella'
+                # Soft tissue injury
+                'ataxia',
+                'coughing up blood',
+                'stridor',
+                'subcutaneous air',
+                'blue discoloration of skin or lips',
+                'pressure in chest',
+                'rapid breathing',
+                # Internal organ injury
+                'low blood pressure',
+                'Bluish discoloration of the belly',
+                'Right-sided abdominal pain and right shoulder pain',
+                'Blood in the urine',
+                'Left arm and shoulder pain',
+                'rigid abdomen',
+                'cyanosis',
+                'heart palpitations',
+                'pain in the left shoulder or left side of the chest',
+                'difficulty urinating',
+                'urine leakage',
+                'abdominal distension',
+                'rectal bleeding',
+                # Internal bleeding
+                'sweaty skin',
+                # Spinal cord injury
+                'inability to control bladder',
+                'inability to control bowel',
+                'unnatural positioning of the head',
+                # Amputation - limb's bloody gone
+                }
+
     def initialise_population(self, population):
         df = population.props
         now = self.sim.date.year
         df.loc[df.is_alive & 'rt_road_traffic_inc'] = False
-        df.loc[df.is_alive & 'rt_roadtrafficinj'] = "none"  # default: no one has been injured in a RTI
-        df.loc[df.is_alive & 'rt_fracture'] = ''  # default: no fractures at birth
-        df.loc[df.is_alive & 'rt_dislocation'] = ''  # default: no dislocations at birth
+        df.loc[df.is_alive & 'rt_injseverity'] = "none"  # default: no one has been injured in a RTI
+        df.loc[df.is_alive & 'rt_fracture'] = "none"  # default: no fractures at birth
+        df.loc[df.is_alive & 'rt_fracture_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_fracture_treated'] = False
+        df.loc[df.is_alive & 'rt_dislocation'] = "none"  # default: no dislocations at birth
+        df.loc[df.is_alive & 'rt_dislocation_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_dislocation_treated'] = False
         df.loc[df.is_alive & 'rt_tbi'] = "none"  # default: no traumatic brain injury at birth
-        df.loc[df.is_alive & 'rt_soft'] = ''  # default: no soft tissue injury at birth
-        df.loc[df.is_alive & 'rt_ioi'] = ''  # default: no internal organ injury at birth
-        df.loc[df.is_alive & 'rt_intbleed'] = ''  # default: no internal bleeding at birth
+        df.loc[df.is_alive & 'rt_tbi_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_rbi_treated'] = False
+        df.loc[df.is_alive & 'rt_tbi_recovered'] = False
+        df.loc[df.is_alive & 'rt_soft'] = "none"  # default: no soft tissue injury at birth
+        df.loc[df.is_alive & 'rt_soft_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_soft_treated'] = False
+        df.loc[df.is_alive & 'rt_ioi'] = "none"  # default: no internal organ injury at birth
+        df.loc[df.is_alive & 'rt_ioi_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_ioi_treated'] = False
+        df.loc[df.is_alive & 'rt_intbleed'] = "none"  # default: no internal bleeding at birth
+        df.loc[df.is_alive & 'rt_intbleed_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_intbleed_treated'] = False
         df.loc[df.is_alive & 'rt_sci'] = "none"
-        df.loc[df.is_alive & 'rt_amp'] = ''
+        df.loc[df.is_alive & 'rt_sci_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_sci_treated'] = False
+        df.loc[df.is_alive & 'rt_amp'] = "none"
+        df.loc[df.is_alive & 'rt_amp_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_amp_treated'] = False
         df.loc[df.is_alive & 'rt_eye_inj'] = False
-        df.loc[df.is_alive & 'polutrauma'] = False
+        df.loc[df.is_alive & 'rt_eye_inj_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_eye_inj_treated'] = False
+        df.loc[df.is_alive & 'rt_wound'] = False
+        df.loc[df.is_alive & 'rt_wound_diagnosed'] = False
+        df.loc[df.is_alive & 'rt_wound_treated'] = False
+        df.loc[df.is_alive & 'rt_polytrauma'] = False
+        df.loc[df.is_alive & 'rt_perm_disability'] = False
         df.loc[df.is_alive & 'rt_imm_death'] = False  # default: no one is dead on scene of crash
         df.loc[df.is_alive & 'rt_med_int'] = False  # default: no one has a had medical intervention
         df.loc[df.is_alive & 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
@@ -1199,17 +1268,38 @@ class RTI(Module):
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
         df.loc[df.is_alive & 'rt_road_traffic_inc'] = False
-        df.at[child_id, 'rt_roadtrafficinj'] = "none"  # default: no one has been injured in a RTI
+        df.at[child_id, 'rt_injseverity'] = "none"  # default: no one has been injured in a RTI
         df.at[child_id, 'rt_imm_death'] = False  # default: no one is dead on scene of crash
-        df.at[child_id, 'rt_fracture'] = ''  # default: no fractures at birth
-        df.at[child_id, 'rt_dislocation'] = ''  # default: no dislocations at birth
+        df.at[child_id, 'rt_fracture'] = "none"  # default: no fractures at birth
+        df.at[child_id, 'rt_fracture_diagnosed'] = False
+        df.at[child_id, 'rt_fracture_treated'] = False
+        df.at[child_id, 'rt_dislocation'] = "none"  # default: no dislocations at birth
+        df.at[child_id, 'rt_dislocation_diagnosed'] = False
+        df.at[child_id, 'rt_dislocation_treated'] = False
         df.at[child_id, 'rt_tbi'] = "none"  # default: no traumatic brain injury at birth
-        df.at[child_id, 'rt_soft'] = ''  # default: no soft tissue injury at birth
-        df.at[child_id, 'rt_ioi'] = ''  # default: no internal organ injury at birth
-        df.at[child_id, 'rt_intbleed'] = ''  # default: no internal bleeding at birth
+        df.at[child_id, 'rt_tbi_diagnosed'] = False
+        df.at[child_id, 'rt_tbi_treated'] = False
+        df.at[child_id, 'rt_soft'] = "none"  # default: no soft tissue injury at birth
+        df.at[child_id, 'rt_soft_diagnosed'] = False
+        df.at[child_id, 'rt_soft_treated'] = False
+        df.at[child_id, 'rt_ioi'] = "none"  # default: no internal organ injury at birth
+        df.at[child_id, 'rt_ioi_diagnosed'] = False
+        df.at[child_id, 'rt_ioi_treated'] = False
+        df.at[child_id, 'rt_intbleed'] = "none"  # default: no internal bleeding at birth
+        df.at[child_id, 'rt_intbleed_diagnosed'] = False
+        df.at[child_id, 'rt_intbleed_treated'] = False
         df.at[child_id, 'rt_sci'] = "none"
-        df.at[child_id, 'rt_amp'] = ''
+        df.at[child_id, 'rt_sci_diagnosed'] = False
+        df.at[child_id, 'rt_sci_treated'] = False
+        df.at[child_id, 'rt_amp'] = "none"
+        df.at[child_id, 'rt_amp_diagnosed'] = False
+        df.at[child_id, 'rt_amp_treated'] = False
         df.at[child_id, 'rt_eye_inj'] = False
+        df.at[child_id, 'rt_eye_inj_diagnosed'] = False
+        df.at[child_id, 'rt_eye_inj_treated'] = False
+        df.at[child_id, 'rt_wound'] = False
+        df.at[child_id, 'rt_wound_diagnosed'] = False
+        df.at[child_id, 'rt_wound_treated'] = False
         df.at[child_id, 'rt_polytrauma'] = False
         df.at[child_id, 'rt_med_int'] = False  # default: no one has a had medical intervention
         df.at[child_id, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
@@ -1402,13 +1492,15 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             selected_for_rti_inj = pd.concat([selected_for_rti_inj, description], axis=1)
             # ============================ Injury severity classification============================================
 
+            # todo:  get the injuries out of the description data frame
+
             # Find those with mild injuries and update the rt_roadtrafficinj property so they have a mild injury
             mild_rti_idx = selected_for_rti_inj.index[selected_for_rti_inj.isalive & selected_for_rti_inj['ISS'] < 15]
-            df.loc[mild_rti_idx, 'rt_roadtrafficinj'] = 'mild'
+            df.loc[mild_rti_idx, 'rt_injseverity'] = 'mild'
 
             # Find those with severe injuries and update the rt_roadtrafficinj property so they have a severe injury
             severe_rti_idx = selected_for_rti_inj.index[selected_for_rti_inj['ISS'] >= 15]
-            df.loc[severe_rti_idx, 'rt_roadtrafficinj'] = 'severe'
+            df.loc[severe_rti_idx, 'rt_injseverity'] = 'severe'
 
             # Find those with polytrauma and update the rt_polytrauma property so they have polytrauma
             polytrauma_idx = selected_for_rti_inj.index[selected_for_rti_inj['Polytrauma'] is True]
@@ -1417,7 +1509,8 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             # Find those with fractures and update rt_fracture property to reflect the injury
             fracture_idx = selected_for_rti_inj.index[selected_for_rti_inj['Injury category'].str.find('1') is True]
             # frac_loc_idx = fracture_idx
-            df.loc[fracture_idx, 'rt_fracture'] = selected_for_rti_inj['Injury category'].str.index('1')
+            # df.loc[fracture_idx, 'rt_fracture'] =
+
 
             # Find those with dislocations and update rt_dislocation property to reflect the injury
             disloc_idx = selected_for_rti_inj.index[selected_for_rti_inj['Injury category'].str.match('2') is True]
