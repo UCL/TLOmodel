@@ -193,7 +193,7 @@ class LinearModel(object):
 
         assert all([p.property_name in df.columns
                     for p in self.predictors
-                    if p.property_name is not None]), f"Predictor variables not in df"
+                    if p.property_name is not None]), "Predictor variables not in dataframe"
 
         # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
