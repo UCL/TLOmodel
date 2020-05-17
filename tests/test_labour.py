@@ -15,7 +15,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor
+    pregnancy_supervisor, healthseekingbehaviour, symptommanager
 )
 
 start_date = Date(2010, 1, 1)
@@ -31,17 +31,20 @@ def simulation():
 
     sim = Simulation(start_date=start_date)
 
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
     sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
     sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
     sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
+
 
     # sim.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
     #                                                               'tlo.module.labour': logging.DEBUG,

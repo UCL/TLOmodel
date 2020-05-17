@@ -10,7 +10,7 @@ from tlo.analysis.utils import (
 )
 from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
     pregnancy_supervisor, antenatal_care, \
-    healthburden
+    healthburden, healthseekingbehaviour, symptommanager
 
 # %%
 outputpath = Path("./outputs")
@@ -34,7 +34,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 # sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+#sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
 #                                       service_availability=['*'],
 #                                       capabilities_coefficient=0.0,
 #                                       mode_appt_constraints=2))
@@ -44,6 +44,8 @@ sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
 sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
 logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(1)
