@@ -64,6 +64,8 @@ class NewbornOutcomes(Module):
             Types.REAL, 'effect of prompt sepsis treatment on reducing mortality'),
         'delayed_treatment_effect_sepsis': Parameter(
             Types.REAL, 'effect of delayed sepsis treatment on reducing mortality'),
+        'treatment_effect_sepsis': Parameter(
+            Types.REAL, 'effect of sepsis treatment on reducing mortality'),
         'prob_failure_to_transition': Parameter(
             Types.REAL, 'baseline probability of a neonate developing intrapartum related complications '
                         '(previously birth asphyxia) following delivery '),
@@ -114,10 +116,20 @@ class NewbornOutcomes(Module):
             Types.REAL, 'case fatality rate for a neonate due to neonatal sepsis'),
         'cfr_encephalopathy': Parameter(
             Types.REAL, 'case fatality rate for a neonate due to encephalopathy'),
+        'cfr_mild_enceph': Parameter(
+            Types.REAL, 'case fatality rate for a neonate due to mild encephalopathy'),
+        'cfr_moderate_enceph': Parameter(
+            Types.REAL, 'case fatality rate for a neonate due to moderate encephalopathy'),
+        'cfr_severe_enceph': Parameter(
+            Types.REAL, 'case fatality rate for a neonate due to severe encephalopathy'),
         'cfr_failed_to_transition': Parameter(
             Types.REAL, 'case fatality rate for a neonate following failure to transition'),
         'cfr_preterm_birth': Parameter(
             Types.REAL, 'case fatality rate for a neonate born prematurely'),
+        'cfr_early_preterm': Parameter(
+            Types.REAL, 'case fatality rate for a neonate born prematurely (early)'),
+        'cfr_late_preterm': Parameter(
+            Types.REAL, 'case fatality rate for a neonate born prematurely (late)'),
         'rr_preterm_death_steroids': Parameter(
             Types.REAL, 'relative risk of death for preterm neonates following administration of antenatal '
                         'corticosteroids'),
@@ -286,9 +298,52 @@ class NewbornOutcomes(Module):
              params['cfr_preterm_birth'],
              Predictor('received_antenatal_steroids', external=True).when('True', params['rr_preterm_death_steroids'])),
 
+
             'care_seeking_for_complication': LinearModel(
              LinearModelType.MULTIPLICATIVE,
-             params['prob_care_seeking_for_complication'])
+             params['prob_care_seeking_for_complication']),
+
+            'newborn_death': LinearModel(
+             # TODO: apply delay/prompt TE inside the code
+             LinearModelType.ADDITIVE,
+             0,
+
+             Predictor().when(('nb_early_onset_neonatal_sepsis' == True) & ('nb_treatment_for_neonatal_sepsis' == False)
+                              , params['cfr_neonatal_sepsis']),
+             Predictor().when(('nb_early_onset_neonatal_sepsis' == True) & ('nb_treatment_for_neonatal_sepsis' == True),
+                              params['cfr_neonatal_sepsis'] * params['treatment_effect_sepsis']),
+
+             Predictor().when(('nb_failed_to_transition' == True) & ('nb_received_neonatal_resus' == False),
+                              params['cfr_failed_to_transition']),
+             Predictor().when(('nb_failed_to_transition' == True) & ('nb_received_neonatal_resus' == True),
+                              params['cfr_failed_to_transition'] * params['prob_successful_resuscitation']),
+             # TODO: treatment effect?
+
+             Predictor().when(('nb_early_preterm' == True) & ('nb_received_antenatal_steroids' == False),
+                              params['cfr_early_preterm']),
+             Predictor().when(('nb_early_preterm' == True) & ('nb_received_antenatal_steroids' == True),
+                              params['cfr_early_preterm'] * params['rr_preterm_death_steroids']),
+
+             Predictor().when(('nb_late_preterm' == True) & ('nb_received_antenatal_steroids' == False),
+                              params['cfr_late_preterm']),
+             Predictor().when(('nb_late_preterm' == True) & ('nb_received_antenatal_steroids' == True),
+                              params['cfr_late_preterm'] * params['rr_preterm_death_steroids']),
+
+             Predictor().when(('nb_encephalopathy' == 'mild_enceph') & ('nb_received_neonatal_resus' == False),
+                              params['cfr_mild_enceph']),
+             Predictor().when(('nb_encephalopathy' == 'mild_enceph') & ('nb_received_neonatal_resus' == True),
+                              params['cfr_mild_enceph'] * params['prob_successful_resuscitation']),
+
+             Predictor().when(('nb_encephalopathy' == 'moderate_enceph') & ('nb_received_neonatal_resus' == False),
+                              params['cfr_moderate_enceph']),
+             Predictor().when(('nb_encephalopathy' == 'moderate_enceph') & ('nb_received_neonatal_resus' == True),
+                              params['cfr_moderate_enceph'] * params['prob_successful_resuscitation']),
+
+             Predictor().when(('nb_encephalopathy' == 'mild_enceph') & ('nb_received_neonatal_resus' == False),
+                              params['cfr_severe_enceph']),
+             Predictor().when(('nb_encephalopathy' == 'mild_enceph') & ('nb_received_neonatal_resus' == True),
+                              params['cfr_severe_enceph'] * params['prob_successful_resuscitation'])),
+
             }
 
     def initialise_population(self, population):
@@ -298,6 +353,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_early_preterm'] = False
         df.loc[df.is_alive, 'nb_late_preterm'] = False
         df.loc[df.is_alive, 'nb_preterm_birth_disab'] = 'none'
+        df.loc[df.is_alive, 'nb_received_antenatal_steroids'] = False
         df.loc[df.is_alive, 'nb_congenital_anomaly'] = 'none'
         df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'] = False
         df.loc[df.is_alive, 'nb_treatment_for_neonatal_sepsis'] = 'none'
@@ -570,6 +626,12 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_early_preterm'] = False
         df.at[child_id, 'nb_late_preterm'] = False
         df.at[child_id, 'nb_preterm_birth_disab'] = 'none'
+
+        if m['corticosteroids_given']:
+            df.at[child_id, 'nb_received_antenatal_steroids'] = True
+        else:
+            df.at[child_id, 'nb_received_antenatal_steroids'] = False
+
         df.at[child_id, 'nb_congenital_anomaly'] = 'none'
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
         df.at[child_id, 'nb_treatment_for_neonatal_sepsis'] = 'none'
@@ -620,6 +682,9 @@ class NewbornOutcomes(Module):
                              'delivery_setting': mni[mother_id]['delivery_setting'],
                              'sought_care_for_complication': False}
 
+            assert nci[child_id]['delivery_attended'] is not 'none'
+            assert nci[child_id]['delivery_setting'] is not 'none'
+
             # Determine if this child will be born with a congeintal anomaly
             if self.rng.random_sample() < params['prob_congenital_ba']:
                 etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
@@ -637,7 +702,7 @@ class NewbornOutcomes(Module):
             # ------------------------------------------- SEPSIS.... ------------------------------------------------
             # If the child's mother has delivered at home, we immediately apply the risk and make changes to the
             # data frame. Otherwise this is done during the HSI
-            if m['delivery_setting'] == 'home_birth':
+            if nci[child_id]['delivery_setting'] == 'home_birth':
                 if self.eval(params['nb_newborn_equations']['neonatal_sepsis'], child_id):
                     df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
                     self.NewbornComplicationTracker['neonatal_sepsis'] += 1
@@ -650,7 +715,7 @@ class NewbornOutcomes(Module):
 
             # ---------------------------------------- ENCEPHALOPATHY.... --------------------------------------------
             # Term neonates then have a risk of encephalopathy applied
-            if ~child.nb_early_preterm & ~child.nb_late_preterm:
+            if ~child.nb_early_preterm and ~child.nb_late_preterm:
                 if self.eval(params['nb_newborn_equations']['encephalopathy'], child_id):
 
                     # For a newborn who is encephalopathic we then set the severity
@@ -816,6 +881,34 @@ class NewbornOutcomes(Module):
         return health_values_df
 
 
+class NewbornEncephalopathyEvent (Event, IndividualScopeEventMixin):
+    """This is the NewbornEncephalopathyEvent. """
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        if self.module.eval(params['nb_newborn_equations']['encephalopathy'], individual_id):
+            severity_enceph = self.module.rng.choice(('mild', 'moderate', 'severe'), p=params['prob_enceph_severity'])
+            if severity_enceph == 'mild':
+                df.at[individual_id, 'nb_encephalopathy'] = 'mild_enceph'
+                self.module.NewbornComplicationTracker['mild_enceph'] += 1
+
+            elif severity_enceph == 'moderate':
+                df.at[individual_id, 'nb_encephalopathy'] = 'moderate_enceph'
+                self.module.NewbornComplicationTracker['moderate_enceph'] += 1
+
+            else:
+                df.at[individual_id, 'nb_encephalopathy'] = 'severe_enceph'
+                self.module.NewbornComplicationTracker['severe_enceph'] += 1
+
+            # Check all encephalopathy cases receive a grade
+            assert df.at[individual_id, 'nb_encephalopathy'] != 'none'
+
+
 class NewbornDeathEvent(Event, IndividualScopeEventMixin):
     """This is the NewbornDeathEvent. It is scheduled for all newborns via the on_birth function. This event determines
     if those newborns who have experienced any complications will die due to them. This event will likely be changed as
@@ -956,7 +1049,8 @@ class NewbornDiseaseResetEvent(Event, IndividualScopeEventMixin):
 class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth This event is scheduled by
     the on_birth function of this module, automatically for neonates who delivered in facility and via a care seeking
-    equation for those delivered at home. This event manages initial care of newborns following birth. This event also houses assessment and treatment of complications following delivery (sepsis and failure
+    equation for those delivered at home. This event manages initial care of newborns following birth. This event also
+    houses assessment and treatment of complications following delivery (sepsis and failure
     to transition). Eventually it will scheduled additional treatment for those who need it."""
 
     def __init__(self, module, person_id, facility_level_of_this_hsi):
@@ -985,7 +1079,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
         # This HSI follows a similar structure as Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1
         # This function manages the administration of essential newborn care and prophylaxis
         if df.at[person_id, 'is_alive']:
-            if nci[person_id]['delivery_attended']:
+            if nci[person_id]['delivery_attended'] and ~nci[person_id]['sought_care_for_complication']:
 
                 # The required consumables are defined
                 item_code_tetracycline = pd.unique(consumables.loc[consumables['Items'] == 'Tetracycline eye ointment '
@@ -1009,79 +1103,81 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
             # package therefore aren't defined here on conditioned on
             # TODO: think I'm applying the effect of cord care twice, reduction in neonatal sepsis risk may be covered
             #  by 'clean birth practices' effect in labour module. review
-            nci[person_id]['cord_care'] = True
+                nci[person_id]['cord_care'] = True
             # Tetracycline eye care and vitamin k prophylaxis are conditioned on the availability of consumables
 
             # ------------------------------------------ TETRACYCLINE-----------------------------------------------
-            if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
-                logger.debug('Neonate %d has received tetracycline eye drops to reduce sepsis risk following a facility'
-                             'delivery', person_id)
-                nci[person_id]['tetra_eye_d'] = True
-                self.module.NewbornComplicationTracker['t_e_d'] += 1
+                if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
+                    logger.debug('Neonate %d has received tetracycline eye drops to reduce sepsis risk following a '
+                                 'facility delivery', person_id)
+                    nci[person_id]['tetra_eye_d'] = True
+                    self.module.NewbornComplicationTracker['t_e_d'] += 1
 
-            else:
-                logger.debug('This facility has no tetracycline and therefore was not given')
+                else:
+                    logger.debug('This facility has no tetracycline and therefore was not given')
 
             # ------------------------------------------ VITAMIN K --------------------------------------------------
-            if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k] and \
-               outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]:
-                logger.debug('Neonate %d has received vitamin k prophylaxis following a facility delivery', person_id)
-                nci[person_id]['vit_k'] = True
-                self.module.NewbornComplicationTracker['vit_k'] += 1
+                if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k] and \
+                   outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]:
+                    logger.debug('Neonate %d has received vitamin k prophylaxis following a facility delivery',
+                                 person_id)
+                    nci[person_id]['vit_k'] = True
+                    self.module.NewbornComplicationTracker['vit_k'] += 1
 
                 # TODO: this variable currently doesnt affect any outcomes - maybe effect could live in 'newborn first
                 #  month module'
-            else:
-                logger.debug('This facility has no vitamin K and therefore was not given')
+                else:
+                    logger.debug('This facility has no vitamin K and therefore was not given')
 
             # ---------------------------------EARLY INITIATION OF BREAST FEEDING -----------------------------------
             # A probably that early breastfeeding will initiated in a facility is applied
-            if self.module.rng.random_sample() < params['prob_early_breastfeeding_hf']:
-                df.at[person_id, 'nb_early_breastfeeding'] = True
-                logger.debug('Neonate %d has started breastfeeding within 1 hour of birth', person_id)
-            else:
-                logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', person_id)
+                if self.module.rng.random_sample() < params['prob_early_breastfeeding_hf']:
+                    df.at[person_id, 'nb_early_breastfeeding'] = True
+                    logger.debug('Neonate %d has started breastfeeding within 1 hour of birth', person_id)
+                else:
+                    logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', person_id)
 
             # TODO: should initiation of breastfeeding vary between health centres and hospitals
             # TODO: Determine if neonates are given antibiotics for maternal risk factors
 
-        else:
-            # Otherwise they receives no benefit of prophylaxis
-            logger.debug('neonate %d received no prophylaxis as they were delivered unattended', person_id)
+            else:
+                # Otherwise they receives no benefit of prophylaxis
+                logger.debug('neonate %d received no prophylaxis as they were delivered unattended', person_id)
 
         # --------------------------------- RECALCULATE SEPSIS RISK --------------------------------------------------
         # Following the administration of prophylaxis we determine if this neonate will develop sepsis
-        if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis'], person_id):
-            df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
-            self.module.NewbornComplicationTracker['neonatal_sepsis'] += 1
+            if ~nci[person_id]['sought_care_for_complication']:
+                if self.module.eval(params['nb_newborn_equations']['neonatal_sepsis'], person_id):
+                    df.at[person_id, 'nb_early_onset_neonatal_sepsis'] = True
+                    self.module.NewbornComplicationTracker['neonatal_sepsis'] += 1
 
-            logger.debug('Neonate %d has developed early onset sepsis following a facility delivery on date %s',
-                         person_id, self.sim.date)
-            logger.info('%s|early_onset_nb_sep|%s', self.sim.date, {'person_id': person_id})
+                    logger.debug('Neonate %d has developed early onset sepsis following a facility delivery on date %s',
+                                 person_id, self.sim.date)
 
         # --------------------------------------- INTERVENTIONS ------------------------------------------------------
         # Only stable neonates are assessed for KMC as per guidelines
-        if nci[person_id]['delivery_attended'] and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
-                                                    ~df.at[person_id, 'nb_failed_to_transition'] and
-                                                    df.at[person_id, 'nb_encephalopathy'] != 'none'):
-            # Likelihood of correct assessment and treatment varied by facility type
+            if nci[person_id]['delivery_attended'] and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
+                                                        ~df.at[person_id, 'nb_failed_to_transition'] and
+                                                        df.at[person_id, 'nb_encephalopathy'] != 'none'):
+
+                # Likelihood of correct assessment and treatment varied by facility type
+                if nci[person_id]['delivery_setting'] == 'health_centre':
+                    self.module.kangaroo_mother_care(self, 'hc')
+                elif nci[person_id]['delivery_setting'] == 'hospital':
+                    self.module.kangaroo_mother_care(self, 'hp')
+
+            # This function manages initiation of neonatal resuscitation
             if nci[person_id]['delivery_setting'] == 'health_centre':
-                self.module.kangaroo_mother_care(self, 'hc')
-            elif nci[person_id]['delivery_setting'] == 'hospital':
-                self.module.kangaroo_mother_care(self, 'hp')
+                self.module.assessment_and_initiation_of_neonatal_resus(self, 'hc')
+            if nci[person_id]['delivery_setting'] == 'hospital':
+                self.module.assessment_and_initiation_of_neonatal_resus(self, 'hp')
 
-        # This function manages initiation of neonatal resuscitation
-        if nci[person_id]['delivery_setting'] == 'health_centre':
-            self.module.assessment_and_initiation_of_neonatal_resus(self, 'hc')
-        if nci[person_id]['delivery_setting'] == 'hospital':
-            self.module.assessment_and_initiation_of_neonatal_resus(self, 'hp')
-
-        # This function manages the assessment and treatment of neonatal sepsis, and follows the same structure as
-        # resuscitation
-        if nci[person_id]['delivery_setting'] == 'health_centre':
-            self.module.assessment_and_treatment_newborn_sepsis(self,'hc')
-        if nci[person_id]['delivery_setting'] == 'hospital':
-            self.module.assessment_and_treatment_newborn_sepsis(self, 'hp')
+            # This function manages the assessment and treatment of neonatal sepsis, and follows the same structure as
+            # resuscitation
+            if nci[person_id]['delivery_setting'] == 'health_centre':
+                self.module.assessment_and_treatment_newborn_sepsis(self, 'hc')
+            if nci[person_id]['delivery_setting'] == 'hospital':
+                self.module.assessment_and_treatment_newborn_sepsis(self, 'hp')
 
     def did_not_run(self):
         person_id = self.target
@@ -1111,6 +1207,8 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Previous Year...
         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+        total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
+
         # Denominators...
         dfx = pd.to_datetime(df['date_of_birth'])
         yearly_births = len(dfx.index[dfx.dt.year == self.sim.date.year])
@@ -1126,6 +1224,15 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         late_preterm_births = len(df.index[df.nb_late_preterm & (df.date_of_birth > one_year_prior) &
                                            (df.date_of_birth < self.sim.date)])
+
+        sepsis_new_method = len(df.index[df.nb_early_onset_neonatal_sepsis & (df.date_of_birth > one_year_prior) &
+                                           (df.date_of_birth < self.sim.date)])
+
+        enceph_new_method = len(df.index[(df.nb_encephalopathy != 'none') &
+                                                 (df.date_of_birth > one_year_prior) & (df.date_of_birth <
+                                                                                        self.sim.date)])
+        ftt_new_method = len(df.index[df.nb_failed_to_transition & (df.date_of_birth > one_year_prior) &
+                                         (df.date_of_birth < self.sim.date)])
 
         total_preterm_births = early_preterm_births + late_preterm_births
 
@@ -1153,7 +1260,8 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         resus = self.module.NewbornComplicationTracker['resus']
     #    tetra_cycline = self.module.NewbornComplicationTracker['t_e_d']
 
-        dict_for_output = {'neonatal_deaths': newborn_deaths,
+        dict_for_output = {'births': yearly_births,
+                           'neonatal_deaths': newborn_deaths,
                            'checker_deaths': death,
                            'sepsis_deaths_crude': sepsis_death,
                            'ftt_deaths_crude': ftt_death,
@@ -1165,15 +1273,15 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'tptb_incidence': total_preterm_births/yearly_births * 100,
                            'low_birth_weight': low_birth_weight / yearly_births * 100,
                            'small_for_gestational_age': small_for_gestational_age / yearly_births * 100,
-                           'sepsis_crude': sepsis,
-                           'sepsis_incidence': sepsis / yearly_births * 100,
+                           'sepsis_crude': sepsis_new_method,
+                           'sepsis_incidence': sepsis_new_method / yearly_births * 100,
                            'seps is_treatment_crude': sepsis_treatment,
                            'mild_enceph_incidence': mild_enceph / yearly_births * 100,
                            'mod_enceph_incidence': mod_enceph / yearly_births * 100,
                            'severe_enceph_incidence': severe_enceph / yearly_births * 100,
-                           'total_enceph_incidence': all_enceph / yearly_births * 100,
-                           'ftt_crude': ftt,
-                           'ftt_incidence': ftt / yearly_births * 100,
+                           'total_enceph_incidence': enceph_new_method / yearly_births * 100,
+                           'ftt_crude': ftt_new_method,
+                           'ftt_incidence': ftt_new_method / yearly_births * 100,
                            'resus_crude': resus,
                            # 'resus_rate': resus / ftt * 100,
                            }

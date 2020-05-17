@@ -8,6 +8,8 @@ from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAn
 from tlo.methods.healthsystem import HSI_Event
 #from tlo.methods.labour import HSI_Labour_PresentsForSkilledBirthAttendanceInLabour, \
 #    HSI_Labour_ReceivesCareForPostpartumPeriod
+from tlo.methods.labour import HSI_Labour_PresentsForSkilledBirthAttendanceInLabour, \
+    HSI_Labour_ReceivesCareForPostpartumPeriod
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 
 
@@ -182,6 +184,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
+        df = self.sim.population.props
 
         # simple diagnosis to work out which HSI event to trigger
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
@@ -228,4 +231,5 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
-        pass
+        return False  # Labour debugging
+        # pass

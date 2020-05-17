@@ -13,7 +13,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor,
+    pregnancy_supervisor, symptommanager, healthseekingbehaviour
 )
 
 # Where will outputs go
@@ -57,6 +57,8 @@ def test_run():
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 

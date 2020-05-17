@@ -443,12 +443,15 @@ class Labour (Module):
         'la_maternal_death_in_labour_date': Property(Types.DATE, 'date of death for a date in pregnancy')  # DUMMY
     }
 
+
     def read_parameters(self, data_folder):
 
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
+
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Here we will include DALY weights if applicable...
         if 'HealthBurden' in self.sim.modules.keys():
@@ -761,8 +764,6 @@ class Labour (Module):
         # newborn info dictionary
         event = LabourCheckEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=1))
-
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # This list contains all the women who are currently in labour
         self.women_in_labour = []
@@ -1215,6 +1216,36 @@ class Labour (Module):
         assert mother.age_years < 51
         assert mother.la_currently_in_labour
         assert mother.ps_gestational_age_in_weeks == 0
+
+    def events_queue_checker(self, individual_id):
+        """ This function checks a womans event and hsi_event queues to ensure that she has the correct events scheduled
+         during the process of labour"""
+        mni = self.mother_and_newborn_info
+
+        events = self.sim.event_queue.find_events_for_person(person_id=individual_id)
+        hsi_events = self.sim.modules['HealthSystem'].find_events_for_person(person_id=individual_id)
+
+        # Here we iterate through each womans event queue to insure she has the correct events scheduled
+        # Firstly we check all women have the labour death event and birth event scheduled
+        for x in events:
+            for y in x:
+                if isinstance(y, tlo.methods.labour.LabourDeathEvent):
+                    event_check = 1
+                    if isinstance(y, tlo.methods.labour.BirthEvent):
+                        event_check += 1
+                        assert event_check == 2
+
+        # Then we ensure that women delivering in a facility have the right HSI scheduled
+        if mni[individual_id]['delivery_setting'] != 'homebirth':
+            for x in hsi_events:
+                for y in x:
+                    if isinstance(y, tlo.methods.labour.HSI_Labour_PresentsForSkilledBirthAttendanceInLabour):
+                        hsi_check = 1
+                        assert hsi_check == 1
+
+        # TODO: This simply cant be the most elegant solution
+        # todo: maybe double check with asif this is doing what I think
+        # todo: think where else to apply this (and how to adapt appropriately)
 
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
@@ -1809,7 +1840,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-# ======================================== SCHEDULING BIRTH AND DEATH EVENTS ==========================================
+    # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ======================================
             # We schedule all women to move through the death event where those who have developed a complication
             # that hasn't been treated or treatment has failed will have a case fatality rate applied
             self.sim.schedule_event(LabourDeathEvent(self.module, individual_id), self.sim.date + DateOffset(days=3))
@@ -1824,25 +1855,10 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             logger.debug('This is LabourOnsetEvent scheduling a potential death on date %s for mother %d',
                          self.sim.date, individual_id)
 
-            # TODO: Ask Tim H how to work this
-
+    # ======================================== RUNNING CHECKS ON EVENT QUEUES ========================================
             # Here we run a check to ensure at the end of the preliminary labour event, women have the appropriate
             # future events scheduled
-            events = self.sim.event_queue.find_events_for_person(person_id=individual_id)
-            hsi_events = self.sim.modules['HealthSystem'].find_events_for_person(person_id=individual_id)
-
-            x = isinstance(events[0][1], tlo.methods.labour.LabourDeathEvent)
-            z ='y'
-            #  assert 'LabourDeathEvent' in events[0][1]
-            #  assert BirthEvent in events
-
-            # if mni[individual_id]['delivery_setting'] == 'homebirth':
-            #    assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour not in hsi_events
-            #    assert LabourAtHomeEvent in events
-
-            # else:
-            #    assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour in hsi_events
-            #    assert LabourAtHomeEvent not in events
+            self.module.events_queue_checker(individual_id)
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
@@ -1889,20 +1905,18 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                     df.at[individual_id, 'la_eclampsia'] or \
                    df.at[individual_id, 'la_uterine_rupture']:
 
-                    self.sim.modules['SymptomManager'].change_symptom(
-                        person_id=individual_id,
-                        disease_module=self.module,
-                        add_or_remove='+',
-                        symptom_string='em_complication_during_birth')
-                    # todo: where do these symptoms reset
-
                     if self.module.eval(params['la_labour_equations']['care_seeking_for_complication'], individual_id):
-                        event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-                                module=self.sim.modules['Labour'],
-                                person_id=individual_id
-                                )
-
                         mni[individual_id]['sought_care_for_complication'] = True
+                        event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+                            self.module, person_id=individual_id, facility_level_of_this_hsi=int(self.module.rng.choice(
+                                [1, 2])))
+
+                        # from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+                        # event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
+                        #        module=self.module,
+                        #        person_id=individual_id
+                        #        )
+
                         logger.debug('mother %d will now seek care for a complication that has developed during labour '
                                      'on date %s', individual_id, self.sim.date)
                         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -1911,6 +1925,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                                                                             tclose=self.sim.date + DateOffset(days=1))
 
             # TODO: recurring issue with determining level of facility choice
+
 
 
 class BirthEvent(Event, IndividualScopeEventMixin):
@@ -2045,17 +2060,16 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                                                                       df.at[individual_id, 'la_eclampsia_postpartum'] or
                                                                       df.at[individual_id, 'la_postpartum_haem']):
 
-                self.sim.modules['SymptomManager'].change_symptom(
-                    person_id=individual_id,
-                    disease_module=self.module,
-                    add_or_remove='+',
-                    symptom_string='em_complication_following_birth')
-
-                event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-                    module=self.module, person_id=individual_id)
-
                 if self.module.eval(params['la_labour_equations']['care_seeking_for_complication'], individual_id):
                     mni[individual_id]['sought_care_for_complication'] = True
+                    event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+                    self.module, person_id=individual_id, facility_level_of_this_hsi=int(self.module.rng.choice(
+                                                                                        [1, 2])))
+
+                    # from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+                    # event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
+                    #     module=self.module, person_id=individual_id)
+
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         event,
                         priority=0,
@@ -2302,13 +2316,18 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         df = self.sim.population.props
         params = self.module.parameters
 
-        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother %d has presented to a health '
-                    'facility on date %s following the onset of her labour', person_id, self.sim.date)
+        # TODO: reset symptoms
 
         # =========================== LOGGING DELIVERY AND CHARACTERISTIC CHECKER =====================================
         # Women who developed a complication at home, then presented to a facility for delivery, are counted as
         # facility deliveries
-        if df.at[person_id, 'is_alive']:
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        else:
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother %d has presented to a health '
+                        'facility on date %s following the onset of her labour', person_id, self.sim.date)
+            print(mni[person_id])
             if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
                 mni[person_id]['delivery_setting'] = 'health_centre'
             # TODO: currently dont have choice of facility level in complication care-seeking equation
@@ -2372,7 +2391,7 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
             if not mni[person_id]['sought_care_for_complication']:
                 [self.module.set_intrapartum_complications(person_id, complication=complication)
                     for complication in
-                    ['eclampsia', 'antepartum_haem', 'sepsis']]
+                    ['obstructed_labour', 'eclampsia', 'antepartum_haem', 'sepsis']]
 
             # n.b. we do not apply the risk of uterine rupture due to the causal link between obstructed labour and
             # uterine rupture. We want interventions for obstructed labour to reduce the risk of uterine rupture
@@ -2674,6 +2693,11 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
         person_id = self.target
         logger.debug('squeeze factor is too high for this event to run for mother %s on date %d and she is unable to '
                      'deliver via caesarean section', person_id, self.sim.date)
+
+        # Here we apply the risk that for women who were referred for caesrean, but it wasnt performed, develop uterine
+        # rupture
+        self.module.set_intrapartum_complications(
+            person_id, complication='uterine_rupture')
         return False
 
 
@@ -2918,8 +2942,10 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'ol_incidence': ol / total_births_last_year * 100,
                            'aph_incidence': aph / total_births_last_year * 100,
                            'ur_incidence': ur / total_births_last_year * 100,
-                           'ec_incidence': ec + ec_pp / total_births_last_year * 100,
-                           'sep_incidence': sep + sep_pp / total_births_last_year * 100,
+                           'ec_incidence': ec / total_births_last_year * 100,
+                           'ec_incidence_pp': ec_pp / total_births_last_year * 100,
+                           'sep_incidence': sep / total_births_last_year * 100,
+                           'sep_incidence_pp': sep_pp / total_births_last_year * 100,
                            'pph_incidence': pph / total_births_last_year * 100,
                            'ol_cases': ol,
                            'aph_cases': aph,
