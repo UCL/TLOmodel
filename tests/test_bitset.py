@@ -22,7 +22,7 @@ def test_bitset():
     u = symptoms.uncompress()
     assert len(u) == 5
     assert np.all(u.columns == pd.Index(['fever', 'cough', 'nausea', 'vomiting']))
-    assert not u.all(axis=None)
+    assert (~u.all()).all()
 
     # individual
     symptoms.set([0], 'nausea')
