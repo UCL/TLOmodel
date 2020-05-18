@@ -181,12 +181,7 @@ class BitsetHandler():
         value = np.invert(np.array(value, np.int64))
         self.df.loc[where, self._column] = np.bitwise_and(self.df.loc[where, self._column], value)
 
-    def _has_all(self, where, *elements: str):
-        value = sum([self._lookup[x] for x in elements])
-        matched = np.bitwise_and(self.df.loc[where, self._column], value) == value
-        return matched
-
-    def has_all(self, where, *elements: str) -> Union[pd.Series, bool]:
+    def has_all(self, where, *elements: str, pop=False) -> Union[pd.Series, bool]:
         """Check whether individual(s) have all the elements given set to True
 
         The where argument is used verabtim as the first item in a `df.loc[x, y]` call. It can be index
@@ -197,19 +192,21 @@ class BitsetHandler():
         If a single individual is supplied as the where clause, returns a bool, otherwise a Series of bool
 
         :param where: condition to filter rows that will be set
-        :param elements: one or more elements to set to True"""
-        matched = self._has_all(where, *elements)
-        if len(matched) == 1:
+        :param elements: one or more elements to set to True
+        :param pop: a keyword argument to return first item in Series instead of Series"""
+        value = sum([self._lookup[x] for x in elements])
+        matched = np.bitwise_and(self.df.loc[where, self._column], value) == value
+        if pop:
             return matched.iloc[0]
         return matched
 
-    def has_any(self, where, *elements: str):
+    def has_any(self, where, *elements: str, pop=False):
         """Sister method to `has_all` but instead checks whether matching rows have any of the elements
         set to True"""
         matched = pd.Series(False, index=self.df.index[where])
         for element in elements:
-            matched = matched.where(matched, self._has_all(where, element))
-        if len(matched) == 1:
+            matched = matched.where(matched, self.has_all(where, element))
+        if pop:
             return matched.iloc[0]
         return matched
 
@@ -230,7 +227,7 @@ class BitsetHandler():
             where = self.df.index
         collect = dict()
         for element in self._elements:
-            collect[element] = self._has_all(where, element)
+            collect[element] = self.has_all(where, element)
         return pd.DataFrame(collect)
 
     def clear(self, where) -> None:

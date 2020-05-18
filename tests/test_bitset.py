@@ -51,8 +51,8 @@ def test_bitset():
     # who has a cough
     assert (symptoms.has_all(df.is_alive, 'cough') == [True, False, True, True, True]).all()
 
-    # does individual 1 have vomiting or fever
-    assert (symptoms.has_any([0], 'fever', 'vomiting'))
+    # does individual 1 have vomiting or fever - use 'pop' to get single entry, not Series
+    assert (symptoms.has_any([0], 'fever', 'vomiting', pop=True))
 
     # who has both cough and vomiting
     assert (symptoms.has_all(df.is_alive, 'cough', 'vomiting') == [True, False, True, False, True]).all()
