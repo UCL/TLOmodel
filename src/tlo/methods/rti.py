@@ -29,8 +29,7 @@ def injrandomizer(number):
     #  used to calculate the injury severity score (ISS), which will then inform mortality and disability
 
     # Import the distribution of injured body regions from the VIBES study
-    totalinjdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/'
-                                 'TLOmodel/resources/ResourceFile_NumberOfInjuredBodyLocations.csv', delimiter=',')
+    totalinjdist = np.genfromtxt('TLOmodel/resources/ResourceFile_RTI_NumberOfInjuredBodyLocations.csv')
     # Import the predicted rate of mortality from the ISS score of injuries
     # ISSmort = np.genfromtxt('AssignInjuryTraits/data/ISSmortality.csv', delimiter=',')
     predinjlocs = []
@@ -43,10 +42,15 @@ def injrandomizer(number):
     injlocstring = []
     injcatstring = []
     injaisstring = []
+
+
+
+
+
     for n in range(0, number):
+
         # Reset the distribution of body regions which can injured.
-        injlocdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/'
-                                   'TLOmodel/resources//ResourceFile_InjuredBodyRegionPercentage.csv', delimiter=',')
+        injlocdist = np.genfromtxt('TLOmodel/resources/ResourceFile_RTI_InjuredBodyRegionPercentage.csv', delimiter=',')
 
         ninjdecide = np.random.uniform(0, sum(totalinjdist))
         # This generates a random number which will decide how many injuries the person will have,
@@ -117,8 +121,11 @@ def injrandomizer(number):
                     # Spinal cord injury - 7
                     # Amputation - 8
                     # Eye injury - 9
+                    # Cuts etc - 10
+
                     if injlocs == 1:
                         # stringinjlocs.append('1 ')
+
                         if cat <= 0.291:
                             injcat.append(int(1))
                             if cat <= 0.91 * 0.291:
@@ -165,12 +172,11 @@ def injrandomizer(number):
                                 injais.append(2)
 
                                 # print('Fce frac 1')
-                        elif 0.47 < cat <= 0.47 + 0.17:
-                            # Soft tissue injury
-                            injcat.append(int(4))
+                        elif 0.47 < cat <= 0.995:
+                            # Skin and soft tissue injury
+                            injcat.append(int(10))
                             injais.append(1)
 
-                            # print('face soft tissue')
                         else:
                             injcat.append(int(9))
                             injais.append(1)
@@ -318,19 +324,22 @@ def injrandomizer(number):
                                 # print('scl4')
                     if injlocs == 7:
                         # stringinjlocs.append('7 ')
-                        if cat <= 0.943:
+                        if cat <= 0.943/2:
+                            injcat.append(int(10))
+                            injais.append(1)
+                        elif 0.943/2 < cat <= 0.943:
                             # Fracture to arm
                             injcat.append(int(1))
                             injais.append(2)
 
                             # print('uxfrac1')
-                        elif 0.943 < cat <= 0.943 + 0.003:
+                        elif 0.943 < cat <= 0.943 + 0.002:
                             # Dislocation to arm
                             injcat.append(int(2))
                             injais.append(2)
 
                             # print('uxdis')
-                        elif 0.943 + 0.003 < cat <= 0.943 + 0.003 + 0.051:
+                        elif 0.943 + 0.002 < cat <= 0.943 + 0.002 + 0.051:
                             # Amputation to finger/thumb/unilateral arm
                             injcat.append(int(8))
                             injais.append(2)
@@ -362,25 +371,29 @@ def injrandomizer(number):
                             injais.append(2)
 
                             # print('lx toe')
-                        elif 0.157 < cat <= 0.198:
+                        elif 0.157 < cat <= 0.198/2:
                             # Fracture of foot/toes
                             injcat.append(int(1))
                             injais.append(1)
 
                             # print('lx foot frac')
-                        elif 0.198 < cat <= 0.813:
+                        elif 0.198/2 < cat <= 0.813/2:
                             # Fracture of tibia, fibula, patella
                             # print('lx lower leg ')
                             injcat.append(int(1))
                             injais.append(2)
 
-                        elif 0.813 < cat <= 0.978:
+                        elif 0.813/2 < cat <= 0.978/2:
                             # Fracture of femur
                             # print('lx femur')
                             injcat.append(int(1))
                             injais.append(3)
 
-                        elif 0.978 < cat:
+                        elif 0.978/2 < cat <= 0.995:
+                            injcat.append(int(10))
+                            injais.append(1)
+
+                        elif 0.995 < cat:
                             # Dislocation
                             # print('lx dis')
                             injcat.append(int(2))
@@ -389,6 +402,7 @@ def injrandomizer(number):
                     # The injury is then assigned an AIS severity ranking based on the possible range of AIS severity
                     # scored for that body region, currently this is random, but could be informed by a distribution
                     break
+
 
         # Create a dataframe that stores the injury location and severity for each person, the point of this
         # dataframe is to use some of the pandas tools to manipulate the generated injury data to calculate
@@ -407,8 +421,7 @@ def injrandomizer(number):
         # location.
         df = df.drop_duplicates(['AIS location'], keep='first')
         # Finds the AIS score for the most severely injured body regions and stores them in a new dataframe z
-        z = df.nlargest(3, 'Severity max', keep='first')
-        # --------------- previously had keep as 'all', does this matter?
+        z = df.nlargest(3, 'Severity max', 'first')
         # Find the 3 most severely injured body regions
         z = z.iloc[:3]
         # Need to determine whether the persons injuries qualify as polytrauma as such injuries have a different
@@ -483,6 +496,7 @@ def injrandomizer(number):
         injurydescription.rename(columns={injurydescription.columns[columnname]: "Injury " + str(columnname + 1)},
                                  inplace=True)
 
+    injurydescription = injurydescription.fillna('na')
     return injdf, injurydescription
 
 
@@ -545,6 +559,10 @@ class RTI(Module):
             Types.REAL,
             'Proportion of people who pass away in the following month with no treatment for injuries with an ISS'
             'score of 15 '
+        ),
+        'prob_perm_disability_with_treatment_severe_TBI': Parameter(
+            Types.REAL,
+            'probability that someone with a treated severe TBI is permanently disabled'
         ),
         'daly_wt_unspecified_skull_fracture': Parameter(
             Types.REAL,
@@ -1343,7 +1361,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
     and thus implement discrete timestep type behaviour. The frequency is
     specified when calling the base class constructor in our __init__ method.
     """
-
+    # todo: check list of parameters over
     def __init__(self, module):
         """Shedule to take place every month
         """
@@ -1356,6 +1374,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         self.rr_injrti_male = p['rr_injrti_male']
         self.rr_injrti_excessalcohol = p['rr_injrti_excessalcohol']
         self.imm_death_proportion_rti = p['imm_death_proportion_rti']
+        self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.daly_wt_unspecified_skull_fracture = p['daly_wt_unspecified_skull_fracture']
         self.daly_wt_basilar_skull_fracture = p['daly_wt_basilar_skull_fracture']
         self.daly_wt_epidural_hematoma = p['daly_wt_epidural_hematoma']
@@ -1580,44 +1599,70 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_RTI_Appointment(HSI_Event, IndividualScopeEventMixin):
+class HSI_RTI_Traumatic_Brain_Injury(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event.
-    An appointment where someone injured due to a road traffic incident is treated
+    An appointment of a person who has experienced head injury due to a road traffic injury, requiring the resources
+    found at a level 1+ facility such as:
+
+    Diagnostic tools -
+
+    (Computed) tomograpy - a.k.a ct scan
+    MRI scan
+    Diagnostic radiography procedures e.g. x-rays
+
+    Treatments -
+    Anti inflammetory drugs
+    Major surgery e.g. craniotomy, aspiration
+
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Skeleton)
+        assert isinstance(module, RTI)
 
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' footprint:
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         #   - update to reflect the appointments that are required
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+        the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+        the_appt_footprint['MRI'] = 1  # This appointment requires a MRI scan
+        the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
 
         # Define the facilities at which this event can occur (only one is allowed)
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
-        the_accepted_facility_level = 0
+        the_accepted_facility_level = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
+        self.TREATMENT_ID = 'RTI_TBI_Interaction'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        """
-        Do the action that take place in this health system interaction, in light of squeeze_factor
-        Can reutrn an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
-        """
+        p = RTI.module.parameters
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'rt_tbi_diagnosed'] = True
+        df.at[person_id, 'rt_tbi_treated'] = True
+        logger.debug('@@@@@@@@@@ TBI Treatment started !!!!!!')
+        prob_dis = np.random.random()
+
+        if prob_dis < p['prob_perm_disability_with_treatment_severe_TBI']:
+            df.at[person_id, 'rt_perm_disability'] = True
+            logger.debug('@@@@@@@@@@ TBI Treatment started but still disabled!!!!!!')
+        else:
+            df.at[person_id, 'rt_tbi_recovered'] = True
         pass
 
     def did_not_run(self):
-        """
-        Do any action that is neccessary when the health system interaction is not run.
-        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities.
-        Return False to cause this HSI event not to be rescheduled and to therefore never be run.
-        (Returning nothing or True will cause this event to be rescheduled for the next day.)
-        """
+        logger.debug('HSI_RTI_Traumatic_Brain_Injury: did not run')
+
+        # todo: find out the probability of death without treatment
+        #
+        #
+        #
+
         pass
