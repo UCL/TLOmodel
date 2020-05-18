@@ -157,7 +157,7 @@ class BitsetHandler():
     def set(self, where, *elements: str) -> None:
         """For individuals matching `where` argument, set the bit (i.e. set to True) the given elements
 
-        The where argument is used verabtim as the first item in a `df.loc[x, y]` call. It can be index
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
         items, a boolean logical condition, or list of row indices e.g. "[0]"
 
         The elements are one of more valid items from the list of elements for this bitset
@@ -170,7 +170,7 @@ class BitsetHandler():
     def unset(self, where, *elements: str) -> None:
         """For individuals matching `where` argument, unset the bit (i.e. set to False) the given elements
 
-        The where argument is used verabtim as the first item in a `df.loc[x, y]` call. It can be index
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
         items, a boolean logical condition, or list of row indices e.g. "[0]"
 
         The elements are one of more valid items from the list of elements for this bitset
@@ -184,7 +184,7 @@ class BitsetHandler():
     def has_all(self, where, *elements: str, pop=False) -> Union[pd.Series, bool]:
         """Check whether individual(s) have all the elements given set to True
 
-        The where argument is used verabtim as the first item in a `df.loc[x, y]` call. It can be index
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
         items, a boolean logical condition, or list of row indices e.g. "[0]"
 
         The elements are one of more valid items from the list of elements for this bitset
@@ -213,7 +213,7 @@ class BitsetHandler():
     def get(self, where, pop=False):
         """Returns a Series with set of string of elements where bit is True
 
-        The where argument is used verabtim as the first item in a `df.loc[x, y]` call. It can be index
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
         items, a boolean logical condition, or list of row indices e.g. "[0]"
 
         The elements are one of more valid items from the list of elements for this bitset
