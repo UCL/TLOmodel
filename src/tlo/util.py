@@ -175,7 +175,7 @@ class BitsetHandler():
 
         The elements are one of more valid items from the list of elements for this bitset
 
-        :param where: condition to filter rows that will be set
+        :param where: condition to filter rows that will be unset
         :param elements: one or more elements to set to False"""
         value = sum([self._lookup[x] for x in elements])
         value = np.invert(np.array(value, np.int64))
@@ -191,7 +191,7 @@ class BitsetHandler():
 
         If a single individual is supplied as the where clause, returns a bool, otherwise a Series of bool
 
-        :param where: condition to filter rows that will be set
+        :param where: condition to filter rows that will checked
         :param elements: one or more elements to set to True
         :param pop: a keyword argument to return first item in Series instead of Series"""
         value = sum([self._lookup[x] for x in elements])
@@ -218,7 +218,7 @@ class BitsetHandler():
 
         The elements are one of more valid items from the list of elements for this bitset
 
-        :param where: condition to filter rows that will be set
+        :param where: condition to filter rows that will returned
         """
         def int_to_set(integer):
             bin_repr = '{0:b}'.format(integer)
