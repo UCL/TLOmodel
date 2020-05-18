@@ -305,6 +305,7 @@ class NewbornOutcomes(Module):
 
             'newborn_death': LinearModel(
              # TODO: apply delay/prompt TE inside the code
+             # todo: what if this =>1
              LinearModelType.ADDITIVE,
              0,
 
