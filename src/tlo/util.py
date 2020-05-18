@@ -210,6 +210,24 @@ class BitsetHandler():
             return matched.iloc[0]
         return matched
 
+    def get(self, where, pop=False):
+        """Returns a Series with set of string of elements where bit is True
+
+        The where argument is used verabtim as the first item in a `df.loc[x, y]` call. It can be index
+        items, a boolean logical condition, or list of row indices e.g. "[0]"
+
+        The elements are one of more valid items from the list of elements for this bitset
+
+        :param where: condition to filter rows that will be set
+        """
+        def int_to_set(integer):
+            bin_repr = '{0:b}'.format(integer)
+            return {self._lookup[2 ** k] for k, v in enumerate(reversed(list(bin_repr))) if v == '1'}
+        sets = self.df.loc[where, self._column].apply(int_to_set)
+        if pop:
+            return sets.iloc[0]
+        return sets
+
     def compress(self, uncompressed: pd.DataFrame) -> None:
         def convert(column):
             value_of_column = self._lookup[column.name]

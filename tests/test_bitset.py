@@ -70,3 +70,11 @@ def test_bitset():
     person_symp = symptoms.uncompress([2])
     person_symp = person_symp.loc[2]  # turn dataframe into series with column as index
     assert not person_symp.fever and person_symp.cough and not person_symp.nausea & person_symp.vomiting
+
+    # get set of strings of elements (might be easier to work with in some circumstances...?)
+    sets = symptoms.get(df.is_alive)
+    assert len(sets.loc[1]) == 0
+    assert len(sets.loc[3]) == 1 and 'cough' in sets.loc[3]
+
+    person_symptoms = symptoms.get([4], pop=True)
+    assert person_symptoms.difference({'cough', 'vomiting'}) == set()
