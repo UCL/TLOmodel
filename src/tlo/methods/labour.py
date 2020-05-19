@@ -746,7 +746,7 @@ class Labour (Module):
                                  (params['cfr_uterine_rupture'] * params['ur_prompt_treatment_effect_md'])),
                 Predictor().when('(la_uterine_rupture == True) & (la_uterine_rupture_treatment == True) & '
                                  '(__referred_for_surgery__ == "delayed_referral")',
-                                 (params['cfr_aph'] * params['ur_delayed_treatment_effect_md']))),
+                                (params['cfr_aph'] * params['ur_delayed_treatment_effect_md']))),
 
              'death_following_labour': LinearModel(
                 LinearModelType.ADDITIVE,
@@ -756,6 +756,7 @@ class Labour (Module):
                 Predictor().when('(la_sepsis_postpartum == True) & (la_sepsis_treatment == True) & '
                                  '(__attended_birth__ == True)',
                                  (params['cfr_pp_sepsis'] * params['sepsis_prompt_treatment_effect_md'])),
+
                 Predictor().when('(la_sepsis_postpartum == True) & (la_sepsis_treatment == True) & '
                                  '(__attended_birth__ == False)',
                                  (params['cfr_pp_sepsis'] * params['sepsis_delayed_treatment_effect_md'])),
@@ -804,16 +805,16 @@ class Labour (Module):
 
                  # TODO: we're only now applying treatment effect to women who dont die intrapartum?
                  Predictor().when('(la_sepsis == True) & (la_sepsis_treatment == True) & (__attended_birth__ == True)'
-                                  '(la_maternal_death_in_labour == False)',
+                                  '& (la_maternal_death_in_labour == False)',
                                   params['prob_still_birth_sepsis'] * params['sepsis_prompt_treatment_effect_sb']),
                  Predictor().when('(la_sepsis == True) & (la_sepsis_treatment == True) & (__attended_birth__ == False)'
-                                  '(la_maternal_death_in_labour == False)',
+                                  '& (la_maternal_death_in_labour == False)',
                                   params['prob_still_birth_sepsis'] * params['sepsis_delayed_treatment_effect_sb']),
 
                  Predictor().when('(la_eclampsia == True) & (la_eclampsia_treatment == False) & '
                                   '(la_maternal_death_in_labour == False)',
                                   params['prob_still_birth_eclampsia']),
-                 Predictor().when('(la_sepsis == True) & (la_sepsis_treatment == False) & '
+                 Predictor().when('(la_eclampsia == True) & (la_eclampsia_treatment == False) & '
                                   '(la_maternal_death_in_labour == True)',
                                   params['prob_still_birth_eclampsia'] * params[
                                       'rr_still_birth_eclampsia_maternal_death']),
@@ -821,11 +822,11 @@ class Labour (Module):
                  Predictor().when('(la_eclampsia == True) & (la_eclampsia_treatment == True) & '
                                   '(__attended_birth__ == True) & (la_maternal_death_in_labour == False)',
                                   params['prob_still_birth_eclampsia'] * params[
-                                      'eclampsia_prompt_treatment_effect_sb']),
+                                   'eclampsia_prompt_treatment_effect_sb']),
                  Predictor().when('(la_eclampsia == True) & (la_eclampsia_treatment == True) & '
                                   '(__attended_birth__ == False) & (la_maternal_death_in_labour == False)',
                                   params['prob_still_birth_eclampsia'] * params[
-                                      'eclampsia_delayed_treatment_effect_sb']),
+                                     'eclampsia_delayed_treatment_effect_sb']),
 
                  Predictor('ps_severe_pre_eclamp').when(True, params['prob_still_birth_severe_pre_eclamp']),
 
@@ -846,7 +847,7 @@ class Labour (Module):
                                   '(__referred_for_caesarean__ == "delayed_referral") & '
                                   '(la_maternal_death_in_labour == False)',
                                   params['prob_still_birth_eclampsia'] * params[
-                                      'aph_delayed_treatment_effect_sb']),
+                                     'aph_delayed_treatment_effect_sb']),
 
                  Predictor().when('(la_uterine_rupture == True) & (la_uterine_rupture_treatment == False) & '
                                   '(la_maternal_death_in_labour == False)',
@@ -861,6 +862,7 @@ class Labour (Module):
                                   '(la_maternal_death_in_labour == False)',
                                   params['prob_still_birth_uterine_rupture'] * params[
                                       'ur_prompt_treatment_effect_sb']),
+
                  Predictor().when('(la_uterine_rupture == True) & (la_uterine_rupture_treatment == True) & '
                                   '(__referred_for_caesarean__ == "delayed_referral") & '
                                   '(la_maternal_death_in_labour == False)',
@@ -1249,6 +1251,9 @@ class Labour (Module):
         if eq == params['la_labour_equations']['intrapartum_still_birth']:
             return self.rng.random_sample() < eq.predict(person, attended_birth=attended_delivery,
                                                          referred_for_caesarean=referred_for_caesarean)[person_id]
+
+        if eq == params['la_labour_equations']['death_following_labour']:
+            return self.rng.random_sample() < eq.predict(person, attended_birth=attended_delivery,)[person_id]
 
         else:
             # If there are no external variables in the model we simply return....
@@ -1906,7 +1911,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'squeeze_to_high_for_hsi': False,
                                   'squeeze_to_high_for_hsi_pp': False,
                                   'sought_care_for_complication': False,
-                                  'referred_for_cs': 'none',  # 'none', 'prompt_referral', 'late_referral'
+                                  'referred_for_cs': 'none',  # 'none', 'prompt_referral', 'delayed_referral'
                                   'referred_for_blood': 'none',  # 'none', 'prompt_referral', 'late_referral'
                                   'received_blood_transfusion': False,
                                   'referred_for_surgery': 'none',  # 'none', 'prompt_referral', 'late_referral'
@@ -1975,6 +1980,11 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             facility_types = ['home_birth', 'health_centre', 'hospital']
             probabilities = [prob_hb, prob_hc, prob_hp]
             mni[individual_id]['delivery_setting'] = self.module.rng.choice(facility_types, p=probabilities)
+
+            # TODO: check with Tim H
+            # This line of logic means that if the health system is switched off, women will all deliver at home
+            if self.sim.modules['HealthSystem'].service_availability == []:
+                mni[individual_id]['delivery_setting'] = 'home_birth'
 
             # Check all women's 'delivery setting' is set
             assert mni[individual_id]['delivery_setting'] is not None
@@ -2092,8 +2102,6 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                                                                             tclose=self.sim.date + DateOffset(days=1))
 
             # TODO: recurring issue with determining level of facility choice
-
-
 
 class BirthEvent(Event, IndividualScopeEventMixin):
     """This is the BirthEvent. It is scheduled by LabourOnsetEvent. For women who survived labour, the appropriate
@@ -2269,6 +2277,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             # mni[individual_id]['cause_of_death_in_labour'].append(cause)
             df.at[individual_id, 'la_maternal_death_in_labour'] = True
             df.at[individual_id, 'la_maternal_death_in_labour_date'] = self.sim.date
+            self.module.LabourComplicationTracker['maternal_death'] += 1
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='labour'), self.sim.date)
             logger.info('This is LabourDeathEvent scheduling a death for person %d on date %s who died due to '
@@ -2277,19 +2286,13 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         if self.module.eval(params['la_labour_equations']['intrapartum_still_birth'], individual_id):
             df.at[individual_id, 'la_intrapartum_still_birth'] = True
             df.at[individual_id, 'ps_previous_stillbirth'] = True
-
-        if df.at[individual_id, 'la_intrapartum_still_birth']:
+            self.module.LabourComplicationTracker['ip_stillbirth'] += 1
             logger.info('@@@@ A Still Birth has occurred, to mother %s', individual_id)
-            logger.info('%s|still_birth|%s', self.sim.date,
-                        {'mother_id': individual_id})
 
         if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
             # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
             # the baby has survived we delete the dictionary following the on_birth function of NewbornOutcomes
                 del mni[individual_id]
-
-
-
 
         #if df.at[individual_id, 'ps_severe_pre_eclamp']:
         #    self.module.set_maternal_death_status_intrapartum(individual_id, cause='severe_pre_eclamp')
@@ -2347,6 +2350,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         mni = self.module.mother_and_newborn_info
+        params = self.module.parameters
 
         logger.debug('mother %d at PPD at date %s', individual_id, self.sim.date)
 
@@ -2354,53 +2358,81 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(8, unit='D')
         self.module.postpartum_characteristics_checker(individual_id)
 
-        # Check the same number of women who went into labour have reached the final event (minus those who died)
-
-        # We apply the same structure as with the LabourDeathEvent to women who experience postpartum complications
-        # Check the woman is currently alive
-        if df.at[individual_id, 'is_alive']:
-            if df.at[individual_id, 'la_eclampsia_postpartum']:
-                self.module.set_maternal_death_status_postpartum(individual_id, cause='eclampsia')
-
-            if df.at[individual_id, 'la_postpartum_haem']:
-                self.module.set_maternal_death_status_postpartum(individual_id, cause='postpartum_haem')
-
-            if df.at[individual_id, 'la_sepsis_postpartum']:
-                self.module.set_maternal_death_status_postpartum(individual_id, cause='sepsis')
-
-            if mni[individual_id]['death_postpartum']:
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+        if self.module.eval(params['la_labour_equations']['death_following_labour'], individual_id):
+            mni[individual_id]['death_postpartum'] = True
+            df.at[individual_id, 'la_maternal_death_in_labour'] = True
+            df.at[individual_id, 'la_maternal_death_in_labour_date'] = self.sim.date
+            self.module.LabourComplicationTracker['maternal_death'] += 1
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='postpartum labour'), self.sim.date)
-
-        # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id]
-        #  [cause_of_death_in_labour]
-
-                logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
-                             'postpartum complications', individual_id,
+            logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
+                         'postpartum complications', individual_id,
                              self.sim.date)
 
-                logger.debug('%s|labour_complications|%s', self.sim.date,
+            logger.debug('%s|labour_complications|%s', self.sim.date,
                              {'person_id': individual_id,
                               'labour_profile': mni[individual_id]})
-                del mni[individual_id]
+            del mni[individual_id]
 
-            else:
-                # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to
-                # false
-                self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id),
-                                        self.sim.date + DateOffset(weeks=1))
-                # TODO: Consider how best to deal with complications that are long lasting.
+        else:
+            # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to
+            # false
+            self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id),
+                                    self.sim.date + DateOffset(weeks=1))
+        # TODO: Consider how best to deal with complications that are long lasting.
 
-                logger.debug('%s|labour_complications|%s', self.sim.date,
-                             {'person_id': individual_id,
-                              'labour_profile': mni[individual_id]})
-
-            # End the period of current labour
-            # should this be for everyone?
+            logger.debug('%s|labour_complications|%s', self.sim.date,
+                         {'person_id': individual_id,
+                          'labour_profile': mni[individual_id]})
             df.at[individual_id, 'la_currently_in_labour'] = False
 
         # Here we remove all women (dead and alive) who have passed through the labour events
         self.module.women_in_labour.remove(individual_id)
+
+        # if df.at[individual_id, 'is_alive']:
+        #    if df.at[individual_id, 'la_eclampsia_postpartum']:
+        #        self.module.set_maternal_death_status_postpartum(individual_id, cause='eclampsia')
+
+        #    if df.at[individual_id, 'la_postpartum_haem']:
+        #        self.module.set_maternal_death_status_postpartum(individual_id, cause='postpartum_haem')
+
+        #    if df.at[individual_id, 'la_sepsis_postpartum']:
+        #        self.module.set_maternal_death_status_postpartum(individual_id, cause='sepsis')
+
+        #    if mni[individual_id]['death_postpartum']:
+        #        self.module.LabourComplicationTracker['maternal_death'] += 1
+        #        self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+        #                                                              cause='postpartum labour'), self.sim.date)
+
+        # TODO: amend cause= 'labour_' + [str(cause) + '_' for cause in list(mni[individual_id]
+        #  [cause_of_death_in_labour]
+
+        #        logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
+        #                     'postpartum complications', individual_id,
+        #                     self.sim.date)
+
+        #        logger.debug('%s|labour_complications|%s', self.sim.date,
+        #                     {'person_id': individual_id,
+        #                      'labour_profile': mni[individual_id]})
+        #        del mni[individual_id]
+
+        #    else:
+                # Surviving women pass through the DiseaseResetEvent to ensure all complication variable are set to
+                # false
+        #        self.sim.schedule_event(DiseaseResetEvent(self.module, individual_id),
+        #                                self.sim.date + DateOffset(weeks=1))
+                # TODO: Consider how best to deal with complications that are long lasting.
+
+        #        logger.debug('%s|labour_complications|%s', self.sim.date,
+        #                     {'person_id': individual_id,
+        #                      'labour_profile': mni[individual_id]})
+
+            # End the period of current labour
+            # should this be for everyone?
+        #    df.at[individual_id, 'la_currently_in_labour'] = False
+
+        # Here we remove all women (dead and alive) who have passed through the labour events
+        #self.module.women_in_labour.remove(individual_id)
 
         # todo: reset la_due_date_current_pregnancy ?
 
@@ -3071,8 +3103,8 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Denominators...
         # todo this is currently all births
-        dfx = pd.to_datetime(df['date_of_birth'])
-        yearly_births = len(dfx.index[dfx.dt.year == self.sim.date.year])
+    #    dfx = pd.to_datetime(df['date_of_birth'])
+    #    yearly_births = len(dfx.index[dfx.dt.year == self.sim.date.year])
         total_ip_maternal_deaths_last_year = len(df.index[df.la_maternal_death_in_labour & (
             df.la_maternal_death_in_labour_date > one_year_prior) & (df.la_maternal_death_in_labour_date <
                                                                      self.sim.date)])
@@ -3081,8 +3113,8 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if total_ip_maternal_deaths_last_year == 0:
             total_ip_maternal_deaths_last_year = 1
 
-        if yearly_births == 0:
-            yearly_births = 1
+    #    if yearly_births == 0:
+    #        yearly_births = 1
 
         # yearly number of complications
         deaths = self.module.LabourComplicationTracker['maternal_death']
@@ -3110,14 +3142,15 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: division by zero crashes code on small runs
 
-        dict_for_output = {'yearly_births': yearly_births,
+        dict_for_output = {#'yearly_births': yearly_births,
                            'total_births_last_year': total_births_last_year,
                            'maternal_deaths_checker':deaths,
                            'maternal_deaths_df': total_ip_maternal_deaths_last_year,
                            'still_births':still_births,
-                           'sbr': still_births/ total_births_last_year * 100,
+    #                       'sbr': still_births/ total_births_last_year * 100,
                            'intrapartum_mmr': total_ip_maternal_deaths_last_year / total_births_last_year * 100000,
-                           'home_births': home / total_births_last_year * 100,
+                           'home_births_crude': home,
+                           'home_births_prop': home / total_births_last_year * 100,
                            'health_centre_births': health_centre / total_births_last_year * 100,
                            'hospital_births': hospital / total_births_last_year * 100,
                            'cs_delivery_rate': cs_deliveries/total_births_last_year * 100,
