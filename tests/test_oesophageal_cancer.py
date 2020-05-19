@@ -65,6 +65,7 @@ if __name__ == '__main__':
 
 * To check the working of the HSI, good shortcut would be to increase the baseline risk of cancer:
 
+* at initiation, that date diagnosed is consistent with the age of the person
 
 
 """

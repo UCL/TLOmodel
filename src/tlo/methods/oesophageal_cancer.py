@@ -6,6 +6,9 @@ TODO:
 * Disability weights need to be updated?
 * Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
 * The age effect is very aggressive in the initiaisation: is that right?
+
+* we are sending these people to a specific HSI rather than a generic HSI. I think that's fine but we'll want to keep track of these decision and making sure that all is consistent
+
 """
 
 import logging
@@ -230,6 +233,10 @@ class Oesophageal_Cancer(Module):
         """Set our property values for the initial population."""
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
+        # DEBUG
+        # For debugging purposes, make the initial level of oes cancer very high
+        self.parameters['init_prop_oes_cancer_stage'] = [val * 2000 for val in self.parameters['init_prop_oes_cancer_stage']]
+
         # -------------------- DEFAULTS ------------------------------------------------------------
         df.loc[df.is_alive, "ca_oesophagus"] = "none"
         df.loc[df.is_alive, "ca_oesophagus_any"] = False
@@ -289,12 +296,12 @@ class Oesophageal_Cancer(Module):
                 .when("stage4", self.parameters['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][5])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df, self.rng)
-        date_diagnosed = pd.Series(
+        df["ca_date_oes_cancer_diagnosis"] = pd.Series(
             index=ever_diagnosed.index,
-            data=[pd.NaT if (not x) else (self.sim.date - DateOffset(days=self.rng.random_integers(0, 600))) for x in ever_diagnosed.values]
+            data=[pd.NaT if (not x) else (self.sim.date - DateOffset(days=int(1000*self.rng.rand()))) for x in ever_diagnosed]
         )
-        # TODO- GOT TO HERE!
-        df["ca_date_oes_cancer_diagnosis"]
+
+
 
 
         # -------------------- ASSIGN VALUES OESOPHAGEAL_CANCER_DIAGNOSED AT BASELINE --------------------------------
@@ -798,8 +805,6 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             dict_for_output[key] = value if not np.isnan(value) else 0
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
-
-
 
         # TODO; work out what this is intendeing to do.
         # ---------------------------------------------------------------------------------------------------
