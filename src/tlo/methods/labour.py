@@ -2726,10 +2726,11 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         return False
 
     def not_available(self):
-        """This is called when the HSI is passed to the healthsystem scheduler but not schedueld as the TREATMENT_ID
+        """This is called when the HSI is passed to the healthsystem scheduler but not scheduled as the TREATMENT_ID
         is not allowed under the 'services_available' parameter of the health system.
         Note that this called at the time of the event being passed to the Health System at schedule_hsi_event(...) and
-        not at the time when the HSI is intended to be run (as specified by the 'topen' parameter in that call"""
+        not at the time when the HSI is intended to be run (as specified by the 'topen' parameter in that call)"""
+        #TODO: should the healthsystem call this at the time that the HSI was intended to be run?
         pass
 
 class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEventMixin):
