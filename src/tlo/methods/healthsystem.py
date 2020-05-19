@@ -373,11 +373,18 @@ class HealthSystem(Module):
             )
 
         else:
+            # HSI is not available under the services_available parameter: call the hsi's not_available() method if it exists:
+            try:
+                hsi_event.not_available()
+            except ValueError:
+                pass
+
             logger.debug(
                 '%s| A request was made for a service but it was not included in the service_availability list: %s',
                 self.sim.date,
                 hsi_event.TREATMENT_ID,
             )
+
 
     def check_appt_footprint_format(self, appt_footprint):
         """
