@@ -29,7 +29,7 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 2)
+end_date = Date(2014, 1, 2)
 popsize = 10000
 
 for label, service_avail in scenarios.items():
