@@ -154,16 +154,16 @@ class Oesophageal_Cancer(Module):
         ),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
         "daly_wt_oes_cancer_controlled": Parameter(
-            Types.REAL, "disability weight for oesophageal cancer controlled phase - code 547"
+            Types.REAL, "disability weight for oesophageal cancer controlled phase"
         ),
         "daly_wt_oes_cancer_terminal": Parameter(
-            Types.REAL, "disability weight for oesophageal cancer terminal - code 548"
+            Types.REAL, "disability weight for oesophageal cancer terminal"
         ),
         "daly_wt_oes_cancer_metastatic": Parameter(
-            Types.REAL, "disability weight for oesophageal cancer metastatic - code 549"
+            Types.REAL, "disability weight for oesophageal cancer metastatic"
         ),
         "daly_wt_oes_cancer_primary_therapy": Parameter(
-            Types.REAL, "disability weight for oesophageal cancer primary therapy - code 550"
+            Types.REAL, "disability weight for oesophageal cancer primary therapy"
         ),
     }
 
@@ -215,17 +215,14 @@ class Oesophageal_Cancer(Module):
 
         # Get DALY weight values:
         if "HealthBurden" in self.sim.modules.keys():
-            # get the DALY weight for oes cancer
-            self.parameters["daly_wt_oes_dysp_diagnosed"] = 0.03
             self.parameters["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
-            sequlae_code=550
+                sequlae_code=550
             )
-            # todo: lower disability weight if palliative care (or higher if no palliative care)
             self.parameters["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
-            sequlae_code=549
+                sequlae_code=549
             )
             self.parameters["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
-            sequlae_code=547
+                sequlae_code=547
             )
 
 
@@ -233,10 +230,9 @@ class Oesophageal_Cancer(Module):
         """Set our property values for the initial population."""
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
-        # DEBUG
+        # ** DEBUG **
         # For debugging purposes, make the initial level of oes cancer very high
         self.parameters['init_prop_oes_cancer_stage'] = [val * 2000 for val in self.parameters['init_prop_oes_cancer_stage']]
-
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
 
@@ -356,7 +352,6 @@ class Oesophageal_Cancer(Module):
         )
 
 
-
     def initialise_simulation(self, sim):
         """
         * Schedule the main polling event
@@ -442,20 +437,19 @@ class Oesophageal_Cancer(Module):
 
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that updates all oesophageal cancer properties for population
+    Regular event that updates all oesophageal cancer properties for population:
+    *
+    *
+    *
     """
 
     def __init__(self, module):
-        """schedule to run every 3 months
-        note: if change this offset from 3 months need to consider code conditioning on age.years_exact
-        :param module: the module that created this event
+        """scheduled to run every 3 months: do not change.
         """
         super().__init__(module, frequency=DateOffset(months=3))
 
     def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
-        """
+
         df = population.props
         m = self.module
         rng = m.rng
