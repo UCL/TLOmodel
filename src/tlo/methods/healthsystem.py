@@ -373,9 +373,12 @@ class HealthSystem(Module):
             )
 
         else:
-            # HSI is not available under the services_available parameter: call the hsi's not_available() method if it exists:
+            # HSI is not available under the services_available parameter: call the hsi's not_available() method if it
+            # exists:
             try:
                 hsi_event.not_available()
+                # TODO: should the healthsystem call this at the time that the HSI was intended to be run (i.e topen)?
+
             except ValueError:
                 pass
 
