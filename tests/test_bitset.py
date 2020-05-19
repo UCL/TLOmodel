@@ -2,8 +2,10 @@ from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Population
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.util import BitsetHandler
 
 
@@ -78,3 +80,69 @@ def test_bitset():
 
     person_symptoms = symptoms.get([4], pop=True)
     assert person_symptoms.difference({'cough', 'vomiting'}) == set()
+
+
+def test_linearmodel_with_bitset():
+    # set up a mock population, only has props dataframe
+    mock = Mock(spec=Population)
+    df = pd.DataFrame(data={
+        'symptoms': pd.Series(0, index=range(5), dtype=np.dtype('int64')),
+        'is_alive': pd.Series(True, index=range(5), dtype=np.dtype('bool')),
+        'age': pd.Series([5, 10, 20, 30, 40], index=range(5), dtype=np.dtype('int'))
+    })
+    mock.configure_mock(props=df)
+
+    # create the handler to work with symptoms column on the population dataframe
+    symptoms = BitsetHandler(mock, 'symptoms', ['fever', 'cough', 'nausea', 'vomiting'])
+
+    # set
+    symptoms.set(df.index % 2 == 0, 'fever')
+    symptoms.set(df.index % 2 != 0, 'cough')
+    symptoms.set([4], 'vomiting')
+    symptoms.unset([3], 'cough')
+
+    # fever  cough  nausea  vomiting
+    # 0   True  False   False     False
+    # 1  False   True   False     False
+    # 2   True  False   False     False
+    # 3  False  False   False     False
+    # 4   True  False   False      True
+
+    # have any symptoms
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        1.0,
+        Predictor('symptoms').when('>0', 10)
+                             .otherwise(20),
+    )
+
+    out = lm.predict(df)
+    assert pytest.approx(21.0) == out.loc[3]
+
+    # has specific symptoms - vomiting
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('symptoms').apply(lambda x: 2.0 if x & symptoms.element_repr('vomiting') else 20.0)
+    )
+
+    out = lm.predict(df)
+    pd.testing.assert_series_equal(out, pd.Series([20.0, 20.0, 20.0, 20.0, 2.0]))
+
+    # put more complex rules in its own function
+    def symptom_coeff_calc(bitset):
+        if bitset & symptoms.element_repr('fever'):
+            if bitset & symptoms.element_repr('vomiting'):
+                return 1
+            else:
+                return 2
+        return 3
+
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('symptoms').apply(symptom_coeff_calc)
+    )
+
+    out = lm.predict(df)
+    pd.testing.assert_series_equal(out, pd.Series([2.0, 3.0, 2.0, 3.0, 1.0]))

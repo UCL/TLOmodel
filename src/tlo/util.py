@@ -154,6 +154,10 @@ class BitsetHandler():
     def df(self) -> pd.DataFrame:
         return self._population.props
 
+    def element_repr(self, element: str) -> str:
+        """Returns integer representation of the specified element"""
+        return self._lookup[element]
+
     def set(self, where, *elements: str) -> None:
         """For individuals matching `where` argument, set the bit (i.e. set to True) the given elements
 
@@ -221,7 +225,7 @@ class BitsetHandler():
         :param where: condition to filter rows that will returned
         """
         def int_to_set(integer):
-            bin_repr = '{0:b}'.format(integer)
+            bin_repr = format(integer, 'b')
             return {self._lookup[2 ** k] for k, v in enumerate(reversed(list(bin_repr))) if v == '1'}
         sets = self.df.loc[where, self._column].apply(int_to_set)
         if pop:
