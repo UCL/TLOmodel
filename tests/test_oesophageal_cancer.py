@@ -67,5 +67,6 @@ if __name__ == '__main__':
 
 * at initiation, that date diagnosed is consistent with the age of the person
 
+* at initiation, that not treatment or dianogsis for those with none stages
 
 """
