@@ -598,20 +598,18 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
-        the_appt_footprint['MinorSurg'] = 1
-        # todo: this appointment type for endoscopy and biopsy to be checked
 
-        # This requires one out patient appt  # Define the necessary information for an HSI
-        self.TREATMENT_ID = "assess_dysphagia"
+        self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-        df.at[person_id, "ca_oesophagus_diagnosed"] = True
-        df.at[person_id, "ca_date_oes_cancer_diagnosis"] = self.sim.date
-        df.at[person_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = True
+        pass
+        # df = self.sim.population.props
+        # df.at[person_id, "ca_oesophagus_diagnosed"] = True
+        # df.at[person_id, "ca_date_oes_cancer_diagnosis"] = self.sim.date
+        # df.at[person_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = True
 
 
 class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -622,23 +620,22 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        # todo: return to this below
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
         the_appt_footprint["MajorSurg"] = 3
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "start_treatment_oes_cancer"
+        self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 3  # Enforces that this apppointment must happen at level 3
+        self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        df.at[person_id, "ca_oesophagus_curative_treatment"] = df.at[person_id, "ca_oesophagus"]
-        df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
+        pass
+        # df = self.sim.population.props
+        # df.at[person_id, "ca_oesophagus_curative_treatment"] = df.at[person_id, "ca_oesophagus"]
+        # df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
 class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -647,7 +644,22 @@ class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixi
     It is only for those undergoing treatment for Oesophageal Cancer.
     If the person has developed cancer to stage4, then treatment is stopped and palliative care is begun.
     """
-    pass
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint["Over5OPD"] = 1
+        the_appt_footprint["MajorSurg"] = 3
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "OesophagealCancer_MonitorTreatmen"
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 3
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        pass
 
 
 class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
@@ -661,22 +673,20 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        # todo: return to this below
+        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "cancer_palliative_care"
+        self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        # todo: return to this below
-        self.ACCEPTED_FACILITY_LEVEL = 3  # Enforces that this apppointment must happen at level 3
+        self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        df.at[person_id, "ca_palliative_care"] = True
+        pass
+        # df = self.sim.population.props
+        # df.at[person_id, "ca_palliative_care"] = True
 
 
 
