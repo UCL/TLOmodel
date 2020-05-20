@@ -144,6 +144,8 @@ results_no_healthsystem = make_set_of_plots(logfile_no_healthsystem)
 logfile_with_healthsystem = run_sim(service_availability=['*'])
 results_with_healthsystem = make_set_of_plots(logfile_with_healthsystem)
 
-
 # Compare results:
-
+deaths = pd.concat({
+    'No_HealthSystem': results_no_healthsystem['oes_cancer_deaths'][0],
+    'With_HealthSystem': results_with_healthsystem['oes_cancer_deaths'][0]
+    }, axis=1)
