@@ -29,9 +29,8 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 2)
-popsize = 20000
-
+end_date = Date(2012, 1, 2)
+popsize = 500
 
 for label, service_avail in scenarios.items():
     # add file handler for the purpose of logging
@@ -80,38 +79,59 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
 
     mmr = maternal_counts['intrapartum_mmr']
     sbr = maternal_counts['sbr']
-    nmr = newborn_counts['nmr_early']
+    aph_incidence = maternal_counts['aph_incidence']
+    ol_incidence = maternal_counts['ur_incidence']
+    ur_incidence = maternal_counts['ol_incidence']
+    sepsis_incidence = maternal_counts['sep_incidence']
+    eclampsia_incidence = maternal_counts['ec_incidence']
+    pph_incidence = maternal_counts['pph_incidence']
+    home_birth_rate = maternal_counts['home_births_prop']
+    health_centre_rate = maternal_counts['health_centre_births']
+    hospital_rate = maternal_counts['hospital_births']
 
-    return mmr, sbr, nmr
+    caesarean_section_rate = maternal_counts['cs_delivery_rate']
+
+    nmr = newborn_counts['nmr_early']
+    neonatal_sepsis  = newborn_counts['nmr_early']
+    ftt  = newborn_counts['nmr_early']
+    encephalopathy  = newborn_counts['nmr_early']
+
+    return mmr,  sbr, aph_incidence, ol_incidence, ur_incidence, sepsis_incidence, eclampsia_incidence, \
+           pph_incidence, home_birth_rate, health_centre_rate, hospital_rate, caesarean_section_rate,
 
 
 maternal_deaths = dict()
 newborn_deaths = dict()
 still_births = dict()
+antepartum_haem = dict()
+obstructed_labour = dict()
+uterine_rupture = dict()
+maternal_sepsis = dict()
+eclampsia = dict()
+postpartum_haem = dict()
+home_births = dict()
+health_centre_births = dict()
+hospital_births = dict()
+caesarean_births = dict()
+
 for label, file in output_files.items():
-    maternal_deaths[label], newborn_deaths[label], still_births[label] = \
+    maternal_deaths[label], still_births[label] ,newborn_deaths[label], antepartum_haem[label], \
+    obstructed_labour[label], uterine_rupture[label], maternal_sepsis[label], eclampsia[label],\
+        postpartum_haem[label], home_births[label], health_centre_births[label], hospital_births[label],\
+        caesarean_births[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
 
 data = {}
-for label in maternal_deaths.keys():
-    data.update({label: maternal_deaths[label]})
-pd.concat(data, axis=1).plot.bar()
-plt.title('Maternal Mortality Ratio by Year')
-plt.savefig(outputpath / ("MMR_by_scenario" + datestamp + ".pdf"), format='pdf')
-plt.show()
 
-for label in newborn_deaths.keys():
-    data.update({label: newborn_deaths[label]})
-pd.concat(data, axis=1).plot.bar()
-plt.title('Early Neonatal Mortality Ratio by Year ')
-plt.savefig(outputpath / ("NMR_by_scenario" + datestamp + ".pdf"), format='pdf')
-plt.show()
+def generate_graphs(dictionary, title, saved_title):
+    for label in dictionary.keys():
+        data.update({label: dictionary[label]})
+    pd.concat(data, axis=1).plot.bar()
+    plt.title(f'{title}')
+    plt.savefig(outputpath / (f"{saved_title}" + datestamp + ".pdf"), format='pdf')
+    plt.show()
 
-for label in still_births.keys():
-    data.update({label: still_births[label]})
-pd.concat(data, axis=1).plot.bar()
-plt.title('Intrapartum Stillbirth Rate by Year ')
-plt.savefig(outputpath / ("NMR_by_scenario" + datestamp + ".pdf"), format='pdf')
-plt.show()
-
+generate_graphs(maternal_deaths, 'Maternal Mortality Ratio by Year', "MMR_by_scenario")
+generate_graphs(newborn_deaths, 'Early Neonatal Mortality Ratio by Year', "NMR_by_scenario")
+generate_graphs(still_births, 'Intrapartum Stillbirth Rate by Year ', "SBR_by_scenario")
 
