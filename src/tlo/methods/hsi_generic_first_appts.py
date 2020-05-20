@@ -7,7 +7,7 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
-from tlo.methods.oesophageal_cancer import HSI_Oesophageal_Cancer_Investigation_Following_Dysphagia
+from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -84,7 +84,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
             if 'dysphagia' in symptoms:
-                hsi_event = HSI_Oesophageal_Cancer_Investigation_Following_Dysphagia(
+                hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
                     module=self.sim.modules['OesophagealCancer'],
                     person_id=person_id,
                 )

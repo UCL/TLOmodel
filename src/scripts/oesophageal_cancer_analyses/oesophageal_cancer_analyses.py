@@ -9,7 +9,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthburden,
     healthsystem,
-    oesophageal_cancer,
+    oesophagealcancer,
     pregnancy_supervisor, labour, healthseekingbehaviour, symptommanager)
 
 # import matplotlib.pyplot as plt
@@ -45,7 +45,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             oesophageal_cancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
              )
 
 # Establish the logger
