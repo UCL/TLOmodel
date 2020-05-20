@@ -69,4 +69,7 @@ if __name__ == '__main__':
 
 * at initiation, that not treatment or dianogsis for those with none stages
 
+* check that treatment reduced risk of progression
+
+* check that progression works:
 """
