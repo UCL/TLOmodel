@@ -8,7 +8,7 @@ TODO:
 * The age effect is very aggressive in the initiaisation: is that right?
 * No benefit in daly_wt of palliative care -- should there be?
 * we are sending these people to a specific HSI rather than a generic HSI. I think that's fine but we'll want to keep track of these decision and making sure that all is consistent
-
+* representation of palliative care in the healthsystem: how often appointments, etc.
 """
 
 import logging
@@ -198,8 +198,8 @@ class OesophagealCancer(Module):
         # todo - is is right that it never end?
     }
 
-    # Symptom that this module will use: (dysphagia means problems swallowing)
-    SYMPTOMS = {'dysphagia'}
+    # Symptom that this module will use
+    SYMPTOMS = {'dysphagia'}    # (dysphagia means problems swallowing)
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
@@ -538,9 +538,9 @@ class OesophagealCancer(Module):
 class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all oesophageal cancer properties for population:
-    *
-    *
-    *
+    * Acquisition and progression of Oesophagel Cancer
+    * Sympton Development according to stage of Oesophagel Cancer
+    * Deaths from Oesophagel Cancer for those in stage4
     """
 
     def __init__(self, module):
@@ -572,53 +572,27 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
-        # -------------------- TODO DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
-        # stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
-        #
-        # selected_to_die = stage4_idx[m.r_death_oesoph_cancer > rng.random_sample(size=len(stage4_idx))]
-        #
-        # df.loc[selected_to_die, "ca_oesophageal_cancer_death"] = True
-        #
-        # for individual_id in selected_to_die:
-        #     self.sim.schedule_event(
-        #         demography.InstantaneousDeath(self.module, individual_id, "Oesophageal_cancer"), self.sim.date
-        #     )
+        # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
+        # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
+        stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
+        selected_to_die = stage4_idx[
+            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_oesoph_cancer']]
 
-
-
-
-        # -------------------- UPDATING VALUES OF CA_PALLIATIVE_CARE  -------------------
-
-        def update_palliative_care_status(p):
-            idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4") & (~df.ca_palliative_care)]
-            selected3 = idx[p > rng.random_sample(size=len(idx))]
-
-            # generate the HSI Events whereby persons seek/need palliative care
-            for person_id in selected3:
-                # For this person, determine when they will seek/need palliative care
-                # (uniform distribution [0,91]days from now)
-                date_palliative_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
-                # For this person, create the HSI Event for their palliative care
-                hsi_cancer_palliative_care = HSI_Cancer_PalliativeCare(self.module, person_id)
-                # Enter this event to the HealthSystem
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_cancer_palliative_care, priority=0, topen=date_palliative_care, tclose=None
-                )
-
-        update_palliative_care_status(m.rate_palliative_care_stage4)
-
-
+        for person_id in selected_to_die:
+            self.sim.schedule_event(
+                demography.InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
+            )
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-
-class HSI_Oesophageal_Cancer_Investigation_Following_Dysphagia(HSI_Event, IndividualScopeEventMixin):
+class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
     dysphagia.
-    It begins the investigation that may result in diagnosis of Oesophageal Cancer and the scheduling of treatment.
+    It begins the investigation that may result in diagnosis of Oesophageal Cancer and the scheduling of treatment or
+    palliative care.
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -640,7 +614,12 @@ class HSI_Oesophageal_Cancer_Investigation_Following_Dysphagia(HSI_Event, Indivi
         df.at[person_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = True
 
 
-class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This event is scheduled by HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of
+    Oesophageal Cancer. It is only for persons with a cancer that is not in stage4.
+    """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -662,7 +641,24 @@ class HSI_OesCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSI_Cancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixin):
+    """
+    This event is scheduled by HSI_OesophagealCancer_StartTreatment and itself.
+    It is only for those undergoing treatment for Oesophageal Cancer.
+    If the person has developed cancer to stage4, then treatment is stopped and palliative care is begun.
+    """
+    pass
+
+
+class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    This event is scheduled by either:
+    * HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of Oesophageal Cancer at stage4.
+    * HSI_OesophagealCancer_MonitorTreatment following progression to stage4 during treatment.
+    * Itself for the continuance of care.
+    It is only for persons with a cancer in stage4.
+    """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -681,6 +677,7 @@ class HSI_Cancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         df.at[person_id, "ca_palliative_care"] = True
+
 
 
 # ---------------------------------------------------------------------------------------------------------
