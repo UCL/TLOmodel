@@ -9,7 +9,7 @@ from tlo.analysis.utils import (
 )
 
 from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
-    pregnancy_supervisor, antenatal_care
+    pregnancy_supervisor, antenatal_care, symptommanager, healthseekingbehaviour
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -30,7 +30,7 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 2)
-popsize = 10000
+popsize = 20000
 
 
 for label, service_avail in scenarios.items():
@@ -40,6 +40,8 @@ for label, service_avail in scenarios.items():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
     sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
@@ -59,40 +61,57 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    counts = output['tlo.methods.labour']['summary_stats_incidence']
-    counts['year'] = pd.to_datetime(counts['date']).dt.year
-    counts.drop(columns='date', inplace=True)
-    counts.set_index(
+    maternal_counts = output['tlo.methods.labour']['summary_stats_incidence']
+    maternal_counts['year'] = pd.to_datetime(maternal_counts['date']).dt.year
+    maternal_counts.drop(columns='date', inplace=True)
+    maternal_counts.set_index(
         'year',
         drop=True,
         inplace=True
     )
-    mmr = counts['intrapartum_mmr']
-    uterine_rupture = counts['ur_incidence']
+    newborn_counts = output['tlo.methods.newborn_outcomes']['summary_stats']
+    newborn_counts['year'] = pd.to_datetime(newborn_counts['date']).dt.year
+    newborn_counts.drop(columns='date', inplace=True)
+    newborn_counts.set_index(
+        'year',
+        drop=True,
+        inplace=True
+    )
 
-    return mmr, uterine_rupture
+    mmr = maternal_counts['intrapartum_mmr']
+    sbr = maternal_counts['sbr']
+    nmr = newborn_counts['nmr_early']
+
+    return mmr, sbr, nmr
 
 
-deaths = dict()
-incidence = dict()
+maternal_deaths = dict()
+newborn_deaths = dict()
+still_births = dict()
 for label, file in output_files.items():
-    deaths[label], incidence[label] = \
+    maternal_deaths[label], newborn_deaths[label], still_births[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
 
-
 data = {}
-for label in deaths.keys():
-    data.update({label: deaths[label]})
+for label in maternal_deaths.keys():
+    data.update({label: maternal_deaths[label]})
 pd.concat(data, axis=1).plot.bar()
 plt.title('Maternal Mortality Ratio by Year')
 plt.savefig(outputpath / ("MMR_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
-for label in incidence.keys():
-    data.update({label: incidence[label]})
+for label in newborn_deaths.keys():
+    data.update({label: newborn_deaths[label]})
 pd.concat(data, axis=1).plot.bar()
-plt.title('Incidence of Uterine Rupture by Year')
-plt.savefig(outputpath / ("UR_by_scenario" + datestamp + ".pdf"), format='pdf')
+plt.title('Early Neonatal Mortality Ratio by Year ')
+plt.savefig(outputpath / ("NMR_by_scenario" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+for label in still_births.keys():
+    data.update({label: still_births[label]})
+pd.concat(data, axis=1).plot.bar()
+plt.title('Intrapartum Stillbirth Rate by Year ')
+plt.savefig(outputpath / ("NMR_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 

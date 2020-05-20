@@ -1135,6 +1135,9 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
 
         return False
 
+    def not_available(self):
+        pass
+
     # ------------------------------ (To go here- referral for further care) ---------------------------------------
 
 
@@ -1151,13 +1154,6 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Previous Year...
         one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
         total_births_last_year = len(df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)])
-
-        # Denominators...
-        dfx = pd.to_datetime(df['date_of_birth'])
-        yearly_births = len(dfx.index[dfx.dt.year == self.sim.date.year])
-
-        if yearly_births == 0:
-            yearly_births = 1
 
         newborn_deaths = len(df.index[df.nb_death_after_birth & (df.nb_death_after_birth_date > one_year_prior) &
                                       (df.nb_death_after_birth_date < self.sim.date)])
@@ -1203,28 +1199,28 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         resus = self.module.NewbornComplicationTracker['resus']
     #    tetra_cycline = self.module.NewbornComplicationTracker['t_e_d']
 
-        dict_for_output = {'births': yearly_births,
+        dict_for_output = {'births': total_births_last_year,
                            'neonatal_deaths': newborn_deaths,
                            'checker_deaths': death,
                            'sepsis_deaths_crude': sepsis_death,
                            'ftt_deaths_crude': ftt_death,
                            'preterm_deaths': preterm_death,
-                           'nmr_early': newborn_deaths/yearly_births * 1000,
+                           'nmr_early': newborn_deaths/total_births_last_year * 1000,
                            'early_preterm_births': early_preterm_births,
                            'late_preterm_births': late_preterm_births,
                            'total_preterm_births': total_preterm_births,
-                           'tptb_incidence': total_preterm_births/yearly_births * 100,
-                           'low_birth_weight': low_birth_weight / yearly_births * 100,
-                           'small_for_gestational_age': small_for_gestational_age / yearly_births * 100,
+                           'tptb_incidence': total_preterm_births/total_births_last_year * 100,
+                           'low_birth_weight': low_birth_weight / total_births_last_year * 100,
+                           'small_for_gestational_age': small_for_gestational_age / total_births_last_year * 100,
                            'sepsis_crude': sepsis_new_method,
-                           'sepsis_incidence': sepsis_new_method / yearly_births * 100,
+                           'sepsis_incidence': sepsis_new_method / total_births_last_year * 100,
                            'seps is_treatment_crude': sepsis_treatment,
-                           'mild_enceph_incidence': mild_enceph / yearly_births * 100,
-                           'mod_enceph_incidence': mod_enceph / yearly_births * 100,
-                           'severe_enceph_incidence': severe_enceph / yearly_births * 100,
-                           'total_enceph_incidence': enceph_new_method / yearly_births * 100,
+                           'mild_enceph_incidence': mild_enceph / total_births_last_year * 100,
+                           'mod_enceph_incidence': mod_enceph / total_births_last_year * 100,
+                           'severe_enceph_incidence': severe_enceph / total_births_last_year * 100,
+                           'total_enceph_incidence': enceph_new_method / total_births_last_year * 100,
                            'ftt_crude': ftt_new_method,
-                           'ftt_incidence': ftt_new_method / yearly_births * 100,
+                           'ftt_incidence': ftt_new_method / total_births_last_year * 100,
                            'resus_crude': resus,
                            # 'resus_rate': resus / ftt * 100,
                            }
