@@ -2963,9 +2963,9 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'ol_incidence': ol / total_births_last_year * 100,
                            'aph_incidence': aph / total_births_last_year * 100,
                            'ur_incidence': ur / total_births_last_year * 100,
-                           'ec_incidence': ec / total_births_last_year * 100,
+                           'ec_incidence': ec + ec_pp/ total_births_last_year * 100,
                            'ec_incidence_pp': ec_pp / total_births_last_year * 100,
-                           'sep_incidence': sep / total_births_last_year * 100,
+                           'sep_incidence': sep + sep_pp/ total_births_last_year * 100,
                            'sep_incidence_pp': sep_pp / total_births_last_year * 100,
                            'pph_incidence': pph / total_births_last_year * 100,
                            }
