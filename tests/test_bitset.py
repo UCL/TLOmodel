@@ -146,3 +146,16 @@ def test_linearmodel_with_bitset():
 
     out = lm.predict(df)
     pd.testing.assert_series_equal(out, pd.Series([2.0, 3.0, 2.0, 3.0, 1.0]))
+
+    # use external variables
+    lm = LinearModel(
+        LinearModelType.ADDITIVE,
+        0.0,
+        Predictor('fever_and_vomiting', external=True).when(True, 1)
+                                                      .otherwise(2)
+    )
+
+    out = lm.predict(df.loc[df.is_alive],
+                     fever_and_vomiting=symptoms.has_all(df.is_alive, 'fever', 'vomiting'))
+
+    pd.testing.assert_series_equal(out, pd.Series([2.0, 2.0, 2.0, 2.0, 1.0]))
