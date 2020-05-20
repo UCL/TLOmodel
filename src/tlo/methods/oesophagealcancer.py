@@ -231,11 +231,6 @@ class OesophagealCancer(Module):
         """Set our property values for the initial population."""
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
-        # ** DEBUG **
-        # For debugging purposes, make the initial level of oes cancer very high
-        self.parameters['init_prop_oes_cancer_stage'] = [val * 500 for val in
-                                                         self.parameters['init_prop_oes_cancer_stage']]
-
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
 
         # ----- Determine who has cancer at ANY cancer stage:
@@ -366,9 +361,6 @@ class OesophagealCancer(Module):
         * Define the diagnostic used
         """
 
-        # *** FOR DEBUG PURPOSES: USE A HIGH RATE OF ACQUISITION: ***
-        self.parameters['r_low_grade_dysplasia_none'] = 0.5
-
         # Schedule main polling event to happen immediately
         sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
@@ -467,7 +459,8 @@ class OesophagealCancer(Module):
                 .otherwise(0.0)
         )
 
-        # Create the diagnostic test representing the use of an endoscope to assess oes_cancer
+        # ----- DX TESTS -----
+        # Create the diagnostic test representing the use of an endoscope to ca_oesophagus
         # This properties of conditional on the test being done only to persons with the Symptom, 'dysphagia'.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             endoscopy_for_oes_cancer_given_dysphagia=DxTest(
@@ -475,6 +468,8 @@ class OesophagealCancer(Module):
                 sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia']
             )
         )
+
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -502,25 +497,27 @@ class OesophagealCancer(Module):
 
         # Assign daly_wt to those with cancer stages before stage4 and never treated
         disability_series_for_alive_persons.loc[
-            (pd.isnull(df.ca_date_treatment_oesophageal_cancer))
-                (
-                (df.ca_oesophagus == "low_grade_dysplasia") |
-                (df.ca_oesophagus == "high_grade_dysplasia") |
-                (df.ca_oesophagus == "stage1") |
-                (df.ca_oesophagus == "stage2") |
-                (df.ca_oesophagus == "stage3")
+            (
+                pd.isnull(df.ca_date_treatment_oesophageal_cancer) & (
+                    (df.ca_oesophagus == "low_grade_dysplasia") |
+                    (df.ca_oesophagus == "high_grade_dysplasia") |
+                    (df.ca_oesophagus == "stage1") |
+                    (df.ca_oesophagus == "stage2") |
+                    (df.ca_oesophagus == "stage3")
+                )
             )
         ] = self.parameters['daly_wt_oes_cancer_stage_1_3']
 
         # Assign daly_wt to those with cancer stages before stage4 and who have been treated
         disability_series_for_alive_persons.loc[
-            (~pd.isnull(df.ca_date_treatment_oesophageal_cancer))
-                (
-                (df.ca_oesophagus == "low_grade_dysplasia") |
-                (df.ca_oesophagus == "high_grade_dysplasia") |
-                (df.ca_oesophagus == "stage1") |
-                (df.ca_oesophagus == "stage2") |
-                (df.ca_oesophagus == "stage3")
+            (
+                ~pd.isnull(df.ca_date_treatment_oesophageal_cancer) & (
+                    (df.ca_oesophagus == "low_grade_dysplasia") |
+                    (df.ca_oesophagus == "high_grade_dysplasia") |
+                    (df.ca_oesophagus == "stage1") |
+                    (df.ca_oesophagus == "stage2") |
+                    (df.ca_oesophagus == "stage3")
+                )
             )
         ] = self.parameters['daly_wt_treated_oes_cancer']
 
@@ -619,11 +616,17 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         if not self.sim.population.props.at[person_id, 'is_alive']:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        # Use an endoscope to diagnose whether the person has Oesophageal Cancer
-        dx_result = self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            'endoscopy_for_oes_cancer_given_dysphagia')
+        # Check if is in stage4
+        in_stage4 = self.sim.population.props.at[person_id, 'ca_oesophagus'] == 'stage4'
 
-        if dx_result:
+        # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
+        # If the diagnsosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+        dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
+            hsi_event=self
+        )
+
+        if dx_result and (not in_stage4):
             # record date of diagnosis:
             self.sim.population.props.at[person_id, 'ca_date_oes_cancer_diagnosis'] = self.sim.date
 
@@ -638,7 +641,20 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
                 tclose=None
             )
 
-        # todo what about stage4?
+        elif dx_result and in_stage4:
+            # record date of diagnosis:
+            self.sim.population.props.at[person_id, 'ca_date_oes_cancer_diagnosis'] = self.sim.date
+
+            # start palliative care
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event= HSI_OesophagealCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
 
     def did_not_run(self):
         pass
@@ -680,10 +696,11 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             hsi_event=HSI_OesophagealCancer_MonitorTreatment(
                 module=self.module,
-                person_id=person_id
+                person_id=person_id,
             ),
             topen=self.sim.date + DateOffset(months=1),
-            tclose=None
+            tclose=None,
+            priority=0
         )
 
     def did_not_run(self):

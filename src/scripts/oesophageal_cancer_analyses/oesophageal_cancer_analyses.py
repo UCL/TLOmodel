@@ -48,15 +48,30 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
              )
 
+# # Manipulate parameters in order that there is a high burden of oes_cancer in order to do the checking:
+# # ** DEBUG **
+# # For debugging purposes, make the initial level of oes cancer very high
+# self.parameters['init_prop_oes_cancer_stage'] = [val * 500 for val in
+#                                                  self.parameters['init_prop_oes_cancer_stage']]
+#
+# # *** FOR DEBUG PURPOSES: USE A HIGH RATE OF ACQUISITION: ***
+# self.parameters['r_low_grade_dysplasia_none'] = 0.5
+
+
 # Establish the logger
 logfile = sim.configure_logging(filename="LogFile")
-
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 
 # %% TODO : Demonstrate the burden and the interventions
 output = parse_log_file(logfile)
+
+
+
+PREVALENCE
+DALYS
+DEATHS
 
 
 

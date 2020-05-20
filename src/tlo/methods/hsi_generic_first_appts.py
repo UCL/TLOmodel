@@ -88,7 +88,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     module=self.sim.modules['OesophagealCancer'],
                     person_id=person_id,
                 )
-                self.sim.modules['HealthSystem'].schedule_hsi(
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event,
                     priority=0,
                     topen=self.sim.date,
