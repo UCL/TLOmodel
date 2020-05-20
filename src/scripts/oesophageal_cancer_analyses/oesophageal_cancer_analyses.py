@@ -45,7 +45,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath)
+             oesophageal_cancer.OesophagealCancer(resourcefilepath=resourcefilepath)
              )
 
 # Establish the logger

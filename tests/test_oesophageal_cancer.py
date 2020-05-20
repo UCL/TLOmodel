@@ -30,7 +30,7 @@ def simulation():
                                            mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
-    sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
+    sim.register(oesophageal_cancer.OesophagealCancer(resourcefilepath=resourcefilepath))
 
     return sim
 

@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Oesophageal_Cancer(Module):
+class OesophagealCancer(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -368,7 +368,6 @@ class Oesophageal_Cancer(Module):
         # *** FOR DEBUG PURPOSES: USE A HIGH RATE OF ACQUISITION: ***
         self.parameters['r_low_grade_dysplasia_none'] = 0.5
 
-
         # Schedule main polling event to happen immediately
         sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
@@ -555,7 +554,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = m.rng
 
         # -------------------- ACQUISITION AND PROGRESSION OF CA-OESOPHAGUS -----------------------------------
-        currently_on_treatment = ~pd.isnull(df.ca_date_treatemnt_started)
+        currently_on_treatment = ~pd.isnull(df.ca_date_treatment_oesophageal_cancer)
         for stage, lm in self.module.linear_models_for_progession_of_ca_oesophagus.items():
             gets_new_stage = lm.predict(df, rng, currently_on_treatment=currently_on_treatment)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
@@ -564,8 +563,8 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UPDATING OF DYSPHAGIA OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of dysphagia.
-        # Once the symptom is developed it never resolves naturally
-        onset_dysphagia = self.module.lm_onset_dysphagia(df, rng)
+        # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
+        onset_dysphagia = self.module.lm_onset_dysphagia.predict(df, rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_dysphagia[onset_dysphagia].index.tolist(),
             symptom_string='dysphagia',
@@ -573,56 +572,20 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
+        # -------------------- TODO DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
+        # stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
+        #
+        # selected_to_die = stage4_idx[m.r_death_oesoph_cancer > rng.random_sample(size=len(stage4_idx))]
+        #
+        # df.loc[selected_to_die, "ca_oesophageal_cancer_death"] = True
+        #
+        # for individual_id in selected_to_die:
+        #     self.sim.schedule_event(
+        #         demography.InstantaneousDeath(self.module, individual_id, "Oesophageal_cancer"), self.sim.date
+        #     )
 
-        # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_DIAGNOSED  -------------------
-        # update ca_oesophagus_diagnosed for those with dysphagia
 
-        def update_diagnosis_status(p_present_dysphagia):
 
-            idx2 = df.index[df.is_alive & df.sy_dysphagia & ~df.ca_oesophagus_diagnosed]
-            selected2 = idx2[p_present_dysphagia > rng.random_sample(size=len(idx2))]
-
-            # generate the HSI Events whereby persons present for care and get diagnosed
-            for person_id in selected2:
-                # For this person, determine when they will seek care (uniform distribution [0,91]days from now)
-                date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
-                # For this person, create the HSI Event for their presentation for care
-                hsi_present_for_care = HSI_Dysphagia_PresentForCare(self.module, person_id)
-                # Enter this event to the HealthSystem
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
-                )
-
-        update_diagnosis_status(m.prob_present_dysphagia)
-
-        # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
-        # update ca_oesophagus_curative_treatment for diagnosed, untreated people
-        # this uses the approach descibed in detail above for updating diagnosis status
-        def update_curative_treatment(current_stage):
-
-            # todo: to disallow treatment for calibration purposes changed age cut off below from 20 to 200
-            idx = df.index[df.is_alive &
-                           (df.ca_oesophagus == current_stage) &
-                           (df.age_years >= 200) &
-                           df.ca_oesophagus_diagnosed &
-                           (df.ca_oesophagus_curative_treatment == 'never')]
-
-            # generate the HSI Events whereby diagnosed person gets treatment
-            for person_id in idx:
-                # For this person, determine when they will receive treatment (if there is health system capacity)
-                date_oes_cancer_curative_treatment = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
-                # For this person, create the HSI Event for their treatment
-                hsi_oes_cancer_curative_treatment = HSI_OesCancer_StartTreatment(self.module, person_id)
-                # Enter this event to the HealthSystem
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_oes_cancer_curative_treatment, priority=0, topen=date_oes_cancer_curative_treatment, tclose=None
-                )
-
-        update_curative_treatment('low_grade_dysplasia')
-        update_curative_treatment('high_grade_dysplasia')
-        update_curative_treatment('stage1')
-        update_curative_treatment('stage2')
-        update_curative_treatment('stage3')
 
         # -------------------- UPDATING VALUES OF CA_PALLIATIVE_CARE  -------------------
 
@@ -644,17 +607,6 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         update_palliative_care_status(m.rate_palliative_care_stage4)
 
-        # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
-        stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
-
-        selected_to_die = stage4_idx[m.r_death_oesoph_cancer > rng.random_sample(size=len(stage4_idx))]
-
-        df.loc[selected_to_die, "ca_oesophageal_cancer_death"] = True
-
-        for individual_id in selected_to_die:
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, individual_id, "Oesophageal_cancer"), self.sim.date
-            )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -662,7 +614,12 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 
-class HSI_Dysphagia_PresentForCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_Oesophageal_Cancer_Investigation_Following_Dysphagia(HSI_Event, IndividualScopeEventMixin):
+    """
+    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
+    dysphagia.
+    It begins the investigation that may result in diagnosis of Oesophageal Cancer and the scheduling of treatment.
+    """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
