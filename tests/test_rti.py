@@ -1,7 +1,7 @@
 import os
 import time
 from pathlib import Path
-
+import numpy as np
 import pytest
 
 from tlo import Date, Simulation
@@ -44,6 +44,11 @@ def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
+    # rtidtype = df.dtypes.to_frame('dtypes').reset_index()
+    # original = orig.dtypes.to_frame('dtypes').reset_index()
+    # rtidtype.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/rtidtype.csv')
+    # original.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/origdtype.csv')
+
     assert (df.dtypes == orig.dtypes).all()
 
 
