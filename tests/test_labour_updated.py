@@ -30,9 +30,8 @@ except NameError:
     resourcefilepath = 'resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 2000
-
+end_date = Date(2015, 1, 1)
+popsize = 5000
 
 
 def check_dtypes(simulation):
@@ -43,9 +42,10 @@ def check_dtypes(simulation):
 
 
 def test_run():
-    sim = Simulation(start_date=start_date)
+    """This test runs a simulation with a functioning health system with full service availability and no set
+    constraints"""
 
-    # Register the core modules
+    sim = Simulation(start_date=start_date)
 
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
@@ -62,14 +62,17 @@ def test_run():
 
     sim.seed_rngs(0)
 
-    # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
 
 
-def test_run_health_system_events_wont_run():
+def test_run_health_system_high_squeeze():
+    """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
+    factor is too high. Therefore it tests the logic in the did_not_run functions of the Labour HSIs to ensure women
+    who want to deliver in a facility, but cant, due to lacking capacity, have the correct events scheduled to continue
+    their labour"""
     sim = Simulation(start_date=start_date)
 
     # Register the core modules
@@ -94,5 +97,31 @@ def test_run_health_system_events_wont_run():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
-    # todo: some logic here to confirm that all women are now delivering at home due to high squeeze
 
+def test_run_health_system_events_wont_run():
+    """This test runs a simulation in which no scheduled HSIs will run.. Therefore it tests the logic in the
+    not_available functions of the Labour HSIs to ensure women who want to deliver in a facility, but cant, due to the
+    service being unavailble, have the correct events scheduled to continue their labour"""
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules
+
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                               service_availability=[]))
+    sim.seed_rngs(0)
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    check_dtypes(sim)
+    # todo: some logic here to confirm that all women are now delivering at home due to high squeeze

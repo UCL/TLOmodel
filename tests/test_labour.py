@@ -20,7 +20,7 @@ from tlo.methods import (
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 500
+popsize = 3000
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -35,6 +35,8 @@ def simulation():
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
+    #sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]))
+
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))

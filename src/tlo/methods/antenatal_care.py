@@ -181,7 +181,8 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit(HSI_Even
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit: did not run')
 
-
+    def not_available(self):
+        pass
 class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI_Event, IndividualScopeEventMixin):
     """This is the HSI PThis is the HSI PresentsForSubsequentAntenatalCareVisit. Currently it is not scheduled to run, but
      will be scheduled by HSI PresentsForFirstANCVists. It will be responsible for the management of monitoring and
@@ -232,6 +233,8 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit: did not run')
 
+    def not_available(self):
+        pass
 
 class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin):
     """ This is the HSI EmergencyTreatment. Currently it is not scheduled to run, but will be scheduled via the
@@ -283,6 +286,8 @@ class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualSco
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_EmergencyTreatment: did not run')
 
+    def not_available(self):
+        pass
 
 class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI PostAbortionCare. Currently it is not scheduled, but will be scheduled via the PregnancySupervisor
@@ -332,6 +337,8 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, Indi
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare: did not run')
 
+    def not_available(self):
+        pass
 
 class HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI TreatmentFollowingAntepartumStillbirth. Currently it is not scheduled but will be scheduled by the
@@ -381,3 +388,6 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth(HSI_
 
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth: did not run')
+
+    def not_available(self):
+        pass
