@@ -12,10 +12,9 @@ from tlo.methods import (
     oesophagealcancer,
     pregnancy_supervisor, labour, healthseekingbehaviour, symptommanager)
 
-# import matplotlib.pyplot as plt
-# import numpy as np
-# import pandas as pd
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -28,8 +27,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 500
+end_date = Date(2015, 1, 1)
+popsize = 10000
 
 # Establish the simulation object and set the seed
 sim = Simulation(start_date=start_date)
@@ -48,32 +47,54 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
              )
 
-# # Manipulate parameters in order that there is a high burden of oes_cancer in order to do the checking:
-# # ** DEBUG **
-# # For debugging purposes, make the initial level of oes cancer very high
-# self.parameters['init_prop_oes_cancer_stage'] = [val * 500 for val in
-#                                                  self.parameters['init_prop_oes_cancer_stage']]
-#
-# # *** FOR DEBUG PURPOSES: USE A HIGH RATE OF ACQUISITION: ***
-# self.parameters['r_low_grade_dysplasia_none'] = 0.5
+# Manipulate parameters in order that there is a high burden of oes_cancer in order to do the checking:
+# Initial prevalence of cancer:
+sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.2, 0.1, 0.1, 0.05, 0.05, 0.025]
 
+# Rate of cancer onset per 3 months:
+sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.05
+
+# Rates of cancer progression per 3 months:
+sim.modules['OesophagealCancer'].parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
+sim.modules['OesophagealCancer'].parameters['r_stage1_high_grade_dysp'] *= 5
+sim.modules['OesophagealCancer'].parameters['r_stage2_stage1'] *= 5
+sim.modules['OesophagealCancer'].parameters['r_stage3_stage2'] *= 5
+sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
 
 # Establish the logger
 logfile = sim.configure_logging(filename="LogFile")
+
+# Run the simulation
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 
-# %% TODO : Demonstrate the burden and the interventions
+# %% TODO: Demonstrate the burden and the interventions
 output = parse_log_file(logfile)
 
+# PREVALENCE wrt dx/ treated/ palliative
+s = output['tlo.methods.oesophagealcancer']['summary_stats']
+s['date'] = pd.to_datetime(s['date'])
+s = s.set_index('date', drop=True)
 
+# Total prevalence
+s.plot(y=['total_low_grade_dysplasia', 'total_high_grade_dysplasia', 'total_stage1', 'total_stage2', 'total_stage3', 'total_stage4'])
+plt.show()
 
-PREVALENCE
-DALYS
-DEATHS
+# Numbers diagnosed, treated, palliated
 
+s.plot()
+plt.show()
 
+# DALYS wrt age
+h = output['tlo.methods.healthburden']['DALYS']
+h['date'] = pd.to_datetime(h['date'])
+h = h.set_index('date', drop=True)
+
+h.groupby(by=['age_range']).sum().reset_index().plot.bar(x='age_range', y=['YLD_OesophagealCancer_0'], stacked=True)
+plt.show()
+
+# DEATHS wrt age and time
 
 
 # %% TODO: Demonstrate the impact of the interventions

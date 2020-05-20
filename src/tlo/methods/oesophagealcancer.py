@@ -744,7 +744,8 @@ class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixi
                     person_id=person_id
                 ),
                 topen=self.sim.date,
-                tclose=None
+                tclose=None,
+                priority=0
             )
 
         else:
@@ -755,7 +756,8 @@ class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixi
                     person_id=person_id
                 ),
                 topen=self.sim.date + DateOffset(months=1),
-                tclose=None
+                tclose=None,
+                priority=0
             )
 
     def did_not_run(self):
@@ -801,7 +803,8 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
                 person_id=person_id
             ),
             topen=self.sim.date + DateOffset(months=1),
-            tclose=None
+            tclose=None,
+            priority=0
         )
 
     def did_not_run(self):
