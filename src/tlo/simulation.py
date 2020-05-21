@@ -9,7 +9,7 @@ from typing import Dict, Union
 
 import numpy as np
 
-from tlo import Population, logging
+from tlo import Date, Population, logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -39,18 +39,34 @@ class Simulation:
         with independent state.
     """
 
-    def __init__(self, *, start_date):
+    def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
             a keyword parameter for clarity
+        :param seed: the seed for random number generator. class will create one if not supplied
+        :param log_config: sets up the logging configuration for this simulation
         """
+        # simulation
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
-        self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
         self.end_date = None
         self.output_file = None
+
+        # logging
+        if log_config is None:
+            log_config = dict()
+        self._custom_log_levels = None
+        self._log_filepath = None
+        self.configure_logging(**log_config)
+
+        # random number generator
+        if seed is None:
+            seed = np.random.randint(2 ** 31 - 1)
+        self._seed = seed
+        logger.info("Simulation RNG user seed: %d", self._seed)
+        self.rng = np.random.RandomState(self._seed)
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
@@ -71,16 +87,28 @@ class Simulation:
         logging.set_simulation(self)
 
         if custom_levels:
-            if not self.modules:
-                raise ValueError("You must register disease modules before adding custom logging levels")
-            module_paths = (module.__module__ for module in self.modules.values())
-            logging.set_logging_levels(custom_levels, module_paths)
+            # if modules have already been registered
+            if self.modules:
+                module_paths = (module.__module__ for module in self.modules.values())
+                logging.set_logging_levels(custom_levels, module_paths)
+            else:
+                # save the configuration and apply in the `register` phase
+                self._custom_log_levels = custom_levels
 
         if filename:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
+            logger.info("Log output: %s", log_path)
+            self._log_filepath = log_path
             return log_path
+
+    @property
+    def log_filepath(self):
+        return self._log_filepath
+
+    def _set_module_log_level(self, module_path, level):
+        logging.set_logging_levels({module_path: level}, [module_path])
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
@@ -91,9 +119,24 @@ class Simulation:
         for module in modules:
             assert module.name not in self.modules, (
                 'A module named {} has already been registered'.format(module.name))
+
+            # set the rng seed for the registered module
+            module_seed = self.rng.randint(2 ** 31 - 1)
+            logger.info("%s RNG auto seed: %d", module.name, module_seed)
+            module.rng = np.random.RandomState(module_seed)
+
+            # if user provided custom log levels
+            if self._custom_log_levels is not None:
+                # get the log level of this module
+                path = module.__module__
+                if path in self._custom_log_levels:
+                    self._set_module_log_level(path, self._custom_log_levels[path])
+                elif '*' in self._custom_log_levels:
+                    self._set_module_log_level(path, self._custom_log_levels['*'])
+
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters('')  # TODO: Use a proper data_folder - or remove the 'data_folder' as not used
+            module.read_parameters('')
 
     def seed_rngs(self, seed=None):
         """Seed the random number generator (RNG) for the Simulation instance and registered modules
@@ -105,14 +148,12 @@ class Simulation:
         :param seed: the seed for the Simulation RNG. If seed is not provided, a random seed will be
             used.
         """
-        if seed is None:
-            seed = np.random.randint(2 ** 31 - 1)
-
-        logger.info("Simulation RNG user seed %d", seed)
+        logger.warning("seed_rngs() is deprecated. Provide `seed` argument to Simulation().")
         self.rng.seed(seed)
+        logger.info("Simulation RNG user seed: %d", seed)
         for module in self.modules.values():
             module_seed = self.rng.randint(2 ** 31 - 1)
-            logger.info("%s RNG auto seed %d", module.name, module_seed)
+            logger.info("%s RNG auto seed: %d", module.name, module_seed)
             module.rng = np.random.RandomState(module_seed)
 
     def make_initial_population(self, *, n):

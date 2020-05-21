@@ -28,13 +28,11 @@ def basic_configuration(tmpdir):
 def simulation_configuration(tmpdir):
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, log_config={'filename': 'log', 'directory': tmpdir})
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    f = sim.configure_logging("log", directory=tmpdir)
-
-    yield sim.output_file, f
+    yield sim.output_file, sim.log_filepath
 
     sim.output_file.close()
 
@@ -141,11 +139,11 @@ class TestStructuredLogging:
         log_message(message_level, logger_level, message, structured_logging=True)
 
         lines = read_file(file_handler, file_path)
-        header_json = json.loads(lines[0])
-        data_json = json.loads(lines[1])
+        header_json = json.loads(lines[4])
+        data_json = json.loads(lines[5])
 
         # message should be written to log
-        assert len(lines) == 2
+        assert len(lines) == 6
         assert header_json['level'] == message_level.lstrip("logging.")
         assert 'message' in header_json['columns']
         assert header_json['columns']['message'] == 'float64'
@@ -160,11 +158,11 @@ class TestStructuredLogging:
         log_message(message_level, logger_level, message, structured_logging=True)
 
         lines = read_file(file_handler, file_path)
-        header_json = json.loads(lines[0])
-        data_json = json.loads(lines[1])
+        header_json = json.loads(lines[4])
+        data_json = json.loads(lines[5])
 
         # message should be written to log
-        assert len(lines) == 2
+        assert len(lines) == 6
         assert header_json['level'] == message_level.lstrip("logging.")
         assert 'message' in header_json['columns']
         assert header_json['columns']['message'] == 'float64'
