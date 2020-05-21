@@ -42,7 +42,7 @@ class DxManager:
                 dx_test = (dx_test,)
 
             # Check that the objects given are each a DxTest object
-            assert all([isinstance(d, DxTest) for d in dx_test]), f'One of the passed objects is not a DxTest object.'
+            assert all([isinstance(d, DxTest) for d in dx_test]), 'One of the passed objects is not a DxTest object.'
 
             # Check if this tuple of DxTests is a duplicate of something already registered.
             if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
@@ -60,7 +60,7 @@ class DxManager:
         assert name_of_dx_test in self.dx_tests, f'This DxTest is not recognised: {name_of_dx_test}'
         the_dx_test = self.dx_tests[name_of_dx_test]
         print()
-        print(f'----------------------')
+        print('----------------------')
         print(f'** {name_of_dx_test} **')
         for num, test in enumerate(the_dx_test):
             print(f'   Position in tuple #{num}')
@@ -68,7 +68,7 @@ class DxManager:
             print(f'sensitivity: {test.sensitivity}')
             print(f'specificity: {test.specificity}')
             print(f'property: {test.property}')
-            print(f'----------------------')
+            print('----------------------')
 
     def print_info_about_all_dx_tests(self):
         for dx_test in self.dx_tests:
@@ -85,7 +85,7 @@ class DxManager:
         if not isinstance(dx_tests_to_run, list):
             dx_tests_to_run = [dx_tests_to_run]
 
-        assert all([name in self.dx_tests for name in dx_tests_to_run]), f'A DxTest name is not recognised.'
+        assert all([name in self.dx_tests for name in dx_tests_to_run]), 'A DxTest name is not recognised.'
 
         # Create the dict() of results that will be returned
         result_dict_for_list_of_dx_tests = dict()
