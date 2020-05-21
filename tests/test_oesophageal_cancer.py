@@ -6,38 +6,149 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    contraception,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthsystem,
     oesophagealcancer,
+    pregnancy_supervisor,
+    labour,
+    healthseekingbehaviour,
+    symptommanager
 )
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 5000
-
-
-@pytest.fixture(scope='module')
-def simulation():
+try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+except NameError:
+    # running interactively
+    resourcefilepath = Path('./resources')
+
+
+def make_simulation_healthsystemdisabled():
+
+    start_date = Date(2010, 1, 1)
+    popsize = 5000
+
     sim = Simulation(start_date=start_date)
     sim.seed_rngs(0)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+                 )
 
-    sim.register(oesophageal_cancer.OesophagealCancer(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=popsize)
+    return sim
 
+def make_simulation_nohsi():
+
+    start_date = Date(2010, 1, 1)
+    popsize = 5000
+
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.make_initial_population(n=popsize)
     return sim
 
 
-def test_run(simulation):
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+
+
+def zero_out_init_prev(sim):
+    # Set initial prevalence to zero:
+    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = \
+        [0.0] * len(sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'])
+    return sim
+
+def incr_rates_of_progression_and_effect_of_treatment(sim):
+    # Rate of cancer onset per 3 months:
+    sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.05
+
+    # Rates of cancer progression per 3 months:
+    sim.modules['OesophagealCancer'].parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
+    sim.modules['OesophagealCancer'].parameters['r_stage1_high_grade_dysp'] *= 5
+    sim.modules['OesophagealCancer'].parameters['r_stage2_stage1'] *= 5
+    sim.modules['OesophagealCancer'].parameters['r_stage3_stage2'] *= 5
+    sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
+
+    # Effect of treatment in reducing progression: set so that treatment prevent progression
+    sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage1_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage2_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 0.0
+
+    return sim
+
+def test_initial_configuration_of_population():
+    """Tests of the the way the population is configured"""
+    sim = make_simulation_healthsystemdisabled()
+    test_dtypes(sim)
+
+    # Further tests:
+
+
+def test_run_from_zero_init():
+    """Tests on the population following simulation"""
+    sim = make_simulation_healthsystemdisabled()
+    sim = zero_out_init_prev(sim)
+    end_date = Date(2020, 1, 1)
+    sim.simulate(end_date=end_date)
+    test_dtypes(sim)
+
+    # Further tests:
+
+def test_run_from_nonzero_init():
+    """Tests on the population following simulation"""
+    sim = make_simulation_healthsystemdisabled()
+    end_date = Date(2020, 1, 1)
+    sim.simulate(end_date=end_date)
+    test_dtypes(sim)
+
+    # Further tests:
+
+def test_run_from_zero_init_nohsi():
+    """Tests on the population following simulation"""
+    sim = make_simulation_nohsi()
+    sim = zero_out_init_prev(sim)
+    end_date = Date(2020, 1, 1)
+    sim.simulate(end_date=end_date)
+    test_dtypes(sim)
+
+    # Further test
+
+
+def test_run_from_nonzero_init_nohsi():
+    """Tests on the population following simulation"""
+    sim = make_simulation_nohsi()
+    end_date = Date(2020, 1, 1)
+    sim.simulate(end_date=end_date)
+    test_dtypes(sim)
+
+    # Further tests:
+
 
 
 def test_dtypes(simulation):
@@ -47,12 +158,8 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
+
+
 
 
 """Other tests:
@@ -72,4 +179,10 @@ if __name__ == '__main__':
 * check that treatment reduced risk of progression
 
 * check that progression works:
+
+* no dx w/o health system
+
+* lots of dx, treatment etc w/ health system
+
+
 """

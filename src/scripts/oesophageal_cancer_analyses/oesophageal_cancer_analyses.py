@@ -10,10 +10,13 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     oesophagealcancer,
-    pregnancy_supervisor, labour, healthseekingbehaviour, symptommanager)
+    pregnancy_supervisor,
+    labour,
+    healthseekingbehaviour,
+    symptommanager
+)
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 # Where will outputs go
@@ -27,7 +30,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 5000
 
 def run_sim(service_availability):
@@ -50,8 +53,10 @@ def run_sim(service_availability):
                  )
 
     # Manipulate parameters in order that there is a high burden of oes_cancer in order to do the checking:
-    # Initial prevalence of cancer:
-    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.2, 0.1, 0.1, 0.05, 0.05, 0.025]
+
+    # Set initial prevalence to zero:
+    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = \
+        [0.0] * len(sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'])
 
     # Rate of cancer onset per 3 months:
     sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.05
@@ -62,6 +67,13 @@ def run_sim(service_availability):
     sim.modules['OesophagealCancer'].parameters['r_stage2_stage1'] *= 5
     sim.modules['OesophagealCancer'].parameters['r_stage3_stage2'] *= 5
     sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
+
+    # Effect of treatment in reducing progression: set so that treatment prevent progression
+    sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage1_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage2_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 0.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 0.0
 
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
@@ -136,13 +148,15 @@ def make_set_of_plots(logfile):
 
 # %% Run the simulation with and without service availabilty
 
+# With:
+logfile_with_healthsystem = run_sim(service_availability=['*'])
+results_with_healthsystem = make_set_of_plots(logfile_with_healthsystem)
+
 # Without:
 logfile_no_healthsystem = run_sim(service_availability=[])
 results_no_healthsystem = make_set_of_plots(logfile_no_healthsystem)
 
-# With:
-logfile_with_healthsystem = run_sim(service_availability=['*'])
-results_with_healthsystem = make_set_of_plots(logfile_with_healthsystem)
+
 
 # Compare DEaths
 deaths = pd.concat({
@@ -153,4 +167,5 @@ deaths = pd.concat({
 deaths.plot.bar()
 plt.show()
 
-# todo fix --- treatment effect should be stronger
+# TODO: TIDY PLOTS
+# TODO: CONFIRM RESULTS

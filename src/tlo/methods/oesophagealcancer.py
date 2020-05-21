@@ -38,6 +38,22 @@ class OesophagealCancer(Module):
         self.resourcefilepath = resourcefilepath
 
     PARAMETERS = {
+        "init_prop_oes_cancer_stage": Parameter(
+            Types.LIST,
+            "initial proportions in ca_oesophagus categories for man aged 20 with no excess alcohol and no tobacco",
+        ),
+        "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer diagnosed"
+        ),
+        "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of people with diagnosed oesophageal cancer with dysplasia"
+        ),
+        "init_prop_treatment_status_oes_cancer": Parameter(
+            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
+        ),
+        "init_prob_palliative_care": Parameter(
+            Types.REAL, "initial probability of being under palliative care if stage 4"
+        ),
         "r_low_grade_dysplasia_none": Parameter(
             Types.REAL,
             "probabilty per 3 months of incident low grade oesophageal dysplasia, amongst people with no "
@@ -121,39 +137,20 @@ class OesophagealCancer(Module):
         "rr_dysphagia_stage4": Parameter(
             Types.REAL, "rate ratio for dysphagia if have stage 4 oesophageal cancer"
         ),
-        "prob_present_dysphagia": Parameter(
-            Types.REAL, "probability of presenting if have dysphagia"
-        ),
-        "init_prop_oes_cancer_stage": Parameter(
-            Types.LIST,
-            "initial proportions in ca_oesophagus categories for man aged 20 with no excess alcohol and no tobacco",
-        ),
         "rp_oes_cancer_female": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if female "
+            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if female"
         ),
         "rp_oes_cancer_per_year_older": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer per year older than 20 "
+            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer per year older than 20"
         ),
         "rp_oes_cancer_tobacco": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if tobacco "
+            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if tobacco"
         ),
         "rp_oes_cancer_ex_alc": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer "
-        ),
-        "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer diagnosed"
-        ),
-        "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people with diagnosed oesophageal cancer with dysplasia"
-        ),
-        "init_prop_treatment_status_oes_cancer": Parameter(
-            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
-        ),
-        "init_prob_palliative_care": Parameter(
-            Types.REAL, "initial probability of being under palliative care if stage 4"
+            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer"
         ),
         "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
-            Types.REAL, "sensitivity of endoscopy_for diagnosis of oes_cancer_with_dysphagia"
+            Types.REAL, "sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia"
         ),
     }
 
@@ -220,12 +217,18 @@ class OesophagealCancer(Module):
             lm_init_oc_status_any_dysplasia_or_cancer.predict(df, self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        df.loc[(df.is_alive) & (df.oc_status_any_dysplasia_or_cancer), "oc_status"] = self.rng.choice(
-            [val for val in self.PROPERTIES['oc_status'].categories if val != 'none'],
-            df.loc[df.is_alive, "oc_status_any_dysplasia_or_cancer"].sum(),
-            p=[p / sum(self.parameters['init_prop_oes_cancer_stage']) for p in
-               self.parameters['init_prop_oes_cancer_stage']]
-        )
+        if df.loc[df.is_alive, "oc_status_any_dysplasia_or_cancer"].sum():
+            prob_by_stage_of_cancer_if_cancer = [
+                ((p / sum(self.parameters['init_prop_oes_cancer_stage'])) if not sum(self.parameters['init_prop_oes_cancer_stage']) == 0 else 0)
+                for p in self.parameters['init_prop_oes_cancer_stage']
+            ]
+            assert sum(prob_by_stage_of_cancer_if_cancer) == 1.0
+
+            df.loc[(df.is_alive) & (df.oc_status_any_dysplasia_or_cancer), "oc_status"] = self.rng.choice(
+                [val for val in self.PROPERTIES['oc_status'].categories if val != 'none'],
+                df.loc[df.is_alive, "oc_status_any_dysplasia_or_cancer"].sum(),
+                p=prob_by_stage_of_cancer_if_cancer
+            )
 
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of dysphagia:
@@ -298,6 +301,7 @@ class OesophagealCancer(Module):
             data=[pd.NaT if (not x) else (self.sim.date - DateOffset(days=self.rng.randint(100, 300))) for x in
                   treatment_initiated]
         )
+        # Todo - set up on-going treatment appointments
 
         # -------------------- oc_date_palliative_care -----------
         df.loc[df.is_alive, "oc_date_palliative_care"] = pd.NaT     # default
@@ -316,6 +320,8 @@ class OesophagealCancer(Module):
                   palliative_care_initiated]
         )
 
+        # Todo - set up palliative care appointments
+
     def initialise_simulation(self, sim):
         """
         * Schedule the main polling event
@@ -325,13 +331,15 @@ class OesophagealCancer(Module):
         * Define the Disability-weights
         """
 
+        # ----- SCHEDULE LOGGING EVENTS -----
+        # Schedule logging event to happen immediately
+        sim.schedule_event(OesCancerLoggingEvent(self), sim.date + DateOffset(months=0))
+
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
         sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
-        # ----- SCHEDULE LOGGING EVENTS -----
-        # Schedule logging event to happen immediately
-        sim.schedule_event(OesCancerLoggingEvent(self), sim.date + DateOffset(months=0))
+
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -663,7 +671,6 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
-        the_appt_footprint["MajorSurg"] = 3
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
@@ -711,7 +718,6 @@ class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixi
 
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
-        the_appt_footprint["MajorSurg"] = 3
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "OesophagealCancer_MonitorTreatment"
