@@ -10,7 +10,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthburden,
     healthsystem,
-    oesophageal_cancer,
+    oesophagealcancer,
 )
 
 start_date = Date(2010, 1, 1)
