@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -1478,6 +1478,10 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, "rt_disability"] = 0
         # set rt_road_traffic_inc back to false after death
         df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
+        # set rt_med_int back to false after death
+        df.loc[df.is_alive, 'rt_med_int'] = False
+        # set rt_polytrauma back to false after death
+        df.loc[df.is_alive, 'rt_polytrauma'] = False
 
         # ----------- UPDATING OF RTI OVER TIME ----------------
         rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc & ~df.rt_imm_death]
@@ -1528,7 +1532,6 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
 
         selected_for_rti_inj = df.loc[df.is_alive].copy()
         selected_for_rti_inj = selected_for_rti_inj.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
-        selected_for_rti_inj_index = selected_for_rti_inj.index
 
         mortality, description = injrandomizer(len(selected_for_rti_inj))
 
@@ -1538,8 +1541,8 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         selected_for_rti_inj = selected_for_rti_inj.join(mortality.set_index(selected_for_rti_inj.index))
 
         selected_for_rti_inj = selected_for_rti_inj.join(description.set_index(selected_for_rti_inj.index))
-        selected_for_rti_inj.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/'
-                                    'test_injuries.csv')
+        # selected_for_rti_inj.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/'
+        #                             'test_injuries.csv')
         # ============================ Injury severity classification============================================
 
         # todo:  get the injuries out of the description data frame
@@ -1548,11 +1551,9 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         # Find those with mild injuries and update the rt_roadtrafficinj property so they have a mild injury
         mild_rti_idx = selected_for_rti_inj.index[selected_for_rti_inj.is_alive & selected_for_rti_inj['ISS'] < 15]
         df.loc[mild_rti_idx, 'rt_injseverity'] = 'mild'
-
         # Find those with severe injuries and update the rt_roadtrafficinj property so they have a severe injury
         severe_rti_idx = selected_for_rti_inj.index[selected_for_rti_inj['ISS'] >= 15]
         df.loc[severe_rti_idx, 'rt_injseverity'] = 'severe'
-
         # Find those with polytrauma and update the rt_polytrauma property so they have polytrauma
         polytrauma_idx = selected_for_rti_inj.index[selected_for_rti_inj['Polytrauma'] is True]
         df.loc[polytrauma_idx, 'rt_polytrauma'] = True
@@ -1560,19 +1561,34 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         # ============================ Injury specific updates ====================================================
 
         # ------ Find those with traumatic brain injury and update rt_tbi to match and call the TBI treatment ------
-
         headinj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
-        headinj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
-        headinj3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
-        if len(headinj1) + len(headinj2) + len(headinj3) > 1:
+        dalyweightsfor133 = [self.daly_wt_subarachnoid_hematoma, self.daly_wt_brain_contusion,
+                             self.daly_wt_intraventricular_haemorrhage, self.daly_wt_subgaleal_hematoma]
+        probabilities = [0.2, 0.66, 0.03, 0.11]
+        if len(headinj1) > 0:
             idx1 = headinj1.index[headinj1]
+            for headinjperson in idx1:
+                df.loc[headinjperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor133,
+                                                                                 p=probabilities)
+        headinj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
+        dalyweightsfor134 = [self.daly_wt_epidural_hematoma, self.daly_wt_subdural_hematoma]
+        probabilities = [0.52, 0.48]
+        if len(headinj2) > 0:
             idx2 = headinj2.index[headinj2]
+            for headinjperson in idx2:
+                df.loc[headinjperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor134, p=probabilities)
+
+        headinj3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
+        if len(headinj3) > 0:
             idx3 = headinj3.index[headinj3]
+            df.loc[idx3, 'rt_disability'] += self.daly_wt_diffuse_axonal_injury
+
+        if len(headinj1) + len(headinj2) + len(headinj3) > 1:
             idx = idx1.union(idx2)
             idx = idx.union(idx3)
             df.loc[idx, 'rt_tbi'] = True
             for person_id_to_start_treatment in idx:
-                event = HSI_RTI_Traumatic_Brain_Injury(self.module, person_id=person_id_to_start_treatment)
+                event = HSI_RTI_MedicalIntervention(self.module, person_id=person_id_to_start_treatment)
                 target_date = self.sim.date + DateOffset(days=int(0))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
                                                                     tclose=None)
@@ -1640,6 +1656,9 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         # eye_idx = selected_for_rti_inj[selected_for_rti_inj['Injury category'].str.match('9') is True]
         # df.loc[eye_idx, 'rt_eye_inj'] = True
 
+        # ================================ Predict mortality for those with treatment ==================================
+
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
@@ -1682,7 +1701,8 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_RTI_Traumatic_Brain_Injury(HSI_Event, IndividualScopeEventMixin):
+class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
+    # todo: Make this a generic intervention
     """This is a Health System Interaction Event.
     An appointment of a person who has experienced head injury due to a road traffic injury, requiring the resources
     found at a level 1+ facility such as:
@@ -1720,7 +1740,7 @@ class HSI_RTI_Traumatic_Brain_Injury(HSI_Event, IndividualScopeEventMixin):
         the_accepted_facility_level = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'RTI_TBI_Interaction'  # This must begin with the module name
+        self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
@@ -1728,7 +1748,7 @@ class HSI_RTI_Traumatic_Brain_Injury(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-
+        df.at[person_id, 'rt_med_int'] = True
         df.at[person_id, 'rt_tbi_diagnosed'] = True
         df.at[person_id, 'rt_tbi_treated'] = True
         logger.debug('@@@@@@@@@@ TBI Treatment started !!!!!!')
@@ -1740,6 +1760,10 @@ class HSI_RTI_Traumatic_Brain_Injury(HSI_Event, IndividualScopeEventMixin):
         else:
             df.at[person_id, 'rt_tbi_recovered'] = True
         pass
+        self.sim.schedule_event(RTIMedicalInterventionDeathEvent(self.module, person_id), self.sim.date +
+                                DateOffset(days=0))
+        logger.debug('This is MedicalInterventionEvent scheduling a potential death on date %s for person %d',
+                     self.sim.date, person_id)
 
     def did_not_run(self):
         logger.debug('HSI_RTI_Traumatic_Brain_Injury: did not run')
@@ -1882,3 +1906,34 @@ class HSI_RTI_Abdominal_Oragan_Injury(HSI_Event, IndividualScopeEventMixin):
         #
 
         pass
+
+
+class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
+    """This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
+    resources required to treat that person and
+    """
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+        rng = self.module.rng
+        randfordeath = self.module.rng.random_sample(size=1)
+        # Schedule death for those who died from their injuries despite medical intervention
+        if df.loc[individual_id, 'rt_injseverity'] == 'mild':
+            # todo: add these probabilities of death to the parameters sheet
+            if randfordeath < 0.046:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='rti'), self.sim.date)
+                # Log the death
+                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
+                             individual_id, self.sim.date)
+        elif df.loc[individual_id, 'rt_injseverity'] == 'severe':
+            if randfordeath < 0.27:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='rti'), self.sim.date)
+                # Log the death
+                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
+                             individual_id, self.sim.date)
