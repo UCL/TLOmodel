@@ -178,8 +178,8 @@ class TestStructuredLogging:
 
         lines = read_file(file_handler, file_path)
 
-        # message should be written to log
-        assert [] == lines
+        # only simulation info messages should be written to log
+        assert len(lines) == 4
 
 
 class TestConvertLogData:
