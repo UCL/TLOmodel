@@ -203,6 +203,8 @@ class OesophagealCancer(Module):
         df.loc[df.is_alive, "oc_status"] = "none"     # default
         df.loc[df.is_alive, "oc_status_any_dysplasia_or_cancer"] = False     # default
 
+        assert sum(self.parameters['init_prop_oes_cancer_stage']) <= 1.0
+
         lm_init_oc_status_any_dysplasia_or_cancer = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(self.parameters['init_prop_oes_cancer_stage']),
@@ -220,7 +222,7 @@ class OesophagealCancer(Module):
                 ((p / sum(self.parameters['init_prop_oes_cancer_stage'])) if not sum(self.parameters['init_prop_oes_cancer_stage']) == 0 else 0)
                 for p in self.parameters['init_prop_oes_cancer_stage']
             ]
-            assert sum(prob_by_stage_of_cancer_if_cancer) == 1.0
+            assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
 
             df.loc[(df.is_alive) & (df.oc_status_any_dysplasia_or_cancer), "oc_status"] = self.rng.choice(
                 [val for val in self.PROPERTIES['oc_status'].categories if val != 'none'],
@@ -263,7 +265,10 @@ class OesophagealCancer(Module):
                 .when("stage3", self.parameters['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][4])
                 .when("stage4", self.parameters['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][5])
         )
-        ever_diagnosed = lm_init_diagnosed.predict(df, self.rng)
+        ever_diagnosed = lm_init_diagnosed.predict(df.is_alive, self.rng)
+
+        # ensure that persons who have not ever has the symptom dysphagia are diagnosed:
+        ever_diagnosed.loc[~has_dysphagia_at_init] = False
 
         # Set data of diagnosis (300-600 days ago)
         df["oc_date_diagnosis"] = pd.Series(
@@ -274,7 +279,7 @@ class OesophagealCancer(Module):
 
         # -------------------- oc_date_treatment -----------
         df.loc[df.is_alive, "oc_date_treatment"] = pd.NaT     # default
-        df.loc[df.is_alive, "oc_stage_at_which_treatment_applied"].values[:] = "none"     # default
+        df.loc[df.is_alive, "oc_stage_at_which_treatment_applied"] = "none"     # default
 
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')
@@ -295,8 +300,8 @@ class OesophagealCancer(Module):
         treatment_initiated.loc[df.oc_status == 'stage4'] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[~pd.isnull(df.oc_date_treatment), "oc_stage_at_which_treatment_applied"] = \
-            df.oc_status.loc[~pd.isnull(df.oc_date_treatment)]
+        df.loc[treatment_initiated, "oc_stage_at_which_treatment_applied"] = \
+            df.oc_status.loc[treatment_initiated]
 
         # set date at which treatment began (100-200 days ago)
         df["oc_date_treatment"] = pd.Series(
@@ -305,14 +310,14 @@ class OesophagealCancer(Module):
                   treatment_initiated]
         )
 
-        # Todo - set up on-going treatment appointments
+        # **Todo - set up on-going treatment appointments**
 
         # -------------------- oc_date_palliative_care -----------
         df.loc[df.is_alive, "oc_date_palliative_care"] = pd.NaT     # default
 
-        persons_in_stage4 = df.index[df.is_alive & (df.oc_status == 'stage4')]
-        selected_for_palliative_care = persons_in_stage4[
-            self.rng.random_sample(size=len(persons_in_stage4)) < self.parameters['init_prob_palliative_care']
+        persons_in_stage4_who_are_diagnosed = df.index[df.is_alive & (df.oc_status == 'stage4') & ~pd.isnull(df.oc_date_diagnosis)]
+        selected_for_palliative_care = persons_in_stage4_who_are_diagnosed[
+            self.rng.random_sample(size=len(persons_in_stage4_who_are_diagnosed)) < self.parameters['init_prob_palliative_care']
             ]
         palliative_care_initiated = pd.Series(index=df.index, data=False)
         palliative_care_initiated[selected_for_palliative_care] = True
