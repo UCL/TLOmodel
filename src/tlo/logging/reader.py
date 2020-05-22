@@ -44,7 +44,9 @@ class LogData:
         output_logs: DefaultDict[str, Dict[str, pd.DataFrame]] = defaultdict(dict)
 
         for module, log_data in self.data.items():
+            output_logs['_metadata'][module] = dict()
             for key, data in log_data.items():
+                output_logs['_metadata'][module][key] = data['header']
                 output_logs[module][key] = pd.DataFrame(data['values'], columns=data['header']['columns'].keys())
                 output_logs[module][key].insert(0, "date", pd.Series(data["dates"], dtype=np.dtype('datetime64[ns]')))
                 # timestamps are encoded as strings
