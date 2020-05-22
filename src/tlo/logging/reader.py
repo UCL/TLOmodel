@@ -52,7 +52,6 @@ class LogData:
                 # timestamps are encoded as strings
                 for n, t in data['header']['columns'].items():
                     if t == "Timestamp":
-                        print('setting', output_logs[module][key][n].head())
                         output_logs[module][key][n] = output_logs[module][key][n].astype('datetime64[ns]')
 
         return output_logs

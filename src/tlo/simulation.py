@@ -64,8 +64,11 @@ class Simulation:
         # random number generator
         if seed is None:
             seed = np.random.randint(2 ** 31 - 1)
+            seed_from = 'auto'
+        else:
+            seed_from = 'user'
         self._seed = seed
-        logger.info("Simulation RNG user seed: %d", self._seed)
+        logger.info("Simulation RNG %s seed: %d", seed_from, self._seed)
         self.rng = np.random.RandomState(self._seed)
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
@@ -138,7 +141,7 @@ class Simulation:
             module.sim = self
             module.read_parameters('')
 
-    def seed_rngs(self, seed=None):
+    def seed_rngs(self, seed):
         """Seed the random number generator (RNG) for the Simulation instance and registered modules
 
         The Simulation instance has its RNG seeded with the supplied value. Each module has its own
