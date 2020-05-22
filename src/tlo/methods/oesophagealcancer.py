@@ -1,19 +1,10 @@
 """
 Oesophageal Cancer Disease Module
 
-TODO:
+Limitations to note:
 * Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
-* Perhaps need to add (i) wood burning fire / indoor polution (ii) white maize flour in diet (both risk factors)
-
-QUESTIONS FOR ANDREW:
-* Palliative care -- has no effect and never ends, should it?
-* Check recurrence of appointments
-* Do you want prob of treatment to depend on stage?
-* Does treatment result in any reversion?
-
-* Should dalywt to include the low/high dyplasia stages?
-* palliative care never ends -right?
-
+* Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
+* Footprints of HSI -- pending input from expert on resources required.
 """
 
 from pathlib import Path
@@ -49,7 +40,7 @@ class OesophagealCancer(Module):
             Types.LIST, "initial proportions of people with diagnosed oesophageal cancer with dysplasia"
         ),
         "init_prop_treatment_status_oes_cancer": Parameter(
-            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer treated"
+            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer that had initiated treatment"
         ),
         "init_prob_palliative_care": Parameter(
             Types.REAL, "initial probability of being under palliative care if stage 4"
@@ -165,14 +156,21 @@ class OesophagealCancer(Module):
             Types.BOOL,
             "Current status of having any Oesophageal Cancer (equal to: ~(oc_status=='none')"),
 
-        "oc_date_oes_cancer_diagnosis": Property(
+        "oc_date_diagnosis": Property(
             Types.DATE,
             "the date of diagnsosis of the oes_cancer (pd.NaT if never diagnosed)"
         ),
 
-        "oc_date_treatment_oesophageal_cancer": Property(
+        "oc_date_treatment": Property(
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
+        ),
+
+        "oc_stage_at_which_treatment_applied": Property(
+            Types.CATEGORICAL,
+            "the cancer stage at which treatment is applied (because the treatment only has an effect during the stage"
+            "at which it is applied.",
+            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
         ),
 
         "oc_date_palliative_care": Property(
@@ -250,8 +248,8 @@ class OesophagealCancer(Module):
             disease_module=self
         )
 
-        # -------------------- oc_date_oes_cancer_diagnosis -----------
-        df.loc[df.is_alive, "oc_date_oes_cancer_diagnosis"] = pd.NaT     # default
+        # -------------------- oc_date_diagnosis -----------
+        df.loc[df.is_alive, "oc_date_diagnosis"] = pd.NaT     # default
 
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')
@@ -268,14 +266,15 @@ class OesophagealCancer(Module):
         ever_diagnosed = lm_init_diagnosed.predict(df, self.rng)
 
         # Set data of diagnosis (300-600 days ago)
-        df["oc_date_oes_cancer_diagnosis"] = pd.Series(
+        df["oc_date_diagnosis"] = pd.Series(
             index=ever_diagnosed.index,
             data=[pd.NaT if (not x) else (self.sim.date - DateOffset(days=self.rng.randint(300, 600))) for x in
                   ever_diagnosed]
         )
 
-        # -------------------- oc_date_treatment_oesophageal_cancer -----------
-        df.loc[df.is_alive, "oc_date_treatment_oesophageal_cancer"] = pd.NaT     # default
+        # -------------------- oc_date_treatment -----------
+        df.loc[df.is_alive, "oc_date_treatment"] = pd.NaT     # default
+        df.loc[df.is_alive, "oc_stage_at_which_treatment_applied"].values[:] = "none"     # default
 
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')
@@ -290,17 +289,22 @@ class OesophagealCancer(Module):
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df, self.rng)
 
         # prevent treatment having been initiated for anyone who is not yet diagnosed
-        treatment_initiated.loc[pd.isnull(df.oc_date_oes_cancer_diagnosis)] = False
+        treatment_initiated.loc[pd.isnull(df.oc_date_diagnosis)] = False
 
         # prevent treatment having been initiated from anyone who is not in stage4
         treatment_initiated.loc[df.oc_status == 'stage4'] = False
 
-        # set date at which treatment began (100-300 days ago)
-        df["oc_date_treatment_oesophageal_cancer"] = pd.Series(
+        # assume that the stage at which treatment is begun is the stage the person is in now;
+        df.loc[~pd.isnull(df.oc_date_treatment), "oc_stage_at_which_treatment_applied"] = \
+            df.oc_status.loc[~pd.isnull(df.oc_date_treatment)]
+
+        # set date at which treatment began (100-200 days ago)
+        df["oc_date_treatment"] = pd.Series(
             index=treatment_initiated.index,
-            data=[pd.NaT if (not x) else (self.sim.date - DateOffset(days=self.rng.randint(100, 300))) for x in
+            data=[pd.NaT if (not x) else (self.sim.date - DateOffset(days=self.rng.randint(100, 200))) for x in
                   treatment_initiated]
         )
+
         # Todo - set up on-going treatment appointments
 
         # -------------------- oc_date_palliative_care -----------
@@ -340,9 +344,11 @@ class OesophagealCancer(Module):
         sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
 
-
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
+        # NB. The effect being produced is that treatment only has the effect for during the stage at which the
+        # treatment was received.
+
         self.linear_models_for_progession_of_oc_status = dict()
         self.linear_models_for_progession_of_oc_status[
             'low_grade_dysplasia'] = LinearModel(
@@ -366,7 +372,7 @@ class OesophagealCancer(Module):
             'high_grade_dysplasia'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.parameters['r_high_grade_dysplasia_low_grade_dysp'],
-            Predictor('currently_on_treatment', external=True)
+            Predictor('had_treatment_during_this_stage', external=True)
                 .when(True, self.parameters['rr_high_grade_dysp_undergone_curative_treatment']),
             Predictor('oc_status')
                 .when('low_grade_dysplasia', 1.0)
@@ -377,7 +383,7 @@ class OesophagealCancer(Module):
             'stage1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.parameters['r_stage1_high_grade_dysp'],
-            Predictor('currently_on_treatment', external=True)
+            Predictor('had_treatment_during_this_stage', external=True)
                 .when(True, self.parameters['rr_stage1_undergone_curative_treatment']),
             Predictor('oc_status')
                 .when('high_grade_dysplasia', 1.0)
@@ -388,7 +394,7 @@ class OesophagealCancer(Module):
             'stage2'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.parameters['r_stage2_stage1'],
-            Predictor('currently_on_treatment', external=True)
+            Predictor('had_treatment_during_this_stage', external=True)
                 .when(True, self.parameters['rr_stage2_undergone_curative_treatment']),
             Predictor('oc_status')
                 .when('stage1', 1.0)
@@ -399,7 +405,7 @@ class OesophagealCancer(Module):
             'stage3'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.parameters['r_stage3_stage2'],
-            Predictor('currently_on_treatment', external=True)
+            Predictor('had_treatment_during_this_stage', external=True)
                 .when(True, self.parameters['rr_stage3_undergone_curative_treatment']),
             Predictor('oc_status')
                 .when('stage2', 1.0)
@@ -410,7 +416,7 @@ class OesophagealCancer(Module):
             'stage4'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             self.parameters['r_stage4_stage3'],
-            Predictor('currently_on_treatment', external=True)
+            Predictor('had_treatment_during_this_stage', external=True)
                 .when(True, self.parameters['rr_stage4_undergone_curative_treatment']),
             Predictor('oc_status')
                 .when('stage3', 1.0)
@@ -449,26 +455,33 @@ class OesophagealCancer(Module):
         if "HealthBurden" in self.sim.modules.keys():
             self.daly_wts = dict()
             # For those with cancer (any stage prior to stage 4) and never treated
-            self.daly_wts["daly_wt_oes_cancer_stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=550
                 # "Diagnosis and primary therapy phase of esophageal cancer":
                 #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
             # For those with cancer (any stage prior to stage 4) and has been treated
-            self.daly_wts["daly_wt_treated_oes_cancer"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=547
                 # "Controlled phase of esophageal cancer,Generic uncomplicated disease":
                 # "worry and daily medication,has a chronic disease that requires medication every day and causes some
                 #   worry but minimal interference with daily activities".
             )
 
-            # For those in stage 4
-            self.daly_wts["daly_wt_oes_cancer_stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            # For those in stage 4: no palliative care
+            self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=549
                 # "Metastatic phase of esophageal cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
             )
+
+            # For those in stage 4: with palliative care
+            self.daly_wts["stage4_palliative_care"] = self.daly_wts["stage_1_3"]
+                # By assumption, we say that that the weight for those in stage 4 with palliative care is the same as
+                # that for those with stage 1-3 cancers.
+
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -478,8 +491,9 @@ class OesophagealCancer(Module):
         df = self.sim.population.props
         df.at[child_id, "oc_status"] = "none"
         df.at[child_id, "oc_status_any_dysplasia_or_cancer"] = False
-        df.at[child_id, "oc_date_oes_cancer_diagnosis"] = pd.NaT
-        df.at[child_id, "coc_date_treatment_oesophageal_cancer"] = pd.NaT
+        df.at[child_id, "oc_date_diagnosis"] = pd.NaT
+        df.at[child_id, "coc_date_treatment"] = pd.NaT
+        df.at[child_id, "oc_stage_at_which_treatment_applied"] = "none"
         df.at[child_id, "oc_date_palliative_care"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -496,33 +510,36 @@ class OesophagealCancer(Module):
         # Assign daly_wt to those with cancer stages before stage4 and never treated
         disability_series_for_alive_persons.loc[
             (
-                pd.isnull(df.oc_date_treatment_oesophageal_cancer) & (
-                (df.oc_status == "low_grade_dysplasia") |
-                (df.oc_status == "high_grade_dysplasia") |
+                pd.isnull(df.oc_date_treatment) & (
                 (df.oc_status == "stage1") |
                 (df.oc_status == "stage2") |
                 (df.oc_status == "stage3")
             )
             )
-        ] = self.daly_wts['daly_wt_oes_cancer_stage_1_3']
+        ] = self.daly_wts['stage_1_3']
 
         # Assign daly_wt to those with cancer stages before stage4 and who have been treated
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.oc_date_treatment_oesophageal_cancer) & (
-                (df.oc_status == "low_grade_dysplasia") |
-                (df.oc_status == "high_grade_dysplasia") |
+                ~pd.isnull(df.oc_date_treatment) & (
                 (df.oc_status == "stage1") |
                 (df.oc_status == "stage2") |
                 (df.oc_status == "stage3")
             )
             )
-        ] = self.daly_wts['daly_wt_treated_oes_cancer']
+        ] = self.daly_wts['stage_1_3_treated']
 
-        # Assign daly_wt to those in stage4 cancer (irrespective of whether receiving palliative care)
+        # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
-            (df.oc_status == "stage4")
-        ] = self.daly_wts['daly_wt_oes_cancer_stage4']
+            (df.oc_status == "stage4") &
+            (pd.isnull(df.oc_date_palliative_care))
+        ] = self.daly_wts['stage4']
+
+        # Assign daly_wt to those in stage4 cancer, who have had palliative care
+        disability_series_for_alive_persons.loc[
+            (df.oc_status == "stage4") &
+            (~pd.isnull(df.oc_date_palliative_care))
+        ] = self.daly_wts['stage4_palliative_care']
 
         return disability_series_for_alive_persons
 
@@ -550,9 +567,14 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = m.rng
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (oc_status) -----------------------------------
-        currently_on_treatment = ~pd.isnull(df.oc_date_treatment_oesophageal_cancer)
+
+        # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
+        #  reducing progression risk during the stage at which is received.
+        had_treatment_during_this_stage = ~pd.isnull(df.oc_date_treatment) & \
+                                          (df.oc_status == df.oc_stage_at_which_treatment_applied)
+
         for stage, lm in self.module.linear_models_for_progession_of_oc_status.items():
-            gets_new_stage = lm.predict(df, rng, currently_on_treatment=currently_on_treatment)
+            gets_new_stage = lm.predict(df, rng, had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'oc_status'] = stage
             df.loc[idx_gets_new_stage, 'oc_status_any_dysplasia_or_cancer'] = True
@@ -613,7 +635,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
-        if not pd.isnull(self.sim.population.props.at[person_id, "oc_date_oes_cancer_diagnosis"]):
+        if not pd.isnull(self.sim.population.props.at[person_id, "oc_date_diagnosis"]):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
 
@@ -625,7 +647,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
 
         if dx_result:
             # record date of diagnosis:
-            self.sim.population.props.at[person_id, 'oc_date_oes_cancer_diagnosis'] = self.sim.date
+            self.sim.population.props.at[person_id, 'oc_date_diagnosis'] = self.sim.date
 
             # Check if is in stage4:
             in_stage4 = self.sim.population.props.at[person_id, 'oc_status'] == 'stage4'
@@ -685,19 +707,20 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
         assert not self.sim.population.props.at[person_id, "oc_status"] == 'none'
         assert not self.sim.population.props.at[person_id, "oc_status"] == 'stage4'
-        assert not pd.isnull(self.sim.population.props.at[person_id, "oc_date_oes_cancer_diagnosis"])
-        assert pd.isnull(self.sim.population.props.at[person_id, "oc_date_treatment_oesophageal_cancer"])
+        assert not pd.isnull(self.sim.population.props.at[person_id, "oc_date_diagnosis"])
+        assert pd.isnull(self.sim.population.props.at[person_id, "oc_date_treatment"])
 
         # Record date of starting treatment
         df = self.sim.population.props
-        df.at[person_id, "oc_date_treatment_oesophageal_cancer"] = self.sim.date
+        df.at[person_id, "oc_date_treatment"] = self.sim.date
 
+        # Schedule a post-treatment check for 12 months:
         self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_OesophagealCancer_MonitorTreatment(
+            hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
-            topen=self.sim.date + DateOffset(months=1),
+            topen=self.sim.date + DateOffset(years=12),
             tclose=None,
             priority=0
         )
@@ -706,11 +729,12 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         pass
 
 
-class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_OesophagealCancer_StartTreatment and itself.
-    It is only for those undergoing treatment for Oesophageal Cancer.
-    If the person has developed cancer to stage4, then treatment is stopped and palliative care is begun.
+    It is only for those who have undergone treatment for Oesophageal Cancer.
+    If the person has developed cancer to stage4, the patient is initiated on palliative care; otherwise a further
+    appointment is scheduled for one year.
     """
 
     def __init__(self, module, person_id):
@@ -732,8 +756,8 @@ class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixi
 
         # Check that the person is has cancer and is on treatment
         assert not self.sim.population.props.at[person_id, "oc_status"] == 'none'
-        assert not pd.isnull(self.sim.population.props.at[person_id, "oc_date_oes_cancer_diagnosis"])
-        assert not pd.isnull(self.sim.population.props.at[person_id, "oc_date_treatment_oesophageal_cancer"])
+        assert not pd.isnull(self.sim.population.props.at[person_id, "oc_date_diagnosis"])
+        assert not pd.isnull(self.sim.population.props.at[person_id, "oc_date_treatment"])
 
         if self.sim.population.props.at[person_id, 'oc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -748,13 +772,13 @@ class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixi
             )
 
         else:
-            # Schedule another HSI_OesophagealCancer_MonitorTreatment event in one month
+            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event in one month
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_MonitorTreatment(
+                hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(months=1),
+                topen=self.sim.date + DateOffset(years=1),
                 tclose=None,
                 priority=0
             )
@@ -765,10 +789,11 @@ class HSI_OesophagealCancer_MonitorTreatment(HSI_Event, IndividualScopeEventMixi
 
 class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
-    This is the event for palliative care. It does not affect the patient but takes resources from the healthsystem.
+    This is the event for palliative care. It does not affect the patients progress but does affect the disability
+     weight and takes resources from the healthsystem.
     This event is scheduled by either:
     * HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of Oesophageal Cancer at stage4.
-    * HSI_OesophagealCancer_MonitorTreatment following progression to stage4 during treatment.
+    * HSI_OesophagealCancer_PostTreatmentCheck following progression to stage4 during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in stage4.
     """
@@ -839,15 +864,15 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Current counts, undiagnosed
         dict_for_output.update({f'undiagnosed_{k}': v for k, v in df.loc[
-            pd.isnull(df.oc_date_oes_cancer_diagnosis), 'oc_status'].value_counts().to_dict().items()})
+            pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().to_dict().items()})
 
         # Current counts, diagnosed
         dict_for_output.update({f'diagnosed_{k}': v for k, v in df.loc[
-            ~pd.isnull(df.oc_date_oes_cancer_diagnosis), 'oc_status'].value_counts().to_dict().items()})
+            ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().to_dict().items()})
 
         # Current counts, on treatment (excl. palliative care)
         dict_for_output.update({f'treatment_{k}': v for k, v in df.loc[(~pd.isnull(
-            df.oc_date_treatment_oesophageal_cancer) & pd.isnull(
+            df.oc_date_treatment) & pd.isnull(
             df.oc_date_palliative_care)), 'oc_status'].value_counts().to_dict().items()})
 
         # Current counts, on palliative care
@@ -860,8 +885,8 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
         dict_for_output.update({
-            'diagnosed_since_last_log': df.oc_date_oes_cancer_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.oc_date_treatment_oesophageal_cancer.between(date_lastlog, date_now).sum(),
+            'diagnosed_since_last_log': df.oc_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.oc_date_treatment.between(date_lastlog, date_now).sum(),
             'palliative_since_last_log': df.oc_date_palliative_care.between(date_lastlog, date_now).sum()
         })
 

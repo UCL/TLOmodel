@@ -157,8 +157,7 @@ logfile_no_healthsystem = run_sim(service_availability=[])
 results_no_healthsystem = make_set_of_plots(logfile_no_healthsystem)
 
 
-
-# Compare DEaths
+# Compare Deaths
 deaths = pd.concat({
     'No_HealthSystem': results_no_healthsystem['oes_cancer_deaths'][0],
     'With_HealthSystem': results_with_healthsystem['oes_cancer_deaths'][0]
@@ -169,3 +168,6 @@ plt.show()
 
 # TODO: TIDY PLOTS
 # TODO: CONFIRM RESULTS
+
+
+# %% Check 5-year survival:

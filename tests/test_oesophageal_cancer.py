@@ -168,6 +168,10 @@ def test_dtypes(simulation):
 
 * that no one has oes_cancer at age less than 20 -- initiation or after simulation
 
+* treamtnt is none for all those w/o cancer and w/o diagnossi
+
+* that treatment will lead to a piling up of people in a particular stage
+
 * That the dates of thing in the properites are in right order where appropriate: ca_date_oes_cancer_diagnosis < ca_date_treatment_oesophageal_cancer < ca_date_palliative_care
 
 * To check the working of the HSI, good shortcut would be to increase the baseline risk of cancer:
@@ -184,5 +188,6 @@ def test_dtypes(simulation):
 
 * lots of dx, treatment etc w/ health system
 
+*
 
 """
