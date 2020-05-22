@@ -122,10 +122,17 @@ class Logger:
 
         uuid = self.keys[key]
 
-        # create data json row
-        row = {"uuid": uuid,
-               "date": getLogger('tlo').simulation.date.isoformat(),
-               "values": list(data.values())}
+        # create data json row; in DEBUG model we echo the module and key
+        if self._std_logger.level == DEBUG:
+            row = {"date": getLogger('tlo').simulation.date.isoformat(),
+                   "module": self.name,
+                   "key": key,
+                   "uuid": uuid,
+                   "values": list(data.values())}
+        else:
+            row = {"uuid": uuid,
+                   "date": getLogger('tlo').simulation.date.isoformat(),
+                   "values": list(data.values())}
 
         out = ""
         if header:
