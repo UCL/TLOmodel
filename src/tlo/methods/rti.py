@@ -497,7 +497,7 @@ def injrandomizer(number):
         injurydescription.rename(columns={injurydescription.columns[columnname]: "Injury " + str(columnname + 1)},
                                  inplace=True)
 
-    injurydescription = injurydescription.fillna('na')
+    injurydescription = injurydescription.fillna("none")
     return injdf, injurydescription
 
 
@@ -825,64 +825,54 @@ class RTI(Module):
                                    'Injury status relating to road traffic injury: none, mild, moderate, severe',
                                    categories=['none', 'mild', 'severe'],
                                    ),
-        'rt_fracture': Property(Types.CATEGORICAL, 'fractured bone resulting from RTI',
-                                categories=['none', 'foot', 'hip', 'patella/tibia/fibula/ankle', 'pelvis',
-                                            'femur other than femoral neck', 'clavicle, scapula, humerus', 'hand/wrist',
-                                            'radius/ulna', 'vertebrae', 'fractured ribs', 'flail chest', 'mandible',
-                                            'nasal', 'zygomatic', 'unspfacial', 'basilar skull', 'unspskull'
-                                            ]),
-        'rt_fracture_diagnosed': Property(Types.BOOL, 'fractured bone diagnosed'),
-        'rt_fracture_treated': Property(Types.BOOL, 'fractured bone treated'),
-        'rt_dislocation': Property(Types.CATEGORICAL, 'dislocated joint resulting from RTI',
-                                   categories=['none', 'atlanto-axial subluxation', 'atlanto-occipital subluxation',
-                                               'hip', 'knee', 'shoulder']),
-        'rt_dislocation_diagnosed': Property(Types.BOOL, 'dislocated joint diagnosed'),
-        'rt_dislocation_treated': Property(Types.BOOL, 'dislocated joint treated'),
-        # 'rt_tbi': Property(Types.CATEGORICAL, 'traumatic brain injury resulting from RTI, mild, moderate, severe',
-        #                    categories=['none', 'epidural hematoma', 'subdural hemtaoma', 'subarachnoid haemorrhage',
-        #                                'contusion', 'intraventricular haemorrhage', 'diffuse axonal injury',
-        #                                'subgaleal hematoma', 'midline shift']),
-        'rt_tbi': Property(Types.BOOL, 'traumatic brain injury from RTI'),
-        'rt_tbi_diagnosed': Property(Types.BOOL, 'traumatic brain injury diagnosed'),
-        'rt_tbi_treated': Property(Types.BOOL, 'traumatic brain injury treated'),
-        'rt_tbi_recovered': Property(Types.BOOL, 'recovery from traumatic brain injury'),
-        'rt_soft': Property(Types.CATEGORICAL, 'soft tissue injury resulting from RTI.',
-                            categories=['none', 'unspface', 'vertebral artery laceration', 'pharynx contusion',
-                                        'chest wall lacerations/avulsions', 'closed pneumothorax',
-                                        'open pneumothorax', 'subcutaneous emphysema']),
-        'rt_soft_diagnosed': Property(Types.BOOL, 'soft tissue injury resulting from RTI diagnosed'),
-        'rt_soft_treated': Property(Types.BOOL, 'soft tissue injury treated'),
-        # 'rt_ioi': Property(Types.CATEGORICAL, 'internal organ injury resulting from RTI.',
-        #                    categories=['none', 'lung contusion', 'diaphragm rupture', 'spleen', 'urinary bladder',
-        #                                'intestines', 'liver', 'urethra', 'stomach', 'colon', 'kidney']),
-        'rt_ioi': Property(Types.BOOL, 'internal organ injury'),
-        'rt_ioi_diagnosed': Property(Types.BOOL, 'internal organ injury diagnosed'),
-        'rt_ioi_treated': Property(Types.BOOL, 'internal organ injury treated'),
-        'rt_intbleed': Property(Types.CATEGORICAL, 'internal bleeding resulting from RTI.',
-                                categories=['none', 'sternomastoid m. hemorrhage',
-                                            'supraclavicular triangle Hemorrhage', 'posterior triangle hemorrhage',
-                                            'anterior vertebral vessel hemorrhage', 'hematoma in carotid sheath',
-                                            'carotid sheath hemorrhage', 'neck muscle hemorrhage',
-                                            'chest wall bruises/haematoma', 'haemothorax']),
-        'rt_intbleed_diagnosed': Property(Types.BOOL, 'internal bleeding diagnosed'),
-        'rt_intbleed_treated': Property(Types.BOOL, 'internal bleeding treated'),
-        # 'rt_sci': Property(Types.CATEGORICAL, 'spinal cord injury from RTI at neck/below neck level',
-        #                    categories=['none', 'neck', 'below neck']),
-        'rt_sci': Property(Types.BOOL, 'spinal cord injury from RTI'),
-        'rt_sci_diagnosed': Property(Types.BOOL, 'spinal cord injury from RTI diagnosed'),
-        'rt_sci_treated': Property(Types.BOOL, 'spinal cord injury from RTI treated'),
-        'rt_sci_recovered': Property(Types.BOOL, 'recovery from spinal cord injury'),
-        'rt_amp': Property(Types.CATEGORICAL, 'amputation from RTI.',
-                           categories=['none', 'thumb', 'finger', 'unilateral upper limb', 'bilateral upper limb',
-                                       'toe', 'unilateral lower limb', 'bilateral lower limb']),
-        'rt_amp_diagnosed': Property(Types.BOOL, 'amputation from RTI diagnosed'),
-        'rt_amp_treated': Property(Types.BOOL, 'amputation from RTI treated'),
-        'rt_wound': Property(Types.BOOL, 'wound from rti.'),
-        'rt_wound_diagnosed': Property(Types.BOOL, 'wound diagnosed'),
-        'rt_wound_treated': Property(Types.BOOL, 'wound treated'),
-        'rt_eye_inj': Property(Types.BOOL, 'eye injury from RTI'),
-        'rt_eye_inj_diagnosed': Property(Types.BOOL, 'eye injury from RTI diagnosed'),
-        'rt_eye_inj_treated': Property(Types.BOOL, 'eye injury from RTI treated'),
+        'rt_injury_1': Property(Types.CATEGORICAL, 'Codes for injury 1 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
+        'rt_injury_2': Property(Types.CATEGORICAL, 'Codes for injury 2 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
+        'rt_injury_3': Property(Types.CATEGORICAL, 'Codes for injury 3 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
+        'rt_injury_4': Property(Types.CATEGORICAL, 'Codes for injury 4 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
+        'rt_injury_5': Property(Types.CATEGORICAL, 'Codes for injury 5 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
+        'rt_injury_6': Property(Types.CATEGORICAL, 'Codes for injury 6 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
+        'rt_injury_7': Property(Types.CATEGORICAL, 'Codes for injury 7 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
+        'rt_injury_8': Property(Types.CATEGORICAL, 'Codes for injury 8 from RTI',
+                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
+                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
+                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
+                                            '822', '882', '883', '884', '8101']),
         'rt_perm_disability': Property(Types.BOOL, 'whether the injuries from an RTI result in permanent disability'),
         'rt_polytrauma': Property(Types.BOOL, 'polytrauma from RTI'),
         'rt_imm_death': Property(Types.BOOL, 'death at scene True/False'),
@@ -1240,37 +1230,14 @@ class RTI(Module):
 
         df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
         df.loc[df.is_alive, 'rt_injseverity'] = "none"  # default: no one has been injured in a RTI
-        df.loc[df.is_alive, 'rt_fracture'] = "none"  # default: no fractures at birth
-        df.loc[df.is_alive, 'rt_fracture_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_fracture_treated'] = False
-        df.loc[df.is_alive, 'rt_dislocation'] = "none"  # default: no dislocations at birth
-        df.loc[df.is_alive, 'rt_dislocation_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_dislocation_treated'] = False
-        df.loc[df.is_alive, 'rt_tbi'] = False  # default: no traumatic brain injury at birth
-        df.loc[df.is_alive, 'rt_tbi_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_tbi_treated'] = False
-        df.loc[df.is_alive, 'rt_tbi_recovered'] = False
-        df.loc[df.is_alive, 'rt_soft'] = "none"  # default: no soft tissue injury at birth
-        df.loc[df.is_alive, 'rt_soft_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_soft_treated'] = False
-        df.loc[df.is_alive, 'rt_ioi'] = False  # default: no internal organ injury at birth
-        df.loc[df.is_alive, 'rt_ioi_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_ioi_treated'] = False
-        df.loc[df.is_alive, 'rt_intbleed'] = "none"  # default: no internal bleeding at birth
-        df.loc[df.is_alive, 'rt_intbleed_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_intbleed_treated'] = False
-        df.loc[df.is_alive, 'rt_sci'] = False
-        df.loc[df.is_alive, 'rt_sci_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_sci_treated'] = False
-        df.loc[df.is_alive, 'rt_amp'] = "none"
-        df.loc[df.is_alive, 'rt_amp_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_amp_treated'] = False
-        df.loc[df.is_alive, 'rt_eye_inj'] = False
-        df.loc[df.is_alive, 'rt_eye_inj_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_eye_inj_treated'] = False
-        df.loc[df.is_alive, 'rt_wound'] = False
-        df.loc[df.is_alive, 'rt_wound_diagnosed'] = False
-        df.loc[df.is_alive, 'rt_wound_treated'] = False
+        df.loc[df.is_alive, 'rt_injury_1'] = "none"
+        df.loc[df.is_alive, 'rt_injury_2'] = "none"
+        df.loc[df.is_alive, 'rt_injury_3'] = "none"
+        df.loc[df.is_alive, 'rt_injury_4'] = "none"
+        df.loc[df.is_alive, 'rt_injury_5'] = "none"
+        df.loc[df.is_alive, 'rt_injury_6'] = "none"
+        df.loc[df.is_alive, 'rt_injury_7'] = "none"
+        df.loc[df.is_alive, 'rt_injury_8'] = "none"
         df.loc[df.is_alive, 'rt_polytrauma'] = False
         df.loc[df.is_alive, 'rt_perm_disability'] = False
         df.loc[df.is_alive, 'rt_imm_death'] = False  # default: no one is dead on scene of crash
@@ -1296,36 +1263,14 @@ class RTI(Module):
         df.at[child_id, 'rt_road_traffic_inc'] = False
         df.at[child_id, 'rt_injseverity'] = "none"  # default: no one has been injured in a RTI
         df.at[child_id, 'rt_imm_death'] = False  # default: no one is dead on scene of crash
-        df.at[child_id, 'rt_fracture'] = "none"  # default: no fractures at birth
-        df.at[child_id, 'rt_fracture_diagnosed'] = False
-        df.at[child_id, 'rt_fracture_treated'] = False
-        df.at[child_id, 'rt_dislocation'] = "none"  # default: no dislocations at birth
-        df.at[child_id, 'rt_dislocation_diagnosed'] = False
-        df.at[child_id, 'rt_dislocation_treated'] = False
-        df.at[child_id, 'rt_tbi'] = False  # default: no traumatic brain injury at birth
-        df.at[child_id, 'rt_tbi_diagnosed'] = False
-        df.at[child_id, 'rt_tbi_treated'] = False
-        df.at[child_id, 'rt_soft'] = "none"  # default: no soft tissue injury at birth
-        df.at[child_id, 'rt_soft_diagnosed'] = False
-        df.at[child_id, 'rt_soft_treated'] = False
-        df.at[child_id, 'rt_ioi'] = "none"  # default: no internal organ injury at birth
-        df.at[child_id, 'rt_ioi_diagnosed'] = False
-        df.at[child_id, 'rt_ioi_treated'] = False
-        df.at[child_id, 'rt_intbleed'] = "none"  # default: no internal bleeding at birth
-        df.at[child_id, 'rt_intbleed_diagnosed'] = False
-        df.at[child_id, 'rt_intbleed_treated'] = False
-        df.at[child_id, 'rt_sci'] = False
-        df.at[child_id, 'rt_sci_diagnosed'] = False
-        df.at[child_id, 'rt_sci_treated'] = False
-        df.at[child_id, 'rt_amp'] = "none"
-        df.at[child_id, 'rt_amp_diagnosed'] = False
-        df.at[child_id, 'rt_amp_treated'] = False
-        df.at[child_id, 'rt_eye_inj'] = False
-        df.at[child_id, 'rt_eye_inj_diagnosed'] = False
-        df.at[child_id, 'rt_eye_inj_treated'] = False
-        df.at[child_id, 'rt_wound'] = False
-        df.at[child_id, 'rt_wound_diagnosed'] = False
-        df.at[child_id, 'rt_wound_treated'] = False
+        df.at[child_id, 'rt_injury_1'] = "none"
+        df.at[child_id, 'rt_injury_2'] = "none"
+        df.at[child_id, 'rt_injury_3'] = "none"
+        df.at[child_id, 'rt_injury_4'] = "none"
+        df.at[child_id, 'rt_injury_5'] = "none"
+        df.at[child_id, 'rt_injury_6'] = "none"
+        df.at[child_id, 'rt_injury_7'] = "none"
+        df.at[child_id, 'rt_injury_8'] = "none"
         df.at[child_id, 'rt_polytrauma'] = False
         df.at[child_id, 'rt_med_int'] = False  # default: no one has a had medical intervention
         df.at[child_id, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
@@ -1482,12 +1427,20 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, 'rt_med_int'] = False
         # set rt_polytrauma back to false after death
         df.loc[df.is_alive, 'rt_polytrauma'] = False
+        # set rt_perm_disability back to false after death
+        df.loc[df.is_alive & (~df.rt_road_traffic_inc), 'rt_perm_disability'] = False
+        # reset rt_injuries properties after death
+        df.loc[df.is_alive, 'rt_injury_1'] = "none"
+        df.loc[df.is_alive, 'rt_injury_2'] = "none"
+        df.loc[df.is_alive, 'rt_injury_3'] = "none"
+        df.loc[df.is_alive, 'rt_injury_4'] = "none"
+        df.loc[df.is_alive, 'rt_injury_5'] = "none"
+        df.loc[df.is_alive, 'rt_injury_6'] = "none"
+        df.loc[df.is_alive, 'rt_injury_7'] = "none"
+        df.loc[df.is_alive, 'rt_injury_8'] = "none"
 
         # ----------- UPDATING OF RTI OVER TIME ----------------
         rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc & ~df.rt_imm_death]
-        # rt_current_dead_ind = df.index[~df.is_alive]
-        # print('dead_idx')
-        # print(rt_current_dead_ind)
         rt_current_mild_inj_ind = df.index[df.is_alive & (df.rt_injseverity is "mild") & (df.rt_imm_death is False)]
         rt_current_sev_inj_ind = df.index[df.is_alive & (df.rt_injseverity is "severe") & (df.rt_imm_death is False)]
         rt_current_imm_dead = df.index[df.is_alive & (df.rt_injseverity is not "none") & (df.rt_imm_death is True)]
@@ -1510,11 +1463,6 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ========================= Take those involved in a RTI and assign some to death ==============================
         # Update to say they have been involved in a rti
-        # print('people not in rti')
-        # print(rt_current_non_ind)
-        # print('people selected for rti')
-        # print(selected_for_rti)
-        # in_rti_idx = rt_current_non_ind[selected_for_rti]
 
         df.loc[selected_for_rti, 'rt_road_traffic_inc'] = True
         df.loc[selected_for_rti, 'rt_date_inj'] = now
@@ -1524,7 +1472,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
 
         for individual_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, individual_id, "Road_Traffic_Incident_imm_death"),
+                demography.InstantaneousDeath(self.module, individual_id, "RTI_imm_death"),
                 self.sim.date
             )
 
@@ -1534,18 +1482,32 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         selected_for_rti_inj = selected_for_rti_inj.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
 
         mortality, description = injrandomizer(len(selected_for_rti_inj))
-
-        # mortality.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/'
-        #                  'test_mortality.csv')
+        description = description.replace('nan', 'none')
+        description = description.set_index(selected_for_rti_inj.index)
 
         selected_for_rti_inj = selected_for_rti_inj.join(mortality.set_index(selected_for_rti_inj.index))
 
         selected_for_rti_inj = selected_for_rti_inj.join(description.set_index(selected_for_rti_inj.index))
-        # selected_for_rti_inj.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/'
-        #                             'test_injuries.csv')
-        # ============================ Injury severity classification============================================
 
-        # todo:  get the injuries out of the description data frame
+        for ninjuries in range(0, len(description.columns)):
+            for person_id in selected_for_rti_inj.index:
+                if ninjuries == 0:
+                    df.loc[person_id, 'rt_injury_1'] = description.loc[person_id, 'Injury 1']
+                if ninjuries == 1:
+                    df.loc[person_id, 'rt_injury_2'] = description.loc[person_id, 'Injury 2']
+                if ninjuries == 2:
+                    df.loc[person_id, 'rt_injury_3'] = description.loc[person_id, 'Injury 3']
+                if ninjuries == 3:
+                    df.loc[person_id, 'rt_injury_4'] = description.loc[person_id, 'Injury 4']
+                if ninjuries == 4:
+                    df.loc[person_id, 'rt_injury_5'] = description.loc[person_id, 'Injury 5']
+                if ninjuries == 5:
+                    df.loc[person_id, 'rt_injury_6'] = description.loc[person_id, 'Injury 6']
+                if ninjuries == 6:
+                    df.loc[person_id, 'rt_injury_7'] = description.loc[person_id, 'Injury 7']
+                if ninjuries == 7:
+                    df.loc[person_id, 'rt_injury_8'] = description.loc[person_id, 'Injury 8']
+        # ============================ Injury severity classification============================================
 
         # ============================== Non specific injury updates ===============================================
         # Find those with mild injuries and update the rt_roadtrafficinj property so they have a mild injury
@@ -1558,105 +1520,369 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         polytrauma_idx = selected_for_rti_inj.index[selected_for_rti_inj['Polytrauma'] is True]
         df.loc[polytrauma_idx, 'rt_polytrauma'] = True
 
-        # ============================ Injury specific updates ====================================================
-
-        # ------ Find those with traumatic brain injury and update rt_tbi to match and call the TBI treatment ------
-        headinj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
+        # =+=+=+=+=+=+=+=+=+=+=+=+=+=+ Injury specific updates =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+        # =+=+=+=+=+=+=+=+=+=+=+=+=+=+ Assign the DALY weights =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+        # =============================== AIS region 1: head ==========================================================
+        # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ---------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('112').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            for injuredperson in idx1:
+                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_unspecified_skull_fracture
+        inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('113').any(), axis=1)
+        if len(inj2) > 0:
+            idx2 = inj2.index[inj2]
+            for injuredperson in idx2:
+                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_basilar_skull_fracture
+        # ------ Find those with traumatic brain injury and update rt_tbi to match and call the TBI treatment ---------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
         dalyweightsfor133 = [self.daly_wt_subarachnoid_hematoma, self.daly_wt_brain_contusion,
                              self.daly_wt_intraventricular_haemorrhage, self.daly_wt_subgaleal_hematoma]
         probabilities = [0.2, 0.66, 0.03, 0.11]
-        if len(headinj1) > 0:
-            idx1 = headinj1.index[headinj1]
-            for headinjperson in idx1:
-                df.loc[headinjperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor133,
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            for injuredperson in idx1:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor133,
                                                                                  p=probabilities)
-        headinj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
+        inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
         dalyweightsfor134 = [self.daly_wt_epidural_hematoma, self.daly_wt_subdural_hematoma]
         probabilities = [0.52, 0.48]
-        if len(headinj2) > 0:
-            idx2 = headinj2.index[headinj2]
-            for headinjperson in idx2:
-                df.loc[headinjperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor134, p=probabilities)
+        if len(inj2) > 0:
+            idx2 = inj2.index[inj2]
+            for injuredperson in idx2:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor134, p=probabilities)
 
-        headinj3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
-        if len(headinj3) > 0:
-            idx3 = headinj3.index[headinj3]
+        inj3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
+        if len(inj3) > 0:
+            idx3 = inj3.index[inj3]
             df.loc[idx3, 'rt_disability'] += self.daly_wt_diffuse_axonal_injury
 
-        if len(headinj1) + len(headinj2) + len(headinj3) > 1:
+        if len(inj1) + len(inj2) + len(inj3) > 0:
             idx = idx1.union(idx2)
             idx = idx.union(idx3)
-            df.loc[idx, 'rt_tbi'] = True
             for person_id_to_start_treatment in idx:
                 event = HSI_RTI_MedicalIntervention(self.module, person_id=person_id_to_start_treatment)
                 target_date = self.sim.date + DateOffset(days=int(0))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
                                                                     tclose=None)
+        # =============================== AIS region 2: face ==========================================================
+        # ----------------------- Find those with facial fractures and assign DALY weight -----------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('211').any(), axis=1)
+        inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('212').any(), axis=1)
+        if len(inj1) + len(inj2) > 0:
+            idx1 = inj1.index[inj1]
+            idx2 = inj2.index[inj2]
+            idx = idx1.union(idx2)
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_facial_fracture
 
-        # # ------------ Find those with spinal cord injury and update request treatment -----------------------------
-        # sci1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
-        # sci2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('674').any(), axis=1)
-        # sci3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('675').any(), axis=1)
-        # sci4 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('676').any(), axis=1)
-        # if len(sci1) + len(sci2) + len(sci3) + len(sci4) > 1:
-        #     idx1 = sci1.index[sci1]
-        #     idx2 = sci1.index[sci2]
-        #     idx3 = sci1.index[sci3]
-        #     idx4 = sci1.index[sci4]
-        #     idx = idx1.union(idx2)
-        #     idx = idx.union(idx3)
-        #     idx = idx.union(idx4)
-        #     df.loc[idx, 'rt_sci'] = True
-        #     sciinj = selected_for_rti_inj.iloc[idx]
-        #     for person_id_to_start_treatment in sciinj:
-        #         event = HSI_RTI_Spinal_Cord_Injury(self.module, person_id=person_id_to_start_treatment)
-        #         target_date = self.sim.date + DateOffset(days=int(0))
-        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
-        #                                                             tclose=None)
-        # # ------------ Find those with abdominal internal organ injury and update rt_ioi to match -----------------
-        # abd1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('552').any(), axis=1)
-        # abd2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('553').any(), axis=1)
-        # abd3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('554').any(), axis=1)
-        # if len(abd1) + len(abd2) + len(abd3) > 1:
-        #     idx1 = abd1.index[abd1]
-        #     idx2 = abd2.index[abd2]
-        #     idx3 = abd3.index[abd3]
-        #     idx = idx1.union(idx2)
-        #     idx = idx.union(idx3)
-        #
-        #     df.loc[idx, 'rt_abd'] = True
-        #     abdinj = selected_for_rti_inj.iloc[idx]
-        #     for person_id_to_start_treatment in abdinj:
-        #         event = HSI_RTI_Abdominal_Oragan_Injury(self.module, person_id=person_id_to_start_treatment)
-        #         target_date = self.sim.date + DateOffset(days=int(0))
-        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
-        #                                                             tclose=None)
+        # ----------------- Find those with lacerations/soft tissue injuries and assign DALY weight -------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('2101').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
 
-        # ------ Find those with fractures and update rt_fracture property to reflect the injury ------------------
-        # fracture_idx = selected_for_rti_inj.index[selected_for_rti_inj['Injury category'].str.find('1') is True]
-        # frac_loc_idx = fracture_idx
-        # df.loc[fracture_idx, 'rt_fracture'] =
-        # Find those with dislocations and update rt_dislocation property to reflect the injury
-        # disloc_idx = selected_for_rti_inj.index[selected_for_rti_inj['Injury category'].str.match('2') is True]
-        # df.loc[disloc_idx, 'rt_dislocation'] = True
-        #
-        # # Find those with soft tissue injury and update rt_soft to reflect
-        # soft_idx = selected_for_rti_inj.index[selected_for_rti_inj['Injury category'].str.match('4') is True]
-        # df.loc[soft_idx, 'rt_soft'] = True
-        #
-        # # Find those with internal bleeding and update rt_intbleed to match
-        # int_bleed_idx = selected_for_rti_inj[selected_for_rti_inj['Injury category'].str.match('6') is True]
-        # df.loc[int_bleed_idx, 'rt_intbleed'] = True
-        #
-        # # Find those with amputations and update rt_amp to match
-        # amp_idx = selected_for_rti_inj[selected_for_rti_inj['Injury category'].str.match('8') is True]
-        # df.loc[amp_idx, 'rt_amp'] = True
-        #
-        # # Find those with eye injuries and update rt_eye_inj to match
-        # eye_idx = selected_for_rti_inj[selected_for_rti_inj['Injury category'].str.match('9') is True]
-        # df.loc[eye_idx, 'rt_eye_inj'] = True
+        # ----------------- Find those with eye injuries and assign DALY weight ---------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('291').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_eye_injury
 
-        # ================================ Predict mortality for those with treatment ==================================
+        # =============================== AIS region 3: Neck ==========================================================
+        # -------------------------- soft tissue injuries and internal bleeding----------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('342').any(), axis=1)
+        inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('343').any(), axis=1)
+        inj3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('361').any(), axis=1)
+        inj4 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('363').any(), axis=1)
+        if len(inj1) + len(inj2) + len(inj3) + len(inj4) > 0:
+            idx1 = inj1.index[inj1]
+            idx2 = inj2.index[inj2]
+            idx3 = inj3.index[inj3]
+            idx4 = inj4.index[inj4]
+            idx = idx1.union(idx2)
+            idx = idx.union(idx3)
+            idx = idx.union(idx4)
+            df.loc[idx, 'rt_disability'] += self.daly_wt_neck_internal_bleeding
+
+        # -------------------------------- neck vertebrae dislocation ------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('322').any(), axis=1)
+        inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('323').any(), axis=1)
+        if len(inj1) + len(inj2) > 0:
+            idx1 = inj1.index[inj1]
+            idx2 = inj2.index[inj2]
+            idx = idx1.union(idx2)
+            df.loc[idx, 'rt_disability'] += self.daly_wt_neck_dislocation
+
+        # ================================== AIS region 4: Thorax =====================================================
+        # --------------------------------- fractures & flail chest ---------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('412').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_rib_fracture
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('414').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_flail_chest
+        # ------------------------------------ Internal bleeding ------------------------------------------------------
+        # chest wall bruises/hematoma
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('461').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_chest_wall_bruises_hematoma
+        # hemothorax
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('463').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_hemothorax
+        # -------------------------------- Internal organ injury ------------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('453').any(), axis=1)
+        dalyweightsfor453 = [self.daly_wt_diaphragm_rupture, self.daly_wt_lung_contusion]
+        probabilities = [0.77, 0.23]
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor453, p=probabilities)
+        # ----------------------------------- Soft tissue injury ------------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('441').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_chest_wall_laceration
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('442').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_surgical_emphysema
+        # ---------------------------------- Pneumothoraxs ------------------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('441').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_closed_pneumothorax
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('443').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_open_pneumothorax
+
+        # ================================== AIS region 5: Abdomen ====================================================
+        # Intestine, stomache and colon
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('552').any(), axis=1)
+        # Spleen, Urinary bladder, Liver, Urethra, Diaphragm
+        inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('553').any(), axis=1)
+        # Kidney
+        inj3 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('554').any(), axis=1)
+
+        if len(inj1) + len(inj2) + len(inj3) > 0:
+            idx1 = inj1.index[inj1]
+            idx2 = inj2.index[inj2]
+            idx3 = inj2.index[inj3]
+            idx = idx1.union(idx2)
+            idx = idx.union(idx3)
+            df.loc[idx, 'rt_disability'] += self.daly_wt_abd_internal_organ_injury
+
+        # =================================== AIS region 6: spine =====================================================
+        # ----------------------------------- vertebrae fracture ------------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('612').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_vertebrae_fracture
+        # ---------------------------------- Spinal cord injuries -----------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
+        dalyweightsfor673 = [self.daly_wt_spinal_cord_lesion_neck_without_treatment,
+                             self.daly_wt_spinal_cord_lesion_below_neck_without_treatment]
+        probabilities = [0.28, 0.72]
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor673,
+                                                                                 p=probabilities)
+
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('674').any(), axis=1)
+        inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('675').any(), axis=1)
+
+        dalyweightsfor674675 = [self.daly_wt_spinal_cord_lesion_neck_without_treatment,
+                                self.daly_wt_spinal_cord_lesion_below_neck_without_treatment]
+        probabilities = [0.39, 0.61]
+        if len(inj1) + len(inj2) > 0:
+            idx1 = inj1.index[inj1]
+            idx2 = inj2.index[inj2]
+            idx = idx1.union(idx2)
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor674675,
+                                                                                 p=probabilities)
+
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('676').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_spinal_cord_lesion_neck_without_treatment
+
+        # ============================== AIS body region 7: upper extremities ======================================
+        # ------------------------------------------ fractures ------------------------------------------------------
+        # Fracture to Clavicle, scapula, humerus, Hand/wrist, Radius/ulna
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('712').any(), axis=1)
+        dalyweightsfor712 = [self.daly_wt_clavicle_scapula_humerus_fracture,
+                             self.daly_wt_hand_wrist_fracture_without_treatment,
+                             self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment]
+        probabilities = [0.22, 0.59, 0.19]
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor712,
+                                                                                 p=probabilities)
+        # ------------------------------------ Dislocation of shoulder ---------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('722').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_dislocated_shoulder
+        # ------------------------------------------ Amputations -----------------------------------------------------
+        # Amputation of fingers, Unilateral upper limb amputation, Thumb amputation
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('782').any(), axis=1)
+        dalyweightsfor782 = [self.daly_wt_amputated_finger,
+                             self.daly_wt_unilateral_arm_amputation_without_treatment,
+                             self.daly_wt_amputated_thumb]
+        probabilities = [0.66, 0.09, 0.25]
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor782,
+                                                                                 p=probabilities)
+        # Bilateral upper limb amputation
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('783').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_bilateral_arm_amputation_without_treatment
+        # ----------------------------------- cuts and bruises --------------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('7101').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            # todo: create daly_wt for generic soft tissue
+            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+
+        # ============================== AIS body region 8: Lower extremities ========================================
+        # ------------------------------------------ Fractures -------------------------------------------------------
+        # Broken foot
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('811').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_foot_fracture_short_term_with_without_treatment
+        # Broken patella, tibia, fibula
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('812').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_patella_tibia_fibula_fracture_with_treatment
+        # Broken Hip, Pelvis, Femur other than femoral neck
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('813').any(), axis=1)
+        dalyweightsfor813 = [self.daly_wt_hip_fracture_short_term_with_without_treatment,
+                             self.daly_wt_pelvis_fracture_short_term,
+                             self.daly_wt_femur_fracture_short_term]
+        probabilities = [0.2, 0.2, 0.6]
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor813,
+                                                                                 p=probabilities)
+        # -------------------------------------- Dislocations -------------------------------------------------------
+        # Dislocated hip, knee
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('822').any(), axis=1)
+        dalyweightsfor822 = [self.daly_wt_dislocated_hip,
+                             self.daly_wt_dislocated_knee]
+        probabilities = [0.94, 0.06]
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            for injuredperson in idx:
+                df.loc[injuredperson, 'rt_disability'] += self.module.rng.choice(dalyweightsfor822,
+                                                                                 p=probabilities)
+        # --------------------------------------- Amputations ------------------------------------------------------
+        # toes
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('882').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_amputated_toes
+        # Unilateral lower limb amputation
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('883').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_unilateral_lower_limb_amputation_without_treatment
+        # Bilateral lower limb amputation
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('884').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_bilateral_lower_limb_amputation_without_treatment
+        # ------------------------------------ cuts and bruises -----------------------------------------------------
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('8101').any(), axis=1)
+        if len(inj1) > 0:
+            idx = inj1.index[inj1]
+            df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+
+        DALYweightoverlimit = df.index[df['rt_disability'] > 1]
+        df.loc[DALYweightoverlimit, 'rt_disability'] = 1
+
+        # ================================== decide where they will go ===============================================
+        # todo: send them where they need to go
+        # Need to create a function that will assess the severity of the injuries a person has and assign them a
+        # required facility level. To do this we need to find what is
+        # required to treat each injury code, then search through a person's injuries, finding the facilities and
+        # resources needed to treat the injuries and then send them to the lowest level of facility which has the
+        # treatments.
+        #
+        # Injury code - description
+        # '112' -  skull fracture unspecified
+        # Requires - x-ray, ct scan, MRI scan, pain killers, sometimes surgery
+        #
+        # Injury code - description
+        # '113' - basilar skull fracture
+        # Requires - x-ray, ct scan, MRI scan, pain killers, sometimes surgery
+        #
+        # Injury code - description
+        # '133' - TBI, Subarachnoid haemorrhage (20%), Contusion (66%), Intraventricular haemorrhage (3%),
+        # Subgaleal hematoma (11%)
+        # Requires - Some kind of scan, ct or MRI, can require major surgery, can require steroids, pain killers
+        #
+        # Injury code - description
+        # '134' - TBI, Epidural hematoma (52%), Subdural hematoma (48%)
+        # Requires - Some kind of scan, ct or MRI, can require major surgery, can require steroids, pain killers
+        #
+        # Injury code - description
+        # '135' - TBI diffuse axonal injury
+        # Requires - Some kind of scan, ct or MRI, can require major surgery, can require steroids, pain killers
+        #
+        # '211' -
+        # '212'
+        # '2101'
+        # '291'
+        # '342'
+        # '343'
+        # '361'
+        # '363'
+        # '322'
+        # '323'
+        # '412'
+        # '414'
+        # '461'
+        # '463'
+        # '453'
+        # '441'
+        # '442'
+        # '443'
+        # '552'
+        # '553'
+        # '554'
+        # '612'
+        # '673'
+        # '674'
+        # '675'
+        # '676'
+        # '712'
+        # '722'
+        # '782'
+        # '783' bilateral amputation, upper limb
+        # '7101' lacerations, upper limb
+        # '811'
+        # '812'
+        # '813'
+        # '822'
+        # '882'
+        # '883'
+        # '884' - bilateral lower limb amputation
+        # '8101' - lacerations, lower limb
 
 
 
@@ -1682,14 +1908,18 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Make some summary statitics
         df = population.props
         n_in_RTI = (df.rt_road_traffic_inc).sum()
+        n_perm_disabled = (df.is_alive & df.rt_perm_disability).sum()
         n_alive = df.is_alive.sum()
         n_not_injured = (df.is_alive & ~df.rt_road_traffic_inc).sum()
         n_immediate_death = df.rt_imm_death.sum()
+        # n_head_injuries = (df.is_alive & df.rt_tbi).sum()
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
             'number not injured': n_not_injured,
             'number alive': n_alive,
-            'number immediate deaths': n_immediate_death
+            'number immediate deaths': n_immediate_death,
+            # 'number head injuries': n_head_injuries,
+            'number permanently disabled': n_perm_disabled
         }
 
         logger.info('%s|summary_1m|%s', self.sim.date, dict_to_output)
@@ -1725,7 +1955,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
 
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
-        #   - get an 'empty' foot    np.savetxt(r'C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/rtidtyoes.txt', a):
+        #   - get an 'empty' foot
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         #   - update to reflect the appointments that are required
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
@@ -1749,16 +1979,12 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         df.at[person_id, 'rt_med_int'] = True
-        df.at[person_id, 'rt_tbi_diagnosed'] = True
-        df.at[person_id, 'rt_tbi_treated'] = True
-        logger.debug('@@@@@@@@@@ TBI Treatment started !!!!!!')
+        logger.debug('@@@@@@@@@@ Medical intervention started !!!!!!')
         prob_dis = np.random.random()
 
         if prob_dis < 0.81:
             df.at[person_id, 'rt_perm_disability'] = True
-            logger.debug('@@@@@@@@@@ TBI Treatment started but still disabled!!!!!!')
-        else:
-            df.at[person_id, 'rt_tbi_recovered'] = True
+            logger.debug('@@@@@@@@@@ Medical intervention started but still disabled!!!!!!')
         pass
         self.sim.schedule_event(RTIMedicalInterventionDeathEvent(self.module, person_id), self.sim.date +
                                 DateOffset(days=0))
@@ -1766,7 +1992,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
                      self.sim.date, person_id)
 
     def did_not_run(self):
-        logger.debug('HSI_RTI_Traumatic_Brain_Injury: did not run')
+        logger.debug('HSI_RTI: did not run')
 
         # todo: find out the probability of death without treatment
         #
@@ -1774,139 +2000,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         #
 
         pass
-
-
-class HSI_RTI_Spinal_Cord_Injury(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event.
-    An appointment of a person who has experienced spinal cord injury due to a road traffic injury,
-    requiring the resources found at a level 1+ facility such as:
-
-    Diagnostic tools -
-
-    (Computed) tomograpy - a.k.a ct scan
-    MRI scan
-    Diagnostic radiography procedures e.g. x-rays
-
-    Treatments -
-    Anti inflammetory drugs
-    Major surgery
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, RTI)
-
-        # Define the call on resources of this treatment event: Time of Officers (Appointments)
-        #   - get an 'empty' footprint:
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        #   - update to reflect the appointments that are required
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-        the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-        the_appt_footprint['MRI'] = 1  # This appointment requires a MRI scan
-        the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
-        the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
-
-        # Define the facilities at which this event can occur (only one is allowed)
-        # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
-        #                            ['Facility_Level']))
-        the_accepted_facility_level = 1
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'RTI_Spinal_cord_injury_Interaction'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        p = RTI.module.parameters
-
-        df = self.sim.population.props
-
-        df.at[person_id, 'rt_sci_diagnosed'] = True
-        df.at[person_id, 'rt_sci_treated'] = True
-        logger.debug('@@@@@@@@@@ SCI Treatment started !!!!!!')
-        prob_dis = np.random.random()
-
-        if prob_dis < p['prop_perm_disability_with_treatment_sci']:
-            df.at[person_id, 'rt_perm_disability'] = True
-            logger.debug('@@@@@@@@@@ SCI Treatment started but still disabled!!!!!!')
-        else:
-            df.at[person_id, 'rt_sci_recovered'] = True
-        pass
-
-    def did_not_run(self):
-        logger.debug('HSI_RTI_Spinal_Cord_Injury: did not run')
-
-        # todo: find out the probability of death without treatment
-        #
-        #
-        #
-
-        pass
-
-
-class HSI_RTI_Abdominal_Oragan_Injury(HSI_Event, IndividualScopeEventMixin):
-    """This is a Health System Interaction Event.
-    An appointment of a person who has experienced an abdominal internal organ injury due to a road traffic injury,
-    requiring the resources found at a level 1+ facility such as:
-
-    Diagnostic tools -
-
-    (Computed) tomograpy - a.k.a ct scan
-    MRI scan
-    Diagnostic radiography procedures e.g. x-rays
-
-    Treatments -
-    Anti inflammetory drugs
-    Major surgery
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, RTI)
-
-        # Define the call on resources of this treatment event: Time of Officers (Appointments)
-        #   - get an 'empty' footprint:
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        #   - update to reflect the appointments that are required
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-        the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-        the_appt_footprint['MRI'] = 1  # This appointment requires a MRI scan
-        the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
-
-        # Define the facilities at which this event can occur (only one is allowed)
-        # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
-        #                            ['Facility_Level']))
-        the_accepted_facility_level = 1
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'RTI_abdominal_organ_injury_Interaction'  # This must begin with the module name
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        p = RTI.module.parameters
-
-        df = self.sim.population.props
-
-        df.at[person_id, 'rt_abd_diagnosed'] = True
-        df.at[person_id, 'rt_abd_treated'] = True
-
-        logger.debug('@@@@@@@@@@ ABD Treatment started !!!!!!')
-
-    def did_not_run(self):
-        logger.debug('HSI_RTI_Abdominal_Oragan_Injury: did not run')
-
-        # todo: find out the probability of death without treatment
-        #
-        #
-        #
-
-        pass
-
 
 class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
     """This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
@@ -1925,15 +2018,17 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
         if df.loc[individual_id, 'rt_injseverity'] == 'mild':
             # todo: add these probabilities of death to the parameters sheet
             if randfordeath < 0.046:
+                df.loc[individual_id, 'rt_post_med_death'] = True
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='rti'), self.sim.date)
+                                                                      cause='RTI_with_med'), self.sim.date)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
                              individual_id, self.sim.date)
         elif df.loc[individual_id, 'rt_injseverity'] == 'severe':
             if randfordeath < 0.27:
+                df.loc[individual_id, 'rt_post_med_death'] = True
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='rti'), self.sim.date)
+                                                                      cause='RTI_with_med'), self.sim.date)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
                              individual_id, self.sim.date)
