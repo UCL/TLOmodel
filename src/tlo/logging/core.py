@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging as _logging
 from typing import Union
@@ -33,7 +34,7 @@ class Logger:
             self._std_logger.propagate = False
         self.name = self._std_logger.name
         # track keys given during structured logging
-        self.keys = set()
+        self.keys = dict()
         # populated by init_logging(simulation)
         self.simulation = None
         # to ensure only structured or oldstyle logging used for a single module
@@ -107,19 +108,22 @@ class Logger:
         header = {}
         if key not in self.keys:
             # new log key, so create header json row
-            self.keys.add(key)
+            uuid = hashlib.md5(f"{self.name}+{key}".encode()).hexdigest()
+            self.keys[key] = uuid[:10]
+
             header = {"type": "header",
-                      "level": _logging.getLevelName(level),
                       "module": self.name,
                       "key": key,
+                      "uuid": self.keys[key],
+                      "level": _logging.getLevelName(level),
                       # using type().__name__ so both pandas and stdlib types can be used
                       "columns": {key: type(value).__name__ for key, value in data.items()},
                       "description": description}
 
+        uuid = self.keys[key]
+
         # create data json row
-        row = {"type": "data",
-               "module": self.name,
-               "key": key,
+        row = {"uuid": uuid,
                "date": getLogger('tlo').simulation.date.isoformat(),
                "values": list(data.values())}
 
@@ -145,7 +149,7 @@ class Logger:
 
     def _try_log_message(self, level, key, data, description):
         """Log strucured message, if key or data are None, then throw exception"""
-        if key and data:
+        if key is not None and data is not None:
             self._mixed_logging_check(is_structured=True)
             return self._log_message(level=level, key=key, data=data, description=description)
         raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
