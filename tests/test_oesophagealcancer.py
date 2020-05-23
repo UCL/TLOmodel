@@ -28,6 +28,7 @@ except NameError:
 
 # parameters for whole suite of tests:
 start_date = Date(2010, 1, 1)
+popsize = 1000
 
 # %% Construction of simulation objects:
 def make_simulation_healthsystemdisabled():
@@ -98,22 +99,22 @@ def incr_rates_of_progression_and_effect_of_treatment(sim):
     return sim
 
 
-# %% Tests:
-
-def check_dtypes(simulation):
+# %% Checks:
+def check_dtypes(sim):
     # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
+    df = sim.population.props
+    orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
 
 def check_configuration_of_population(sim):
 
-    # Further tests:
-    df = sim.population.props
+    # get df for alive persons:
+    df = sim.population.props.loc[sim.population.props.is_alive]
 
-    # check that the oc_status and oc_status_any_dysplasia_or_cancer properties always correspond:
-    assert (df.index[df.oc_status == 'none'] == df.index[~df.oc_status_any_dysplasia_or_cancer]).all()
+    # check that the oc_status and oc_status_any_dysplasia_or_cancer properties always correspond correctly:
+    assert set(df.loc[df.oc_status == 'none'].index) == set(df.loc[~df.oc_status_any_dysplasia_or_cancer].index)
+
+    x = df.loc[(df.oc_status == 'none') & (df.oc_status_any_dysplasia_or_cancer), ['oc_status', 'oc_status_any_dysplasia_or_cancer']]
 
     # check that no one under twenty has cancer
     assert not df.loc[df.age_years < 20].oc_status_any_dysplasia_or_cancer.any()
@@ -132,50 +133,105 @@ def check_configuration_of_population(sim):
     assert set(sim.modules['SymptomManager'].who_has('dysphagia')).issubset(df.index[df.oc_status!='none'])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
+    assert set(df.index[~pd.isnull(df.oc_date_diagnosis)]).issubset(df.index[df.oc_status_any_dysplasia_or_cancer])
     assert set(df.index[~pd.isnull(df.oc_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('dysphagia'))
     assert (df.loc[~pd.isnull(df.oc_date_diagnosis)].oc_date_diagnosis <= sim.date).all()
+
+    # check that date diagnosed is consistent with the age of the person (ie. not before they were 20.0
+    age_at_dx = (df.loc[~pd.isnull(df.oc_date_diagnosis)].oc_date_diagnosis - df.loc[~pd.isnull(df.oc_date_diagnosis)].date_of_birth)
+    assert all([int(x.days / 365.25) >= 20 for x in age_at_dx])
 
     # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.oc_date_treatment)]).issubset(df.index[~pd.isnull(df.oc_date_diagnosis)])
     assert (df.loc[~pd.isnull(df.oc_date_treatment)].oc_date_diagnosis <= df.loc[~pd.isnull(df.oc_date_treatment)].oc_date_treatment).all()
 
-    # check that that on palliative care are a subset of those diagnosed (and that the order of dates makes sense):
+    # check that those on palliative care are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.oc_date_palliative_care)]).issubset(df.index[~pd.isnull(df.oc_date_diagnosis)])
-    assert (df.loc[~pd.isnull(df.oc_date_palliative_care)].oc_date_diagnosis <= df.loc[~pd.isnull(df.oc_date_palliative_care)].oc_date_treatment).all()
+    assert (df.loc[~pd.isnull(df.oc_date_palliative_care)].oc_date_diagnosis <= df.loc[~pd.isnull(df.oc_date_palliative_care)].oc_date_diagnosis).all()
 
-
-# * treamtnt is none for all those w/o cancer and w/o diagnossi
-#
-# * at initiation, that date diagnosed is consistent with the age of the person
-#
-# * at initiation, that not treatment or dianogsis for those with none stages
-
-
-
+# %% Tests:
 def test_initial_config_of_pop_high_prevalence():
     """Tests of the the way the population is configured: with high initial prevalence values """
     sim = make_simulation_healthsystemdisabled()
     sim = make_high_init_prev(sim)
-    sim.make_initial_population(n=5000)
+    sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
-
 
 def test_initial_config_of_pop_zero_prevalence():
     """Tests of the the way the population is configured: with zero initial prevalence values """
     sim = make_simulation_healthsystemdisabled()
     sim = zero_out_init_prev(sim)
-    sim.make_initial_population(n=50000)
+    sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
 def test_initial_config_of_pop_usual_prevalence():
     """Tests of the the way the population is configured: with usual initial prevalence values"""
     sim = make_simulation_healthsystemdisabled()
-    sim.make_initial_population(n=50000)
+    sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
+def test_run_sim_from_high_prevalence():
+    """Run the simulation from the usual prevalence values and high rates of incidence and check configuration of
+    properties at the end"""
+    sim = make_simulation_healthsystemdisabled()
+    sim = make_high_init_prev(sim)
+    sim = incr_rates_of_progression_and_effect_of_treatment(sim)
+    sim.make_initial_population(n=popsize)
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+    sim.simulate(end_date=Date(2012, 1, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+
+
+
+
+# def test_check_progression_through_stages_is_happeneing():
+#     sim = make_simulation_healthsystemdisabled()
+#
+#     # set initial prevalence to only be in the initial stage (low_grade_dysplasia)
+#     sim = zero_out_init_prev(sim)
+#     # todoset box 1 to have something in
+#
+#
+#     # remove effect of treatment:
+#
+#
+#     sim = incr_rates_of_progression_and_effect_of_treatment(sim)
+#
+#     sim.make_initial_population(n=5000)
+#     check_dtypes(sim)
+#     check_configuration_of_population(sim)
+#     sim.simulate(end_date=Date(2015, 1, 1))
+#     check_dtypes(sim)
+#     check_configuration_of_population(sim)
+#
+#     # check that there are not some people in all the later stages:
+
+
+# def test_check_progression_through_stages_is_blocked_by_treatment():
+#     sim = make_simulation_healthsystemdisabled()
+#
+#     # set initial prevalence to only be in the initial stage (low_grade_dysplasia)
+#     sim = zero_out_init_prev(sim)
+#     # todoset box 1 to have something in
+#
+#     # let the effect of treatment be perfect; and let everyone get on treatment (how?)
+#
+#     sim = incr_rates_of_progression_and_effect_of_treatment(sim)
+#
+#     sim.make_initial_population(n=5000)
+#     check_dtypes(sim)
+#     check_configuration_of_population(sim)
+#     sim.simulate(end_date=Date(2015, 1, 1))
+#     check_dtypes(sim)
+#     check_configuration_of_population(sim)
+
+    # check that there are not some people in all the later stages:
 
 
 # def test_run_from_zero_init():
