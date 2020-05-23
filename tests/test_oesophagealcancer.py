@@ -32,6 +32,9 @@ popsize = 1000
 
 # %% Construction of simulation objects:
 def make_simulation_healthsystemdisabled():
+    """Make the simulation with:
+    * the demography module with the OtherDeathsPoll not running
+    """
     sim = Simulation(start_date=start_date)
     sim.seed_rngs(0)
 
@@ -50,6 +53,9 @@ def make_simulation_healthsystemdisabled():
     return sim
 
 def make_simulation_nohsi():
+    """Make the simulation with:
+    * the healthsystem enable but with no service availabilty (so no HSI run)
+    """
     sim = Simulation(start_date=start_date)
     sim.seed_rngs(0)
 
@@ -73,29 +79,53 @@ def zero_out_init_prev(sim):
     sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.0] * 6
     return sim
 
+def seed_init_prev_in_first_stage_only(sim):
+    # Set initial prevalence to zero:
+    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.0] * 6
+    # Put everyone in first stage ('low-grade-dysplasia')
+    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'][0] = 1.0
+    return sim
+
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
     sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.1] * 6
     return sim
 
-def incr_rates_of_progression_and_effect_of_treatment(sim):
+def incr_rate_of_onset_lgd(sim):
     # Rate of cancer onset per 3 months:
     sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.05
+    return sim
 
+def zero_rate_of_onset_lgd(sim):
+    # Rate of cancer onset per 3 months:
+    sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.00
+    return sim
+
+def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
     sim.modules['OesophagealCancer'].parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
     sim.modules['OesophagealCancer'].parameters['r_stage1_high_grade_dysp'] *= 5
     sim.modules['OesophagealCancer'].parameters['r_stage2_stage1'] *= 5
     sim.modules['OesophagealCancer'].parameters['r_stage3_stage2'] *= 5
     sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
+    return sim
 
-    # Effect of treatment in reducing progression: set so that treatment prevent progression
+def make_treatment_ineffective(sim):
+    # Treatment effect of 1.0 will not retard progression
+    sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 1.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage1_undergone_curative_treatment'] = 1.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage2_undergone_curative_treatment'] = 1.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 1.0
+    sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 1.0
+    return sim
+
+def make_treamtment_perfectly_effective(sim):
+    # Treatment effect of 0.0 will stop progression
     sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 0.0
     sim.modules['OesophagealCancer'].parameters['rr_stage1_undergone_curative_treatment'] = 0.0
     sim.modules['OesophagealCancer'].parameters['rr_stage2_undergone_curative_treatment'] = 0.0
     sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 0.0
     sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 0.0
-
     return sim
 
 
@@ -178,7 +208,8 @@ def test_run_sim_from_high_prevalence():
     properties at the end"""
     sim = make_simulation_healthsystemdisabled()
     sim = make_high_init_prev(sim)
-    sim = incr_rates_of_progression_and_effect_of_treatment(sim)
+    sim = incr_rates_of_progression(sim)
+    sim = incr_rate_of_onset_lgd(sim)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
@@ -186,114 +217,100 @@ def test_run_sim_from_high_prevalence():
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
+def test_check_progression_through_stages_is_happeneing():
+    """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
+    up in late stages and some die of this cause."""
+    sim = make_simulation_healthsystemdisabled()
+
+    # set initial prevalence to be zero
+    sim = zero_out_init_prev(sim)
+
+    # no incidence of new cases
+    sim = zero_rate_of_onset_lgd(sim)
+
+    # remove effect of treatment:
+    sim = make_treatment_ineffective(sim)
+
+    # increase progression rates:
+    sim = incr_rates_of_progression(sim)
+
+    # make initial population
+    sim.make_initial_population(n=5000)
+
+    # force that all persons aged over 20 are in the low_grade dysplasis stage to begin with:
+    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status"] = 'low_grade_dysplasia'
+    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status_any_dysplasia_or_cancer"] = True
+    check_configuration_of_population(sim)
+
+    # Simulate
+    sim.simulate(end_date=Date(2015, 1, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+    # check that there are now some people in each of the later stages:
+    df = sim.population.props
+    assert len(df.loc[df.is_alive & (df.oc_status != 'none')]) > 0
+    assert not pd.isnull(df.oc_status).any()
+    assert (df.loc[df.is_alive].oc_status.value_counts().drop(index='none') > 0).all()
+
+    # check that some people have died of oesophagal cancer
+    yll = sim.modules['HealthBurden'].YearsLifeLost
+    assert yll['YLL_OesophagealCancer_OesophagealCancer'].sum() > 0
+
+def test_check_progression_through_stages_is_blocked_by_treatment():
+    """Put all people into the first stage but on treatment, let progression happen, and check that people do move into
+    a late stage or die"""
+    sim = make_simulation_healthsystemdisabled()
+
+    # set initial prevalence to be zero
+    sim = zero_out_init_prev(sim)
+
+    # no incidence of new cases
+    sim = zero_rate_of_onset_lgd(sim)
+
+    # remove effect of treatment:
+    sim = make_treamtment_perfectly_effective(sim)
+
+    # increase progression rates:
+    sim = incr_rates_of_progression(sim)
+
+    # make inital popuation
+    sim.make_initial_population(n=5000)
+
+    # force that all persons aged over 20 are in the low_grade dysplasis stage to begin with:
+    has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 20)
+    sim.population.props.loc[has_lgd, "oc_status"] = 'low_grade_dysplasia'
+    sim.population.props.loc[has_lgd, "oc_status_any_dysplasia_or_cancer"] = True
+
+    # force that they are all symptomatic, diagnosed and already on treatment:
+    sim.modules['SymptomManager'].change_symptom(
+            person_id=has_lgd.index[has_lgd].tolist(),
+            symptom_string='dysphagia',
+            add_or_remove='+',
+            disease_module=sim.modules['OesophagealCancer']
+        )
+    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_date_diagnosis"] = sim.date
+    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_date_treatment"] = sim.date
+    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_stage_at_which_treatment_applied"] = 'low_grade_dysplasia'
+    check_configuration_of_population(sim)
+
+    # Simulate
+    sim.simulate(end_date=Date(2015, 1, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+    # check that there are not any people in each of the later stages and everyone is still in 'low_grade_dysplasia':
+    df = sim.population.props
+    assert len(df.loc[df.is_alive & (df.age_years >= 20), "oc_status"]) > 0
+    assert (df.loc[df.is_alive & (df.age_years >= 20), "oc_status"].isin(["none", "low_grade_dysplasia"])).all()
+    assert (df.loc[has_lgd.index[has_lgd].tolist(), "oc_status"] == "low_grade_dysplasia").all()
+
+    # check that no people have died of oesophageal cancer
+    yll = sim.modules['HealthBurden'].YearsLifeLost
+    assert 'YLL_OesophagealCancer_OesophagealCancer' not in yll.columns
 
 
+# check that people only get diagnosed, onto treatment and palliative care if the HSI are running.
 
+# check for the occurence of HSI
 
-# def test_check_progression_through_stages_is_happeneing():
-#     sim = make_simulation_healthsystemdisabled()
-#
-#     # set initial prevalence to only be in the initial stage (low_grade_dysplasia)
-#     sim = zero_out_init_prev(sim)
-#     # todoset box 1 to have something in
-#
-#
-#     # remove effect of treatment:
-#
-#
-#     sim = incr_rates_of_progression_and_effect_of_treatment(sim)
-#
-#     sim.make_initial_population(n=5000)
-#     check_dtypes(sim)
-#     check_configuration_of_population(sim)
-#     sim.simulate(end_date=Date(2015, 1, 1))
-#     check_dtypes(sim)
-#     check_configuration_of_population(sim)
-#
-#     # check that there are not some people in all the later stages:
-
-
-# def test_check_progression_through_stages_is_blocked_by_treatment():
-#     sim = make_simulation_healthsystemdisabled()
-#
-#     # set initial prevalence to only be in the initial stage (low_grade_dysplasia)
-#     sim = zero_out_init_prev(sim)
-#     # todoset box 1 to have something in
-#
-#     # let the effect of treatment be perfect; and let everyone get on treatment (how?)
-#
-#     sim = incr_rates_of_progression_and_effect_of_treatment(sim)
-#
-#     sim.make_initial_population(n=5000)
-#     check_dtypes(sim)
-#     check_configuration_of_population(sim)
-#     sim.simulate(end_date=Date(2015, 1, 1))
-#     check_dtypes(sim)
-#     check_configuration_of_population(sim)
-
-    # check that there are not some people in all the later stages:
-
-
-# def test_run_from_zero_init():
-#     """Tests on the population following simulation"""
-#     sim = make_simulation_healthsystemdisabled()
-#     sim = zero_out_init_prev(sim)
-#     end_date = Date(2020, 1, 1)
-#     sim.simulate(end_date=end_date)
-#     test_dtypes(sim)
-#
-#     # Further tests:
-
-
-# def test_run_from_nonzero_init():
-#     """Tests on the population following simulation"""
-#     sim = make_simulation_healthsystemdisabled()
-#     end_date = Date(2020, 1, 1)
-#     sim.simulate(end_date=end_date)
-#     test_dtypes(sim)
-#
-#     # Further tests:
-
-
-# def test_run_from_zero_init_nohsi():
-#     """Tests on the population following simulation"""
-#     sim = make_simulation_nohsi()
-#     sim = zero_out_init_prev(sim)
-#     end_date = Date(2020, 1, 1)
-#     sim.simulate(end_date=end_date)
-#     test_dtypes(sim)
-#
-#     # Further test
-
-
-# def test_run_from_nonzero_init_nohsi():
-#     """Tests on the population following simulation"""
-#     sim = make_simulation_nohsi()
-#     end_date = Date(2020, 1, 1)
-#     sim.simulate(end_date=end_date)
-#     test_dtypes(sim)
-#
-#     # Further tests:
-
-
-
-
-"""Other tests:
-
-
-# DYNAMIC CHECKS:
-* that treatment will lead to a piling up of people in a particular stage
-
-* To check the working of the HSI, good shortcut would be to increase the baseline risk of cancer:
-
-* check that treatment reduced risk of progression
-
-* check that progression works:
-
-* no dx w/o health system
-
-* lots of dx, treatment etc w/ health system
-
-*
-
-"""

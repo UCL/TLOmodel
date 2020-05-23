@@ -5,7 +5,6 @@ Limitations to note:
 * Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
 * Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
 * Footprints of HSI -- pending input from expert on resources required.
-
 * TODO: Remove 'oc_status_any_dysplasia_or_cancer' once DxTest can check for particular level of a category:
 """
 
@@ -302,10 +301,8 @@ class OesophagealCancer(Module):
         df.loc[treatment_initiated, "oc_stage_at_which_treatment_applied"] = \
             df.oc_status.loc[treatment_initiated]
 
-        # set date at which treatment began: same as diagnosis
+        # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "oc_date_treatment"] = df.loc[treatment_initiated, "oc_date_diagnosis"]
-
-        # **Todo - set up on-going treatment appointments**
 
         # -------------------- oc_date_palliative_care -----------
         df.loc[df.is_alive, "oc_date_palliative_care"] = pd.NaT     # default
@@ -321,10 +318,8 @@ class OesophagealCancer(Module):
         palliative_care_initiated = pd.Series(index=df.loc[df.is_alive].index, data=False)
         palliative_care_initiated[selected_for_palliative_care] = True
 
-        # set date of palliative care being initiated: same as diagnosis
+        # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
         df.loc[palliative_care_initiated, "oc_date_palliative_care"] = df.loc[treatment_initiated, "oc_date_diagnosis"]
-
-        # **Todo - set up palliative care appointments
 
     def initialise_simulation(self, sim):
         """
@@ -333,6 +328,7 @@ class OesophagealCancer(Module):
         * Define the LinearModels
         * Define the Diagnostic used
         * Define the Disability-weights
+        * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
 
         # ----- SCHEDULE LOGGING EVENTS -----
@@ -342,7 +338,6 @@ class OesophagealCancer(Module):
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
         sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
-
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -480,6 +475,18 @@ class OesophagealCancer(Module):
             self.daly_wts["stage4_palliative_care"] = self.daly_wts["stage_1_3"]
                 # By assumption, we say that that the weight for those in stage 4 with palliative care is the same as
                 # that for those with stage 1-3 cancers.
+
+
+        # ----- HSI FOR PALLIATIVE CARE -----
+        df = self.sim.population.props
+        on_palliative_care_at_initiation = df.loc[df.is_alive & ~pd.isnull(df.oc_date_palliative_care)].index
+        for person_id in on_palliative_care_at_initiation:
+            self.sim.modules['HealthSystem'].schedule_hsi(
+                hsi_event=HSI_OesophagealCancer_PalliativeCare(module=self, person_id=person_id),
+                priorty=0,
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=self.sim.date + DateOffset(months=1) + DateOffset(week=1)
+            )
 
 
     def on_birth(self, mother_id, child_id):
