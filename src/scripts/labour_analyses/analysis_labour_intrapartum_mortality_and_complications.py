@@ -24,7 +24,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 2000
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -33,7 +33,7 @@ sim = Simulation(start_date=start_date)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-# sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 #sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
 #                                       service_availability=[]))
