@@ -103,10 +103,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # -------------------------------
 
-
-
-
-
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
 

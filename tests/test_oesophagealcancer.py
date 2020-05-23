@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-import pytest
-
 import pandas as pd
 
 from tlo import Date, Simulation
@@ -30,6 +28,7 @@ except NameError:
 start_date = Date(2010, 1, 1)
 popsize = 1000
 
+
 # %% Construction of simulation objects:
 def make_simulation_healthsystemdisabled():
     """Make the simulation with:
@@ -52,6 +51,7 @@ def make_simulation_healthsystemdisabled():
                  )
     return sim
 
+
 def make_simulation_nohsi():
     """Make the simulation with:
     * the healthsystem enable but with no service availabilty (so no HSI run)
@@ -73,11 +73,13 @@ def make_simulation_nohsi():
                  )
     return sim
 
+
 # %% Manipulation of parameters:
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
     sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.0] * 6
     return sim
+
 
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
@@ -86,20 +88,24 @@ def seed_init_prev_in_first_stage_only(sim):
     sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'][0] = 1.0
     return sim
 
+
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
     sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.1] * 6
     return sim
+
 
 def incr_rate_of_onset_lgd(sim):
     # Rate of cancer onset per 3 months:
     sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.05
     return sim
 
+
 def zero_rate_of_onset_lgd(sim):
     # Rate of cancer onset per 3 months:
     sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.00
     return sim
+
 
 def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
@@ -110,6 +116,7 @@ def incr_rates_of_progression(sim):
     sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
     return sim
 
+
 def make_treatment_ineffective(sim):
     # Treatment effect of 1.0 will not retard progression
     sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 1.0
@@ -118,6 +125,7 @@ def make_treatment_ineffective(sim):
     sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 1.0
     sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 1.0
     return sim
+
 
 def make_treamtment_perfectly_effective(sim):
     # Treatment effect of 0.0 will stop progression
@@ -136,15 +144,13 @@ def check_dtypes(sim):
     orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-def check_configuration_of_population(sim):
 
+def check_configuration_of_population(sim):
     # get df for alive persons:
     df = sim.population.props.loc[sim.population.props.is_alive]
 
     # check that the oc_status and oc_status_any_dysplasia_or_cancer properties always correspond correctly:
     assert set(df.loc[df.oc_status == 'none'].index) == set(df.loc[~df.oc_status_any_dysplasia_or_cancer].index)
-
-    x = df.loc[(df.oc_status == 'none') & (df.oc_status_any_dysplasia_or_cancer), ['oc_status', 'oc_status_any_dysplasia_or_cancer']]
 
     # check that no one under twenty has cancer
     assert not df.loc[df.age_years < 20].oc_status_any_dysplasia_or_cancer.any()
@@ -160,7 +166,7 @@ def check_configuration_of_population(sim):
     assert 0 == (df.loc[~pd.isnull(df.oc_date_treatment)].oc_stage_at_which_treatment_applied == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:
-    assert set(sim.modules['SymptomManager'].who_has('dysphagia')).issubset(df.index[df.oc_status!='none'])
+    assert set(sim.modules['SymptomManager'].who_has('dysphagia')).issubset(df.index[df.oc_status != 'none'])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.oc_date_diagnosis)]).issubset(df.index[df.oc_status_any_dysplasia_or_cancer])
@@ -168,16 +174,20 @@ def check_configuration_of_population(sim):
     assert (df.loc[~pd.isnull(df.oc_date_diagnosis)].oc_date_diagnosis <= sim.date).all()
 
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 20.0
-    age_at_dx = (df.loc[~pd.isnull(df.oc_date_diagnosis)].oc_date_diagnosis - df.loc[~pd.isnull(df.oc_date_diagnosis)].date_of_birth)
+    age_at_dx = (df.loc[~pd.isnull(df.oc_date_diagnosis)].oc_date_diagnosis - df.loc[
+        ~pd.isnull(df.oc_date_diagnosis)].date_of_birth)
     assert all([int(x.days / 365.25) >= 20 for x in age_at_dx])
 
     # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.oc_date_treatment)]).issubset(df.index[~pd.isnull(df.oc_date_diagnosis)])
-    assert (df.loc[~pd.isnull(df.oc_date_treatment)].oc_date_diagnosis <= df.loc[~pd.isnull(df.oc_date_treatment)].oc_date_treatment).all()
+    assert (df.loc[~pd.isnull(df.oc_date_treatment)].oc_date_diagnosis <= df.loc[
+        ~pd.isnull(df.oc_date_treatment)].oc_date_treatment).all()
 
     # check that those on palliative care are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.oc_date_palliative_care)]).issubset(df.index[~pd.isnull(df.oc_date_diagnosis)])
-    assert (df.loc[~pd.isnull(df.oc_date_palliative_care)].oc_date_diagnosis <= df.loc[~pd.isnull(df.oc_date_palliative_care)].oc_date_diagnosis).all()
+    assert (df.loc[~pd.isnull(df.oc_date_palliative_care)].oc_date_diagnosis <= df.loc[
+        ~pd.isnull(df.oc_date_palliative_care)].oc_date_diagnosis).all()
+
 
 # %% Tests:
 def test_initial_config_of_pop_high_prevalence():
@@ -188,6 +198,7 @@ def test_initial_config_of_pop_high_prevalence():
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
+
 def test_initial_config_of_pop_zero_prevalence():
     """Tests of the the way the population is configured: with zero initial prevalence values """
     sim = make_simulation_healthsystemdisabled()
@@ -196,12 +207,14 @@ def test_initial_config_of_pop_zero_prevalence():
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
+
 def test_initial_config_of_pop_usual_prevalence():
     """Tests of the the way the population is configured: with usual initial prevalence values"""
     sim = make_simulation_healthsystemdisabled()
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
+
 
 def test_run_sim_from_high_prevalence():
     """Run the simulation from the usual prevalence values and high rates of incidence and check configuration of
@@ -217,9 +230,12 @@ def test_run_sim_from_high_prevalence():
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
+
 def test_check_progression_through_stages_is_happeneing():
     """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
-    up in late stages and some die of this cause."""
+    up in late stages and some die of this cause.
+    Use a functioning healthsystem that allows HSI and check that diagnosis, treatment and palliative care is happening.
+    """
     sim = make_simulation_healthsystemdisabled()
 
     # set initial prevalence to be zero
@@ -235,11 +251,13 @@ def test_check_progression_through_stages_is_happeneing():
     sim = incr_rates_of_progression(sim)
 
     # make initial population
-    sim.make_initial_population(n=5000)
+    sim.make_initial_population(n=popsize)
 
-    # force that all persons aged over 20 are in the low_grade dysplasis stage to begin with:
-    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status"] = 'low_grade_dysplasia'
-    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status_any_dysplasia_or_cancer"] = True
+    # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
+    sim.population.props.loc[
+        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status"] = 'low_grade_dysplasia'
+    sim.population.props.loc[sim.population.props.is_alive & (
+            sim.population.props.age_years >= 20), "oc_status_any_dysplasia_or_cancer"] = True
     check_configuration_of_population(sim)
 
     # Simulate
@@ -256,6 +274,64 @@ def test_check_progression_through_stages_is_happeneing():
     # check that some people have died of oesophagal cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
     assert yll['YLL_OesophagealCancer_OesophagealCancer'].sum() > 0
+
+    # check that people are being diagnosed, going onto treatment and palliative care:
+    assert (df.oc_date_diagnosis > start_date).any()
+    assert (df.oc_date_treatment > start_date).any()
+    assert (df.oc_stage_at_which_treatment_applied != 'none').any()
+    assert (df.oc_date_palliative_care > start_date).any()
+
+
+def test_that_there_is_no_treatment_without_the_hsi_running():
+    """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
+    up in late stages and some die of this cause.
+    Use a healthsystem that does not allows HSI and check that diagnosis, treatment and palliative care do not occur.
+    """
+    sim = make_simulation_nohsi()
+
+    # set initial prevalence to be zero
+    sim = zero_out_init_prev(sim)
+
+    # no incidence of new cases
+    sim = zero_rate_of_onset_lgd(sim)
+
+    # remove effect of treatment:
+    sim = make_treatment_ineffective(sim)
+
+    # increase progression rates:
+    sim = incr_rates_of_progression(sim)
+
+    # make initial population
+    sim.make_initial_population(n=popsize)
+
+    # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
+    sim.population.props.loc[
+        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status"] = 'low_grade_dysplasia'
+    sim.population.props.loc[sim.population.props.is_alive & (
+            sim.population.props.age_years >= 20), "oc_status_any_dysplasia_or_cancer"] = True
+    check_configuration_of_population(sim)
+
+    # Simulate
+    sim.simulate(end_date=Date(2015, 1, 1))
+    check_dtypes(sim)
+    check_configuration_of_population(sim)
+
+    # check that there are now some people in each of the later stages:
+    df = sim.population.props
+    assert len(df.loc[df.is_alive & (df.oc_status != 'none')]) > 0
+    assert not pd.isnull(df.oc_status).any()
+    assert (df.loc[df.is_alive].oc_status.value_counts().drop(index='none') > 0).all()
+
+    # check that some people have died of oesophagal cancer
+    yll = sim.modules['HealthBurden'].YearsLifeLost
+    assert yll['YLL_OesophagealCancer_OesophagealCancer'].sum() > 0
+
+    # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
+    assert not (df.oc_date_diagnosis > start_date).any()
+    assert not (df.oc_date_treatment > start_date).any()
+    assert not (df.oc_stage_at_which_treatment_applied != 'none').any()
+    assert not (df.oc_date_palliative_care > start_date).any()
+
 
 def test_check_progression_through_stages_is_blocked_by_treatment():
     """Put all people into the first stage but on treatment, let progression happen, and check that people do move into
@@ -275,7 +351,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     sim = incr_rates_of_progression(sim)
 
     # make inital popuation
-    sim.make_initial_population(n=5000)
+    sim.make_initial_population(n=popsize)
 
     # force that all persons aged over 20 are in the low_grade dysplasis stage to begin with:
     has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 20)
@@ -284,14 +360,17 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
 
     # force that they are all symptomatic, diagnosed and already on treatment:
     sim.modules['SymptomManager'].change_symptom(
-            person_id=has_lgd.index[has_lgd].tolist(),
-            symptom_string='dysphagia',
-            add_or_remove='+',
-            disease_module=sim.modules['OesophagealCancer']
-        )
-    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_date_diagnosis"] = sim.date
-    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_date_treatment"] = sim.date
-    sim.population.props.loc[sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_stage_at_which_treatment_applied"] = 'low_grade_dysplasia'
+        person_id=has_lgd.index[has_lgd].tolist(),
+        symptom_string='dysphagia',
+        add_or_remove='+',
+        disease_module=sim.modules['OesophagealCancer']
+    )
+    sim.population.props.loc[
+        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_date_diagnosis"] = sim.date
+    sim.population.props.loc[
+        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_date_treatment"] = sim.date
+    sim.population.props.loc[sim.population.props.is_alive & (
+            sim.population.props.age_years >= 20), "oc_stage_at_which_treatment_applied"] = 'low_grade_dysplasia'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -308,9 +387,3 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     # check that no people have died of oesophageal cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
     assert 'YLL_OesophagealCancer_OesophagealCancer' not in yll.columns
-
-
-# check that people only get diagnosed, onto treatment and palliative care if the HSI are running.
-
-# check for the occurence of HSI
-
