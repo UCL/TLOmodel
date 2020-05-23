@@ -895,23 +895,25 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         dict_for_output = {}
 
         # Current counts, total
-        dict_for_output.update({f'total_{k}': v for k, v in df.oc_status.value_counts().to_dict().items()})
+        dict_for_output.update({
+            f'total_{k}': v for k, v in df.loc[df.is_alive].oc_status.value_counts().to_dict().items()
+        })
 
         # Current counts, undiagnosed
-        dict_for_output.update({f'undiagnosed_{k}': v for k, v in df.loc[
+        dict_for_output.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
             pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().to_dict().items()})
 
         # Current counts, diagnosed
-        dict_for_output.update({f'diagnosed_{k}': v for k, v in df.loc[
+        dict_for_output.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
             ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().to_dict().items()})
 
         # Current counts, on treatment (excl. palliative care)
-        dict_for_output.update({f'treatment_{k}': v for k, v in df.loc[(~pd.isnull(
+        dict_for_output.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
             df.oc_date_treatment) & pd.isnull(
             df.oc_date_palliative_care)), 'oc_status'].value_counts().to_dict().items()})
 
         # Current counts, on palliative care
-        dict_for_output.update({f'palliative_{k}': v for k, v in df.loc[
+        dict_for_output.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
             ~pd.isnull(df.oc_date_palliative_care), 'oc_status'].value_counts().to_dict().items()})
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
@@ -926,3 +928,12 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
+
+        # Checks on the logging output:
+        # "Total = diagnosed + undiagnosed"
+        assert (0 == df.loc[df.is_alive].oc_status.value_counts() - (
+            df.loc[df.is_alive].loc[
+                pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts() +
+            df.loc[df.is_alive].loc[
+                ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts()
+        )).all()

@@ -1,8 +1,21 @@
+"""
+* Check key outputs for reporting in the calibration table of the write-up
+* Produce representative plots for the default parameters
+
+NB. To see larger effects
+* Increase incidence of cancer (see tests)
+* Increase symptom onset (r_dysphagia_stage1)
+* Increase progression rates (see tests)
+"""
+
 import datetime
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, make_age_grp_types
 from tlo.methods import (
     contraception,
     demography,
@@ -16,9 +29,6 @@ from tlo.methods import (
     symptommanager
 )
 
-import matplotlib.pyplot as plt
-import pandas as pd
-
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -30,11 +40,11 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 5000
 
-def run_sim(service_availability):
 
+def run_sim(service_availability):
     # Establish the simulation object and set the seed
     sim = Simulation(start_date=start_date)
     sim.seed_rngs(0)
@@ -43,7 +53,8 @@ def run_sim(service_availability):
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -51,29 +62,6 @@ def run_sim(service_availability):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
-
-    # Manipulate parameters in order that there is a high burden of oes_cancer in order to do the checking:
-
-    # Set initial prevalence to zero:
-    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = \
-        [0.0] * len(sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'])
-
-    # Rate of cancer onset per 3 months:
-    sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.05
-
-    # Rates of cancer progression per 3 months:
-    sim.modules['OesophagealCancer'].parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage1_high_grade_dysp'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage2_stage1'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage3_stage2'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
-
-    # Effect of treatment in reducing progression: set so that treatment prevent progression
-    sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage1_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage2_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 0.0
 
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
@@ -85,89 +73,134 @@ def run_sim(service_availability):
     return logfile
 
 
-def make_set_of_plots(logfile):
+def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
-    ## TOTAL COUNTS BY STAGE OVER TIME
-    s = output['tlo.methods.oesophagealcancer']['summary_stats']
-    s['date'] = pd.to_datetime(s['date'])
-    s = s.set_index('date', drop=True)
+    # 1) TOTAL COUNTS BY STAGE OVER TIME
+    counts_by_stage = output['tlo.methods.oesophagealcancer']['summary_stats']
+    counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
+    counts_by_stage = counts_by_stage.set_index('date', drop=True)
 
-    # Total prevalence over time
-    s.plot(y=['total_low_grade_dysplasia', 'total_high_grade_dysplasia', 'total_stage1', 'total_stage2', 'total_stage3',
-              'total_stage4'])
-    plt.show()
-
-
-    ## PROGRESSION THROUGH CARE CASCADE OVER TIME (SUMMED ACROSS TYPES OF CANCER)
+    # 2) NUMBERS UNDIAGNOSED-DIAGNOSED-TREATED-PALLIATIVE CARE OVER TIME (SUMMED ACROSS TYPES OF CANCER)
     def get_cols_excl_none(allcols, stub):
+        # helper function to some columns with a certain prefix stub - excluding the 'none' columns (ie. those
+        #  that do not have cancer)
         cols = allcols[allcols.str.startswith(stub)]
         cols_not_none = [s for s in cols if ("none" not in s)]
         return cols_not_none
 
     summary = {
-        'total': s[get_cols_excl_none(s.columns, 'total_')].sum(axis=1),
-        'udx': s[get_cols_excl_none(s.columns, 'undiagnosed_')].sum(axis=1),
-        'dx': s[get_cols_excl_none(s.columns, 'diagnosed_')].sum(axis=1),
-        'tr': s[get_cols_excl_none(s.columns, 'treatment_')].sum(axis=1),
-        'pc': s[get_cols_excl_none(s.columns, 'palliative_')].sum(axis=1)
+        'total': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'total_')].sum(axis=1),
+        'udx': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'undiagnosed_')].sum(axis=1),
+        'dx': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'diagnosed_')].sum(axis=1),
+        'tr': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'treatment_')].sum(axis=1),
+        'pc': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'palliative_')].sum(axis=1)
     }
     counts_by_cascade = pd.DataFrame(summary)
 
-    # assert (df['total'] == (df['udx'] + df['dx'])).all()  # todo - fix
+    # 3) DALYS wrt age (total over whole simulation)
+    dalys = output['tlo.methods.healthburden']['DALYS']
+    dalys = dalys.groupby(by=['age_range']).sum()
+    dalys.index = dalys.index.astype(make_age_grp_types())
+    dalys = dalys.sort_index()
 
-    counts_by_cascade.plot.bar(y=['udx', 'dx', 'tr', 'pc'])
-    plt.show()
-
-    # DALYS wrt age
-    h = output['tlo.methods.healthburden']['DALYS']
-    h['date'] = pd.to_datetime(h['date'])
-    h = h.set_index('date', drop=True)
-
-    h.groupby(by=['age_range']).sum().reset_index().plot.bar(x='age_range', y=['YLD_OesophagealCancer_0'], stacked=True)
-    plt.show()
-
-    # DEATHS wrt age and time
-    d = output['tlo.methods.demography']['death']
-    d['date'] = pd.to_datetime(d['date'])
-    d = d.set_index('date', drop=True)
-
-    d['age_group'] = d['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
-    d['year'] = d.index.year
-
-    oes_cancer_deaths = pd.DataFrame(d.loc[d.cause == 'OesophagealCancer'].groupby(by=['age_group']).size())
-    oes_cancer_deaths.plot.bar()
-    plt.show()
+    # 4) DEATHS wrt age (total over whole simulation)
+    deaths = output['tlo.methods.demography']['death']
+    deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
+    oes_cancer_deaths = pd.Series(deaths.loc[deaths.cause == 'OesophagealCancer'].groupby(by=['age_group']).size())
+    oes_cancer_deaths.index = oes_cancer_deaths.index.astype(make_age_grp_types())
+    oes_cancer_deaths = oes_cancer_deaths.sort_index()
 
     return {
-        'total_counts_by_stage_over_time': s,
+        'total_counts_by_stage_over_time': counts_by_stage,
         'counts_by_cascade': counts_by_cascade,
+        'dalys': dalys,
         'oes_cancer_deaths': oes_cancer_deaths
     }
 
 
-# %% Run the simulation with and without service availabilty
+# %% Run the simulation with and without interventions being allowed
 
-# With:
+# With interventions:
 logfile_with_healthsystem = run_sim(service_availability=['*'])
-results_with_healthsystem = make_set_of_plots(logfile_with_healthsystem)
+results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
-# Without:
+# Without interventions:
 logfile_no_healthsystem = run_sim(service_availability=[])
-results_no_healthsystem = make_set_of_plots(logfile_no_healthsystem)
+results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 
 
-# Compare Deaths
+# %% Produce Summary Graphs:
+
+# Examine Counts by Stage Over Time
+counts = results_no_healthsystem['total_counts_by_stage_over_time']
+counts.plot(y=['total_low_grade_dysplasia',
+               'total_high_grade_dysplasia',
+               'total_stage1', 'total_stage2',
+               'total_stage3',
+               'total_stage4'
+               ])
+plt.title('Count in Each Stage of Disease Over Time')
+plt.xlabel('Time')
+plt.ylabel('Count')
+plt.show()
+
+# Examine numbers in each stage of the cascade:
+results_with_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
+plt.title('With Health System')
+plt.xlabel('Numbers of those With Cancer by Stage in Cascade')
+plt.xlabel('Time')
+plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
+plt.show()
+
+results_no_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
+plt.title('With No Health System')
+plt.xlabel('Numbers of those With Cancer by Stage in Cascade')
+plt.xlabel('Time')
+plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
+plt.show()
+
+
+# Examine DALYS (summed over whole simulation)
+results_no_healthsystem['dalys'].plot.bar(
+    y=['YLD_OesophagealCancer_0', 'YLL_OesophagealCancer_OesophagealCancer'],
+    stacked=True)
+plt.xlabel('Age-group')
+plt.ylabel('DALYS')
+plt.legend()
+plt.title("With No Health System")
+plt.show()
+
+# todo - make nice axis in the below two graphs:
+# Examiner Deaths (summed over whole simulation)
+deaths = results_no_healthsystem['oes_cancer_deaths']
+deaths.index = deaths.index.astype(make_age_grp_types())
+
+# # male a series with the right categories and zero so formats nicely in the grapsh:
+# agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
+# totdeaths = pd.Series(index=agegrps, data=0.0)
+# totdeaths.index = totdeaths.index.astype(make_age_grp_types())
+# totdeaths = totdeaths.astype(int).add(deaths.astype)
+
+deaths.plot.bar()
+plt.title('Deaths due to Oesophageal Cancer')
+plt.xlabel('Age-group')
+plt.ylabel('Total Deaths During Simulation')
+plt.gca().get_legend().remove()
+plt.show()
+
+# Compare Deaths - with and without the healthsystem functioning
 deaths = pd.concat({
     'No_HealthSystem': results_no_healthsystem['oes_cancer_deaths'][0],
     'With_HealthSystem': results_with_healthsystem['oes_cancer_deaths'][0]
-    }, axis=1)
+    }, axis=1, sort=True)
 
 deaths.plot.bar()
+plt.title('Deaths due to Oesophageal Cancer')
+plt.xlabel('Age-group')
+plt.ylabel('Total Deaths During Simulation')
 plt.show()
-
-# TODO: TIDY PLOTS
-# TODO: CONFIRM RESULTS
+# todo nice categorical x-axis
 
 
-# %% Check 5-year survival:
+# %% TODO: Create new simulation to compute the 5-YEAR SURVIVAL
