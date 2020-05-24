@@ -115,7 +115,9 @@ def get_summary_stats(logfile):
 
     # 5) Rates of diagnosis per year:
     counts_by_stage['year'] = counts_by_stage.index.year
-    annual_count_of_dxtr = counts_by_stage.groupby(by='year')[['diagnosed_since_last_log', 'treated_since_last_log', 'palliative_since_last_log']].sum()
+    annual_count_of_dxtr = counts_by_stage.groupby(by='year')[['diagnosed_since_last_log',
+                                                               'treated_since_last_log',
+                                                               'palliative_since_last_log']].sum()
 
     return {
         'total_counts_by_stage_over_time': counts_by_stage,
@@ -207,7 +209,8 @@ plt.show()
 
 # %% Get Statistics for Table in write-up (from results_with_healthsystem);
 
-# ** Current prevalence (end-2019) of people who have diagnosed oesophageal cancer in 2020 (total; and current stage 1, 2, 3,
+# ** Current prevalence (end-2019) of people who have diagnosed oesophageal cancer in 2020 (total; and current stage
+# 1, 2, 3,
 # 4), per 100,000 population aged 20+
 
 counts = results_with_healthsystem['total_counts_by_stage_over_time'][[
