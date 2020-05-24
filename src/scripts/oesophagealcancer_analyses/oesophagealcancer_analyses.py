@@ -13,6 +13,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file, make_age_grp_types
@@ -171,36 +172,34 @@ plt.legend()
 plt.title("With No Health System")
 plt.show()
 
-# todo - make nice axis in the below two graphs:
-# Examiner Deaths (summed over whole simulation)
+# Examine Deaths (summed over whole simulation)
 deaths = results_no_healthsystem['oes_cancer_deaths']
 deaths.index = deaths.index.astype(make_age_grp_types())
-
-# # male a series with the right categories and zero so formats nicely in the grapsh:
-# agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
-# totdeaths = pd.Series(index=agegrps, data=0.0)
-# totdeaths.index = totdeaths.index.astype(make_age_grp_types())
-# totdeaths = totdeaths.astype(int).add(deaths.astype)
-
-deaths.plot.bar()
+# # make a series with the right categories and zero so formats nicely in the grapsh:
+agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
+totdeaths = pd.Series(index=agegrps, data=np.nan)
+totdeaths.index = totdeaths.index.astype(make_age_grp_types())
+totdeaths = totdeaths.combine_first(deaths).fillna(0.0)
+totdeaths.plot.bar()
 plt.title('Deaths due to Oesophageal Cancer')
 plt.xlabel('Age-group')
 plt.ylabel('Total Deaths During Simulation')
-plt.gca().get_legend().remove()
+# plt.gca().get_legend().remove()
 plt.show()
 
-# Compare Deaths - with and without the healthsystem functioning
+# Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = pd.concat({
-    'No_HealthSystem': results_no_healthsystem['oes_cancer_deaths'][0],
-    'With_HealthSystem': results_with_healthsystem['oes_cancer_deaths'][0]
+    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths'][0]),
+    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'][0])
     }, axis=1, sort=True)
 
 deaths.plot.bar()
 plt.title('Deaths due to Oesophageal Cancer')
-plt.xlabel('Age-group')
+plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
 plt.show()
-# todo nice categorical x-axis
 
 
-# %% TODO: Create new simulation to compute the 5-YEAR SURVIVAL
+
+
+
