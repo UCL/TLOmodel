@@ -5,7 +5,7 @@ Limitations to note:
 * Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
 * Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
 * Footprints of HSI -- pending input from expert on resources required.
-* TODO: Remove 'oc_status_any_dysplasia_or_cancer' once DxTest can check for particular level of a category:
+* TODO: Remove 'oc_status_any_dysplasia_or_cancer' once the DxTest can check for particular level of a category:
 """
 
 from pathlib import Path
@@ -22,9 +22,6 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# FOR DEBUGGING: **RAISE** the SettingWithCopy issue as an error not a warning:
-pd.set_option('mode.chained_assignment', 'raise')
-
 
 class OesophagealCancer(Module):
     """Oesophageal Cancer Disease Module"""
@@ -36,19 +33,19 @@ class OesophagealCancer(Module):
     PARAMETERS = {
         "init_prop_oes_cancer_stage": Parameter(
             Types.LIST,
-            "initial proportions in ca_oesophagus categories for man aged 20 with no excess alcohol and no tobacco",
+            "initial proportions in dysplasia/cancer categories for man aged 20 with no excess alcohol and no tobacco"
         ),
         "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer diagnosed"
+            Types.LIST, "initial proportions of those with dysplasia/cancer categories that have the symptom dysphagia"
         ),
         "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people with diagnosed oesophageal cancer with dysplasia"
+            Types.LIST, "initial proportions of people that have symptom of dysphagia that have been diagnosed"
         ),
         "init_prop_treatment_status_oes_cancer": Parameter(
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer that had initiated treatment"
         ),
         "init_prob_palliative_care": Parameter(
-            Types.REAL, "initial probability of being under palliative care if stage 4"
+            Types.REAL, "initial probability of being under palliative care if in stage 4"
         ),
         "r_low_grade_dysplasia_none": Parameter(
             Types.REAL,
@@ -928,12 +925,3 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
-
-        # Checks on the logging output:
-        # "Total = diagnosed + undiagnosed"
-        assert (0 == df.loc[df.is_alive].oc_status.value_counts() - (
-            df.loc[df.is_alive].loc[
-                pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts() +
-            df.loc[df.is_alive].loc[
-                ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts()
-        )).all()

@@ -12,8 +12,8 @@ import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file, make_age_grp_types
@@ -130,7 +130,6 @@ results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 logfile_no_healthsystem = run_sim(service_availability=[])
 results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 
-
 # %% Produce Summary Graphs:
 
 # Examine Counts by Stage Over Time
@@ -161,7 +160,6 @@ plt.xlabel('Time')
 plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
 plt.show()
 
-
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
     y=['YLD_OesophagealCancer_0', 'YLL_OesophagealCancer_OesophagealCancer'],
@@ -191,15 +189,10 @@ plt.show()
 deaths = pd.concat({
     'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths'][0]),
     'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'][0])
-    }, axis=1, sort=True)
+}, axis=1, sort=True)
 
 deaths.plot.bar()
 plt.title('Deaths due to Oesophageal Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
 plt.show()
-
-
-
-
-
