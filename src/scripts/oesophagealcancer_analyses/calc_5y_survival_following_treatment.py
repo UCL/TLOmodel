@@ -70,7 +70,7 @@ sim.modules['OesophagealCancer'].parameters["init_prob_palliative_care"] = 0.0
 # Establish the logger and look at only demography
 custom_levels = {"*": logging.WARNING,  # <--
                  "tlo.methods.demography": logging.INFO
-}
+                 }
 logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
 
 

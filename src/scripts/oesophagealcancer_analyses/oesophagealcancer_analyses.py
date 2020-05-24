@@ -42,7 +42,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 5000
+popsize = 10000
 
 
 def run_sim(service_availability):
@@ -112,11 +112,16 @@ def get_summary_stats(logfile):
     oes_cancer_deaths.index = oes_cancer_deaths.index.astype(make_age_grp_types())
     oes_cancer_deaths = oes_cancer_deaths.sort_index()
 
+    # 5) Rates of diagnosis per year:
+    counts_by_stage['year'] = counts_by_stage.index.year
+    annual_count_of_dxtr = counts_by_stage.groupby(by='year')[['diagnosed_since_last_log', 'treated_since_last_log', 'palliative_since_last_log']].sum()
+
     return {
         'total_counts_by_stage_over_time': counts_by_stage,
         'counts_by_cascade': counts_by_cascade,
         'dalys': dalys,
-        'oes_cancer_deaths': oes_cancer_deaths
+        'oes_cancer_deaths': oes_cancer_deaths,
+        'annual_count_of_dxtr': annual_count_of_dxtr
     }
 
 
@@ -196,3 +201,19 @@ plt.title('Deaths due to Oesophageal Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
 plt.show()
+
+
+# %% Get Statistics for Table in write-up (from results_with_healthsystem);
+
+# ** Current prevalence (2020) of people who have diagnosed oesophageal cancer in 2020 (total; and current stage 1, 2, 3,
+# 4), per 100,000 population aged 20+
+
+
+# ** Number of deaths from oesophageal cancer per year per 100,000 population.
+
+# ** Incidence rate of diagnosis of oesophageal cancer (all stages combined), per 100,000 population aged 20+
+
+# ** Number of people given attempted curative treatment for oesophageal dysplasia / cancer per year, per 100,000 population aged 20+
+
+# ** 5-year survival following treatment
+# See sepaerate file
