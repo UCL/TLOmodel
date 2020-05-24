@@ -108,6 +108,7 @@ def get_summary_stats(logfile):
     # 4) DEATHS wrt age (total over whole simulation)
     deaths = output['tlo.methods.demography']['death']
     deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
+
     oes_cancer_deaths = pd.Series(deaths.loc[deaths.cause == 'OesophagealCancer'].groupby(by=['age_group']).size())
     oes_cancer_deaths.index = oes_cancer_deaths.index.astype(make_age_grp_types())
     oes_cancer_deaths = oes_cancer_deaths.sort_index()
@@ -120,6 +121,7 @@ def get_summary_stats(logfile):
         'total_counts_by_stage_over_time': counts_by_stage,
         'counts_by_cascade': counts_by_cascade,
         'dalys': dalys,
+        'deaths': deaths,
         'oes_cancer_deaths': oes_cancer_deaths,
         'annual_count_of_dxtr': annual_count_of_dxtr
     }
@@ -205,15 +207,38 @@ plt.show()
 
 # %% Get Statistics for Table in write-up (from results_with_healthsystem);
 
-# ** Current prevalence (2020) of people who have diagnosed oesophageal cancer in 2020 (total; and current stage 1, 2, 3,
+# ** Current prevalence (end-2019) of people who have diagnosed oesophageal cancer in 2020 (total; and current stage 1, 2, 3,
 # 4), per 100,000 population aged 20+
 
+counts = results_with_healthsystem['total_counts_by_stage_over_time'][[
+    'total_low_grade_dysplasia',
+    'total_high_grade_dysplasia',
+    'total_stage1',
+    'total_stage2',
+    'total_stage3',
+    'total_stage4'
+]].iloc[-1]
+
+totpopsize = results_with_healthsystem['total_counts_by_stage_over_time'][[
+    'total_none',
+    'total_low_grade_dysplasia',
+    'total_high_grade_dysplasia',
+    'total_stage1',
+    'total_stage2',
+    'total_stage3',
+    'total_stage4'
+]].iloc[-1].sum()
+
+prev_per_100k = 1e5 * counts.sum() / totpopsize
 
 # ** Number of deaths from oesophageal cancer per year per 100,000 population.
+# average deaths per year = deaths over ten years divided by ten, * 100k/population size
+(results_with_healthsystem['oes_cancer_deaths'].sum()/10) * 1e5/popsize
 
-# ** Incidence rate of diagnosis of oesophageal cancer (all stages combined), per 100,000 population aged 20+
+# ** Incidence rate of diagnosis, treatment, palliative care for oesophageal cancer (all stages combined),
+# per 100,000 population
+(results_with_healthsystem['annual_count_of_dxtr']).mean() * 1e5/popsize
 
-# ** Number of people given attempted curative treatment for oesophageal dysplasia / cancer per year, per 100,000 population aged 20+
 
 # ** 5-year survival following treatment
 # See sepaerate file
