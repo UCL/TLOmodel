@@ -149,6 +149,8 @@ class DxTest:
             :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
                                         the observation of a continuous property
             :param threshold: the observed value of a continuous property above which the result of the test is True.
+            :param target_category: the category value (as string) to correspond with a positive result if property
+            is categorical.
     """
 
     def __init__(self,
@@ -158,7 +160,8 @@ class DxTest:
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,
-                 threshold: float = None
+                 threshold: float = None,
+                 target_category: str = None
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
@@ -187,6 +190,7 @@ class DxTest:
         self.specificity = _default_if_none(specificity, 1.0)
         self.measure_error_stdev = _default_if_none(measure_error_stdev, 0.0)
         self.threshold = threshold
+        self.target_category = target_category
 
     def __hash_key(self):
         return (
@@ -254,6 +258,18 @@ class DxTest:
                 test_value = float(reading)
             else:
                 test_value = bool(reading >= self.threshold)
+
+        elif (df[self.property].dtype == "category") and (self.target_category is not None):
+            # Categorical property: compare the value to the 'target_category' if its specified
+            is_match_to_cat = (true_value == self.target_category)
+
+            if is_match_to_cat:
+                # Apply the sensitivity:
+                test_value = hs_module.rng.rand() < self.sensitivity
+            else:
+                # Apply the specificity:
+                test_value = not (hs_module.rng.rand() < self.specificity)
+
         else:
             test_value = true_value
 
