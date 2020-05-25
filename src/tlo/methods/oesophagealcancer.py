@@ -503,7 +503,7 @@ class OesophagealCancer(Module):
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_OesophagealCancer_PalliativeCare(module=self, person_id=person_id),
-                priorty=0,
+                priority=0,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
             )
