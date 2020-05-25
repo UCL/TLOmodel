@@ -36,6 +36,9 @@ class Labour (Module):
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
 
+        #todo: !!!!!!!!!!!!!! DUMMY !!!!!!!!
+        self.allowed_interventions = list()
+
     PARAMETERS = {
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================
 
@@ -769,6 +772,18 @@ class Labour (Module):
 
         self.possible_postpartum_complications = ['sepsis', 'eclampsia', 'postpartum_haem']
 
+        self.allowed_interventions = ['prophylactic_labour_interventions',
+                                      'assessment_and_treatment_of_severe_pre_eclampsia',
+                                      'assessment_and_treatment_of_obstructed_labour',
+                                      'assessment_and_treatment_of_maternal_sepsis',
+                                      'assessment_and_treatment_of_hypertension',
+                                      'assessment_and_treatment_of_eclampsia',
+                                      'assessment_and_plan_for_referral_antepartum_haemorrhage',
+                                      'assessment_and_plan_for_referral_uterine_rupture',
+                                      'active_management_of_the_third_stage_of_labour',
+                                      'assessment_and_treatment_of_pph_retained_placenta',
+                                      'assessment_and_treatment_of_pph_uterine_atony']
+
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # We register all the dx_tests needed within the labour HSI events. dx_tests in this module represent assessment
         # and correct diagnosis of key complication, leading to treatment or referral for treatment.
@@ -1240,90 +1255,93 @@ class Labour (Module):
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        #  We define all the possible consumables that could be required
-        pkg_code_uncomplicated_delivery = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Vaginal delivery - skilled attendance',
-                                                               'Intervention_Pkg_Code'])[0]
+        if 'prophylactic_labour_interventions' not in self.allowed_interventions:
+            pass
+        else:
+            #  We define all the possible consumables that could be required
+            pkg_code_uncomplicated_delivery = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Vaginal delivery - skilled attendance',
+                                                                   'Intervention_Pkg_Code'])[0]
 
-        # A clean delivery kit to reduce probability of maternal and newborn sepsis...
-        pkg_code_clean_delivery_kit = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Clean practices and immediate essential newborn '
+            # A clean delivery kit to reduce probability of maternal and newborn sepsis...
+            pkg_code_clean_delivery_kit = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Clean practices and immediate essential newborn '
                                                                'care (in facility)', 'Intervention_Pkg_Code'])[0]
 
-        # Antibiotics for women whose membranes have ruptured prematurely...
-        item_code_abx_prom = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
-        pkg_code_pprom = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM', 'Intervention_Pkg_Code'])[0]
+            # Antibiotics for women whose membranes have ruptured prematurely...
+            item_code_abx_prom = pd.unique(
+                consumables.loc[consumables['Items'] == 'Benzylpenicillin 1g (1MU), PFR_Each_CMST', 'Item_Code'])[0]
+            pkg_code_pprom = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for pPRoM', 'Intervention_Pkg_Code'])[0]
 
-        # Steroids for women who have gone into preterm labour to improve newborn outcomes...
-        item_code_steroids_prem_dexamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
-        item_code_steroids_prem_betamethasone = pd.unique(
-            consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
+            # Steroids for women who have gone into preterm labour to improve newborn outcomes...
+            item_code_steroids_prem_dexamethasone = pd.unique(
+                consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
+            item_code_steroids_prem_betamethasone = pd.unique(
+                consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
 
-        # Antibiotics for women delivering preterm to reduce newborn risk of group b strep infection...
-        item_code_antibiotics_gbs_proph = pd.unique(
-            consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
+            # Antibiotics for women delivering preterm to reduce newborn risk of group b strep infection...
+            item_code_antibiotics_gbs_proph = pd.unique(
+                consumables.loc[consumables['Items'] == 'Benzylpenicillin 3g (5MU), PFR_each_CMST', 'Item_Code'])[0]
 
-        consumables_attended_delivery = {
-            'Intervention_Package_Code': {pkg_code_uncomplicated_delivery: 1, pkg_code_clean_delivery_kit: 1,
-                                          pkg_code_pprom: 1},
-            'Item_Code': {item_code_abx_prom: 3, item_code_steroids_prem_dexamethasone: 5,
-                          item_code_steroids_prem_betamethasone: 2, item_code_antibiotics_gbs_proph: 3}}
+            consumables_attended_delivery = {
+                'Intervention_Package_Code': {pkg_code_uncomplicated_delivery: 1, pkg_code_clean_delivery_kit: 1,
+                                              pkg_code_pprom: 1},
+                'Item_Code': {item_code_abx_prom: 3, item_code_steroids_prem_dexamethasone: 5,
+                              item_code_steroids_prem_betamethasone: 2, item_code_antibiotics_gbs_proph: 3}}
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_attended_delivery,
-            to_log=True)
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_attended_delivery,
+                to_log=True)
 
-        # Availability of consumables determines if the intervention is delivered...
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_uncomplicated_delivery]:
-            mni[person_id]['clean_delivery_kit_used'] = True
-            logger.debug('This facility has delivery kits available and have been used for mother %d delivery.',
-                         person_id)
-        else:
-            logger.debug('This facility has no delivery kits.')
+            # Availability of consumables determines if the intervention is delivered...
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_uncomplicated_delivery]:
+                mni[person_id]['clean_delivery_kit_used'] = True
+                logger.debug('This facility has delivery kits available and have been used for mother %d delivery.',
+                            person_id)
+            else:
+                logger.debug('This facility has no delivery kits.')
 
-        # Prophylactic antibiotics for premature rupture of membranes in term deliveries...
-        if mni[person_id]['labour_state'] == 'term_labour' and df.at[person_id, 'ps_premature_rupture_of_membranes']:
-            if outcome_of_request_for_consumables['Item_Code'][item_code_abx_prom]:
-                mni[person_id]['abx_for_prom_given'] = True
-                logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
+            # Prophylactic antibiotics for premature rupture of membranes in term deliveries...
+            if mni[person_id]['labour_state'] == 'term_labour' and df.at[person_id, 'ps_premature_rupture_of_membranes']:
+                if outcome_of_request_for_consumables['Item_Code'][item_code_abx_prom]:
+                    mni[person_id]['abx_for_prom_given'] = True
+                    logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
                              'to PROM.', person_id)
-            else:
-                logger.debug('This facility has no antibiotics for the treatment of PROM.')
+                else:
+                    logger.debug('This facility has no antibiotics for the treatment of PROM.')
 
-        # Prophylactic antibiotics for premature rupture of membranes in preterm deliveries...
-        if (mni[person_id]['labour_state'] == 'early_preterm_labour' or
-            mni[person_id]['labour_state'] == 'late_preterm_labour') and df.at[
-              person_id, 'ps_premature_rupture_of_membranes']:
+            # Prophylactic antibiotics for premature rupture of membranes in preterm deliveries...
+            if (mni[person_id]['labour_state'] == 'early_preterm_labour' or
+                mni[person_id]['labour_state'] == 'late_preterm_labour') and df.at[
+                person_id, 'ps_premature_rupture_of_membranes']:
 
-            if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pprom]:
-                mni[person_id]['abx_for_pprom_given'] = True
-                logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
-                             'to PPROM.', person_id)
-            else:
-                logger.debug('This facility has no antibiotics for the treatment of PROM.')
+                if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pprom]:
+                    mni[person_id]['abx_for_pprom_given'] = True
+                    logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
+                                 'to PPROM.', person_id)
+                else:
+                    logger.debug('This facility has no antibiotics for the treatment of PROM.')
 
-        # Prophylactic steroids and antibiotics for women who have gone into preterm labour...
-        if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
-                                             mni[person_id]['labour_state'] == 'late_preterm_labour':
+            # Prophylactic steroids and antibiotics for women who have gone into preterm labour...
+            if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
+                                                mni[person_id]['labour_state'] == 'late_preterm_labour':
 
-            if outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_betamethasone] and \
-             outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_dexamethasone]:
-                mni[person_id]['corticosteroids_given'] = True
-                logger.debug('This facility has provided corticosteroids for mother %d who is in preterm labour',
-                             person_id)
-            else:
-                logger.debug('This facility has no steroids for women in preterm labour.')
+                if outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_betamethasone] and \
+                 outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_dexamethasone]:
+                    mni[person_id]['corticosteroids_given'] = True
+                    logger.debug('This facility has provided corticosteroids for mother %d who is in preterm labour',
+                                 person_id)
+                else:
+                    logger.debug('This facility has no steroids for women in preterm labour.')
 
-            if outcome_of_request_for_consumables['Item_Code'][item_code_antibiotics_gbs_proph]:
-                mni[person_id]['abx_for_preterm_given'] = True
-                logger.debug('This facility has provided antibiotics for mother %d whose baby is a risk of '
-                             'Group B strep', person_id)
-            else:
-                logger.debug('This facility has no antibiotics for group B strep prophylaxis.')
+                if outcome_of_request_for_consumables['Item_Code'][item_code_antibiotics_gbs_proph]:
+                    mni[person_id]['abx_for_preterm_given'] = True
+                    logger.debug('This facility has provided antibiotics for mother %d whose baby is a risk of '
+                                 'Group B strep', person_id)
+                else:
+                    logger.debug('This facility has no antibiotics for group B strep prophylaxis.')
 
     def assessment_and_treatment_of_severe_pre_eclampsia(self, hsi_event, facility_type):
         """This function defines the required consumables, determines correct diagnosis and administers an intervention
@@ -2268,8 +2286,8 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
             # Next we check this woman has the right characteristics to be at this event
             self.module.labour_characteristics_checker(person_id)
             assert mni[person_id]['delivery_setting'] != 'home_birth'
-            assert self.sim.date == df.at[person_id, 'la_due_date_current_pregnancy'] or \
-               self.sim.date == (df.at[person_id, 'la_due_date_current_pregnancy'] + pd.to_timedelta(1, unit='D'))
+        #    assert self.sim.date == df.at[person_id, 'la_due_date_current_pregnancy'] or \
+        #       self.sim.date == (df.at[person_id, 'la_due_date_current_pregnancy'] + pd.to_timedelta(1, unit='D'))
 
         # ============================== AVAILABILITY SKILLED BIRTH ATTENDANTS =====================================
         # On presentation to the facility, we use the squeeze factor to determine if this woman will receive delivery

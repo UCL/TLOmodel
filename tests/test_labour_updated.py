@@ -98,6 +98,7 @@ def test_run_health_system_high_squeeze():
 
     check_dtypes(sim)
 
+
 def test_run_health_system_events_wont_run():
     """This test runs a simulation in which no scheduled HSIs will run.. Therefore it tests the logic in the
     not_available functions of the Labour HSIs to ensure women who want to deliver in a facility, but cant, due to the

@@ -228,7 +228,7 @@ class NewbornOutcomes(Module):
 
 # ======================================= LINEAR MODEL EQUATIONS ======================================================
         # All linear equations used in this module are stored within the nb_newborn_equations parameter below
-        # TODO: predictors commented out presently for analysis
+        # TODO: majority of predictors commented out presently for analysis, remaining predictors are treatment effects
 
         params = self.parameters
         params['nb_newborn_equations'] = {
@@ -357,7 +357,7 @@ class NewbornOutcomes(Module):
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # We define the diagnostic tests that will be called within the health system interactions. As with Labour, the
-        # sensitivity of these tests varies between facility type
+        # sensitivity of these tests varies between facility type (hc = health centre, hp = hospital)
 
         # Neonatal sepsis...
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -391,14 +391,14 @@ class NewbornOutcomes(Module):
 
     # ===================================== HELPER AND TESTING FUNCTIONS ==============================================
     def eval(self, eq, person_id):
-        # TODO: remove and use new LM functionality
-        """Compares the result of a specific linear equation with a random draw providing a boolean for the outcome
-        under examination. For equations that require external variables, they are also defined here"""
+        """This function compares the result of a specific linear equation with a random draw providing a boolean for
+        the outcome under examination. For equations that require external variables, they are also defined here"""
         df = self.sim.population.props
         nci = self.newborn_care_info
         mni = self.sim.modules['Labour'].mother_and_newborn_info
         mother_id = df.loc[person_id, 'mother_id']
         person = df.loc[[person_id]]
+        # TODO: remove and use new LM functionality
 
         # Here we define all the possible external variables used in the linear model
         cord_care_given = nci[person_id]['cord_care']
@@ -448,7 +448,7 @@ class NewbornOutcomes(Module):
                                                                        mean_birth_weight_list_location],
                                                                 scale=standard_deviation, )
 
-        # Make the appropriate changes to the data frame and log accordingly
+        # Make the appropriate changes to the data frame
         if birth_weight > 2500:
             df.at[child_id, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
         elif 1500 < birth_weight < 2500:
@@ -468,11 +468,12 @@ class NewbornOutcomes(Module):
         else:
             df.at[child_id, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
 
-    # ============================================= RISK OF COMPLICATIONS =================================================
+    # ============================================= RISK OF COMPLICATIONS =============================================
 
     def set_neonatal_death_status(self, individual_id, cause):
-        """This function  is called for neonates that have experienced a complication after birth and determines if it
-        will cause their death. Properties in the DF are set accordingly."""
+        """This function  is called for neonates that have experienced a complication after birth and determines if this
+         complication will cause their death. Properties in the data frame are set accordingly, and the result of the
+         equation is tracker"""
         df = self.sim.population.props
         params = self.parameters
         nci = self.newborn_care_info
@@ -483,12 +484,12 @@ class NewbornOutcomes(Module):
             self.NewbornComplicationTracker[f'{cause}_death'] += 1
             nci[individual_id]['cause_of_death_after_birth'].append(cause)
 
-
             logger.debug(F'This is NewbornOutcomes scheduling a death for person %d on date %s who died due to {cause}'
                          'complications following birth', individual_id, self.sim.date)
 
     def apply_risk_of_early_onset_neonatal_sepsis(self, child_id):
-        """"""
+        """This function uses the linear model to determines if a neonate will develop early onset neonatal sepsis and
+         makes the appropriate changes to the data frame"""
         params = self.parameters
         df = self.sim.population.props
 
@@ -500,7 +501,8 @@ class NewbornOutcomes(Module):
                         child_id, self.sim.date)
 
     def apply_risk_of_encephalopathy(self, child_id):
-        """"""
+        """This function uses the linear model to determines if a neonate will develop neonatal encephalopathy, at what
+        severity, and makes the appropriate changes to the data frame"""
         params = self.parameters
         df = self.sim.population.props
 
@@ -524,7 +526,8 @@ class NewbornOutcomes(Module):
             assert df.at[child_id, 'nb_encephalopathy'] != 'none'
 
     def apply_risk_of_failure_to_transition(self, child_id):
-        """"""
+        """This function uses the linear model to determines if a neonate will develop failure to transition and makes
+        the appropriate changes to the data frame"""
         params = self.parameters
         df = self.sim.population.props
 
@@ -534,7 +537,7 @@ class NewbornOutcomes(Module):
             self.NewbornComplicationTracker['failed_to_transition'] += 1
 
             logger.debug(f'Neonate %d has failed to transition from foetal to neonatal state and is not breathing '
-                     f'following delivery', child_id)
+                         f'following delivery', child_id)
 
         # Otherwise we use the linear model to calculate risk and make changes to the data frame
         elif self.eval(params['nb_newborn_equations']['failure_to_transition'], child_id):
@@ -547,7 +550,7 @@ class NewbornOutcomes(Module):
     # Here we store interventions delivered following birth as functions that are called within the HSIs
 
     def kangaroo_mother_care(self, hsi_event, facility_type):
-        """The kangaroo_mother_care function manages the diagnosis and treatment of low birth weight neonates who have
+        """This function manages the diagnosis and treatment of low birth weight neonates who have
         delivered in a facility. It is called by the HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth"""
 
         df = self.sim.population.props
@@ -563,8 +566,8 @@ class NewbornOutcomes(Module):
                          'care has been initiated', person_id, self.sim.date)
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event, facility_type):
-        """The assessment_and_initiation_of_neonatal_resus function manages the diagnosis of failure to
-        transition/encephalopathy and the administration of neonatal resuscitation for neonates delivered in a facility.
+        """This function manages the diagnosis of failure to transition/encephalopathy and the administration of
+        neonatal resuscitation for neonates delivered in a facility.
         It is called by the HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth"""
 
         df = self.sim.population.props
@@ -593,9 +596,8 @@ class NewbornOutcomes(Module):
                 self.NewbornComplicationTracker['resus'] += 1
 
     def assessment_and_treatment_newborn_sepsis(self, hsi_event, facility_type):
-        """The assessment_and_treatment_newborn_sepsis function manages the diagnosis and treatment of early onset
-        neonatal sepsis for neonates delivered in a facility. It is called by the
-        HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth"""
+        """This function manages the diagnosis and treatment of early onset neonatal sepsis for neonates delivered in a
+        facility. It is called by the HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth"""
         df = self.sim.population.props
         person_id = hsi_event.target
 
@@ -617,8 +619,11 @@ class NewbornOutcomes(Module):
                 self.NewbornComplicationTracker['sep_treatment'] += 1
 
     def hsi_cannot_run(self, individual_id):
+        """This function determines what happens to neonates if HSI_NewbornOutcomes_
+        ReceivesSkilledAttendanceFollowingBirth cannot run with the current service configuration"""
         nci = self.newborn_care_info
 
+        # We apply the risk of neonatal complications that would have occured if the HSI was able to run
         if ~nci[individual_id]['sought_care_for_complication']:
             self.module.apply_risk_of_early_onset_neonatal_sepsis(individual_id)
             self.module.apply_risk_of_encephalopathy(individual_id)
@@ -634,7 +639,7 @@ class NewbornOutcomes(Module):
         params = self.parameters
         nci = self.newborn_care_info
 
-        # We check that the baby has survived labour and has been delivered (even if the mother did no survive)
+        # We check that the baby has survived labour and has been delivered (even if the mother did not survive)
         if (df.at[mother_id, 'is_alive'] and ~df.at[mother_id, 'la_intrapartum_still_birth']) or \
            (~df.at[mother_id, 'is_alive'] and df.at[mother_id, 'la_maternal_death_in_labour'] and
            ~df.at[mother_id, 'la_intrapartum_still_birth']):
@@ -702,22 +707,19 @@ class NewbornOutcomes(Module):
                 random_choice = self.rng.choice(etiology, size=1, p=probabilities)
                 df.at[child_id, 'nb_congenital_anomaly'] = random_choice
 
-    # =================================== BIRTH-WEIGHT AND SIZE FOR GESTATIONAL AGE ===================================
             # The set birth weight function is used to determine this newborns birth weight and size for gestational age
             self.set_birth_weight(child_id, nci[child_id]['ga_at_birth'])
 
-    # ================================== COMPLICATIONS FOLLOWING BIRTH ================================================
             # Here, using linear equations, we determine individual newborn risk of complications following delivery.
-            # -------------------------------------- RETINOPATHY... ------------------------------------------
-            if (child.nb_early_preterm or child.nb_late_preterm) and self.eval(
-                params['nb_newborn_equations']['retinopathy'], child_id):
+            if (child.nb_early_preterm or child.nb_late_preterm) and self.eval(params[
+                                                                                   'nb_newborn_equations'][
+                                                                                   'retinopathy'], child_id):
                 random_draw = self.rng.choice(('mild', 'moderate', 'severe', 'blindness'),
                                               p=params['prob_retinopathy_severity'])
                 df.at[child_id, 'nb_retinopathy_prem'] = random_draw
                 logger.debug(f'Neonate %d has developed {random_draw}retinopathy of prematurity',
                              child_id)
 
-            # ------------------------------------------- SEPSIS.... ------------------------------------------------
             # If the child's mother has delivered at home, we immediately apply the risk and make changes to the
             # data frame. Otherwise this is done during the HSI
             if nci[child_id]['delivery_setting'] == 'home_birth':
@@ -726,20 +728,16 @@ class NewbornOutcomes(Module):
             # TODO: (IMPORTANT) apply distribution of onset of neonatal sepsis, days 0-7, and add code to the
             #  postpartum module to give these newborns symptoms and seek care
 
-            # ---------------------------------------- ENCEPHALOPATHY.... --------------------------------------------
-            # Term neonates then have a risk of encephalopathy applied
+                # Term neonates then have a risk of encephalopathy applied
                 if ~child.nb_early_preterm and ~child.nb_late_preterm:
                     self.apply_risk_of_encephalopathy(child_id)
 
-            # --------------------------------------- FAILURE TO TRANSITION... ---------------------------------------
             # Following the application of the above complications, we determine which neonates will fail to transition
             # (i.e. not spontaneously begin breathing) on birth
                 self.apply_risk_of_failure_to_transition(child_id)
 
-    # ======================================= SCHEDULING NEWBORN CARE  ================================================
-        # Neonates who were delivered in a facility are automatically scheduled to receive care after birth at the same
-        # level of facility that they were delivered in
-
+            # Neonates who were delivered in a facility are automatically scheduled to receive care after birth at the
+            # same level of facility that they were delivered in
             if m['delivery_setting'] == 'health_centre':
                 event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(
                     self, person_id=child_id, facility_level_of_this_hsi=1)
@@ -782,9 +780,7 @@ class NewbornOutcomes(Module):
                                  'FollowingBirthFacilityLevel1 for child %d whose mother has sought care after a '
                                  'complication has developed following a home_birth', child_id)
 
-    # ============================================ BREAST FEEDING AT HOME ============================================
-            # Using DHS data we apply a one of probability that women who deliver at home will initiate breastfeeding
-            # within one hour of birth
+            # We apply a probability that women who deliver at home will initiate breastfeeding within one hour of birth
             # We assume that neonates with complications will not start breastfeeding within one hour
             if (m['delivery_setting'] == 'home_birth') and (~child.nb_failed_to_transition and
                                                             ~child.nb_early_onset_neonatal_sepsis and
@@ -797,10 +793,8 @@ class NewbornOutcomes(Module):
                 else:
                     logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', child_id)
 
-    # ========================================== SCHEDULING NEWBORN DEATH EVENT  ======================================
             # All newborns are then scheduled to pass through a newborn death event to determine likelihood of death
             # in the presence of complications
-
             self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=3))
             logger.info('This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person %d', child_id)
 
@@ -852,7 +846,7 @@ class NewbornOutcomes(Module):
 
 
 class NewbornDeathEvent(Event, IndividualScopeEventMixin):
-    """This is the NewbornDeathEvent. It is scheduled for all newborns via the on_birth function. This event determines
+    """This is the NewbornDeathEvent. It is scheduled for all newborns by the on_birth function. This event determines
     if those newborns who have experienced any complications will die due to them. This event will likely be changed as
      at present we dont deal with death of newborns due to congenital anomalies awaiting discussion regarding ongoing
      newborn care (NICU)"""
@@ -870,7 +864,6 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 
         # Using the set_neonatal_death_status function, defined above, it is determined if newborns who have experienced
         # complications will die because of them.
-
         if child.nb_early_onset_neonatal_sepsis:
             self.module.set_neonatal_death_status(individual_id, cause='neonatal_sepsis')
 
@@ -888,6 +881,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
             self.module.set_neonatal_death_status(individual_id, cause='preterm_birth')
 
         child = df.loc[individual_id]
+        # If a neonate has died, the death is scheduled and tracked
         if child.nb_death_after_birth:
             self.module.NewbornComplicationTracker['death'] += 1
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
@@ -912,7 +906,8 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 class NewbornDisabilityEvent(Event, IndividualScopeEventMixin):
     """ This is NewbornDisabilityEvent. It is scheduled by NewbornDeathEvent for surviving neonates. This event
     determines level of disability for neonates who have experience complications around the time of birth. The
-    resulting disabilities are then mapped to DALY weights and reported to the health burden module."""
+    resulting disabilities are then mapped to DALY weights and reported to the health burden module. Complications are
+    also reset"""
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
@@ -1006,8 +1001,9 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # This HSI follows a similar structure as Labour_PresentsForSkilledAttendanceInLabourFacilityLevel1
-        # This function manages the administration of essential newborn care and prophylaxis
+        # This HSI follows a similar structure as Labour_PresentsForSkilledAttendanceInLabour
+        # First we apply the effect of essential newborn care prophylactic interventions for all neonates delivered in
+        # facility
         if df.at[person_id, 'is_alive']:
             if nci[person_id]['delivery_attended'] and ~nci[person_id]['sought_care_for_complication']:
 
@@ -1036,7 +1032,6 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 nci[person_id]['cord_care'] = True
             # Tetracycline eye care and vitamin k prophylaxis are conditioned on the availability of consumables
 
-            # ------------------------------------------ TETRACYCLINE-----------------------------------------------
                 if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
                     logger.debug('Neonate %d has received tetracycline eye drops to reduce sepsis risk following a '
                                  'facility delivery', person_id)
@@ -1046,7 +1041,6 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 else:
                     logger.debug('This facility has no tetracycline and therefore was not given')
 
-            # ------------------------------------------ VITAMIN K --------------------------------------------------
                 if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k] and \
                    outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]:
                     logger.debug('Neonate %d has received vitamin k prophylaxis following a facility delivery',
@@ -1068,7 +1062,8 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 logger.debug('neonate %d received no prophylaxis as they were delivered unattended', person_id)
 
         # --------------------------------- COMPLICATION RISKS --------------------------------------------------
-        # Following the administration of prophylaxis we determine if this neonate will develop sepsis
+            # Following the administration of prophylaxis we determine if this neonate has developed any complications
+            # following birth
             if ~nci[person_id]['sought_care_for_complication']:
                 self.module.apply_risk_of_early_onset_neonatal_sepsis(person_id)
 
@@ -1103,8 +1098,9 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
 
             # In the case of neonates who needed resuscitation, but do not receive the intervention, we apply a risk of
             # encephalopathy due to additional hypoxia at birth
-            if (df.at[person_id, 'nb_encephalopathy'] == 'none') and df.at[person_id, 'nb_failed_to_transition'] \
-                and ~df.at[person_id, 'nb_received_neonatal_resus']:
+            if (df.at[person_id, 'nb_encephalopathy'] == 'none') and \
+                    df.at[person_id, 'nb_failed_to_transition'] and \
+                    ~df.at[person_id, 'nb_received_neonatal_resus']:
                 self.module.apply_risk_of_encephalopathy(person_id)
 
     def did_not_run(self):
@@ -1124,8 +1120,11 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
 
     # ------------------------------ (To go here- referral for further care) ---------------------------------------
 
+
 class HSI_NewbornOutcomes_NeonateInpatientDay(HSI_Event, IndividualScopeEventMixin):
-    """ """
+    """This is HSI_NewbornOutcomes_NeonateInpatientDay. This HSI will act to record inpatient treatment days required by
+     neonates who need care after birth. It has not been completed awaiting discussion around referral of neonates to
+     NICU"""
     def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
@@ -1190,7 +1189,6 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         severe_enceph_death = self.module.NewbornComplicationTracker['severe_enceph_death']
         preterm_birth_death = self.module.NewbornComplicationTracker['preterm_birth_death']
 
-
         sepsis_treatment = self.module.NewbornComplicationTracker['sep_treatment']
         resus = self.module.NewbornComplicationTracker['resus']
     #    tetra_cycline = self.module.NewbornComplicationTracker['t_e_d']
@@ -1217,6 +1215,7 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'severe_enceph_incidence': severe_enceph / total_births_last_year * 100,
                            'severe_enceph_death': severe_enceph_death,
                            'total_enceph_incidence': all_enceph / total_births_last_year * 100,
+                           'total_enceph_death':mild_enceph_death + moderate_enceph_death + severe_enceph_death,
                            'ftt_crude': ftt,
                            'ftt_incidence': ftt / total_births_last_year * 100,
                            'ftt_death': ftt_death,

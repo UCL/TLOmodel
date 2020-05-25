@@ -29,8 +29,8 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 2)
-popsize = 1000
+end_date = Date(2015, 1, 2)
+popsize = 20000
 
 for label, service_avail in scenarios.items():
     # add file handler for the purpose of logging
@@ -93,9 +93,9 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # sepsis_incidence = maternal_counts['sep_incidence']
     # eclampsia_incidence = maternal_counts['ec_incidence']
     # pph_incidence = maternal_counts['pph_incidence']
-    home_birth_rate = maternal_counts['home_births_prop']
-    health_centre_rate = maternal_counts['health_centre_births']
-    hospital_rate = maternal_counts['hospital_births']
+    # home_birth_rate = maternal_counts['home_births_prop']
+    # health_centre_rate = maternal_counts['health_centre_births']
+    # hospital_rate = maternal_counts['hospital_births']
     # caesarean_section_rate = maternal_counts['cs_delivery_rate']
     # nmr = newborn_counts['nmr_early']
     # neonatal_sepsis  = newborn_counts['nmr_early']
@@ -108,18 +108,22 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # ec_deaths = maternal_deaths['eclampsia']
     # pph_deaths = maternal_deaths['postpartum_haem']
 
-    #sep_deaths = maternal_deaths['sepsis']
-    #ur_deaths = maternal_deaths['uterine_rupture']
-    #aph_deaths = maternal_deaths['aph']
-    #ec_deaths = maternal_deaths['eclampsia']
-    #pph_deaths = maternal_deaths['postpartum_haem']
+    # sep_deaths = maternal_deaths['sepsis']
+    # ur_deaths = maternal_deaths['uterine_rupture']
+    # aph_deaths = maternal_deaths['aph']
+    # ec_deaths = maternal_deaths['eclampsia']
+    # pph_deaths = maternal_deaths['postpartum_haem']
 
-    #return mmr, nmr,  sbr, aph_incidence, ol_incidence, ur_incidence, sepsis_incidence, eclampsia_incidence, \
+    pt_d = newborn_counts['preterm_birth_death']
+    ftt_d = newborn_counts['ftt_death']
+    enc_d = newborn_counts['total_enceph_death']
+    nb_sep_d = newborn_counts['sepsis_deaths']
+
+    # return mmr, nmr,  sbr, aph_incidence, ol_incidence, ur_incidence, sepsis_incidence, eclampsia_incidence, \
     #       pph_incidence, home_birth_rate, health_centre_rate, hospital_rate, caesarean_section_rate,
-
-    return home_birth_rate, health_centre_rate, hospital_rate
-
-   # return sep_deaths, ur_deaths, aph_deaths, ec_deaths, pph_deaths
+    # return home_birth_rate, health_centre_rate, hospital_rate
+    # return sep_deaths, ur_deaths, aph_deaths, ec_deaths, pph_deaths
+    return pt_d, ftt_d, enc_d, nb_sep_d
 
 # maternal_deaths = dict()
 # newborn_deaths = dict()
@@ -130,16 +134,20 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
 # maternal_sepsis = dict()
 # eclampsia = dict()
 # postpartum_haem = dict()
-home_births = dict()
-health_centre_births = dict()
-hospital_births = dict()
+# home_births = dict()
+# health_centre_births = dict()
+# hospital_births = dict()
 # caesarean_births = dict()
+# sepsis_deaths = dict()
+# uterine_rupture_deaths = dict()
+# antepartum_haem_deaths = dict()
+# eclampsia_deaths = dict()
+# postpartum_haem_deaths = dict()
 
-#sepsis_deaths = dict()
-#uterine_rupture_deaths = dict()
-#antepartum_haem_deaths = dict()
-#eclampsia_deaths = dict()
-#postpartum_haem_deaths = dict()
+preterm_birth_deaths = dict()
+failure_to_transition_deaths = dict()
+encephalopathy_death = dict()
+newborn_sepsis_death = dict()
 
 
 #for label, file in output_files.items():
@@ -153,8 +161,12 @@ hospital_births = dict()
 #    sepsis_deaths[label], uterine_rupture_deaths[label], antepartum_haem_deaths[label], eclampsia_deaths[label], \
 #    postpartum_haem_deaths[label] = get_incidence_rate_and_death_numbers_from_logfile(file)
 
+# for label, file in output_files.items():
+#    home_births[label], health_centre_births[label], hospital_births[label] = \
+#        get_incidence_rate_and_death_numbers_from_logfile(file)
 for label, file in output_files.items():
-    home_births[label], health_centre_births[label], hospital_births[label] = \
+    preterm_birth_deaths[label], failure_to_transition_deaths[label], encephalopathy_death[label], \
+    newborn_sepsis_death[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
 data = {}
 
@@ -166,6 +178,13 @@ def generate_graphs(dictionary, title, saved_title):
     plt.title(f'{title}')
     plt.savefig(outputpath / (f"{saved_title}" + datestamp + ".pdf"), format='pdf')
     plt.show()
+
+
+generate_graphs(preterm_birth_deaths, 'Preterm Birth Deaths by Year', "ptb_death_by_scenario")
+generate_graphs(failure_to_transition_deaths, 'Failure To Transition Deaths by Year', "ftt_death_by_scenario")
+generate_graphs(encephalopathy_death, 'Neonatal Encephalopathy Deaths by Year', "nenc_death_by_scenario")
+generate_graphs(newborn_sepsis_death, 'Neonatal Sepsis Deaths by Year', "nsep_death_by_scenario")
+
 
 
 #generate_graphs(sepsis_deaths, 'Maternal Sepsis Deaths by Year', "sep_death_by_scenario")
@@ -184,31 +203,22 @@ def generate_graphs(dictionary, title, saved_title):
 #generate_graphs(postpartum_haem, 'Postpartum Haemorrhage Rate by Year ', "PPH_by_scenario")
 
 
-data2 = {}
-data3 = {}
-for label in home_births.keys():
-    data.update({label: home_births[label]})
-for label in hospital_births.keys():
-    data2.update({label: hospital_births[label]})
-for label in health_centre_births.keys():
-    data3.update({label: health_centre_births[label]})
+# data2 = {}
+# data3 = {}
+# for label in home_births.keys():
+#    data.update({label: home_births[label]})
+# for label in hospital_births.keys():
+#    data2.update({label: hospital_births[label]})
+# for label in health_centre_births.keys():
+#    data3.update({label: health_centre_births[label]})
 
-fig, ax = plt.subplots()
-pd.concat(data, axis=1).plot.bar()
-pd.concat(data2, axis=1).plot.bar()
-pd.concat(data3, axis=1).plot.bar()
-plt.title('Births by Setting')
-plt.savefig(outputpath / ("birth_setting" + datestamp + ".pdf"), format='pdf')
-plt.show()
+# fig, ax = plt.subplots()
+# pd.concat(data, axis=1).plot.bar()
+# pd.concat(data2, axis=1).plot.bar()
+# pd.concat(data3, axis=1).plot.bar()
+# plt.title('Births by Setting')
+# plt.savefig(outputpath / ("birth_setting" + datestamp + ".pdf"), format='pdf')
+# plt.show()
 
-
-#    ax.bar(data['year'], data)
-#   ax.bar(data2['year'], data2)
-#    ax.bar(data3['year'], data3)
-
-#    ax.set_ylabel('Percentage of All Births')
-#    ax.set_title('Proportion of Yearly Births by Setting')
-#    ax.legend()
-#    plt.show()
 
 
