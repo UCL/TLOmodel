@@ -60,8 +60,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
-        diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
-
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
             # It's a child and we are in FacilityLevel1, so run the the child management routine:

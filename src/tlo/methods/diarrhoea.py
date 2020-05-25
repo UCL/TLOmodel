@@ -356,11 +356,6 @@ class Diarrhoea(Module):
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
 
-        # ---- Treatment properties ----
-        # NB. These are not used in the simulation but are used for testing purposes.
-        # TODO - REMOVE, also they are not initiated for children
-        'gi_diarrhoea_treatment': Property(Types.BOOL, 'currently on diarrhoea treatment'),
-        'gi_diarrhoea_tx_start_date': Property(Types.DATE, 'start date of diarrhoea treatment for current episode'),
     }
 
     # Declare symptoms that this module will cause:
@@ -838,21 +833,19 @@ class Diarrhoea(Module):
         """
         Sets that there is no one with diarrahoea at initiation.
         """
+        #TODO - loc on is_alive
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
         # ---- Key Current Status Classification Properties ----
         df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
         df['gi_last_diarrhoea_type'].values[:] = 'none'
-        df['gi_last_diarrhoea_dehydration'] = 'none'
+        df['gi_last_diarrhoea_dehydration'].values[:] = 'none'
 
         # ---- Internal values ----
         df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
         df['gi_last_diarrhoea_duration'] = np.nan
         df['gi_last_diarrhoea_recovered_date'] = pd.NaT
         df['gi_last_diarrhoea_death_date'] = pd.NaT
-
-        df['gi_diarrhoea_treatment'] = False
-        df['gi_diarrhoea_tx_start_date'] = pd.NaT
 
         # ---- Temporary values ----
         df['tmp_malnutrition'] = False
@@ -876,7 +869,6 @@ class Diarrhoea(Module):
         # ---- Key Current Status Classification Properties ----
         df.at[child_id, 'gi_last_diarrhoea_pathogen'] = 'none'
         df.at[child_id, 'gi_last_diarrhoea_type'] = 'none'
-        df.at[child_id, 'gi_current_severe_dehydration'] = False
 
         # ---- Internal values ----
         df.at[child_id, 'gi_last_diarrhoea_date_of_onset'] = pd.NaT
@@ -1133,10 +1125,6 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
-        # clear the treatment prperties
-        df.at[person_id, 'gi_diarrhoea_treatment'] = False
-        df.at[person_id, 'gi_diarrhoea_tx_start_date'] = pd.NaT
-
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
@@ -1249,10 +1237,9 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
-                df.at[person_id, 'gi_diarrhoea_treatment'] = True
-                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
-                # Resolve the status of curent_severe_dehydration
-                df.at[person_id, 'gi_current_severe_dehydration'] = False
+
+                # TODO - remove symptoms:
+
                 # schedule cure date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
@@ -1306,8 +1293,6 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
             logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
-                df.at[person_id, 'gi_diarrhoea_treatment'] = True
-                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
 
@@ -1359,8 +1344,6 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
             logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
-                df.at[person_id, 'gi_diarrhoea_treatment'] = True
-                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
 
@@ -1409,8 +1392,6 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
-                df.at[person_id, 'gi_diarrhoea_treatment'] = True
-                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
 
@@ -1460,8 +1441,6 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
                 logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                              person_id)
                 if df.at[person_id, 'is_alive']:
-                    df.at[person_id, 'gi_diarrhoea_treatment'] = True
-                    df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
                     self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                             self.sim.date + DateOffset(weeks=1))
 
@@ -1483,8 +1462,6 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
                 logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                              person_id)
                 if df.at[person_id, 'is_alive']:
-                    df.at[person_id, 'gi_diarrhoea_treatment'] = True
-                    df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
                     self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                             self.sim.date + DateOffset(weeks=1))
 
@@ -1536,7 +1513,5 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
-                df.at[person_id, 'gi_diarrhoea_treatment'] = True
-                df.at[person_id, 'gi_diarrhoea_tx_start_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))

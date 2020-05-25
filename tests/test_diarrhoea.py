@@ -13,7 +13,10 @@ from tlo.methods import (
     enhanced_lifestyle,
     symptommanager,
     healthburden,
-    healthseekingbehaviour, dx_algorithm_child)
+    healthseekingbehaviour,
+    dx_algorithm_child,
+    labour,
+    pregnancy_supervisor)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -28,98 +31,41 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+def check_configuration_of_properties(df):
+    # check that the properties are ok:
+    # TODO: checks!
+    pass
 
-def test_basic_run_of_diarhoea_module():
+
+def test_basic_run_of_diarrhoea_module():
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 1, 2)
-    popsize = 200
+    end_date = Date(2010, 12, 31)
+    popsize = 1000
 
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)
+
+    check_configuration_of_properties(sim.population.props)
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+    check_configuration_of_properties(sim.population.props)
 
-    # Todo: Check there is some non-zero level diarrhaea
+    # Todo: Check there is some non-zero level diarrhaea; that there has been some treatment; etc
 
-
-def test_basic_run_of_diarhoea_module_with_health_care():
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 1, 2)
-    popsize = 200
-
-    sim = Simulation(start_date=start_date)
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
-    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
-
-    sim.seed_rngs(0)
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
-
-# Todo: Check there is some treatments due to diarrhoea
-
-
-"""
-# This script is used in development. It will become the test script for diraahoea module.
-
-
-# %% Import Statements and initial declarations
-import datetime
-from pathlib import Path
-
-from tlo import Date, Simulation
-from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
-    symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child
-
-# %%
-outputpath = Path("./outputs")
-resourcefilepath = Path("./resources")
-
-# Create name for log-file
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath / ('LogFile' + datestamp + '.log')
-
-# %% Run the Simulation
-
-start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 2)
-popsize = 500
-
-# add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
-
-# run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
-sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
-
-sim.seed_rngs(0)
-sim.make_initial_population(n=popsize)
-sim.simulate(end_date=end_date)
-"""
