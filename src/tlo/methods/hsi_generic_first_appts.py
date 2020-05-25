@@ -6,8 +6,6 @@ from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
-#from tlo.methods.labour import HSI_Labour_PresentsForSkilledBirthAttendanceInLabour, \
-#    HSI_Labour_ReceivesCareForPostpartumPeriod
 from tlo.methods.labour import HSI_Labour_PresentsForSkilledBirthAttendanceInLabour, \
     HSI_Labour_ReceivesCareForPostpartumPeriod
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms

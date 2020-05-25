@@ -24,11 +24,25 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 10000
+popsize = 5000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
 # service_availability = ['*']
+
+allowed_interventions = ['prophylactic_labour_interventions',
+                         'assessment_and_treatment_of_severe_pre_eclampsia',
+                         'assessment_and_treatment_of_obstructed_labour',
+                         'assessment_and_treatment_of_maternal_sepsis',
+                         'assessment_and_treatment_of_hypertension',
+                         'assessment_and_treatment_of_eclampsia',
+                         'assessment_and_plan_for_referral_antepartum_haemorrhage',
+                         'assessment_and_plan_for_referral_uterine_rupture',
+                         'active_management_of_the_third_stage_of_labour',
+                         'assessment_and_treatment_of_pph_retained_placenta',
+                         'assessment_and_treatment_of_pph_uterine_atony']
+
+
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
