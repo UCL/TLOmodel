@@ -4,6 +4,8 @@ Basic tests for the Diarrhoea Module
 import os
 from pathlib import Path
 
+import pandas as pd
+
 from tlo import Date, Simulation
 from tlo.methods import (
     contraception,
@@ -31,10 +33,65 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-def check_configuration_of_properties(df):
+def check_configuration_of_properties(sim):
     # check that the properties are ok:
     # TODO: checks!
-    pass
+
+    # df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
+    # df['gi_last_diarrhoea_type'].values[:] = 'none'
+    # df['gi_last_diarrhoea_dehydration'].values[:] = 'none'
+    #
+    # # ---- Internal values ----
+    # df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
+    # df['gi_last_diarrhoea_duration'] = np.nan
+    # df['gi_last_diarrhoea_recovered_date'] = pd.NaT
+    # df['gi_last_diarrhoea_death_date'] = pd.NaT
+
+
+    df = sim.poulation.props
+
+    # Those that have never had diarrhoea, should have null values:
+    assert pd.isnull(df.loc[df['gi_last_diarrhoea_dehydration'] == 'none',[
+        'gi_last_diarrhoea_date_of_onset',
+        'gi_last_diarrhoea_duration',
+        'gi_last_diarrhoea_recovered_date',
+        'gi_last_diarrhoea_death_date']
+    ]).any().any()
+
+    # Those that have had diarrhoea, should have a pathgoen and a number of days duration
+    assert df.loc[
+        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
+        'gi_last_diarrhoea_pathogen' != 'none'
+    ].all()
+
+    assert not pd.isnull(df.loc[
+        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
+        'gi_last_diarrhoea_duration']).any()
+
+
+    # Those that have had diarrhoea, should have either a recovery date or a death_date
+    has_recovery_date = df.loc[
+        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
+        ~pd.isnull(df['gi_last_diarrhoea_recovered_date'])
+    ]
+
+    has_death_date = df.loc[
+        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
+        ~pd.isnull(df['gi_last_diarrhoea_death_date'])
+    ]
+    assert (has_recovery_date | has_death_date).all()
+
+    # Those for whom the death date has past should be dead
+    df.loc[
+        ~pd.isnull(df['gi_last_diarrhoea_death_date']) &
+        df['gi_last_diarrhoea_death_date'] < sim.date
+    ]
+
+
+
+    # todo: Compare duration with different in dates between onset and resolution (depends on if there is intv or not)
+
+    # TODO: OTHER TESTS?
 
 
 def test_basic_run_of_diarrhoea_module():
@@ -61,11 +118,11 @@ def test_basic_run_of_diarrhoea_module():
     sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)
 
-    check_configuration_of_properties(sim.population.props)
+    check_configuration_of_properties(sim)
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
-    check_configuration_of_properties(sim.population.props)
+    check_configuration_of_properties(sim)
 
     # Todo: Check there is some non-zero level diarrhaea; that there has been some treatment; etc
 

@@ -343,7 +343,8 @@ class Diarrhoea(Module):
         'gi_last_diarrhoea_dehydration': Property(Types.CATEGORICAL,
                                                   'Severity of dehydration of last episode of diarrhoea',
                                                   categories=['none',
-                                                              'some', 'severe']),
+                                                              'some',
+                                                              'severe']),
 
         # ---- Internal variables to schedule onset and deaths due to diarrhoea  ----
         'gi_last_diarrhoea_date_of_onset': Property(Types.DATE, 'date of onset of last episode of diarrhoea'),
@@ -355,7 +356,6 @@ class Diarrhoea(Module):
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
-
     }
 
     # Declare symptoms that this module will cause:
@@ -833,7 +833,7 @@ class Diarrhoea(Module):
         """
         Sets that there is no one with diarrahoea at initiation.
         """
-        #TODO - loc on is_alive
+        #TODO - loc on is_alive -- HERE AND THROUGHOUT
         df = population.props  # a shortcut to the data-frame storing data for individuals
 
         # ---- Key Current Status Classification Properties ----
