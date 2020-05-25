@@ -23,7 +23,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # Scenarios Definitions:
 # *1: No Treatment
 # *2: Some Treatment
-# TODO: expand this.
+
 
 scenarios = dict()
 scenarios['No_Treatment'] = []

@@ -17,7 +17,6 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -358,15 +357,20 @@ class Diarrhoea(Module):
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
 
         # ---- Treatment properties ----
-        # TODO; Ines -- you;ve introduced these but not initialised them and don;t use them. do you need them?
+        # NB. These are not used in the simulation but are used for testing purposes.
+        # TODO - REMOVE, also they are not initiated for children
         'gi_diarrhoea_treatment': Property(Types.BOOL, 'currently on diarrhoea treatment'),
         'gi_diarrhoea_tx_start_date': Property(Types.DATE, 'start date of diarrhoea treatment for current episode'),
     }
 
     # Declare symptoms that this module will cause:
-    SYMPTOMS = {'diarrhoea', 'bloody_stool', 'fever', 'vomiting', 'dehydration'}
-    # Todo: decide if we want dehydration to be a symptom: currently it is not doing very much: just taken to signify
-    #  non-severe dehydration and is onset immididstely when diarrhoea is onset
+    SYMPTOMS = {'diarrhoea',
+                'bloody_stool',
+                'fever',
+                'vomiting',
+                'dehydration'  # NB. This is non-severe dehydration
+                }
+
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -1241,7 +1245,7 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self, cons_req_as_footprint=the_consumables_needed)
         logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
-        if is_cons_available:
+        if is_cons_available:   # TODO - this is now how to do a check on the availability?
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
