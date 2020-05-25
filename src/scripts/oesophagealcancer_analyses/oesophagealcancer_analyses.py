@@ -16,18 +16,19 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file, make_age_grp_types
+
+from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     contraception,
     demography,
     enhanced_lifestyle,
     healthburden,
+    healthseekingbehaviour,
+    labour,
     healthsystem,
     oesophagealcancer,
     pregnancy_supervisor,
-    labour,
-    healthseekingbehaviour,
-    symptommanager
+    symptommanager,
 )
 
 # Where will outputs go

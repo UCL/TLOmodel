@@ -9,12 +9,12 @@ from tlo.methods import (
     demography,
     enhanced_lifestyle,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
+    labour,
     oesophagealcancer,
     pregnancy_supervisor,
-    labour,
-    healthseekingbehaviour,
-    symptommanager
+    symptommanager,
 )
 
 # %% Setup:

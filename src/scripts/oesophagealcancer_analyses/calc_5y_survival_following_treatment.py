@@ -12,19 +12,21 @@ To this by creating a simulation with:
 import datetime
 from pathlib import Path
 
+import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
     oesophagealcancer,
-    healthseekingbehaviour,
-    symptommanager
+    symptommanager,
 )
 
-import pandas as pd
+
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
