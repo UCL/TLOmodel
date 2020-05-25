@@ -541,7 +541,7 @@ class Schisto_Haematobium(Module):
         params['gamma_alpha'] = self.schisto_initial_reservoir.loc[:, 'alpha_value']
         params['R0'] = self.schisto_initial_reservoir.loc[:, 'R0_value']
 
-        # symptoms
+        # symptoms # TODO: Put into the SymptomManager
         params['symptoms'] = ['anemia', 'fever', 'haematuria', 'hydronephrosis', 'dysuria', 'bladder_pathology']
 
         # this is to be used if we want to model every district
@@ -631,7 +631,7 @@ class Schisto_Mansoni(Module):
         params['gamma_alpha'] = self.schisto_initial_reservoir.loc[:, 'alpha_value']
         params['R0'] = self.schisto_initial_reservoir.loc[:, 'R0_value']
 
-        # symptoms
+        # symptoms  #TODO - put into the Symptom Manaher
         params['symptoms'] = ['anemia', 'fever', 'ascites', 'diarrhoea', 'vomit', 'hepatomegaly']
 
         params['list_of_districts'] = \
@@ -849,7 +849,7 @@ class SchistoWormsNatDeath(Event, IndividualScopeEventMixin):
                         df.loc[person_id, f'{prefix}_high_inf_days_this_year'] += high_inf_duration
                         df.loc[person_id, f'{prefix}_start_of_high_infection'] = pd.NaT
 
-
+#TODO: change this to use SYmptomManager and HealthCareSeekingBehaviour
 class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
     """Development of symptoms upon high intensity infection
     Schedules the HSI_seek_treatment event, provided a True value is drawn from Bernoulli(prob_seek_healthcare)
@@ -905,7 +905,7 @@ class SchistoDevelopSymptomsEvent(Event, IndividualScopeEventMixin):
             return symptoms_exp
         return np.nan
 
-
+# TODO: Should this be an HSI?
 class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
     """Cured upon PZQ treatment through HSI or MDA (Infected -> Non-infected)
     PZQ treats both types of infections, so affect symptoms and worm burden of any infection type registered
@@ -960,7 +960,7 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
 #   HSI EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-
+#TODO: Consider if this should be the generic HSI
 class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event of seeking treatment for a person with symptoms
     """
@@ -1064,7 +1064,7 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 #   MASS-DRUG ADMINISTRATION EVENTS
 # ---------------------------------------------------------------------------------------------------------
-
+# TODO: Check function?
 class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
     Using the historical MDA coverage
@@ -1121,7 +1121,7 @@ class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
 
         return MDA_idx
 
-
+# TODO: Make this into HSI (Population Level)
 class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
     Using the proposed MDA coverage
