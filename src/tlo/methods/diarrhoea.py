@@ -440,22 +440,22 @@ class Diarrhoea(Module):
             'rotavirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_rotavirus'][0])
-                                     .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_rotavirus'][1])
-                                     .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_rotavirus'][2])
-                                     .otherwise(0.0),
-                                     # Predictor('li_no_access_handwashing')
-                                     # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                     # Predictor('li_no_clean_drinking_water').
-                                     # when(False, m.rr_diarrhoea_clean_water),
-                                     # Predictor('li_unimproved_sanitation').
-                                     # when(False, m.rr_diarrhoea_improved_sanitation),
-                                     # # Predictor('hv_inf').
-                                     # # when(True, m.rr_diarrhoea_HIV),
-                                     # Predictor('malnutrition').
-                                     # when(True, m.rr_diarrhoea_SAM),
-                                     # Predictor('exclusive_breastfeeding').
-                                     # when(False, m.rr_diarrhoea_excl_breast)
+                                         .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_rotavirus'][0])
+                                         .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_rotavirus'][1])
+                                         .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_rotavirus'][2])
+                                        .otherwise(0.0),
+                                     Predictor('li_no_access_handwashing')
+                                        .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                     Predictor('li_no_clean_drinking_water')
+                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                     Predictor('li_unimproved_sanitation')
+                                        .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                     Predictor('hv_inf')
+                                        .when(True, p['rr_diarrhoea_HIV']),
+                                     Predictor('malnutrition')
+                                        .when(True, p['rr_diarrhoea_SAM']),
+                                     Predictor('exclusive_breastfeeding')
+                                        .when(False, p['rr_diarrhoea_excl_breast'])
                                      )
         })
 
@@ -463,22 +463,22 @@ class Diarrhoea(Module):
             'shigella': LinearModel(LinearModelType.MULTIPLICATIVE,
                                     1.0,
                                     Predictor('age_years')
-                                    .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_shigella'][0])
-                                    .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_shigella'][1])
-                                    .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_shigella'][2])
-                                    .otherwise(0.0),
-                                    # Predictor('li_no_access_handwashing')
-                                    # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                    # Predictor('li_no_clean_drinking_water').
-                                    # when(False, m.rr_diarrhoea_clean_water),
-                                    # Predictor('li_unimproved_sanitation').
-                                    # when(False, m.rr_diarrhoea_improved_sanitation),
-                                    # # Predictor('hv_inf').
-                                    # # when(True, m.rr_diarrhoea_HIV),
-                                    # Predictor('malnutrition').
-                                    # when(True, m.rr_diarrhoea_SAM),
-                                    # Predictor('exclusive_breastfeeding').
-                                    # when(False, m.rr_diarrhoea_excl_breast)
+                                        .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_shigella'][0])
+                                        .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_shigella'][1])
+                                        .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_shigella'][2])
+                                        .otherwise(0.0),
+                                    Predictor('li_no_access_handwashing')
+                                        .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                    Predictor('li_no_clean_drinking_water')
+                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                    Predictor('li_unimproved_sanitation')
+                                        .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                    Predictor('hv_inf')
+                                        .when(True, p['rr_diarrhoea_HIV']),
+                                    Predictor('malnutrition')
+                                        .when(True, p['rr_diarrhoea_SAM']),
+                                    Predictor('exclusive_breastfeeding')
+                                        .when(False, p['rr_diarrhoea_excl_breast'])
                                     )
         })
 
@@ -486,22 +486,22 @@ class Diarrhoea(Module):
             'adenovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_adenovirus'][0])
-                                      .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_adenovirus'][1])
-                                      .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_adenovirus'][2])
-                                      .otherwise(0.0),
-                                      # Predictor('li_no_access_handwashing')
-                                      # .when(False, m.rr__diarrhoea_HHhandwashing),
-                                      # Predictor('li_no_clean_drinking_water').
-                                      # when(False, m.rr_diarrhoea_clean_water),
-                                      # Predictor('li_unimproved_sanitation').
-                                      # when(False, m.rr_diarrhoea_improved_sanitation),
-                                      # # Predictor('hv_inf').
-                                      # # when(True, m.rr_diarrhoea_HIV),
-                                      # Predictor('malnutrition').
-                                      # when(True, m.rr_diarrhoea_SAM),
-                                      # Predictor('exclusive_breastfeeding').
-                                      # when(False, m.rr_diarrhoea_excl_breast)
+                                          .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_adenovirus'][0])
+                                          .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_adenovirus'][1])
+                                          .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_adenovirus'][2])
+                                          .otherwise(0.0),
+                                      Predictor('li_no_access_handwashing')
+                                            .when(False, p['rr__diarrhoea_HHhandwashing']),
+                                      Predictor('li_no_clean_drinking_water')
+                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                      Predictor('li_unimproved_sanitation')
+                                            .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                      Predictor('hv_inf')
+                                            .when(True, p['rr_diarrhoea_HIV']),
+                                      Predictor('malnutrition')
+                                        .when(True, p['rr_diarrhoea_SAM']),
+                                      Predictor('exclusive_breastfeeding')
+                                        .when(False, p['rr_diarrhoea_excl_breast'])
                                       )
         })
 
@@ -509,22 +509,22 @@ class Diarrhoea(Module):
             'cryptosporidium': LinearModel(LinearModelType.MULTIPLICATIVE,
                                            1.0,
                                            Predictor('age_years')
-                                           .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][0])
-                                           .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][1])
-                                           .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][2])
-                                           .otherwise(0.0),
-                                           # Predictor('li_no_access_handwashing')
-                                           # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                           # Predictor('li_no_clean_drinking_water').
-                                           # when(False, m.rr_diarrhoea_clean_water),
-                                           # Predictor('li_unimproved_sanitation').
-                                           # when(False, m.rr_diarrhoea_improved_sanitation),
-                                           # # Predictor('hv_inf').
-                                           # # when(True, m.rr_diarrhoea_HIV),
-                                           # Predictor('malnutrition').
-                                           # when(True, m.rr_diarrhoea_SAM),
-                                           # Predictor('exclusive_breastfeeding').
-                                           # when(False, m.rr_diarrhoea_excl_breast)
+                                               .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][0])
+                                               .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][1])
+                                               .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_cryptosporidium'][2])
+                                               .otherwise(0.0),
+                                           Predictor('li_no_access_handwashing')
+                                                .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                           Predictor('li_no_clean_drinking_water')
+                                                .when(False, p['rr_diarrhoea_clean_water']),
+                                           Predictor('li_unimproved_sanitation')
+                                                .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                           Predictor('hv_inf')
+                                                .when(True, p['rr_diarrhoea_HIV']),
+                                           Predictor('malnutrition')
+                                                .when(True, p['rr_diarrhoea_SAM']),
+                                           Predictor('exclusive_breastfeeding')
+                                                .when(False, p['rr_diarrhoea_excl_breast'])
                                            )
         })
 
@@ -532,22 +532,22 @@ class Diarrhoea(Module):
             'campylobacter': LinearModel(LinearModelType.MULTIPLICATIVE,
                                          1.0,
                                          Predictor('age_years')
-                                         .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_campylobacter'][0])
-                                         .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_campylobacter'][1])
-                                         .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_campylobacter'][2])
-                                         .otherwise(0.0),
-                                         # Predictor('li_no_access_handwashing')
-                                         # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                         # Predictor('li_no_clean_drinking_water').
-                                         # when(False, m.rr_diarrhoea_clean_water),
-                                         # Predictor('li_unimproved_sanitation').
-                                         # when(False, m.rr_diarrhoea_improved_sanitation),
-                                         # # Predictor('hv_inf').
-                                         # # when(True, m.rr_diarrhoea_HIV),
-                                         # Predictor('malnutrition').
-                                         # when(True, m.rr_diarrhoea_SAM),
-                                         # Predictor('exclusive_breastfeeding').
-                                         # when(False, m.rr_diarrhoea_excl_breast)
+                                             .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_campylobacter'][0])
+                                             .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_campylobacter'][1])
+                                             .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_campylobacter'][2])
+                                             .otherwise(0.0),
+                                         Predictor('li_no_access_handwashing')
+                                            .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                         Predictor('li_no_clean_drinking_water')
+                                            .when(False, p['rr_diarrhoea_clean_water']),
+                                         Predictor('li_unimproved_sanitation')
+                                            .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                         Predictor('hv_inf')
+                                            .when(True, p['rr_diarrhoea_HIV']),
+                                         Predictor('malnutrition')
+                                            .when(True, p['rr_diarrhoea_SAM']),
+                                         Predictor('exclusive_breastfeeding')
+                                            .when(False, p['rr_diarrhoea_excl_breast'])
                                          )
         })
 
@@ -555,22 +555,22 @@ class Diarrhoea(Module):
             'ST-ETEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                    1.0,
                                    Predictor('age_years')
-                                   .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][0])
-                                   .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][1])
-                                   .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][2])
-                                   .otherwise(0.0),
-                                   # Predictor('li_no_access_handwashing')
-                                   # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                   # Predictor('li_no_clean_drinking_water').
-                                   # when(False, m.rr_diarrhoea_clean_water),
-                                   # Predictor('li_unimproved_sanitation').
-                                   # when(False, m.rr_diarrhoea_improved_sanitation),
-                                   # # Predictor('hv_inf').
-                                   # # when(True, m.rr_diarrhoea_HIV),
-                                   # Predictor('malnutrition').
-                                   # when(True, m.rr_diarrhoea_SAM),
-                                   # Predictor('exclusive_breastfeeding').
-                                   # when(False, m.rr_diarrhoea_excl_breast)
+                                       .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][0])
+                                       .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][1])
+                                       .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_ST-ETEC'][2])
+                                       .otherwise(0.0),
+                                   Predictor('li_no_access_handwashing')
+                                        .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                   Predictor('li_no_clean_drinking_water')
+                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                   Predictor('li_unimproved_sanitation')
+                                        .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                   Predictor('hv_inf')
+                                        .when(True, p['rr_diarrhoea_HIV']),
+                                   Predictor('malnutrition')
+                                        .when(True, p['rr_diarrhoea_SAM']),
+                                   Predictor('exclusive_breastfeeding')
+                                        .when(False, p['rr_diarrhoea_excl_breast'])
                                    )
         })
 
@@ -578,22 +578,22 @@ class Diarrhoea(Module):
             'sapovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_sapovirus'][0])
-                                     .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_sapovirus'][1])
-                                     .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_sapovirus'][2])
-                                     .otherwise(0.0),
-                                     # Predictor('li_no_access_handwashing')
-                                     # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                     # Predictor('li_no_clean_drinking_water').
-                                     # when(False, m.rr_diarrhoea_clean_water),
-                                     # Predictor('li_unimproved_sanitation').
-                                     # when(False, m.rr_diarrhoea_improved_sanitation),
-                                     # # Predictor('hv_inf').
-                                     # # when(True, m.rr_diarrhoea_HIV),
-                                     # Predictor('malnutrition').
-                                     # when(True, m.rr_diarrhoea_SAM),
-                                     # Predictor('exclusive_breastfeeding').
-                                     # when(False, m.rr_diarrhoea_excl_breast)
+                                         .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_sapovirus'][0])
+                                         .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_sapovirus'][1])
+                                         .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_sapovirus'][2])
+                                         .otherwise(0.0),
+                                     Predictor('li_no_access_handwashing')
+                                        .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                     Predictor('li_no_clean_drinking_water')
+                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                     Predictor('li_unimproved_sanitation')
+                                        .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                     Predictor('hv_inf')
+                                        .when(True, p['rr_diarrhoea_HIV']),
+                                     Predictor('malnutrition').
+                                        .when(True, p['rr_diarrhoea_SAM']),
+                                     Predictor('exclusive_breastfeeding').
+                                        .when(False, p['rr_diarrhoea_excl_breast'])
                                      )
         })
 
@@ -601,22 +601,22 @@ class Diarrhoea(Module):
             'norovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
                                      Predictor('age_years')
-                                     .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_norovirus'][0])
-                                     .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_norovirus'][1])
-                                     .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_norovirus'][2])
-                                     .otherwise(0.0),
-                                     # Predictor('li_no_access_handwashing')
-                                     # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                     # Predictor('li_no_clean_drinking_water').
-                                     # when(False, m.rr_diarrhoea_clean_water),
-                                     # Predictor('li_unimproved_sanitation').
-                                     # when(False, m.rr_diarrhoea_improved_sanitation),
-                                     # # Predictor('hv_inf').
-                                     # # when(True, m.rr_diarrhoea_HIV),
-                                     # Predictor('malnutrition').
-                                     # when(True, m.rr_diarrhoea_SAM),
-                                     # Predictor('exclusive_breastfeeding').
-                                     # when(False, m.rr_diarrhoea_excl_breast)
+                                         .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_norovirus'][0])
+                                         .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_norovirus'][1])
+                                         .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_norovirus'][2])
+                                         .otherwise(0.0),
+                                     Predictor('li_no_access_handwashing')
+                                        .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                     Predictor('li_no_clean_drinking_water')
+                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                     Predictor('li_unimproved_sanitation')
+                                        .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                     Predictor('hv_inf')
+                                        .when(True, p['rr_diarrhoea_HIV']),
+                                     Predictor('malnutrition')
+                                        .when(True, p['rr_diarrhoea_SAM']),
+                                     Predictor('exclusive_breastfeeding')
+                                        .when(False, p['rr_diarrhoea_excl_breast'])
                                      )
         })
 
@@ -624,22 +624,22 @@ class Diarrhoea(Module):
             'astrovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                       1.0,
                                       Predictor('age_years')
-                                      .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_astrovirus'][0])
-                                      .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_astrovirus'][1])
-                                      .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_astrovirus'][2])
-                                      .otherwise(0.0),
-                                      # Predictor('li_no_access_handwashing')
-                                      # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                      # Predictor('li_no_clean_drinking_water').
-                                      # when(False, m.rr_diarrhoea_clean_water),
-                                      # Predictor('li_unimproved_sanitation').
-                                      # when(False, m.rr_diarrhoea_improved_sanitation),
-                                      # # Predictor('hv_inf').
-                                      # # when(True, m.rr_diarrhoea_HIV),
-                                      # Predictor('malnutrition').
-                                      # when(True, m.rr_diarrhoea_SAM),
-                                      # Predictor('exclusive_breastfeeding').
-                                      # when(False, m.rr_diarrhoea_excl_breast)
+                                        .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_astrovirus'][0])
+                                        .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_astrovirus'][1])
+                                        .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_astrovirus'][2])
+                                        .otherwise(0.0),
+                                      Predictor('li_no_access_handwashing')
+                                        .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                      Predictor('li_no_clean_drinking_water')
+                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                      Predictor('li_unimproved_sanitation')
+                                        .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                      Predictor('hv_inf')
+                                        .when(True, p['rr_diarrhoea_HIV']),
+                                      Predictor('malnutrition')
+                                        .when(True, p['rr_diarrhoea_SAM']),
+                                      Predictor('exclusive_breastfeeding')
+                                        .when(False, p['rr_diarrhoea_excl_breast'])
                                       )
         })
 
@@ -647,22 +647,22 @@ class Diarrhoea(Module):
             'tEPEC': LinearModel(LinearModelType.MULTIPLICATIVE,
                                  1.0,
                                  Predictor('age_years')
-                                 .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_tEPEC'][0])
-                                 .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_tEPEC'][1])
-                                 .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_tEPEC'][2])
-                                 .otherwise(0.0),
-                                 # Predictor('li_no_access_handwashing')
-                                 # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                 # Predictor('li_no_clean_drinking_water').
-                                 # when(False, m.rr_diarrhoea_clean_water),
-                                 # Predictor('li_unimproved_sanitation').
-                                 # when(False, m.rr_diarrhoea_improved_sanitation),
-                                 # # Predictor('hv_inf').
-                                 # # when(True, m.rr_diarrhoea_HIV),
-                                 # Predictor('malnutrition').
-                                 # when(True, m.rr_diarrhoea_SAM),
-                                 # Predictor('exclusive_breastfeeding').
-                                 # when(False, m.rr_diarrhoea_excl_breast)
+                                     .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_tEPEC'][0])
+                                     .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_tEPEC'][1])
+                                     .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_tEPEC'][2])
+                                     .otherwise(0.0),
+                                 Predictor('li_no_access_handwashing')
+                                    .when(False, p['rr_diarrhoea_HHhandwashing']),
+                                 Predictor('li_no_clean_drinking_water')
+                                    .when(False, p['rr_diarrhoea_clean_water']),
+                                 Predictor('li_unimproved_sanitation')
+                                    .when(False, p['rr_diarrhoea_improved_sanitation']),
+                                 Predictor('hv_inf')
+                                    .when(True, p['rr_diarrhoea_HIV']),
+                                 Predictor('malnutrition')
+                                    .when(True, p['rr_diarrhoea_SAM']),
+                                 Predictor('exclusive_breastfeeding')
+                                    .when(False, p['rr_diarrhoea_excl_breast'])
                                  )
         })
 
@@ -670,7 +670,7 @@ class Diarrhoea(Module):
         assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
 
         # --------------------------------------------------------------------------------------------
-        # Make a dict containing the probability of symptoms onset given acquistion of diarrhoaea caused
+        # Make a dict containing the probability of symptoms onset given acquisition of diarrhoeaa caused
         # by a particular pathogen
 
         self.prob_symptoms.update({
@@ -771,59 +771,58 @@ class Diarrhoea(Module):
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
                         Predictor('gi_last_diarrhoea_type')
-                        .when('watery', p['case_fatality_rate_AWD'])
-                        .when('bloody', p['case_fatality_rate_dysentery']),
+                            .when('watery', p['case_fatality_rate_AWD'])
+                            .when('bloody', p['case_fatality_rate_dysentery']),
                         Predictor('gi_last_diarrhoea_duration')
-                        .when('>13', 0.0035),
+                            .when('>13', 0.0035),
                         Predictor('gi_last_diarrhoea_dehydration')
-                        .when('severe', 0.05),
-                        # .when('persistent', p['cfr_persistent_diarrhoea']),
-                        # Predictor('age_years')  ##          <--- fill in
-                        # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
-                        # .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
-                        # .otherwise(0.0)
-                        # TODO: add in current_severe_dehyration
-                        # # Predictor('hv_inf').
-                        # # when(True, m.rr_diarrhoea_HIV),
-                        # Predictor('malnutrition').
-                        # when(True, m.rr_diarrhoea_SAM)
+                            .when('severe', 0.05)
+                            .when('persistent', p['cfr_persistent_diarrhoea']),
+                        Predictor('age_years')
+                            .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
+                            .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
+                            .otherwise(0.0),
+                        Predictor('hv_inf')
+                            .when(True, p['rr_diarrhoea_HIV']),
+                        Predictor('malnutrition')
+                            .when(True, p['rr_diarrhoea_SAM'])
                         )
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the duration of the episode of diarrhoea
-        self.mean_duration_in_days_of_diarrhoea = LinearModel(
-            LinearModelType.ADDITIVE,
-            0.0,
-            Predictor('gi_last_diarrhoea_pathogen')
-            .when('rotavirus', 7)
-            .when('shigella', 7)
-            .when('adenovirus', 7)
-            .when('cryptosporidium', 7)
-            .when('campylobacter', 7)
-            .when('ST-ETEC', 7)
-            .when('sapovirus', 7)
-            .when('norovirus', 7)
-            .when('astrovirus', 7)
-            .when('tEPEC', 7)
-
-        )
+        # TODO; add these add parameters
+        self.mean_duration_in_days_of_diarrhoea = \
+            LinearModel(LinearModelType.ADDITIVE,
+                        0.0,
+                        Predictor('gi_last_diarrhoea_pathogen')
+                            .when('rotavirus', 7)
+                            .when('shigella', 7)
+                            .when('adenovirus', 7)
+                            .when('cryptosporidium', 7)
+                            .when('campylobacter', 7)
+                            .when('ST-ETEC', 7)
+                            .when('sapovirus', 7)
+                            .when('norovirus', 7)
+                            .when('astrovirus', 7)
+                            .when('tEPEC', 7)
+                        )
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the probability that the diarrhoea is 'watery' (rather than 'bloody')
-        self.prob_diarrhoea_is_watery = LinearModel(
-            LinearModelType.ADDITIVE,
-            0.0,
-            Predictor('gi_last_diarrhoea_pathogen')
-            .when('rotavirus', p['proportion_AWD_by_rotavirus'])
-            .when('shigella', p['proportion_AWD_by_shigella'])
-            .when('adenovirus', p['proportion_AWD_by_adenovirus'])
-            .when('cryptosporidium', p['proportion_AWD_by_cryptosporidium'])
-            .when('campylobacter', p['proportion_AWD_by_campylobacter'])
-            .when('ST-ETEC', p['proportion_AWD_by_ST-ETEC'])
-            .when('sapovirus', p['proportion_AWD_by_sapovirus'])
-            .when('norovirus', p['proportion_AWD_by_norovirus'])
-            .when('astrovirus', p['proportion_AWD_by_astrovirus'])
-            .when('tEPEC', p['proportion_AWD_by_tEPEC'])
-        )
+        self.prob_diarrhoea_is_watery = \
+            LinearModel(LinearModelType.ADDITIVE,
+                        0.0,
+                        Predictor('gi_last_diarrhoea_pathogen')
+                            .when('rotavirus', p['proportion_AWD_by_rotavirus'])
+                            .when('shigella', p['proportion_AWD_by_shigella'])
+                            .when('adenovirus', p['proportion_AWD_by_adenovirus'])
+                            .when('cryptosporidium', p['proportion_AWD_by_cryptosporidium'])
+                            .when('campylobacter', p['proportion_AWD_by_campylobacter'])
+                            .when('ST-ETEC', p['proportion_AWD_by_ST-ETEC'])
+                            .when('sapovirus', p['proportion_AWD_by_sapovirus'])
+                            .when('norovirus', p['proportion_AWD_by_norovirus'])
+                            .when('astrovirus', p['proportion_AWD_by_astrovirus'])
+                            .when('tEPEC', p['proportion_AWD_by_tEPEC'])
+                        )
         # --------------------------------------------------------------------------------------------
 
         # Register this disease module with the health system
@@ -1064,11 +1063,11 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # Determine the progress to severe dehydration
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
         if df.at[person_id, 'gi_last_diarrhoea_dehydration'] == 'some':
-            prob_severe_dehydration = self.module.rng.rand() < 0.3
+            prob_severe_dehydration = self.module.rng.rand() < 0.3    #todo - make into parameter
             if prob_severe_dehydration:
                 self.sim.schedule_event(DiarrhoeaSevereDehydrationEvent(self.module, person_id, symptoms=self.symptoms),
                                         max(self.sim.date, date_of_outcome - DateOffset(
-                                            days=(3 * m.rng.rand()))))
+                                            days=(3 * m.rng.rand()))))  # todo - make into parameters
 
         # Determine timing of outcome (either recovery or death)
         prob_death_by_diarrhoea = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
@@ -1148,7 +1147,8 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
                                                                   cause='Diarrhoea_' + df.at[
                                                                       person_id, 'gi_last_diarrhoea_pathogen']
                                                                   ),
-                                    self.sim.date)
+                                    self.sim.date
+                                    )
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1191,59 +1191,6 @@ class DiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
-
-
-class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a treatment for diarrhoea with severe dehydration administered at outpatient setting through IMCI
-    """
-# if child has no other severe classification: PLAN C
-# Or if child has another severe classification:
-    # refer urgently to hospital with mother giving frequent ORS on the way, advise on breastfeeding
-# if cholera is in your area, give antibiotic for cholera
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-        self.TREATMENT_ID = 'Treatment_PlanC'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        logger.debug('Provide the treatment for Diarrhoea')
-
-        # Stop the person from dying of Diarrhoea (if they were going to die)
-        df = self.sim.population.props
-        # Get consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code_diarrhoea_severe_dehydration = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
-                            'Intervention_Pkg_Code'])[0]
-
-        the_consumables_needed = {
-            'Intervention_Package_Code': {pkg_code_diarrhoea_severe_dehydration: 1},
-            'Item_Code': {}
-        }
-
-        # Outcome of the request for treatment
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
-        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
-
-        if is_cons_available:   # TODO - this is now how to do a check on the availability?
-            logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
-                         person_id)
-            if df.at[person_id, 'is_alive']:
-
-                # TODO - remove symptoms:
-
-                # schedule cure date
-                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                        self.sim.date + DateOffset(weeks=1))
-
 
 class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1348,6 +1295,58 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
                                         self.sim.date + DateOffset(weeks=1))
 
 
+class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a treatment for diarrhoea with severe dehydration administered at outpatient setting through IMCI
+    """
+# if child has no other severe classification: PLAN C
+# Or if child has another severe classification:
+    # refer urgently to hospital with mother giving frequent ORS on the way, advise on breastfeeding
+# if cholera is in your area, give antibiotic for cholera
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        self.TREATMENT_ID = 'Treatment_PlanC'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('Provide the treatment for Diarrhoea')
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
+        df = self.sim.population.props
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_diarrhoea_severe_dehydration = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
+                            'Intervention_Pkg_Code'])[0]
+
+        the_consumables_needed = {
+            'Intervention_Package_Code': {pkg_code_diarrhoea_severe_dehydration: 1},
+            'Item_Code': {}
+        }
+
+        # Outcome of the request for treatment
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+        if is_cons_available:   # TODO - this is now how to do a check on the availability?
+            logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
+                         person_id)
+            if df.at[person_id, 'is_alive']:
+
+                # TODO - remove symptoms:
+
+                # schedule cure date
+                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(weeks=1))
+
+
 class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for Severe_Dehydration administered at FacilityLevel=1
@@ -1380,8 +1379,8 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
             'Intervention_Package_Code': {pkg_code1: 1},
             'Item_Code': {}
         }
-# if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for 5 days
-        # if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and suplements
+        # if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for
+        # 5 days if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and supplements
 
         # Request the treatment
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -1400,7 +1399,7 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
     """
     This is a treatment for Severe_Dehydration administered at FacilityLevel=1
     """
-# give multivitamins for 14 days
+    # give multivitamins for 14 days
     # give zinc for 10 days
     # follow up in 5 days
 
@@ -1465,6 +1464,7 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
                     self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                             self.sim.date + DateOffset(weeks=1))
 
+# todo - add in effectiveness = 1.0 & make it linear model.
 
 class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
     """

@@ -100,7 +100,8 @@ class DxAlgorithmChild(Module):
                          topen=self.sim.date,
                          tclose=None
                          )
-        elif dehydration and not danger_signs: #TODO: add - and not other severe classsification
+        elif dehydration and not danger_signs:
+            # TODO: add - and not other severe classification from other disease modules (measles, pneumonia, etc)
             # Treatment Plan B for some dehydration diarrhoea
             schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id, module=self),
                          priority=0,
@@ -136,4 +137,3 @@ class DxAlgorithmChild(Module):
                          tclose=None
                          )
         # -----------------------------------------------------
-

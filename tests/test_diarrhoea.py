@@ -36,7 +36,7 @@ def check_dtypes(simulation):
 def check_configuration_of_properties(sim):
     # check that the properties are ok:
     # TODO: checks!
-
+    #
     # df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
     # df['gi_last_diarrhoea_type'].values[:] = 'none'
     # df['gi_last_diarrhoea_dehydration'].values[:] = 'none'
