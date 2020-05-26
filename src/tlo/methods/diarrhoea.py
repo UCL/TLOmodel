@@ -426,6 +426,45 @@ class Diarrhoea(Module):
                               type.python_type), f'Parameter "{param_name}" ' \
                 f'is not read in correctly from the resourcefile.'
 
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+    def initialise_population(self, population):
+        """
+        Sets that there is no one with diarrahoea at initiation.
+        """
+        #TODO - loc on is_alive -- HERE AND THROUGHOUT
+        df = population.props  # a shortcut to the data-frame storing data for individuals
+
+        # ---- Key Current Status Classification Properties ----
+        df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
+        df['gi_last_diarrhoea_type'].values[:] = 'none'
+        df['gi_last_diarrhoea_dehydration'].values[:] = 'none'
+
+        # ---- Internal values ----
+        df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
+        df['gi_last_diarrhoea_duration'] = np.nan
+        df['gi_last_diarrhoea_recovered_date'] = pd.NaT
+        df['gi_last_diarrhoea_death_date'] = pd.NaT
+
+        # ---- Temporary values ----
+        df['tmp_malnutrition'] = False
+        df['tmp_exclusive_breastfeeding'] = False
+        df['tmp_continued_breastfeeding'] = False
+
+    def initialise_simulation(self, sim):
+        """Prepares for simulation:
+        * Schedules the main polling event
+        * Schedules the main logging event
+        * Estbalishes the linear models and other data sturctures using the parameters that have been read-in
+        """
+
+        # Schedule the main polling event (to first occur immidiately)
+        sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date + DateOffset(months=0))
+
+        # Schedule the main logging event (to first occur in one year)
+        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
+
         # Get DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
             self.daly_wts['mild_diarrhoea'] = \
@@ -438,7 +477,7 @@ class Diarrhoea(Module):
         # --------------------------------------------------------------------------------------------
         # Make a dict to hold the equations that govern the probability that a person acquires diarrhoea
         # that is caused (primarily) by a pathogen
-
+        p = self.parameters
         self.incidence_equations_by_pathogen.update({
             'rotavirus': LinearModel(LinearModelType.MULTIPLICATIVE,
                                      1.0,
@@ -446,7 +485,7 @@ class Diarrhoea(Module):
                                          .when('.between(0,0)', p['base_inc_rate_diarrhoea_by_rotavirus'][0])
                                          .when('.between(1,1)', p['base_inc_rate_diarrhoea_by_rotavirus'][1])
                                          .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_rotavirus'][2])
-                                        .otherwise(0.0),
+                                         .otherwise(0.0),
                                      Predictor('li_no_access_handwashing')
                                         .when(False, p['rr_diarrhoea_HHhandwashing']),
                                      Predictor('li_no_clean_drinking_water')
@@ -672,6 +711,13 @@ class Diarrhoea(Module):
         # Check that equations have been declared for each of the pathogens
         assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
 
+        # Scale the models of risk of acquiring pathogens so that they give the desired means (has to be done at
+        # run-time because it will depend on frequency of other properties.
+
+        for k, v in self.incidence_equations_by_pathogen.items():
+            self.incidence_equations_by_pathogen[k] = self.rescale_equ(v)
+
+
         # --------------------------------------------------------------------------------------------
         # Make a dict containing the probability of symptoms onset given acquisition of diarrhoeaa caused
         # by a particular pathogen
@@ -829,39 +875,6 @@ class Diarrhoea(Module):
                         )
         # --------------------------------------------------------------------------------------------
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
-    def initialise_population(self, population):
-        """
-        Sets that there is no one with diarrahoea at initiation.
-        """
-        #TODO - loc on is_alive -- HERE AND THROUGHOUT
-        df = population.props  # a shortcut to the data-frame storing data for individuals
-
-        # ---- Key Current Status Classification Properties ----
-        df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
-        df['gi_last_diarrhoea_type'].values[:] = 'none'
-        df['gi_last_diarrhoea_dehydration'].values[:] = 'none'
-
-        # ---- Internal values ----
-        df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
-        df['gi_last_diarrhoea_duration'] = np.nan
-        df['gi_last_diarrhoea_recovered_date'] = pd.NaT
-        df['gi_last_diarrhoea_death_date'] = pd.NaT
-
-        # ---- Temporary values ----
-        df['tmp_malnutrition'] = False
-        df['tmp_exclusive_breastfeeding'] = False
-        df['tmp_continued_breastfeeding'] = False
-
-    def initialise_simulation(self, sim):
-
-        # Schedule the main polling event (to first occur immidiately)
-        sim.schedule_event(DiarrhoeaPollingEvent(self), sim.date + DateOffset(months=0))
-
-        # Schedule the main logging event (to first occur in one year)
-        sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         """
@@ -882,6 +895,33 @@ class Diarrhoea(Module):
         df.at[child_id, 'tmp_malnutrition'] = False
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
         df.at[child_id, 'tmp_continued_breastfeeding'] = False
+
+    def rescale_equ(self, lm):
+        """
+        Accepts a linear model, and adjust its intercept value such that the mean incidence rate of 0 year-olds matches
+        the specified marginal value for 0 year-olds in the model.
+        NB. Have to pluck out the value from the linear model rather than run because that is how this model is
+        parameterised.
+        """
+        # mean when lm is applied
+        df = self.sim.population.props
+        actual_mean = lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
+
+        # target mean value as specified in the lm for a 0 year-old with no other conditions
+        assert lm.predictors[0].property_name == 'age_years'
+
+        # check that the first conditions is for 0 year-olds
+        assert lm.predictors[0].conditions[0][0] == '(age_years.between(0,0))'
+
+        target_mean = lm.predictors[0].conditions[0][1]
+
+        # adjust value of intercept
+        lm.intercept *= target_mean / actual_mean
+
+        # check by applying the model to the under 5 population
+        assert (target_mean - lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+
+        return lm
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -1113,7 +1153,11 @@ class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
 
 class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
     """
-    #TODO - fill in!
+    #This is the cure event. It is called by HSI events that have implemented a cure.
+    It does the following:
+        * "cancels" the death caused by diarrhoea
+        * sets the date of recovery
+        * resolves all symptoms caused by diarrhoea
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1344,9 +1388,6 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
             if df.at[person_id, 'is_alive']:
-
-                # TODO - remove symptoms:
-
                 # schedule cure date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
