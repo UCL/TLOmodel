@@ -357,6 +357,7 @@ class Diarrhoea(Module):
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
+        'tmp_hv_inf': Property(Types.BOOL, 'Temporary property - current HIV infection')
     }
 
     # Declare symptoms that this module will cause:
@@ -452,11 +453,11 @@ class Diarrhoea(Module):
                                         .when(False, p['rr_diarrhoea_clean_water']),
                                      Predictor('li_unimproved_sanitation')
                                         .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                     Predictor('hv_inf')
+                                     Predictor('tmp_hv_inf')
                                         .when(True, p['rr_diarrhoea_HIV']),
-                                     Predictor('malnutrition')
+                                     Predictor('tmp_malnutrition')
                                         .when(True, p['rr_diarrhoea_SAM']),
-                                     Predictor('exclusive_breastfeeding')
+                                     Predictor('tmp_exclusive_breastfeeding')
                                         .when(False, p['rr_diarrhoea_excl_breast'])
                                      )
         })
@@ -475,11 +476,11 @@ class Diarrhoea(Module):
                                         .when(False, p['rr_diarrhoea_clean_water']),
                                     Predictor('li_unimproved_sanitation')
                                         .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                    Predictor('hv_inf')
+                                    Predictor('tmp_hv_inf')
                                         .when(True, p['rr_diarrhoea_HIV']),
-                                    Predictor('malnutrition')
+                                    Predictor('tmp_malnutrition')
                                         .when(True, p['rr_diarrhoea_SAM']),
-                                    Predictor('exclusive_breastfeeding')
+                                    Predictor('tmp_exclusive_breastfeeding')
                                         .when(False, p['rr_diarrhoea_excl_breast'])
                                     )
         })
@@ -493,17 +494,17 @@ class Diarrhoea(Module):
                                           .when('.between(2,4)', p['base_inc_rate_diarrhoea_by_adenovirus'][2])
                                           .otherwise(0.0),
                                       Predictor('li_no_access_handwashing')
-                                            .when(False, p['rr__diarrhoea_HHhandwashing']),
+                                            .when(False, p['rr_diarrhoea_HHhandwashing']),
                                       Predictor('li_no_clean_drinking_water')
-                                        .when(False, p['rr_diarrhoea_clean_water']),
+                                            .when(False, p['rr_diarrhoea_clean_water']),
                                       Predictor('li_unimproved_sanitation')
                                             .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                      Predictor('hv_inf')
+                                      Predictor('tmp_hv_inf')
                                             .when(True, p['rr_diarrhoea_HIV']),
-                                      Predictor('malnutrition')
-                                        .when(True, p['rr_diarrhoea_SAM']),
-                                      Predictor('exclusive_breastfeeding')
-                                        .when(False, p['rr_diarrhoea_excl_breast'])
+                                      Predictor('tmp_malnutrition')
+                                            .when(True, p['rr_diarrhoea_SAM']),
+                                      Predictor('tmp_exclusive_breastfeeding')
+                                            .when(False, p['rr_diarrhoea_excl_breast'])
                                       )
         })
 
@@ -521,11 +522,11 @@ class Diarrhoea(Module):
                                                 .when(False, p['rr_diarrhoea_clean_water']),
                                            Predictor('li_unimproved_sanitation')
                                                 .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                           Predictor('hv_inf')
+                                           Predictor('tmp_hv_inf')
                                                 .when(True, p['rr_diarrhoea_HIV']),
-                                           Predictor('malnutrition')
+                                           Predictor('tmp_malnutrition')
                                                 .when(True, p['rr_diarrhoea_SAM']),
-                                           Predictor('exclusive_breastfeeding')
+                                           Predictor('tmp_exclusive_breastfeeding')
                                                 .when(False, p['rr_diarrhoea_excl_breast'])
                                            )
         })
@@ -544,11 +545,11 @@ class Diarrhoea(Module):
                                             .when(False, p['rr_diarrhoea_clean_water']),
                                          Predictor('li_unimproved_sanitation')
                                             .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                         Predictor('hv_inf')
+                                         Predictor('tmp_hv_inf')
                                             .when(True, p['rr_diarrhoea_HIV']),
-                                         Predictor('malnutrition')
+                                         Predictor('tmp_malnutrition')
                                             .when(True, p['rr_diarrhoea_SAM']),
-                                         Predictor('exclusive_breastfeeding')
+                                         Predictor('tmp_exclusive_breastfeeding')
                                             .when(False, p['rr_diarrhoea_excl_breast'])
                                          )
         })
@@ -567,11 +568,11 @@ class Diarrhoea(Module):
                                         .when(False, p['rr_diarrhoea_clean_water']),
                                    Predictor('li_unimproved_sanitation')
                                         .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                   Predictor('hv_inf')
+                                   Predictor('tmp_hv_inf')
                                         .when(True, p['rr_diarrhoea_HIV']),
-                                   Predictor('malnutrition')
+                                   Predictor('tmp_malnutrition')
                                         .when(True, p['rr_diarrhoea_SAM']),
-                                   Predictor('exclusive_breastfeeding')
+                                   Predictor('tmp_exclusive_breastfeeding')
                                         .when(False, p['rr_diarrhoea_excl_breast'])
                                    )
         })
@@ -590,11 +591,11 @@ class Diarrhoea(Module):
                                         .when(False, p['rr_diarrhoea_clean_water']),
                                      Predictor('li_unimproved_sanitation')
                                         .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                     Predictor('hv_inf')
+                                     Predictor('tmp_hv_inf')
                                         .when(True, p['rr_diarrhoea_HIV']),
-                                     Predictor('malnutrition').
+                                     Predictor('tmp_malnutrition')
                                         .when(True, p['rr_diarrhoea_SAM']),
-                                     Predictor('exclusive_breastfeeding').
+                                     Predictor('tmp_exclusive_breastfeeding')
                                         .when(False, p['rr_diarrhoea_excl_breast'])
                                      )
         })
@@ -613,11 +614,11 @@ class Diarrhoea(Module):
                                         .when(False, p['rr_diarrhoea_clean_water']),
                                      Predictor('li_unimproved_sanitation')
                                         .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                     Predictor('hv_inf')
+                                     Predictor('tmp_hv_inf')
                                         .when(True, p['rr_diarrhoea_HIV']),
-                                     Predictor('malnutrition')
+                                     Predictor('tmp_malnutrition')
                                         .when(True, p['rr_diarrhoea_SAM']),
-                                     Predictor('exclusive_breastfeeding')
+                                     Predictor('tmp_exclusive_breastfeeding')
                                         .when(False, p['rr_diarrhoea_excl_breast'])
                                      )
         })
@@ -636,11 +637,11 @@ class Diarrhoea(Module):
                                         .when(False, p['rr_diarrhoea_clean_water']),
                                       Predictor('li_unimproved_sanitation')
                                         .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                      Predictor('hv_inf')
+                                      Predictor('tmp_hv_inf')
                                         .when(True, p['rr_diarrhoea_HIV']),
-                                      Predictor('malnutrition')
+                                      Predictor('tmp_malnutrition')
                                         .when(True, p['rr_diarrhoea_SAM']),
-                                      Predictor('exclusive_breastfeeding')
+                                      Predictor('tmp_exclusive_breastfeeding')
                                         .when(False, p['rr_diarrhoea_excl_breast'])
                                       )
         })
@@ -659,11 +660,11 @@ class Diarrhoea(Module):
                                     .when(False, p['rr_diarrhoea_clean_water']),
                                  Predictor('li_unimproved_sanitation')
                                     .when(False, p['rr_diarrhoea_improved_sanitation']),
-                                 Predictor('hv_inf')
+                                 Predictor('tmp_hv_inf')
                                     .when(True, p['rr_diarrhoea_HIV']),
-                                 Predictor('malnutrition')
+                                 Predictor('tmp_malnutrition')
                                     .when(True, p['rr_diarrhoea_SAM']),
-                                 Predictor('exclusive_breastfeeding')
+                                 Predictor('tmp_exclusive_breastfeeding')
                                     .when(False, p['rr_diarrhoea_excl_breast'])
                                  )
         })
@@ -769,6 +770,7 @@ class Diarrhoea(Module):
 
         # --------------------------------------------------------------------------------------------
         # Creat the linear model for the risk of dying due to diarrhoea
+        # todo -- no magic numbers
         self.risk_of_death_diarrhoea = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
@@ -779,14 +781,14 @@ class Diarrhoea(Module):
                             .when('>13', 0.0035),
                         Predictor('gi_last_diarrhoea_dehydration')
                             .when('severe', 0.05)
-                            .when('persistent', p['cfr_persistent_diarrhoea']),
+                            .when('persistent', 0.05),
                         Predictor('age_years')
                             .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
                             .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
                             .otherwise(0.0),
-                        Predictor('hv_inf')
+                        Predictor('tmp_hv_inf')
                             .when(True, p['rr_diarrhoea_HIV']),
-                        Predictor('malnutrition')
+                        Predictor('tmp_malnutrition')
                             .when(True, p['rr_diarrhoea_SAM'])
                         )
         # --------------------------------------------------------------------------------------------

@@ -48,7 +48,7 @@ def check_configuration_of_properties(sim):
     # df['gi_last_diarrhoea_death_date'] = pd.NaT
 
 
-    df = sim.poulation.props
+    df = sim.population.props
 
     # Those that have never had diarrhoea, should have null values:
     assert pd.isnull(df.loc[df['gi_last_diarrhoea_dehydration'] == 'none',[
@@ -58,11 +58,10 @@ def check_configuration_of_properties(sim):
         'gi_last_diarrhoea_death_date']
     ]).any().any()
 
-    # Those that have had diarrhoea, should have a pathgoen and a number of days duration
-    assert df.loc[
+    # Those that have had diarrhoea, should have a pathogen and a number of days duration
+    assert (df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
-        'gi_last_diarrhoea_pathogen' != 'none'
-    ].all()
+        'gi_last_diarrhoea_pathogen'] != 'none').all()
 
     assert not pd.isnull(df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
@@ -70,28 +69,21 @@ def check_configuration_of_properties(sim):
 
 
     # Those that have had diarrhoea, should have either a recovery date or a death_date
-    has_recovery_date = df.loc[
+    has_recovery_date = ~pd.isnull(df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
-        ~pd.isnull(df['gi_last_diarrhoea_recovered_date'])
-    ]
+        'gi_last_diarrhoea_recovered_date'])
 
-    has_death_date = df.loc[
+    has_death_date = ~pd.isnull(df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
-        ~pd.isnull(df['gi_last_diarrhoea_death_date'])
-    ]
+        'gi_last_diarrhoea_death_date'])
+
     assert (has_recovery_date | has_death_date).all()
 
     # Those for whom the death date has past should be dead
-    df.loc[
+    assert not df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_death_date']) &
-        df['gi_last_diarrhoea_death_date'] < sim.date
-    ]
-
-
-
-    # todo: Compare duration with different in dates between onset and resolution (depends on if there is intv or not)
-
-    # TODO: OTHER TESTS?
+        (df['gi_last_diarrhoea_death_date'] < sim.date),
+        'is_alive'].any()
 
 
 def test_basic_run_of_diarrhoea_module():
@@ -125,4 +117,13 @@ def test_basic_run_of_diarrhoea_module():
     check_configuration_of_properties(sim)
 
     # Todo: Check there is some non-zero level diarrhaea; that there has been some treatment; etc
+
+
+# Run with no intervention: check no effect; duration == diff in death or recovery
+
+
+# Run with intervention: check that cures happen etc
+
+
+
 

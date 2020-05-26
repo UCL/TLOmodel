@@ -3,7 +3,11 @@ This is the place for all the stuff to do with diagnosing a child that presents 
 It is expected that the pieces of logic and data that go here will be shared across multiple modules so they
 are put here rather than the individual disease modules.
 
-There should be a method here to respond to every symptom that a child could present with:
+There should be a method here to respond to every symptom that a child could present with. Currently this module is
+served by the following disease modules:
+* Diarrhoea
+
+
 """
 
 from tlo import Module
