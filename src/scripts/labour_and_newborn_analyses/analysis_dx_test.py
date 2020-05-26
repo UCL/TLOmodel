@@ -3,7 +3,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging, Parameter
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -93,26 +93,11 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         drop=True,
         inplace=True
     )
-    newborn_counts = output['tlo.methods.newborn_outcomes']['summary_stats']
-    newborn_counts['year'] = pd.to_datetime(newborn_counts['date']).dt.year
-    newborn_counts.drop(columns='date', inplace=True)
-    newborn_counts.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
-    maternal_deaths = output['tlo.methods.labour']['summary_stats_death']
-    maternal_deaths['year'] = pd.to_datetime(maternal_deaths['date']).dt.year
-    maternal_deaths.drop(columns='date', inplace=True)
-    maternal_deaths.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
 
     mmr = maternal_counts['intrapartum_mmr']
 
     return mmr
+
 
 maternal_deaths = dict()
 

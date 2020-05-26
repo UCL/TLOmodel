@@ -3,7 +3,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging, Parameter
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -33,15 +33,15 @@ scenarios['all_interventions'] = ['prophylactic_labour_interventions',
                                   'assessment_and_treatment_of_pph_uterine_atony']
 #
 scenarios['selected_interventions'] = ['prophylactic_labour_interventions',
-                                        'assessment_and_treatment_of_severe_pre_eclampsia',
-                                        'assessment_and_treatment_of_obstructed_labour',
-                                        'assessment_and_treatment_of_maternal_sepsis',
-                                        'assessment_and_treatment_of_hypertension',
-                                        'assessment_and_treatment_of_eclampsia',
-                                        'assessment_and_plan_for_referral_antepartum_haemorrhage',
-                                        'active_management_of_the_third_stage_of_labour',
-                                        'assessment_and_treatment_of_pph_retained_placenta',
-                                        'assessment_and_treatment_of_pph_uterine_atony']
+                                       'assessment_and_treatment_of_severe_pre_eclampsia',
+                                       'assessment_and_treatment_of_obstructed_labour',
+                                       'assessment_and_treatment_of_maternal_sepsis',
+                                       'assessment_and_treatment_of_hypertension',
+                                       'assessment_and_treatment_of_eclampsia',
+                                       'assessment_and_plan_for_referral_antepartum_haemorrhage',
+                                       'active_management_of_the_third_stage_of_labour',
+                                       'assessment_and_treatment_of_pph_retained_placenta',
+                                       'assessment_and_treatment_of_pph_uterine_atony']
 
 # Create dict to capture the outputs
 output_files = dict()
@@ -92,26 +92,11 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         drop=True,
         inplace=True
     )
-    newborn_counts = output['tlo.methods.newborn_outcomes']['summary_stats']
-    newborn_counts['year'] = pd.to_datetime(newborn_counts['date']).dt.year
-    newborn_counts.drop(columns='date', inplace=True)
-    newborn_counts.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
-    maternal_deaths = output['tlo.methods.labour']['summary_stats_death']
-    maternal_deaths['year'] = pd.to_datetime(maternal_deaths['date']).dt.year
-    maternal_deaths.drop(columns='date', inplace=True)
-    maternal_deaths.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
 
     mmr = maternal_counts['intrapartum_mmr']
 
     return mmr
+
 
 maternal_deaths = dict()
 

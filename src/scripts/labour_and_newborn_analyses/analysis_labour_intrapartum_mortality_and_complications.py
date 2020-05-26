@@ -2,7 +2,6 @@
 
 import datetime
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 import pandas as pd
 from tlo import Date, Simulation
@@ -43,13 +42,12 @@ allowed_interventions = ['prophylactic_labour_interventions',
                          'assessment_and_treatment_of_pph_uterine_atony']
 
 
-
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-#sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
 #                                       service_availability=[]))
 
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
@@ -93,7 +91,3 @@ stats_nb['year'] = stats_nb['date'].dt.year
 stats_md = output['tlo.methods.labour']['summary_stats_death']
 stats_md['date'] = pd.to_datetime(stats_md['date'])
 stats_md['year'] = stats_md['date'].dt.year
-
-
-
-

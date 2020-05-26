@@ -758,7 +758,7 @@ class Labour (Module):
         # Create complication tracker
         self.LabourTracker = {'ip_stillbirth': 0, 'maternal_death': 0, 'obstructed_labour': 0,
                               'antepartum_haem': 0, 'antepartum_haem_death': 0, 'sepsis': 0, 'sepsis_death': 0,
-                              'eclampsia': 0, 'eclampsia_death': 0, 'uterine_rupture': 0, 'uterine_rupture_death':0,
+                              'eclampsia': 0, 'eclampsia_death': 0, 'uterine_rupture': 0, 'uterine_rupture_death': 0,
                               'postpartum_haem': 0, 'postpartum_haem_death': 0, 'sepsis_postpartum': 0,
                               'eclampsia_postpartum': 0, 'home_birth': 0, 'health_centre_birth': 0,
                               'hospital_birth': 0, 'caesarean_section': 0, 'early_preterm': 0,
@@ -1290,7 +1290,8 @@ class Labour (Module):
                 logger.debug('This facility has no delivery kits.')
 
             # Prophylactic antibiotics for premature rupture of membranes in term deliveries...
-            if mni[person_id]['labour_state'] == 'term_labour' and df.at[person_id, 'ps_premature_rupture_of_membranes']:
+            if mni[person_id]['labour_state'] == 'term_labour' and df.at[person_id,
+                                                                         'ps_premature_rupture_of_membranes']:
                 if outcome_of_request_for_consumables['Item_Code'][item_code_abx_prom]:
                     mni[person_id]['abx_for_prom_given'] = True
                     logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
@@ -1343,7 +1344,8 @@ class Labour (Module):
         else:
 
             pkg_code_severe_preeclampsia = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia', 'Intervention_Pkg_Code'])[0]
+                consumables.loc[consumables['Intervention_Pkg'] == 'Management of eclampsia',
+                                'Intervention_Pkg_Code'])[0]
 
             consumables_needed_spe = {'Intervention_Package_Code': {pkg_code_severe_preeclampsia: 1},
                                       'Item_Code': {}}
@@ -1353,8 +1355,8 @@ class Labour (Module):
 
         # Here we run a dx_test function to determine if the birth attendant will correctly identify this womans
         # severe pre-eclampsia, and therefore administer treatment
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=f'assess_severe_pe_{facility_type}',
-                                                                       hsi_event=hsi_event):
+            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                    dx_tests_to_run=f'assess_severe_pe_{facility_type}', hsi_event=hsi_event):
 
                 if outcome_of_request_for_consumables_spe:
                     df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
@@ -1396,7 +1398,7 @@ class Labour (Module):
                     cons_req_as_footprint=consumables_obstructed_labour, to_log=True)
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run=f'assess_obstructed_labour_{facility_type}', hsi_event=hsi_event):
+                    dx_tests_to_run=f'assess_obstructed_labour_{facility_type}', hsi_event=hsi_event):
 
                 if outcome_of_request_for_consumables_ol:
 
@@ -1444,7 +1446,7 @@ class Labour (Module):
                 cons_req_as_footprint=consumables_needed_sepsis)
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-                dx_tests_to_run=f'assess_sepsis_{facility_type}_{labour_stage}', hsi_event=hsi_event):
+                    dx_tests_to_run=f'assess_sepsis_{facility_type}_{labour_stage}', hsi_event=hsi_event):
 
                 if outcome_of_request_for_consumables_sep:
                     logger.debug('mother %d has has their sepsis identified during delivery. As consumables are '
@@ -1452,8 +1454,8 @@ class Labour (Module):
                     df.at[person_id, 'la_sepsis_treatment'] = True
 
                 elif df.at[person_id, 'la_sepsis']:
-                    logger.debug('mother %d has not had their sepsis identified during delivery and will not be treated',
-                                 person_id)
+                    logger.debug('mother %d has not had their sepsis identified during delivery and will not be '
+                                 'treated', person_id)
 
     def assessment_and_treatment_of_hypertension(self, hsi_event, facility_type):
         """This function defines the required consumables, determines correct diagnosis and administers intervention
@@ -2950,7 +2952,7 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.LabourTracker = {'ip_stillbirth': 0, 'maternal_death': 0, 'obstructed_labour': 0,
                                      'antepartum_haem': 0, 'antepartum_haem_death': 0, 'sepsis': 0, 'sepsis_death': 0,
                                      'eclampsia': 0, 'eclampsia_death': 0, 'uterine_rupture': 0,
-                                     'uterine_rupture_death': 0,'postpartum_haem': 0, 'postpartum_haem_death': 0,
+                                     'uterine_rupture_death': 0, 'postpartum_haem': 0, 'postpartum_haem_death': 0,
                                      'sepsis_postpartum': 0, 'eclampsia_postpartum': 0, 'home_birth': 0,
                                      'health_centre_birth': 0, 'hospital_birth': 0, 'caesarean_section': 0,
                                      'early_preterm': 0, 'late_preterm': 0, 'post_term': 0, 'term': 0}
