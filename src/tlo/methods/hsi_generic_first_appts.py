@@ -190,7 +190,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # -----  COMPLICATION DURING BIRTH  -----
         if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-            & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
             event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
                 module=self.sim.modules['Labour'], person_id=person_id,
                 facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
@@ -198,7 +198,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         # -----  COMPLICATION AFTER BIRTH  -----
         if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-            & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
             event = HSI_Labour_ReceivesCareForPostpartumPeriod(
                     module=self.sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))

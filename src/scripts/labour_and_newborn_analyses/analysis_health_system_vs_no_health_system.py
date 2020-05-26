@@ -3,7 +3,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -144,29 +144,31 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
 # eclampsia_deaths = dict()
 # postpartum_haem_deaths = dict()
 
+
 preterm_birth_deaths = dict()
 failure_to_transition_deaths = dict()
 encephalopathy_death = dict()
 newborn_sepsis_death = dict()
 
 
-#for label, file in output_files.items():
+# for label, file in output_files.items():
 #    maternal_deaths[label], still_births[label], newborn_deaths[label], antepartum_haem[label], \
 #    obstructed_labour[label], uterine_rupture[label], maternal_sepsis[label], eclampsia[label],\
 #        postpartum_haem[label], home_births[label], health_centre_births[label], hospital_births[label],\
 #        caesarean_births[label] = \
 #        get_incidence_rate_and_death_numbers_from_logfile(file)
 
-#for label, file in output_files.items():
+# for label, file in output_files.items():
 #    sepsis_deaths[label], uterine_rupture_deaths[label], antepartum_haem_deaths[label], eclampsia_deaths[label], \
 #    postpartum_haem_deaths[label] = get_incidence_rate_and_death_numbers_from_logfile(file)
 
 # for label, file in output_files.items():
 #    home_births[label], health_centre_births[label], hospital_births[label] = \
 #        get_incidence_rate_and_death_numbers_from_logfile(file)
+
 for label, file in output_files.items():
     preterm_birth_deaths[label], failure_to_transition_deaths[label], encephalopathy_death[label], \
-    newborn_sepsis_death[label] = \
+        newborn_sepsis_death[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
 data = {}
 
@@ -185,22 +187,20 @@ generate_graphs(failure_to_transition_deaths, 'Failure To Transition Deaths by Y
 generate_graphs(encephalopathy_death, 'Neonatal Encephalopathy Deaths by Year', "nenc_death_by_scenario")
 generate_graphs(newborn_sepsis_death, 'Neonatal Sepsis Deaths by Year', "nsep_death_by_scenario")
 
-
-
-#generate_graphs(sepsis_deaths, 'Maternal Sepsis Deaths by Year', "sep_death_by_scenario")
-#generate_graphs(uterine_rupture_deaths, 'Uterine Rupture Deaths by Year', "ur_death_by_scenario")
-#generate_graphs(antepartum_haem_deaths, 'Antepartum Haemorrhage Deaths by Year', "aph_death_by_scenario")
-#generate_graphs(eclampsia_deaths, 'Eclampsia Deaths by Year', "ec_death_by_scenario")
-#generate_graphs(postpartum_haem_deaths, 'Postpartum Haem Deaths by Year', "pph_death_by_scenario")
-#generate_graphs(maternal_deaths, 'Maternal Mortality Ratio by Year', "MMR_by_scenario")
-#generate_graphs(newborn_deaths, 'Early Neonatal Mortality Ratio by Year', "NMR_by_scenario")
-#generate_graphs(still_births, 'Intrapartum Stillbirth Rate by Year ', "SBR_by_scenario")
-#generate_graphs(antepartum_haem, 'Antepartum Haemorrhage Rate by Year ', "APH_by_scenario")
-#generate_graphs(obstructed_labour, 'Obstructed Labour Rate by Year ', "OL_by_scenario")
-#generate_graphs(uterine_rupture, 'Uterine Rupture Rate by Year ', "UR_by_scenario")
-#generate_graphs(maternal_sepsis, 'Maternal Sepsis Rate by Year ', "MS_by_scenario")
-#generate_graphs(eclampsia, 'Eclampsia Rate by Year ', "ER_by_scenario")
-#generate_graphs(postpartum_haem, 'Postpartum Haemorrhage Rate by Year ', "PPH_by_scenario")
+# generate_graphs(sepsis_deaths, 'Maternal Sepsis Deaths by Year', "sep_death_by_scenario")
+# generate_graphs(uterine_rupture_deaths, 'Uterine Rupture Deaths by Year', "ur_death_by_scenario")
+# generate_graphs(antepartum_haem_deaths, 'Antepartum Haemorrhage Deaths by Year', "aph_death_by_scenario")
+# generate_graphs(eclampsia_deaths, 'Eclampsia Deaths by Year', "ec_death_by_scenario")
+# generate_graphs(postpartum_haem_deaths, 'Postpartum Haem Deaths by Year', "pph_death_by_scenario")
+# generate_graphs(maternal_deaths, 'Maternal Mortality Ratio by Year', "MMR_by_scenario")
+# generate_graphs(newborn_deaths, 'Early Neonatal Mortality Ratio by Year', "NMR_by_scenario")
+# generate_graphs(still_births, 'Intrapartum Stillbirth Rate by Year ', "SBR_by_scenario")
+# generate_graphs(antepartum_haem, 'Antepartum Haemorrhage Rate by Year ', "APH_by_scenario")
+# generate_graphs(obstructed_labour, 'Obstructed Labour Rate by Year ', "OL_by_scenario")
+# generate_graphs(uterine_rupture, 'Uterine Rupture Rate by Year ', "UR_by_scenario")
+# generate_graphs(maternal_sepsis, 'Maternal Sepsis Rate by Year ', "MS_by_scenario")
+# generate_graphs(eclampsia, 'Eclampsia Rate by Year ', "ER_by_scenario")
+# generate_graphs(postpartum_haem, 'Postpartum Haemorrhage Rate by Year ', "PPH_by_scenario")
 
 
 # data2 = {}
@@ -219,6 +219,3 @@ generate_graphs(newborn_sepsis_death, 'Neonatal Sepsis Deaths by Year', "nsep_de
 # plt.title('Births by Setting')
 # plt.savefig(outputpath / ("birth_setting" + datestamp + ".pdf"), format='pdf')
 # plt.show()
-
-
-

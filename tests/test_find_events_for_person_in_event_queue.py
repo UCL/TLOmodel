@@ -1,8 +1,5 @@
 import os
-import time
 from pathlib import Path
-
-import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -49,4 +46,4 @@ def test_can_look_at_future_events():
     assert len(events) > 0
     assert len(hsi_events) > 0
 
-    #TODO: nice way to combine and sort these two lists.
+    # TODO: nice way to combine and sort these two lists.

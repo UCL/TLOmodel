@@ -116,8 +116,7 @@ def test_run_health_system_events_wont_run():
     sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                               service_availability=[]))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]))
     sim.seed_rngs(0)
 
     # Run the simulation

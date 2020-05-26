@@ -183,6 +183,8 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit(HSI_Even
 
     def not_available(self):
         pass
+
+
 class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI_Event, IndividualScopeEventMixin):
     """This is the HSI PThis is the HSI PresentsForSubsequentAntenatalCareVisit. Currently it is not scheduled to run, but
      will be scheduled by HSI PresentsForFirstANCVists. It will be responsible for the management of monitoring and
@@ -235,6 +237,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI
 
     def not_available(self):
         pass
+
 
 class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin):
     """ This is the HSI EmergencyTreatment. Currently it is not scheduled to run, but will be scheduled via the
@@ -289,6 +292,7 @@ class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualSco
     def not_available(self):
         pass
 
+
 class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI PostAbortionCare. Currently it is not scheduled, but will be scheduled via the PregnancySupervisor
     module for women who seek care following a termination of pregnancy. It will manage treatment for common
@@ -339,6 +343,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, Indi
 
     def not_available(self):
         pass
+
 
 class HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI TreatmentFollowingAntepartumStillbirth. Currently it is not scheduled but will be scheduled by the

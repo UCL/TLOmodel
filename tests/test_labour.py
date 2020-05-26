@@ -35,7 +35,7 @@ def simulation():
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
-    #sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]))
+    # sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]))
 
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
@@ -45,8 +45,6 @@ def simulation():
     sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
     sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
     sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-
-
 
     # sim.configure_logging('log', directory=tmpdir, custom_levels={'*': logging.WARNING,
     #                                                               'tlo.module.labour': logging.DEBUG,

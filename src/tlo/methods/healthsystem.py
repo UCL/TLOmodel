@@ -388,7 +388,6 @@ class HealthSystem(Module):
                 hsi_event.TREATMENT_ID,
             )
 
-
     def check_appt_footprint_format(self, appt_footprint):
         """
         This function runs some checks on the appt_footprint to ensure it is the right format
@@ -964,6 +963,7 @@ class HealthSystem(Module):
                     list_of_events.append((date, event))
 
         return list_of_events
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """

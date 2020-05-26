@@ -697,8 +697,8 @@ class NewbornOutcomes(Module):
                              'sought_care_for_complication': False,
                              'cause_of_death_after_birth': []}
 
-            assert nci[child_id]['delivery_attended'] is not 'none'
-            assert nci[child_id]['delivery_setting'] is not 'none'
+            assert nci[child_id]['delivery_attended'] != 'none'
+            assert nci[child_id]['delivery_setting'] != 'none'
 
             # Determine if this child will be born with a congenital anomaly
             if self.rng.random_sample() < params['prob_congenital_ba']:
@@ -1215,7 +1215,7 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'severe_enceph_incidence': severe_enceph / total_births_last_year * 100,
                            'severe_enceph_death': severe_enceph_death,
                            'total_enceph_incidence': all_enceph / total_births_last_year * 100,
-                           'total_enceph_death':mild_enceph_death + moderate_enceph_death + severe_enceph_death,
+                           'total_enceph_death': mild_enceph_death + moderate_enceph_death + severe_enceph_death,
                            'ftt_crude': ftt,
                            'ftt_incidence': ftt / total_births_last_year * 100,
                            'ftt_death': ftt_death,
