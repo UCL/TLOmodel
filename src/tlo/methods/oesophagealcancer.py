@@ -532,14 +532,13 @@ class OesophagealCancer(Module):
 
         disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
 
-        # Assign daly_wt to those with cancer stages before stage4 and never treated
+        # Assign daly_wt to those with cancer stages before stage4 and have either never been treated or are no longer
+        # in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
-                pd.isnull(df.oc_date_treatment) & (
-                    (df.oc_status == "stage1") |
-                    (df.oc_status == "stage2") |
-                    (df.oc_status == "stage3")
-                )
+                (df.oc_status == "stage1") |
+                (df.oc_status == "stage2") |
+                (df.oc_status == "stage3")
             )
         ] = self.daly_wts['stage_1_3']
 
