@@ -33,7 +33,8 @@ class Diarrhoea(Module):
         'sapovirus',
         'norovirus',
         'astrovirus',
-        'tEPEC'}
+        'tEPEC'
+    }
 
     PARAMETERS = {
         'base_inc_rate_diarrhoea_by_rotavirus':
@@ -359,12 +360,13 @@ class Diarrhoea(Module):
     }
 
     # Declare symptoms that this module will cause:
-    SYMPTOMS = {'diarrhoea',
-                'bloody_stool',
-                'fever',
-                'vomiting',
-                'dehydration'  # NB. This is non-severe dehydration
-                }
+    SYMPTOMS = {
+        'diarrhoea',
+        'bloody_stool',
+        'fever',
+        'vomiting',
+        'dehydration'  # NB. This is non-severe dehydration
+    }
 
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -1108,7 +1110,9 @@ class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
 
 
 class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
-
+    """
+    #TODO - fill in!
+    """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1127,7 +1131,6 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
-
 
 class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
     """
