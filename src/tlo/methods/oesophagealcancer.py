@@ -543,14 +543,15 @@ class OesophagealCancer(Module):
             )
         ] = self.daly_wts['stage_1_3']
 
-        # Assign daly_wt to those with cancer stages before stage4 and who have been treated
+        # Assign daly_wt to those with cancer stages before stage4 and who have been treated and who are still in the
+        # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
                 ~pd.isnull(df.oc_date_treatment) & (
                     (df.oc_status == "stage1") |
                     (df.oc_status == "stage2") |
                     (df.oc_status == "stage3")
-                )
+                ) & (df.oc_status == df.oc_stage_at_which_treatment_applied)
             )
         ] = self.daly_wts['stage_1_3_treated']
 
