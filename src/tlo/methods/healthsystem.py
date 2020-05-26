@@ -379,7 +379,7 @@ class HealthSystem(Module):
                 hsi_event.not_available()
                 # TODO: should the healthsystem call this at the time that the HSI was intended to be run (i.e topen)?
 
-            except ValueError:
+            except AttributeError:
                 pass
 
             logger.debug(
@@ -1228,6 +1228,12 @@ class HSI_Event:
         Must be implemented by subclasses.
         """
         raise NotImplementedError
+
+    def not_available(self):
+        """Called when this event is passed to schedule_hsi_event when the TREATMENT_ID is not permitted by the
+         parameter service_availability.
+        """
+        pass
 
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""
