@@ -1427,8 +1427,10 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, 'rt_med_int'] = False
         # set rt_polytrauma back to false after death
         df.loc[df.is_alive, 'rt_polytrauma'] = False
+        # set injury severity back to none after death
+        df.loc[df.is_alive, 'rt_injseverity'] = "none"
         # set rt_perm_disability back to false after death
-        df.loc[df.is_alive & (~df.rt_road_traffic_inc), 'rt_perm_disability'] = False
+        df.loc[df.is_alive, 'rt_perm_disability'] = False
         # reset rt_injuries properties after death
         df.loc[df.is_alive, 'rt_injury_1'] = "none"
         df.loc[df.is_alive, 'rt_injury_2'] = "none"
@@ -1438,6 +1440,10 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, 'rt_injury_6'] = "none"
         df.loc[df.is_alive, 'rt_injury_7'] = "none"
         df.loc[df.is_alive, 'rt_injury_8'] = "none"
+        # Reset injury date after death
+        df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
+        # Reset recovery wihtout medical intervention
+        df.loc[df.is_alive, 'rt_recovery_no_med'] = False
 
         # ----------- UPDATING OF RTI OVER TIME ----------------
         rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc & ~df.rt_imm_death]
@@ -1557,14 +1563,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             idx3 = inj3.index[inj3]
             df.loc[idx3, 'rt_disability'] += self.daly_wt_diffuse_axonal_injury
 
-        if len(inj1) + len(inj2) + len(inj3) > 0:
-            idx = idx1.union(idx2)
-            idx = idx.union(idx3)
-            for person_id_to_start_treatment in idx:
-                event = HSI_RTI_MedicalIntervention(self.module, person_id=person_id_to_start_treatment)
-                target_date = self.sim.date + DateOffset(days=int(0))
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
-                                                                    tclose=None)
+
         # =============================== AIS region 2: face ==========================================================
         # ----------------------- Find those with facial fractures and assign DALY weight -----------------------------
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('211').any(), axis=1)
@@ -1815,76 +1814,14 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         DALYweightoverlimit = df.index[df['rt_disability'] > 1]
         df.loc[DALYweightoverlimit, 'rt_disability'] = 1
 
-        # ================================== decide where they will go ===============================================
-        # todo: send them where they need to go
-        # Need to create a function that will assess the severity of the injuries a person has and assign them a
-        # required facility level. To do this we need to find what is
-        # required to treat each injury code, then search through a person's injuries, finding the facilities and
-        # resources needed to treat the injuries and then send them to the lowest level of facility which has the
-        # treatments.
-        #
-        # Injury code - description
-        # '112' -  skull fracture unspecified
-        # Requires - x-ray, ct scan, MRI scan, pain killers, sometimes surgery
-        #
-        # Injury code - description
-        # '113' - basilar skull fracture
-        # Requires - x-ray, ct scan, MRI scan, pain killers, sometimes surgery
-        #
-        # Injury code - description
-        # '133' - TBI, Subarachnoid haemorrhage (20%), Contusion (66%), Intraventricular haemorrhage (3%),
-        # Subgaleal hematoma (11%)
-        # Requires - Some kind of scan, ct or MRI, can require major surgery, can require steroids, pain killers
-        #
-        # Injury code - description
-        # '134' - TBI, Epidural hematoma (52%), Subdural hematoma (48%)
-        # Requires - Some kind of scan, ct or MRI, can require major surgery, can require steroids, pain killers
-        #
-        # Injury code - description
-        # '135' - TBI diffuse axonal injury
-        # Requires - Some kind of scan, ct or MRI, can require major surgery, can require steroids, pain killers
-        #
-        # '211' -
-        # '212'
-        # '2101'
-        # '291'
-        # '342'
-        # '343'
-        # '361'
-        # '363'
-        # '322'
-        # '323'
-        # '412'
-        # '414'
-        # '461'
-        # '463'
-        # '453'
-        # '441'
-        # '442'
-        # '443'
-        # '552'
-        # '553'
-        # '554'
-        # '612'
-        # '673'
-        # '674'
-        # '675'
-        # '676'
-        # '712'
-        # '722'
-        # '782'
-        # '783' bilateral amputation, upper limb
-        # '7101' lacerations, upper limb
-        # '811'
-        # '812'
-        # '813'
-        # '822'
-        # '882'
-        # '883'
-        # '884' - bilateral lower limb amputation
-        # '8101' - lacerations, lower limb
 
 
+        idx = df.index[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
+        for person_id_to_start_treatment in idx:
+            event = HSI_RTI_MedicalIntervention(self.module, person_id=person_id_to_start_treatment)
+            target_date = self.sim.date + DateOffset(days=int(0))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
+                                                                tclose=None)
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
@@ -1932,20 +1869,15 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
-    # todo: Make this a generic intervention
+    # todo: 1) Find way to schedule multiple diagnostic scans and treatments in this one HSI event.
+    #  2) Find out the proportions of needing surgery for the various injuries
+    #  3) Finish off the appointment requirements for amputations
+    #  4) Include duration of stay, could be based on ISS score or at least influenced by it
+    #  5) Include injury specific mortality for not having treatment
+    #
     """This is a Health System Interaction Event.
-    An appointment of a person who has experienced head injury due to a road traffic injury, requiring the resources
-    found at a level 1+ facility such as:
-
-    Diagnostic tools -
-
-    (Computed) tomograpy - a.k.a ct scan
-    MRI scan
-    Diagnostic radiography procedures e.g. x-rays
-
-    Treatments -
-    Anti inflammetory drugs
-    Major surgery e.g. craniotomy, aspiration
+    An appointment of a person who has experienced a road traffic injury, requiring the resources
+    found at a level 1+ facility depending on the nature of the injury
 
     """
 
@@ -1953,17 +1885,149 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         p = RTI.parameters
         assert isinstance(module, RTI)
-
+        df = self.sim.population.props
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' foot
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         #   - update to reflect the appointments that are required
+        # ------------------------------------ Generic ----------------------------------------------------------------
+        the_appt_footprint['AccidentsandEmerg'] = 1
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-        the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-        the_appt_footprint['MRI'] = 1  # This appointment requires a MRI scan
-        the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
-        the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        persons_injuries = df.loc[[person_id], columns]
+        surgery_counts = 0
+        # print(persons_injuries)
+        # --------------------- For fractures, sometimes requiring surgery ---------------------------------------------
 
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('112').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('113').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('211').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('211').any(), axis=1)
+        idx4 = inj4.index[inj4]
+        inj5 = persons_injuries.apply(lambda row: row.astype(str).str.contains('412').any(), axis=1)
+        idx5 = inj5.index[inj5]
+        inj6 = persons_injuries.apply(lambda row: row.astype(str).str.contains('414').any(), axis=1)
+        idx6 = inj6.index[inj6]
+        inj7 = persons_injuries.apply(lambda row: row.astype(str).str.contains('612').any(), axis=1)
+        idx7 = inj7.index[inj7]
+        inj8 = persons_injuries.apply(lambda row: row.astype(str).str.contains('712').any(), axis=1)
+        idx8 = inj8.index[inj8]
+        inj9 = persons_injuries.apply(lambda row: row.astype(str).str.contains('811').any(), axis=1)
+        idx9 = inj9.index[inj9]
+        inj10 = persons_injuries.apply(lambda row: row.astype(str).str.contains('812').any(), axis=1)
+        idx10 = inj10.index[inj10]
+        inj11 = persons_injuries.apply(lambda row: row.astype(str).str.contains('813').any(), axis=1)
+        idx11 = inj11.index[inj11]
+        idx = idx1.union(idx2).union(idx3).union(idx4).union(idx5).union(idx6).union(idx7).union(idx8).union(idx9).\
+            union(idx10).union(idx11)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+        if len(idx11) > 0:
+            the_appt_footprint['MajorSurg'] = 1
+            surgery_counts += 1
+
+        # ------------------------------ Traumatic brain injury requirements ------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        idx = idx1.union(idx2).union(idx3)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['MRI'] = 1  # This appointment requires a MRI scan
+            the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            surgery_counts += 1
+        # ------------------------------ Abdominal organ injury requirements ------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('552').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('553').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('554').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        idx = idx1.union(idx2).union(idx3)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            surgery_counts += 1
+        # -------------------------------- Spinal cord injury requirements -------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('674').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('675').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('676').any(), axis=1)
+        idx4 = inj4.index[inj4]
+        idx = idx1.union(idx2).union(idx3).union(idx4)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+            the_appt_footprint['MRI'] = 1  # This appointment requires an MRI
+            the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            surgery_counts += 1
+
+        # --------------------------------- Dislocations ------------------------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('322').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('323').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('722').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('822').any(), axis=1)
+        idx4 = inj4.index[inj4]
+        idx = idx1.union(idx2).union(idx3).union(idx4)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+            the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            surgery_counts += 1
+
+        # --------------------------------- Soft tissue injury in neck -------------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('342').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('343').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        idx = idx1.union(idx2)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            surgery_counts += 1
+
+        # --------------------------------- Soft tissue injury in thorax/ lung injury ----------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('441').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('443').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('453').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        idx = idx1.union(idx2).union(idx3)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+            the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            surgery_counts += 1
+
+        # -------------------------------- Internal bleeding -----------------------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('361').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('363').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('461').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('463').any(), axis=1)
+        idx4 = inj4.index[inj4]
+        idx = idx1.union(idx2).union(idx3).union(idx4)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            surgery_counts += 1
+
+        # ------------------------------------- Amputations ------------------------------------------------------------
         # Define the facilities at which this event can occur (only one is allowed)
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
@@ -1974,7 +2038,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
-
+        print(surgery_counts)
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
@@ -1985,7 +2049,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         if prob_dis < 0.81:
             df.at[person_id, 'rt_perm_disability'] = True
             logger.debug('@@@@@@@@@@ Medical intervention started but still disabled!!!!!!')
-        pass
+
         self.sim.schedule_event(RTIMedicalInterventionDeathEvent(self.module, person_id), self.sim.date +
                                 DateOffset(days=0))
         logger.debug('This is MedicalInterventionEvent scheduling a potential death on date %s for person %d',
@@ -2020,7 +2084,7 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
             if randfordeath < 0.046:
                 df.loc[individual_id, 'rt_post_med_death'] = True
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='RTI_with_med'), self.sim.date)
+                                                                      cause='death_with_med'), self.sim.date)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
                              individual_id, self.sim.date)
@@ -2028,7 +2092,7 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
             if randfordeath < 0.27:
                 df.loc[individual_id, 'rt_post_med_death'] = True
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='RTI_with_med'), self.sim.date)
+                                                                      cause='death_with_med'), self.sim.date)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
                              individual_id, self.sim.date)
