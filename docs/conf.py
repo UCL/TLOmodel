@@ -56,3 +56,45 @@ autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
+
+
+def setup(app):
+    '''
+    Tell Sphinx which functions to run when it emits certain events.
+    '''
+
+    # The next two lines show two different ways of telling Sphinx to use
+    # our local, redefined versions of its internal functions:
+    ###AttributeDocumenter.add_directive_header = add_directive_header
+    ###app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
+    ###    add_content
+
+    # When the autodoc-process-docstring event is emitted, handle it with
+    # add_params_to_docstring():
+    app.connect("autodoc-process-docstring", add_params_to_docstring)
+
+
+def add_params_to_docstring(app, what, name, obj, options, lines):
+    '''
+    This adds a planet's PARAMETERS values in the form of a table.
+    We will also want to do the same for its PROPERTIES in TLO.
+    Ideally using the same function.
+    '''
+
+    if (what == "attribute"):
+        # Adds the following list to each attribute docstring encountered
+        # Examples of 'name' are:
+        # tlo.methods.chronicsyndrome.ChronicSyndrome.rng
+        # tlo.methods.antenatal_care.CareOfWomenDuringPregnancy.parameters
+        # tlo.methods.epilepsy.Epilepsy.PARAMETERS
+        substrings = name.split(".")
+        #import pdb; pdb.set_trace()
+        module = substrings[-2]   # e.g. "Epilepsy"
+        attribute_name = substrings[-1]  # e.g. "PARAMETERS"
+        import pdb
+        if lines is None:
+            lines = []
+        if (attribute_name == "PARAMETERS"):  # and planet_name != "Planet"):
+            #lines += create_table(obj, planet_name)
+            #pdb.set_trace()
+            lines.append("create table placeholder")
