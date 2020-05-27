@@ -6,8 +6,8 @@ from tlo.methods import (
     demography,
     enhanced_lifestyle,
 
-    mockitis, chronicsyndrome, healthsystem, symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child,
-    labour, pregnancy_supervisor, contraception)
+    mockitis, contraception, chronicsyndrome, healthsystem, symptommanager, healthburden, healthseekingbehaviour,
+    dx_algorithm_child, labour, pregnancy_supervisor)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -25,6 +25,7 @@ def test_can_look_at_future_events():
 
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
@@ -33,7 +34,6 @@ def test_can_look_at_future_events():
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=False)
                  )
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
     sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())

@@ -2862,8 +2862,8 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if total_ip_maternal_deaths_last_year == 0:
             total_ip_maternal_deaths_last_year = 1
 
-    #    if yearly_births == 0:
-    #        yearly_births = 1
+        if total_births_last_year == 0:
+            total_births_last_year = 1
 
         # yearly number of complications
         deaths = self.module.LabourTracker['maternal_death']
