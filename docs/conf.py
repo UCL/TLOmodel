@@ -110,6 +110,48 @@ def add_content(self, more_content, no_docstring=False):
             self.add_line(line, src[0], src[1])
 
 
+def add_directive_header(self, sig):
+    '''
+    As above, we adapt the version of this function currently installed at:
+    /anaconda3/envs/nicedocs/lib/python3.6/site-packages/sphinx/ext/autodoc/__init__.py
+    in class AttributeDocumenter
+
+    We don't want to display the raw dictionaries of PARAMETERS
+    or PROPERTIES; we only want to display those in our nice
+    tabular form. So, here, we suppress the raw dict printing.
+    '''
+
+    super(AttributeDocumenter, self).add_directive_header(sig)
+    sourcename = self.get_sourcename()
+
+    if not self.options.annotation and \
+            not (('PARAMETERS' in sourcename) or ('PROPERTIES' in sourcename)):
+
+        if not self._datadescriptor:
+            # obtain annotation for this attribute
+            annotations = getattr(self.parent, '__annotations__', {})
+            if annotations and self.objpath[-1] in annotations:
+                objrepr = stringify_typehint(annotations.get(self.objpath[-1]))
+                self.add_line('   :type: ' + objrepr, sourcename)
+            else:
+                key = ('.'.join(self.objpath[:-1]), self.objpath[-1])
+                if self.analyzer and key in self.analyzer.annotations:
+                    self.add_line('   :type: ' +
+                                  self.analyzer.annotations[key],
+                                  sourcename)
+            try:
+                objrepr = object_description(self.object)
+                self.add_line('   :value: ' + objrepr, sourcename)
+            except ValueError:
+                pass
+
+    elif (self.options.annotation is SUPPRESS) or \
+            ('PARAMETERS' in sourcename) or ('PROPERTIES' in sourcename):
+        pass
+    else:
+        self.add_line('   :annotation: %s' % self.options.annotation,
+                      sourcename)
+
 
 def setup(app):
     '''
@@ -118,7 +160,7 @@ def setup(app):
 
     # The next two lines show two different ways of telling Sphinx to use
     # our local, redefined versions of its internal functions:
-    ###AttributeDocumenter.add_directive_header = add_directive_header
+    AttributeDocumenter.add_directive_header = add_directive_header
     app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
         add_content
 
