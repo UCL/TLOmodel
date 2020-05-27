@@ -3,14 +3,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -1191,29 +1189,19 @@ class Labour (Module):
         """ This function checks a womans event and hsi_event queues to ensure that she has the correct events scheduled
          during the process of labour"""
         mni = self.mother_and_newborn_info
-
-        events = self.sim.event_queue.find_events_for_person(person_id=individual_id)
-        hsi_events = self.sim.modules['HealthSystem'].find_events_for_person(person_id=individual_id)
+        events = self.sim.find_events_for_person(person_id=individual_id)
 
         # Here we iterate through each womans event queue to insure she has the correct events scheduled
         # Firstly we check all women have the labour death event and birth event scheduled
-        for x in events:
-            for y in x:
-                if isinstance(y, tlo.methods.labour.LabourDeathEvent):
-                    event_check = 1
-                    if isinstance(y, tlo.methods.labour.BirthEvent):
-                        event_check += 1
-                        assert event_check == 2
+        events = [e.__class__ for d, e in events]
+        assert LabourDeathEvent in events
+        assert BirthEvent in events
 
         # Then we ensure that women delivering in a facility have the right HSI scheduled
         if mni[individual_id]['delivery_setting'] != 'homebirth':
-            for x in hsi_events:
-                for y in x:
-                    if isinstance(y, tlo.methods.labour.HSI_Labour_PresentsForSkilledBirthAttendanceInLabour):
-                        hsi_check = 1
-                        assert hsi_check == 1
-
-        # todo: Check with asif this is doing what I think it is
+            hsi_events = self.sim.modules['HealthSystem'].find_events_for_person(person_id=individual_id)
+            hsi_events = [e.__class__ for d, e in hsi_events]
+            assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour in hsi_events
 
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a

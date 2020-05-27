@@ -1,14 +1,25 @@
 import os
+from operator import itemgetter
 from pathlib import Path
+
 import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    chronicsyndrome,
+    contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
-
-    mockitis, contraception, chronicsyndrome, healthsystem, symptommanager, healthburden, healthseekingbehaviour,
-    dx_algorithm_child, labour, pregnancy_supervisor, newborn_outcomes)
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    mockitis,
+    newborn_outcomes,
+    pregnancy_supervisor,
+    symptommanager,
+)
 
 start_date = Date(2010, 1, 1)
 
@@ -54,10 +65,16 @@ def test_can_look_at_future_events():
                                                    tclose=sim.date + pd.DateOffset(days=1))
 
     # Query the queue of events for this person:
-    events = sim.event_queue.find_events_for_person(person_id=person_id)
+    events = sim.find_events_for_person(person_id=person_id)
     hsi_events = sim.modules['HealthSystem'].find_events_for_person(person_id=person_id)
 
-    assert len(events) > 0
-    assert len(hsi_events) > 0
+    all_events = events + hsi_events
+    all_sorted_events = sorted(((i, j) for i, j in all_events), key=itemgetter(0))
 
-    # TODO: nice way to combine and sort these two lists.
+    assert len(events) > 0
+    assert events[0][1] is dummy_event
+
+    assert len(hsi_events) > 0
+    assert hsi_events[0][1] is dummy_hsi
+
+    assert len(all_sorted_events) == len(events) + len(hsi_events)
