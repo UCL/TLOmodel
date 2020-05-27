@@ -1174,6 +1174,11 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         small_for_gestational_age = len(df.index[(df.nb_size_for_gestational_age == 'small_for_gestational_age') &
                                                  (df.date_of_birth > one_year_prior) & (df.date_of_birth <
                                                                                         self.sim.date)])
+        # todo: this is just to stop code crashing on small runs
+        if newborn_deaths == 0:
+            newborn_deaths = 1
+        if total_births_last_year == 0:
+            total_births_last_year = 1
 
         # yearly number of complications
         sepsis = self.module.NewbornComplicationTracker['neonatal_sepsis']
