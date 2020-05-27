@@ -47,7 +47,6 @@ def test_can_look_at_future_events():
     dummy_event = mockitis.MockitisDeathEvent(sim.modules['Mockitis'], person_id)
     sim.schedule_event(dummy_event, sim.date)
 
-
     # hsi event queue
     dummy_hsi = chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
         sim.modules['ChronicSyndrome'], person_id=person_id)
