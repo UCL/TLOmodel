@@ -96,8 +96,8 @@ class Specifiable:
         '''Add docstring here.
         self.type will be something like "Types.REAL";
         we might want to remove the leading "Type." '''
-        return f'{self.type_} = {self.description}'
-        #pass
+        return f'{self.type_} === {self.description}'
+        # Types.CATEGORICAL might need special treatment
 
 
 class Parameter(Specifiable):

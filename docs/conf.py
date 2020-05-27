@@ -76,7 +76,7 @@ def setup(app):
 
 def add_params_to_docstring(app, what, name, obj, options, lines):
     '''
-    This adds a planet's PARAMETERS values in the form of a table.
+    This adds a disease's PARAMETERS values in the form of a table.
     We will also want to do the same for its PROPERTIES in TLO.
     Ideally using the same function.
     '''
@@ -89,12 +89,50 @@ def add_params_to_docstring(app, what, name, obj, options, lines):
         # tlo.methods.epilepsy.Epilepsy.PARAMETERS
         substrings = name.split(".")
         #import pdb; pdb.set_trace()
-        module = substrings[-2]   # e.g. "Epilepsy"
+        disease = substrings[-2]   # e.g. "Epilepsy"
         attribute_name = substrings[-1]  # e.g. "PARAMETERS"
         import pdb
         if lines is None:
             lines = []
-        if (attribute_name == "PARAMETERS"):  # and planet_name != "Planet"):
+        if (attribute_name == "PARAMETERS"):  # and disease != "Module"):
             #lines += create_table(obj, planet_name)
+            lines += create_table(obj, disease)
             #pdb.set_trace()
-            lines.append("create table placeholder")
+            #lines.append("create table placeholder")
+
+
+def create_table(mydict, mydisease):
+    '''
+    Dynamically create a table of arbitrary length.
+    `mydict` is the dictionary object.
+    `mydisease` is the disease name, e.g. "Epilepsy".
+    A key point here is that it splits a string with the
+    delimiter " = ", because that is what the Parameter
+    class's __repr__() function returns.
+    NB Do not change the positioning of items in the
+    f-strings below, or things will break!
+    '''
+    delimiter = " === "
+
+    examplestr = f'''
+.. list-table::  Info for {mydisease}
+   :widths: 25 25 50
+   :header-rows: 1
+
+   * - Item
+     - Value
+     - Description
+'''
+
+    for key in mydict.keys():
+        item = str(mydict[key])
+        value, description = item.split(delimiter)
+
+        row = f'''   * - {key}
+     - {value}
+     - {description}
+'''
+        examplestr += row
+    mylist = examplestr.splitlines()
+    return mylist
+
