@@ -27,7 +27,7 @@ jupyter-console==5.2.0    # via jupyter
 jupyter-core==4.4.0       # via jupyter-client, nbconvert, nbformat, notebook, qtconsole
 jupyter==1.0.0
 kiwisolver==1.0.1         # via matplotlib
-markupsafe==1.0
+markupsafe==1.1.1
 matplotlib==3.0.0
 mistune==0.8.3            # via nbconvert
 more-itertools==4.2.0     # via pytest
