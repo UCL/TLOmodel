@@ -1,7 +1,6 @@
-import os
 import datetime
+import os
 from pathlib import Path
-
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -10,10 +9,12 @@ from tlo.methods import (
     demography,
     enhanced_lifestyle,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor, symptommanager, healthseekingbehaviour
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 # Where will outputs go
@@ -47,17 +48,17 @@ def test_run():
 
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 
@@ -76,20 +77,20 @@ def test_run_health_system_high_squeeze():
 
     # Register the core modules
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=0.0,
-                                           mode_appt_constraints=2))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                                           mode_appt_constraints=2),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 
@@ -108,18 +109,18 @@ def test_run_health_system_events_wont_run():
 
     # Register the core modules
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=[]))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=[]),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 
