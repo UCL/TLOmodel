@@ -84,7 +84,7 @@ def add_content(self, more_content, no_docstring=False):
         attr_docs = self.analyzer.find_attr_docs()
         if self.objpath:
             key = ('.'.join(self.objpath[:-1]), self.objpath[-1])
-            # Example key: ('Jupiter', 'PARAMETERS')
+            # Example key: ('Contraception', 'PARAMETERS')
             if key not in attr_docs and key[1] in ("PARAMETERS", "PROPERTIES"):
                 attr_docs[key] = []
             if key in attr_docs:
@@ -184,7 +184,7 @@ def add_params_to_docstring(app, what, name, obj, options, lines):
         # tlo.methods.epilepsy.Epilepsy.PARAMETERS
         substrings = name.split(".")
         #import pdb; pdb.set_trace()
-        disease = substrings[-2]   # e.g. "Epilepsy"
+        module = substrings[-2]   # e.g. "Epilepsy"
         attribute_name = substrings[-1]  # e.g. "PARAMETERS"
         import pdb
         if lines is None:
@@ -192,16 +192,17 @@ def add_params_to_docstring(app, what, name, obj, options, lines):
         if (attribute_name == "PARAMETERS"):  # and disease != "Module"):
             #lines += create_table(obj, planet_name)
             #import pdb; pdb.set_trace()
-            lines += create_table(obj, disease)
+            lines += create_table(obj, module)
             #pdb.set_trace()
             #lines.append("create table placeholder")
 
 
-def create_table(mydict, mydisease):
+def create_table(mydict, mymodule):
     '''
     Dynamically create a table of arbitrary length.
     `mydict` is the dictionary object.
-    `mydisease` is the disease name, e.g. "Epilepsy".
+    `mymodule` is the name for diseases, etc.,
+      e.g. "Epilepsy", "Contraception".
     A key point here is that it splits a string with the
     delimiter " = ", because that is what the Parameter
     class's __repr__() function returns.
@@ -212,7 +213,7 @@ def create_table(mydict, mydisease):
     #import pdb; pdb.set_trace()
 
     examplestr = f'''
-.. list-table::  Info for {mydisease}
+.. list-table::  Info for {mymodule}
    :widths: 25 25 50
    :header-rows: 1
 
