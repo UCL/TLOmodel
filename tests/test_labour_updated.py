@@ -128,4 +128,3 @@ def test_run_health_system_events_wont_run():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
-    # todo: some logic here to confirm that all women are now delivering at home due to high squeeze
