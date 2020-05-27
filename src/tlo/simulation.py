@@ -10,6 +10,7 @@ from typing import Dict, Union
 import numpy as np
 
 from tlo import Population, logging
+from tlo.events import IndividualScopeEventMixin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -200,6 +201,22 @@ class Simulation:
             module.on_birth(mother_id, child_id)
         return child_id
 
+    def find_events_for_person(self, person_id: int):
+        """Find the events in the queue for a particular person.
+        :param person_id: the person_id of interest
+        :returns list of tuples (date_of_event, event) for that person_id in the queue.
+
+        NB. This is for debugging and testing only - not for use in real simulations as it is slow
+        """
+        person_events = list()
+
+        for date, counter, event in self.event_queue.queue:
+            if isinstance(event, IndividualScopeEventMixin):
+                if event.target == person_id:
+                    person_events.append((date, event))
+
+        return person_events
+
 
 class EventQueue:
     """A simple priority queue for events.
@@ -230,25 +247,6 @@ class EventQueue:
         """
         date, count, event = heapq.heappop(self.queue)
         return event, date
-
-    def find_events_for_person(self, person_id: int):
-        """Find the events in the queue for a particular person.
-        :param person_id: the person_id of interest
-        :returns list of tuples (date_of_event, event) for that person_id in the queue.
-
-        NB. This is for debugging and testing only - not for use in real simulations as it is slow
-        """
-        list_of_events = list()
-
-        for ev_tuple in self.queue:
-            date = ev_tuple[0]
-            event = ev_tuple[2]
-            target = event.target
-            if isinstance(target, int):
-                if target == person_id:
-                    list_of_events.append((date, event))
-
-        return list_of_events
 
     def __len__(self):
         """:return: the length of the queue"""
