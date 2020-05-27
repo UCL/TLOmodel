@@ -1,8 +1,18 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+#
+# Helpful page:
+# https://medium.com/@eikonomega/getting-started-with-sphinx-autodoc-part-1-2cebbbca5365
+#
+from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS
+from sphinx.util.inspect import object_description
 import os
+import sys
+sys.path.insert(0, os.path.abspath('../..'))
 
+from __future__ import unicode_literals
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -58,6 +68,49 @@ autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
 
 
+def add_content(self, more_content, no_docstring=False):
+    """
+    Add content from docstrings, attribute documentation and user.
+
+     We adapt the version of this function currently installed at:
+     /anaconda3/envs/nicedocs/lib/python3.6/site-packages/sphinx/ext/autodoc/__init__.py
+     in the  Documenter class.
+    """
+
+    # set sourcename and add content from attribute documentation
+    sourcename = self.get_sourcename()
+
+    if self.analyzer:
+        attr_docs = self.analyzer.find_attr_docs()
+        if self.objpath:
+            key = ('.'.join(self.objpath[:-1]), self.objpath[-1])
+            # Example key: ('Jupiter', 'PARAMETERS')
+            if key not in attr_docs and key[1] in ("PARAMETERS", "PROPERTIES"):
+                attr_docs[key] = []
+            if key in attr_docs:
+                no_docstring = True
+                docstrings = [attr_docs[key]]
+                for i, line in enumerate(self.process_doc(docstrings)):
+                    self.add_line(line, sourcename, i)
+
+    # add content from docstrings
+    if not no_docstring:
+        docstrings = self.get_doc()
+        if not docstrings:
+            # append at least a dummy docstring, so that the event
+            # autodoc-process-docstring is fired and can add some
+            # content if desired
+            docstrings.append([])
+        for i, line in enumerate(self.process_doc(docstrings)):
+            self.add_line(line, sourcename, i)
+
+    # add additional content (e.g. from document), if present
+    if more_content:
+        for line, src in zip(more_content.data, more_content.items):
+            self.add_line(line, src[0], src[1])
+
+
+
 def setup(app):
     '''
     Tell Sphinx which functions to run when it emits certain events.
@@ -66,8 +119,8 @@ def setup(app):
     # The next two lines show two different ways of telling Sphinx to use
     # our local, redefined versions of its internal functions:
     ###AttributeDocumenter.add_directive_header = add_directive_header
-    ###app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
-    ###    add_content
+    app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
+        add_content
 
     # When the autodoc-process-docstring event is emitted, handle it with
     # add_params_to_docstring():
@@ -96,6 +149,7 @@ def add_params_to_docstring(app, what, name, obj, options, lines):
             lines = []
         if (attribute_name == "PARAMETERS"):  # and disease != "Module"):
             #lines += create_table(obj, planet_name)
+            #import pdb; pdb.set_trace()
             lines += create_table(obj, disease)
             #pdb.set_trace()
             #lines.append("create table placeholder")
@@ -113,6 +167,7 @@ def create_table(mydict, mydisease):
     f-strings below, or things will break!
     '''
     delimiter = " === "
+    #import pdb; pdb.set_trace()
 
     examplestr = f'''
 .. list-table::  Info for {mydisease}
