@@ -12,6 +12,8 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
+    healthseekingbehaviour,
+    symptommanager,
 )
 
 start_date = Date(2010, 1, 1)
@@ -26,10 +28,12 @@ def simulation():
 
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
     sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
