@@ -171,19 +171,32 @@ inc_mean['2-4y_calibrating_data'] = pd.Series(data=calibration_incidence_rate_2_
 # 0 year-olds
 inc_mean.plot.bar(y=['0y_model_output', '0y_calibrating_data'])
 plt.title('Incidence Rate: 0 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.xlabel('Pathogen')
+plt.ylabel('Risk of pathogen causing diarrhoea per year')
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_0_year_olds" + datestamp + ".pdf"), format='pdf')
+plt.tight_layout()
 plt.show()
 
 # 1 year-olds
 inc_mean.plot.bar(y=['1y_model_output', '1y_calibrating_data'])
 plt.title('Incidence Rate: 1 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.xlabel('Pathogen')
+plt.ylabel('Risk of pathogen causing diarrhoea per year')
+plt.xlabel('Pathogen')
+plt.ylabel('Risk of pathogen causing diarrhoea per year')
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_1_year_olds" + datestamp + ".pdf"), format='pdf')
+plt.tight_layout()
 plt.show()
 
 # 2-4 year-olds
 inc_mean.plot.bar(y=['2-4y_model_output', '2-4y_calibrating_data'])
 plt.title('Incidence Rate: 2-4 year-olds')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
+plt.xlabel('Pathogen')
+plt.ylabel('Risk of pathogen causing diarrhoea per year')
+plt.xlabel('Pathogen')
+plt.ylabel('Risk of pathogen causing diarrhoea per year')
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_2-4_year_olds" + datestamp + ".pdf"), format='pdf')
+plt.tight_layout()
 plt.show()
 
 
