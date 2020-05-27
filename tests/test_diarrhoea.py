@@ -35,18 +35,6 @@ def check_dtypes(simulation):
 
 def check_configuration_of_properties(sim):
     # check that the properties are ok:
-    # TODO: checks!
-    #
-    # df['gi_last_diarrhoea_pathogen'].values[:] = 'none'
-    # df['gi_last_diarrhoea_type'].values[:] = 'none'
-    # df['gi_last_diarrhoea_dehydration'].values[:] = 'none'
-    #
-    # # ---- Internal values ----
-    # df['gi_last_diarrhoea_date_of_onset'] = pd.NaT
-    # df['gi_last_diarrhoea_duration'] = np.nan
-    # df['gi_last_diarrhoea_recovered_date'] = pd.NaT
-    # df['gi_last_diarrhoea_death_date'] = pd.NaT
-
 
     df = sim.population.props
 

@@ -197,12 +197,12 @@ class Demography(Module):
 
     def calc_py_lived_in_last_year(self):
         """
-        This is a helper method to compute the person-years that were lived in the previous year.
-        It outputs a pd.DataFrame with the index being single year of age
+        This is a helper method to compute the person-years that were lived in the previous year by age.
+        It outputs a pd.DataFrame with the index being single year of age, 0 to 99.
         """
-        # Making a working data-frame that is limited to those who were alive one year ago
+        # Making a working data-frame that is limited to those who have lived in the last year:
         df_calc = self.sim.population.props.loc[
-            (self.sim.population.props['date_of_birth'] <= (self.sim.date - DateOffset(years=1)))
+            (self.sim.population.props['date_of_birth'] <= (self.sim.date))
             & ~(self.sim.population.props['date_of_death'] < (self.sim.date - DateOffset(years=1))),
             ['sex', 'date_of_birth', 'date_of_death', 'age_years', 'age_exact_years', 'is_alive']]
 
@@ -244,7 +244,7 @@ class Demography(Module):
                 start_date=df_calc.at[i, 'year_start'],
                 end_date=df_calc.at[i, 'year_end']
             )
-        # Persons less than a year-old did not have a birthday in the last year,so remove thier 'birthday_during_window'
+        # Persons less than a year-old did not have a birthday in the last year,so remove their 'birthday_during_window'
         df_calc.loc[df_calc['age_exact_years'] < 1.0, 'birthday_during_window'] = pd.NaT
 
         df_calc['days_at_younger_age_in_window'] = 0
@@ -282,20 +282,14 @@ class Demography(Module):
         # Convert to fractions of a year
         py = py / duration_of_window_in_days
 
-        # ------------ Additional logical check ------------
-        # Todo: more logical check on the PY calc may be useful
-        # * Number of PY lived last year is between PopSize(one year ago) and PopSize(now)
-        df = self.sim.population.props
-        pop_size_last_year = len(df.loc[(df['date_of_birth'] <= (self.sim.date - DateOffset(years=1))) &
-                                        ((df['date_of_death'] < (self.sim.date - DateOffset(years=1))) | pd.isnull(
-                                            df['date_of_death']))])
-        pop_size_now = len(df.loc[df['is_alive']])
-        check = min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
-        # assert min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
-        # ----------------------------------------------------
+        # trim the index so that py spent at ages [0,.., 99]
+        py = py.loc[py.index < 100]
+
+        # check that output is right shape
+        assert (py.columns == ['M', 'F']).all()
+        assert 100 == len(py.index)
 
         return py
-
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """

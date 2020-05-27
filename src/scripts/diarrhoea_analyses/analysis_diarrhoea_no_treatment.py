@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
-    symptommanager, healthburden
+    symptommanager, healthburden, healthseekingbehaviour, labour, pregnancy_supervisor, dx_algorithm_child
 
 # %%
 outputpath = Path("./outputs")
@@ -36,13 +36,18 @@ popsize = 10000
 sim = Simulation(start_date=start_date)
 
 # run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             contraception.Contraception(resourcefilepath=resourcefilepath),
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             labour.Labour(resourcefilepath=resourcefilepath),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
+             )
 
 logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(0)
@@ -181,7 +186,9 @@ plt.title('Incidence Rate: 2-4 year-olds')
 plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
-# ---------------------------- MODEL OUTPUT FOR MEAN DEATH RATE BY PATHOGEN ----------------------------
+
+
+# %% ---------------------------- MODEL OUTPUT FOR MEAN DEATH RATE BY PATHOGEN ----------------------------
 # %%
 # Look at deaths arising? Or anything else?
 # fig1, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
