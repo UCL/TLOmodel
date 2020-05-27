@@ -92,6 +92,13 @@ class Specifiable:
     def pandas_type(self):
         return self.PANDAS_TYPE_MAP[self.type_]
 
+    def __repr__(self):
+        '''Add docstring here.
+        self.type will be something like "Types.REAL";
+        we might want to remove the leading "Type." '''
+        return f'{self.type_} = {self.description}'
+        #pass
+
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
