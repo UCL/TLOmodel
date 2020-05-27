@@ -21,23 +21,20 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 200
 
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
-
 
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(1)
     return sim
@@ -46,27 +43,6 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
-
-
-def __check_properties(df):
-    pass
-    # TODO: TBC
-
-
-# def test_make_initial_population(simulation):
-#    simulation.make_initial_population(n=popsize)
-
-
-# def test_initial_population(simulation):
-#    __check_properties(simulation.population.props)
-
-
-# def test_simulate(simulation):
-#    simulation.simulate(end_date=end_date)
-
-
-# def test_final_population(simulation):
-#    __check_properties(simulation.population.props)
 
 
 def test_dypes(simulation):
