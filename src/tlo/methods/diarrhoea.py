@@ -875,7 +875,6 @@ class Diarrhoea(Module):
                         )
         # --------------------------------------------------------------------------------------------
 
-
     def on_birth(self, mother_id, child_id):
         """
         On birth, all children will have no diarrhoea
@@ -1029,14 +1028,13 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # ----------------------- Allocate a date of onset diarrhoea ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
 
+            # TODO - the rest of this to go into the Incident Event
             # ----------------------- Determine outcomes for this case ----------------------
             duration_in_days_of_diarrhoea = max(1, int(
                 m.mean_duration_in_days_of_diarrhoea.predict(df.loc[[person_id]]).values[0] +
                 (-2 + 7 * rng.rand())  # assumes uniform interval around mean duration
             ))
 
-            # risk_of_death = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
-            # will_die = rng.rand() < risk_of_death
 
             # ----------------------- Allocate symptoms to onset of diarrhoea ----------------------
             possible_symptoms_for_this_pathogen = m.prob_symptoms[pathogen]
