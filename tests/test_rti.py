@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
@@ -32,12 +33,15 @@ def simulation():
     sim.register(rti.RTI(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
+    # f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
+    # output = parse_log_file(f)
     return sim
 
 
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
+
 
 
 def test_dtypes(simulation):
@@ -48,7 +52,7 @@ def test_dtypes(simulation):
     # original = orig.dtypes.to_frame('dtypes').reset_index()
     # rtidtype.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/rtidtype.csv')
     # original.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/origdtype.csv')
-
+    # df.to_csv(r'C:/Users/Robbie Manning Smith/PycharmProjects/JustTests/AssignInjuryTraits/data/testofdf.csv')
     assert (df.dtypes == orig.dtypes).all()
 
 
