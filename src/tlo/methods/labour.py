@@ -1198,7 +1198,7 @@ class Labour (Module):
         assert BirthEvent in events
 
         # Then we ensure that women delivering in a facility have the right HSI scheduled
-        if mni[individual_id]['delivery_setting'] != 'homebirth':
+        if mni[individual_id]['delivery_setting'] != 'home_birth':
             hsi_events = self.sim.modules['HealthSystem'].find_events_for_person(person_id=individual_id)
             hsi_events = [e.__class__ for d, e in hsi_events]
             assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour in hsi_events

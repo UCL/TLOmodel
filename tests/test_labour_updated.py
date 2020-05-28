@@ -31,8 +31,8 @@ except NameError:
     resourcefilepath = 'resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 5000
+end_date = Date(2013, 1, 1)
+popsize = 1000
 
 
 def check_dtypes(simulation):
@@ -129,3 +129,5 @@ def test_run_health_system_events_wont_run():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+
+test_run()
