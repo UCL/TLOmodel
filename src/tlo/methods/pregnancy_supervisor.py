@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from tlo import DateOffset, Module, Property, Types, logging
@@ -58,28 +57,27 @@ class PregnancySupervisor(Module):
 
     def read_parameters(self, data_folder):
         params = self.parameters
-        #    dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
-        #                        sheet_name='parameter_values_old')
-        #    self.load_parameters_from_dataframe(dfd)
+        #  dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
+        #                      sheet_name='parameter_values_old')
+        #  self.load_parameters_from_dataframe(dfd)
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
 
-# ==================================== LINEAR MODEL EQUATIONS ==========================================================
+        # ==================================== LINEAR MODEL EQUATIONS ==============================
         # Will live here...
 
     def initialise_population(self, population):
-
         df = population.props
 
         df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
-        df.loc[df.is_alive, 'ps_ectopic_symptoms'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_ectopic_symptoms'] = 'none'
         df.loc[df.is_alive, 'ps_ep_unified_symptom_code'] = 0
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
         df.loc[df.is_alive, 'ps_total_miscarriages'] = 0
         df.loc[df.is_alive, 'ps_total_induced_abortion'] = 0
-        df.loc[df.is_alive, 'ps_abortion_complication'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
         df.loc[df.is_alive, 'ps_previous_stillbirth'] = False
         df.loc[df.is_alive, 'ps_gestational_htn'] = False
@@ -92,17 +90,9 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
 
     def initialise_simulation(self, sim):
-        """Get ready for simulation start.
-        """
-        event = PregnancySupervisorEvent
-        sim.schedule_event(event(self),
-                           sim.date + DateOffset(days=0))
-
-        event = PregnancyDiseaseProgressionEvent
-        sim.schedule_event(event(self),
-                           sim.date + DateOffset(days=0))
-
-#        self.sim.modules['HealthSystem'].register_disease_module(self)
+        """Get ready for simulation start."""
+        sim.schedule_event(PregnancySupervisorEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(PregnancyDiseaseProgressionEvent(self), sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -129,7 +119,6 @@ class PregnancySupervisor(Module):
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
 
     def on_hsi_alert(self, person_id, treatment_id):
-
         logger.debug('This is PregnancySupervisor, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
@@ -139,36 +128,35 @@ class PregnancySupervisor(Module):
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This is the PregnancySupervisorEvent. It runs weekly. It updates gestational age of pregnancy in weeks.
-    Presently this event has been hollowed out, additionally it will and uses set_pregnancy_complications function to
-    determine if women will experience complication. This event is incomplete and will eventually apply risk of
-     antenatal death and handle antenatal care seeking. """
+    """The PregnancySupervisorEvent runs weekly. It updates gestational age of pregnancy in weeks.
+    Presently this event has been hollowed out, additionally it will and uses
+    set_pregnancy_complications function to determine if women will experience complication. This
+    event is incomplete and will eventually apply risk of antenatal death and handle antenatal care
+    seeking."""
 
     def __init__(self, module,):
         super().__init__(module, frequency=DateOffset(weeks=1))
 
     def apply(self, population):
         df = population.props
-
-    # ===================================== UPDATING GESTATIONAL AGE IN WEEKS  ========================================
-        # Here we update the gestational age in weeks of all currently pregnant women in the simulation
-
+        # ===================================== UPDATING GESTATIONAL AGE IN WEEKS  =================
+        # Here we update the gestational age in weeks of all currently pregnant women in the
+        # simulation
         alive_and_preg = df.is_alive & df.is_pregnant
         gestation_in_days = self.sim.date - df.loc[alive_and_preg, 'date_of_last_pregnancy']
         gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
         df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] = gestation_in_weeks.astype('int64')
         logger.debug('updating gestational ages on date %s', self.sim.date)
 
-    # ======================================= PREGNANCY COMPLICATIONS ==================================================
+        # ======================================= PREGNANCY COMPLICATIONS ==========================
         # Application of pregnancy complications will occur here
 
 
 class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This is the PregnancyDiseaseProgressionEvent. It runs every 4 weeks and determines if women who have a disease
-    of pregnancy will undergo progression to the next stage. This event will need to be recoded using the
-    progression_matrix function """
+    """The PregnancyDiseaseProgressionEvent runs every 4 weeks and determines if women who have a
+    disease of pregnancy will undergo progression to the next stage. This event will need to be
+    recoded using the progression_matrix function"""
     # TODO: consider renaming if only dealing with HTN diseases
-
     def __init__(self, module,):
         super().__init__(module, frequency=DateOffset(weeks=4))
 
@@ -176,5 +164,5 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         """This is where progression of diseases will be handled"""
         pass
 
-    # ============================= PROGRESSION OF PREGNANCY DISEASES ==========================================
-    # Progression of pregnancy diseases will live here
+        # ============================= PROGRESSION OF PREGNANCY DISEASES ==========================
+        # Progression of pregnancy diseases will live here
