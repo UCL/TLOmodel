@@ -1,8 +1,6 @@
+import datetime
 import os
-import time
 from pathlib import Path
-
-import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -11,50 +9,59 @@ from tlo.methods import (
     demography,
     enhanced_lifestyle,
     healthburden,
+    healthseekingbehaviour,
     healthsystem,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
+    symptommanager,
 )
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 200
+# Where will outputs go
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
+# date-stamp to label log files and any other outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-@pytest.fixture(scope='module')
-def simulation():
+# The resource files
+try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date)
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 demography.Demography(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, mode_appt_constraints=0),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+except NameError:
+    # running interactively
+    resourcefilepath = 'resources'
 
-    sim.seed_rngs(1)
-    return sim
+start_date = Date(2010, 1, 1)
+end_date = Date(2013, 1, 1)
+popsize = 1000
 
 
-def test_run(simulation):
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
-
-
-def test_dypes(simulation):
+def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
 
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
+def test_run():
+    sim = Simulation(start_date=start_date)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+
+    sim.seed_rngs(0)
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    check_dtypes(sim)
+
+test_run()

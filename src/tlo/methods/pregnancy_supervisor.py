@@ -5,7 +5,6 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.methods import demography
-from tlo import util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 
@@ -15,9 +14,9 @@ logger.setLevel(logging.DEBUG)
 
 class PregnancySupervisor(Module):
     """This module is responsible for supervision of pregnancy in the population including incidence of ectopic
-    pregnancy, multiple pregnancy, miscarriage, abortion, and onset of antenatal complications. This module is
-    incomplete, currently antenatal death has not been coded. Similarly antenatal care seeking will be house hear, for
-    both routine treatment and in emergencies"""
+    pregnancy, multiple pregnancy, spontaneous abortion, induced abortion, and onset of antenatal complications. This
+    module is incomplete, currently antenatal death has not been coded. Similarly antenatal care seeking will be house
+    hear, for  both routine treatment and in emergencies"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -30,10 +29,10 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of a womans pregnancy being ectopic and not uterine implantation'),
         'prob_multiples': Parameter(
             Types.REAL, 'probability that a woman is currently carrying more than one pregnancy'),
-        'prob_miscarriage_per_month': Parameter(
-            Types.REAL, 'underlying risk of miscarriage per month without the impact of risk factors'),
-        'prob_abortion_per_month': Parameter(
-            Types.REAL, 'underlying risk of abortion per month without the impact of risk factors'),
+        'prob_spontaneous_abortion_per_month': Parameter(
+            Types.REAL, 'underlying risk of spontaneous_abortion per month without the impact of risk factors'),
+        'prob_induced_abortion_per_month': Parameter(
+            Types.REAL, 'underlying risk of induced abortion per month without the impact of risk factors'),
         'prob_pre_eclampsia_per_month': Parameter(
             Types.REAL, 'underlying risk of pre-eclampsia per month without the impact of risk factors'),
         'prob_gest_htn_per_month': Parameter(
@@ -46,16 +45,27 @@ class PregnancySupervisor(Module):
             Types.REAL, 'underlying risk of antenatal maternal death per month without the impact of risk factors'),
         'prob_ectopic_pregnancy_death': Parameter(
             Types.REAL, 'probability of a woman dying from a ruptured ectopic pregnancy'),
+        'prob_induced_abortion_type': Parameter(
+            Types.LIST, 'probabilities that the type of abortion a woman has will be 1.) Surgical or 2.) Medical'),
+        'prob_haemorrhage_spontaneous_abortion': Parameter(
+            Types.REAL, 'probability that a woman who has undergone a spontaneous abortion will experience haemorrhage '
+                        'as a complication'),
+        'prob_sepsis_spontaneous_abortion': Parameter(
+            Types.REAL, 'probability that a woman who has undergone a spontaneous abortion will experience sepsis '
+                        'as a complication'),
+        'prob_haemorrhage_induced_abortion': Parameter(
+            Types.REAL, 'probability that a woman who has undergone an induced abortion will experience haemorrhage '
+                        'as a complication'),
+        'prob_sepsis_induced_abortion': Parameter(
+            Types.REAL, 'probability that a woman who has undergone an induced abortion will experience sepsis '
+                        'as a complication'),
+        'prob_injury_induced_abortion': Parameter(
+            Types.REAL, 'probability that a woman who has undergone an induced abortion will experience injury '
+                        'as a complication'),
         'prob_induced_abortion_death': Parameter(
             Types.REAL, 'underlying risk of death following an induced abortion'),
-        'prob_abortion_type': Parameter(
-            Types.LIST, 'probabilities that the type of abortion a woman has will be 1.) Surgical or 2.) Medical'),
-        'prob_abortion_comps_surgical': Parameter(
-            Types.LIST, 'probabilities that a woman who has undergone a surgical induced abortio will experience'
-                        ' 1.) no complications 2.) sepsis or 3.)a haemorrhage'),
-        'prob_abortion_comps_medical': Parameter(
-            Types.LIST, 'probabilities that a woman who has undergone a medical induced abortio will experience'
-                        ' 1.) no complications 2.) sepsis or 3.)a haemorrhage'),
+        'prob_spontaneous_abortion_death': Parameter(
+            Types.REAL, 'underlying risk of death following an spontaneous abortion'),
     }
 
     PROPERTIES = {
@@ -70,13 +80,10 @@ class PregnancySupervisor(Module):
             '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
             categories=[0, 1, 2, 3, 4]),
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
-        'ps_miscarriages_this_year': Property(Types.INT, 'the number of miscarriages a woman has experienced in the '
-                                                         'current year'),
-        'ps_induced_abortions_this_year': Property(Types.INT, 'the number of induced abortions a woman has undergone '
-                                                              'in the current year'),
-        'ps_abortion_complication': Property(Types.CATEGORICAL, 'Type of complication following an induced abortion: '
-                                                                'None; Sepsis; Haemorrhage',
-                                             categories=['none', 'sepsis', 'haemorrhage']),
+        'ps_induced_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
+                                                                 'following an induced abortion'),
+        'ps_spontaneous_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
+                                                                     'following an spontaneous abortion'),
         'ps_antepartum_still_birth': Property(Types.BOOL, 'whether this woman has experienced an antepartum still birth'
                                                           'of her current pregnancy'),
         'ps_previous_stillbirth': Property(Types.BOOL, 'whether this woman has had any previous pregnancies end in '
@@ -105,7 +112,7 @@ class PregnancySupervisor(Module):
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
 
-            # ==================================== LINEAR MODEL EQUATIONS ==========================================================
+    # ==================================== LINEAR MODEL EQUATIONS =====================================================
             # All linear equations used in this module are stored within the ps_linear_equations parameter below
 
             params['ps_linear_equations'] = {
@@ -117,13 +124,13 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_multiples']),
 
-                'miscarriage': LinearModel(
+                'spontaneous_abortion': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_miscarriage_per_month']),
+                    params['prob_spontaneous_abortion_per_month']),
 
-                'abortion': LinearModel(
+                'induced_abortion': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_abortion_per_month']),
+                    params['prob_induced_abortion_per_month']),
 
                 'pre_eclampsia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -153,6 +160,10 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_induced_abortion_death']),
 
+                'spontaneous_abortion_death': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_spontaneous_abortion_death']),
+
             }
 
     def initialise_population(self, population):
@@ -164,9 +175,8 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_ectopic_symptoms'].values[:] = 'none'
         df.loc[df.is_alive, 'ps_ep_unified_symptom_code'] = 0
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
-        df.loc[df.is_alive, 'ps_miscarriages_this_year'] = 0
-        df.loc[df.is_alive, 'ps_induced_abortions_this_year'] = 0
-        df.loc[df.is_alive, 'ps_abortion_complication'].values[:] = 'none'
+        df.loc[df.is_alive, 'ps_induced_abortion_complication'] = 'none'
+        df.loc[df.is_alive, 'ps_spontaneous_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
         df.loc[df.is_alive, 'ps_previous_stillbirth'] = False
         df.loc[df.is_alive, 'ps_gestational_htn'] = False
@@ -194,7 +204,7 @@ class PregnancySupervisor(Module):
 
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        self.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0}
+        self.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -204,9 +214,8 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_ectopic_symptoms'] = 'none'
         df.at[child_id, 'ps_ep_unified_symptom_code'] = 0
         df.at[child_id, 'ps_multiple_pregnancy'] = False
-        df.at[child_id, 'ps_miscarriages_this_year'] = 0
-        df.at[child_id, 'ps_induced_abortions_this_year'] = 0
-        df.at[child_id, 'ps_abortion_complication'] = 'none'
+        df.at[child_id, 'ps_induced_abortion_complication'] = 'none'
+        df.at[child_id, 'ps_spontaneous_abortion_complication'] = 'none'
         df.at[child_id, 'ps_antepartum_still_birth'] = False
         df.at[child_id, 'ps_previous_stillbirth'] = False
         df.at[child_id, 'ps_gestational_htn'] = False
@@ -265,11 +274,10 @@ class PregnancySupervisor(Module):
 
         if complication == 'ectopic':
             df.loc[positive_index, 'ps_ectopic_pregnancy'] = True
-            self.PregnancyDiseaseTracker['ectopic_pregnancy'] += 1
+            self.PregnancyDiseaseTracker['ectopic_pregnancy'] += len(positive_index)
             for person in positive_index:
-                # TODO: we could randomly assign date of rupture (between 6-10 weeks gestation)
-                self.sim.schedule_event(EctopicPregnancyRuptureEvent(self, person), (self.sim.date + pd.Timedelta(8,
-                                                                                                                  unit='W')))
+                self.sim.schedule_event(EctopicPregnancyRuptureEvent(self, person),
+                                        (self.sim.date + pd.Timedelta(days=7 * 5 + self.rng.randint(0, 7 * 4))))
 
             if not positive_index.empty:
                 logger.debug(f'The following women have experience an ectopic pregnancy,{positive_index}')
@@ -277,25 +285,11 @@ class PregnancySupervisor(Module):
         if complication == 'multiples':
             df.loc[positive_index, 'ps_multiple_pregnancy'] = True
 
-        if complication == 'miscarriage':
-            df.loc[positive_index, 'is_pregnant'] = False
-            df.loc[positive_index, 'la_due_date_current_pregnancy'] = pd.NaT
-            df.loc[positive_index, 'ps_gestational_age_in_weeks'] = 0
-            df.loc[positive_index, 'ps_miscarriages_this_year'] = +1
-            # for person in positive_index:
-            #   self.sim.schedule_event(MiscarriageEvent(self, person), self.sim.date)
-            if not positive_index.empty:
-                logger.debug(f'The following women have miscarried,{positive_index}')
-
-        if complication == 'abortion':
-            df.loc[positive_index, 'is_pregnant'] = False
-            df.loc[positive_index, 'la_due_date_current_pregnancy'] = pd.NaT
-            df.loc[positive_index, 'ps_gestational_age_in_weeks'] = 0
-            df.loc[positive_index, 'ps_induced_abortions_this_year'] = +1
+        if complication == 'spontaneous_abortion' or complication == 'induced_abortion':
             for person in positive_index:
-                self.sim.schedule_event(InducedAbortionEvent(self, person), self.sim.date)
+                self.sim.schedule_event(AbortionEvent(self, person, cause=f'{complication}'), self.sim.date)
             if not positive_index.empty:
-                logger.debug(f'The following women have had an abortion,{positive_index}')
+                    logger.debug(f'The following women have experience an abortion,{positive_index}')
 
         if complication == 'pre_eclampsia':
             df.loc[positive_index, 'ps_mild_pre_eclamp'] = True
@@ -325,6 +319,30 @@ class PregnancySupervisor(Module):
 
         # TODO: consider using return function to produce negative index which could be used for the chain of functions
 
+    def set_abortion_complications(self, individual_id, abortion_type):
+        df = self.sim.population.props
+        params = self.parameters
+
+        # complications are appended into a list to allow multiple comps from each abortion
+    #    if abortion_type == 'spontaneous_abortion':
+    #        if params['prob_haemorrhage_spontaneous_abortion'] < self.rng.random_sample():
+    #            df.at[individual_id, 'ps_spontaneous_abortion_complication'].append('haemorrhage')
+    #        if params['prob_sepsis_spontaneous_abortion'] < self.rng.random_sample():
+    #            df.at[individual_id, 'ps_spontaneous_abortion_complication'].append('sepsis')
+
+        # TODO surgical vs medical induced abortions
+    #    if abortion_type == 'induced_abortion':
+    #        if params['prob_haemorrhage_induced_abortion'] < self.rng.random_sample():
+    #            df.at[individual_id, 'ps_induced_abortion_complication'].append('haemorrhage')
+    #        elif params['prob_sepsis_induced_abortion'] < self.rng.random_sample():
+    #            df.at[individual_id, 'ps_induced_abortion_complication'].append('sepsis')
+    #        elif params['prob_injury_induced_abortion'] < self.rng.random_sample():
+    #            df.at[individual_id, 'ps_induced_abortion_complication'].append('sepsis')
+    #        else:
+    #            df.at[individual_id, 'ps_induced_abortion_complication'].append('none')
+
+        # TODO: reset these complications after a certain time period
+
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent. It runs weekly. It updates gestational age of pregnancy in weeks.
@@ -339,7 +357,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        # ===================================== UPDATING GESTATIONAL AGE IN WEEKS  ========================================
+        # ===================================== UPDATING GESTATIONAL AGE IN WEEKS  ====================================
         # Here we update the gestational age in weeks of all currently pregnant women in the simulation
         alive_and_preg = df.is_alive & df.is_pregnant
         gestation_in_days = self.sim.date - df.loc[alive_and_preg, 'date_of_last_pregnancy']
@@ -348,7 +366,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] = gestation_in_weeks.astype('int64')
         logger.debug('updating gestational ages on date %s', self.sim.date)
 
-        # ========================PREGNANCY COMPLICATIONS - ECTOPIC PREGNANCY & MULTIPLES =================================
+        # ========================PREGNANCY COMPLICATIONS - ECTOPIC PREGNANCY & MULTIPLES =============================
         # Here we use the set_pregnancy_complications function to calculate each womans risk of ectopic pregnancy,
         # conduct a draw and edit relevant properties defined above
 
@@ -362,59 +380,59 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.set_pregnancy_complications(np_no_ectopic, 'multiples')
         # TODO: Review the necessity of including multiple pregnancies
 
-        # ==================================== MONTH 1 PREGNANCY RISKS ====================================================
+        # ==================================== MONTH 1 PREGNANCY RISKS ================================================
         # Here we look at all the women who have reached one month gestation and apply the risk of early pregnancy loss
 
         month_1_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
                                                                                         == 4)]
-        self.module.set_pregnancy_complications(month_1_idx, 'miscarriage')
+        self.module.set_pregnancy_complications(month_1_idx, 'spontaneous_abortion')
 
-        # ========================================== MONTH 2 PREGNANCY RISKS ==============================================
+        # ========================================== MONTH 2 PREGNANCY RISKS ==========================================
         # Now we use the set_pregnancy_complications function to calculate risk and set properties for women whose
         # pregnancy is not ectopic
 
-        # MISCARRIAGE:
+        # spontaneous_abortion:
         month_2_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
                                                                                         == 8)]
-        self.module.set_pregnancy_complications(month_2_idx, 'miscarriage')
+        self.module.set_pregnancy_complications(month_2_idx, 'spontaneous_abortion')
 
         # Here we use the an index of women who will not miscarry to determine who will seek an abortion
-        # ABORTION:
-        month_2_no_miscarriage = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+        # induced_abortion:
+        month_2_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 8)]
-        self.module.set_pregnancy_complications(month_2_no_miscarriage, 'abortion')
+        self.module.set_pregnancy_complications(month_2_no_spontaneous_abortion, 'induced_abortion')
 
         # TODO: need to know the incidence of induced abortion for GA 8 weeks to determine if its worth while
 
-        # ======================================= MONTH 3 PREGNANCY RISKS =================================================
+        # ======================================= MONTH 3 PREGNANCY RISKS ============================================
         month_3_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
                                                                                         == 13)]
-        # MISCARRIAGE
-        self.module.set_pregnancy_complications(month_3_idx, 'miscarriage')
+        # spontaneous_abortion
+        self.module.set_pregnancy_complications(month_3_idx, 'spontaneous_abortion')
 
-        # ABORTION:
-        month_3_no_miscarriage = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+        # induced_abortion:
+        month_3_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                         (df.ps_gestational_age_in_weeks == 13)]
-        self.module.set_pregnancy_complications(month_3_no_miscarriage, 'abortion')
+        self.module.set_pregnancy_complications(month_3_no_spontaneous_abortion, 'induced_abortion')
 
-        # ================================= MONTH 4 PREGNANCY RISKS =======================================================
+        # ================================= MONTH 4 PREGNANCY RISKS ==================================================
         month_4_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
-        # MISCARRIAGE
-        self.module.set_pregnancy_complications(month_4_idx, 'miscarriage')
+        # spontaneous_abortion
+        self.module.set_pregnancy_complications(month_4_idx, 'spontaneous_abortion')
 
-        month_4_no_miscarriage = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
+        month_4_no_spontaneous_abortion = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
 
-        # ABORTION:
-        self.module.set_pregnancy_complications(month_4_no_miscarriage, 'abortion')
+        # induced_abortion:
+        self.module.set_pregnancy_complications(month_4_no_spontaneous_abortion, 'induced_abortion')
 
-        # ==================================== MONTH 5 PREGNANCY RISKS ====================================================
+        # ==================================== MONTH 5 PREGNANCY RISKS ===============================================
         month_5_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
-        # MISCARRIAGE
-        self.module.set_pregnancy_complications(month_5_idx, 'miscarriage')
+        # spontaneous_abortion
+        self.module.set_pregnancy_complications(month_5_idx, 'spontaneous_abortion')
 
-        # ABORTION:
-        month_5_no_miscarriage = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
-        self.module.set_pregnancy_complications(month_5_no_miscarriage, 'abortion')
+        # induced_abortion:
+        month_5_no_spontaneous_abortion = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
+        self.module.set_pregnancy_complications(month_5_no_spontaneous_abortion, 'induced_abortion')
 
         # Here we begin to apply the risk of developing complications which present later in pregnancy including
         # pre-eclampsia, gestational hypertension and gestational diabetes
@@ -436,7 +454,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: Exclude current diabetics
         # TODO: review lit in regards to onset date and potentially move this to earlier
 
-        # =========================== MONTH 6 RISK APPLICATION =============================================================
+        # =========================== MONTH 6 RISK APPLICATION =======================================================
         # TODO: should this be 28 weeks to align with still birth definition
         # From month 6 it is possible women could be in labour at the time of this event so we exclude them
         month_6_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
@@ -460,7 +478,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_6_preg_continues, 'gest_diab')
 
-        # =========================== MONTH 7 RISK APPLICATION ===========================================================
+        # =========================== MONTH 7 RISK APPLICATION =======================================================
         month_7_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
                              ~df.la_currently_in_labour]
 
@@ -482,7 +500,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_7_preg_continues, 'gest_diab')
 
-        # =========================== MONTH 8 RISK APPLICATION =============================================================
+        # =========================== MONTH 8 RISK APPLICATION ========================================================
         month_8_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
                              ~df.la_currently_in_labour]
 
@@ -504,7 +522,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_8_preg_continues, 'gest_diab')
 
-        # =========================== MONTH 9 RISK APPLICATION ============================================================
+        # =========================== MONTH 9 RISK APPLICATION ========================================================
         month_9_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
                              ~df.la_currently_in_labour]
 
@@ -526,30 +544,30 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_9_preg_continues, 'gest_diab')
 
-        # =========================== WEEK 41 RISK APPLICATION ============================================================
+        # =========================== WEEK 41 RISK APPLICATION ========================================================
         # Risk of still birth increases significantly in women who carry pregnancies beyond term
         week_41_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 41) &
                              ~df.la_currently_in_labour]
 
         self.module.set_pregnancy_complications(week_41_idx, 'stillbirth')
 
-        # =========================== WEEK 42 RISK APPLICATION ============================================================
+        # =========================== WEEK 42 RISK APPLICATION ========================================================
         week_42_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 42) &
                              ~df.la_currently_in_labour]
 
         self.module.set_pregnancy_complications(week_42_idx, 'stillbirth')
 
-        # =========================== WEEK 43 RISK APPLICATION ============================================================
+        # =========================== WEEK 43 RISK APPLICATION ========================================================
         week_43_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 43) &
                              ~df.la_currently_in_labour]
 
         self.module.set_pregnancy_complications(week_43_idx, 'stillbirth')
-        # =========================== WEEK 44 RISK APPLICATION ============================================================
+        # =========================== WEEK 44 RISK APPLICATION ========================================================
         week_44_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 44) &
                              ~df.la_currently_in_labour]
 
         self.module.set_pregnancy_complications(week_44_idx, 'stillbirth')
-        # =========================== WEEK 45 RISK APPLICATION ============================================================
+        # =========================== WEEK 45 RISK APPLICATION ========================================================
         week_45_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 45) &
                              ~df.la_currently_in_labour]
 
@@ -566,9 +584,12 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        print(individual_id)
         assert df.at[individual_id, 'ps_ectopic_pregnancy']
-        # TODO: additional asserts
+        assert self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy'] < pd.Timedelta(43, unit='d')
+
+        df.at[individual_id, 'is_pregnant'] = False
+        df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
+        df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
 
         logger.debug('persons %d untreated ectopic pregnancy has now ruptured on date %s', individual_id,
                      self.sim.date)
@@ -594,12 +615,6 @@ class EctopicPregnancyDeathEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
 
         assert df.at[individual_id, 'ps_ectopic_pregnancy']
-        # TODO: additional asserts
-
-        # TODO: is it the right call to reset these variables here?
-        df.at[individual_id, 'is_pregnant'] = False
-        df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
-        df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
 
         # Here we apply a risk of death in women who have experienced a ruptured ectopic pregnancy
         random = self.module.rng.random_sample()
@@ -607,7 +622,8 @@ class EctopicPregnancyDeathEvent(Event, IndividualScopeEventMixin):
             individual_id]
 
         if random < risk_of_death:
-            logger.debug('person %d has died following an ruptured ectopic pregnancy', individual_id, self.sim.date)
+            logger.debug('person %d has died following an ruptured ectopic pregnancy on date %s', individual_id,
+                         self.sim.date)
             death = demography.InstantaneousDeath(self.sim.modules['Demography'], individual_id,
                                                   cause='ectopic pregnancy')
             self.sim.schedule_event(death, self.sim.date)
@@ -616,54 +632,58 @@ class EctopicPregnancyDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(disease_reset, self.sim.date)
 
 
-class MiscarriageEvent(Event, IndividualScopeEventMixin):
-    """ This is the Miscarriage Event. It is scheduled by the PregnancySupervisorEvent in the instance that a woman
-    experiences a miscarriage. This event resets the key variables to signify the end of pregnancy"""
+class AbortionEvent(Event, IndividualScopeEventMixin):
+    """ This is the Abortion Event. This event is scheduled by the PregnancySupervisorEvent for women who's pregnancy
+    has ended due to either spontaneous or induced abortion"""
 
-    def __init__(self, module, individual_id):
+    def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
 
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        logger.debug('person %d has had a miscarriage on date %s', individual_id, self.sim.date)
-
-
-class InducedAbortionEvent(Event, IndividualScopeEventMixin):
-    """This is the Induced Abortion Event. It is scheduled by the PregnancySupervisor Event in the instance that a
-    woman undergoes a termination of pregnancy. This event resets the key variables to signify the end of pregnancy,
-    determines if a woman will develop complications due to her termination and applies a risk of death. It is currently
-    incomplete and will need to include care seeking"""
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
+        self.cause = cause
 
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
 
-        logger.debug('person %d has had an induced abortion on date %s', individual_id, self.sim.date)
+        df.at[individual_id, 'is_pregnant'] = False
+        df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
+        df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
 
-        types_of_abortion = ['surgical', 'medical']
-        this_womans_abortion = self.module.rng.choice(types_of_abortion, p=params['prob_abortion_type'])
-        possible_abortion_complications = ['none', 'sepsis', 'haemorrhage']
+        if self.cause == 'induced_abortion':
+            self.module.PregnancyDiseaseTracker['induced_abortion'] += 1
 
-        if this_womans_abortion == 'surgical':
-            df.at[individual_id, 'ps_abortion_complication'] = \
-                self.module.rng.choice(possible_abortion_complications, p=params['prob_abortion_comps_surgical'])
+            types_of_abortion = ['surgical', 'medical']
+            # todo: Do we store this variable and modify probability of complications by it
+            this_womans_abortion = self.module.rng.choice(types_of_abortion, p=params['prob_induced_abortion_type'])
+            self.module.set_abortion_complications(individual_id, 'induced_abortion')
 
-        elif this_womans_abortion == 'medical':
-            df.at[individual_id, 'ps_abortion_complication'] = \
-                self.module.rng.choice(possible_abortion_complications, p=params['prob_abortion_comps_medical'])
+            # TODO: care seeking, delay death equation
 
-        risk_of_death_post_abortion = params['ps_linear_equations']['induced_abortion_death'].predict(
-            df.loc[[individual_id]])[individual_id]
+            risk_of_death_post_abortion = params['ps_linear_equations']['induced_abortion_death'].predict(
+                df.loc[[individual_id]])[individual_id]
 
-        if risk_of_death_post_abortion < self.module.rng.random_sample():
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='labour'), self.sim.date)
+            if risk_of_death_post_abortion < self.module.rng.random_sample():
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='labour'), self.sim.date)
 
-        # TODO: (currently self contained) - predictors in LM for incidence and risk fo death, Symptoms?, care seeking,
-        #  abortion death event (to allow for treatment effect)
+        if self.cause == 'spontaneous_abortion':
+            # TODO: can these properties go?
+            self.module.PregnancyDiseaseTracker['spontaneous_abortion'] += 1
+
+            self.module.set_abortion_complications(individual_id, 'spontaneous_abortion')
+
+            risk_of_death_post_spontaneous_abortion = \
+                params['ps_linear_equations']['spontaneous_abortion_death'].predict(
+                    df.loc[[individual_id]])[individual_id]
+
+            # TODO: care seeking, delay death equation
+
+            if risk_of_death_post_spontaneous_abortion < self.module.rng.random_sample():
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='labour'), self.sim.date)
+
+    # TODO: (currently self contained) - predictors in LM for incidence and risk fo death, Symptoms?, care seeking,
+    #  abortion death event (to allow for treatment effect)
 
 
 class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
@@ -740,23 +760,22 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_women_reproductive_age = len(women_reproductive_age)
 
         # Numerators
-        total_abortions_last_year = df['ps_induced_abortions_this_year'].sum()
-        total_miscarriages_last_year = df['ps_miscarriages_this_year'].sum()
         total_ectopics = self.module.PregnancyDiseaseTracker['ectopic_pregnancy']
+        total_abortions_t = self.module.PregnancyDiseaseTracker['induced_abortion']
+        total_spontaneous_abortions_t = self.module.PregnancyDiseaseTracker['spontaneous_abortion']
 
         dict_for_output = {'repro_women': total_women_reproductive_age,
-                           'total_miscarriages': total_miscarriages_last_year,
-                           'miscarriage_rate': (total_miscarriages_last_year / total_women_reproductive_age) * 1000,
-                           'total_abortions': total_abortions_last_year,
-                           'abortion_rate': (total_abortions_last_year / total_women_reproductive_age) * 1000,
+                           'total_spontaneous_abortions': total_spontaneous_abortions_t,
+                           'spontaneous_abortion_rate': (total_spontaneous_abortions_t /
+                                                         total_women_reproductive_age) * 1000,
+                           'total_induced_abortions': total_abortions_t,
+                           'induced_abortion_rate': (total_abortions_t / total_women_reproductive_age) * 1000,
                            'crude_ectopics': total_ectopics,
-                           'ectopic_rate': total_ectopics / total_women_reproductive_age * 1000}
+                           'ectopic_rate': (total_ectopics / total_women_reproductive_age) * 1000}
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
-        df.loc[women_reproductive_age, 'ps_induced_abortions_this_year'] = 0
-        df.loc[women_reproductive_age, 'ps_miscarriages_this_year'] = 0
-        self.module.PregnancyDiseaseTracker['ectopic_pregnancy'] = 0
+        self.module.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0}
 
         # TODO: figure out why abortions keep going up
 
