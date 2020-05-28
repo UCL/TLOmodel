@@ -102,7 +102,11 @@ class Specifiable:
         mytype = str(self.type_)  # e.g. "Types.REAL"
         item = mytype.split(sub)[1]  # e.g. "REAL"
 
-        return f'{item}' + Specifiable.delimiter + f'{self.description}'
+        if self.type_ == Types.CATEGORICAL:
+            return f'{item}' + Specifiable.delimiter + f'{self.description}' \
+                + f'  (Possible values are: {self.categories})'
+        else:
+            return f'{item}' + Specifiable.delimiter + f'{self.description}'
         # Types.CATEGORICAL might need special treatment
 
 

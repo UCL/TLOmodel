@@ -218,7 +218,8 @@ def create_table(mydict, mymodule):
     NB Do not change the positioning of items in the
     f-strings below, or things will break!
     '''
-    #import pdb; pdb.set_trace()
+    #if mymodule == "tb":
+    #    import pdb; pdb.set_trace()
 
     examplestr = f'''
 .. list-table::  Info for {mymodule}
@@ -232,10 +233,10 @@ def create_table(mydict, mymodule):
 
     for key in mydict.keys():
         item = str(mydict[key])
-        value, description = item.split(Specifiable.delimiter)
+        mytype, description = item.split(Specifiable.delimiter)
 
         row = f'''   * - {key}
-     - {value}
+     - {mytype}
      - {description}
 '''
         examplestr += row
