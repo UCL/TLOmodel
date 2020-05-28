@@ -163,17 +163,18 @@ def setup(app):
     AttributeDocumenter.add_directive_header = add_directive_header
     app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
         add_content
+    # The second one could have been written:
+    # Documenter.add_content = add_content
 
     # When the autodoc-process-docstring event is emitted, handle it with
-    # add_params_to_docstring():
-    app.connect("autodoc-process-docstring", add_params_to_docstring)
+    # add_dict_to_docstring():
+    app.connect("autodoc-process-docstring", add_dicts_to_docstring)
 
 
-def add_params_to_docstring(app, what, name, obj, options, lines):
+def add_dicts_to_docstring(app, what, name, obj, options, lines):
     '''
-    This adds a disease's PARAMETERS values in the form of a table.
-    We will also want to do the same for its PROPERTIES in TLO.
-    Ideally using the same function.
+    This adds a disease's PARAMETERS or PROPERTIES dictionary
+    values in the form of a table.
     '''
 
     if (what == "attribute"):
@@ -189,7 +190,8 @@ def add_params_to_docstring(app, what, name, obj, options, lines):
         import pdb
         if lines is None:
             lines = []
-        if (attribute_name == "PARAMETERS"):  # and disease != "Module"):
+        #if (attribute_name == "PARAMETERS") or :  # and disease != "Module"):
+        if attribute_name in ("PARAMETERS", "PROPERTIES"):
             #lines += create_table(obj, planet_name)
             #import pdb; pdb.set_trace()
             lines += create_table(obj, module)
@@ -199,17 +201,20 @@ def add_params_to_docstring(app, what, name, obj, options, lines):
 
 def create_table(mydict, mymodule):
     '''
-    Dynamically create a table of arbitrary length.
+    Dynamically create a table of arbitrary length
+    from PROPERTIES and PARAMETERS dictionaries.
     `mydict` is the dictionary object.
     `mymodule` is the name for diseases, etc.,
       e.g. "Epilepsy", "Contraception".
-    A key point here is that it splits a string with the
-    delimiter " = ", because that is what the Parameter
-    class's __repr__() function returns.
+    A key point here is that it splits a string with a
+    delimiter, because that is what the __repr__() function
+    returns for the parent class of
+    Parameter and Property (i.e. Specifiable class).
+
     NB Do not change the positioning of items in the
     f-strings below, or things will break!
     '''
-    delimiter = " === "
+    delimiter = " === "  # Would be better defined in only one place
     #import pdb; pdb.set_trace()
 
     examplestr = f'''
