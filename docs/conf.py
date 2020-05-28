@@ -6,10 +6,13 @@
 # Helpful page:
 # https://medium.com/@eikonomega/getting-started-with-sphinx-autodoc-part-1-2cebbbca5365
 #
-from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS
-from sphinx.util.inspect import object_description
+
 import os
 import sys
+
+from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS
+from sphinx.util.inspect import object_description
+
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 from tlo.core import Specifiable
 
@@ -223,7 +226,7 @@ def create_table(mydict, mymodule):
    :header-rows: 1
 
    * - Item
-     - Value
+     - Type
      - Description
 '''
 

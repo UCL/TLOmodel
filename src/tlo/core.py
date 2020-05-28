@@ -96,9 +96,13 @@ class Specifiable:
 
     def __repr__(self):
         '''Add docstring here.
-        self.type will be something like "Types.REAL";
-        we might want to remove the leading "Type." '''
-        return f'{self.type_}' + Specifiable.delimiter + f'{self.description}'
+        self.type will be something like "Types.REAL".
+        For printing, we remove the redundant substring "Types." '''
+        sub = "Types."
+        mytype = str(self.type_)  # e.g. "Types.REAL"
+        item = mytype.split(sub)[1]  # e.g. "REAL"
+
+        return f'{item}' + Specifiable.delimiter + f'{self.description}'
         # Types.CATEGORICAL might need special treatment
 
 
