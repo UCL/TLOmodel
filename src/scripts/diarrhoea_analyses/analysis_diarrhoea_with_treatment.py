@@ -209,15 +209,15 @@ plt.show()
 
 
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
-
+# # TODO: this set of graphs
 # Load the death data to which we calibrate:
-# IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi, per 1000 child-years (under 5's)
+# IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi, per 100,000 child-years (under 5's)
 # https://vizhub.healthdata.org/gbd-compare/
 # http://ghdx.healthdata.org/gbd-results-tool?params=gbd-api-2017-permalink/9dd202e225b13cc2df7557a5759a0aca
 
 calibration_death_rate_per_year_under_5s = {
     '2010': 148 / 100000,   # CI: 111-190
-    '2017': 93 / 1000.0     # CI: 61-135
+    '2017': 93 / 100000     # CI: 61-135
 }
 
 
