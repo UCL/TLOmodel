@@ -11,7 +11,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Labour (Module):
@@ -1199,9 +1199,14 @@ class Labour (Module):
 
         # Then we ensure that women delivering in a facility have the right HSI scheduled
         if mni[individual_id]['delivery_setting'] != 'home_birth':
-            hsi_events = self.sim.modules['HealthSystem'].find_events_for_person(person_id=individual_id)
-            hsi_events = [e.__class__ for d, e in hsi_events]
-            assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour in hsi_events
+            health_system = self.sim.modules['HealthSystem']
+            # If the health system is disabled, then the HSI event was wrapped in an HSIEventWrapper
+            # and put in the simulation event queue. Hence, we only check HSI event if the HSI queue
+            # for HSI event if the HSI event is enabled
+            if not health_system.disabled:
+                hsi_events = health_system.find_events_for_person(person_id=individual_id)
+                hsi_events = [e.__class__ for d, e in hsi_events]
+                assert HSI_Labour_PresentsForSkilledBirthAttendanceInLabour in hsi_events
 
     # ============================================== HSI FUNCTIONS ====================================================
     # Management of each complication is housed within its own function, defined here in the module, and all follow a
