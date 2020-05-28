@@ -10,7 +10,8 @@ from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS
 from sphinx.util.inspect import object_description
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
+from tlo.core import Specifiable
 
 from __future__ import unicode_literals
 
@@ -209,12 +210,11 @@ def create_table(mydict, mymodule):
     A key point here is that it splits a string with a
     delimiter, because that is what the __repr__() function
     returns for the parent class of
-    Parameter and Property (i.e. Specifiable class).
+    Parameter and Property (i.e. in the Specifiable class).
 
     NB Do not change the positioning of items in the
     f-strings below, or things will break!
     '''
-    delimiter = " === "  # Would be better defined in only one place
     #import pdb; pdb.set_trace()
 
     examplestr = f'''
@@ -229,7 +229,7 @@ def create_table(mydict, mymodule):
 
     for key in mydict.keys():
         item = str(mydict[key])
-        value, description = item.split(delimiter)
+        value, description = item.split(Specifiable.delimiter)
 
         row = f'''   * - {key}
      - {value}

@@ -92,11 +92,13 @@ class Specifiable:
     def pandas_type(self):
         return self.PANDAS_TYPE_MAP[self.type_]
 
+    delimiter = " === "
+
     def __repr__(self):
         '''Add docstring here.
         self.type will be something like "Types.REAL";
         we might want to remove the leading "Type." '''
-        return f'{self.type_} === {self.description}'
+        return f'{self.type_}' + Specifiable.delimiter + f'{self.description}'
         # Types.CATEGORICAL might need special treatment
 
 
