@@ -144,7 +144,7 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_gest_diab_per_month']),
 
-                'stillbirth': LinearModel(
+                'antenatal_stillbirth': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_still_birth_per_month']),
 
@@ -286,29 +286,40 @@ class PregnancySupervisor(Module):
             df.loc[positive_index, 'ps_multiple_pregnancy'] = True
 
         if complication == 'spontaneous_abortion' or complication == 'induced_abortion':
+            df.loc[positive_index, 'is_pregnant'] = False
+            df.loc[positive_index, 'la_due_date_current_pregnancy'] = pd.NaT
+            df.loc[positive_index, 'ps_gestational_age_in_weeks'] = 0
             for person in positive_index:
                 self.sim.schedule_event(AbortionEvent(self, person, cause=f'{complication}'), self.sim.date)
             if not positive_index.empty:
-                    logger.debug(f'The following women have experience an abortion,{positive_index}')
+                    logger.debug(f'The following women have experienced an abortion,{positive_index}')
 
         if complication == 'pre_eclampsia':
             df.loc[positive_index, 'ps_mild_pre_eclamp'] = True
             df.loc[positive_index, 'ps_prev_pre_eclamp'] = True
             if not positive_index.empty:
-                logger.debug(f'The following women have have developed pre_eclampsia,{positive_index}')
+                logger.debug(f'The following women have developed pre_eclampsia,{positive_index}')
 
         if complication == 'gest_htn':
             df.loc[positive_index, 'ps_gestational_htn'] = True
             if not positive_index.empty:
-                logger.debug(f'The following women have have developed gestational hypertension,{positive_index}')
+                logger.debug(f'The following women have developed gestational hypertension,{positive_index}')
 
         if complication == 'gest_diab':
             df.loc[positive_index, 'ps_gest_diab'] = True
             df.loc[positive_index, 'ps_prev_gest_diab'] = True
             if not positive_index.empty:
-                logger.debug(f'The following women have have developed gestational diabetes,{positive_index}')
+                logger.debug(f'The following women have developed gestational diabetes,{positive_index}')
 
-        if complication == 'stillbirth':
+        if complication == 'antenatal_death':
+            for person in positive_index:
+                death = demography.InstantaneousDeath(self.sim.modules['Demography'], person,
+                                                      cause='antenatal death')
+                self.sim.schedule_event(death, self.sim.date)
+            if not positive_index.empty:
+                logger.debug(f'The following women have died during pregnancy,{positive_index}')
+
+        if complication == 'antenatal_stillbirth':
             df.loc[positive_index, 'ps_antepartum_still_birth'] = True
             df.loc[positive_index, 'ps_previous_stillbirth'] = True
             df.loc[positive_index, 'is_pregnant'] = False
@@ -387,6 +398,16 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                                                         == 4)]
         self.module.set_pregnancy_complications(month_1_idx, 'spontaneous_abortion')
 
+        # TODO: I need to think if this method of creating new indexes is the best way of doing things,
+        #  seems error prone
+
+        month_1_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+                                                 (df.ps_gestational_age_in_weeks == 4)]
+
+        # TODO: also do i need to apply risk of death in the months where only pregnancy loss occurs? (tb, hiv etc?)
+        # death
+        self.module.set_pregnancy_complications(month_1_no_spontaneous_abortion, 'antenatal_death')
+
         # ========================================== MONTH 2 PREGNANCY RISKS ==========================================
         # Now we use the set_pregnancy_complications function to calculate risk and set properties for women whose
         # pregnancy is not ectopic
@@ -399,10 +420,15 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Here we use the an index of women who will not miscarry to determine who will seek an abortion
         # induced_abortion:
         month_2_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
-                                        (df.ps_gestational_age_in_weeks == 8)]
-        self.module.set_pregnancy_complications(month_2_no_spontaneous_abortion, 'induced_abortion')
+                                                 (df.ps_gestational_age_in_weeks == 8)]
 
         # TODO: need to know the incidence of induced abortion for GA 8 weeks to determine if its worth while
+        self.module.set_pregnancy_complications(month_2_no_spontaneous_abortion, 'induced_abortion')
+
+        month_2_no_induced_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+                                             (df.ps_gestational_age_in_weeks == 8)]
+        # death
+        self.module.set_pregnancy_complications(month_2_no_induced_abortion, 'antenatal_death')
 
         # ======================================= MONTH 3 PREGNANCY RISKS ============================================
         month_3_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
@@ -412,8 +438,13 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # induced_abortion:
         month_3_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
-                                        (df.ps_gestational_age_in_weeks == 13)]
+                                                 (df.ps_gestational_age_in_weeks == 13)]
         self.module.set_pregnancy_complications(month_3_no_spontaneous_abortion, 'induced_abortion')
+
+        month_3_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+                                                 (df.ps_gestational_age_in_weeks == 13)]
+        # death
+        self.module.set_pregnancy_complications(month_3_no_spontaneous_abortion, 'antenatal_death')
 
         # ================================= MONTH 4 PREGNANCY RISKS ==================================================
         month_4_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
@@ -424,6 +455,11 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # induced_abortion:
         self.module.set_pregnancy_complications(month_4_no_spontaneous_abortion, 'induced_abortion')
+
+        month_4_no_induced_abortion = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
+
+        # death
+        self.module.set_pregnancy_complications(month_4_no_induced_abortion, 'antenatal_death')
 
         # ==================================== MONTH 5 PREGNANCY RISKS ===============================================
         month_5_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
@@ -454,6 +490,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: Exclude current diabetics
         # TODO: review lit in regards to onset date and potentially move this to earlier
 
+        # death
+        self.module.set_pregnancy_complications(month_5_preg_continues, 'antenatal_death')
+
         # =========================== MONTH 6 RISK APPLICATION =======================================================
         # TODO: should this be 28 weeks to align with still birth definition
         # From month 6 it is possible women could be in labour at the time of this event so we exclude them
@@ -478,6 +517,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_6_preg_continues, 'gest_diab')
 
+        # death
+        self.module.set_pregnancy_complications(month_6_preg_continues, 'antenatal_death')
+
         # =========================== MONTH 7 RISK APPLICATION =======================================================
         month_7_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
                              ~df.la_currently_in_labour]
@@ -499,6 +541,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_7_preg_continues, 'gest_diab')
+
+        # death
+        self.module.set_pregnancy_complications(month_7_preg_continues, 'antenatal_death')
 
         # =========================== MONTH 8 RISK APPLICATION ========================================================
         month_8_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
@@ -522,6 +567,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_8_preg_continues, 'gest_diab')
 
+        # death
+        self.module.set_pregnancy_complications(month_8_preg_continues, 'antenatal_death')
+
         # =========================== MONTH 9 RISK APPLICATION ========================================================
         month_9_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
                              ~df.la_currently_in_labour]
@@ -543,6 +591,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # GESTATIONAL DIABETES
         self.module.set_pregnancy_complications(month_9_preg_continues, 'gest_diab')
+
+        # death
+        self.module.set_pregnancy_complications(month_9_preg_continues, 'antenatal_death')
 
         # =========================== WEEK 41 RISK APPLICATION ========================================================
         # Risk of still birth increases significantly in women who carry pregnancies beyond term
@@ -645,9 +696,6 @@ class AbortionEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
 
-        df.at[individual_id, 'is_pregnant'] = False
-        df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
-        df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
 
         if self.cause == 'induced_abortion':
             self.module.PregnancyDiseaseTracker['induced_abortion'] += 1
