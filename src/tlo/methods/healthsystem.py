@@ -68,7 +68,7 @@ class HealthSystem(Module):
         self.ignore_cons_constraints = ignore_cons_constraints
 
         assert type(disable) is bool
-        self.disable = disable
+        self.disabled = disable
 
         assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
         # 0: no constraints -- all HSI Events run with no squeeze factor
@@ -187,7 +187,7 @@ class HealthSystem(Module):
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
-        if not self.disable:
+        if not self.disabled:
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
@@ -231,7 +231,7 @@ class HealthSystem(Module):
         assert isinstance(hsi_event, HSI_Event)
 
         # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
-        if self.disable:
+        if self.disabled:
             wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
             self.sim.schedule_event(wrapped_hsi_event, topen)
             return  # Terrminate this functional call
@@ -685,7 +685,7 @@ class HealthSystem(Module):
         self.check_consumables_footprint_format(cons_req_as_footprint)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if self.disable:
+        if self.disabled:
             # If the healthsystem module is disabled, return True for all consuambles
             # without checking or logging.
             packages_availability = dict()

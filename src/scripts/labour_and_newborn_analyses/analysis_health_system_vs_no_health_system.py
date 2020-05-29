@@ -3,13 +3,21 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation
-from tlo.analysis.utils import (
-    parse_log_file,
-)
 
-from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
-    pregnancy_supervisor, antenatal_care, symptommanager, healthseekingbehaviour
+from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import (
+    antenatal_care,
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    newborn_outcomes,
+    pregnancy_supervisor,
+    symptommanager,
+)
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
