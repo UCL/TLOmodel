@@ -2,11 +2,10 @@
 A skeleton template for disease methods.
 
 """
-import logging
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, Date
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
@@ -457,7 +456,7 @@ def injrandomizer(number):
             ISSpercmort = 1
 
         # Include effects of polytrauma here
-        if polytrauma == True:
+        if polytrauma is True:
             pass
             ISSpercmort = 1.9 * ISSpercmort
             if ISSpercmort > 1:
@@ -500,6 +499,17 @@ def injrandomizer(number):
     injurydescription = injurydescription.fillna("none")
     return injdf, injurydescription
 
+
+# def find_and_count_injuries(dataframe, tloinjcodes):
+#     # This function searches the dataframe and finds who has been affected by an injury
+#     index = pd.Index([])
+#     counts = 0
+#     for code in tloinjcodes:
+#         inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(), axis=1)
+#         injidx = inj.index[inj]
+#         counts += len(injidx)
+#         index = index.union(injidx)
+#     return index, counts
 
 class RTI(Module):
     def __init__(self, name=None, resourcefilepath=None):
@@ -1431,44 +1441,35 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         """
         df = population.props
         now = self.sim.date
-        # set rt_imm_death back to false after death
-        df.loc[df.is_alive, "rt_imm_death"] = False
-        # set rt_post_med_death back to false after death
-        df.loc[df.is_alive, "rt_post_med_death"] = False
-        # set rt_disability back to 0 after death
-        df.loc[df.is_alive, "rt_disability"] = 0
-        # set rt_road_traffic_inc back to false after death
-        df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
-        # set rt_med_int back to false after death
-        df.loc[df.is_alive, 'rt_med_int'] = False
-        # set rt_polytrauma back to false after death
-        df.loc[df.is_alive, 'rt_polytrauma'] = False
-        # set injury severity back to none after death
-        df.loc[df.is_alive, 'rt_injseverity'] = "none"
-        # set rt_perm_disability back to false after death
-        df.loc[df.is_alive, 'rt_perm_disability'] = False
-        # reset rt_injuries properties after death
-        df.loc[df.is_alive, 'rt_injury_1'] = "none"
-        df.loc[df.is_alive, 'rt_injury_2'] = "none"
-        df.loc[df.is_alive, 'rt_injury_3'] = "none"
-        df.loc[df.is_alive, 'rt_injury_4'] = "none"
-        df.loc[df.is_alive, 'rt_injury_5'] = "none"
-        df.loc[df.is_alive, 'rt_injury_6'] = "none"
-        df.loc[df.is_alive, 'rt_injury_7'] = "none"
-        df.loc[df.is_alive, 'rt_injury_8'] = "none"
-        # Reset injury date after death
-        df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
-        # Reset recovery wihtout medical intervention
-        df.loc[df.is_alive, 'rt_recovery_no_med'] = False
 
-        # ----------- UPDATING OF RTI OVER TIME ----------------
+        # Reset injury properties after death
+        immdeathidx = df.index[df.is_alive & df.rt_imm_death]
+        deathwithmedidx = df.index[df.is_alive & df.rt_post_med_death]
+        diedfromrtiidx = immdeathidx.union(deathwithmedidx)
+        df.loc[diedfromrtiidx, "rt_imm_death"] = False
+        df.loc[diedfromrtiidx, "rt_post_med_death"] = False
+        df.loc[diedfromrtiidx, "rt_disability"] = 0
+        df.loc[diedfromrtiidx, "rt_med_int"] = False
+        df.loc[diedfromrtiidx, "rt_polytrauma"] = False
+        df.loc[diedfromrtiidx, "rt_injseverity"] = "none"
+        df.loc[diedfromrtiidx, "rt_perm_disability"] = False
+        df.loc[diedfromrtiidx, "rt_injury_1"] = "none"
+        df.loc[diedfromrtiidx, "rt_injury_2"] = "none"
+        df.loc[diedfromrtiidx, "rt_injury_3"] = "none"
+        df.loc[diedfromrtiidx, "rt_injury_4"] = "none"
+        df.loc[diedfromrtiidx, "rt_injury_5"] = "none"
+        df.loc[diedfromrtiidx, "rt_injury_6"] = "none"
+        df.loc[diedfromrtiidx, "rt_injury_7"] = "none"
+        df.loc[diedfromrtiidx, "rt_injury_8"] = "none"
+        df.loc[diedfromrtiidx, "rt_date_inj"] = pd.NaT
+        # reset whether they have been selected for an injury this month
+        df['rt_road_traffic_inc'] = False
+        # reset whether they have sought care this month
+        df['rt_med_int'] = False
+        df.loc[df.is_alive, 'rt_post_med_death'] = False
+
+        # --------------------------------- UPDATING OF RTI OVER TIME -------------------------------------------------
         rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc & ~df.rt_imm_death]
-        rt_current_mild_inj_ind = df.index[df.is_alive & (df.rt_injseverity is "mild") & (df.rt_imm_death is False)]
-        rt_current_sev_inj_ind = df.index[df.is_alive & (df.rt_injseverity is "severe") & (df.rt_imm_death is False)]
-        rt_current_imm_dead = df.index[df.is_alive & (df.rt_injseverity is not "none") & (df.rt_imm_death is True)]
-        rt_current_med_int = df.index[df.is_alive & (df.rt_injseverity is not "none") & (df.rt_med_int is True)]
-        rt_current_rec_no_med = df.index[df.is_alive & (df.rt_injseverity is not "none") &
-                                         (df.rt_recovery_no_med is True)]
 
         # ========= Update for people currently not involved in a RTI, make some involved in a RTI event ==============
         eq = LinearModel(LinearModelType.MULTIPLICATIVE,
@@ -1578,7 +1579,6 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         if len(inj3) > 0:
             idx3 = inj3.index[inj3]
             df.loc[idx3, 'rt_disability'] += self.daly_wt_diffuse_axonal_injury
-
 
         # =============================== AIS region 2: face ==========================================================
         # ----------------------- Find those with facial fractures and assign DALY weight -----------------------------
@@ -1836,44 +1836,6 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
                                                                 tclose=None)
 
-# ---------------------------------------------------------------------------------------------------------
-#   LOGGING EVENTS
-#
-#   Put the logging events here. There should be a regular logger outputting current states of the
-#   population. There may also be a loggig event that is driven by particular events.
-# ---------------------------------------------------------------------------------------------------------
-
-class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        """Produce a summary of the numbers of people with respect to the action of this module.
-        This is a regular event that can output current states of people or cumulative events since last logging event.
-        """
-
-        # run this event every month
-        self.repeat = 1
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-        assert isinstance(module, RTI)
-
-    def apply(self, population):
-        # Make some summary statitics
-        df = population.props
-        n_in_RTI = (df.rt_road_traffic_inc).sum()
-        n_perm_disabled = (df.is_alive & df.rt_perm_disability).sum()
-        n_alive = df.is_alive.sum()
-        n_not_injured = (df.is_alive & ~df.rt_road_traffic_inc).sum()
-        n_immediate_death = df.rt_imm_death.sum()
-        # n_head_injuries = (df.is_alive & df.rt_tbi).sum()
-        dict_to_output = {
-            'number involved in a rti': n_in_RTI,
-            'number not injured': n_not_injured,
-            'number alive': n_alive,
-            'number immediate deaths': n_immediate_death,
-            # 'number head injuries': n_head_injuries,
-            'number permanently disabled': n_perm_disabled
-        }
-
-        logger.info('%s|summary_1m|%s', self.sim.date, dict_to_output)
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
@@ -1896,7 +1858,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-
 
         assert isinstance(module, RTI)
         df = self.sim.population.props
@@ -2084,7 +2045,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         # ------------------------------------- Amputations ------------------------------------------------------------
         # Define the facilities at which this event can occur (only one is allowed)
 
-
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
         the_accepted_facility_level = 1
@@ -2106,45 +2066,13 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         # print(surgery_counts)
         # print('x rays needed')
         # print(xray_counts)
+
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
         df.at[person_id, 'rt_med_int'] = True
         logger.debug('@@@@@@@@@@ Medical intervention started !!!!!!')
         # prob_dis = np.random.random()
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
-        persons_injuries = df.loc[[person_id], columns]
-        # ------------------------ Track permanent disabilities with treatment ----------------------------------------
-        # --------------------------------- Perm disability from TBI --------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        idx = idx1.union(idx2).union(idx3)
-        if len(idx) > 0:
-            prob_perm_disability = self.module.rng.random_sample(size=1)
-            if prob_perm_disability < self.prob_perm_disability_with_treatment_severe_TBI:
-                df.at[person_id, 'rt_perm_disability'] = True
-                logger.debug('@@@@@@@@@@ Medical intervention for TBI started but still disabled!!!!!!')
-
-        # ------------------------------------- Perm disability from SCI ----------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('674').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('675').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('676').any(), axis=1)
-        idx4 = inj3.index[inj4]
-        idx = idx1.union(idx2).union(idx3).union(idx4)
-        if len(idx) > 0:
-            prob_perm_disability = self.module.rng.random_sample(size=1)
-            if prob_perm_disability < self.prob_perm_disability_with_treatment_sci:
-                df.at[person_id, 'rt_perm_disability'] = True
-                logger.debug('@@@@@@@@@@ Medical intervention for SCI started but still disabled!!!!!!')
 
         self.sim.schedule_event(RTIMedicalInterventionDeathEvent(self.module, person_id), self.sim.date +
                                 DateOffset(days=0))
@@ -2183,35 +2111,337 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
 
         pass
 
+
 class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
+    """This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
+    resources required to treat that person and
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        p = self.module.parameters
+        self.prob_death_with_med_mild = p['prob_death_with_med_mild']
+        self.prob_death_with_med_severe = p['prob_death_with_med_severe']
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        randfordeath = self.module.rng.random_sample(size=1)
+        # Schedule death for those who died from their injuries despite medical intervention
+        if df.loc[person_id, 'rt_injseverity'] == 'mild':
+            if randfordeath < self.prob_death_with_med_mild:
+                df.loc[person_id, 'rt_post_med_death'] = True
+                print('death from mild')
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
+                                                                      cause='death_with_med'), self.sim.date)
+                # Log the death
+                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
+                             person_id, self.sim.date)
+            else:
+                self.sim.schedule_event(RTIMedicalInterventionPermDisabilityEvent(self.module, person_id), self.sim.date
+                                        + DateOffset(days=0))
+        if df.loc[person_id, 'rt_injseverity'] == 'severe':
+            if randfordeath < self.prob_death_with_med_severe:
+                df.loc[person_id, 'rt_post_med_death'] = True
+                print('death from severe')
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
+                                                                      cause='death_with_med'), self.sim.date)
+                # Log the death
+                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
+                             person_id, self.sim.date)
+            else:
+                self.sim.schedule_event(RTIMedicalInterventionPermDisabilityEvent(self.module, person_id), self.sim.date
+                                        + DateOffset(days=0))
+
+
+class RTIMedicalInterventionPermDisabilityEvent(Event, IndividualScopeEventMixin):
     """This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
     resources required to treat that person and
     """
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
         p = self.module.parameters
-        self.prob_death_with_med_mild = p['prob_death_with_med_mild']
-        self.prob_death_with_med_severe = p['prob_death_with_med_severe']
-        randfordeath = self.module.rng.random_sample(size=1)
-        # Schedule death for those who died from their injuries despite medical intervention
-        if df.loc[individual_id, 'rt_injseverity'] == 'mild':
-            # todo: add these probabilities of death to the parameters sheet
-            if randfordeath < self.prob_death_with_med_mild:
-                df.loc[individual_id, 'rt_post_med_death'] = True
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='death_with_med'), self.sim.date)
-                # Log the death
-                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
-                             individual_id, self.sim.date)
-        elif df.loc[individual_id, 'rt_injseverity'] == 'severe':
-            if randfordeath < self.prob_death_with_med_severe:
-                df.loc[individual_id, 'rt_post_med_death'] = True
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='death_with_med'), self.sim.date)
-                # Log the death
-                logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
-                             individual_id, self.sim.date)
+        self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
+        self.prob_perm_disability_with_treatment_sci = p['prob_perm_disability_with_treatment_sci']
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        persons_injuries = df.loc[[person_id], columns]
+        # ------------------------ Track permanent disabilities with treatment ----------------------------------------
+        # --------------------------------- Perm disability from TBI --------------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        idx = idx1.union(idx2).union(idx3)
+        if len(idx) > 0:
+            prob_perm_disability = self.module.rng.random_sample(size=1)
+            if prob_perm_disability < self.prob_perm_disability_with_treatment_severe_TBI:
+                # print('person perm disabled TBI')
+                # print(person_id)
+                df.at[person_id, 'rt_perm_disability'] = True
+                logger.debug('@@@@@@@@@@ Medical intervention for TBI started but still disabled!!!!!!')
+
+        # ------------------------------------- Perm disability from SCI ----------------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('674').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('675').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('676').any(), axis=1)
+        idx4 = inj3.index[inj4]
+        idx = idx1.union(idx2).union(idx3).union(idx4)
+        if len(idx) > 0:
+            prob_perm_disability = self.module.rng.random_sample(size=1)
+            if prob_perm_disability < self.prob_perm_disability_with_treatment_sci:
+                # print('person perm disabled SCI')
+                df.at[person_id, 'rt_perm_disability'] = True
+                logger.debug('@@@@@@@@@@ Medical intervention for SCI started but still disabled!!!!!!')
+        # ------------------------------------- Perm disability from amputation ----------------------------------------
+        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('782').any(), axis=1)
+        idx1 = inj1.index[inj1]
+        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('783').any(), axis=1)
+        idx2 = inj2.index[inj2]
+        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('882').any(), axis=1)
+        idx3 = inj3.index[inj3]
+        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('883').any(), axis=1)
+        idx4 = inj4.index[inj4]
+        inj5 = persons_injuries.apply(lambda row: row.astype(str).str.contains('884').any(), axis=1)
+        idx5 = inj5.index[inj5]
+        idx = idx1.union(idx2).union(idx3).union(idx4).union(idx5)
+        if len(idx) > 0:
+            df.at[person_id, 'rt_perm_disability'] = True
+            logger.debug('@@@@@@@@@@ Medical intervention for amputation still disabled!!!!!!')
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   LOGGING EVENTS
+#
+#   Put the logging events here. There should be a regular logger outputting current states of the
+#   population. There may also be a loggig event that is driven by particular events.
+# ---------------------------------------------------------------------------------------------------------
+
+class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
+
+    def __init__(self, module):
+        """Produce a summary of the numbers of people with respect to the action of this module.
+        This is a regular event that can output current states of people or cumulative events since last logging event.
+        """
+
+        # run this event every month
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, RTI)
+        self.tot1inj = 0
+        self.tot2inj = 0
+        self.tot3inj = 0
+        self.tot4inj = 0
+        self.tot5inj = 0
+        self.tot6inj = 0
+        self.tot7inj = 0
+        self.tot8inj = 0
+        self.totfracnumber = 0
+        self.totdisnumber = 0
+        self.tottbi = 0
+        self.totsoft = 0
+        self.totintorg = 0
+        self.totintbled = 0
+        self.totsci = 0
+        self.totamp = 0
+        self.toteye = 0
+        self.totextlac = 0
+        self.totAIS1 = 0
+        self.totAIS2 = 0
+        self.totAIS3 = 0
+        self.totAIS4 = 0
+        self.totAIS5 = 0
+        self.totAIS6 = 0
+        self.totAIS7 = 0
+        self.totAIS8 = 0
+        self.totmild = 0
+        self.totsevere = 0
+        self.totinjured = 0
+        self.deathonscene = 0
+        self.soughtmedcare = 0
+        self.deathaftermed = 0
+        self.permdis = 0
+
+    def apply(self, population):
+        # Make some summary statitics
+        df = population.props
+        n_in_RTI = (df.rt_road_traffic_inc).sum()
+        self.totinjured += n_in_RTI
+        n_perm_disabled = (df.is_alive & df.rt_perm_disability).sum()
+        # self.permdis += n_perm_disabled
+        n_alive = df.is_alive.sum()
+        n_not_injured = (df.is_alive & ~df.rt_road_traffic_inc).sum()
+        n_immediate_death = (df.rt_road_traffic_inc & df.rt_imm_death).sum()
+        self.deathonscene += n_immediate_death
+        n_sought_care = (df.rt_road_traffic_inc & df.rt_med_int).sum()
+        self.soughtmedcare += n_sought_care
+        n_death_post_med = (df.is_alive & df.rt_post_med_death).sum()
+        self.deathaftermed += n_death_post_med
+
+        # n_head_injuries = (df.is_alive & df.rt_tbi).sum()
+
+        def find_and_count_injuries(dataframe, tloinjcodes):
+            index = pd.Index([])
+            counts = 0
+            for code in tloinjcodes:
+                inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(), axis=1)
+                if len(inj) > 0:
+                    injidx = inj.index[inj]
+                    counts += len(injidx)
+                    index = index.union(injidx)
+            return index, counts
+
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        thoseininjuries = df.loc[df.rt_road_traffic_inc]
+        df_injuries = thoseininjuries.loc[:, columns]
+        # ==================================== Number of injuries =====================================================
+        oneinjury = len(df_injuries.loc[df_injuries['rt_injury_2'] == 'none'])
+        self.tot1inj += oneinjury
+        twoinjury = len(df_injuries.loc[(df_injuries['rt_injury_2'] != 'none') &
+                                        (df_injuries['rt_injury_3'] == 'none')])
+        self.tot2inj += twoinjury
+        threeinjury = len(df_injuries.loc[(df_injuries['rt_injury_3'] != 'none') &
+                                          (df_injuries['rt_injury_4'] == 'none')])
+        self.tot3inj += threeinjury
+        fourinjury = len(df_injuries.loc[(df_injuries['rt_injury_4'] != 'none') &
+                                         (df_injuries['rt_injury_5'] == 'none')])
+        self.tot4inj += fourinjury
+        fiveinjury = len(df_injuries.loc[(df_injuries['rt_injury_5'] != 'none') &
+                                         (df_injuries['rt_injury_6'] == 'none')])
+        self.tot5inj += fiveinjury
+        sixinjury = len(df_injuries.loc[(df_injuries['rt_injury_6'] != 'none') &
+                                        (df_injuries['rt_injury_7'] == 'none')])
+        self.tot6inj += sixinjury
+        seveninjury = len(df_injuries.loc[(df_injuries['rt_injury_7'] != 'none') &
+                                          (df_injuries['rt_injury_8'] == 'none')])
+        self.tot7inj += seveninjury
+        eightinjury = len(df_injuries.loc[df_injuries['rt_injury_8'] != 'none'])
+        self.tot8inj += eightinjury
+        # ====================================== AIS body regions =====================================================
+        AIS1codes = ['112', '113', '133', '134', '135']
+        AIS2codes = ['211', '212', '2101', '291']
+        AIS3codes = ['342', '343', '361', '363', '322', '323']
+        AIS4codes = ['412', '414', '461', '463', '453', '441', '442', '443']
+        AIS5codes = ['552', '553', '554']
+        AIS6codes = ['612', '673', '674', '675', '676']
+        AIS7codes = ['712', '722', '782', '783', '7101']
+        AIS8codes = ['811', '812', '813', '822', '882', '883', '884', '8101']
+        idx, AIS1counts = find_and_count_injuries(df_injuries, AIS1codes)
+        self.totAIS1 += AIS1counts
+        idx, AIS2counts = find_and_count_injuries(df_injuries, AIS2codes)
+        self.totAIS2 += AIS2counts
+        idx, AIS3counts = find_and_count_injuries(df_injuries, AIS3codes)
+        self.totAIS3 += AIS3counts
+        idx, AIS4counts = find_and_count_injuries(df_injuries, AIS4codes)
+        self.totAIS4 += AIS4counts
+        idx, AIS5counts = find_and_count_injuries(df_injuries, AIS5codes)
+        self.totAIS5 += AIS5counts
+        idx, AIS6counts = find_and_count_injuries(df_injuries, AIS6codes)
+        self.totAIS6 += AIS6counts
+        idx, AIS7counts = find_and_count_injuries(df_injuries, AIS7codes)
+        self.totAIS7 += AIS7counts
+        idx, AIS8counts = find_and_count_injuries(df_injuries, AIS8codes)
+        self.totAIS8 += AIS8counts
+        # ================================== Injury characteristics ===================================================
+
+        allfraccodes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+        idx, fraccounts = find_and_count_injuries(df_injuries, allfraccodes)
+        self.totfracnumber += fraccounts
+        dislocationcodes = ['322', '323', '722', '822']
+        idx, dislocationcounts = find_and_count_injuries(df_injuries, dislocationcodes)
+        self.totdisnumber += dislocationcounts
+        allheadinjcodes = ['133', '134', '135']
+        idx, tbicounts = find_and_count_injuries(df_injuries, allheadinjcodes)
+        self.tottbi += tbicounts
+        softtissueinjcodes = ['342', '343', '441', '442', '443']
+        idx, softtissueinjcounts = find_and_count_injuries(df_injuries, softtissueinjcodes)
+        self.totsoft += softtissueinjcounts
+        organinjurycodes = ['453', '552', '553', '554']
+        idx, organinjurycounts = find_and_count_injuries(df_injuries, organinjurycodes)
+        self.totintorg += organinjurycounts
+        internalbleedingcodes = ['361', '363', '461', '463']
+        idx, internalbleedingcounts = find_and_count_injuries(df_injuries, internalbleedingcodes)
+        self.totintbled += internalbleedingcounts
+        spinalcordinjurycodes = ['673', '674', '675', '676']
+        idx, spinalcordinjurycounts = find_and_count_injuries(df_injuries, spinalcordinjurycodes)
+        self.totsci += spinalcordinjurycounts
+        amputationcodes = ['782', '783', '882', '883', '884']
+        idx, amputationcounts = find_and_count_injuries(df_injuries, amputationcodes)
+        self.totamp += amputationcounts
+        eyecodes = ['291']
+        idx, eyecounts = find_and_count_injuries(df_injuries, eyecodes)
+        self.toteye += eyecounts
+        externallacerationcodes = ['2101', '7101', '8101']
+        idx, externallacerationcounts = find_and_count_injuries(df_injuries, externallacerationcodes)
+        self.totextlac += externallacerationcounts
+        totalinj = fraccounts + dislocationcounts + tbicounts + softtissueinjcounts + organinjurycounts + \
+                   internalbleedingcounts + spinalcordinjurycounts + amputationcounts + externallacerationcounts
+
+        # ================================= Injury severity ===========================================================
+        sev = df.loc[df.rt_road_traffic_inc]
+        sev = sev['rt_injseverity']
+        severity, severitycount = np.unique(sev, return_counts=True)
+        if 'mild' in severity:
+            idx = np.where(severity == 'mild')
+            self.totmild += severitycount[idx]
+        if 'severe' in severity:
+            idx = np.where(severity == 'severe')
+            self.totsevere += severitycount[idx]
+
+        dict_to_output = {
+            'number involved in a rti': n_in_RTI,
+            'number not injured': n_not_injured,
+            'number alive': n_alive,
+            'number immediate deaths': n_immediate_death,
+            'number deaths post med': n_death_post_med,
+            # 'number head injuries': n_head_injuries,
+            'number permanently disabled': n_perm_disabled,
+            'total injuries': totalinj,
+            # 'proportion fractures': fraccounts / totalinj,
+            # 'proportion dislocations': dislocationcounts / totalinj,
+            # 'proportion tbi': tbicounts / totalinj,
+            # 'proportion soft tissue injuries': softtissueinjcounts / totalinj,
+            # 'proportion organ injuries': organinjurycounts / totalinj,
+            # 'proportion internal bleeding': internalbleedingcounts / totalinj,
+            # 'proportion spinal cord injury': spinalcordinjurycounts / totalinj,
+            # 'proportion amputations': amputationcounts / totalinj,
+            # 'proportion external lacerations': externallacerationcounts / totalinj
+            'number of fractures': fraccounts,
+            'number of dislocations': dislocationcounts,
+            'number of tbi': tbicounts,
+            'number of soft tissue injuries': softtissueinjcounts,
+            'number of organ injuries': organinjurycounts,
+            'number of internal bleeding': internalbleedingcounts,
+            'number of spinal cord injury': spinalcordinjurycounts,
+            'number of amputations': amputationcounts,
+            'number of eye injuries': eyecounts,
+            'number of external lacerations': externallacerationcounts
+
+        }
+        # -------------------------------------- Stored outputs -------------------------------------------------------
+        injcategories = [self.totfracnumber, self.totdisnumber, self.tottbi, self.totsoft, self.totintorg,
+                         self.totintbled, self.totsci, self.totamp, self.toteye, self.totextlac]
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injcategories.txt', injcategories,
+                   delimiter=',')
+        injlocs = [self.totAIS1, self.totAIS2, self.totAIS3, self.totAIS4, self.totAIS5, self.totAIS6, self.totAIS7,
+                   self.totAIS8]
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injlocs.txt', injlocs)
+        injseverity = [self.totmild, self.totsevere]
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injsev.txt', injseverity)
+        numberinjdist = [self.tot1inj, self.tot2inj, self.tot3inj, self.tot4inj, self.tot5inj, self.tot6inj,
+                         self.tot7inj, self.tot8inj]
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injnumber.txt', numberinjdist)
+        rtiflow = [self.totinjured, self.deathonscene, self.soughtmedcare, self.deathaftermed, n_perm_disabled]
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIflow.txt', rtiflow)
+
+        logger.info('%s|summary_1m|%s', self.sim.date, dict_to_output)
