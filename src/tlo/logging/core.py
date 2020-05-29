@@ -49,6 +49,10 @@ class Logger:
     def handlers(self):
         return self._std_logger.handlers
 
+    @property
+    def level(self):
+        return self._std_logger.level
+
     @handlers.setter
     def handlers(self, handlers):
         self._std_logger.handlers.clear()
