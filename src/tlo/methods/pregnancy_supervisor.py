@@ -33,6 +33,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'underlying risk of spontaneous_abortion per month without the impact of risk factors'),
         'prob_induced_abortion_per_month': Parameter(
             Types.REAL, 'underlying risk of induced abortion per month without the impact of risk factors'),
+        'prob_anaemia_per_month': Parameter(
+            Types.REAL, 'underlying risk of induced abortion per month without the impact of risk factors'),
         'prob_pre_eclampsia_per_month': Parameter(
             Types.REAL, 'underlying risk of pre-eclampsia per month without the impact of risk factors'),
         'prob_gest_htn_per_month': Parameter(
@@ -74,12 +76,8 @@ class PregnancySupervisor(Module):
         'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether this womans pregnancy is ectopic'),
         'ps_ectopic_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for ectopic pregnancy',
                                         categories=['none', 'abdominal pain', 'abdominal pain plus bleeding', 'shock']),
-        'ps_ep_unified_symptom_code': Property(
-            Types.CATEGORICAL,
-            'Level of symptoms on the standardised scale (governing health-care seeking): '
-            '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
-            categories=[0, 1, 2, 3, 4]),
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
+        'ps_anaemia_in_pregnancy': Property(Types.BOOL, 'Whether this womans is anaemic during pregnancy'),
         'ps_induced_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
                                                                  'following an induced abortion'),
         'ps_spontaneous_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
@@ -88,6 +86,11 @@ class PregnancySupervisor(Module):
                                                           'of her current pregnancy'),
         'ps_previous_stillbirth': Property(Types.BOOL, 'whether this woman has had any previous pregnancies end in '
                                                        'still birth'),  # consider if this should be an interger
+        'ps_htn_disorders': Property(Types.CATEGORICAL, 'if this woman suffers from a hypertensive disorder of '
+                                                        'pregnancy',
+                                     categories=['none', 'gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp',
+                                                 'eclampsia']),
+        # todo: decide what to do with the HTN properties (drop booleans etc)
         'ps_gestational_htn': Property(Types.BOOL, 'whether this woman has gestational hypertension'),
         'ps_mild_pre_eclamp': Property(Types.BOOL, 'whether this woman has mild pre-eclampsia'),
         'ps_severe_pre_eclamp': Property(Types.BOOL, 'whether this woman has severe pre-eclampsia'),
@@ -132,6 +135,10 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_induced_abortion_per_month']),
 
+                'maternal_anaemia': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_anaemia_per_month']),
+
                 'pre_eclampsia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_pre_eclampsia_per_month']),
@@ -147,10 +154,12 @@ class PregnancySupervisor(Module):
                 'antenatal_stillbirth': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_still_birth_per_month']),
+                # todo: antenatal disease will act as predictors here
 
                 'antenatal_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_antenatal_death_per_month']),
+                # todo: antenatal disease will act as predictors here
 
                 'ectopic_pregnancy_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -173,12 +182,13 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
         df.loc[df.is_alive, 'ps_ectopic_symptoms'].values[:] = 'none'
-        df.loc[df.is_alive, 'ps_ep_unified_symptom_code'] = 0
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
+        df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = False
         df.loc[df.is_alive, 'ps_induced_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_spontaneous_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
         df.loc[df.is_alive, 'ps_previous_stillbirth'] = False
+        df.loc[df.is_alive, 'ps_htn_disorders'] = 'none'
         df.loc[df.is_alive, 'ps_gestational_htn'] = False
         df.loc[df.is_alive, 'ps_mild_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_severe_pre_eclamp'] = False
@@ -200,7 +210,8 @@ class PregnancySupervisor(Module):
 
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        self.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0}
+        self.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
+                                        'maternal_anaemia':0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -208,12 +219,13 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
         df.at[child_id, 'ps_ectopic_pregnancy'] = False
         df.at[child_id, 'ps_ectopic_symptoms'] = 'none'
-        df.at[child_id, 'ps_ep_unified_symptom_code'] = 0
         df.at[child_id, 'ps_multiple_pregnancy'] = False
+        df.at[child_id, 'ps_anaemia_in_pregnancy'] = False
         df.at[child_id, 'ps_induced_abortion_complication'] = 'none'
         df.at[child_id, 'ps_spontaneous_abortion_complication'] = 'none'
         df.at[child_id, 'ps_antepartum_still_birth'] = False
         df.at[child_id, 'ps_previous_stillbirth'] = False
+        df.at[child_id, 'ps_htn_disorders'] = 'none'
         df.at[child_id, 'ps_gestational_htn'] = False
         df.at[child_id, 'ps_mild_pre_eclamp'] = False
         df.at[child_id, 'ps_severe_pre_eclamp'] = False
@@ -224,6 +236,8 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
 
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
+
+        # TODO: what diseases should be reset for women on birth
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug('This is PregnancySupervisor, being alerted about a health system interaction '
@@ -290,14 +304,22 @@ class PregnancySupervisor(Module):
             if not positive_index.empty:
                     logger.debug(f'The following women have experienced an abortion,{positive_index}')
 
+        if complication == 'maternal_anaemia':
+            df.loc[positive_index, 'ps_anaemia_in_pregnancy'] = True
+            self.PregnancyDiseaseTracker['maternal_anaemia'] += len(positive_index)
+            if not positive_index.empty:
+                logger.debug(f'The following women have developed anaemia during their pregnancy,{positive_index}')
+
         if complication == 'pre_eclampsia':
             df.loc[positive_index, 'ps_mild_pre_eclamp'] = True
             df.loc[positive_index, 'ps_prev_pre_eclamp'] = True
+            df.loc[positive_index, 'ps_htn_disorders'] = 'mild_pre_eclamp'
             if not positive_index.empty:
                 logger.debug(f'The following women have developed pre_eclampsia,{positive_index}')
 
         if complication == 'gest_htn':
             df.loc[positive_index, 'ps_gestational_htn'] = True
+            df.loc[positive_index, 'ps_htn_disorders'] = 'gest_htn'
             if not positive_index.empty:
                 logger.debug(f'The following women have developed gestational hypertension,{positive_index}')
 
@@ -350,33 +372,20 @@ class PregnancySupervisor(Module):
 
         # TODO: reset these complications after a certain time period
 
-    def disease_progression(self, gestational_age, complication):
+    def disease_progression(self, selected):
         df = self.sim.population.props
 
-        disease_states = ['gestational_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
+        disease_states = ['gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
         prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
 
-        prob_matrix['gestational_htn'] = [0.8, 0.2, 0.1, 0.0]
+        prob_matrix['gest_htn'] = [0.8, 0.2, 0.0, 0.0]
         prob_matrix['mild_pre_eclamp'] = [0.0, 0.8, 0.1, 0.1]
         prob_matrix['severe_pre_eclamp'] = [0.0, 0.1, 0.6, 0.3]
         prob_matrix['eclampsia'] = [0.0, 0.0, 0.1, 0.9]
-        x = prob_matrix
 
-        # TODO: couldnt someone just move through all these states in one go (also this doesnt work)
-        if complication == 'gest_htn':
-            women_with_gest_htn = df.loc[df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks ==
-                                                                         gestational_age) & df.ps_gestational_htn]
-            new_states_gest_htn = util.transition_states(women_with_gest_htn, prob_matrix, self.rng)
-            df.ps_gestational_htn.update(new_states_gest_htn)
-
-        # women_with_pre_eclampsia = df.loc[df.is_alive & df.is_pregnant & df.ps_mild_pre_eclamp, 'ps_mild_pre_eclamp']
-        # new_states_mild_pe = util.transition_states(women_with_pre_eclampsia, prob_matrix, self.module.rng)
-        # df.ps_mild_pre_eclamp.update(new_states_mild_pe)
-
-        # women_with_severe_pre_eclampsia = df.loc[df.is_alive & df.is_pregnant & df.ps_severe_pre_eclamp,
-        #                                         'ps_severe_pre_eclamp']
-        # new_states_mild_pe = util.transition_states(women_with_severe_pre_eclampsia, prob_matrix, self.module.rng)
-        # df.ps_severe_pre_eclamp.update(new_states_mild_pe)
+        current_status = df.loc[selected, "ps_htn_disorders"]
+        new_status = util.transition_states(current_status, prob_matrix, self.rng)
+        df.loc[selected, "ps_htn_disorders"] = new_status
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -404,7 +413,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # ========================PREGNANCY COMPLICATIONS - ECTOPIC PREGNANCY & MULTIPLES =============================
         # Here we use the set_pregnancy_complications function to calculate each womans risk of ectopic pregnancy,
         # conduct a draw and edit relevant properties defined above
-
         newly_pregnant_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 1)]
         self.module.set_pregnancy_complications(newly_pregnant_idx, 'ectopic')
 
@@ -415,36 +423,41 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.set_pregnancy_complications(np_no_ectopic, 'multiples')
         # TODO: Review the necessity of including multiple pregnancies
 
-        # ==================================== MONTH 1 PREGNANCY RISKS ================================================
+        # =========================================== MONTH 1 =========================================================
         # Here we look at all the women who have reached one month gestation and apply the risk of early pregnancy loss
-
         month_1_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
                                                                                         == 4)]
         self.module.set_pregnancy_complications(month_1_idx, 'spontaneous_abortion')
 
-        # TODO: I need to think if this method of creating new indexes is the best way of doing things,
-        #  seems error prone
+        # Women whose pregnancy continues may develop anaemia associated with their pregnancy
+        month_1_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+                                                 (df.ps_gestational_age_in_weeks == 8)]
+        self.module.set_pregnancy_complications(month_1_no_spontaneous_abortion, 'maternal_anaemia')
 
-        # ========================================== MONTH 2 PREGNANCY RISKS ==========================================
+        # =========================================== MONTH 2 ========================================================
         # Now we use the set_pregnancy_complications function to calculate risk and set properties for women whose
         # pregnancy is not ectopic
 
         # spontaneous_abortion:
-        month_2_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
-                                                                                        == 8)]
+        month_2_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+                             (df.ps_gestational_age_in_weeks == 8)]
         self.module.set_pregnancy_complications(month_2_idx, 'spontaneous_abortion')
 
         # Here we use the an index of women who will not miscarry to determine who will seek an abortion
         # induced_abortion:
         month_2_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                                  (df.ps_gestational_age_in_weeks == 8)]
-
-        # TODO: need to know the incidence of induced abortion for GA 8 weeks to determine if its worth while
         self.module.set_pregnancy_complications(month_2_no_spontaneous_abortion, 'induced_abortion')
 
-        # ======================================= MONTH 3 PREGNANCY RISKS ============================================
-        month_3_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
-                                                                                        == 13)]
+        # anaemia
+        month_2_no_induced_abortion = df.loc[
+            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 8) &
+            ~df.ps_anaemia_in_pregnancy]
+        self.module.set_pregnancy_complications(month_2_no_induced_abortion, 'maternal_anaemia')
+
+        # =========================================== MONTH 3 =========================================================
+        month_3_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
+                             (df.ps_gestational_age_in_weeks == 13)]
         # spontaneous_abortion
         self.module.set_pregnancy_complications(month_3_idx, 'spontaneous_abortion')
 
@@ -453,17 +466,28 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                  (df.ps_gestational_age_in_weeks == 13)]
         self.module.set_pregnancy_complications(month_3_no_spontaneous_abortion, 'induced_abortion')
 
-        # ================================= MONTH 4 PREGNANCY RISKS ==================================================
+        # anaemia
+        month_3_no_induced_abortion = df.loc[
+            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 13) &
+            ~df.ps_anaemia_in_pregnancy]
+        self.module.set_pregnancy_complications(month_3_no_induced_abortion, 'maternal_anaemia')
+
+        # ============================================ MONTH 4 ========================================================
         month_4_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
         # spontaneous_abortion
         self.module.set_pregnancy_complications(month_4_idx, 'spontaneous_abortion')
 
         month_4_no_spontaneous_abortion = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
-
         # induced_abortion:
         self.module.set_pregnancy_complications(month_4_no_spontaneous_abortion, 'induced_abortion')
 
-        # ==================================== MONTH 5 PREGNANCY RISKS ===============================================
+        # anaemia
+        month_4_no_induced_abortion = df.loc[
+            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17) &
+            ~df.ps_anaemia_in_pregnancy]
+        self.module.set_pregnancy_complications(month_4_no_induced_abortion, 'maternal_anaemia')
+
+        # ============================================= MONTH 5 =======================================================
         month_5_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
         # spontaneous_abortion
         self.module.set_pregnancy_complications(month_5_idx, 'spontaneous_abortion')
@@ -472,34 +496,32 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         month_5_no_spontaneous_abortion = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
         self.module.set_pregnancy_complications(month_5_no_spontaneous_abortion, 'induced_abortion')
 
+        # anaemia
+        month_5_no_induced_abortion = df.loc[
+            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
+            ~df.ps_anaemia_in_pregnancy]
+        self.module.set_pregnancy_complications(month_5_no_induced_abortion, 'maternal_anaemia')
+
         # Here we begin to apply the risk of developing complications which present later in pregnancy including
         # pre-eclampsia, gestational hypertension and gestational diabetes
 
-        # PRE-ECLAMPSIA
+        # pre-eclampsia
         # Only women without pre-existing hypertensive disorders of pregnancy are can develop the disease now
-        month_5_preg_continues = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
+        month_5_preg_continues = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
+                                        (df.ps_htn_disorders == 'none')]
         self.module.set_pregnancy_complications(month_5_preg_continues, 'pre_eclampsia')
 
         month_5_no_pe = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
                                ~df.ps_mild_pre_eclamp & ~df.ps_severe_pre_eclamp]
 
-        # GESTATIONAL HYPERTENSION
+        # gestational hypertension
         # Similarly only those women who dont develop pre-eclampsia are able to develop gestational hypertension
         self.module.set_pregnancy_complications(month_5_no_pe, 'gest_htn')
 
-        # GESTATIONAL DIABETES
+        # gestational diabetes
         self.module.set_pregnancy_complications(month_5_preg_continues, 'gest_diab')
-        # TODO: Exclude current diabetics
-        # TODO: review lit in regards to onset date and potentially move this to earlier
 
-        month_5_gest_htn = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
-                                  ~df.ps_mild_pre_eclamp & ~df.ps_severe_pre_eclamp & df.ps_gestational_htn]
-
-        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DISEASE PROGRESSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        self.module.disease_progression(22, 'gest_htn')
-        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DISEASE PROGRESSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        # From month 5 we apply a montly risk of antenatal death that considers the impact of maternal diseases
+        # From month 5 we apply a monthly risk of antenatal death that considers the impact of maternal diseases
         # death
         self.module.set_pregnancy_complications(month_5_preg_continues, 'antenatal_death')
 
@@ -509,23 +531,33 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         month_6_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
                              ~df.la_currently_in_labour]
 
-        # STILL BIRTH RISK
-        self.module.set_pregnancy_complications(month_6_idx, 'stillbirth')
+        # still birth
+        self.module.set_pregnancy_complications(month_6_idx, 'antenatal_stillbirth')
 
+        # anaemia
+        month_6_preg_continues_no_anaemia = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27)
+                                                   & ~df.ps_anaemia_in_pregnancy & ~df.la_currently_in_labour]
+        self.module.set_pregnancy_complications(month_6_preg_continues_no_anaemia, 'maternal_anaemia')
+
+        # pre-eclampsia
         month_6_preg_continues = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
                                         ~df.la_currently_in_labour]
-
-        # PRE ECLAMPSIA
         self.module.set_pregnancy_complications(month_6_preg_continues, 'pre_eclampsia')
 
         month_6_no_pe = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
                                ~df.ps_mild_pre_eclamp & ~df.ps_severe_pre_eclamp]
 
-        # GESTATIONAL HYPERTENSION
+        # gestational hypertension
         self.module.set_pregnancy_complications(month_6_no_pe, 'gest_htn')
 
-        # GESTATIONAL DIABETES
+        # gestational diabetes
         self.module.set_pregnancy_complications(month_6_preg_continues, 'gest_diab')
+
+        # From month six we also determine if women suffering from any hypertensive disorders of pregnancy will progress
+        # from one disease to another
+        month_6_htn_disorder = df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) & (
+            df.ps_htn_disorders != 'none')
+        self.module.disease_progression(month_6_htn_disorder)
 
         # death
         self.module.set_pregnancy_complications(month_6_preg_continues, 'antenatal_death')
@@ -534,23 +566,33 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         month_7_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
                              ~df.la_currently_in_labour]
 
-        # STILL BIRTH RISK
-        self.module.set_pregnancy_complications(month_7_idx, 'stillbirth')
+        # still birth
+        self.module.set_pregnancy_complications(month_7_idx, 'antenatal_stillbirth')
 
+        # anaemia
+        month_7_preg_continues_no_anaemia = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31)
+                                                   & ~df.ps_anaemia_in_pregnancy & ~df.la_currently_in_labour]
+        self.module.set_pregnancy_complications(month_7_preg_continues_no_anaemia, 'maternal_anaemia')
+
+        # pre-eclampsia
         month_7_preg_continues = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
                                         ~df.la_currently_in_labour]
 
-        # PRE ECLAMPSIA
         self.module.set_pregnancy_complications(month_7_preg_continues, 'pre_eclampsia')
 
         month_7_no_pe = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
                                ~df.ps_mild_pre_eclamp & ~df.ps_severe_pre_eclamp]
 
-        # GESTATIONAL HYPERTENSION
+        # gestational hypertension
         self.module.set_pregnancy_complications(month_7_no_pe, 'gest_htn')
 
-        # GESTATIONAL DIABETES
+        # gestational diabetes
         self.module.set_pregnancy_complications(month_7_preg_continues, 'gest_diab')
+
+        # disease progression
+        month_7_htn_disorder = df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) & (
+            df.ps_htn_disorders != 'none')
+        self.module.disease_progression(month_7_htn_disorder)
 
         # death
         self.module.set_pregnancy_complications(month_7_preg_continues, 'antenatal_death')
@@ -559,23 +601,32 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         month_8_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
                              ~df.la_currently_in_labour]
 
-        # STILL BIRTH RISK
-        self.module.set_pregnancy_complications(month_8_idx, 'stillbirth')
+        # still birth
+        self.module.set_pregnancy_complications(month_8_idx, 'antenatal_stillbirth')
 
         month_8_preg_continues = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
                                         ~df.la_currently_in_labour]
 
-        # PRE ECLAMPSIA
-        self.module.set_pregnancy_complications(month_8_preg_continues, 'pre_eclampsia')
+        # anaemia
+        month_8_preg_continues_no_anaemia = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35)
+                                                   & ~df.ps_anaemia_in_pregnancy & ~df.la_currently_in_labour]
+        self.module.set_pregnancy_complications(month_8_preg_continues_no_anaemia, 'maternal_anaemia')
 
+        # pre-eclampsia
+        self.module.set_pregnancy_complications(month_8_preg_continues, 'pre_eclampsia')
         month_8_no_pe = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
                                ~df.ps_mild_pre_eclamp & ~df.ps_severe_pre_eclamp]
 
-        # GESTATIONAL HYPERTENSION
+        # gestational hypertension
         self.module.set_pregnancy_complications(month_8_no_pe, 'gest_htn')
 
-        # GESTATIONAL DIABETES
+        # gestational diabetes
         self.module.set_pregnancy_complications(month_8_preg_continues, 'gest_diab')
+
+        # disease progression
+        month_8_htn_disorder = df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) & (
+            df.ps_htn_disorders != 'none')
+        self.module.disease_progression(month_8_htn_disorder)
 
         # death
         self.module.set_pregnancy_complications(month_8_preg_continues, 'antenatal_death')
@@ -584,23 +635,32 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         month_9_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
                              ~df.la_currently_in_labour]
 
-        # STILL BIRTH RISK
-        self.module.set_pregnancy_complications(month_9_idx, 'stillbirth')
+        # still birth
+        self.module.set_pregnancy_complications(month_9_idx, 'antenatal_stillbirth')
 
         month_9_preg_continues = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
                                         ~df.la_currently_in_labour]
+        # anaemia
+        month_9_preg_continues_no_anaemia = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40)
+                                                   & ~df.ps_anaemia_in_pregnancy & ~df.la_currently_in_labour]
+        self.module.set_pregnancy_complications(month_9_preg_continues_no_anaemia, 'maternal_anaemia')
 
-        # PRE ECLAMPSIA
+        # pre-eclampsia
         self.module.set_pregnancy_complications(month_9_preg_continues, 'pre_eclampsia')
 
         month_9_no_pe = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
                                ~df.ps_mild_pre_eclamp & ~df.ps_severe_pre_eclamp]
 
-        # GESTATIONAL HYPERTENSION
+        # gestational hypertension
         self.module.set_pregnancy_complications(month_9_no_pe, 'gest_htn')
 
-        # GESTATIONAL DIABETES
+        # gestational diabetes
         self.module.set_pregnancy_complications(month_9_preg_continues, 'gest_diab')
+
+        # disease progression
+        month_9_htn_disorder = df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) & (
+            df.ps_htn_disorders != 'none')
+        self.module.disease_progression(month_9_htn_disorder)
 
         # death
         self.module.set_pregnancy_complications(month_9_preg_continues, 'antenatal_death')
@@ -610,29 +670,29 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         week_41_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 41) &
                              ~df.la_currently_in_labour]
 
-        self.module.set_pregnancy_complications(week_41_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(week_41_idx, 'antenatal_stillbirth')
 
         # =========================== WEEK 42 RISK APPLICATION ========================================================
         week_42_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 42) &
                              ~df.la_currently_in_labour]
 
-        self.module.set_pregnancy_complications(week_42_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(week_42_idx, 'antenatal_stillbirth')
 
         # =========================== WEEK 43 RISK APPLICATION ========================================================
         week_43_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 43) &
                              ~df.la_currently_in_labour]
 
-        self.module.set_pregnancy_complications(week_43_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(week_43_idx, 'antenatal_stillbirth')
         # =========================== WEEK 44 RISK APPLICATION ========================================================
         week_44_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 44) &
                              ~df.la_currently_in_labour]
 
-        self.module.set_pregnancy_complications(week_44_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(week_44_idx, 'antenatal_stillbirth')
         # =========================== WEEK 45 RISK APPLICATION ========================================================
         week_45_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 45) &
                              ~df.la_currently_in_labour]
 
-        self.module.set_pregnancy_complications(week_45_idx, 'stillbirth')
+        self.module.set_pregnancy_complications(week_45_idx, 'antenatal_stillbirth')
 
 
 class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
@@ -783,6 +843,7 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_ectopics = self.module.PregnancyDiseaseTracker['ectopic_pregnancy']
         total_abortions_t = self.module.PregnancyDiseaseTracker['induced_abortion']
         total_spontaneous_abortions_t = self.module.PregnancyDiseaseTracker['spontaneous_abortion']
+        total_anaemia_cases = self.module.PregnancyDiseaseTracker['maternal_anaemia']
 
         dict_for_output = {'repro_women': total_women_reproductive_age,
                            'total_spontaneous_abortions': total_spontaneous_abortions_t,
@@ -791,11 +852,11 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'total_induced_abortions': total_abortions_t,
                            'induced_abortion_rate': (total_abortions_t / total_women_reproductive_age) * 1000,
                            'crude_ectopics': total_ectopics,
-                           'ectopic_rate': (total_ectopics / total_women_reproductive_age) * 1000}
+                           'ectopic_rate': (total_ectopics / total_women_reproductive_age) * 1000,
+                           'crude_anaemia': total_anaemia_cases,
+                           'anaemia_rate': (total_anaemia_cases/total_women_reproductive_age) * 1000}
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
-        self.module.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0}
-
-        # TODO: figure out why abortions keep going up
-
+        self.module.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
+                                               'maternal_anaemia': 0}
