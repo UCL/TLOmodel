@@ -230,16 +230,22 @@ def create_table(mydict, mymodule):
      - Type
      - Description
 '''
+    if len(mydict) == 0:
+        row = f'''   * - NO
+     - DATA
+     - DEFINED
+'''
+        examplestr += row
+    else:
+        for key in mydict.keys():
+            item = str(mydict[key])
+            mytype, description = item.split(Specifiable.delimiter)
 
-    for key in mydict.keys():
-        item = str(mydict[key])
-        mytype, description = item.split(Specifiable.delimiter)
-
-        row = f'''   * - {key}
+            row = f'''   * - {key}
      - {mytype}
      - {description}
 '''
-        examplestr += row
+            examplestr += row
     mylist = examplestr.splitlines()
     return mylist
 
