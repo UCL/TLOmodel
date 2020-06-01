@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.methods import demography
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -195,10 +195,6 @@ class PregnancySupervisor(Module):
         sim.schedule_event(event(self),
                            sim.date + DateOffset(days=0))
 
-        event = PregnancyDiseaseProgressionEvent
-        sim.schedule_event(event(self),
-                           sim.date + DateOffset(days=0))
-
         event = PregnancyLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=364))
 
@@ -354,6 +350,34 @@ class PregnancySupervisor(Module):
 
         # TODO: reset these complications after a certain time period
 
+    def disease_progression(self, gestational_age, complication):
+        df = self.sim.population.props
+
+        disease_states = ['gestational_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
+        prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
+
+        prob_matrix['gestational_htn'] = [0.8, 0.2, 0.1, 0.0]
+        prob_matrix['mild_pre_eclamp'] = [0.0, 0.8, 0.1, 0.1]
+        prob_matrix['severe_pre_eclamp'] = [0.0, 0.1, 0.6, 0.3]
+        prob_matrix['eclampsia'] = [0.0, 0.0, 0.1, 0.9]
+        x = prob_matrix
+
+        # TODO: couldnt someone just move through all these states in one go (also this doesnt work)
+        if complication == 'gest_htn':
+            women_with_gest_htn = df.loc[df.is_alive & df.is_pregnant & (df.ps_gestational_age_in_weeks ==
+                                                                         gestational_age) & df.ps_gestational_htn]
+            new_states_gest_htn = util.transition_states(women_with_gest_htn, prob_matrix, self.rng)
+            df.ps_gestational_htn.update(new_states_gest_htn)
+
+        # women_with_pre_eclampsia = df.loc[df.is_alive & df.is_pregnant & df.ps_mild_pre_eclamp, 'ps_mild_pre_eclamp']
+        # new_states_mild_pe = util.transition_states(women_with_pre_eclampsia, prob_matrix, self.module.rng)
+        # df.ps_mild_pre_eclamp.update(new_states_mild_pe)
+
+        # women_with_severe_pre_eclampsia = df.loc[df.is_alive & df.is_pregnant & df.ps_severe_pre_eclamp,
+        #                                         'ps_severe_pre_eclamp']
+        # new_states_mild_pe = util.transition_states(women_with_severe_pre_eclampsia, prob_matrix, self.module.rng)
+        # df.ps_severe_pre_eclamp.update(new_states_mild_pe)
+
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the PregnancySupervisorEvent. It runs weekly. It updates gestational age of pregnancy in weeks.
@@ -401,13 +425,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: I need to think if this method of creating new indexes is the best way of doing things,
         #  seems error prone
 
-        month_1_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
-                                                 (df.ps_gestational_age_in_weeks == 4)]
-
-        # TODO: also do i need to apply risk of death in the months where only pregnancy loss occurs? (tb, hiv etc?)
-        # death
-        self.module.set_pregnancy_complications(month_1_no_spontaneous_abortion, 'antenatal_death')
-
         # ========================================== MONTH 2 PREGNANCY RISKS ==========================================
         # Now we use the set_pregnancy_complications function to calculate risk and set properties for women whose
         # pregnancy is not ectopic
@@ -425,11 +442,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: need to know the incidence of induced abortion for GA 8 weeks to determine if its worth while
         self.module.set_pregnancy_complications(month_2_no_spontaneous_abortion, 'induced_abortion')
 
-        month_2_no_induced_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
-                                             (df.ps_gestational_age_in_weeks == 8)]
-        # death
-        self.module.set_pregnancy_complications(month_2_no_induced_abortion, 'antenatal_death')
-
         # ======================================= MONTH 3 PREGNANCY RISKS ============================================
         month_3_idx = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks
                                                                                         == 13)]
@@ -441,11 +453,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                  (df.ps_gestational_age_in_weeks == 13)]
         self.module.set_pregnancy_complications(month_3_no_spontaneous_abortion, 'induced_abortion')
 
-        month_3_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
-                                                 (df.ps_gestational_age_in_weeks == 13)]
-        # death
-        self.module.set_pregnancy_complications(month_3_no_spontaneous_abortion, 'antenatal_death')
-
         # ================================= MONTH 4 PREGNANCY RISKS ==================================================
         month_4_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
         # spontaneous_abortion
@@ -455,11 +462,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # induced_abortion:
         self.module.set_pregnancy_complications(month_4_no_spontaneous_abortion, 'induced_abortion')
-
-        month_4_no_induced_abortion = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 17)]
-
-        # death
-        self.module.set_pregnancy_complications(month_4_no_induced_abortion, 'antenatal_death')
 
         # ==================================== MONTH 5 PREGNANCY RISKS ===============================================
         month_5_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22)]
@@ -490,6 +492,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: Exclude current diabetics
         # TODO: review lit in regards to onset date and potentially move this to earlier
 
+        month_5_gest_htn = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
+                                  ~df.ps_mild_pre_eclamp & ~df.ps_severe_pre_eclamp & df.ps_gestational_htn]
+
+        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DISEASE PROGRESSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.module.disease_progression(22, 'gest_htn')
+        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DISEASE PROGRESSION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        # From month 5 we apply a montly risk of antenatal death that considers the impact of maternal diseases
         # death
         self.module.set_pregnancy_complications(month_5_preg_continues, 'antenatal_death')
 
@@ -696,7 +706,6 @@ class AbortionEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
 
-
         if self.cause == 'induced_abortion':
             self.module.PregnancyDiseaseTracker['induced_abortion'] += 1
 
@@ -732,43 +741,6 @@ class AbortionEvent(Event, IndividualScopeEventMixin):
 
     # TODO: (currently self contained) - predictors in LM for incidence and risk fo death, Symptoms?, care seeking,
     #  abortion death event (to allow for treatment effect)
-
-
-class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This is the PregnancyDiseaseProgressionEvent. It runs every 4 weeks and determines if women who have a disease
-    of pregnancy will undergo progression to the next stage. This event will need to be recoded using the
-    progression_matrix function """
-
-    # TODO: consider renaming if only dealing with HTN diseases
-
-    def __init__(self, module, ):
-        super().__init__(module, frequency=DateOffset(weeks=4))
-
-    def apply(self, population):
-        df = self.sim.population.props
-        # ============================= PROGRESSION OF PREGNANCY DISEASES ==========================================
-
-        disease_states = ['gestational_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
-        prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
-
-        prob_matrix['gestational_htn'] = [0.8, 0.2, 0.1, 0.0]
-        prob_matrix['mild_pre_eclamp'] = [0.0, 0.8, 0.1, 0.1]
-        prob_matrix['severe_pre_eclamp'] = [0.0, 0.1, 0.6, 0.3]
-        prob_matrix['eclampsia'] = [0.0, 0.0, 0.1, 0.9]
-
-        # TODO: couldnt someone just move through all these states in one go (also this doesnt work)
-        # women_with_gest_htn = df.loc[df.is_alive & df.is_pregnant & df.ps_gestational_htn, 'ps_gestational_htn']
-        # new_states_gest_htn = util.transition_states(women_with_gest_htn, prob_matrix, self.module.rng)
-        # df.ps_gestational_htn.update(new_states_gest_htn)
-
-        # women_with_pre_eclampsia = df.loc[df.is_alive & df.is_pregnant & df.ps_mild_pre_eclamp, 'ps_mild_pre_eclamp']
-        # new_states_mild_pe = util.transition_states(women_with_pre_eclampsia, prob_matrix, self.module.rng)
-        # df.ps_mild_pre_eclamp.update(new_states_mild_pe)
-
-        # women_with_severe_pre_eclampsia = df.loc[df.is_alive & df.is_pregnant & df.ps_severe_pre_eclamp,
-        #                                         'ps_severe_pre_eclamp']
-        # new_states_mild_pe = util.transition_states(women_with_severe_pre_eclampsia, prob_matrix, self.module.rng)
-        # df.ps_severe_pre_eclamp.update(new_states_mild_pe)
 
 
 class PregnancyDiseaseResetEvent(Event, IndividualScopeEventMixin):
