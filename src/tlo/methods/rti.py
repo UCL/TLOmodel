@@ -16,12 +16,13 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 # ---------------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 # ================Put inj randomizer function here for now====================================
 
 def injrandomizer(number):
+    # todo: use the swedish distribution to inform the distribution of minor injuries in the model
     # A function that can be called specifying the number of people affected by RTI injuries
     #  and provides outputs for the number of injuries each person experiences from a RTI event, the location of the
     #  injury, the TLO injury categories and the severity of the injuries. The severity of the injuries will then be
@@ -899,6 +900,8 @@ class RTI(Module):
                                             '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
                                             '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
                                             '822', '882', '883', '884', '8101']),
+        'rt_ISS_score': Property(Types.INT, 'The ISS score associated with the injuries resulting from a road traffic'
+                                            'accident'),
         'rt_perm_disability': Property(Types.BOOL, 'whether the injuries from an RTI result in permanent disability'),
         'rt_polytrauma': Property(Types.BOOL, 'polytrauma from RTI'),
         'rt_imm_death': Property(Types.BOOL, 'death at scene True/False'),
@@ -1265,6 +1268,7 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_injury_7'] = "none"
         df.loc[df.is_alive, 'rt_injury_8'] = "none"
         df.loc[df.is_alive, 'rt_polytrauma'] = False
+        df.loc[df.is_alive, 'rt_ISS_score'] = 0
         df.loc[df.is_alive, 'rt_perm_disability'] = False
         df.loc[df.is_alive, 'rt_imm_death'] = False  # default: no one is dead on scene of crash
         df.loc[df.is_alive, 'rt_med_int'] = False  # default: no one has a had medical intervention
@@ -1277,18 +1281,29 @@ class RTI(Module):
         """Add lifestyle events to this simulation
 
         """
+        df = self.sim.population.props
         event = RTIEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         event = RTILoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Register this disease module with the health system
         self.sim.modules["HealthSystem"].register_disease_module(self)
+        for person_id_infected in df.index[df.rt_road_traffic_inc]:
+            symptom_string_for_this_person = 'em_severe_trauma'
+
+            if symptom_string_for_this_person != 'none':
+                self.sim.modules['SymptomManager'].change_symptom(
+                    person_id=person_id_infected,
+                    symptom_string=symptom_string_for_this_person,
+                    add_or_remove='+',
+                    disease_module=self,
+                    duration_in_days=20
+                )
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
         df.at[child_id, 'rt_road_traffic_inc'] = False
         df.at[child_id, 'rt_injseverity'] = "none"  # default: no one has been injured in a RTI
-        df.at[child_id, 'rt_imm_death'] = False  # default: no one is dead on scene of crash
         df.at[child_id, 'rt_injury_1'] = "none"
         df.at[child_id, 'rt_injury_2'] = "none"
         df.at[child_id, 'rt_injury_3'] = "none"
@@ -1298,6 +1313,9 @@ class RTI(Module):
         df.at[child_id, 'rt_injury_7'] = "none"
         df.at[child_id, 'rt_injury_8'] = "none"
         df.at[child_id, 'rt_polytrauma'] = False
+        df.at[child_id, 'rt_ISS_score'] = 0
+        df.at[child_id, 'rt_imm_death'] = False
+        df.at[child_id, 'rt_perm_disability'] = False
         df.at[child_id, 'rt_med_int'] = False  # default: no one has a had medical intervention
         df.at[child_id, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
         df.at[child_id, 'rt_post_med_death'] = False  # default: no death after medical intervention
@@ -1507,13 +1525,16 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         mortality, description = injrandomizer(len(selected_for_rti_inj))
         description = description.replace('nan', 'none')
         description = description.set_index(selected_for_rti_inj.index)
-
+        mortality = mortality.set_index(selected_for_rti_inj.index)
         selected_for_rti_inj = selected_for_rti_inj.join(mortality.set_index(selected_for_rti_inj.index))
 
         selected_for_rti_inj = selected_for_rti_inj.join(description.set_index(selected_for_rti_inj.index))
+        for person_id in selected_for_rti_inj.index:
+            df.loc[person_id, 'rt_ISS_score'] = mortality.loc[person_id, 'ISS']
 
         for ninjuries in range(0, len(description.columns)):
             for person_id in selected_for_rti_inj.index:
+
                 if ninjuries == 0:
                     df.loc[person_id, 'rt_injury_1'] = description.loc[person_id, 'Injury 1']
                 if ninjuries == 1:
@@ -1530,7 +1551,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
                     df.loc[person_id, 'rt_injury_7'] = description.loc[person_id, 'Injury 7']
                 if ninjuries == 7:
                     df.loc[person_id, 'rt_injury_8'] = description.loc[person_id, 'Injury 8']
-        # ============================ Injury severity classification============================================
+        # ============================ Injury severity classification ============================================
 
         # ============================== Non specific injury updates ===============================================
         # Find those with mild injuries and update the rt_roadtrafficinj property so they have a mild injury
@@ -1855,7 +1876,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
     found at a level 1+ facility depending on the nature of the injury
 
     """
-
+    # Wound treatment requires cleaning with cetrimide 15% + chorhexidine solution 15%, suture wound
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1883,69 +1904,65 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         surgery_counts = 0
         xray_counts = 0
         # print(persons_injuries)
+
+        def find_and_count_injuries(dataframe, tloinjcodes):
+            index = pd.Index([])
+            counts = 0
+            for code in tloinjcodes:
+                inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(), axis=1)
+                if len(inj) > 0:
+                    injidx = inj.index[inj]
+                    counts += len(injidx)
+                    index = index.union(injidx)
+            return index, counts
+
         # --------------------- For fractures, sometimes requiring surgery ---------------------------------------------
         # ------------------------------- Skull fractures -------------------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('112').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('113').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        idx = idx1.union(idx2)
+        codes = ['112', '113']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+
         if len(idx) > 0:
             the_appt_footprint['DiagRadio'] = 1
             xray_counts += 1
         # -------------------------------- Facial fractures -----------------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('211').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('212').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        idx = idx1.union(idx2)
+        codes = ['211', '212']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['DiagRadio'] = 1
             xray_counts += 1
         # --------------------------------- Thorax fractures ----------------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('412').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('414').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        idx = idx1.union(idx2)
+        codes = ['412', '414']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['DiagRadio'] = 1
             xray_counts += 1
         # --------------------------------- Vertebrae fractures -------------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('612').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        if len(idx1) > 0:
+        codes = ['612']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
             the_appt_footprint['DiagRadio'] = 1
             xray_counts += 1
         # --------------------------------- Upper extremity fractures --------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('712').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        if len(idx1) > 0:
+        codes = ['712']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
             the_appt_footprint['DiagRadio'] = 1
             xray_counts += 1
         # --------------------------------- Lower extremity fractures --------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('811').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('812').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('813').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        idx = idx1.union(idx2).union(idx3)
+        codes = ['811', '812', '813']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        idx1, counts = find_and_count_injuries(persons_injuries, codes[2])
+
         if len(idx) > 0:
             the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
             xray_counts += 1
-        if len(idx3) > 0:
+        if len(idx1) > 0:
             the_appt_footprint['MajorSurg'] = 1
             surgery_counts += 1
 
         # ------------------------------ Traumatic brain injury requirements ------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        idx = idx1.union(idx2).union(idx3)
+        codes = ['133', '134', '135']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         require_surgery = self.module.rng.random_sample(size=1)
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
@@ -1954,29 +1971,17 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
                 the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
                 surgery_counts += 1
         # ------------------------------ Abdominal organ injury requirements ------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('552').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('553').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('554').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        idx = idx1.union(idx2).union(idx3)
+        codes = ['552', '553', '554']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         require_surgery = self.module.rng.random_sample(size=1)
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             if require_surgery < self.prob_exploratory_laparotomy:
                 the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
                 surgery_counts += 1
-        # -------------------------------- Spinal cord injury requirements -------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('674').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('675').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('676').any(), axis=1)
-        idx4 = inj4.index[inj4]
-        idx = idx1.union(idx2).union(idx3).union(idx4)
+        # -------------------------------- Spinal cord injury requirements --------------------------------------------
+        codes = ['673', '674', '675', '676']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
@@ -1985,16 +1990,9 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             xray_counts += 1
             surgery_counts += 1
 
-        # --------------------------------- Dislocations ------------------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('322').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('323').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('722').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('822').any(), axis=1)
-        idx4 = inj4.index[inj4]
-        idx = idx1.union(idx2).union(idx3).union(idx4)
+        # --------------------------------- Dislocations --------------------------------------------------------------
+        codes = ['322', '323', '722', '822']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
             the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
@@ -2002,24 +2000,16 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             surgery_counts += 1
 
         # --------------------------------- Soft tissue injury in neck -------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('342').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('343').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        idx = idx1.union(idx2)
+        codes = ['342', '343']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
             surgery_counts += 1
 
         # --------------------------------- Soft tissue injury in thorax/ lung injury ----------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('441').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('443').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('453').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        idx = idx1.union(idx2).union(idx3)
+        codes = ['441', '443', '453']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
@@ -2028,15 +2018,8 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             surgery_counts += 1
 
         # -------------------------------- Internal bleeding -----------------------------------------------------------
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('361').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('363').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('461').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('463').any(), axis=1)
-        idx4 = inj4.index[inj4]
-        idx = idx1.union(idx2).union(idx3).union(idx4)
+        codes = ['361', '363', '461', '463']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
@@ -2044,6 +2027,11 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
 
         # ------------------------------------- Amputations ------------------------------------------------------------
         # Define the facilities at which this event can occur (only one is allowed)
+        codes = ['782', '783', '882', '883', '884']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['MajorSurg'] = 1
+            surgery_counts += 1
 
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
@@ -2130,7 +2118,6 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
         if df.loc[person_id, 'rt_injseverity'] == 'mild':
             if randfordeath < self.prob_death_with_med_mild:
                 df.loc[person_id, 'rt_post_med_death'] = True
-                print('death from mild')
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
                                                                       cause='death_with_med'), self.sim.date)
                 # Log the death
@@ -2142,7 +2129,6 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
         if df.loc[person_id, 'rt_injseverity'] == 'severe':
             if randfordeath < self.prob_death_with_med_severe:
                 df.loc[person_id, 'rt_post_med_death'] = True
-                print('death from severe')
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
                                                                       cause='death_with_med'), self.sim.date)
                 # Log the death
@@ -2270,6 +2256,7 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.soughtmedcare = 0
         self.deathaftermed = 0
         self.permdis = 0
+        self.ISSscore = []
 
     def apply(self, population):
         # Make some summary statitics
@@ -2286,8 +2273,6 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.soughtmedcare += n_sought_care
         n_death_post_med = (df.is_alive & df.rt_post_med_death).sum()
         self.deathaftermed += n_death_post_med
-
-        # n_head_injuries = (df.is_alive & df.rt_tbi).sum()
 
         def find_and_count_injuries(dataframe, tloinjcodes):
             index = pd.Index([])
@@ -2397,13 +2382,19 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if 'severe' in severity:
             idx = np.where(severity == 'severe')
             self.totsevere += severitycount[idx]
+        # ==================================== Incidence ==============================================================
+        incidence = n_in_RTI / len(df.is_alive)
 
+        ISSlist = thoseininjuries['rt_ISS_score'].tolist()
+        ISSlist = list(filter(lambda num: num != 0, ISSlist))
+        self.ISSscore += ISSlist
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
-            'number not injured': n_not_injured,
-            'number alive': n_alive,
+            'incidence of rti': incidence,
+            # 'number not injured': n_not_injured,
+            # 'number alive': n_alive,
             'number immediate deaths': n_immediate_death,
-            'number deaths post med': n_death_post_med,
+            # 'number deaths post med': n_death_post_med,
             # 'number head injuries': n_head_injuries,
             'number permanently disabled': n_perm_disabled,
             'total injuries': totalinj,
@@ -2416,32 +2407,35 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
             # 'proportion spinal cord injury': spinalcordinjurycounts / totalinj,
             # 'proportion amputations': amputationcounts / totalinj,
             # 'proportion external lacerations': externallacerationcounts / totalinj
-            'number of fractures': fraccounts,
-            'number of dislocations': dislocationcounts,
-            'number of tbi': tbicounts,
-            'number of soft tissue injuries': softtissueinjcounts,
-            'number of organ injuries': organinjurycounts,
-            'number of internal bleeding': internalbleedingcounts,
-            'number of spinal cord injury': spinalcordinjurycounts,
-            'number of amputations': amputationcounts,
-            'number of eye injuries': eyecounts,
-            'number of external lacerations': externallacerationcounts
+            # 'number of fractures': fraccounts,
+            # 'number of dislocations': dislocationcounts,
+            # 'number of tbi': tbicounts,
+            # 'number of soft tissue injuries': softtissueinjcounts,
+            # 'number of organ injuries': organinjurycounts,
+            # 'number of internal bleeding': internalbleedingcounts,
+            # 'number of spinal cord injury': spinalcordinjurycounts,
+            # 'number of amputations': amputationcounts,
+            # 'number of eye injuries': eyecounts,
+            # 'number of external lacerations': externallacerationcounts,
+            'ISS scores': ISSlist,
 
         }
         # -------------------------------------- Stored outputs -------------------------------------------------------
         injcategories = [self.totfracnumber, self.totdisnumber, self.tottbi, self.totsoft, self.totintorg,
                          self.totintbled, self.totsci, self.totamp, self.toteye, self.totextlac]
-        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injcategories.txt', injcategories,
-                   delimiter=',')
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injcategories.txt',
+                   injcategories)
         injlocs = [self.totAIS1, self.totAIS2, self.totAIS3, self.totAIS4, self.totAIS5, self.totAIS6, self.totAIS7,
                    self.totAIS8]
-        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injlocs.txt', injlocs)
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injlocs.txt', injlocs)
         injseverity = [self.totmild, self.totsevere]
-        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injsev.txt', injseverity)
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injsev.txt', injseverity)
         numberinjdist = [self.tot1inj, self.tot2inj, self.tot3inj, self.tot4inj, self.tot5inj, self.tot6inj,
                          self.tot7inj, self.tot8inj]
-        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Injnumber.txt', numberinjdist)
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injnumber.txt',
+                   numberinjdist)
         rtiflow = [self.totinjured, self.deathonscene, self.soughtmedcare, self.deathaftermed, n_perm_disabled]
-        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIflow.txt', rtiflow)
-
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIflow.txt', rtiflow)
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/ISSscores.txt',
+                   self.ISSscore)
         logger.info('%s|summary_1m|%s', self.sim.date, dict_to_output)

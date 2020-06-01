@@ -1,7 +1,6 @@
-import datetime
 from pathlib import Path
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     chronicsyndrome,
@@ -14,39 +13,29 @@ from tlo.methods import (
     healthsystem,
     mockitis,
     symptommanager,
-    labour,
-    pregnancy_supervisor,
     rti
 )
+import os
 
-# [NB. Working directory must be set to the root of TLO: TLOmodel/]
-
-# Where will output go
-outputpath = Path('./outputs')
-
-# date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
-# The resource files
+# The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 
+# Establish the simulation object
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=2010, month=12, day=31)
 popsize = 2000
 
-# Establish the simulation object
 sim = Simulation(start_date=start_date)
-logfile = sim.configure_logging('LogFile')
-
-# ----- Control over the types of intervention that can occur -----
-# Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
-# '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
+logfile = sim.configure_logging(filename="LogFile")
+# if os.path.exists(logfile):
+#     os.remove(logfile)
+# Make all services available:
 service_availability = ['*']
-# -----------------------------------------------------------------
+logging.getLogger('tlo.methods.RTI').setLevel(logging.DEBUG)
 
-# Register the appropriate modules
+# Register the appropriate 'core' modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
@@ -54,19 +43,25 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        capabilities_coefficient=1.0,
                                        ignore_cons_constraints=False,
                                        disable=False))
+# (NB. will run much faster with disable=True in the declaration of the HealthSystem)
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-sim.register(mockitis.Mockitis())
-# sim.register(chronicsyndrome.ChronicSyndrome())
+
+# Register disease modules of interest:
 sim.register(rti.RTI(resourcefilepath=resourcefilepath))
-# Run the simulation and flush the logger
+
+# custom_levels = {
+#     # '*': logging.CRITICAL,  # disable logging for all modules
+#     'tlo.methods.RTI': logging.INFO,  # enable logging at INFO level
+#     'tlo.methods.RTI': logging.DEBUG
+#                   }
+
+# Run the simulation
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# %% read the results
+# Read the results
 output = parse_log_file(logfile)

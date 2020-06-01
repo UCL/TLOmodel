@@ -15,6 +15,8 @@ from tlo.methods import (
     epilepsy,
     healthburden,
     healthsystem,
+    labour,
+    pregnancy_supervisor
 )
 
 # Where will outputs go
@@ -57,8 +59,8 @@ sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(epilepsy.Epilepsy(resourcefilepath=resourcefilepath))
-
-
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 # Run the simulation and flush the logger
 # sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
