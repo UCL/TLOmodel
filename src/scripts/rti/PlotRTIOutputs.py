@@ -20,11 +20,11 @@ sankey = Sankey(ax=ax,
                 format='%d')
 
 sankey.add(flows=[sum(data), -data[0], -data[1], -data[2], -data[3], -data[4],
-                  - data[5], -data[6], -data[7], -data[8], -data[9]],
+                  - data[5], -data[6], -data[7], -data[8], -data[9], - data[10]],
            labels=['Number of injuries', 'Fractures', 'Dislocations', 'TBI', 'Soft tiss', 'Int. org', 'Int. bleed',
-                   'SCI', 'Amputation', 'Eye injury', 'Skin wounds'],
-           orientations=[0, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1],  # arrow directions
-           pathlengths=[0.1, 0.5, 0.8, 0.5, 0.5, 0.8, 0.8, 0.5, 0.4, 0.8, 0.5],
+                   'SCI', 'Amputation', 'Eye injury', 'Skin wounds', 'Burns'],
+           orientations=[0, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1],  # arrow directions
+           pathlengths=[0.1, 0.5, 0.8, 0.5, 0.5, 0.8, 0.8, 0.5, 0.4, 0.8, 0.5, 0.8],
            trunklength=2,
            edgecolor='#027368',
            facecolor='#027368')

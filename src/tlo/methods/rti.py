@@ -119,286 +119,245 @@ def injrandomizer(number):
                     # Spinal cord injury - 7
                     # Amputation - 8
                     # Eye injury - 9
-                    # Cuts etc - 10
+                    # Cuts etc (minor wounds) - 10
+                    # Burns - 11
 
                     if injlocs == 1:
-                        # stringinjlocs.append('1 ')
-
-                        if cat <= 0.291:
+                        if cat <= 0.14:
+                            # Open wound
+                            injcat.append(int(10))
+                            injais.append(1)
+                        elif 0.14 < cat <= 0.185:
+                            # Burn
+                            injcat.append(int(11))
+                            injais.append(4)
+                        elif 0.185 < cat <= 0.38:
+                            # Skull fractures
                             injcat.append(int(1))
-                            if cat <= 0.91 * 0.291:
+                            if cat <= 0.36:
                                 injais.append(2)
-                                # Unspecified skull fracture
-                                # print('skull frac')
                             else:
                                 injais.append(3)
-
-                                # Basal skull fracture
-                                # print('skull frac')
-
-                        elif 0.291 < cat:
+                        elif 0.38 < cat:
                             injcat.append(int(3))
                             # Traumatic brain injuries
-                            if cat <= 0.291 + 0.65 * (1 - 0.291):
+                            if cat <= 0.79:
                                 # Mild TBI
                                 injais.append(3)
-
-                                # print('mild tbi')
-
-                            elif 0.291 + 0.65 * (1 - 0.291) < cat <= 0.291 + (0.65 + 0.25) * (1 - 0.291):
+                            elif 0.79 < cat <= 0.98:
                                 # Moderate TBI
                                 injais.append(4)
-
-                                # print('mod tbi')
-
                             else:
                                 # Severe TBI
                                 injais.append(5)
-
-                                # print('Sev tbi')
                     if injlocs == 2:
-                        # stringinjlocs.append('2 ')
-                        if cat <= 0.47:
+                        if cat <= 0.105:
+                            # Open wound
+                            injcat.append(int(10))
+                            injais.append(1)
+                        elif 0.105 < cat <= 0.13:
+                            # Burn
+                            injcat.append(int(11))
+                            injais.append(4)
+                        elif 0.13 < cat <= 0.54:
                             injcat.append(int(1))
-                            if cat <= 0.47 * 0.35:
+                            if cat <= 0.27:
                                 # Nasal and unspecified fractures of the face
                                 injais.append(1)
-
-                                # print('Face frac 1')
                             else:
                                 # Mandible and Zygomatic fractures
                                 injais.append(2)
-
-                                # print('Fce frac 1')
-                        elif 0.47 < cat <= 0.995:
-                            # Skin and soft tissue injury
-                            injcat.append(int(10))
+                        elif 0.54 < cat < 0.996:
+                            # soft tissue injury
+                            injcat.append(4)
                             injais.append(1)
-
                         else:
+                            # eye injury
                             injcat.append(int(9))
                             injais.append(1)
-
-                            # print('eye inj')
                     if injlocs == 3:
-                        # stringinjlocs.append('3 ')
-                        if cat <= 0.01:
+                        if cat <= 0.08:
+                            # Burn
+                            injcat.append(int(11))
+                            injais.append(3)
+                        elif 0.08 < cat <= 0.12:
+                            # Open wound
+                            injcat.append(int(10))
+                            injais.append(1)
+                        elif 0.012 < cat <= 0.0129:
                             injcat.append(int(4))
                             # Soft tissue injuries of the neck
-                            if cat <= 0.005:
+                            if cat <= 0.01245:
                                 # Vertebral artery laceration
                                 injais.append(2)
-
-                                # print('soft tissue neck 1')
                             else:
                                 # Pharynx contusion
                                 injais.append(3)
-
-                                # print('soft tissue neck 2')
-
-                        elif 0.01 < cat <= 0.99:
+                        elif 0.0129 < cat <= 0.991:
                             # Internal bleeding
                             injcat.append(int(6))
-                            if cat < 0.55 * 0.99:
+                            if cat < 0.6031:
                                 # Sternomastoid m. hemorrhage,
                                 # Hemorrhage, supraclavicular triangle
                                 # Hemorrhage, posterior triangle
                                 # Anterior vertebral vessel hemorrhage
                                 # Neck muscle hemorrhage
                                 injais.append(1)
-
-                                # print('neck internal bleeding 1')
                             else:
                                 # Hematoma in carotid sheath
                                 # Carotid sheath hemorrhage
                                 injais.append(3)
-
-                                # print('neck intern bleed 2')
                         else:
                             # Dislocation
                             injcat.append(int(2))
-                            if cat < 0.99666:
+                            if cat < 0.994:
                                 # Atlanto-axial subluxation
                                 injais.append(3)
-
-                                # print('disloc neck 1')
                             else:
                                 # Atlanto-occipital subluxation
                                 injais.append(2)
-
-                                # print('disloc neck 2')
                     if injlocs == 4:
-                        # stringinjlocs.append('4 ')
-                        if cat <= 0.4:
+                        if cat <= 0.26:
+                            # Open wound
+                            injcat.append(int(10))
+                            injais.append(1)
+                        elif 0.26 < cat <= 0.51:
+                            # Burn
+                            injcat.append(int(11))
+                            injais.append(3)
+                        elif 0.51 < cat <= 0.71:
                             # Internal Bleeding
                             injcat.append(int(6))
-                            if cat <= 0.2:
+                            if cat <= 0.61:
                                 # Chest wall bruises/haematoma
                                 injais.append(1)
-
-                                # print('thor intern bled 1')
                             else:
                                 # Haemothorax
                                 injais.append(3)
-
-                                # print('thor intern bled 2')
-                        elif 0.4 < cat <= 0.54:
+                        elif 0.71 < cat <= 0.78:
                             # Internal organ injury
                             injcat.append(int(5))
                             # Lung contusion and Diaphragm rupture
                             injais.append(3)
-
-                            # print('thor internal organ')
-                        elif 0.54 < cat <= 0.65:
+                        elif 0.78 < cat <= 0.83:
                             # Fractures to ribs and flail chest
                             injcat.append(int(1))
-                            if 0.54 < cat <= 0.54 + 0.8 * 0.11:
+                            if 0.78 < cat <= 0.82:
                                 # fracture to rib(s)
                                 injais.append(2)
-
                             else:
                                 # flail chest
                                 injais.append(4)
-
                         else:
                             injcat.append(int(4))
-                            if 0.65 < cat <= 0.65 + 0.54 * 0.35:
+                            if 0.83 < cat <= 0.92:
                                 # Chest wall lacerations/avulsions
                                 injais.append(1)
-
-                            elif 0.65 + 0.54 * 0.35 < cat <= 0.65 + (0.54 + 0.34) * 0.35:
+                            elif 0.92 < cat <= 0.97:
                                 # Open/closed pneumothorax
                                 injais.append(3)
-
                             else:
                                 # surgical emphysema
                                 injais.append(2)
-
                     if injlocs == 5:
-                        # stringinjlocs.append('5 ')
-                        # Internal organ injuries
-                        injcat.append(int(5))
-                        if cat <= 0.056:
-                            # Intestines, Stomach and colon injury
-                            injais.append(2)
-
-                            # print('abd int 1')
-                        elif 0.056 < cat <= 0.056 + 0.91:
-                            # Spleen, bladder, liver, urethra and diaphragm injury
+                        if cat <= 0.06:
+                            # Open wound
+                            injcat.append(int(10))
+                            injais.append(1)
+                        elif 0.06 < cat <= 0.11:
+                            # Burn
+                            injcat.append(int(11))
                             injais.append(3)
-
-                            # print('abd int 2')
                         else:
-                            # Kidney injury
-                            injais.append(4)
-
-                            # print('abd int 3')
+                            # Internal organ injuries
+                            injcat.append(int(5))
+                            if 0.11 < cat <= 0.16:
+                                # Intestines, Stomach and colon injury
+                                injais.append(2)
+                            elif 0.16 < cat <= 0.97:
+                                # Spleen, bladder, liver, urethra and diaphragm injury
+                                injais.append(3)
+                            elif cat > 0.97:
+                                # Kidney injury
+                                injais.append(4)
                     if injlocs == 6:
-                        # stringinjlocs.append('6 ')
                         if cat <= 0.364:
                             # Fracture to vertebrae
                             injcat.append(int(1))
                             injais.append(2)
-
-                            # print('Spine frac')
                         else:
                             # Spinal cord injury
                             injcat.append(int(7))
-                            if 0.364 < cat <= 0.364 + 0.09 * (1 - 0.364):
+                            if 0.364 < cat <= 0.42:
                                 injais.append(3)
-
-                                # print('scl1')
-                            elif 0.364 + 0.09 * (1 - 0.364) < cat < 0.364 + (0.09 + 0.31) * (1 - 0.364):
+                            elif 0.42 < cat < 0.62:
                                 injais.append(4)
-
-                                # print('scl2')
-                            elif 0.364 + (0.09 + 0.31) * (1 - 0.364) < cat < 0.364 + (0.09 + 0.31 + 0.55) * (1 - 0.364):
+                            elif 0.62 < cat < 0.97:
                                 injais.append(5)
-
-                                # print('scl3')
                             else:
                                 injais.append(6)
-
-                                # print('scl4')
                     if injlocs == 7:
-                        # stringinjlocs.append('7 ')
-                        if cat <= 0.943 / 2:
+                        if cat <= 0.24:
+                            # Open wound
                             injcat.append(int(10))
                             injais.append(1)
-                        elif 0.943 / 2 < cat <= 0.943:
+                        elif 0.24 < cat <= 0.38:
+                            # Burn
+                            injcat.append(int(11))
+                            injais.append(3)
+                        elif 0.38 < cat <= 0.966:
                             # Fracture to arm
                             injcat.append(int(1))
                             injais.append(2)
-
-                            # print('uxfrac1')
-                        elif 0.943 < cat <= 0.943 + 0.002:
+                        elif 0.966 < cat <= 0.968:
                             # Dislocation to arm
                             injcat.append(int(2))
                             injais.append(2)
-
-                            # print('uxdis')
-                        elif 0.943 + 0.002 < cat <= 0.943 + 0.002 + 0.051:
+                        elif 0.968 < cat <= 0.998:
                             # Amputation to finger/thumb/unilateral arm
                             injcat.append(int(8))
                             injais.append(2)
-
-                            # print('uxamp1')
                         else:
                             # Amputation, arm, bilateral
                             injcat.append(int(8))
                             injais.append(3)
-
-                            # print('uxamp2')
                     if injlocs == 8:
-
-                        if cat <= 0.006:
-                            # Bilateral amputation, leg
-                            # print('lx bilat')
-                            injcat.append(int(8))
-                            injais.append(4)
-
-                        elif 0.006 < cat <= 0.082:
-                            # Unilateral amputation, leg
-                            injcat.append(int(8))
-                            injais.append(3)
-
-                            # print('lx unlat')
-                        elif 0.082 < cat <= 0.157:
-                            # Amputation of toe
-                            injcat.append(int(8))
-                            injais.append(2)
-
-                            # print('lx toe')
-                        elif 0.157 < cat <= 0.198 / 2:
-                            # Fracture of foot/toes
-                            injcat.append(int(1))
-                            injais.append(1)
-
-                            # print('lx foot frac')
-                        elif 0.198 / 2 < cat <= 0.813 / 2:
-                            # Fracture of tibia, fibula, patella
-                            # print('lx lower leg ')
-                            injcat.append(int(1))
-                            injais.append(2)
-
-                        elif 0.813 / 2 < cat <= 0.978 / 2:
-                            # Fracture of femur
-                            # print('lx femur')
-                            injcat.append(int(1))
-                            injais.append(3)
-
-                        elif 0.978 / 2 < cat <= 0.995:
+                        if cat <= 0.1:
+                            # Open wound
                             injcat.append(int(10))
                             injais.append(1)
-
-                        elif 0.995 < cat:
-                            # Dislocation
-                            # print('lx dis')
+                        elif 0.1 < cat <= 0.15:
+                            # Burn
+                            injcat.append(int(11))
+                            injais.append(3)
+                        elif 0.15 < cat <= 0.85:
+                            # Fractures
+                            injcat.append(int(1))
+                            if 0.15 < cat < 0.185:
+                                # Foot fracture
+                                injais.append(1)
+                            elif 0.185 < cat <= 0.71:
+                                # Lower leg fracture
+                                injais.append(2)
+                            elif 0.71 < cat <= 0.85:
+                                # Upper leg fracture
+                                injais.append(3)
+                        elif 0.85 < cat <= 0.869:
+                            # dislocation of hip or knee
                             injcat.append(int(2))
                             injais.append(2)
-
-                    # The injury is then assigned an AIS severity ranking based on the possible range of AIS severity
-                    # scored for that body region, currently this is random, but could be informed by a distribution
+                        elif 0.869 < cat:
+                            # Amputations
+                            injcat.append(int(8))
+                            if 0.869 < cat <= 0.874:
+                                # Bilateral limb amputation
+                                injais.append(4)
+                            elif 0.874 < cat <= 0.943:
+                                # Unilateral limb amputation
+                                injais.append(3)
+                            else:
+                                # Toe/toes amputation
+                                injais.append(2)
                     break
 
         # Create a dataframe that stores the injury location and severity for each person, the point of this
@@ -853,53 +812,61 @@ class RTI(Module):
                                    categories=['none', 'mild', 'severe'],
                                    ),
         'rt_injury_1': Property(Types.CATEGORICAL, 'Codes for injury 1 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_injury_2': Property(Types.CATEGORICAL, 'Codes for injury 2 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_injury_3': Property(Types.CATEGORICAL, 'Codes for injury 3 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_injury_4': Property(Types.CATEGORICAL, 'Codes for injury 4 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_injury_5': Property(Types.CATEGORICAL, 'Codes for injury 5 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_injury_6': Property(Types.CATEGORICAL, 'Codes for injury 6 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_injury_7': Property(Types.CATEGORICAL, 'Codes for injury 7 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_injury_8': Property(Types.CATEGORICAL, 'Codes for injury 8 from RTI',
-                                categories=['none', '112', '113', '133', '134', '135', '211', '212', '2101', '291',
-                                            '342', '343', '361', '363', '322', '323', '412', '414', '461', '463',
-                                            '453', '441', '442', '443', '552', '553', '554', '612', '673', '674',
-                                            '675', '676', '712', '722', '782', '783', '7101', '811', '812', '813',
-                                            '822', '882', '883', '884', '8101']),
+                                categories=['none', '112', '113', '133', '134', '135', '1101', '1114', '211', '212',
+                                            '241', '2101', '2114', '291', '342', '343', '361', '363', '322', '323',
+                                            '3101', '3113', '412', '414', '461', '463', '453', '441', '442', '443',
+                                            '4101', '4113', '552', '553', '554', '5101', '5113', '612', '673', '674',
+                                            '675', '676', '712', '722', '782', '783', '7101', '7113', '811', '812',
+                                            '813', '822', '882', '883', '884', '8101', '8113']),
         'rt_ISS_score': Property(Types.INT, 'The ISS score associated with the injuries resulting from a road traffic'
                                             'accident'),
         'rt_perm_disability': Property(Types.BOOL, 'whether the injuries from an RTI result in permanent disability'),
@@ -1172,6 +1139,18 @@ class RTI(Module):
             self.parameters["daly_wt_bilateral_lower_limb_amputation_without_treatment"] = self.sim.modules[
                 "HealthBurden"].get_daly_weight(
                 sequlae_code=1735
+            )
+            self.parameters["daly_wt_burns_greater_than_20_percent_body_area"] = self.sim.modules[
+                "HealthBurden"].get_daly_weight(
+                sequlae_code=1736
+            )
+            self.parameters["daly_wt_burns_less_than_20_percent_body_area_with_treatment"] = self.sim.modules[
+                "HealthBurden"].get_daly_weight(
+                sequlae_code=1737
+            )
+            self.parameters["daly_wt_burns_less_than_20_percent_body_area_without_treatment"] = self.sim.modules[
+                "HealthBurden"].get_daly_weight(
+                sequlae_code=1738
             )
 
     # Declare the non-generic symptoms that this module will use.
@@ -1451,6 +1430,11 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             'daly_wt_bilateral_lower_limb_amputation_with_treatment']
         self.daly_wt_bilateral_lower_limb_amputation_without_treatment = p[
             'daly_wt_bilateral_lower_limb_amputation_without_treatment']
+        self.daly_wt_burns_greater_than_20_percent_body_area = p['daly_wt_burns_greater_than_20_percent_body_area']
+        self.daly_wt_burns_less_than_20_percent_body_area_with_treatment = p[
+            'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
+        self.daly_wt_burns_less_than_20_percent_body_area_without_treatment = p[
+            'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -1551,6 +1535,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
                     df.loc[person_id, 'rt_injury_7'] = description.loc[person_id, 'Injury 7']
                 if ninjuries == 7:
                     df.loc[person_id, 'rt_injury_8'] = description.loc[person_id, 'Injury 8']
+
         # ============================ Injury severity classification ============================================
 
         # ============================== Non specific injury updates ===============================================
@@ -1601,6 +1586,15 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             idx3 = inj3.index[inj3]
             df.loc[idx3, 'rt_disability'] += self.daly_wt_diffuse_axonal_injury
 
+        inj4 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('1101').any(), axis=1)
+        if len(inj4) > 0:
+            idx4 = inj4.index[inj4]
+            df.loc[idx4, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('1114').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_burns_greater_than_20_percent_body_area
+
         # =============================== AIS region 2: face ==========================================================
         # ----------------------- Find those with facial fractures and assign DALY weight -----------------------------
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('211').any(), axis=1)
@@ -1625,6 +1619,15 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             idx = inj1.index[inj1]
             df.loc[idx, 'rt_disability'] += self.daly_wt_eye_injury
 
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('2101').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('2114').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_burns_greater_than_20_percent_body_area
         # =============================== AIS region 3: Neck ==========================================================
         # -------------------------- soft tissue injuries and internal bleeding----------------------------------------
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('342').any(), axis=1)
@@ -1649,6 +1652,15 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             idx2 = inj2.index[inj2]
             idx = idx1.union(idx2)
             df.loc[idx, 'rt_disability'] += self.daly_wt_neck_dislocation
+
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('3101').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('3113').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
 
         # ================================== AIS region 4: Thorax =====================================================
         # --------------------------------- fractures & flail chest ---------------------------------------------------
@@ -1698,6 +1710,14 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             idx = inj1.index[inj1]
             df.loc[idx, 'rt_disability'] += self.daly_wt_open_pneumothorax
 
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('4101').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('4113').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
         # ================================== AIS region 5: Abdomen ====================================================
         # Intestine, stomache and colon
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('552').any(), axis=1)
@@ -1713,7 +1733,14 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             idx = idx1.union(idx2)
             idx = idx.union(idx3)
             df.loc[idx, 'rt_disability'] += self.daly_wt_abd_internal_organ_injury
-
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('5101').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('5113').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
         # =================================== AIS region 6: spine =====================================================
         # ----------------------------------- vertebrae fracture ------------------------------------------------------
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('612').any(), axis=1)
@@ -1790,7 +1817,10 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         if len(inj1) > 0:
             idx = inj1.index[inj1]
             df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
-
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('7113').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
         # ============================== AIS body region 8: Lower extremities ========================================
         # ------------------------------------------ Fractures -------------------------------------------------------
         # Broken foot
@@ -1847,6 +1877,11 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
             idx = inj1.index[inj1]
             df.loc[idx, 'rt_disability'] += self.daly_wt_facial_soft_tissue_injury
 
+        inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('8113').any(), axis=1)
+        if len(inj1) > 0:
+            idx1 = inj1.index[inj1]
+            df.loc[idx1, 'rt_disability'] += self.daly_wt_burns_less_than_20_percent_body_area_without_treatment
+
         DALYweightoverlimit = df.index[df['rt_disability'] > 1]
         df.loc[DALYweightoverlimit, 'rt_disability'] = 1
 
@@ -1897,7 +1932,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         #   - update to reflect the appointments that are required
         # ------------------------------------ Generic ----------------------------------------------------------------
         the_appt_footprint['AccidentsandEmerg'] = 1
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
         persons_injuries = df.loc[[person_id], columns]
@@ -2032,6 +2066,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         if len(idx) > 0:
             the_appt_footprint['MajorSurg'] = 1
             surgery_counts += 1
+        # ------------------------------------- Minor wounds ----------------------------------------------------------
 
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
@@ -2241,6 +2276,7 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.totamp = 0
         self.toteye = 0
         self.totextlac = 0
+        self.totburns = 0
         self.totAIS1 = 0
         self.totAIS2 = 0
         self.totAIS3 = 0
@@ -2313,14 +2349,14 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         eightinjury = len(df_injuries.loc[df_injuries['rt_injury_8'] != 'none'])
         self.tot8inj += eightinjury
         # ====================================== AIS body regions =====================================================
-        AIS1codes = ['112', '113', '133', '134', '135']
-        AIS2codes = ['211', '212', '2101', '291']
-        AIS3codes = ['342', '343', '361', '363', '322', '323']
-        AIS4codes = ['412', '414', '461', '463', '453', '441', '442', '443']
-        AIS5codes = ['552', '553', '554']
+        AIS1codes = ['112', '113', '133', '134', '135', '1101', '1114']
+        AIS2codes = ['211', '212', '2101', '291', '241', '2114']
+        AIS3codes = ['342', '343', '361', '363', '322', '323', '3101', '3113']
+        AIS4codes = ['412', '414', '461', '463', '453', '441', '442', '443', '4101', '4114']
+        AIS5codes = ['552', '553', '554', '5101', '5114']
         AIS6codes = ['612', '673', '674', '675', '676']
-        AIS7codes = ['712', '722', '782', '783', '7101']
-        AIS8codes = ['811', '812', '813', '822', '882', '883', '884', '8101']
+        AIS7codes = ['712', '722', '782', '783', '7101', '7114']
+        AIS8codes = ['811', '812', '813', '822', '882', '883', '884', '8101', '8114']
         idx, AIS1counts = find_and_count_injuries(df_injuries, AIS1codes)
         self.totAIS1 += AIS1counts
         idx, AIS2counts = find_and_count_injuries(df_injuries, AIS2codes)
@@ -2348,7 +2384,7 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         allheadinjcodes = ['133', '134', '135']
         idx, tbicounts = find_and_count_injuries(df_injuries, allheadinjcodes)
         self.tottbi += tbicounts
-        softtissueinjcodes = ['342', '343', '441', '442', '443']
+        softtissueinjcodes = ['241','342', '343', '441', '442', '443']
         idx, softtissueinjcounts = find_and_count_injuries(df_injuries, softtissueinjcodes)
         self.totsoft += softtissueinjcounts
         organinjurycodes = ['453', '552', '553', '554']
@@ -2366,11 +2402,15 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         eyecodes = ['291']
         idx, eyecounts = find_and_count_injuries(df_injuries, eyecodes)
         self.toteye += eyecounts
-        externallacerationcodes = ['2101', '7101', '8101']
+        externallacerationcodes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
         idx, externallacerationcounts = find_and_count_injuries(df_injuries, externallacerationcodes)
         self.totextlac += externallacerationcounts
+        burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+        idx, burncounts = find_and_count_injuries(df_injuries, burncodes)
+        self.totburns += burncounts
         totalinj = fraccounts + dislocationcounts + tbicounts + softtissueinjcounts + organinjurycounts + \
-                   internalbleedingcounts + spinalcordinjurycounts + amputationcounts + externallacerationcounts
+                   internalbleedingcounts + spinalcordinjurycounts + amputationcounts + externallacerationcounts + \
+                    burncounts
 
         # ================================= Injury severity ===========================================================
         sev = df.loc[df.rt_road_traffic_inc]
@@ -2422,7 +2462,7 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         }
         # -------------------------------------- Stored outputs -------------------------------------------------------
         injcategories = [self.totfracnumber, self.totdisnumber, self.tottbi, self.totsoft, self.totintorg,
-                         self.totintbled, self.totsci, self.totamp, self.toteye, self.totextlac]
+                         self.totintbled, self.totsci, self.totamp, self.toteye, self.totextlac, self.totburns]
         np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injcategories.txt',
                    injcategories)
         injlocs = [self.totAIS1, self.totAIS2, self.totAIS3, self.totAIS4, self.totAIS5, self.totAIS6, self.totAIS7,
