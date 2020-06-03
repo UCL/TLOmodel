@@ -16,8 +16,6 @@ from sphinx.util.inspect import object_description
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 from tlo.core import Specifiable
 
-from __future__ import unicode_literals
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -188,28 +186,21 @@ def add_dicts_to_docstring(app, what, name, obj, options, lines):
         # tlo.methods.antenatal_care.CareOfWomenDuringPregnancy.parameters
         # tlo.methods.epilepsy.Epilepsy.PARAMETERS
         substrings = name.split(".")
-        #import pdb; pdb.set_trace()
         module = substrings[-2]   # e.g. "Epilepsy"
         attribute_name = substrings[-1]  # e.g. "PARAMETERS"
-        import pdb
+
         if lines is None:
             lines = []
-        #if (attribute_name == "PARAMETERS") or :  # and disease != "Module"):
+
         if attribute_name in ("PARAMETERS", "PROPERTIES"):
-            #lines += create_table(obj, planet_name)
-            #import pdb; pdb.set_trace()
-            lines += create_table(obj, module)
-            #pdb.set_trace()
-            #lines.append("create table placeholder")
+            lines += create_table(obj)
 
 
-def create_table(mydict, mymodule):
+def create_table(mydict):
     '''
     Dynamically create a table of arbitrary length
     from PROPERTIES and PARAMETERS dictionaries.
     `mydict` is the dictionary object.
-    `mymodule` is the name for diseases, etc.,
-      e.g. "Epilepsy", "Contraception".
     A key point here is that it splits a string with a
     delimiter, because that is what the __repr__() function
     returns for the parent class of
@@ -218,11 +209,9 @@ def create_table(mydict, mymodule):
     NB Do not change the positioning of items in the
     f-strings below, or things will break!
     '''
-    #if mymodule == "tb":
-    #    import pdb; pdb.set_trace()
 
     examplestr = f'''
-.. list-table::  Info for {mymodule}
+.. list-table::
    :widths: 25 25 50
    :header-rows: 1
 
@@ -237,7 +226,7 @@ def create_table(mydict, mymodule):
 '''
         examplestr += row
     else:
-        for key in mydict.keys():
+        for key in mydict:
             item = str(mydict[key])
             mytype, description = item.split(Specifiable.delimiter)
 
