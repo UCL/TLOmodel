@@ -24,6 +24,7 @@ class Logger:
     """
     TLO logging facade so that logging can be intercepted and customised
     """
+    HASH_LEN = 10
 
     def __init__(self, name: str, level=_logging.NOTSET):
         assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
@@ -112,17 +113,19 @@ class Logger:
         header = {}
         if key not in self.keys:
             # new log key, so create header json row
-            uuid = hashlib.md5(f"{self.name}+{key}".encode()).hexdigest()
-            self.keys[key] = uuid[:10]
+            uuid = hashlib.md5(f"{self.name}+{key}".encode()).hexdigest()[:Logger.HASH_LEN]
+            self.keys[key] = uuid
 
-            header = {"type": "header",
-                      "module": self.name,
-                      "key": key,
-                      "uuid": self.keys[key],
-                      "level": _logging.getLevelName(level),
-                      # using type().__name__ so both pandas and stdlib types can be used
-                      "columns": {key: type(value).__name__ for key, value in data.items()},
-                      "description": description}
+            header = {
+                "uuid": uuid,
+                "type": "header",
+                "module": self.name,
+                "key": key,
+                "level": _logging.getLevelName(level),
+                # using type().__name__ so both pandas and stdlib types can be used
+                "columns": {key: type(value).__name__ for key, value in data.items()},
+                "description": description
+            }
 
         uuid = self.keys[key]
 
