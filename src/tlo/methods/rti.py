@@ -16,7 +16,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 # ---------------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 # ================Put inj randomizer function here for now====================================
@@ -1911,6 +1911,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
     found at a level 1+ facility depending on the nature of the injury
 
     """
+
     # Wound treatment requires cleaning with cetrimide 15% + chorhexidine solution 15%, suture wound
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1937,6 +1938,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         persons_injuries = df.loc[[person_id], columns]
         surgery_counts = 0
         xray_counts = 0
+
         # print(persons_injuries)
 
         def find_and_count_injuries(dataframe, tloinjcodes):
@@ -2293,15 +2295,20 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.deathaftermed = 0
         self.permdis = 0
         self.ISSscore = []
+        self.numerator = 0
+        self.denominator = 0
+        self.fracdenominator = 0
 
     def apply(self, population):
         # Make some summary statitics
         df = population.props
         n_in_RTI = (df.rt_road_traffic_inc).sum()
+        self.numerator += n_in_RTI
         self.totinjured += n_in_RTI
         n_perm_disabled = (df.is_alive & df.rt_perm_disability).sum()
         # self.permdis += n_perm_disabled
         n_alive = df.is_alive.sum()
+        self.denominator += (n_alive - n_in_RTI) * (1 / 12)
         n_not_injured = (df.is_alive & ~df.rt_road_traffic_inc).sum()
         n_immediate_death = (df.rt_road_traffic_inc & df.rt_imm_death).sum()
         self.deathonscene += n_immediate_death
@@ -2378,13 +2385,14 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         allfraccodes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
         idx, fraccounts = find_and_count_injuries(df_injuries, allfraccodes)
         self.totfracnumber += fraccounts
+        self.fracdenominator += (n_alive - fraccounts) / 12
         dislocationcodes = ['322', '323', '722', '822']
         idx, dislocationcounts = find_and_count_injuries(df_injuries, dislocationcodes)
         self.totdisnumber += dislocationcounts
         allheadinjcodes = ['133', '134', '135']
         idx, tbicounts = find_and_count_injuries(df_injuries, allheadinjcodes)
         self.tottbi += tbicounts
-        softtissueinjcodes = ['241','342', '343', '441', '442', '443']
+        softtissueinjcodes = ['241', '342', '343', '441', '442', '443']
         idx, softtissueinjcounts = find_and_count_injuries(df_injuries, softtissueinjcodes)
         self.totsoft += softtissueinjcounts
         organinjurycodes = ['453', '552', '553', '554']
@@ -2410,7 +2418,7 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.totburns += burncounts
         totalinj = fraccounts + dislocationcounts + tbicounts + softtissueinjcounts + organinjurycounts + \
                    internalbleedingcounts + spinalcordinjurycounts + amputationcounts + externallacerationcounts + \
-                    burncounts
+                   burncounts
 
         # ================================= Injury severity ===========================================================
         sev = df.loc[df.rt_road_traffic_inc]
@@ -2424,20 +2432,31 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
             self.totsevere += severitycount[idx]
         # ==================================== Incidence ==============================================================
         incidence = n_in_RTI / len(df.is_alive)
-
+        maleinrti = len(df.loc[df.rt_road_traffic_inc & (df['sex'] == 'M')])
+        femaleinrti = len(df.loc[df.rt_road_traffic_inc & (df['sex'] == 'F')])
+        divider = max(maleinrti, femaleinrti)
+        if divider > 0:
+            maleinrti = maleinrti / divider
+            femaleinrti = femaleinrti / divider
+        else:
+            maleinrti = 0
+            femaleinrti = 0
+        mfratio = [maleinrti, femaleinrti]
         ISSlist = thoseininjuries['rt_ISS_score'].tolist()
         ISSlist = list(filter(lambda num: num != 0, ISSlist))
         self.ISSscore += ISSlist
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
-            'incidence of rti': incidence,
+            'incidence of rti per 100,000': (self.numerator / self.denominator) * 100000,
+            'incidence of fractures per 100,000': (self.totfracnumber / self.fracdenominator) * 100000,
             # 'number not injured': n_not_injured,
-            # 'number alive': n_alive,
+            'number alive': n_alive,
             'number immediate deaths': n_immediate_death,
             # 'number deaths post med': n_death_post_med,
             # 'number head injuries': n_head_injuries,
             'number permanently disabled': n_perm_disabled,
             'total injuries': totalinj,
+            'male:female ratio': mfratio,
             # 'proportion fractures': fraccounts / totalinj,
             # 'proportion dislocations': dislocationcounts / totalinj,
             # 'proportion tbi': tbicounts / totalinj,
@@ -2457,7 +2476,7 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
             # 'number of amputations': amputationcounts,
             # 'number of eye injuries': eyecounts,
             # 'number of external lacerations': externallacerationcounts,
-            'ISS scores': ISSlist,
+            # 'ISS scores': ISSlist,
 
         }
         # -------------------------------------- Stored outputs -------------------------------------------------------
