@@ -209,10 +209,6 @@ def create_table(mydict):
     Dynamically create a table of arbitrary length
     from PROPERTIES and PARAMETERS dictionaries.
     `mydict` is the dictionary object.
-    A key point here is that it splits a string with a
-    delimiter, because that is what the __repr__() function
-    returns for the parent class of
-    Parameter and Property (i.e. in the Specifiable class).
 
     NB Do not change the positioning of items in the
     f-strings below, or things will break!
@@ -235,11 +231,13 @@ def create_table(mydict):
         examplestr += row
     else:
         for key in mydict:
-            item = str(mydict[key])
-            mytype, description = item.split(Specifiable.delimiter)
-
+            item = mydict[key]
+            description = item.description
+            mytype = item.type_  # e.g. <Types.REAL: 4>
+            the_type = mytype.name  # e.g. 'REAL'
+            #the_value = mytype.value  # e.g. 4
             row = f'''   * - {key}
-     - {mytype}
+     - {the_type}
      - {description}
 '''
             examplestr += row

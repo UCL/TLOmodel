@@ -92,23 +92,6 @@ class Specifiable:
     def pandas_type(self):
         return self.PANDAS_TYPE_MAP[self.type_]
 
-    delimiter = " === "
-
-    def __repr__(self):
-        '''Add docstring here.
-        self.type will be something like "Types.REAL".
-        For printing, we remove the redundant substring "Types." '''
-        sub = "Types."
-        mytype = str(self.type_)  # e.g. "Types.REAL"
-        item = mytype.split(sub)[1]  # e.g. "REAL"
-
-        if self.type_ == Types.CATEGORICAL:
-            return f'{item}' + Specifiable.delimiter + f'{self.description}' \
-                + f'  (Possible values are: {self.categories})'
-        else:
-            return f'{item}' + Specifiable.delimiter + f'{self.description}'
-        # Types.CATEGORICAL might need special treatment
-
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
