@@ -235,6 +235,14 @@ def create_table(mydict):
             description = item.description
             mytype = item.type_  # e.g. <Types.REAL: 4>
             the_type = mytype.name  # e.g. 'REAL'
+
+            if the_type == 'CATEGORICAL':
+                description += ".  Possible values are: ["
+                mylist = item.categories
+                for mything in mylist:
+                    description += f'{mything}, '
+                description += "]"
+
             #the_value = mytype.value  # e.g. 4
             row = f'''   * - {key}
      - {the_type}
