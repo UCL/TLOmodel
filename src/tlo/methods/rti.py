@@ -22,7 +22,6 @@ logger.setLevel(logging.INFO)
 # ================Put inj randomizer function here for now====================================
 
 def injrandomizer(number):
-    # todo: use the swedish distribution to inform the distribution of minor injuries in the model
     # A function that can be called specifying the number of people affected by RTI injuries
     #  and provides outputs for the number of injuries each person experiences from a RTI event, the location of the
     #  injury, the TLO injury categories and the severity of the injuries. The severity of the injuries will then be
@@ -460,16 +459,17 @@ def injrandomizer(number):
     return injdf, injurydescription
 
 
-# def find_and_count_injuries(dataframe, tloinjcodes):
-#     # This function searches the dataframe and finds who has been affected by an injury
-#     index = pd.Index([])
-#     counts = 0
-#     for code in tloinjcodes:
-#         inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(), axis=1)
-#         injidx = inj.index[inj]
-#         counts += len(injidx)
-#         index = index.union(injidx)
-#     return index, counts
+def find_and_count_injuries(dataframe, tloinjcodes):
+    index = pd.Index([])
+    counts = 0
+    for code in tloinjcodes:
+        inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(), axis=1)
+        if len(inj) > 0:
+            injidx = inj.index[inj]
+            counts += len(injidx)
+            index = index.union(injidx)
+    return index, counts
+
 
 class RTI(Module):
     def __init__(self, name=None, resourcefilepath=None):
@@ -873,8 +873,9 @@ class RTI(Module):
         'rt_polytrauma': Property(Types.BOOL, 'polytrauma from RTI'),
         'rt_imm_death': Property(Types.BOOL, 'death at scene True/False'),
         'rt_med_int': Property(Types.BOOL, 'medical intervention True/False'),
-        'rt_recovery_no_med': Property(Types.BOOL, 'recovery without medical intervention True/False'),
         'rt_post_med_death': Property(Types.BOOL, 'death in following month despite medical intervention True/False'),
+        'rt_no_med_death': Property(Types.BOOL, 'death in following month without medical intervention True/False'),
+        'rt_recovery_no_med': Property(Types.BOOL, 'recovery without medical intervention True/False'),
         'rt_disability': Property(Types.REAL, 'disability weight for current month'),
         'rt_date_inj': Property(Types.DATE, 'date of latest injury')
     }
@@ -1253,6 +1254,7 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_med_int'] = False  # default: no one has a had medical intervention
         df.loc[df.is_alive, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
         df.loc[df.is_alive, 'rt_post_med_death'] = False  # default: no death after medical intervention
+        df.loc[df.is_alive, 'rt_no_med_death'] = False
         df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
         df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
 
@@ -1298,6 +1300,7 @@ class RTI(Module):
         df.at[child_id, 'rt_med_int'] = False  # default: no one has a had medical intervention
         df.at[child_id, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
         df.at[child_id, 'rt_post_med_death'] = False  # default: no death after medical intervention
+        df.at[child_id, 'rt_no_med_death'] = False
         df.at[child_id, 'rt_disability'] = 0  # default: no disability due to RTI
         df.at[child_id, 'rt_date_inj'] = pd.NaT
 
@@ -1338,7 +1341,6 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
     specified when calling the base class constructor in our __init__ method.
     """
 
-    # todo: check list of parameters over
     def __init__(self, module):
         """Shedule to take place every month
         """
@@ -1446,10 +1448,11 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Reset injury properties after death
         immdeathidx = df.index[df.is_alive & df.rt_imm_death]
-        deathwithmedidx = df.index[df.is_alive & df.rt_post_med_death]
+        deathwithmedidx = df.index[df.is_alive & df.rt_post_med_death & df.rt_no_med_death]
         diedfromrtiidx = immdeathidx.union(deathwithmedidx)
         df.loc[diedfromrtiidx, "rt_imm_death"] = False
         df.loc[diedfromrtiidx, "rt_post_med_death"] = False
+        df.loc[diedfromrtiidx, "rt_no_med_death"] = False
         df.loc[diedfromrtiidx, "rt_disability"] = 0
         df.loc[diedfromrtiidx, "rt_med_int"] = False
         df.loc[diedfromrtiidx, "rt_polytrauma"] = False
@@ -1469,6 +1472,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         # reset whether they have sought care this month
         df['rt_med_int'] = False
         df.loc[df.is_alive, 'rt_post_med_death'] = False
+        df.loc[df.is_alive, 'rt_no_med_death'] = False
 
         # --------------------------------- UPDATING OF RTI OVER TIME -------------------------------------------------
         rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc & ~df.rt_imm_death]
@@ -1923,8 +1927,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         self.prob_exploratory_laparotomy = p['prob_exploratory_laparotomy']
         self.prob_death_with_med_mild = p['prob_death_with_med_mild']
         self.prob_death_with_med_severe = p['prob_death_with_med_severe']
-        self.prob_death_TBI_SCI_no_treatment = p['prob_death_TBI_SCI_no_treatment']
-        self.prob_death_fractures_no_treatment = p['prob_death_fractures_no_treatment']
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.prob_perm_disability_with_treatment_sci = p['prob_perm_disability_with_treatment_sci']
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
@@ -2003,6 +2005,8 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             the_appt_footprint['MRI'] = 1  # This appointment requires a MRI scan
+            the_appt_footprint['InpatientDays'] = 1
+            # the_appt_footprint['IPAdmission'] = 1
             if require_surgery < self.prob_TBI_require_craniotomy:
                 the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
                 surgery_counts += 1
@@ -2012,6 +2016,8 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         require_surgery = self.module.rng.random_sample(size=1)
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['InpatientDays'] = 1
+            # the_appt_footprint['IPAdmission'] = 1
             if require_surgery < self.prob_exploratory_laparotomy:
                 the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
                 surgery_counts += 1
@@ -2023,6 +2029,8 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
             the_appt_footprint['MRI'] = 1  # This appointment requires an MRI
             the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            the_appt_footprint['InpatientDays'] = 1
+            # the_appt_footprint['IPAdmission'] = 1
             xray_counts += 1
             surgery_counts += 1
 
@@ -2050,6 +2058,8 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
             the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            the_appt_footprint['InpatientDays'] = 1
+            # the_appt_footprint['IPAdmission'] = 1
             xray_counts += 1
             surgery_counts += 1
 
@@ -2059,6 +2069,8 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         if len(idx) > 0:
             the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
             the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
+            the_appt_footprint['InpatientDays'] = 1
+            # the_appt_footprint['IPAdmission'] = 1
             surgery_counts += 1
 
         # ------------------------------------- Amputations ------------------------------------------------------------
@@ -2069,6 +2081,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             the_appt_footprint['MajorSurg'] = 1
             surgery_counts += 1
         # ------------------------------------- Minor wounds ----------------------------------------------------------
+        # A and E and
 
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
@@ -2104,36 +2117,11 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         logger.debug('This is MedicalInterventionEvent scheduling a potential death on date %s for person %d',
                      self.sim.date, person_id)
 
-    def did_not_run(self, person_id):
-        df = self.sim.population.props
-        logger.debug('HSI_RTI: did not run')
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
-        persons_injuries = df.loc[[person_id], columns]
-        inj1 = persons_injuries.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
-        idx1 = inj1.index[inj1]
-        inj2 = persons_injuries.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
-        idx2 = inj2.index[inj2]
-        inj3 = persons_injuries.apply(lambda row: row.astype(str).str.contains('135').any(), axis=1)
-        idx3 = inj3.index[inj3]
-        inj4 = persons_injuries.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
-        idx4 = inj4.index[inj4]
-        inj5 = persons_injuries.apply(lambda row: row.astype(str).str.contains('674').any(), axis=1)
-        idx5 = inj5.index[inj5]
-        inj6 = persons_injuries.apply(lambda row: row.astype(str).str.contains('675').any(), axis=1)
-        idx6 = inj6.index[inj6]
-        inj7 = persons_injuries.apply(lambda row: row.astype(str).str.contains('676').any(), axis=1)
-        idx7 = inj7.index[inj7]
-        idx = idx1.union(idx2).union(idx3).union(idx4).union(idx5).union(idx6).union(idx7)
-        if len(idx) > 0:
-            prob_death_no_med = self.module.rng.random_sample(size=1)
-            if prob_death_no_med < self.prob_death_TBI_SCI_no_treatment:
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='death_without_med'), self.sim.date)
-        #
-        #
-        #
-
+    def did_not_run(self):
+        logger.debug('RTI_MedicalInterventionEvent: did not run')
+        person_id = self.target
+        self.sim.schedule_event(RTINoMedicalInterventionDeathEvent(self.module, person_id), self.sim.date +
+                                DateOffset(days=5))
         pass
 
 
@@ -2156,7 +2144,7 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
             if randfordeath < self.prob_death_with_med_mild:
                 df.loc[person_id, 'rt_post_med_death'] = True
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='death_with_med'), self.sim.date)
+                                                                      cause='RTI_death_with_med'), self.sim.date)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
                              person_id, self.sim.date)
@@ -2167,9 +2155,57 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
             if randfordeath < self.prob_death_with_med_severe:
                 df.loc[person_id, 'rt_post_med_death'] = True
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
-                                                                      cause='death_with_med'), self.sim.date)
+                                                                      cause='RTI_death_with_med'), self.sim.date)
                 # Log the death
                 logger.debug('This is RTIMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
+                             person_id, self.sim.date)
+            else:
+                self.sim.schedule_event(RTIMedicalInterventionPermDisabilityEvent(self.module, person_id), self.sim.date
+                                        + DateOffset(days=0))
+
+
+class RTINoMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
+    """This is the NoMedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
+    resources required to treat that person and if they aren't present, they person is sent here
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        p = self.module.parameters
+        self.prob_death_TBI_SCI_no_treatment = p['prob_death_TBI_SCI_no_treatment']
+        self.prob_death_fractures_no_treatment = p['prob_death_fractures_no_treatment']
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        persons_injuries = df.loc[[person_id], columns]
+        severeinjurycodes = ['133', '134', '135', '342', '343', '361', '363', '441', '443', '463', '552',
+                             '553', '554', '612', '673', '674', '675', '676']
+        idx, counts = find_and_count_injuries(persons_injuries, severeinjurycodes)
+        # Schedule death for those who died from their injuries without medical intervention
+        randfordeath = self.module.rng.random_sample(size=1)
+        if len(idx) > 0:
+            if randfordeath < self.prob_death_TBI_SCI_no_treatment:
+                df.loc[person_id, 'rt_no_med_death'] = True
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
+                                                                      cause='RTI_death_without_med'), self.sim.date)
+                # Log the death
+                logger.debug('This is RTINoMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
+                             person_id, self.sim.date)
+            else:
+                self.sim.schedule_event(RTIMedicalInterventionPermDisabilityEvent(self.module, person_id), self.sim.date
+                                        + DateOffset(days=0))
+        fractureinjurycodes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+        idx, counts = find_and_count_injuries(persons_injuries, fractureinjurycodes)
+
+        if len(idx) > 0:
+            if randfordeath < self.prob_death_fractures_no_treatment:
+                df.loc[person_id, 'rt_no_med_death'] = True
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id,
+                                                                      cause='RTI_death_without_med'), self.sim.date)
+                # Log the death
+                logger.debug('This is RTINoMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
                              person_id, self.sim.date)
             else:
                 self.sim.schedule_event(RTIMedicalInterventionPermDisabilityEvent(self.module, person_id), self.sim.date

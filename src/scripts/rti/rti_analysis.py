@@ -15,14 +15,26 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     symptommanager,
-    rti
+    rti,
+    epilepsy,
+    oesophageal_cancer,
+    labour,
+    newborn_outcomes,
+    pregnancy_supervisor,
+    contraception,
+    male_circumcision,
+    hiv,
+    hiv_behaviour_change,
+    tb,
+    tb_hs_engagement,
+    antenatal_care
 )
 
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 
 # Establish the simulation object
-yearsrun = 2
+yearsrun = 4
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 popsize = 10000
@@ -50,7 +62,18 @@ sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
+sim.register(epilepsy.Epilepsy(resourcefilepath=resourcefilepath))
+sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+# sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
+# sim.register(hiv_behaviour_change.BehaviourChange)
+# sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
+# sim.register(tb.tb(resourcefilepath=resourcefilepath))
+# sim.register(tb_hs_engagement.health_system_tb)
+sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
 # Register disease modules of interest:
 sim.register(rti.RTI(resourcefilepath=resourcefilepath))
 
@@ -67,6 +90,8 @@ sim.simulate(end_date=end_date)
 
 # Read the results
 output = parse_log_file(logfile)
+output['tlo.methods.healthsystem']['HSI_Event'].to_csv(
+    'C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/outputdf.csv')
 rt_df = output['tlo.methods.rti']['summary_1m']
 deaths_df = output['tlo.methods.demography']['death']
 deaths_df['date'] = pd.to_datetime(deaths_df['date'])
@@ -75,8 +100,6 @@ deaths_df['year'] = deaths_df['date'].dt.year
 death_by_cause = deaths_df.groupby(['year', 'cause'])['person_id'].size()
 rt_df.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/resultdf.csv')
 
-healthappointment = output['tlo.methods.healthsystem']['HSI_Event']
-soughthealthcare = len(healthappointment)
 # death_with_medical = death_by_cause.get_group('death_with_med')
 # imm_death = death_by_cause.get_group('RTI_imm_death')
 # print(len(death_with_medical), len(imm_death))
@@ -88,7 +111,7 @@ ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
 # injcategories = [self.totfracnumber, self.totdisnumber, self.tottbi, self.totsoft, self.totintorg,
 #                          self.totintbled, self.totsci, self.totamp, self.toteye, self.totextlac]
 sankey = Sankey(ax=ax,
-                scale=data[0]/(data[0] * data[0]),
+                scale=data[0] / (data[0] * data[0]),
                 offset=0.2,
                 format='%d')
 
@@ -152,13 +175,20 @@ plt.title(f'{yearsrun} year model run, N={popsize}: Distribution of ISS scores')
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/ISSscoreDistribution.png')
 
 data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIflow.txt')
-diedaftermed = len(newdf.loc[newdf['cause'] == 'death_with_med'])
+diedaftermed = len(newdf.loc[newdf['cause'] == 'RTI_death_with_med'])
 diedimm = len(newdf.loc[newdf['cause'] == 'RTI_imm_death'])
+healthappointment = output['tlo.methods.healthsystem']['HSI_Event']
+rti_health_appointment = len(healthappointment.loc[(healthappointment['TREATMENT_ID'] == 'RTI_MedicalIntervention')])
+
+# No_treatment_available = len(healthappointment.loc[(healthappointment['TREATMENT_ID'] == 'RTI_MedicalIntervention')
+#                                                    & (healthappointment['did_run'] is False)])
+soughthealthcare = rti_health_appointment
+diedwithouthealthcare = len(newdf.loc[newdf['cause'] == 'RTI_death_without_med'])
 fig = plt.figure(figsize=(20, 10))
 ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
                      title=f"{yearsrun} year model run, N={popsize}: model flow")
 sankey = Sankey(ax=ax,
-                scale=data[0]/(data[0] * data[0]),
+                scale=data[0] / (data[0] * data[0]),
                 offset=0.2,
                 format='%d')
 
@@ -169,7 +199,7 @@ sankey.add(flows=[data[0], -soughthealthcare, -diedimm],
            trunklength=0.5,
            edgecolor='#027368',
            facecolor='#027368')
-sankey.add(flows=[soughthealthcare, -diedaftermed, -data[4], -(soughthealthcare-diedaftermed-data[4])],
+sankey.add(flows=[soughthealthcare, -diedaftermed, -data[4], -(soughthealthcare - diedaftermed - data[4])],
            labels=['', 'Died after treatment', 'Treated but still disabled', 'Recovered'],
            prior=0,
            connect=(1, 0),
@@ -178,6 +208,16 @@ sankey.add(flows=[soughthealthcare, -diedaftermed, -data[4], -(soughthealthcare-
            trunklength=0.5,
            edgecolor='#58A4B0',
            facecolor='#58A4B0')
+# sankey.add(flows=[No_treatment_available, -diedwithouthealthcare, -(No_treatment_available - diedwithouthealthcare)],
+#            labels=['', 'Died after not receiving treatment', 'recovered without treatment'],
+#            prior=1,
+#            connect=(2, 1),
+#            orientations=[0, 1, 0],
+#            pathlengths=[0.4, 0.2, 0.2],
+#            trunklength=0.5,
+#            edgecolor='#022368',
+#            facecolor='#022368'
+#            )
 
 sankey.finish()
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIModelFlow.png')
