@@ -74,6 +74,10 @@ napoleon_use_param = False
 
 autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
 
+# Keep HTML output order the same as in the source code,
+# rather than alphabetically.
+autodoc_member_order = 'bysource'
+
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
 
