@@ -540,7 +540,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Women whose pregnancy continues may develop anaemia associated with their pregnancy
         month_1_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
-                                                 (df.ps_gestational_age_in_weeks == 8)]
+                                                 (df.ps_gestational_age_in_weeks == 4)]
         self.module.set_pregnancy_complications(month_1_no_spontaneous_abortion, 'maternal_anaemia')
 
         # =========================================== MONTH 2 =========================================================
@@ -552,7 +552,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                              (df.ps_gestational_age_in_weeks == 8)]
         self.module.set_pregnancy_complications(month_2_idx, 'spontaneous_abortion')
 
-        # Here we use the an index of women who will not miscarry to determine who will seek an abortion
+        # Here we use the an index of women who will not miscarry to determine who will seek an induced abortion
         # induced_abortion:
         month_2_no_spontaneous_abortion = df.loc[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive &
                                                  (df.ps_gestational_age_in_weeks == 8)]
