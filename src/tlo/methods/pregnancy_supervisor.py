@@ -49,6 +49,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of a woman dying from a ruptured ectopic pregnancy'),
         'prob_induced_abortion_type': Parameter(
             Types.LIST, 'probabilities that the type of abortion a woman has will be 1.) Surgical or 2.) Medical'),
+        'prob_any_complication_induced_abortion': Parameter(
+            Types.REAL, 'probability of a woman that undergoes an induced abortion experiencing any complications'),
         'prob_haemorrhage_spontaneous_abortion': Parameter(
             Types.REAL, 'probability that a woman who has undergone a spontaneous abortion will experience haemorrhage '
                         'as a complication'),
@@ -206,12 +208,12 @@ class PregnancySupervisor(Module):
                            sim.date + DateOffset(days=0))
 
         event = PregnancyLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(days=364))
+        sim.schedule_event(event, sim.date + DateOffset(years=1))
 
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
         self.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
-                                        'maternal_anaemia':0}
+                                        'maternal_anaemia': 0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -349,8 +351,15 @@ class PregnancySupervisor(Module):
         # TODO: consider using return function to produce negative index which could be used for the chain of functions
 
     def set_abortion_complications(self, individual_id, abortion_type):
+        """"""
         df = self.sim.population.props
         params = self.parameters
+
+        # TODO: this can be handeled by Asif's BitsetHandler - awaiting PR
+
+        # TODO: for IA - we apply a risk of any complication in the abortion event. Then here we just do a random
+        #  choice of the complications (or mix) and apply (as opposed to individual risk)
+
 
         # complications are appended into a list to allow multiple comps from each abortion
     #    if abortion_type == 'spontaneous_abortion':
@@ -372,12 +381,16 @@ class PregnancySupervisor(Module):
 
         # TODO: reset these complications after a certain time period
 
+
     def disease_progression(self, selected):
+        """This function uses util.transition_states to apply a probability of transitioning from one state of
+        hypertensive disorder to another during each month of pregnancy"""
         df = self.sim.population.props
 
         disease_states = ['gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
         prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
 
+        # TODO: these should be parameters
         prob_matrix['gest_htn'] = [0.8, 0.2, 0.0, 0.0]
         prob_matrix['mild_pre_eclamp'] = [0.0, 0.8, 0.1, 0.1]
         prob_matrix['severe_pre_eclamp'] = [0.0, 0.1, 0.6, 0.3]
@@ -386,6 +399,29 @@ class PregnancySupervisor(Module):
         current_status = df.loc[selected, "ps_htn_disorders"]
         new_status = util.transition_states(current_status, prob_matrix, self.rng)
         df.loc[selected, "ps_htn_disorders"] = new_status
+
+        # TODO: Should symptoms and care-seeking be applied within this function if a woman progresses to a new state?
+        # todo: whats the best way to count the incidence of new HDP when transitioning
+
+    def antenatal_disease_reset(self, individual_id):
+        """This function is scheduled by the DiseaseReset event in the labour module. It resets the properties for
+        antenatal diseases around two weeks after the date of delivery. We do not reset these using the on_birth
+        function as some of these conditions have effect in the immediate postpartum period."""
+
+        df = self.sim.population.props
+
+        # TODO: the on_birth function is not used to reset diseases of pregnancy as the effect of these conditions does
+        #  not end immediately at birth
+
+        # TODO: need additional checks here? there are checks in the function it comes from
+
+        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = False
+        df.at[individual_id, 'ps_htn_disorders'] = 'none'
+        df.at[individual_id, 'ps_gestational_htn'] = False
+        df.at[individual_id, 'ps_mild_pre_eclamp'] = False
+        df.at[individual_id, 'ps_severe_pre_eclamp'] = False
+        df.at[individual_id, 'ps_currently_hypertensive'] = False
+        df.at[individual_id, 'ps_gest_diab'] = False
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -434,7 +470,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                                                  (df.ps_gestational_age_in_weeks == 8)]
         self.module.set_pregnancy_complications(month_1_no_spontaneous_abortion, 'maternal_anaemia')
 
-        # =========================================== MONTH 2 ========================================================
+        # =========================================== MONTH 2 =========================================================
         # Now we use the set_pregnancy_complications function to calculate risk and set properties for women whose
         # pregnancy is not ectopic
 
@@ -714,43 +750,15 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
 
         logger.debug('persons %d untreated ectopic pregnancy has now ruptured on date %s', individual_id,
                      self.sim.date)
+
         # TODO: Symptoms
         # TODO: Care seeking
 
         # We schedule the ectopic pregnancy death event 3 days after rupture to allow for women to see care and
         # treatment effects to reduce likelihood of death (this is not an accurate representation of time between
         # rupture and death)
-        self.sim.schedule_event(EctopicPregnancyDeathEvent(self.module, individual_id), self.sim.date +
-                                DateOffset(days=3))
-
-
-class EctopicPregnancyDeathEvent(Event, IndividualScopeEventMixin):
-    """This is EctopicPregnancyRuptureEvent. It is scheduled by the PregnancySupervisorEvent for women who have
-    experience an ectopic pregnancy. Currently this event applies a risk of death, it is unfinished."""
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-
-        assert df.at[individual_id, 'ps_ectopic_pregnancy']
-
-        # Here we apply a risk of death in women who have experienced a ruptured ectopic pregnancy
-        random = self.module.rng.random_sample()
-        risk_of_death = params['ps_linear_equations']['ectopic_pregnancy_death'].predict(df.loc[[individual_id]])[
-            individual_id]
-
-        if random < risk_of_death:
-            logger.debug('person %d has died following an ruptured ectopic pregnancy on date %s', individual_id,
-                         self.sim.date)
-            death = demography.InstantaneousDeath(self.sim.modules['Demography'], individual_id,
-                                                  cause='ectopic pregnancy')
-            self.sim.schedule_event(death, self.sim.date)
-        else:
-            disease_reset = PregnancyDiseaseResetEvent(self.module, individual_id)
-            self.sim.schedule_event(disease_reset, self.sim.date)
+        self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id, cause='ectopic_pregnancy'),
+                                self.sim.date + DateOffset(days=3))
 
 
 class AbortionEvent(Event, IndividualScopeEventMixin):
@@ -766,55 +774,66 @@ class AbortionEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
 
+        self.module.PregnancyDiseaseTracker[f'{self.cause}'] += 1
+
+        if params['prob_any_complication_induced_abortion'] < self.module.rng.random_sample():
+            self.module.set_abortion_complications(individual_id, f'{self.cause}')
+
+            # TODO: care seeking
+            # TODO: symptoms
+
+        self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id, cause=f'{self.cause}'),
+                                self.sim.date + DateOffset(days=3))
+
         if self.cause == 'induced_abortion':
             self.module.PregnancyDiseaseTracker['induced_abortion'] += 1
 
-            types_of_abortion = ['surgical', 'medical']
             # todo: Do we store this variable and modify probability of complications by it
-            this_womans_abortion = self.module.rng.choice(types_of_abortion, p=params['prob_induced_abortion_type'])
-            self.module.set_abortion_complications(individual_id, 'induced_abortion')
+            # types_of_abortion = ['surgical', 'medical']
+            # this_womans_abortion = self.module.rng.choice(types_of_abortion, p=params['prob_induced_abortion_type'])
 
-            # TODO: care seeking, delay death equation
+            # Polis et al 2015 estimate 60% of all induced abortions ended in complication
+            if params['prob_any_complication_induced_abortion'] < self.module.rng.random_sample():
+                self.module.set_abortion_complications(individual_id, 'induced_abortion')
 
-            risk_of_death_post_abortion = params['ps_linear_equations']['induced_abortion_death'].predict(
-                df.loc[[individual_id]])[individual_id]
 
-            if risk_of_death_post_abortion < self.module.rng.random_sample():
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='labour'), self.sim.date)
+
+            self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id, cause='induced_abortion'),
+                                    self.sim.date + DateOffset(days=3))
 
         if self.cause == 'spontaneous_abortion':
-            # TODO: can these properties go?
             self.module.PregnancyDiseaseTracker['spontaneous_abortion'] += 1
-
             self.module.set_abortion_complications(individual_id, 'spontaneous_abortion')
 
-            risk_of_death_post_spontaneous_abortion = \
-                params['ps_linear_equations']['spontaneous_abortion_death'].predict(
-                    df.loc[[individual_id]])[individual_id]
-
-            # TODO: care seeking, delay death equation
-
-            if risk_of_death_post_spontaneous_abortion < self.module.rng.random_sample():
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='labour'), self.sim.date)
-
-    # TODO: (currently self contained) - predictors in LM for incidence and risk fo death, Symptoms?, care seeking,
-    #  abortion death event (to allow for treatment effect)
+            # TODO: care seeking
+            # TODO: symptoms
 
 
-class PregnancyDiseaseResetEvent(Event, IndividualScopeEventMixin):
-    """This is EctopicPregnancyRuptureEvent. It is scheduled by the PregnancySupervisorEvent for women who have
-    experience an ectopic pregnancy. Currently this event applies a risk of death, it is unfinished."""
+class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
+    """This is EarlyPregnancyLossDeathEvent. It is scheduled by the EctopicPregnancyRuptureEvent & AbortionEvent for
+    women who are at risk of death following a loss of their pregnancy. Currently this event applies a risk of death,
+    it is unfinished."""
 
-    def __init__(self, module, individual_id):
+    def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
+
+        self.cause = cause
 
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
 
-        df.at[individual_id, 'ps_ectopic_pregnancy'] = False
+        risk_of_death = params['ps_linear_equations'][f'{self.cause}_death'].predict(df.loc[[individual_id]])[
+            individual_id]
+
+        if self.module.rng.random_sample() < risk_of_death:
+            logger.debug(f'person %d has died due to {self.cause} on date %s', individual_id,
+                         self.sim.date)
+            self.sim.schedule_event(demography.InstantaneousDeath(
+                self.module, individual_id, cause=f'{self.cause}'), self.sim.date)
+
+        elif self.cause == 'ectopic_pregnancy':
+            df.at[individual_id, 'ps_ectopic_pregnancy'] = False
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -822,8 +841,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     deaths per 100,000 live births). It is incomplete"""
 
     def __init__(self, module):
-        self.repeat = 12
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(years=self.repeat))
 
     def apply(self, population):
         df = self.sim.population.props

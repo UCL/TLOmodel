@@ -2279,6 +2279,9 @@ class DiseaseResetEvent (Event, IndividualScopeEventMixin):
             df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
             df.at[individual_id, 'la_postpartum_haem_treatment'] = False
 
+            # This function resets the antenatal diseases a woman will have had during pregnancy
+            self.sim.modules['PregnancySupervisor'].antenatal_disease_reset(individual_id)
+
             del mni[individual_id]
 
 
