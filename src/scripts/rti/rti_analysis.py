@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 from matplotlib.sankey import Sankey
-
+from floweaver import *
 # matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -96,9 +96,10 @@ rt_df = output['tlo.methods.rti']['summary_1m']
 deaths_df = output['tlo.methods.demography']['death']
 deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 newdf = deaths_df[['person_id', 'date', 'cause']]
+newdf.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/deathsdf.csv')
 deaths_df['year'] = deaths_df['date'].dt.year
 death_by_cause = deaths_df.groupby(['year', 'cause'])['person_id'].size()
-rt_df.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/resultdf.csv')
+rt_df.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_summary_df.csv')
 
 # death_with_medical = death_by_cause.get_group('death_with_med')
 # imm_death = death_by_cause.get_group('RTI_imm_death')
@@ -174,51 +175,4 @@ plt.ylabel('Frequency')
 plt.title(f'{yearsrun} year model run, N={popsize}: Distribution of ISS scores')
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/ISSscoreDistribution.png')
 
-data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIflow.txt')
-diedaftermed = len(newdf.loc[newdf['cause'] == 'RTI_death_with_med'])
-diedimm = len(newdf.loc[newdf['cause'] == 'RTI_imm_death'])
-healthappointment = output['tlo.methods.healthsystem']['HSI_Event']
-rti_health_appointment = len(healthappointment.loc[(healthappointment['TREATMENT_ID'] == 'RTI_MedicalIntervention')])
 
-# No_treatment_available = len(healthappointment.loc[(healthappointment['TREATMENT_ID'] == 'RTI_MedicalIntervention')
-#                                                    & (healthappointment['did_run'] is False)])
-soughthealthcare = rti_health_appointment
-diedwithouthealthcare = len(newdf.loc[newdf['cause'] == 'RTI_death_without_med'])
-fig = plt.figure(figsize=(20, 10))
-ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
-                     title=f"{yearsrun} year model run, N={popsize}: model flow")
-sankey = Sankey(ax=ax,
-                scale=data[0] / (data[0] * data[0]),
-                offset=0.2,
-                format='%d')
-
-sankey.add(flows=[data[0], -soughthealthcare, -diedimm],
-           labels=['Number of injured persons', 'sought health care', 'Died on scene'],
-           orientations=[0, 0, 1],  # arrow directions
-           pathlengths=[0.4, 0.1, 0.1],
-           trunklength=0.5,
-           edgecolor='#027368',
-           facecolor='#027368')
-sankey.add(flows=[soughthealthcare, -diedaftermed, -data[4], -(soughthealthcare - diedaftermed - data[4])],
-           labels=['', 'Died after treatment', 'Treated but still disabled', 'Recovered'],
-           prior=0,
-           connect=(1, 0),
-           orientations=[0, 1, -1, 0],
-           pathlengths=[0.4, 0.2, 0.2, 0.1],
-           trunklength=0.5,
-           edgecolor='#58A4B0',
-           facecolor='#58A4B0')
-# sankey.add(flows=[No_treatment_available, -diedwithouthealthcare, -(No_treatment_available - diedwithouthealthcare)],
-#            labels=['', 'Died after not receiving treatment', 'recovered without treatment'],
-#            prior=1,
-#            connect=(2, 1),
-#            orientations=[0, 1, 0],
-#            pathlengths=[0.4, 0.2, 0.2],
-#            trunklength=0.5,
-#            edgecolor='#022368',
-#            facecolor='#022368'
-#            )
-
-sankey.finish()
-plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIModelFlow.png')
-plt.clf()
