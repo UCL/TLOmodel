@@ -30,14 +30,14 @@ sim = Simulation(start_date=start_date)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+             antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
 
 logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(1)
