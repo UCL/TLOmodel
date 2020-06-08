@@ -1866,7 +1866,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # ======================================== RUNNING CHECKS ON EVENT QUEUES ==============
             # Here we run a check to ensure at the end of the preliminary labour event, women have the appropriate
             # future events scheduled
-            self.module.events_queue_checker(individual_id)
+            # For debugging only:
+            # self.module.events_queue_checker(individual_id)
 
 
 class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
