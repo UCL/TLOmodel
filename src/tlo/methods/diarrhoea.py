@@ -884,6 +884,7 @@ class Diarrhoea(Module):
         # ---- Key Current Status Classification Properties ----
         df.at[child_id, 'gi_last_diarrhoea_pathogen'] = 'none'
         df.at[child_id, 'gi_last_diarrhoea_type'] = 'none'
+        df.at[child_id, 'gi_last_diarrhoea_dehydration'] = 'none'
 
         # ---- Internal values ----
         df.at[child_id, 'gi_last_diarrhoea_date_of_onset'] = pd.NaT
@@ -1112,11 +1113,11 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                                             days=(3 * m.rng.rand()))))  # todo - make into parameters
 
         # Determine timing of outcome (either recovery or death)
-        prob_death_by_diarrhoea = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]]).values[0]
-        death_outcome = m.rng.rand() < prob_death_by_diarrhoea
+        death_outcome = m.risk_of_death_diarrhoea.predict(df.loc[[person_id]], m.rng)
+
         if death_outcome:
             df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
-            df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+            df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_outcome
             self.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id),
                                     date_of_outcome)
         else:

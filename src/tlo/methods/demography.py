@@ -56,6 +56,7 @@ class Demography(Module):
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
+        'cause_of_death': Property(Types.STRING, 'Cause of death of this individual, as entered to the logger'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         # Age calculation is handled by demography module
@@ -125,6 +126,7 @@ class Demography(Module):
         df.is_alive.values[:] = True
         df['date_of_birth'] = demog_char_to_assign['date_of_birth']
         df['date_of_death'] = pd.NaT
+        df['cause_of_death'] = ''
         df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
@@ -172,6 +174,9 @@ class Demography(Module):
 
         df.at[child_id, 'is_alive'] = True
         df.at[child_id, 'date_of_birth'] = self.sim.date
+
+        df.at[child_id, 'date_of_death'] = pd.NaT
+        df.at[child_id, 'cause_of_death'] = ''
 
         p_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
         df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[p_male, 1 - p_male])
@@ -386,8 +391,8 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'is_alive']:
             # here comes the death.......
             df.at[individual_id, 'is_alive'] = False
-            # the person is now dead
             df.at[individual_id, 'date_of_death'] = self.sim.date
+            df.at[individual_id, 'cause_of_death'] = self.cause
 
         logger.debug("*******************************************The person %s "
                      "is now officially dead and has died of %s", individual_id, self.cause)
