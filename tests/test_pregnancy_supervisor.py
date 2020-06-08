@@ -65,4 +65,5 @@ def test_run():
 
     check_dtypes(sim)
 
+
 test_run()

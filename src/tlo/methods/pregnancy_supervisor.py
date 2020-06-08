@@ -4,9 +4,9 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
-from tlo.methods import demography
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -423,7 +423,7 @@ class PregnancySupervisor(Module):
             for person in positive_index:
                 self.sim.schedule_event(AbortionEvent(self, person, cause=f'{complication}'), self.sim.date)
             if not positive_index.empty:
-                    logger.debug(f'The following women have experienced an abortion,{positive_index}')
+                logger.debug(f'The following women have experienced an abortion,{positive_index}')
 
         if complication == 'maternal_anaemia':
             df.loc[positive_index, 'ps_anaemia_in_pregnancy'] = True
@@ -736,7 +736,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # gestational hypertension
         month_6_no_pe = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
-                                ~df.la_currently_in_labour & (df.ps_htn_disorders == 'none')]
+                               ~df.la_currently_in_labour & (df.ps_htn_disorders == 'none')]
         self.module.set_pregnancy_complications(month_6_no_pe, 'gest_htn')
 
         # gestational diabetes
@@ -845,7 +845,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.set_pregnancy_complications(month_9_preg_continues, 'pre_eclampsia')
 
         # gestational hypertension
-        month_9_no_pe = df.loc[df.is_pregnant & df.is_alive & ~df.la_currently_in_labour  &
+        month_9_no_pe = df.loc[df.is_pregnant & df.is_alive & ~df.la_currently_in_labour &
                                (df.ps_gestational_age_in_weeks == 40) & (df.ps_htn_disorders == 'none')]
         self.module.set_pregnancy_complications(month_9_no_pe, 'gest_htn')
 
