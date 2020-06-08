@@ -10,7 +10,7 @@
 import os
 import sys
 
-from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS
+from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS, Documenter
 from sphinx.util.inspect import object_description
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
@@ -72,14 +72,49 @@ napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
 
-autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
+# The terms used here are defined at:
+# https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html#customizing-templates
+# Each value is either True/False or a string which is a comma-separated list
+# (this can be None)
+# e.g. (from Sphinx documentation):
+#     'members': 'var1, var2',
+#     'member-order': 'bysource',
+#     'special-members': '__init__',
+#     'undoc-members': True,
+#     'exclude-members': '__weakref__'
+# NB some will only take a boolean value.
+#autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
+# See "autodoc_default_options" at https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+# The supported options are 'members', 'member-order', 'undoc-members',
+# 'private-members', 'special-members', 'inherited-members',
+# 'show-inheritance', 'ignore-module-all', 'imported-members'
+# and 'exclude-members'.
+autodoc_default_options = {
+    #'members': None,  ##'on_birth',
+    #'private-members': None,
+    #'undoc-members': None, ##False,
+    #'special-members': None,
+    #'show-inheritance': False, ####True,
+    #'inherited_members': 'PARAMETERS',
 
-# Keep HTML output order the same as in the source code,
-# rather than alphabetically.
-autodoc_member_order = 'bysource'
+    # Keep HTML output order the same as in the
+    # source code, rather than alphabetically:
+    'member-order': 'bysource',
+
+    # List below what you don't want to see documented:
+    'exclude-members': '__dict__, name, rng, sim',
+}
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
+
+
+#@classmethod
+# (cls, member: Any, membername: str, isattr: bool, parent: Any) -> bool:
+def can_document_member(cls, member, membername, isattr, parent):
+    """Called to see if a member can be documented by this documenter."""
+    #raise NotImplementedError('must be implemented in subclasses')
+    return True
 
 
 def add_content(self, more_content, no_docstring=False):
@@ -89,6 +124,9 @@ def add_content(self, more_content, no_docstring=False):
      We adapt the version of this function currently installed at:
      /anaconda3/envs/nicedocs/lib/python3.6/site-packages/sphinx/ext/autodoc/__init__.py
      in the  Documenter class.
+
+     Without this function, the PARAMETERS and PROPERTIES tables do not appear.
+     Even if can_document_member() is True
     """
 
     # set sourcename and add content from attribute documentation
@@ -175,10 +213,16 @@ def setup(app):
     # The next two lines show two different ways of telling Sphinx to use
     # our local, redefined versions of its internal functions:
     AttributeDocumenter.add_directive_header = add_directive_header
-    app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
-        add_content
+    #app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
+    #    add_content
     # The second one could have been written:
-    # Documenter.add_content = add_content
+    Documenter.add_content = add_content
+
+    Documenter.can_document_member = can_document_member
+
+    # We want to define our own version of Documenter.can_document_member()
+    # and put our functionality in there, rather than having our own versions
+    # of add_content() and add_directive_header()
 
     # When the autodoc-process-docstring event is emitted, handle it with
     # add_dict_to_docstring():
