@@ -86,7 +86,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             # ---- ASSESS FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:
                 depr = self.sim.modules['Depression']
-                if (squeeze_factor == 0.0) and (self.module.rng.random() <
+                if (squeeze_factor == 0.0) and (self.module.rng.random_sample() <
                                                 depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # -------------------------------
