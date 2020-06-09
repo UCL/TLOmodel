@@ -149,8 +149,8 @@ def check_configuration_of_population(sim):
     # get df for alive persons:
     df = sim.population.props.loc[sim.population.props.is_alive]
 
-    # check that the oc_status and oc_status_any_dysplasia_or_cancer properties always correspond correctly:
-    assert set(df.loc[df.oc_status == 'none'].index) == set(df.loc[~df.oc_status_any_dysplasia_or_cancer].index)
+    # for convenience, define a bool for any stage of dysplasia of cancer
+    df['oc_status_any_dysplasia_or_cancer'] = df.oc_status != 'none'
 
     # check that no one under twenty has cancer
     assert not df.loc[df.age_years < 20].oc_status_any_dysplasia_or_cancer.any()
@@ -256,8 +256,6 @@ def test_check_progression_through_stages_is_happeneing():
     # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
     sim.population.props.loc[
         sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status"] = 'low_grade_dysplasia'
-    sim.population.props.loc[sim.population.props.is_alive & (
-            sim.population.props.age_years >= 20), "oc_status_any_dysplasia_or_cancer"] = True
     check_configuration_of_population(sim)
 
     # Simulate
@@ -307,8 +305,6 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
     sim.population.props.loc[
         sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oc_status"] = 'low_grade_dysplasia'
-    sim.population.props.loc[sim.population.props.is_alive & (
-            sim.population.props.age_years >= 20), "oc_status_any_dysplasia_or_cancer"] = True
     check_configuration_of_population(sim)
 
     # Simulate
@@ -356,7 +352,6 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     # force that all persons aged over 20 are in the low_grade dysplasis stage to begin with:
     has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 20)
     sim.population.props.loc[has_lgd, "oc_status"] = 'low_grade_dysplasia'
-    sim.population.props.loc[has_lgd, "oc_status_any_dysplasia_or_cancer"] = True
 
     # force that they are all symptomatic, diagnosed and already on treatment:
     sim.modules['SymptomManager'].change_symptom(

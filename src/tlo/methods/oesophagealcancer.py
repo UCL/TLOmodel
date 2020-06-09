@@ -5,7 +5,6 @@ Limitations to note:
 * Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
 * Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
 * Footprints of HSI -- pending input from expert on resources required.
-* TODO: Remove 'oc_status_any_dysplasia_or_cancer' once the DxTest can check for particular level of a category:
 """
 
 from pathlib import Path
@@ -154,10 +153,6 @@ class OesophagealCancer(Module):
             categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
         ),
 
-        "oc_status_any_dysplasia_or_cancer": Property(
-            Types.BOOL,
-            "Current status of having any Oesophageal Cancer (equal to: ~(oc_status=='none')"),
-
         "oc_date_diagnosis": Property(
             Types.DATE,
             "the date of diagnsosis of the oes_cancer (pd.NaT if never diagnosed)"
@@ -203,7 +198,6 @@ class OesophagealCancer(Module):
         # -------------------- oc_status -----------
         # Determine who has cancer at ANY cancer stage:
         df.loc[df.is_alive, "oc_status"] = "none"  # default
-        df.loc[df.is_alive, "oc_status_any_dysplasia_or_cancer"] = False  # default
 
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
         assert sum(self.parameters['init_prop_oes_cancer_stage']) <= 1.0
@@ -216,11 +210,11 @@ class OesophagealCancer(Module):
             Predictor('age_years').apply(
                 lambda x: ((x - 20) ** self.parameters['rp_oes_cancer_per_year_older']) if x > 20 else 0.0)
         )
-        df.loc[df.is_alive, "oc_status_any_dysplasia_or_cancer"] = \
+        oc_status_any_dysplasia_or_cancer = \
             lm_init_oc_status_any_dysplasia_or_cancer.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        if df["oc_status_any_dysplasia_or_cancer"].sum():
+        if oc_status_any_dysplasia_or_cancer.sum():
             prob_by_stage_of_cancer_if_cancer = [
                 ((p / sum(self.parameters['init_prop_oes_cancer_stage'])) if not sum(
                     self.parameters['init_prop_oes_cancer_stage']) == 0 else 0)
@@ -228,9 +222,9 @@ class OesophagealCancer(Module):
             ]
             assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
 
-            df.loc[df.is_alive & df.oc_status_any_dysplasia_or_cancer, "oc_status"] = self.rng.choice(
+            df.loc[df.is_alive & oc_status_any_dysplasia_or_cancer, "oc_status"] = self.rng.choice(
                 [val for val in self.PROPERTIES['oc_status'].categories if val != 'none'],
-                df["oc_status_any_dysplasia_or_cancer"].sum(),
+                oc_status_any_dysplasia_or_cancer.sum(),
                 p=prob_by_stage_of_cancer_if_cancer
             )
 
@@ -462,8 +456,9 @@ class OesophagealCancer(Module):
         # This properties of conditional on the test being done only to persons with the Symptom, 'dysphagia'.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             endoscopy_for_oes_cancer_given_dysphagia=DxTest(
-                property='oc_status_any_dysplasia_or_cancer',
-                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia']
+                property='oc_status',
+                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
+                target_category=["low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"]
             )
         )
 
@@ -515,7 +510,6 @@ class OesophagealCancer(Module):
         """
         df = self.sim.population.props
         df.at[child_id, "oc_status"] = "none"
-        df.at[child_id, "oc_status_any_dysplasia_or_cancer"] = False
         df.at[child_id, "oc_date_diagnosis"] = pd.NaT
         df.at[child_id, "oc_date_treatment"] = pd.NaT
         df.at[child_id, "oc_stage_at_which_treatment_applied"] = "none"
@@ -603,13 +597,6 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'oc_status'] = stage
-            df.loc[idx_gets_new_stage, 'oc_status_any_dysplasia_or_cancer'] = True
-        # Check correspondence between oc_status and oc_status_any_dysplasia_or_cancer
-        assert set(df.loc[df.is_alive & (df.oc_status == 'none')].index) == set(
-            df.loc[df.is_alive & ~df.oc_status_any_dysplasia_or_cancer].index)
-        #
-        # non = set(df.loc[df.is_alive & (df.oc_status == 'none')].index)
-        # fal = set(df.loc[df.is_alive & ~df.oc_status_any_dysplasia_or_cancer].index)
 
         # -------------------- UPDATING OF SYMPTOM OF DYSPHAGIA OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of dysphagia.
