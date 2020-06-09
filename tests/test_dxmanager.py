@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import pandas as pd
+
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
@@ -618,3 +620,65 @@ def test_create_dx_test_and_run_with_cont_dx_and_error():
 
     assert all([0.0 == e for e in result_from_test_with_zero_stdev])
     assert sum([abs(e) for e in result_from_test_with_nonzero_stdev]) > 0
+
+
+def test_dx_with_categorial():
+    df = sim.population.props
+    df['CategoricalProperty'] = pd.Series(
+        data=sim.rng.choice(['level0', 'level1', 'level2'], len(df), [0.1, 0.1, 0.8]),
+        dtype="category"
+    )
+
+    # Create the test - with no error:
+    my_test = DxTest(
+        property='CategoricalProperty',
+        target_category='level2'
+    )
+
+    # Create the test - with no sensitivity:
+    my_test_w_no_sens = DxTest(
+        property='CategoricalProperty',
+        target_category='level2',
+        sensitivity=0.0
+    )
+
+    # Create the test - with no specificity:
+    my_test_w_no_spec = DxTest(
+        property='CategoricalProperty',
+        target_category='level2',
+        specificity=0.0
+    )
+
+    # Create new DxManager
+    dx_manager = DxManager(sim.modules['HealthSystem'])
+
+    # Register DxTest with DxManager:
+    dx_manager.register_dx_test(my_test=my_test,
+                                my_test_w_no_sens=my_test_w_no_sens,
+                                my_test_w_no_spec=my_test_w_no_spec
+                                )
+
+    # Run it and check the result:
+    for person_id in df.loc[df.is_alive].index:
+        hsi_event.target = person_id
+
+        # Test with perfect sensitivity and specificity
+        result_from_dx_manager = dx_manager.run_dx_test(
+            dx_tests_to_run='my_test',
+            hsi_event=hsi_event,
+        )
+        assert result_from_dx_manager == (df.at[person_id, 'CategoricalProperty'] == 'level2')
+
+        # Test with no sensitivity: will never detect the category when it is correct
+        result_from_dx_manager = dx_manager.run_dx_test(
+            dx_tests_to_run='my_test_w_no_sens',
+            hsi_event=hsi_event,
+        )
+        assert result_from_dx_manager is False
+
+        # Test with no specificity: will always detect the category if it not correct
+        result_from_dx_manager = dx_manager.run_dx_test(
+            dx_tests_to_run='my_test_w_no_spec',
+            hsi_event=hsi_event,
+        )
+        assert result_from_dx_manager is True
