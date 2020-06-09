@@ -324,7 +324,43 @@ class Diarrhoea(Module):
         'days_onset_severe_dehydration_before_death':
             Parameter(Types.INT, 'number of days before a death (in the untreated case) that dehydration would be '
                                  'classified as severe and child ought to be classified as positive for the danger'
-                                 'signs')
+                                 'signs'),
+        'mean_days_duration_with_rotavirus':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by rotavirus'),
+        'mean_days_duration_with_shigella':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by shigella'),
+        'mean_days_duration_with_adenovirus':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by adenovirus'),
+        'mean_days_duration_with_cryptosporidium':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by cryptosporidium'),
+        'mean_days_duration_with_campylobacter':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by campylobacter'),
+        'mean_days_duration_with_ST-ETEC':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by ST-ETEC'),
+        'mean_days_duration_with_sapovirus':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by sapovirus'),
+        'mean_days_duration_with_norovirus':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by norovirus'),
+        'mean_days_duration_with_astrovirus':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by astrovirus'),
+        'mean_days_duration_with_tEPEC':
+            Parameter(Types.INT, 'mean number of days duration with diarrhoea caused by tEPEC'),
+        'prob_of_cure_given_Treatment_PlanA':
+            Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan A'),
+        'prob_of_cure_given_Treatment_PlanB':
+            Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan B'),
+        'prob_of_cure_given_Treatment_PlanC':
+            Parameter(Types.REAL, 'probability of the person being cured if is provided with Treatment Plan C'),
+
+        # TODO check the below parmaeters for those HSI are relevant
+        'prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea':
+            Parameter(Types.REAL, 'probability of the person being cured if is provided with HSI_Diarrhoea_Severe_Persistent_Diarrhoea.'),
+        'prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea':
+            Parameter(Types.REAL,
+                      'probability of the person being cured if is provided with HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea.'),
+        'prob_of_cure_given_HSI_Diarrhoea_Dysentery':
+            Parameter(Types.REAL,
+                      'probability of the person being cured if is provided with HSI_Diarrhoea_Dysentery.'),
     }
 
     PROPERTIES = {
@@ -352,6 +388,11 @@ class Diarrhoea(Module):
         'gi_last_diarrhoea_duration': Property(Types.REAL, 'number of days of last episode of diarrhoea'),
         'gi_last_diarrhoea_recovered_date': Property(Types.DATE, 'date of recovery from last episode of diarrhoea'),
         'gi_last_diarrhoea_death_date': Property(Types.DATE, 'date of death caused by last episode of diarrhoea'),
+        'gi_last_diarrhoea_treatment_date': Property(
+            Types.DATE,
+            'date of first treatment on the last episode of diarrhoea'
+        ),
+
 
         # ---- Temporary Variables: To be replaced with the properties of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
@@ -446,6 +487,7 @@ class Diarrhoea(Module):
         df['gi_last_diarrhoea_duration'] = np.nan
         df['gi_last_diarrhoea_recovered_date'] = pd.NaT
         df['gi_last_diarrhoea_death_date'] = pd.NaT
+        df['gi_last_diarrhoea_treatment_date'] = pd.NaT
 
         # ---- Temporary values ----
         df['tmp_malnutrition'] = False
@@ -815,8 +857,8 @@ class Diarrhoea(Module):
         )
 
         # --------------------------------------------------------------------------------------------
-        # Creat the linear model for the risk of dying due to diarrhoea
-        # todo -- no magic numbers
+        # Create the linear model for the risk of dying due to diarrhoea
+        # TODO: ADD PARAMETERS FOR THESE "MAGIC NUNBERS"
         self.risk_of_death_diarrhoea = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
                         1.0,
@@ -839,21 +881,20 @@ class Diarrhoea(Module):
                         )
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the duration of the episode of diarrhoea
-        # TODO; add these add parameters
         self.mean_duration_in_days_of_diarrhoea = \
             LinearModel(LinearModelType.ADDITIVE,
                         0.0,
                         Predictor('gi_last_diarrhoea_pathogen')
-                            .when('rotavirus', 7)
-                            .when('shigella', 7)
-                            .when('adenovirus', 7)
-                            .when('cryptosporidium', 7)
-                            .when('campylobacter', 7)
-                            .when('ST-ETEC', 7)
-                            .when('sapovirus', 7)
-                            .when('norovirus', 7)
-                            .when('astrovirus', 7)
-                            .when('tEPEC', 7)
+                            .when('rotavirus', p['mean_days_duration_with_rotavirus'])
+                            .when('shigella', p['mean_days_duration_with_shigella'])
+                            .when('adenovirus', p['mean_days_duration_with_adenovirus'])
+                            .when('cryptosporidium', p['mean_days_duration_with_cryptosporidium'])
+                            .when('campylobacter', p['mean_days_duration_with_campylobacter'])
+                            .when('ST-ETEC', p['mean_days_duration_with_ST-ETEC'])
+                            .when('sapovirus', p['mean_days_duration_with_sapovirus'])
+                            .when('norovirus', p['mean_days_duration_with_norovirus'])
+                            .when('astrovirus', p['mean_days_duration_with_astrovirus'])
+                            .when('tEPEC', p['mean_days_duration_with_tEPEC'])
                         )
 
         # --------------------------------------------------------------------------------------------
@@ -890,6 +931,7 @@ class Diarrhoea(Module):
         df.at[child_id, 'gi_last_diarrhoea_date_of_onset'] = pd.NaT
         df.at[child_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
         df.at[child_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
+        df.at[child_id, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
@@ -1031,7 +1073,8 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # TODO - the rest of this to go into the Incident Event
             # ----------------------- Determine outcomes for this case ----------------------
-            duration_in_days_of_diarrhoea = max(1, int(
+            # TODO: no magic numbeers
+            duration_in_days_of_diarrhoea = max(2, int(
                 m.mean_duration_in_days_of_diarrhoea.predict(df.loc[[person_id]]).values[0] +
                 (-2 + 7 * rng.rand())  # assumes uniform interval around mean duration
             ))
@@ -1043,6 +1086,9 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             for symptom, prob in possible_symptoms_for_this_pathogen.items():
                 if rng.rand() < prob:
                     symptoms_for_this_person.append(symptom)
+            # TODO DEBUG:
+            assert symptoms_for_this_person, "DEBUG, for the test being considered this list should not empty"
+
 
             # ----------------------- Create the event for the onset of infection -------------------
             # NB. The symptoms are scheduled by the SymptomManager to 'autoresolve' after the duration
@@ -1058,7 +1104,6 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 date=date_onset
             )
 
-
 class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
     """
     This Event is for the onset of the infection that causes diarrhoea.
@@ -1071,6 +1116,10 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         self.symptoms = symptoms
 
     def apply(self, person_id):
+
+        if person_id==67:
+            print('its them!')
+
         df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
 
@@ -1132,7 +1181,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             age_grp = '5+y'
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
 
-
 class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id, symptoms):
@@ -1149,13 +1197,12 @@ class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
 
-
 class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
     """
     #This is the cure event. It is called by HSI events that have implemented a cure.
     It does the following:
         * "cancels" the death caused by diarrhoea
-        * sets the date of recovery
+        * sets the date of recover
         * resolves all symptoms caused by diarrhoea
     """
     def __init__(self, module, person_id):
@@ -1169,7 +1216,7 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Stop the person from dying of Diarrhoea (if they were going to die)
+        # Stop the person from dying of Diarrhoea (if they were going to die) and record date of treatment
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
@@ -1287,10 +1334,10 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
         if is_cons_available['Intervention_Package_Code']['pkg_code_uncomplic_diarrhoea']:
             logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
                          person_id)
-            if df.at[person_id, 'is_alive']:
+            if df.at[person_id, 'is_alive'] and (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_Treatment_PlanA']):
+                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
-
 
 class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1338,19 +1385,19 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
         if is_cons_available['Intervention_Package_Code']['pkg_code_uncomplic_diarrhoea']:
             logger.debug('HSI_Diarrhoea_Dysentery: giving uncomplicated diarrhoea treatment for child %d',
                          person_id)
-            if df.at[person_id, 'is_alive']:
+            if df.at[person_id, 'is_alive'] and (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_Treatment_PlanB']):
+                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
-
 
 class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for diarrhoea with severe dehydration administered at outpatient setting through IMCI
     """
-# if child has no other severe classification: PLAN C
-# Or if child has another severe classification:
-    # refer urgently to hospital with mother giving frequent ORS on the way, advise on breastfeeding
-# if cholera is in your area, give antibiotic for cholera
+    # if child has no other severe classification: PLAN C
+    # Or if child has another severe classification:
+        # refer urgently to hospital with mother giving frequent ORS on the way, advise on breastfeeding
+    # if cholera is in your area, give antibiotic for cholera
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1383,15 +1430,18 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self, cons_req_as_footprint=the_consumables_needed)
         logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
-        if is_cons_available:   # TODO - this is now how to do a check on the availability?
+        if is_cons_available:   # TODO - this is **NOT* how to do a check on the availability?
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
-            if df.at[person_id, 'is_alive']:
+            if df.at[person_id, 'is_alive'] and (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_Treatment_PlanC']):
+                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
                 # schedule cure date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
 
 
+
+# **** TODO check the below parmaeters for those HSI are relevant ****
 class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for Severe_Dehydration administered at FacilityLevel=1
@@ -1435,10 +1485,10 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
         if is_cons_available:
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
-            if df.at[person_id, 'is_alive']:
+            if df.at[person_id, 'is_alive'] and (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea']):
+                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))
-
 
 class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1484,7 +1534,7 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
             if is_cons_available:
                 logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                              person_id)
-                if df.at[person_id, 'is_alive']:
+                if df.at[person_id, 'is_alive'] and (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']):
                     self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                             self.sim.date + DateOffset(weeks=1))
 
@@ -1505,11 +1555,10 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
             if is_cons_available:
                 logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                              person_id)
-                if df.at[person_id, 'is_alive']:
+                if df.at[person_id, 'is_alive'] and (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']):
+                    df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
                     self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                             self.sim.date + DateOffset(weeks=1))
-
-# todo - add in effectiveness = 1.0 & make it linear model.
 
 class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1557,6 +1606,7 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
         if is_cons_available:
             logger.debug('HSI_Diarrhoea_Dysentery: giving dysentery treatment for child %d',
                          person_id)
-            if df.at[person_id, 'is_alive']:
+            if df.at[person_id, 'is_alive'] and (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Dysentery']):
+                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
                 self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                         self.sim.date + DateOffset(weeks=1))

@@ -30,9 +30,14 @@ class HealthSeekingBehaviour(Module):
     # No properties to declare
     PROPERTIES = {}
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
+        # for anyone with newly onset symptoms
+        assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
+        self.force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -192,11 +197,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # convert into a probability of seeking care:
                 prob_seeking_care = 1 / (1 + np.exp(-f))
 
-                if self.module.rng.rand() < prob_seeking_care:
+                if self.module.force_any_symptom_to_lead_to_healthcareseeking or (self.module.rng.rand() < prob_seeking_care):
                     # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
                     # NB. Here we can specify which type of facility they would attend if we need to
 
-                    delay_to_seeking_care_in_days = self.module.rng.randint(0, 1)  # Uniform interal 0-1 days
+                    delay_to_seeking_care_in_days = self.module.rng.randint(0, 1)  # Uniform interval 0-1 days
                     date_of_seeking_care = self.sim.date + DateOffset(days=delay_to_seeking_care_in_days)
 
                     hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)
