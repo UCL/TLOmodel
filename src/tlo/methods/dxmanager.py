@@ -261,7 +261,7 @@ class DxTest:
 
         elif (df[self.property].dtype == "category") and (self.target_category is not None):
             # Categorical property: compare the value to the 'target_category' if its specified
-            is_match_to_cat = (true_value == self.target_category)
+            is_match_to_cat = (true_value in self.target_category)
 
             if is_match_to_cat:
                 # Apply the sensitivity:

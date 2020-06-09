@@ -682,3 +682,36 @@ def test_dx_with_categorial():
             hsi_event=hsi_event,
         )
         assert result_from_dx_manager is True
+
+
+def test_dx_with_categorial_multiple_levels_accepted():
+    df = sim.population.props
+    df['CategoricalProperty'] = pd.Series(
+        data=sim.rng.choice(['level0', 'level1', 'level2'], len(df), [0.3, 0.3, 0.4]),
+        dtype="category"
+    )
+
+    # Create the test - with no error:
+    my_test = DxTest(
+        property='CategoricalProperty',
+        target_category=['level2', 'level0']
+    )
+
+    # Create new DxManager
+    dx_manager = DxManager(sim.modules['HealthSystem'])
+
+    # Register DxTest with DxManager:
+    dx_manager.register_dx_test(my_test=my_test,
+                                )
+
+    # Run it and check the result:
+    for person_id in df.loc[df.is_alive].index:
+        hsi_event.target = person_id
+
+        # Test with perfect sensitivity and specificity
+        result_from_dx_manager = dx_manager.run_dx_test(
+            dx_tests_to_run='my_test',
+            hsi_event=hsi_event,
+        )
+        assert result_from_dx_manager == (df.at[person_id, 'CategoricalProperty'] == 'level2') or (
+                df.at[person_id, 'CategoricalProperty'] == 'level0')

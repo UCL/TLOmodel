@@ -187,8 +187,13 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 if person_profile['sy_eye_complaint']:
                     f += np.log(1.33)
 
-                if person_profile['sy_dysphagia']:
-                    f += np.log(4.00)                   # arbitrarily large value for health seeking for dysphagia
+                # TODO - symptom that are specific to a disease module need to be registered, or otherwise safely
+                #  handled here
+                try:
+                    if person_profile['sy_dysphagia']:
+                        f += np.log(4.00)                   # arbitrarily large value for health seeking for dysphagia
+                except:
+                    pass
 
                 # convert into a probability of seeking care:
                 prob_seeking_care = 1 / (1 + np.exp(-f))
