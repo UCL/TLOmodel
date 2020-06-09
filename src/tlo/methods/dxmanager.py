@@ -42,7 +42,7 @@ class DxManager:
                 dx_test = (dx_test,)
 
             # Check that the objects given are each a DxTest object
-            assert all([isinstance(d, DxTest) for d in dx_test]), f'One of the passed objects is not a DxTest object.'
+            assert all([isinstance(d, DxTest) for d in dx_test]), 'One of the passed objects is not a DxTest object.'
 
             # Check if this tuple of DxTests is a duplicate of something already registered.
             if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
@@ -60,7 +60,7 @@ class DxManager:
         assert name_of_dx_test in self.dx_tests, f'This DxTest is not recognised: {name_of_dx_test}'
         the_dx_test = self.dx_tests[name_of_dx_test]
         print()
-        print(f'----------------------')
+        print('----------------------')
         print(f'** {name_of_dx_test} **')
         for num, test in enumerate(the_dx_test):
             print(f'   Position in tuple #{num}')
@@ -68,7 +68,7 @@ class DxManager:
             print(f'sensitivity: {test.sensitivity}')
             print(f'specificity: {test.specificity}')
             print(f'property: {test.property}')
-            print(f'----------------------')
+            print('----------------------')
 
     def print_info_about_all_dx_tests(self):
         for dx_test in self.dx_tests:
@@ -85,7 +85,7 @@ class DxManager:
         if not isinstance(dx_tests_to_run, list):
             dx_tests_to_run = [dx_tests_to_run]
 
-        assert all([name in self.dx_tests for name in dx_tests_to_run]), f'A DxTest name is not recognised.'
+        assert all([name in self.dx_tests for name in dx_tests_to_run]), 'A DxTest name is not recognised.'
 
         # Create the dict() of results that will be returned
         result_dict_for_list_of_dx_tests = dict()
@@ -149,6 +149,8 @@ class DxTest:
             :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
                                         the observation of a continuous property
             :param threshold: the observed value of a continuous property above which the result of the test is True.
+            :param target_category: the category value (as string) to correspond with a positive result if property
+            is categorical.
     """
 
     def __init__(self,
@@ -158,7 +160,8 @@ class DxTest:
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,
-                 threshold: float = None
+                 threshold: float = None,
+                 target_category: str = None
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
@@ -187,6 +190,7 @@ class DxTest:
         self.specificity = _default_if_none(specificity, 1.0)
         self.measure_error_stdev = _default_if_none(measure_error_stdev, 0.0)
         self.threshold = threshold
+        self.target_category = target_category
 
     def __hash_key(self):
         return (
@@ -254,6 +258,18 @@ class DxTest:
                 test_value = float(reading)
             else:
                 test_value = bool(reading >= self.threshold)
+
+        elif (df[self.property].dtype == "category") and (self.target_category is not None):
+            # Categorical property: compare the value to the 'target_category' if its specified
+            is_match_to_cat = (true_value == self.target_category)
+
+            if is_match_to_cat:
+                # Apply the sensitivity:
+                test_value = hs_module.rng.rand() < self.sensitivity
+            else:
+                # Apply the specificity:
+                test_value = not (hs_module.rng.rand() < self.specificity)
+
         else:
             test_value = true_value
 
