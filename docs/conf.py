@@ -10,7 +10,7 @@
 import os
 import sys
 
-from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS, Documenter
+from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS, Documenter, ModuleDocumenter
 from sphinx.util.inspect import object_description
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
@@ -108,58 +108,60 @@ autodoc_default_options = {
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
 
+from sphinx.util import inspect
 
-#@classmethod
+@classmethod
 # (cls, member: Any, membername: str, isattr: bool, parent: Any) -> bool:
+# We want to stop the raw dictionaries of PARAMETERS and PROPERTIES
+# being output. (We still want to show their nice tables.) At the moment
+# we suppress the raw dicts using our version of
+# AttributeDocumenter.add_directive_header().
+# The tables appear due to our tweaking of add_content(). Without that,
+# epilepsy's PARAMETERS table appears, I think because it's the first one
+# encountered, but non after that one.
 def can_document_member(cls, member, membername, isattr, parent):
     """Called to see if a member can be documented by this documenter."""
+    # Example values
+    # self is not defined
+    # cls = <class 'sphinx.ext.autodoc.AttributeDocumenter'>
+    # cls.objtype = 'attribute'
+    # member = {}, member = <enum 'Enum'>
+    # membername = 'PARAMETERS'
+    # parent for PARAMETERS = <sphinx.ext.autodoc.ClassDocumenter object at 0x112bc5b70>
+    # member is a dictionary e.g. {}, or with a key like 'prob_seek_care_first_anc' and
+    # a value which is a Parameter object
+    # e.g. param = member['prob_seek_care_first_anc'],
+    #       'prob_seek_care_first_anc' is the Item cell in the table
+    #       param.__class__ = <class 'tlo.core.Parameter'>
+    #        param.__dict__ = {'type_': <Types.REAL: 4>, 'description': 'Probability a woman will access antenatal care for the first time'}
+    # parent.object_name = 'Module', or 'CareOfWomenDuringPregnancy'
+    #type(parent) = <class 'sphinx.ext.autodoc.ClassDocumenter'>
+    # isattr = False
+    # parent = <sphinx.ext.autodoc.ModuleDocumenter object at 0x111fb2240>
     #raise NotImplementedError('must be implemented in subclasses')
-    return True
-
-
-def add_content(self, more_content, no_docstring=False):
-    """
-    Add content from docstrings, attribute documentation and user.
-
-     We adapt the version of this function currently installed at:
-     /anaconda3/envs/nicedocs/lib/python3.6/site-packages/sphinx/ext/autodoc/__init__.py
-     in the  Documenter class.
-
-     Without this function, the PARAMETERS and PROPERTIES tables do not appear.
-     Even if can_document_member() is True
-    """
-
-    # set sourcename and add content from attribute documentation
-    sourcename = self.get_sourcename()
-
-    if self.analyzer:
-        attr_docs = self.analyzer.find_attr_docs()
-        if self.objpath:
-            key = ('.'.join(self.objpath[:-1]), self.objpath[-1])
-            # Example key: ('Contraception', 'PARAMETERS')
-            if key not in attr_docs and key[1] in ("PARAMETERS", "PROPERTIES"):
-                attr_docs[key] = []
-            if key in attr_docs:
-                no_docstring = True
-                docstrings = [attr_docs[key]]
-                for i, line in enumerate(self.process_doc(docstrings)):
-                    self.add_line(line, sourcename, i)
-
-    # add content from docstrings
-    if not no_docstring:
-        docstrings = self.get_doc()
-        if not docstrings:
-            # append at least a dummy docstring, so that the event
-            # autodoc-process-docstring is fired and can add some
-            # content if desired
-            docstrings.append([])
-        for i, line in enumerate(self.process_doc(docstrings)):
-            self.add_line(line, sourcename, i)
-
-    # add additional content (e.g. from document), if present
-    if more_content:
-        for line, src in zip(more_content.data, more_content.items):
-            self.add_line(line, src[0], src[1])
+    #return False  #True
+    # will parent give us what we want?
+    if parent.analyzer:
+        ad = parent.analyzer.find_attr_docs()
+        # ad is a dictionary with a tuple as a key andvalue as a list
+        # e.g. (if just one entry in ad):
+        # {('Specifiable', 'PANDAS_TYPE_MAP'): ['Map our Types to Python types.']}
+        # we want a key like: ('Contraception', 'PARAMETERS')
+        if membername in ("PARAMETERS", "PROPERTIES"):
+            #import pdb; pdb.set_trace()
+            classname = parent.object_name  # e.g. 'CareOfWomenDuringPregnancy'
+            key = (classname, membername)
+            if key not in ad:
+                ad[key] = []
+            return True
+    if inspect.isattributedescriptor(member):
+        return True
+    elif (not isinstance(parent, ModuleDocumenter) and
+          not inspect.isroutine(member) and
+          not isinstance(member, type)):
+        return True
+    else:
+        return False
 
 
 def add_directive_header(self, sig):
@@ -212,13 +214,15 @@ def setup(app):
 
     # The next two lines show two different ways of telling Sphinx to use
     # our local, redefined versions of its internal functions:
-    AttributeDocumenter.add_directive_header = add_directive_header
+    ##AttributeDocumenter.add_directive_header = add_directive_header
     #app.extensions['sphinx.ext.autodoc'].module.Documenter.add_content =\
     #    add_content
     # The second one could have been written:
-    Documenter.add_content = add_content
+    #Documenter.add_content = add_content
 
-    Documenter.can_document_member = can_document_member
+    # not impl in Documenter base class.
+    AttributeDocumenter.can_document_member = can_document_member
+    #AttributeDocumenter.can_document_member = matt_can_document_member
 
     # We want to define our own version of Documenter.can_document_member()
     # and put our functionality in there, rather than having our own versions
