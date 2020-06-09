@@ -208,6 +208,9 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 priority=1,
                                                                 topen=self.sim.date
                                                                 )
+        if 'em_severe_trauma' in symptoms:
+            self.sim.modules['RTI'].RTI_MedicalIntervention(self.module, person_id=person_id)
+
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')

@@ -37,7 +37,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 4
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 10000
+popsize = 1000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")
