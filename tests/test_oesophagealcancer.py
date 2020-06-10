@@ -35,7 +35,6 @@ def make_simulation_healthsystemdisabled():
     * the demography module with the OtherDeathsPoll not running
     """
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -49,6 +48,7 @@ def make_simulation_healthsystemdisabled():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
+    sim.seed_rngs(0)
     return sim
 
 
@@ -57,7 +57,6 @@ def make_simulation_nohsi():
     * the healthsystem enable but with no service availabilty (so no HSI run)
     """
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -71,6 +70,7 @@ def make_simulation_nohsi():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
+    sim.seed_rngs(0)
     return sim
 
 
