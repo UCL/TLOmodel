@@ -28,6 +28,9 @@ class OesophagealCancer(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.linear_models_for_progession_of_oc_status = dict()
+        self.lm_onset_dysphagia = None
+        self.daly_wts = dict()
 
     PARAMETERS = {
         "init_prop_oes_cancer_stage": Parameter(
@@ -352,104 +355,82 @@ class OesophagealCancer(Module):
         # NB. The effect being produced is that treatment only has the effect for during the stage at which the
         # treatment was received.
 
-        self.linear_models_for_progession_of_oc_status = dict()
-        self.linear_models_for_progession_of_oc_status[
-            'low_grade_dysplasia'] = LinearModel(
+        p = self.parameters
+
+        self.linear_models_for_progession_of_oc_status['low_grade_dysplasia'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['r_low_grade_dysplasia_none'],
-            Predictor('age_years')
-                .apply(
-                lambda x: 0 if x < 20 else (x - 20) ** self.parameters['rr_low_grade_dysplasia_none_per_year_older']),
-            Predictor('sex')
-                .when('F', self.parameters['rr_low_grade_dysplasia_none_female']),
-            Predictor('li_tob')
-                .when(True, self.parameters['rr_low_grade_dysplasia_none_tobacco']),
-            Predictor('li_ex_alc')
-                .when(True, self.parameters['rr_low_grade_dysplasia_none_ex_alc']),
-            Predictor('oc_status')
-                .when('none', 1.0)
-                .otherwise(0.0)
+            p['r_low_grade_dysplasia_none'],
+            Predictor('age_years').apply(
+                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_dysplasia_none_per_year_older']
+            ),
+            Predictor('sex').when('F', p['rr_low_grade_dysplasia_none_female']),
+            Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
+            Predictor('li_ex_alc').when(True, p['rr_low_grade_dysplasia_none_ex_alc']),
+            Predictor('oc_status').when('none', 1.0)
+                                  .otherwise(0.0)
         )
 
-        self.linear_models_for_progession_of_oc_status[
-            'high_grade_dysplasia'] = LinearModel(
+        self.linear_models_for_progession_of_oc_status['high_grade_dysplasia'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['r_high_grade_dysplasia_low_grade_dysp'],
-            Predictor('had_treatment_during_this_stage', external=True)
-                .when(True, self.parameters['rr_high_grade_dysp_undergone_curative_treatment']),
-            Predictor('oc_status')
-                .when('low_grade_dysplasia', 1.0)
-                .otherwise(0.0)
+            p['r_high_grade_dysplasia_low_grade_dysp'],
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_high_grade_dysp_undergone_curative_treatment']),
+            Predictor('oc_status').when('low_grade_dysplasia', 1.0)
+                                  .otherwise(0.0)
         )
 
-        self.linear_models_for_progession_of_oc_status[
-            'stage1'] = LinearModel(
+        self.linear_models_for_progession_of_oc_status['stage1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['r_stage1_high_grade_dysp'],
-            Predictor('had_treatment_during_this_stage', external=True)
-                .when(True, self.parameters['rr_stage1_undergone_curative_treatment']),
-            Predictor('oc_status')
-                .when('high_grade_dysplasia', 1.0)
-                .otherwise(0.0)
+            p['r_stage1_high_grade_dysp'],
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
+            Predictor('oc_status').when('high_grade_dysplasia', 1.0)
+                                  .otherwise(0.0)
         )
 
-        self.linear_models_for_progession_of_oc_status[
-            'stage2'] = LinearModel(
+        self.linear_models_for_progession_of_oc_status['stage2'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['r_stage2_stage1'],
-            Predictor('had_treatment_during_this_stage', external=True)
-                .when(True, self.parameters['rr_stage2_undergone_curative_treatment']),
-            Predictor('oc_status')
-                .when('stage1', 1.0)
-                .otherwise(0.0)
+            p['r_stage2_stage1'],
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
+            Predictor('oc_status').when('stage1', 1.0)
+                                  .otherwise(0.0)
         )
 
         self.linear_models_for_progession_of_oc_status[
             'stage3'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['r_stage3_stage2'],
-            Predictor('had_treatment_during_this_stage', external=True)
-                .when(True, self.parameters['rr_stage3_undergone_curative_treatment']),
-            Predictor('oc_status')
-                .when('stage2', 1.0)
-                .otherwise(0.0)
+            p['r_stage3_stage2'],
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
+            Predictor('oc_status').when('stage2', 1.0)
+                                  .otherwise(0.0)
         )
 
-        self.linear_models_for_progession_of_oc_status[
-            'stage4'] = LinearModel(
+        self.linear_models_for_progession_of_oc_status['stage4'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['r_stage4_stage3'],
-            Predictor('had_treatment_during_this_stage', external=True)
-                .when(True, self.parameters['rr_stage4_undergone_curative_treatment']),
-            Predictor('oc_status')
-                .when('stage3', 1.0)
-                .otherwise(0.0)
+            p['r_stage4_stage3'],
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
+            Predictor('oc_status').when('stage3', 1.0)
+                                  .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of oc_status
-        assert (set(self.linear_models_for_progession_of_oc_status.keys()).union({'none'})) == \
+        assert set(self.linear_models_for_progession_of_oc_status).union({'none'}) == \
             set(self.PROPERTIES['oc_status'].categories)
 
         # Linear Model for the onset of dysphagia, in each 3 month period
         self.lm_onset_dysphagia = LinearModel.multiplicative(
-            Predictor('oc_status')  .when('low_grade_dysplasia',
-                                          self.parameters['rr_dysphagia_low_grade_dysp'] *
-                                          self.parameters['r_dysphagia_stage1'])
-                                    .when('high_grade_dysplaisa',
-                                          self.parameters['rr_dysphagia_high_grade_dysp'] *
-                                          self.parameters['r_dysphagia_stage1'])
-                                    .when('stage1',
-                                          self.parameters['r_dysphagia_stage1'])
-                                    .when('stage2',
-                                          self.parameters['rr_dysphagia_stage2'] *
-                                          self.parameters['r_dysphagia_stage1'])
-                                    .when('stage3',
-                                          self.parameters['rr_dysphagia_stage3'] *
-                                          self.parameters['r_dysphagia_stage1'])
-                                    .when('stage4',
-                                          self.parameters['rr_dysphagia_stage4'] *
-                                          self.parameters['r_dysphagia_stage1'])
-                                    .otherwise(0.0)
+            Predictor('oc_status').when('low_grade_dysplasia',
+                                        p['rr_dysphagia_low_grade_dysp'] * p['r_dysphagia_stage1'])
+                                  .when('high_grade_dysplaisa',
+                                        p['rr_dysphagia_high_grade_dysp'] * p['r_dysphagia_stage1'])
+                                  .when('stage1', p['r_dysphagia_stage1'])
+                                  .when('stage2', p['rr_dysphagia_stage2'] * p['r_dysphagia_stage1'])
+                                  .when('stage3', p['rr_dysphagia_stage3'] * p['r_dysphagia_stage1'])
+                                  .when('stage4', p['rr_dysphagia_stage4'] * p['r_dysphagia_stage1'])
+                                  .otherwise(0.0)
         )
 
         # ----- DX TESTS -----
@@ -466,7 +447,6 @@ class OesophagealCancer(Module):
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
-            self.daly_wts = dict()
             # For those with cancer (any stage prior to stage 4) and never treated
             self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=550
