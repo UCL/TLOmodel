@@ -465,7 +465,7 @@ class OesophagealCancer(Module):
         )
 
         # ----- DISABILITY-WEIGHT -----
-        if "HealthBurden" in self.sim.modules.keys():
+        if "HealthBurden" in self.sim.modules:
             self.daly_wts = dict()
             # For those with cancer (any stage prior to stage 4) and never treated
             self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
@@ -882,25 +882,24 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Current counts, total
         dict_for_output.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].oc_status.value_counts().to_dict().items()
-        })
+            f'total_{k}': v for k, v in df.loc[df.is_alive].oc_status.value_counts().items()})
 
         # Current counts, undiagnosed
         dict_for_output.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().to_dict().items()})
+            pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
 
         # Current counts, diagnosed
         dict_for_output.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().to_dict().items()})
+            ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
 
         # Current counts, on treatment (excl. palliative care)
         dict_for_output.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
             df.oc_date_treatment) & pd.isnull(
-            df.oc_date_palliative_care)), 'oc_status'].value_counts().to_dict().items()})
+            df.oc_date_palliative_care)), 'oc_status'].value_counts().items()})
 
         # Current counts, on palliative care
         dict_for_output.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_palliative_care), 'oc_status'].value_counts().to_dict().items()})
+            ~pd.isnull(df.oc_date_palliative_care), 'oc_status'].value_counts().items()})
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
