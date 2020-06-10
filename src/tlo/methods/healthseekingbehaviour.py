@@ -189,11 +189,13 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # TODO - symptom that are specific to a disease module need to be registered, or otherwise safely
                 #  handled here
-                try:
-                    if person_profile['sy_dysphagia']:
-                        f += np.log(4.00)       # arbitrarily large value for health seeking for dysphagia
-                except KeyError:
-                    pass
+                def optional_symptom(name, value):
+                    if name in person_profile:
+                        return value
+                    return 0
+
+                # arbitrarily large value for health seeking for dysphagia)
+                f += optional_symptom('sy_dysphagia', np.log(4.00))
 
                 # convert into a probability of seeking care:
                 prob_seeking_care = 1 / (1 + np.exp(-f))
