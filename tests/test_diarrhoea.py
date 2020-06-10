@@ -317,6 +317,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Dysentery'] = 1.0
 
     # Make long duration so as to allow time for healthcare seeking
+    sim.modules['Diarrhoea'].parameters['min_days_duration_of_episode'] = 3
     sim.modules['Diarrhoea'].parameters['mean_days_duration_with_rotavirus'] = 12
     sim.modules['Diarrhoea'].parameters['mean_days_duration_with_shigella'] = 12
     sim.modules['Diarrhoea'].parameters['mean_days_duration_with_adenovirus'] = 12
@@ -350,7 +351,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     # Check that all of those who got diarrhoea got treatment
     got_diarrhoea = ~pd.isnull(df.gi_last_diarrhoea_date_of_onset)
     assert not pd.isnull(df.loc[got_diarrhoea, 'gi_last_diarrhoea_treatment_date']).any()
-    # ******* todo: this is failing because one person (67) is not getting treatment!
+
+    # ******* todo: this is failing because one person (67) is not getting treatment -- maybe because they are recovered before they are treated
     # **** could be to do with short duration episode!?!!?!?
 
 

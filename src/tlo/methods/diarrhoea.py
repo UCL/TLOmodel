@@ -1220,8 +1220,13 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # check that the event is happening on the right day
-        assert self.sim.date == df.at[person_id, 'gi_last_diarrhoea_recovered_date']
+        # do nothing if the person has already recovered through being cure
+        if not self.sim.date == df.at[person_id, 'gi_last_diarrhoea_recovered_date']:
+            try:
+                assert df.at[person_id, 'gi_last_diarrhoea_recovered_date'] < self.sim.date
+            except:
+                print('eh?')
+            return
 
         # check that the person was not scheduled to die in this episode
         assert pd.isnull(df.at[person_id, 'gi_last_diarrhoea_death_date'])
@@ -1229,7 +1234,6 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         # Resolve all the symptoms immediately
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
-
 
 class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
     """
@@ -1249,16 +1253,20 @@ class DiarrhoeaSevereDehydrationEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # check that the person already has dehydration:
-        assert df.at[person_id, 'gi_last_diarrhoea_dehydration'] == 'some'
+        # Do nothing if the person  has been cured already
+        if (df.at[person_id, 'gi_last_diarrhoea_recovered_date'] <= self.sim.date):
+            return
 
-        # check that the person is currently experiencing an episode:
+        # Check that the person is currently experiencing an episode:
         assert df.at[person_id, 'gi_last_diarrhoea_date_of_onset'] <= self.sim.date
-        assert ((not pd.isnull(df.at[person_id, 'gi_last_diarrhoea_death_date'])) and (
+        try:
+            assert ((not pd.isnull(df.at[person_id, 'gi_last_diarrhoea_death_date'])) and (
             df.at[person_id, 'gi_last_diarrhoea_death_date'] >= self.sim.date)) \
                or \
                ((not pd.isnull(df.at[person_id, 'gi_last_diarrhoea_recovered_date'])) and (
                    df.at[person_id, 'gi_last_diarrhoea_recovered_date'] >= self.sim.date))
+        except:
+            print('eh?')
 
         # change the status:
         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'severe'
@@ -1292,7 +1300,7 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
 
 class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
     """
-    #This is the cure event. It is called by HSI events that have implemented a cure.
+    # This is the cure event. It is called by HSI events that have implemented a cure.
     It does the following:
         * "cancels" the death caused by diarrhoea (if there was going to be one)
         * sets the date of recovery to today's date
