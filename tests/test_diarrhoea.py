@@ -39,13 +39,20 @@ def check_configuration_of_properties(sim):
     df = sim.population.props
 
     # Those that have never had diarrhoea, should have null values:
-    assert pd.isnull(df.loc[df['gi_last_diarrhoea_dehydration'] == 'none',[
+    assert pd.isnull(df.loc[df['gi_last_diarrhoea_pathogen'] == 'none', [
         'gi_last_diarrhoea_date_of_onset',
         'gi_last_diarrhoea_duration',
         'gi_last_diarrhoea_recovered_date',
         'gi_last_diarrhoea_death_date',
         'gi_last_diarrhoea_treatment_date']
-    ]).any().any()
+    ]).all().all()
+
+    # those that have have never had diarrhoea should have 'none' for type and pathogen of last episode
+    assert (df.loc[df['gi_last_diarrhoea_pathogen'] == 'none'].index == df.loc[
+        df['gi_last_diarrhoea_type'] == 'none'].index).all()
+    assert (df.loc[df['gi_last_diarrhoea_pathogen'] == 'none'].index == df.loc[
+        df['gi_last_diarrhoea_dehydration'] == 'none'].index).all()
+
 
     # Those that have had diarrhoea, should have a pathogen and a number of days duration
     assert (df.loc[
@@ -57,7 +64,7 @@ def check_configuration_of_properties(sim):
         'gi_last_diarrhoea_duration']).any()
 
 
-    # Those that have had diarrhoea, should have either a recovery date or a death_date
+    # Those that have had diarrhoea, should have either a recovery date or a death_date (but not bith)
     has_recovery_date = ~pd.isnull(df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
         'gi_last_diarrhoea_recovered_date'])
@@ -67,14 +74,26 @@ def check_configuration_of_properties(sim):
         'gi_last_diarrhoea_death_date'])
 
     has_recovery_date_or_death_date = has_recovery_date | has_death_date
-
+    has_both_recovery_date_and_death_date = has_recovery_date & has_death_date
     assert has_recovery_date_or_death_date.all()
+    assert not has_both_recovery_date_and_death_date.any()
 
     # Those for whom the death date has past should be dead
     assert not df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_death_date']) &
         (df['gi_last_diarrhoea_death_date'] < sim.date),
         'is_alive'].any()
+
+    # TODO Those currently in an episode of diarrhoea should have symptoms and no-one else should.
+    date_of_outcome = df['gi_last_diarrhoea_recovered_date'].fillna(df['gi_last_diarrhoea_death_date'])
+
+    in_current_episode = ~pd.isnull(df.gi_last_diarrhoea_date_of_onset) & \
+                         (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
+                         ~pd.isnull(date_of_outcome) & \
+                         (date_of_outcome > sim.date)
+
+    assert list(in_current_episode[in_current_episode].index.values) ==\
+           sim.modules['SymptomManager'].who_has('diarrhoea')
 
 def test_basic_run_of_diarrhoea_module_with_default_params():
     # Check that the module run and that properties are maintained correctly, using health system and default parameters
@@ -332,17 +351,15 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     got_diarrhoea = ~pd.isnull(df.gi_last_diarrhoea_date_of_onset)
     assert not pd.isnull(df.loc[got_diarrhoea, 'gi_last_diarrhoea_treatment_date']).any()
     # ******* todo: this is failing because one person (67) is not getting treatment!
+    # **** could be to do with short duration episode!?!!?!?
+
+
 
     # Check for zero level of death
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
 
-
-
-
-
-
-# TODO Run with intervention but no symptom onset: check that no cures happen etc, some deaths hapen;
+# TODO Run with intervention but no health-care-seeking: check that no cures happen etc, some deaths hapen;
 
 
 
