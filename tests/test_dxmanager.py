@@ -16,6 +16,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     mockitis,
+    pregnancy_supervisor,
     symptommanager,
 )
 from tlo.methods.dxmanager import DxManager, DxTest
@@ -42,6 +43,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              mockitis.Mockitis(),
              chronicsyndrome.ChronicSyndrome())
 
@@ -645,7 +647,7 @@ def test_dx_with_categorial():
     # Create the test - with no specificity:
     my_test_w_no_spec = DxTest(
         property='CategoricalProperty',
-        target_catgories='level2',
+        target_categories=['level2'],
         specificity=0.0
     )
 

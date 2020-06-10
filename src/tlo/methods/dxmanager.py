@@ -5,8 +5,8 @@ See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagn
 import json
 from typing import Dict, List, Tuple
 
-import numpy as np
 import pandas as pd
+from pandas.api.types import is_bool_dtype, is_categorical_dtype, is_float_dtype
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
@@ -43,6 +43,19 @@ class DxManager:
 
             # Check that the objects given are each a DxTest object
             assert all([isinstance(d, DxTest) for d in dx_test]), 'One of the passed objects is not a DxTest object.'
+
+            # Checks on each DxTest
+            df = self.hs_module.sim.population.props
+            for d in dx_test:
+                assert isinstance(d, DxTest), 'One of the passed objects is not a DxTest object'
+                assert d.property in df.columns, f'Column {d.property} does exist in population dataframe'
+                # if property is category, check target categories have been provided
+                if d.target_categories is not None:
+                    assert is_categorical_dtype(df[d.property]), f'{d.property} is not categorical'
+                    assert isinstance(d.target_categories, list), 'target_categories must be list of categories'
+                    property_categories = df[d.property].cat.categories
+                    assert all(elem in property_categories
+                               for elem in d.target_categories), 'not all target_categories are valid categories'
 
             # Check if this tuple of DxTests is a duplicate of something already registered.
             if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
@@ -240,7 +253,7 @@ class DxTest:
                 return None
 
         # Apply the test:
-        if df[self.property].dtype == np.dtype('bool'):
+        if is_bool_dtype(df[self.property]):
             if true_value:
                 # Apply the sensitivity:
                 test_value = hs_module.rng.rand() < self.sensitivity
@@ -248,7 +261,7 @@ class DxTest:
                 # Apply the specificity:
                 test_value = not (hs_module.rng.rand() < self.specificity)
 
-        elif df[self.property].dtype == np.dtype('float'):
+        elif is_float_dtype(df[self.property]):
             # Apply the normally distributed zero-mean error
             reading = true_value + hs_module.rng.normal(0.0, self.measure_error_stdev)
 
@@ -258,7 +271,7 @@ class DxTest:
             else:
                 test_value = bool(reading >= self.threshold)
 
-        elif (df[self.property].dtype == "category") and (self.target_categories is not None):
+        elif self.target_categories is not None:
             # Categorical property: compare the value to the 'target_categories' if its specified
             is_match_to_cat = (true_value in self.target_categories)
 
