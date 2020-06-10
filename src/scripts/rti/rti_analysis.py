@@ -34,7 +34,7 @@ from tlo.methods import (
 resourcefilepath = Path('./resources')
 
 # Establish the simulation object
-yearsrun = 4
+yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
 popsize = 1000

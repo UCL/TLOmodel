@@ -11,6 +11,7 @@ from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -463,7 +464,7 @@ def find_and_count_injuries(dataframe, tloinjcodes):
     index = pd.Index([])
     counts = 0
     for code in tloinjcodes:
-        inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(), axis=1)
+        inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
         if len(inj) > 0:
             injidx = inj.index[inj]
             counts += len(injidx)
@@ -471,8 +472,16 @@ def find_and_count_injuries(dataframe, tloinjcodes):
     return index, counts
 
 
-class RTI(Module):
+def treated_injuries(dataframe, person_id, tloinjcodes):
+    cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+            'rt_injury_7', 'rt_injury_8']
+    person_injuries = dataframe.loc[[person_id], cols]
+    for code in tloinjcodes:
+        injury_cols = person_injuries.columns[(person_injuries.values == code).any(0)].tolist()
+        dataframe.loc[person_id, injury_cols] = "none"
 
+
+class RTI(Module):
     """
     RTI module for the TLO model
     """
@@ -1151,7 +1160,6 @@ class RTI(Module):
                 "HealthBurden"].get_daly_weight(
                 sequlae_code=1738
             )
-        self.sim.modules["HealthSystem"].register_disease_module(self)
 
     # Declare the non-generic symptoms that this module will use.
     # It will not be able to use any that are not declared here. They do not need to be unique to this module.
@@ -1257,6 +1265,7 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_no_med_death'] = False
         df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
         df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
+        self.sim.modules["HealthSystem"].register_disease_module(self)
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to this simulation
@@ -1530,6 +1539,8 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
                     df.loc[person_id, 'rt_injury_7'] = description.loc[person_id, 'Injury 7']
                 if ninjuries == 7:
                     df.loc[person_id, 'rt_injury_8'] = description.loc[person_id, 'Injury 8']
+
+        df.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/poppropsdf.csv')
 
         # ============================ Injury severity classification ============================================
 
@@ -1881,159 +1892,142 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[DALYweightoverlimit, 'rt_disability'] = 1
 
         idx = df.index[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
-        print(self.sim.modules['HealthSystem'].registered_disease_modules.values())
-        for person_id in idx:
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                disease_module=self,
-                add_or_remove='+',
-                symptom_string='em_severe_trauma',
-            )
-        # for person_id_to_start_treatment in idx:
-        #     event = RTI_A_and_E_Diagnostic_Event(self.module, person_id=person_id_to_start_treatment)
-        #     target_date = self.sim.date + DateOffset(days=int(0))
-        #     self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
-        #                                                         tclose=None)
+        # for person_id in idx:
+        #     self.sim.modules['SymptomManager'].change_symptom(
+        #         person_id=person_id,
+        #         disease_module=self,
+        #         add_or_remove='+',
+        #         symptom_string='em_severe_trauma',
+        #     )
         for person_id_to_start_treatment in idx:
-            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=self.module,
-                                                                  person_id=person_id_to_start_treatment)
+            event = RTI_A_and_E_Diagnostic_Event(self.module, person_id=person_id_to_start_treatment)
+            target_date = self.sim.date + DateOffset(days=int(0))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
+                                                                tclose=None)
 
-            columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                       'rt_injury_7', 'rt_injury_8']
-            persons_injuries = df.loc[[person_id_to_start_treatment], columns]
-            xray_counts = 0
-            ct_scan_count = 0
-            MRI_scan_count = 0
+        # ================================ Generic first appointment ===================================================
 
-            # =============================== Diagnose fractures if suspected ==========================================
-            # ------------------------------- Skull fractures ----------------------------------------------------------
-            codes = ['112', '113']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
-                xray_counts += 1
-            # -------------------------------- Facial fractures --------------------------------------------------------
-            codes = ['211', '212']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
-                xray_counts += 1
-            # --------------------------------- Thorax fractures -------------------------------------------------------
-            codes = ['412', '414']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
-                xray_counts += 1
-            # --------------------------------- Vertebrae fractures ----------------------------------------------------
-            codes = ['612']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
-                xray_counts += 1
-            # --------------------------------- Upper extremity fractures ----------------------------------------------
-            codes = ['712']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
-                xray_counts += 1
-            # --------------------------------- Lower extremity fractures ----------------------------------------------
-            codes = ['811', '812', '813']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x-ray
-                xray_counts += 1
+        # for person_id_to_start_treatment in idx:
+        #     event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=self.module,
+        #                                                           person_id=person_id_to_start_treatment)
 
-            # ------------------------------ Traumatic brain injury requirements ---------------------------------------
-            codes = ['133', '134', '135']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
-                ct_scan_count += 1
-            # ------------------------------ Abdominal organ injury requirements ---------------------------------------
-            codes = ['552', '553', '554']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
-                ct_scan_count += 1
-            # -------------------------------- Spinal cord injury requirements -----------------------------------------
-            codes = ['673', '674', '675', '676']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                # the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x-ray
-                # the_appt_footprint['MRI'] = 1  # This appointment requires an MRI
-                xray_counts += 1
-                ct_scan_count += 1
-                MRI_scan_count += 1
+        # columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+        #            'rt_injury_7', 'rt_injury_8']
+        # persons_injuries = df.loc[[person_id_to_start_treatment], columns]
+        # xray_counts = 0
+        # ct_scan_count = 0
+        # MRI_scan_count = 0
+        #
+        # # =============================== Diagnose fractures if suspected ==========================================
+        # # ------------------------------- Skull fractures ----------------------------------------------------------
+        # codes = ['112', '113']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
+        #     xray_counts += 1
+        # # -------------------------------- Facial fractures --------------------------------------------------------
+        # codes = ['211', '212']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
+        #     xray_counts += 1
+        # # --------------------------------- Thorax fractures -------------------------------------------------------
+        # codes = ['412', '414']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
+        #     xray_counts += 1
+        # # --------------------------------- Vertebrae fractures ----------------------------------------------------
+        # codes = ['612']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
+        #     xray_counts += 1
+        # # --------------------------------- Upper extremity fractures ----------------------------------------------
+        # codes = ['712']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1
+        #     xray_counts += 1
+        # # --------------------------------- Lower extremity fractures ----------------------------------------------
+        # codes = ['811', '812', '813']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x-ray
+        #     xray_counts += 1
+        #
+        # # ------------------------------ Traumatic brain injury requirements ---------------------------------------
+        # codes = ['133', '134', '135']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
+        #     ct_scan_count += 1
+        # # ------------------------------ Abdominal organ injury requirements ---------------------------------------
+        # codes = ['552', '553', '554']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
+        #     ct_scan_count += 1
+        # # -------------------------------- Spinal cord injury requirements -----------------------------------------
+        # codes = ['673', '674', '675', '676']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     # the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x-ray
+        #     # the_appt_footprint['MRI'] = 1  # This appointment requires an MRI
+        #     xray_counts += 1
+        #     ct_scan_count += 1
+        #     MRI_scan_count += 1
+        #
+        # # --------------------------------- Dislocations -----------------------------------------------------------
+        # codes = ['322', '323', '722', '822']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x-ray
+        #     xray_counts += 1
+        #
+        # # --------------------------------- Soft tissue injury in neck ---------------------------------------------
+        # codes = ['342', '343']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x ray
+        #     xray_counts += 1
+        #     ct_scan_count += 1
+        #
+        # # --------------------------------- Soft tissue injury in thorax/ lung injury ------------------------------
+        # codes = ['441', '443', '453']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
+        #     event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x ray
+        #     xray_counts += 1
+        #     ct_scan_count += 1
+        #
+        # # -------------------------------- Internal bleeding -------------------------------------------------------
+        # codes = ['361', '363', '461', '463']
+        # idx, counts = find_and_count_injuries(persons_injuries, codes)
+        # idx2, counts = find_and_count_injuries(persons_injuries, ['461', '463'])
+        # if len(idx) > 0:
+        #     event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
+        #     ct_scan_count += 1
+        #     if len(idx2) > 0:
+        #         event.EXPECTED_APPT_FOOTPRINT['MinorSurg'] = 1
 
-            # --------------------------------- Dislocations -----------------------------------------------------------
-            codes = ['322', '323', '722', '822']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x-ray
-                xray_counts += 1
-
-            # --------------------------------- Soft tissue injury in neck ---------------------------------------------
-            codes = ['342', '343']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x ray
-                xray_counts += 1
-                ct_scan_count += 1
-
-            # --------------------------------- Soft tissue injury in thorax/ lung injury ------------------------------
-            codes = ['441', '443', '453']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
-                event.EXPECTED_APPT_FOOTPRINT['DiagRadio'] = 1  # This appointment requires an x ray
-                xray_counts += 1
-                ct_scan_count += 1
-
-            # -------------------------------- Internal bleeding -------------------------------------------------------
-            codes = ['361', '363', '461', '463']
-            idx, counts = find_and_count_injuries(persons_injuries, codes)
-            idx2, counts = find_and_count_injuries(persons_injuries, ['461', '463'])
-            if len(idx) > 0:
-                event.EXPECTED_APPT_FOOTPRINT['Tomography'] = 1  # This appointment requires a ct scan
-                ct_scan_count += 1
-                if len(idx2) > 0:
-                    event.EXPECTED_APPT_FOOTPRINT['MinorSurg'] = 1
-            logger.debug('Person %d seeks care for an injury from a road traffic '
-                         'incident on date: %s', person_id_to_start_treatment, self.sim.date)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                event,
-                priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + DateOffset(days=5))
-
-
-            df.at[person_id_to_start_treatment, 'rt_diagnosed'] = True
-
-            # if event.apply(person_id_to_start_treatment, ):
-            #     df.at[person_id_to_start_treatment, 'rt_diagnosed'] = True
-            #     logger.debug('@@@@@@@@@@ A and E appointment ran for person %d !!!!!!', person_id_to_start_treatment)
-            #     event = RTI_MedicalIntervention(self.module, person_id=person_id_to_start_treatment)
-            #     target_date = self.sim.date + DateOffset(days=int(0))
-            #     self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=target_date,
-            #                                                         tclose=None)
-            #     logger.debug('This is GenericEmergencyFirstApptAtFacilityLevel1 called by RTI scheduling a treatment on'
-            #                  ' date %s for person %d', self.sim.date, person_id_to_start_treatment)
-            #
-            # if event.did_not_run():
-            #     logger.debug('GenericEmergencyFirstApptAtFacilityLevel1 called by RTI, now asking if person %d dies '
-            #                  'without health care on day %s', person_id_to_start_treatment, self.sim.date)
-            #     self.sim.schedule_event(RTINoMedicalInterventionDeathEvent(self.module, person_id_to_start_treatment),
-            #                             self.sim.date + DateOffset(days=0))
+        # logger.debug('Person %d seeks care for an injury from a road traffic '
+        #              'incident on date: %s', person_id_to_start_treatment, self.sim.date)
+        # self.sim.modules['HealthSystem'].schedule_hsi_event(
+        #     event,
+        #     priority=0,
+        #     topen=self.sim.date,
+        #     tclose=self.sim.date + DateOffset(days=5))
 
 
 # ---------------------------------------------------------------------------------------------------------
-#   HEALTH SYSTEM INTERACTION EVENTS
+#   RTI SPECIFIC HEALTH SYSTEM INTERACTION EVENTS
 #
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
-
 
 
 class RTI_A_and_E_Diagnostic_Event(HSI_Event, IndividualScopeEventMixin):
@@ -2163,7 +2157,6 @@ class RTI_A_and_E_Diagnostic_Event(HSI_Event, IndividualScopeEventMixin):
         # Diagnosed by visual inspection, assume this is part of the A and E appointment
 
         the_accepted_facility_level = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_A_and_E_Diagnostic_Event'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -2215,7 +2208,11 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
         df = self.sim.population.props
         p = module.parameters
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        # todo: remove hard coding of these probabilities
+        self.prob_depressed_skull_fracture = 0.14  # proportion of depressed skull fractures in
+        # https://doi.org/10.1016/j.wneu.2017.09.084
+        self.prob_mild_burns = 0.56  # proportion of burns accross SSA with TBSA < 10
+        # https://doi.org/10.1016/j.burns.2015.04.006
         self.prob_TBI_require_craniotomy = p['prob_TBI_require_craniotomy']
         self.prob_exploratory_laparotomy = p['prob_exploratory_laparotomy']
         self.prob_death_with_med_mild = p['prob_death_with_med_mild']
@@ -2225,9 +2222,15 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' foot
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_accepted_facility_level = 1
+        # Place holder appointment footprints to ensure there is at least one
+        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
 
-        # Place holder
-        the_appt_footprint['InpatientDays'] = 1
+        if is_child:
+            the_appt_footprint['Under5OPD'] = 1.0  # Child out-patient appointment
+        else:
+            the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
+
         #   - update to reflect the appointments that are required
         # ------------------------------------ Generic ----------------------------------------------------------------
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
@@ -2235,51 +2238,16 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         persons_injuries = df.loc[[person_id], columns]
         surgery_counts = 0
         xray_counts = 0
-        # --------------------------- Lacerations will get stiches here -----------------------------------------------
-        codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
-        idx, lacerationcounts = find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            # Request suture
-            pkg_code_laceration_suture = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] ==
-                                'Treatment of Injuries (Blunt Trauma - Soft Tissue Injury)',
-                                'Intervention_Pkg_Code'])[0]
-            print('find me')
-            print(pkg_code_laceration_suture)
-            # tetanus jab for those with lacerations...
-            # item_code_tetanus = pd.unique(
-            # consumables.loc[consumables['Items'] == 'Tetanus toxin vaccine (TTV)', 'Item_Code'])[0]
-            item_code_paracetamol = pd.unique(
-                consumables.loc[consumables['Items'] ==
-                                'Paracetamol 500mg_1000_CMST', 'Item_Code'])[0]
-
-            consumables_open_wound = {
-                'Intervention_Package_Code': {pkg_code_laceration_suture: 1},
-                'Item_Code': {item_code_paracetamol: 1}}
-
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=HSI_Event,
-                cons_req_as_footprint=consumables_open_wound)
-            # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            #     hsi_event=HSI_Event,
-            #     cons_req_as_footprint=consumables_open_wound,
-            #     to_log=True)
-
-            # Availability of consumables determines if the intervention is delivered...
-            if is_cons_available['Intervention_Package_Code'][pkg_code_laceration_suture]:
-                logger.debug('This facility has open wound treatment available which has been used for person %d.',
-                             person_id)
-            else:
-                logger.debug('This facility has no treatment for open wounds available.')
 
         # --------------------- For fractures, sometimes requiring surgery ---------------------------------------------
         # ------------------------------- Skull fractures -------------------------------------------------------------
-        # codes = ['112', '113']
-        # idx, counts = find_and_count_injuries(persons_injuries, codes)
-        # # Find probability that skull fractures will require surgery
-        # if len(idx) > 0:
-        #     the_appt_footprint['DiagRadio'] = 1
-        #     xray_counts += 1
+        codes = ['112', '113']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        require_surgery = self.module.rng.random_sample(size=1)
+        # Find probability that skull fractures will require surgery
+        if len(idx) > 0 & (require_surgery < self.prob_depressed_skull_fracture):
+            the_appt_footprint['MajorSurg'] = 1
+            surgery_counts += 1
         # -------------------------------- Facial fractures -----------------------------------------------------------
         # codes = ['211', '212']
         # idx, counts = find_and_count_injuries(persons_injuries, codes)
@@ -2304,7 +2272,6 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         # consumables required: pain medicine, casts and closed reduction and in some cases surgery.
         # --------------------------------- Lower extremity fractures --------------------------------------------------
         codes = ['811', '812', '813']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
         idx1, counts = find_and_count_injuries(persons_injuries, codes[2])
         # Major surgery required for broken femur/hip/pelvis
         if len(idx1) > 0:
@@ -2316,7 +2283,6 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         idx, counts = find_and_count_injuries(persons_injuries, codes)
         require_surgery = self.module.rng.random_sample(size=1)
         if len(idx) > 0:
-            the_appt_footprint['InpatientDays'] = 1
             if require_surgery < self.prob_TBI_require_craniotomy:
                 the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
                 surgery_counts += 1
@@ -2325,7 +2291,6 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         idx, counts = find_and_count_injuries(persons_injuries, codes)
         require_surgery = self.module.rng.random_sample(size=1)
         if len(idx) > 0:
-            the_appt_footprint['InpatientDays'] = 1
             if require_surgery < self.prob_exploratory_laparotomy:
                 the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
                 surgery_counts += 1
@@ -2334,7 +2299,6 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['MajorSurg'] = 1  # This appointment requires Major surgery
-            the_appt_footprint['InpatientDays'] = 1
             surgery_counts += 1
 
         # --------------------------------- Dislocations --------------------------------------------------------------
@@ -2372,8 +2336,17 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         idx, counts = find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             the_appt_footprint['MajorSurg'] = 1
+            surgery_counts += 1
         # ---------------------------------------- Burns ---------------------------------------------------------------
-        the_accepted_facility_level = 1
+        codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        burns_needing_referral = ['1114', '2114', '3113']
+        idx2, counts = find_and_count_injuries(persons_injuries, burns_needing_referral)
+        if len(idx) > 0:
+            the_appt_footprint['MinorSurg'] = 1  # Assume all will require removal of dead tissue
+            if is_child or (len(idx2) > 0) or (counts > 1):
+                logger.debug('This is RTI_MedicalIntervention, person %d needs referral for burn treatment', person_id)
+                the_appt_footprint['InpatientDays'] = 1
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'RTI_MedicalIntervention'  # This must begin with the module name
@@ -2384,11 +2357,123 @@ class RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        df.at[person_id, 'rt_med_int'] = True
-        logger.debug('@@@@@@@@@@ Medical intervention started !!!!!!')
-        # prob_dis = np.random.random()
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        persons_injuries = df.loc[[person_id], columns]
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # =========================== Request pain relief =============================================================
+
+        # --------------------------- Lacerations will get stitches here -----------------------------------------------
+        codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
+        idx, lacerationcounts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            # Request suture
+            pkg_code_soft_tissue_wound = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] ==
+                                'Treatment of Injuries (Blunt Trauma - Soft Tissue Injury)',
+                                'Intervention_Pkg_Code'])[0]
+            pkg_code_sterilize_wound = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] ==
+                                'Misc',
+                                'Intervention_Pkg_Code'])[0]
+            item_code_tetanus = pd.unique(
+                consumables.loc[consumables['Items'] == 'Tetanus toxin vaccine (TTV)', 'Item_Code'])[0]
+            item_code_cetrimide_chlorhexidine = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
+            consumables_open_wound = {
+                'Intervention_Package_Code': {pkg_code_soft_tissue_wound: lacerationcounts,
+                                              pkg_code_sterilize_wound: lacerationcounts},
+                'Item_Code': {item_code_tetanus: 1, item_code_cetrimide_chlorhexidine: lacerationcounts}}
+
+            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_open_wound,
+                to_log=False)
+
+            # cond = (is_cons_available['Intervention_Package_Code'][pkg_code_soft_tissue_wound]) & \
+            #        (is_cons_available['Intervention_Package_Code'][pkg_code_sterilize_wound])
+            cond = is_cons_available['Intervention_Package_Code'][pkg_code_soft_tissue_wound]
+            # Availability of consumables determines if the intervention is delivered...
+            if cond:
+                logger.debug('This facility has open wound treatment available which has been used for person %d.',
+                             person_id)
+                logger.debug(f'This facility treated their {lacerationcounts} open wounds')
+                treated_injuries(df, person_id, codes)
+            else:
+                logger.debug('This facility has no treatment for open wounds available.')
+
+        # =================================== Burns consumables =======================================================
+
+        codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+        idx, burncounts = find_and_count_injuries(persons_injuries, codes)
+        possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
+        idx2, counts = find_and_count_injuries(persons_injuries, possible_large_TBSA_burn_codes)
+        if len(idx) > 0:
+            # give tetanus jab
+            pkg_code_soft_tissue_wound = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] ==
+                                'Treatment of Injuries (Blunt Trauma - Soft Tissue Injury)',
+                                'Intervention_Pkg_Code'])[0]
+            item_code_tetanus = pd.unique(
+                consumables.loc[consumables['Items'] == 'Tetanus toxin vaccine (TTV)', 'Item_Code'])[0]
+            # give morphine
+            item_code_morphine = pd.unique(
+                consumables.loc[consumables['Items'] == "morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA",
+                                'Item_Code'])[0]
+            # sterilize wound
+            pkg_code_sterilize_wound_and_fluid_replacement = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] ==
+                                'Misc',
+                                'Intervention_Pkg_Code'])[0]
+            item_code_cetrimide_chlorhexidine = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
+            item_code_gauze = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_packof 36_CMST", 'Item_Code'])[0]
+
+            random_for_severe_burn = self.module.rng.random_sample(size=1)
+            if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
+                # Note that the wording for the above condition is awful but it's doing what I want it to
+
+                item_code_fluid_replacement = pd.unique(
+                    consumables.loc[consumables['Items'] ==
+                                    "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
+                consumables_burns = {
+                    'Intervention_Package_Code': {pkg_code_soft_tissue_wound: 1,
+                                                  pkg_code_sterilize_wound_and_fluid_replacement: 1},
+                    'Item_Code': {item_code_tetanus: 1, item_code_cetrimide_chlorhexidine: burncounts,
+                                  item_code_morphine: 1, item_code_fluid_replacement: 1, item_code_gauze: burncounts}}
+
+            else:
+                consumables_burns = {
+                    'Intervention_Package_Code': {pkg_code_soft_tissue_wound: 1,
+                                                  pkg_code_sterilize_wound_and_fluid_replacement: 1},
+                    'Item_Code': {item_code_tetanus: 1, item_code_cetrimide_chlorhexidine: burncounts,
+                                  item_code_morphine: 1, item_code_gauze: burncounts}}
+
+            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_burns,
+                to_log=False)
+            # cond = (is_cons_available['Intervention_Package_Code'][pkg_code_sterilize_wound_and_fluid_replacement]) & \
+            #        (is_cons_available['Intervention_Package_Code'][pkg_code_soft_tissue_wound])
+            cond = is_cons_available['Intervention_Package_Code'][pkg_code_soft_tissue_wound]
+            # Availability of consumables determines if the intervention is delivered...
+            if cond:
+                logger.debug('This facility has burn treatment available which has been used for person %d.',
+                             person_id)
+                logger.debug(f'This facility treated their {burncounts} burns')
+                treated_injuries(df, person_id, codes)
+            else:
+                logger.debug('This facility has no treatment for open wounds available.')
+
         self.sim.schedule_event(RTIMedicalInterventionDeathEvent(self.module, person_id), self.sim.date +
                                 DateOffset(days=0))
+        df.at[person_id, 'rt_med_int'] = True
+        logger.debug('@@@@@@@@@@ Medical intervention started for person %d !!!!!!', person_id)
         logger.debug('This is RTIMedicalInterventionEvent scheduling a potential death on date %s for person %d',
                      self.sim.date, person_id)
 
