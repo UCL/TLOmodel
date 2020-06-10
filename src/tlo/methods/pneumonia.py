@@ -36,6 +36,10 @@ class Pneumonia(Module):
         'other_pathogens'
     }
 
+    complications = {'pneumothorax', 'pleural efusion', 'empyema',
+    'lung abscess', 'sepsis', 'meningitis',
+    'respiratory failure'}
+
     # Declare the severity levels of the disease:
     pathogen_type = {
         'viral': 'RSV' 'rhinovirus' 'hMPV' 'parainfluenza' 'influenza',
@@ -289,7 +293,8 @@ class Pneumonia(Module):
         self.risk_of_death_severe_pneumonia = dict()
 
         # dict to hold the probability of onset of different types of symptom given underlying complications:
-        self.prob_symptoms = dict()
+        self.prob_symptoms_uncomplicated_pneumonia = set()
+        self.prob_extra_symptoms_complications = dict()
 
         # dict to hold the DALY weights
         self.daly_wts = dict()
@@ -581,75 +586,7 @@ class Pneumonia(Module):
 
         # --------------------------------------------------------------------------------------------
 
-        # --------------------------------------------------------------------------------------------
-        # Make a dict containing the probability of symptoms onset given acquisition of pneumonia
-        self.prob_symptoms.update({
-            'uncomplicated': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 0
-            },
-            'pneumothorax': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'grunting': 0.9,
-                'sereve_respiratory_distress': 0.5,
-                'cyanosis': 1
-            },
-            'pleural_effusion': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'empyema': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'lung_abscess': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'sepsis': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'menigitis': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'respiratory_failure': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            }
-        })
-        # TODO: add the probabilities of symptoms by severity - in parameters
+
 
         # check that probability of symptoms have been declared for each severity level
         # assert self.severity == set(list(self.prob_symptoms.keys()))
@@ -710,6 +647,55 @@ class Pneumonia(Module):
                                                .otherwise(0.0)
                                                ),
         }),
+
+        # --------------------------------------------------------------------------------------------
+        # Make a dict containing the probability of symptoms onset given acquisition of pneumonia
+        self.prob_symptoms_uncomplicated_pneumonia = {
+            'fever': 0.7,
+            'cough': 0.8,
+            'difficult_breathing': 1,
+            'fast_breathing': 0.9,
+            'chest_indrawing': 0.5,
+            'danger_signs': 0
+        }
+
+        self.prob_extra_symptoms_complications.update({
+            'pneumothorax': {
+                'grunting': 0.9,
+                'sereve_respiratory_distress': 0.5,
+                'cyanosis': 1
+            },
+            'pleural_effusion': {
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'empyema': {
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'lung_abscess': {
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'sepsis': {
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'menigitis': {
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'respiratory_failure': {
+                'hypoxia': 0.7,
+                'danger_signs': 1
+            }
+        })
+        # TODO: add the probabilities of symptoms by severity - in parameters
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the risk of dying due to pneumonia
@@ -787,7 +773,6 @@ class Pneumonia(Module):
 
         # ---- Key Current Status Classification Properties ----
         df.at[child_id, 'gi_last_pneumonia_pathogen'] = 'none'
-        df.at[child_id, 'gi_last_clinical_severity'] = 'none'
 
         # ---- Internal values ----
         df.at[child_id, 'gi_last_pneumonia_date_of_onset'] = pd.NaT
@@ -796,6 +781,7 @@ class Pneumonia(Module):
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
+        df.at[child_id, 'tmp_low_birth_weight'] = False
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
         df.at[child_id, 'tmp_continued_breastfeeding'] = False
 
@@ -914,7 +900,7 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 7 + (-2 + 4 * rng.rand())))  # assumes uniform interval around mean duration with range 4 days
 
             # ----------------------- Allocate symptoms to onset of pneumonia ----------------------
-            possible_symptoms_by_severity = m.prob_symptoms['non-severe']
+            possible_symptoms_by_severity = m.prob_symptoms_uncomplicated_pneumonia
             symptoms_for_this_person = list()
             for symptom, prob in possible_symptoms_by_severity.items():
                 if rng.rand() < prob:
@@ -975,26 +961,28 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ri_pneumonia_by_pathogen_type'] = 'primarily viral'
         if self.pathogen == self.module.pathogen_type['bacterial']:
             df.at[person_id, 'ri_pneumonia_by_pathogen_type'] = 'primarily bacterial'
-            
-        # Determine progression to 'severe clinical pneumonia'
-        date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
-        prob_progress_clinical_severe_case = pd.DataFrame(index=[person_id])
-        # for disease in m.diseases:
-        #     prob_progress_clinical_severe_case = \
-        #         m.progression_to_clinical_severe_penumonia[disease].predict(df.loc[[person_id]]).values[0]
-        # will_progress_to_severe = rng.rand() < prob_progress_clinical_severe_case
 
-        # if will_progress_to_severe:
-        #     df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
-        #     df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
-        #     date_onset_clinical_severe = self.module.sim.date + DateOffset(
-        #         days=np.random.randint(2, self.duration_in_days))
-        #     self.sim.schedule_event(SeverePneumoniaEvent(self.module, person_id,
-        #                                                  duration_in_days=self.duration_in_days),
-        #                             date_onset_clinical_severe)
-        # else:
-        #     df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
-        #     df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
+        date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
+
+        complications_for_this_person = list()
+        for complication in self.module.complications:
+            prob_developing_complications = m.risk_of_developing_pneumonia_complications[complication].predict(
+                df.loc[[person_id]]).values[0]
+            if rng.rand() < prob_developing_complications:
+                complications_for_this_person.append(complication)
+                df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
+                df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
+
+        for i in complications_for_this_person:
+            date_onset_complications = self.module.sim.date + DateOffset(
+                days=np.random.randint(3, self.duration_in_days))
+            self.sim.schedule_event[i](PneumoniaWithComplicationsEvent(
+                self.module, person_id, duration_in_days=self.duration_in_days, symptoms=self.symptoms,
+                complication=complications_for_this_person), date_onset_complications)
+
+        if len(complications_for_this_person) == 0:
+            df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
+            df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
 
         # Add this incident case to the tracker
         age = df.loc[person_id, ['age_years']]
@@ -1005,16 +993,18 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
 
 
-class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
+class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
         """
             This Event is for the onset of Clinical Severe Pneumonia. For some untreated children,
             this occurs a set number of days after onset of disease.
             It sets the property 'ri_last_clinical_severity' to 'severe' and schedules the death.
             """
 
-        def __init__(self, module, person_id, duration_in_days):
+        def __init__(self, module, person_id, duration_in_days, symptoms, complication):
             super().__init__(module, person_id=person_id)
             self.duration_in_days = duration_in_days
+            self.complication = complication
+            self.symptoms = symptoms
 
         def apply(self, person_id):
             df = self.sim.population.props  # shortcut to the dataframe
@@ -1025,10 +1015,9 @@ class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
             if not df.at[person_id, 'is_alive']:
                 return
 
-            df.at[person_id, 'ri_last_clinical_severity'] = 'severe'
-            possible_symptoms_by_severity = self.module.prob_symptoms['severe']
+            possible_symptoms_by_complication = self.module.prob_extra_symptoms_complications[self.complication]
             symptoms_for_this_person = list()
-            for symptom, prob in possible_symptoms_by_severity.items():
+            for symptom, prob in possible_symptoms_by_complication.items():
                 if self.module.rng.rand() < prob:
                     symptoms_for_this_person.append(symptom)
 
