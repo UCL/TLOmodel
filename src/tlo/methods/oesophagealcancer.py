@@ -326,7 +326,7 @@ class OesophagealCancer(Module):
         palliative_care_initiated[selected_for_palliative_care] = True
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
-        df.loc[palliative_care_initiated, "oc_date_palliative_care"] = df.loc[treatment_initiated, "oc_date_diagnosis"]
+        df.loc[palliative_care_initiated, "oc_date_palliative_care"] = df.loc[palliative_care_initiated, "oc_date_diagnosis"]
 
     def initialise_simulation(self, sim):
         """
