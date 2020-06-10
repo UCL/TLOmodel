@@ -16,7 +16,6 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     contraception,
@@ -24,8 +23,8 @@ from tlo.methods import (
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
-    labour,
     healthsystem,
+    labour,
     oesophagealcancer,
     pregnancy_supervisor,
     symptommanager,
