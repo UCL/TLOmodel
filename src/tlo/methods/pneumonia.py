@@ -205,10 +205,10 @@ class Pneumonia(Module):
         'r_death_from_pneumonia_due_to_respiratory_failure': Parameter
         (Types.REAL, 'death rate from pneumonia due to respiratory failure'
          ),
-        'rr_death_pneumonia_agelt2mo': Parameter
-        (Types.REAL,
-         'death rate of pneumonia'
-         ),
+        # 'rr_death_pneumonia_agelt2mo': Parameter
+        # (Types.REAL,
+        #  'death rate of pneumonia'
+        #  ),
         'rr_death_pneumonia_age12to23mo': Parameter
         (Types.REAL,
          'death rate of pneumonia'
@@ -225,24 +225,34 @@ class Pneumonia(Module):
         (Types.REAL,
          'death rate of pneumonia'
          ),
+        'rr_death_pneumonia_low_birth_weight': Parameter
+        (Types.REAL,
+         'death rate of pneumonia'
+         ),
     }
 
     PROPERTIES = {
         # ---- The pathogen which is the attributed cause of pneumonia ----
-        'ri_last_ALRI_pathogen': Property(Types.CATEGORICAL,
-                                          'Attributable pathogen for the last ALRI event',
-                                          categories=list(pathogens) + ['none']),
+        'ri_last_pneumonia_pathogen': Property(Types.CATEGORICAL,
+                                               'Attributable pathogen for the last pneumonia event',
+                                               categories=list(pathogens) + ['none']),
 
-        # ---- Classification of the severity of pneumonia that is caused ----
-
+        # ---- Complications associated with pneumonia ----
+        'ri_last_pneumonia_complications': Property(Types.LIST,
+                                                    'complications that arose from last pneumonia event',
+                                                    categories=['pneumothorax', 'pleural efusion', 'empyema',
+                                                                'lung abscess', 'sepsis', 'meningitis',
+                                                                'respiratory failure'] + ['none']
+                                                    ),
 
         # ---- Internal variables to schedule onset and deaths due to pneumonia ----
-        'ri_last_ALRI_date_of_onset': Property(Types.DATE, 'date of onset of last pneumonia event'),
-        'ri_last_ALRI_recovered_date': Property(Types.DATE, 'date of recovery from last pneumonia event'),
-        'ri_last_ALRI_death_date': Property(Types.DATE, 'date of death caused by last pneumonia event'),
+        'ri_last_pneumonia_date_of_onset': Property(Types.DATE, 'date of onset of last pneumonia event'),
+        'ri_last_pneumonia_recovered_date': Property(Types.DATE, 'date of recovery from last pneumonia event'),
+        'ri_last_pneumonia_death_date': Property(Types.DATE, 'date of death caused by last pneumonia event'),
 
         # ---- Temporary Variables: To be replaced with the properties of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
+        'tmp_low_birth_weight': Property(Types.BOOL, 'temporary property - low birth weight'),
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
         'tmp_pneumococcal_vaccination': Property(Types.BOOL, 'temporary property - streptococcus pneumoniae vaccine'),
@@ -269,16 +279,16 @@ class Pneumonia(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # equations for the incidence of ALRI by pathogen:
+        # equations for the incidence of pneumonia by pathogen:
         self.incidence_equations_by_pathogen = dict()
 
-        # equations for predicting the progression of disease from non-severe to severe clinical pneumonia:
-        self.progression_to_clinical_severe_penumonia = dict()
+        # equations for the development of pneumonia-associated complications:
+        self.risk_of_developing_pneumonia_complications = dict()
 
         # Linear Model for predicting the risk of death:
-        self.risk_of_death_clinical_severe_pneumonia = dict()
+        self.risk_of_death_severe_pneumonia = dict()
 
-        # dict to hold the probability of onset of different types of symptom given a pathgoen:
+        # dict to hold the probability of onset of different types of symptom given underlying complications:
         self.prob_symptoms = dict()
 
         # dict to hold the DALY weights
@@ -337,42 +347,38 @@ class Pneumonia(Module):
                                .when('.between(1,1)', p['base_inc_rate_pneumonia_by_RSV'][1])
                                .when('.between(2,4)', p['base_inc_rate_pneumonia_by_RSV'][2])
                                .otherwise(0.0),
-                               # Predictor('li_no_access_handwashing')
-                               # .when(False, m.rr_diarrhoea_HHhandwashing),
-                               # Predictor('li_no_clean_drinking_water').
-                               # when(False, m.rr_diarrhoea_clean_water),
-                               # Predictor('li_unimproved_sanitation').
-                               # when(False, m.rr_diarrhoea_improved_sanitation),
-                               # # Predictor('hv_inf').
-                               # # when(True, m.rr_diarrhoea_HIV),
-                               # Predictor('malnutrition').
-                               # when(True, m.rr_diarrhoea_SAM),
-                               # Predictor('exclusive_breastfeeding').
-                               # when(False, m.rr_diarrhoea_excl_breast)
+                               Predictor('li_no_access_handwashing')
+                               .when(False, p['rr_pneumonia_HHhandwashing']),
+                               Predictor('li_wood_burn_stove')
+                               .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                               Predictor('hv_inf')
+                               .when(True, p['rr_pneumonia_HIV']),
+                               Predictor('tmp_malnutrition')
+                               .when(True, p['rr_pneumonia_SAM']),
+                               Predictor('tmp_exclusive_breastfeeding')
+                               .when(False, p['rr_pneumonia_excl_breast'])
                                )
         })
 
         self.incidence_equations_by_pathogen.update({
             'rhinovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['base_inc_rate_pneumonia_by_rhinovirus'][0])
-                               .when('.between(1,1)', p['base_inc_rate_pneumonia_by_rhinovirus'][1])
-                               .when('.between(2,4)', p['base_inc_rate_pneumonia_by_rhinovirus'][2])
-                               .otherwise(0.0),
-                               # Predictor('li_no_access_handwashing')
-                               # .when(False, m.rr_diarrhoea_HHhandwashing),
-                               # Predictor('li_no_clean_drinking_water').
-                               # when(False, m.rr_diarrhoea_clean_water),
-                               # Predictor('li_unimproved_sanitation').
-                               # when(False, m.rr_diarrhoea_improved_sanitation),
-                               # # Predictor('hv_inf').
-                               # # when(True, m.rr_diarrhoea_HIV),
-                               # Predictor('malnutrition').
-                               # when(True, m.rr_diarrhoea_SAM),
-                               # Predictor('exclusive_breastfeeding').
-                               # when(False, m.rr_diarrhoea_excl_breast)
-                               )
+                                      1.0,
+                                      Predictor('age_years')
+                                      .when('.between(0,0)', p['base_inc_rate_pneumonia_by_rhinovirus'][0])
+                                      .when('.between(1,1)', p['base_inc_rate_pneumonia_by_rhinovirus'][1])
+                                      .when('.between(2,4)', p['base_inc_rate_pneumonia_by_rhinovirus'][2])
+                                      .otherwise(0.0),
+                                      Predictor('li_no_access_handwashing')
+                                      .when(False, p['rr_pneumonia_HHhandwashing']),
+                                      Predictor('li_wood_burn_stove')
+                                      .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                      Predictor('hv_inf')
+                                      .when(True, p['rr_pneumonia_HIV']),
+                                      Predictor('tmp_malnutrition')
+                                      .when(True, p['rr_pneumonia_SAM']),
+                                      Predictor('tmp_exclusive_breastfeeding')
+                                      .when(False, p['rr_pneumonia_excl_breast'])
+                                      )
         })
 
         self.incidence_equations_by_pathogen.update({
@@ -383,18 +389,16 @@ class Pneumonia(Module):
                                 .when('.between(1,1)', p['base_inc_rate_pneumonia_by_hMPV'][1])
                                 .when('.between(2,4)', p['base_inc_rate_pneumonia_by_hMPV'][2])
                                 .otherwise(0.0),
-                                # Predictor('li_no_access_handwashing')
-                                # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                # Predictor('li_no_clean_drinking_water').
-                                # when(False, m.rr_diarrhoea_clean_water),
-                                # Predictor('li_unimproved_sanitation').
-                                # when(False, m.rr_diarrhoea_improved_sanitation),
-                                # # Predictor('hv_inf').
-                                # # when(True, m.rr_diarrhoea_HIV),
-                                # Predictor('malnutrition').
-                                # when(True, m.rr_diarrhoea_SAM),
-                                # Predictor('exclusive_breastfeeding').
-                                # when(False, m.rr_diarrhoea_excl_breast)
+                                Predictor('li_no_access_handwashing')
+                                .when(False, p['rr_pneumonia_HHhandwashing']),
+                                Predictor('li_wood_burn_stove')
+                                .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                Predictor('hv_inf')
+                                .when(True, p['rr_pneumonia_HIV']),
+                                Predictor('tmp_malnutrition')
+                                .when(True, p['rr_pneumonia_SAM']),
+                                Predictor('tmp_exclusive_breastfeeding')
+                                .when(False, p['rr_pneumonia_excl_breast'])
                                 )
         })
 
@@ -406,18 +410,16 @@ class Pneumonia(Module):
                                          .when('.between(1,1)', p['base_inc_rate_pneumonia_by_parainfluenza'][1])
                                          .when('.between(2,4)', p['base_inc_rate_pneumonia_by_parainfluenza'][2])
                                          .otherwise(0.0),
-                                         # Predictor('li_no_access_handwashing')
-                                         # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                         # Predictor('li_no_clean_drinking_water').
-                                         # when(False, m.rr_diarrhoea_clean_water),
-                                         # Predictor('li_unimproved_sanitation').
-                                         # when(False, m.rr_diarrhoea_improved_sanitation),
-                                         # # Predictor('hv_inf').
-                                         # # when(True, m.rr_diarrhoea_HIV),
-                                         # Predictor('malnutrition').
-                                         # when(True, m.rr_diarrhoea_SAM),
-                                         # Predictor('exclusive_breastfeeding').
-                                         # when(False, m.rr_diarrhoea_excl_breast)
+                                         Predictor('li_no_access_handwashing')
+                                         .when(False, p['rr_pneumonia_HHhandwashing']),
+                                         Predictor('li_wood_burn_stove')
+                                         .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                         Predictor('hv_inf')
+                                         .when(True, p['rr_pneumonia_HIV']),
+                                         Predictor('tmp_malnutrition')
+                                         .when(True, p['rr_pneumonia_SAM']),
+                                         Predictor('tmp_exclusive_breastfeeding')
+                                         .when(False, p['rr_pneumonia_excl_breast'])
                                          )
         })
 
@@ -429,18 +431,18 @@ class Pneumonia(Module):
                                          .when('.between(1,1)', p['base_inc_rate_pneumonia_by_streptococcus'][1])
                                          .when('.between(2,4)', p['base_inc_rate_pneumonia_by_streptococcus'][2])
                                          .otherwise(0.0),
-                                         # Predictor('li_no_access_handwashing')
-                                         # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                         # Predictor('li_no_clean_drinking_water').
-                                         # when(False, m.rr_diarrhoea_clean_water),
-                                         # Predictor('li_unimproved_sanitation').
-                                         # when(False, m.rr_diarrhoea_improved_sanitation),
-                                         # # Predictor('hv_inf').
-                                         # # when(True, m.rr_diarrhoea_HIV),
-                                         # Predictor('malnutrition').
-                                         # when(True, m.rr_diarrhoea_SAM),
-                                         # Predictor('exclusive_breastfeeding').
-                                         # when(False, m.rr_diarrhoea_excl_breast)
+                                         Predictor('li_no_access_handwashing')
+                                         .when(False, p['rr_pneumonia_HHhandwashing']),
+                                         Predictor('li_wood_burn_stove')
+                                         .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                         Predictor('hv_inf')
+                                         .when(True, p['rr_pneumonia_HIV']),
+                                         Predictor('tmp_malnutrition')
+                                         .when(True, p['rr_pneumonia_SAM']),
+                                         Predictor('tmp_exclusive_breastfeeding')
+                                         .when(False, p['rr_pneumonia_excl_breast']),
+                                         Predictor('tmp_pneumococcal_vaccination')
+                                         .when(False, p['rr_pneumonia_pneumococcal_vaccine'])
                                          )
         })
 
@@ -452,18 +454,18 @@ class Pneumonia(Module):
                                .when('.between(1,1)', p['base_inc_rate_pneumonia_by_hib'][1])
                                .when('.between(2,4)', p['base_inc_rate_pneumonia_by_hib'][2])
                                .otherwise(0.0),
-                               # Predictor('li_no_access_handwashing')
-                               # .when(False, m.rr_diarrhoea_HHhandwashing),
-                               # Predictor('li_no_clean_drinking_water').
-                               # when(False, m.rr_diarrhoea_clean_water),
-                               # Predictor('li_unimproved_sanitation').
-                               # when(False, m.rr_diarrhoea_improved_sanitation),
-                               # # Predictor('hv_inf').
-                               # # when(True, m.rr_diarrhoea_HIV),
-                               # Predictor('malnutrition').
-                               # when(True, m.rr_diarrhoea_SAM),
-                               # Predictor('exclusive_breastfeeding').
-                               # when(False, m.rr_diarrhoea_excl_breast)
+                               Predictor('li_no_access_handwashing')
+                               .when(False, p['rr_pneumonia_HHhandwashing']),
+                               Predictor('li_wood_burn_stove')
+                               .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                               Predictor('hv_inf')
+                               .when(True, p['rr_pneumonia_HIV']),
+                               Predictor('tmp_malnutrition')
+                               .when(True, p['rr_pneumonia_SAM']),
+                               Predictor('tmp_exclusive_breastfeeding')
+                               .when(False, p['rr_pneumonia_excl_breast']),
+                               Predictor('tmp_hib_vaccination')
+                               .when(False, p['rr_pneumonia_hib_vaccine'])
                                )
         })
 
@@ -475,19 +477,18 @@ class Pneumonia(Module):
                               .when('.between(1,1)', p['base_inc_rate_pneumonia_by_TB'][1])
                               .when('.between(2,4)', p['base_inc_rate_pneumonia_by_TB'][2])
                               .otherwise(0.0),
-                              # todo: add risk factor - TB  - if no TB multiply by 0
-                              # Predictor('li_no_access_handwashing')
-                              # .when(False, m.rr_diarrhoea_HHhandwashing),
-                              # Predictor('li_no_clean_drinking_water').
-                              # when(False, m.rr_diarrhoea_clean_water),
-                              # Predictor('li_unimproved_sanitation').
-                              # when(False, m.rr_diarrhoea_improved_sanitation),
-                              # # Predictor('hv_inf').
-                              # # when(True, m.rr_diarrhoea_HIV),
-                              # Predictor('malnutrition').
-                              # when(True, m.rr_diarrhoea_SAM),
-                              # Predictor('exclusive_breastfeeding').
-                              # when(False, m.rr_diarrhoea_excl_breast)
+                              Predictor('ri_last_pneumonia_pathogen')
+                              .when('is not TB', 0.0),
+                              Predictor('li_no_access_handwashing')
+                              .when(False, p['rr_pneumonia_HHhandwashing']),
+                              Predictor('li_wood_burn_stove')
+                              .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                              Predictor('hv_inf')
+                              .when(True, p['rr_pneumonia_HIV']),
+                              Predictor('tmp_malnutrition')
+                              .when(True, p['rr_pneumonia_SAM']),
+                              Predictor('tmp_exclusive_breastfeeding')
+                              .when(False, p['rr_pneumonia_excl_breast'])
                               )
         })
 
@@ -499,18 +500,16 @@ class Pneumonia(Module):
                                           .when('.between(1,1)', p['base_inc_rate_pneumonia_by_staphylococcus'][1])
                                           .when('.between(2,4)', p['base_inc_rate_pneumonia_by_staphylococcus'][2])
                                           .otherwise(0.0),
-                                          # Predictor('li_no_access_handwashing')
-                                          # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                          # Predictor('li_no_clean_drinking_water').
-                                          # when(False, m.rr_diarrhoea_clean_water),
-                                          # Predictor('li_unimproved_sanitation').
-                                          # when(False, m.rr_diarrhoea_improved_sanitation),
-                                          # # Predictor('hv_inf').
-                                          # # when(True, m.rr_diarrhoea_HIV),
-                                          # Predictor('malnutrition').
-                                          # when(True, m.rr_diarrhoea_SAM),
-                                          # Predictor('exclusive_breastfeeding').
-                                          # when(False, m.rr_diarrhoea_excl_breast)
+                                          Predictor('li_no_access_handwashing')
+                                          .when(False, p['rr_pneumonia_HHhandwashing']),
+                                          Predictor('li_wood_burn_stove')
+                                          .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                          Predictor('hv_inf')
+                                          .when(True, p['rr_pneumonia_HIV']),
+                                          Predictor('tmp_malnutrition')
+                                          .when(True, p['rr_pneumonia_SAM']),
+                                          Predictor('tmp_exclusive_breastfeeding')
+                                          .when(False, p['rr_pneumonia_excl_breast'])
                                           )
         })
 
@@ -522,18 +521,16 @@ class Pneumonia(Module):
                                      .when('.between(1,1)', p['base_inc_rate_pneumonia_by_influenza'][1])
                                      .when('.between(2,4)', p['base_inc_rate_pneumonia_by_influenza'][2])
                                      .otherwise(0.0),
-                                     # Predictor('li_no_access_handwashing')
-                                     # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                     # Predictor('li_no_clean_drinking_water').
-                                     # when(False, m.rr_diarrhoea_clean_water),
-                                     # Predictor('li_unimproved_sanitation').
-                                     # when(False, m.rr_diarrhoea_improved_sanitation),
-                                     # # Predictor('hv_inf').
-                                     # # when(True, m.rr_diarrhoea_HIV),
-                                     # Predictor('malnutrition').
-                                     # when(True, m.rr_diarrhoea_SAM),
-                                     # Predictor('exclusive_breastfeeding').
-                                     # when(False, m.rr_diarrhoea_excl_breast)
+                                     Predictor('li_no_access_handwashing')
+                                     .when(False, p['rr_pneumonia_HHhandwashing']),
+                                     Predictor('li_wood_burn_stove')
+                                     .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                     Predictor('hv_inf')
+                                     .when(True, p['rr_pneumonia_HIV']),
+                                     Predictor('tmp_malnutrition')
+                                     .when(True, p['rr_pneumonia_SAM']),
+                                     Predictor('tmp_exclusive_breastfeeding')
+                                     .when(False, p['rr_pneumonia_excl_breast'])
                                      )
         })
 
@@ -545,18 +542,16 @@ class Pneumonia(Module):
                                      .when('.between(1,1)', p['base_inc_rate_pneumonia_by_jirovecii'][1])
                                      .when('.between(2,4)', p['base_inc_rate_pneumonia_by_jirovecii'][2])
                                      .otherwise(0.0),
-                                     # Predictor('li_no_access_handwashing')
-                                     # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                     # Predictor('li_no_clean_drinking_water').
-                                     # when(False, m.rr_diarrhoea_clean_water),
-                                     # Predictor('li_unimproved_sanitation').
-                                     # when(False, m.rr_diarrhoea_improved_sanitation),
-                                     # # Predictor('hv_inf').
-                                     # # when(True, m.rr_diarrhoea_HIV),
-                                     # Predictor('malnutrition').
-                                     # when(True, m.rr_diarrhoea_SAM),
-                                     # Predictor('exclusive_breastfeeding').
-                                     # when(False, m.rr_diarrhoea_excl_breast)
+                                     Predictor('li_no_access_handwashing')
+                                     .when(False, p['rr_pneumonia_HHhandwashing']),
+                                     Predictor('li_wood_burn_stove')
+                                     .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                     Predictor('hv_inf')
+                                     .when(True, p['rr_pneumonia_HIV']),
+                                     Predictor('tmp_malnutrition')
+                                     .when(True, p['rr_pneumonia_SAM']),
+                                     Predictor('tmp_exclusive_breastfeeding')
+                                     .when(False, p['rr_pneumonia_excl_breast'])
                                      )
         })
 
@@ -568,18 +563,16 @@ class Pneumonia(Module):
                                            .when('.between(1,1)', p['base_inc_rate_pneumonia_by_other_pathogens'][1])
                                            .when('.between(2,4)', p['base_inc_rate_pneumonia_by_other_pathogens'][2])
                                            .otherwise(0.0),
-                                           # Predictor('li_no_access_handwashing')
-                                           # .when(False, m.rr_diarrhoea_HHhandwashing),
-                                           # Predictor('li_no_clean_drinking_water').
-                                           # when(False, m.rr_diarrhoea_clean_water),
-                                           # Predictor('li_unimproved_sanitation').
-                                           # when(False, m.rr_diarrhoea_improved_sanitation),
-                                           # # Predictor('hv_inf').
-                                           # # when(True, m.rr_diarrhoea_HIV),
-                                           # Predictor('malnutrition').
-                                           # when(True, m.rr_diarrhoea_SAM),
-                                           # Predictor('exclusive_breastfeeding').
-                                           # when(False, m.rr_diarrhoea_excl_breast)
+                                           Predictor('li_no_access_handwashing')
+                                           .when(False, p['rr_pneumonia_HHhandwashing']),
+                                           Predictor('li_wood_burn_stove')
+                                           .when(False, p['rr_pneumonia_indoor_air_pollution']),
+                                           Predictor('hv_inf')
+                                           .when(True, p['rr_pneumonia_HIV']),
+                                           Predictor('tmp_malnutrition')
+                                           .when(True, p['rr_pneumonia_SAM']),
+                                           Predictor('tmp_exclusive_breastfeeding')
+                                           .when(False, p['rr_pneumonia_excl_breast'])
                                            )
         })
 
@@ -589,24 +582,9 @@ class Pneumonia(Module):
         # --------------------------------------------------------------------------------------------
 
         # --------------------------------------------------------------------------------------------
-        # Create the linear model for the progression to severe pneumonia
-        self.progression_to_clinical_severe_penumonia.update({
-            'pneumonia': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                     1.0,
-                                     Predictor('age_years')
-                                     .when('.between(0,0)', p['r_progress_to_severe_pneumonia'][0])
-                                     .when('.between(1,1)', p['r_progress_to_severe_pneumonia'][1])
-                                     .when('.between(2,4)', p['r_progress_to_severe_pneumonia'][2])
-                                     .otherwise(0.0),
-                                     # Predictor('has_hiv').when(True, m.rr_progress_very_sev_pneum_HIV),
-                                     # Predictor('malnutrition').when(True, m.rr_progress_very_sev_pneum_SAM),
-                                     ) # todo: add pathogens
-        })
-
-        # --------------------------------------------------------------------------------------------
         # Make a dict containing the probability of symptoms onset given acquisition of pneumonia
         self.prob_symptoms.update({
-            'non-severe': {
+            'uncomplicated': {
                 'fever': 0.7,
                 'cough': 0.8,
                 'difficult_breathing': 1,
@@ -614,7 +592,55 @@ class Pneumonia(Module):
                 'chest_indrawing': 0.5,
                 'danger_signs': 0
             },
-            'severe': {
+            'pneumothorax': {
+                'fever': 0.7,
+                'cough': 0.8,
+                'difficult_breathing': 1,
+                'grunting': 0.9,
+                'sereve_respiratory_distress': 0.5,
+                'cyanosis': 1
+            },
+            'pleural_effusion': {
+                'fever': 0.7,
+                'cough': 0.8,
+                'difficult_breathing': 1,
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'empyema': {
+                'fever': 0.7,
+                'cough': 0.8,
+                'difficult_breathing': 1,
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'lung_abscess': {
+                'fever': 0.7,
+                'cough': 0.8,
+                'difficult_breathing': 1,
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'sepsis': {
+                'fever': 0.7,
+                'cough': 0.8,
+                'difficult_breathing': 1,
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'menigitis': {
+                'fever': 0.7,
+                'cough': 0.8,
+                'difficult_breathing': 1,
+                'fast_breathing': 0.9,
+                'chest_indrawing': 0.5,
+                'danger_signs': 1
+            },
+            'respiratory_failure': {
                 'fever': 0.7,
                 'cough': 0.8,
                 'difficult_breathing': 1,
@@ -626,34 +652,87 @@ class Pneumonia(Module):
         # TODO: add the probabilities of symptoms by severity - in parameters
 
         # check that probability of symptoms have been declared for each severity level
-        assert self.severity == set(list(self.prob_symptoms.keys()))
+        # assert self.severity == set(list(self.prob_symptoms.keys()))
+        # --------------------------------------------------------------------------------------------
+        # Create linear models for the risk of acquiring complications from uncomplicated pneumonia
+        self.risk_of_developing_pneumonia_complications.update({
+            'pneumothorax': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                        1.0,
+                                        Predictor('ri_last_pneumonia_pathogen')
+                                        .when('is streptococcus| hib | TB | staphylococcus',
+                                              p['prob_pneumothorax_bacterial_pneumonia'])
+                                        .otherwise(0.0)
+                                        ),
+
+            'pleural_effusion': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                            1.0,
+                                            Predictor('ri_last_pneumonia_pathogen')
+                                            .when('is streptococcus| hib | TB | staphylococcus',
+                                                  p['prob_pleural_effusion_by_bacterial_pneumonia'])
+                                            .otherwise(0.0)
+                                            ),
+
+            'lung_abscess': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                        1.0,
+                                        Predictor('ri_last_pneumonia_pathogen')
+                                        .when('is streptococcus| hib | TB | staphylococcus',
+                                              p['prob_pleural_effusion_by_bacterial_pneumonia'])
+                                        .otherwise(0.0)
+                                        ),
+
+            'sepsis': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                  1.0,
+                                  Predictor('ri_last_pneumonia_pathogen')
+                                  .when('is streptococcus| hib | TB | staphylococcus',
+                                        p['prob_sepsis_by_bacterial_pneumonia'])
+                                  .when('is RSV | rhinovirus | hMPV | parainfluenza | influenza',
+                                        p['prob_sepsis_by_viral_pneumonia'])
+                                  .otherwise(0.0)
+                                  ),
+
+            'meningitis': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                      1.0,
+                                      Predictor('ri_last_pneumonia_pathogen')
+                                      .when('is streptococcus| hib | TB | staphylococcus',
+                                            p['prob_meningitis_by_bacterial_pneumonia'])
+                                      .when('is RSV | rhinovirus | hMPV | parainfluenza | influenza',
+                                            p['prob_meningitis_by_viral_pneumonia'])
+                                      .otherwise(0.0)
+                                      ),
+
+            'respiratory_failure': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                               1.0,
+                                               Predictor('ri_last_pneumonia_pathogen')
+                                               .when('is streptococcus| hib | TB | staphylococcus',
+                                                     p['prob_respiratory_failure_by_bacterial_pneumonia'])
+                                               .when('is RSV | rhinovirus | hMPV | parainfluenza | influenza',
+                                                     p['prob_respiratory_failure_by_viral_pneumonia'])
+                                               .otherwise(0.0)
+                                               ),
+        }),
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the risk of dying due to pneumonia
-        self.risk_of_death_clinical_severe_pneumonia.update({
-            'pneumonia': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                     0.7,
-                                     Predictor('ri_last_clinical_severity')  ##          <--- fill in
-                                     .when('non-severe', 0)  # zero probability of dying if non-severe
-                                     .when('severe', 0.9)
-                                     #                 # .when('persistent', p['cfr_persistent_diarrhoea']),
-                                     #                 # Predictor('age_years')  ##          <--- fill in
-                                     #                 # .when('.between(1,2)', p['rr_diarr_death_age12to23mo'])
-                                     #                 # .when('.between(2,4)', p['rr_diarr_death_age24to59mo'])
-                                     #                 # .otherwise(0.0)
-                                     #                 ##          < --- TODO: add in current_severe_dehyration
-                                     #                 # # Predictor('hv_inf').
-                                     #                 # # when(True, m.rr_diarrhoea_HIV),
-                                     #                 # Predictor('malnutrition').
-                                     #                 # when(True, m.rr_diarrhoea_SAM)
-                                     )
-        })
-
+        self.risk_of_death_severe_pneumonia =\
+            LinearModel(LinearModelType.MULTIPLICATIVE,
+                        1.0,
+                        Predictor('ri_last_pneumonia_complications')
+                        .when('sepsis', p['r_death_from_pneumonia_due_to_sepsis'])
+                        .when('respiratory_failure', p['r_death_from_pneumonia_due_to_respiratory_failure'])
+                        .when('meningitis', p['r_death_from_pneumonia_due_to_meningitis'])
+                        .otherwise(0.0),
+                        Predictor('hv_inf').when(True, p['rr_death_pneumonia_HIV']),
+                        Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_malnutrition']),
+                        Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_lbw']),
+                        Predictor('age_years')
+                        .when('.between(1,1)', p['rr_death_pneumonia_age12to23mo'])
+                        .when('.between(2,4)', p['rr_death_pneumonia_age24to59mo'])
+                        )
 
         # TODO: duration of ilness - mean 3.0 days (2.0-5.0 days) from PERCH/hopsitalization days
 
         # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -668,13 +747,12 @@ class Pneumonia(Module):
         now = self.sim.date
 
         # ---- Key Current Status Classification Properties ----
-        df['ri_last_ALRI_pathogen'].values[:] = 'none'
-        df['ri_last_clinical_severity'].values[:] = 'none'
+        df['ri_last_pneumonia_pathogen'].values[:] = 'none'
 
         # ---- Internal values ----
-        df['ri_last_ALRI_date_of_onset'] = pd.NaT
-        df['ri_last_ALRI_recovered_date'] = pd.NaT
-        df['ri_last_ALRI_death_date'] = pd.NaT
+        df['ri_last_pneumonia_date_of_onset'] = pd.NaT
+        df['ri_last_pneumonia_recovered_date'] = pd.NaT
+        df['ri_last_pneumonia_death_date'] = pd.NaT
 
         df['ri_pneumonia_treatment'] = False
         df['ri_pneumonia_tx_start_date'] = pd.NaT
@@ -708,13 +786,13 @@ class Pneumonia(Module):
         df = self.sim.population.props
 
         # ---- Key Current Status Classification Properties ----
-        df.at[child_id, 'gi_last_ALRI_pathogen'] = 'none'
+        df.at[child_id, 'gi_last_pneumonia_pathogen'] = 'none'
         df.at[child_id, 'gi_last_clinical_severity'] = 'none'
 
         # ---- Internal values ----
-        df.at[child_id, 'gi_last_ALRI_date_of_onset'] = pd.NaT
-        df.at[child_id, 'gi_last_ALRI_recovered_date'] = pd.NaT
-        df.at[child_id, 'gi_last_ALRI_death_date'] = pd.NaT
+        df.at[child_id, 'gi_last_pneumonia_date_of_onset'] = pd.NaT
+        df.at[child_id, 'gi_last_pneumonia_recovered_date'] = pd.NaT
+        df.at[child_id, 'gi_last_pneumonia_death_date'] = pd.NaT
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
@@ -763,7 +841,7 @@ class Pneumonia(Module):
         #
         # # Split out by pathogen that causes the pneumonia
         # dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index,
-        #                                              'ri_last_ALRI_pathogen'],
+        #                                              'ri_last_pneumonia_pathogen'],
         #                                       dtype='float')
         # daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0).drop(columns='none')
         #
@@ -829,7 +907,7 @@ class PneumoniaPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # print(sum(normalised_p_by_pathogen))
             pathogen = rng.choice(probs_of_acquiring_pathogen.columns, p=normalised_p_by_pathogen)
 
-            # ----------------------- Allocate a date of onset of ALRI ----------------------
+            # ----------------------- Allocate a date of onset of pneumonia ----------------------
             date_onset = self.sim.date + DateOffset(days=np.random.randint(0, days_until_next_polling_event))
             # duration
             duration_in_days_of_pneumonia = max(1, int(
@@ -878,8 +956,8 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
             return
 
         # Update the properties in the dataframe:
-        df.at[person_id, 'ri_last_ALRI_pathogen'] = self.pathogen
-        df.at[person_id, 'ri_last_ALRI_date_of_onset'] = self.sim.date
+        df.at[person_id, 'ri_last_pneumonia_pathogen'] = self.pathogen
+        df.at[person_id, 'ri_last_pneumonia_date_of_onset'] = self.sim.date
         df.at[person_id, 'ri_last_clinical_severity'] = 'non-severe' # all disease start as non-severe symptoms
 
         # Onset symptoms:
@@ -901,22 +979,22 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
         # Determine progression to 'severe clinical pneumonia'
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
         prob_progress_clinical_severe_case = pd.DataFrame(index=[person_id])
-        for disease in m.diseases:
-            prob_progress_clinical_severe_case = \
-                m.progression_to_clinical_severe_penumonia[disease].predict(df.loc[[person_id]]).values[0]
-        will_progress_to_severe = rng.rand() < prob_progress_clinical_severe_case
+        # for disease in m.diseases:
+        #     prob_progress_clinical_severe_case = \
+        #         m.progression_to_clinical_severe_penumonia[disease].predict(df.loc[[person_id]]).values[0]
+        # will_progress_to_severe = rng.rand() < prob_progress_clinical_severe_case
 
-        if will_progress_to_severe:
-            df.at[person_id, 'ri_last_ALRI_recovered_date'] = pd.NaT
-            df.at[person_id, 'ri_last_ALRI_death_date'] = pd.NaT
-            date_onset_clinical_severe = self.module.sim.date + DateOffset(
-                days=np.random.randint(2, self.duration_in_days))
-            self.sim.schedule_event(SeverePneumoniaEvent(self.module, person_id,
-                                                         duration_in_days=self.duration_in_days),
-                                    date_onset_clinical_severe)
-        else:
-            df.at[person_id, 'ri_last_ALRI_recovered_date'] = date_of_outcome
-            df.at[person_id, 'ri_last_ALRI_death_date'] = pd.NaT
+        # if will_progress_to_severe:
+        #     df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
+        #     df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
+        #     date_onset_clinical_severe = self.module.sim.date + DateOffset(
+        #         days=np.random.randint(2, self.duration_in_days))
+        #     self.sim.schedule_event(SeverePneumoniaEvent(self.module, person_id,
+        #                                                  duration_in_days=self.duration_in_days),
+        #                             date_onset_clinical_severe)
+        # else:
+        #     df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
+        #     df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
 
         # Add this incident case to the tracker
         age = df.loc[person_id, ['age_years']]
@@ -956,7 +1034,7 @@ class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
 
             # Determine death outcome
             date_of_outcome = \
-                df.at[person_id, 'ri_last_ALRI_date_of_onset'] + DateOffset(days=self.duration_in_days)
+                df.at[person_id, 'ri_last_pneumonia_date_of_onset'] + DateOffset(days=self.duration_in_days)
             prob_death_by_disease = pd.DataFrame(index=[person_id])
             for disease in m.diseases:
                 prob_death_by_disease = \
@@ -964,13 +1042,13 @@ class SeverePneumoniaEvent(Event, IndividualScopeEventMixin):
             death_outcome = rng.rand() < prob_death_by_disease
 
             if death_outcome:
-                df.at[person_id, 'ri_last_ALRI_recovered_date'] = pd.NaT
-                df.at[person_id, 'ri_last_ALRI_death_date'] = date_of_outcome
+                df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
+                df.at[person_id, 'ri_last_pneumonia_death_date'] = date_of_outcome
                 self.sim.schedule_event(PneumoniaDeathEvent(self.module, person_id),
                                         date_of_outcome)
             else:
-                df.at[person_id, 'ri_last_ALRI_recovered_date'] = date_of_outcome
-                df.at[person_id, 'ri_last_ALRI_death_date'] = pd.NaT
+                df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
+                df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
 
 
 class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
@@ -987,8 +1065,8 @@ class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Stop the person from dying of pneumonia (if they were going to die)
-        df.at[person_id, 'ri_last_ALRI_recovered_date'] = self.sim.date
-        df.at[person_id, 'ri_last_ALRI_death_date'] = pd.NaT
+        df.at[person_id, 'ri_last_pneumonia_recovered_date'] = self.sim.date
+        df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
 
         # clear the treatment prperties
         df.at[person_id, 'ri_pneumonia_treatment'] = False
@@ -1011,11 +1089,11 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
         # Check if person should still die of pneumonia
         if (df.at[person_id, 'is_alive']) and \
-            (df.at[person_id, 'ri_last_ALRI_death_date'] == self.sim.date):
+            (df.at[person_id, 'ri_last_pneumonia_death_date'] == self.sim.date):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
                                                                   cause='Pneumonia_' + df.at[
-                                                                      person_id, 'ri_last_ALRI_pathogen']
+                                                                      person_id, 'ri_last_pneumonia_pathogen']
                                                                   ), self.sim.date)
 
 
