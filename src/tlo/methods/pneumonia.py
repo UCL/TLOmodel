@@ -148,24 +148,62 @@ class Pneumonia(Module):
          'probability of progressing from non-severe to severe pneumonia by age category '
          'HIV negative, no SAM'
          ),
-        # 'rr_progress_severe_pneum_age12to23mo': Parameter
-        # (Types.REAL,
-        #  'relative rate of progression to severe pneumonia for age 12 to 23 months'
-        #  ),
-        # 'rr_progress_severe_pneum_age24to59mo': Parameter
-        # (Types.REAL, 'relative rate of progression to severe pneumonia for age 24 to 59 months'
-        #  ),
-        'rr_progress_clinical_severe_pneumonia_HIV': Parameter
-        (Types.REAL,
-         'relative risk of progression to severe pneumonia for HIV positive status'
+        'prob_respiratory_failure_by_viral_pneumonia': Parameter
+        (Types.REAL, 'probability of respiratory failure caused by primary viral pneumonia'
          ),
-        'rr_progress_clinical_severe_pneumonia_SAM': Parameter
-        (Types.REAL,
-         'relative rate of progression to severe pneumonia for severe acute malnutrition'
+        'prob_respiratory_failure_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of respiratory failure caused by primary or secondary bacterial pneumonia'
          ),
-        'r_death_pneumonia': Parameter
-        (Types.REAL,
-         'death rate of pneumonia'
+        'prob_respiratory_failure_to_multiorgan_dysfunction': Parameter
+        (Types.REAL, 'probability of respiratory failure causing multi-organ dysfunction'
+         ),
+        'prob_sepsis_by_viral_pneumonia': Parameter
+        (Types.REAL, 'probability of sepsis caused by primary viral pneumonia'
+         ),
+        'prob_sepsis_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of sepsis caused by primary or secondary bacterial pneumonia'
+         ),
+        'prob_sepsis_to_septic_shock': Parameter
+        (Types.REAL, 'probability of sepsis causing septic shock'
+         ),
+        'prob_septic_shock_to_multiorgan_dysfunction': Parameter
+        (Types.REAL, 'probability of septic shock causing multi-organ dysfunction'
+         ),
+        'prob_meningitis_by_viral_pneumonia': Parameter
+        (Types.REAL, 'probability of meningitis caused by primary viral pneumonia'
+         ),
+        'prob_meningitis_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of meningitis caused by primary or secondary bacterial pneumonia'
+         ),
+        'prob_pleural_effusion_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of pleural effusion caused by primary or secondary bacterial pneumonia'
+         ),
+        'prob_pleural_effusion_to_empyema': Parameter
+        (Types.REAL, 'probability of pleural effusion developing into empyema'
+         ),
+        'prob_empyema_to_sepsis': Parameter
+        (Types.REAL, 'probability of empyema causing sepsis'
+         ),
+        'prob_lung_abscess_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of a lung abscess caused by primary or secondary bacterial pneumonia'
+         ),
+        'prob_pneumothorax_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of pneumothorax caused by primary or secondary bacterial pneumonia'
+         ),
+        'prob_pneumothorax_to_respiratory_failure': Parameter
+        (Types.REAL, 'probability of pneumothorax causing respiratory failure'
+         ),
+        'prob_lung_abscess_to_sepsis': Parameter
+        (Types.REAL, 'probability of lung abscess causing sepsis'
+         ),
+        'r_death_from_pneumonia_due_to_meningitis': Parameter
+        (Types.REAL, 'death rate from pneumonia due to meningitis'
+         ),
+        'r_death_from_pneumonia_due_to_sepsis': Parameter
+        (Types.REAL, 'death rate from pneumonia due to sepsis'
+         ),
+        'r_death_from_pneumonia_due_to_respiratory_failure': Parameter
+        (Types.REAL, 'death rate from pneumonia due to respiratory failure'
          ),
         'rr_death_pneumonia_agelt2mo': Parameter
         (Types.REAL,
@@ -272,7 +310,7 @@ class Pneumonia(Module):
         p = self.parameters
         self.load_parameters_from_dataframe(
             pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Pneumonia.xlsx', sheet_name='Parameter_values'))
+                Path(self.resourcefilepath) / 'ResourceFile_Childhood_Pneumonia.xlsx', sheet_name='Parameter_values'))
 
         # Check that every value has been read-in successfully
         for param_name, type in self.PARAMETERS.items():
