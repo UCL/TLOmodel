@@ -191,8 +191,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 #  handled here
                 try:
                     if person_profile['sy_dysphagia']:
-                        f += np.log(4.00)                   # arbitrarily large value for health seeking for dysphagia
-                except:
+                        f += np.log(4.00)       # arbitrarily large value for health seeking for dysphagia
+                except KeyError:
                     pass
 
                 # convert into a probability of seeking care:
