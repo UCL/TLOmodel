@@ -632,20 +632,20 @@ def test_dx_with_categorial():
     # Create the test - with no error:
     my_test = DxTest(
         property='CategoricalProperty',
-        target_category='level2'
+        target_categories=['level2']
     )
 
     # Create the test - with no sensitivity:
     my_test_w_no_sens = DxTest(
         property='CategoricalProperty',
-        target_category='level2',
+        target_categories=['level2'],
         sensitivity=0.0
     )
 
     # Create the test - with no specificity:
     my_test_w_no_spec = DxTest(
         property='CategoricalProperty',
-        target_category='level2',
+        target_catgories='level2',
         specificity=0.0
     )
 
@@ -694,7 +694,7 @@ def test_dx_with_categorial_multiple_levels_accepted():
     # Create the test - with no error:
     my_test = DxTest(
         property='CategoricalProperty',
-        target_category=['level2', 'level0']
+        target_categories=['level2', 'level0']
     )
 
     # Create new DxManager

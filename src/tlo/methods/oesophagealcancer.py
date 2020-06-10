@@ -458,7 +458,8 @@ class OesophagealCancer(Module):
             endoscopy_for_oes_cancer_given_dysphagia=DxTest(
                 property='oc_status',
                 sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
-                target_category=["low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"]
+                target_categories=["low_grade_dysplasia", "high_grade_dysplasia",
+                                   "stage1", "stage2", "stage3", "stage4"]
             )
         )
 

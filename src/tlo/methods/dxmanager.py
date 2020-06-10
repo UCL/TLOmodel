@@ -3,7 +3,7 @@ The is the Diagnostic Tests Manager (DxManager). It simplifies the process of co
 See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager)
 """
 import json
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -149,10 +149,9 @@ class DxTest:
             :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
                                         the observation of a continuous property
             :param threshold: the observed value of a continuous property above which the result of the test is True.
-            :param target_category: the category value (as string) to correspond with a positive result if property
-            is categorical.
+            :param target_categories: if property is categorical, a list of categories corresponding
+                                      to a positive result.
     """
-
     def __init__(self,
                  property: str,
                  cons_req_as_footprint=None,
@@ -161,7 +160,7 @@ class DxTest:
                  specificity: float = None,
                  measure_error_stdev: float = None,
                  threshold: float = None,
-                 target_category: str = None
+                 target_categories: List[str] = None
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
@@ -190,7 +189,7 @@ class DxTest:
         self.specificity = _default_if_none(specificity, 1.0)
         self.measure_error_stdev = _default_if_none(measure_error_stdev, 0.0)
         self.threshold = threshold
-        self.target_category = target_category
+        self.target_categories = target_categories
 
     def __hash_key(self):
         return (
@@ -259,9 +258,9 @@ class DxTest:
             else:
                 test_value = bool(reading >= self.threshold)
 
-        elif (df[self.property].dtype == "category") and (self.target_category is not None):
-            # Categorical property: compare the value to the 'target_category' if its specified
-            is_match_to_cat = (true_value in self.target_category)
+        elif (df[self.property].dtype == "category") and (self.target_categories is not None):
+            # Categorical property: compare the value to the 'target_categories' if its specified
+            is_match_to_cat = (true_value in self.target_categories)
 
             if is_match_to_cat:
                 # Apply the sensitivity:
