@@ -382,6 +382,15 @@ class HealthSystem(Module):
             )
 
         else:
+            # HSI is not available under the services_available parameter: call the hsi's not_available() method if it
+            # exists:
+            try:
+                hsi_event.not_available()
+                # TODO: should the healthsystem call this at the time that the HSI was intended to be run (i.e topen)?
+
+            except AttributeError:
+                pass
+
             logger.debug(
                 '%s| A request was made for a service but it was not included in the service_availability list: %s',
                 self.sim.date,
@@ -946,6 +955,24 @@ class HealthSystem(Module):
 
         logger.info('%s|Capacity|%s', self.sim.date, log_capacity)
 
+    def find_events_for_person(self, person_id: int):
+        """Find the events in the HSI_EVENT_QUEUE for a particular person.
+        :param person_id: the person_id of interest
+        :returns list of tuples (date_of_event, event) for that person_id in the HSI_EVENT_QUEUE.
+
+        NB. This is for debugging and testing only - not for use in real simulations as it is slow
+        """
+        list_of_events = list()
+
+        for ev_tuple in self.HSI_EVENT_QUEUE:
+            date = ev_tuple[1]   # this is the 'topen' value
+            event = ev_tuple[4]
+            if isinstance(event.target, int):
+                if event.target == person_id:
+                    list_of_events.append((date, event))
+
+        return list_of_events
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1211,6 +1238,12 @@ class HSI_Event:
         """
         raise NotImplementedError
 
+    def not_available(self):
+        """Called when this event is passed to schedule_hsi_event when the TREATMENT_ID is not permitted by the
+         parameter service_availability.
+        """
+        pass
+
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""
         pass
@@ -1231,6 +1264,7 @@ class HSIEventWrapper(Event):
     def __init__(self, hsi_event, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
+        self.target = hsi_event.target
 
     def run(self):
         # check that the person is still alive
