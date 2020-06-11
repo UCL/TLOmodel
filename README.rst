@@ -4,7 +4,7 @@ Overview
 
 .. start-badges
 
-.. image:: https://api.travis-ci.com/UCL/TLOmodel.svg?branch=master
+.. image:: https://travis-ci.com/UCL/TLOmodel.svg?token=UKPSYZnjNU6sajG8DWb9&branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.com/UCL/TLOmodel
 
@@ -46,6 +46,11 @@ To build the documentation, activate your environment as above then run::
 
 The generated HTML documentation will appear in `dist/docs`.
 
+Wiki
+====
+
+Please note that we have a `Wiki <https://github.com/UCL/TLOmodel/wiki>`_ which you may wish to refer to. It has information on setup, conventions, checklists and code examples.
+
 Development
 ===========
 
@@ -77,4 +82,3 @@ Note, to combine test coverage data from all the tox environments run:
       - ::
 
             PYTEST_ADDOPTS=--cov-append tox
-

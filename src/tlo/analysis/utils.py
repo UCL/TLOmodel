@@ -1,12 +1,12 @@
 """
 General utility functions for TLO analysis
 """
-import logging
 from ast import literal_eval
 
+import numpy as np
 import pandas as pd
 
-from tlo import util
+from tlo import logging, util
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
@@ -29,14 +29,22 @@ def parse_line(line):
     :return: a dictionary with parsed line
     """
     parts = line.split('|')
+
     if len(parts) != 5:
         return None
+
     logger.debug('%s', line)
+
+    try:
+        parsed = literal_eval(parts[4])
+    except ValueError:
+        parsed = eval(parts[4], {'Timestamp': pd.Timestamp, 'nan': np.nan, 'NaT': pd.NaT})
+
     info = {
         'logger': parts[1],
         'sim_date': parts[2],
         'key': parts[3],
-        'object': literal_eval(parts[4])
+        'object': parsed
     }
     logger.debug('%s', info)
     return info

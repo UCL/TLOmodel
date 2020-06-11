@@ -3,15 +3,13 @@ The core demography module and its associated events.
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
-
-import logging
 import math
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.util import create_age_range_lookup
 
@@ -351,7 +349,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     f_age_counts.to_dict())
 
 
-def scale_to_population(parsed_output, resourcefilepath):
+def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):
     """
     This helper function scales certain outputs so that they can create statistics for the whole population.
     e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
@@ -377,6 +375,9 @@ def scale_to_population(parsed_output, resourcefilepath):
 
     # Calculate ratio for scaling
     ratio_data_to_model = cens_tot / model_tot
+
+    if rtn_scaling_ratio:
+        return ratio_data_to_model
 
     # Do the scaling on selected columns in the parsed outputs:
     o = parsed_output.copy()

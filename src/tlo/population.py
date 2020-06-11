@@ -1,7 +1,7 @@
 """The Person and Population classes."""
-import logging
-
 import pandas as pd
+
+from tlo import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

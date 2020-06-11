@@ -2,15 +2,20 @@
 The file contains the event HSI_GenericFirstApptAtFacilityLevel1, which describes the first interaction with
 the health system following the onset of acute generic symptoms.
 """
-import logging
-
+from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.labour import (
+    HSI_Labour_PresentsForSkilledBirthAttendanceInLabour,
+    HSI_Labour_ReceivesCareForPostpartumPeriod,
+)
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -42,10 +47,12 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         acceptable_originating_modules.append(self.sim.modules['HealthSeekingBehaviour'])
         assert module in acceptable_originating_modules
 
+        # Work out if this is for a child or an adult
+        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
+        if is_child:
             the_appt_footprint['Under5OPD'] = 1.0  # Child out-patient appointment
         else:
             the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
@@ -60,18 +67,45 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
         # Work out what to do with this person....
-
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
-            # It's a child and we are in FacilityLevel1, so run the the child management routine:
-            self.sim.modules['ChildhoodManagement'].do_management_of_child_at_facility_level_1(
-                person_id=person_id,
-                hsi_event=self
-            )
+            # It's a child:
+            logger.debug('Run the ICMI algorithm for this child')
+
+            # Get the diagnosis from the algorithm
+            diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
+
+            # Do something based on this diagnosis...
+            if diagnosis == 'measles':
+                logger.debug('Start treatment for measles')
+            else:
+                logger.debug('No treatment. HSI ends.')
 
         else:
             # It's an adult
             logger.debug('To fill in ... what to with an adult')
-            pass
+
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+
+            # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
+            if 'dysphagia' in symptoms:
+                hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+                    module=self.sim.modules['OesophagealCancer'],
+                    person_id=person_id,
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+
+            # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
+            if 'Depression' in self.sim.modules:
+                depr = self.sim.modules['Depression']
+                if (squeeze_factor == 0.0) and (self.module.rng.random() <
+                                                depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
+                    depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            # -------------------------------
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -102,10 +136,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
-            the_appt_footprint['Under5OPD'] = 1.0  # Child out-patient appointment
-        else:
-            the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
+        the_appt_footprint['ConWithDCSA'] = 1.0  # Consultantion with DCSA
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
@@ -114,26 +145,10 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
-
-        # Work out what to do with this person....
-
-        if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
-            # It's a child and we are in FacilityLevel1, so run the the child management routine:
-            self.sim.modules['ChildhoodManagement'].do_management_of_child_at_facility_level_0(
-                person_id=person_id,
-                hsi_event=self
-            )
-
-        else:
-            # It's an adult
-            logger.debug('To fill in ... what to with an adult')
-            pass
+        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel0 for person %d', person_id)
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel0: did not run')
-
-
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -184,10 +199,36 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
+        df = self.sim.population.props
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
+        labour_list = self.sim.modules['Labour'].women_in_labour
 
         # simple diagnosis to work out which HSI event to trigger
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
+        # -----  COMPLICATION DURING BIRTH  -----
+        if person_id in labour_list:
+            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+                    module=self.sim.modules['Labour'], person_id=person_id,
+                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+        # -----  COMPLICATION AFTER BIRTH  -----
+            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+                    module=self.sim.modules['Labour'], person_id=person_id,
+                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+        # -----  SUSPECTED DEPRESSION  -----
+        if 'em_Injuries_From_Self_Harm' in symptoms:
+            self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            # TODO: Trigger surgical care for injuries.
+
+        # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'em_craving_sandwiches' in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
                 module=self.sim.modules['ChronicSyndrome'],
@@ -208,7 +249,10 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 topen=self.sim.date
                                                                 )
 
-
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
+        return False  # Labour debugging
+        # pass
+
+    def not_available(self):
         pass

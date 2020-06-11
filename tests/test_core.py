@@ -25,6 +25,17 @@ def test_categorical():
         s[0] = 'A'
 
 
+def test_dict():
+    p = Property(Types.DICT, description="Dictionary property")
+    s = p.create_series('Dicts', 10)
+    assert s.dtype.name == 'object'
+    s.values[:] = s.apply(lambda x: dict())
+    s[0]['name'] = 'world'
+    assert 'name' in s[0] and s[0]['name'] == 'world'
+    assert len(s[1]) == 0
+    assert dict() == s[1] == s[2]
+
+
 class TestLoadParametersFromDataframe:
     """Tests for the load_parameters_from_dataframe method
 

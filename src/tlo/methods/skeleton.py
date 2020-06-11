@@ -2,9 +2,8 @@
 A skeleton template for disease methods.
 
 """
-import logging
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 
@@ -59,6 +58,7 @@ class Skeleton(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.store = {'Proportion_infected': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
