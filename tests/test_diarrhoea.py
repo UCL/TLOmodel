@@ -355,8 +355,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     # ******* todo: this is failing because one person (67) is not getting treatment -- maybe because they are recovered before they are treated
     # **** could be to do with short duration episode!?!!?!?
 
-
-
     # Check for zero level of death
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
