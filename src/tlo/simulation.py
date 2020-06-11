@@ -10,6 +10,7 @@ from typing import Dict, Union
 import numpy as np
 
 from tlo import Date, Population, logging
+from tlo.events import IndividualScopeEventMixin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -243,6 +244,22 @@ class Simulation:
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
         return child_id
+
+    def find_events_for_person(self, person_id: int):
+        """Find the events in the queue for a particular person.
+        :param person_id: the person_id of interest
+        :returns list of tuples (date_of_event, event) for that person_id in the queue.
+
+        NB. This is for debugging and testing only - not for use in real simulations as it is slow
+        """
+        person_events = list()
+
+        for date, counter, event in self.event_queue.queue:
+            if isinstance(event, IndividualScopeEventMixin):
+                if event.target == person_id:
+                    person_events.append((date, event))
+
+        return person_events
 
 
 class EventQueue:

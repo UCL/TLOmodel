@@ -701,10 +701,6 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'SuicideEvents': self.module.eventsTracker['SuicideEvents'],
         })
 
-        logger.info('%s|person_one|%s',
-                    self.sim.date,
-                    df.loc[10].to_dict())
-
         # Reset the EventTracker
         self.module.eventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
 
