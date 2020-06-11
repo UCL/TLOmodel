@@ -7,7 +7,7 @@ import datetime
 from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography, pneumonia, enhanced_lifestyle
+from tlo.methods import contraception, demography, pneumonia, enhanced_lifestyle, hiv
 
 # %%
 outputpath = Path("./outputs")
@@ -29,6 +29,7 @@ sim = Simulation(start_date=start_date)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 # sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 # sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))

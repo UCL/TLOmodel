@@ -361,7 +361,7 @@ class Pneumonia(Module):
                                Predictor('tmp_malnutrition')
                                .when(True, p['rr_pneumonia_SAM']),
                                Predictor('tmp_exclusive_breastfeeding')
-                               .when(False, p['rr_pneumonia_excl_breast'])
+                               .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                )
         })
 
@@ -382,7 +382,7 @@ class Pneumonia(Module):
                                       Predictor('tmp_malnutrition')
                                       .when(True, p['rr_pneumonia_SAM']),
                                       Predictor('tmp_exclusive_breastfeeding')
-                                      .when(False, p['rr_pneumonia_excl_breast'])
+                                      .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                       )
         })
 
@@ -403,7 +403,7 @@ class Pneumonia(Module):
                                 Predictor('tmp_malnutrition')
                                 .when(True, p['rr_pneumonia_SAM']),
                                 Predictor('tmp_exclusive_breastfeeding')
-                                .when(False, p['rr_pneumonia_excl_breast'])
+                                .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                 )
         })
 
@@ -424,7 +424,7 @@ class Pneumonia(Module):
                                          Predictor('tmp_malnutrition')
                                          .when(True, p['rr_pneumonia_SAM']),
                                          Predictor('tmp_exclusive_breastfeeding')
-                                         .when(False, p['rr_pneumonia_excl_breast'])
+                                         .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                          )
         })
 
@@ -445,7 +445,7 @@ class Pneumonia(Module):
                                          Predictor('tmp_malnutrition')
                                          .when(True, p['rr_pneumonia_SAM']),
                                          Predictor('tmp_exclusive_breastfeeding')
-                                         .when(False, p['rr_pneumonia_excl_breast']),
+                                         .when(False, p['rr_pneumonia_excl_breastfeeding']),
                                          Predictor('tmp_pneumococcal_vaccination')
                                          .when(False, p['rr_pneumonia_pneumococcal_vaccine'])
                                          )
@@ -468,7 +468,7 @@ class Pneumonia(Module):
                                Predictor('tmp_malnutrition')
                                .when(True, p['rr_pneumonia_SAM']),
                                Predictor('tmp_exclusive_breastfeeding')
-                               .when(False, p['rr_pneumonia_excl_breast']),
+                               .when(False, p['rr_pneumonia_excl_breastfeeding']),
                                Predictor('tmp_hib_vaccination')
                                .when(False, p['rr_pneumonia_hib_vaccine'])
                                )
@@ -493,7 +493,7 @@ class Pneumonia(Module):
                               Predictor('tmp_malnutrition')
                               .when(True, p['rr_pneumonia_SAM']),
                               Predictor('tmp_exclusive_breastfeeding')
-                              .when(False, p['rr_pneumonia_excl_breast'])
+                              .when(False, p['rr_pneumonia_excl_breastfeeding'])
                               )
         })
 
@@ -514,7 +514,7 @@ class Pneumonia(Module):
                                           Predictor('tmp_malnutrition')
                                           .when(True, p['rr_pneumonia_SAM']),
                                           Predictor('tmp_exclusive_breastfeeding')
-                                          .when(False, p['rr_pneumonia_excl_breast'])
+                                          .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                           )
         })
 
@@ -535,7 +535,7 @@ class Pneumonia(Module):
                                      Predictor('tmp_malnutrition')
                                      .when(True, p['rr_pneumonia_SAM']),
                                      Predictor('tmp_exclusive_breastfeeding')
-                                     .when(False, p['rr_pneumonia_excl_breast'])
+                                     .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                      )
         })
 
@@ -556,7 +556,7 @@ class Pneumonia(Module):
                                      Predictor('tmp_malnutrition')
                                      .when(True, p['rr_pneumonia_SAM']),
                                      Predictor('tmp_exclusive_breastfeeding')
-                                     .when(False, p['rr_pneumonia_excl_breast'])
+                                     .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                      )
         })
 
@@ -577,7 +577,7 @@ class Pneumonia(Module):
                                            Predictor('tmp_malnutrition')
                                            .when(True, p['rr_pneumonia_SAM']),
                                            Predictor('tmp_exclusive_breastfeeding')
-                                           .when(False, p['rr_pneumonia_excl_breast'])
+                                           .when(False, p['rr_pneumonia_excl_breastfeeding'])
                                            )
         })
 
@@ -597,7 +597,7 @@ class Pneumonia(Module):
                                         1.0,
                                         Predictor('ri_last_pneumonia_pathogen')
                                         .when('is streptococcus| hib | TB | staphylococcus',
-                                              p['prob_pneumothorax_bacterial_pneumonia'])
+                                              p['prob_pneumothorax_by_bacterial_pneumonia'])
                                         .otherwise(0.0)
                                         ),
 
@@ -708,8 +708,8 @@ class Pneumonia(Module):
                         .when('meningitis', p['r_death_from_pneumonia_due_to_meningitis'])
                         .otherwise(0.0),
                         Predictor('hv_inf').when(True, p['rr_death_pneumonia_HIV']),
-                        Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_malnutrition']),
-                        Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_lbw']),
+                        Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_SAM']),
+                        Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_low_birth_weight']),
                         Predictor('age_years')
                         .when('.between(1,1)', p['rr_death_pneumonia_age12to23mo'])
                         .when('.between(2,4)', p['rr_death_pneumonia_age24to59mo'])
