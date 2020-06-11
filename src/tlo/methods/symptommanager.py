@@ -64,8 +64,11 @@ class SymptomManager(Module):
 
         self.all_registered_symptoms = registered_symptoms
 
-        for symptom in self.all_registered_symptoms:
-            self.PROPERTIES[f'sy_{symptom}'] = Property(Types.LIST, f'Presence of symptom {symptom}')
+        # Clear any existing properties (PROPERTIES is a class member, so may have been set elsewhere)
+        SymptomManager.PROPERTIES = dict()
+
+        for symptom in sorted(self.all_registered_symptoms):
+            SymptomManager.PROPERTIES[f'sy_{symptom}'] = Property(Types.LIST, f'Presence of symptom {symptom}')
             self.symptom_column_names.append(f'sy_{symptom}')
 
     def initialise_population(self, population):
