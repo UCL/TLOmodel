@@ -36,9 +36,8 @@ class Pneumonia(Module):
         'other_pathogens'
     }
 
-    complications = {'pneumothorax', 'pleural efusion', 'empyema',
-    'lung abscess', 'sepsis', 'meningitis',
-    'respiratory failure'}
+    complications = {'pneumothorax', 'pleural_effusion', 'empyema',
+                     'lung_abscess', 'sepsis', 'meningitis', 'respiratory_failure'}
 
     # Declare the severity levels of the disease:
     pathogen_type = {
@@ -244,9 +243,9 @@ class Pneumonia(Module):
         # ---- Complications associated with pneumonia ----
         'ri_last_pneumonia_complications': Property(Types.LIST,
                                                     'complications that arose from last pneumonia event',
-                                                    categories=['pneumothorax', 'pleural efusion', 'empyema',
-                                                                'lung abscess', 'sepsis', 'meningitis',
-                                                                'respiratory failure'] + ['none']
+                                                    categories=['pneumothorax', 'pleural_eff usion', 'empyema',
+                                                                'lung_abscess', 'sepsis', 'meningitis',
+                                                                'respiratory_failure'] + ['none']
                                                     ),
 
         # ---- Internal variables to schedule onset and deaths due to pneumonia ----
@@ -257,6 +256,7 @@ class Pneumonia(Module):
         # ---- Temporary Variables: To be replaced with the properties of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'tmp_low_birth_weight': Property(Types.BOOL, 'temporary property - low birth weight'),
+        'tmp_hv_inf': Property(Types.BOOL, 'temporary property - hiv infection'),
         'tmp_exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'tmp_continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
         'tmp_pneumococcal_vaccination': Property(Types.BOOL, 'temporary property - streptococcus pneumoniae vaccine'),
@@ -356,7 +356,7 @@ class Pneumonia(Module):
                                .when(False, p['rr_pneumonia_HHhandwashing']),
                                Predictor('li_wood_burn_stove')
                                .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                               Predictor('hv_inf')
+                               Predictor('tmp_hv_inf')
                                .when(True, p['rr_pneumonia_HIV']),
                                Predictor('tmp_malnutrition')
                                .when(True, p['rr_pneumonia_SAM']),
@@ -377,7 +377,7 @@ class Pneumonia(Module):
                                       .when(False, p['rr_pneumonia_HHhandwashing']),
                                       Predictor('li_wood_burn_stove')
                                       .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                      Predictor('hv_inf')
+                                      Predictor('tmp_hv_inf')
                                       .when(True, p['rr_pneumonia_HIV']),
                                       Predictor('tmp_malnutrition')
                                       .when(True, p['rr_pneumonia_SAM']),
@@ -398,7 +398,7 @@ class Pneumonia(Module):
                                 .when(False, p['rr_pneumonia_HHhandwashing']),
                                 Predictor('li_wood_burn_stove')
                                 .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                Predictor('hv_inf')
+                                Predictor('tmp_hv_inf')
                                 .when(True, p['rr_pneumonia_HIV']),
                                 Predictor('tmp_malnutrition')
                                 .when(True, p['rr_pneumonia_SAM']),
@@ -419,7 +419,7 @@ class Pneumonia(Module):
                                          .when(False, p['rr_pneumonia_HHhandwashing']),
                                          Predictor('li_wood_burn_stove')
                                          .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                         Predictor('hv_inf')
+                                         Predictor('tmp_hv_inf')
                                          .when(True, p['rr_pneumonia_HIV']),
                                          Predictor('tmp_malnutrition')
                                          .when(True, p['rr_pneumonia_SAM']),
@@ -440,7 +440,7 @@ class Pneumonia(Module):
                                          .when(False, p['rr_pneumonia_HHhandwashing']),
                                          Predictor('li_wood_burn_stove')
                                          .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                         Predictor('hv_inf')
+                                         Predictor('tmp_hv_inf')
                                          .when(True, p['rr_pneumonia_HIV']),
                                          Predictor('tmp_malnutrition')
                                          .when(True, p['rr_pneumonia_SAM']),
@@ -463,7 +463,7 @@ class Pneumonia(Module):
                                .when(False, p['rr_pneumonia_HHhandwashing']),
                                Predictor('li_wood_burn_stove')
                                .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                               Predictor('hv_inf')
+                               Predictor('tmp_hv_inf')
                                .when(True, p['rr_pneumonia_HIV']),
                                Predictor('tmp_malnutrition')
                                .when(True, p['rr_pneumonia_SAM']),
@@ -488,7 +488,7 @@ class Pneumonia(Module):
                               .when(False, p['rr_pneumonia_HHhandwashing']),
                               Predictor('li_wood_burn_stove')
                               .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                              Predictor('hv_inf')
+                              Predictor('tmp_hv_inf')
                               .when(True, p['rr_pneumonia_HIV']),
                               Predictor('tmp_malnutrition')
                               .when(True, p['rr_pneumonia_SAM']),
@@ -509,7 +509,7 @@ class Pneumonia(Module):
                                           .when(False, p['rr_pneumonia_HHhandwashing']),
                                           Predictor('li_wood_burn_stove')
                                           .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                          Predictor('hv_inf')
+                                          Predictor('tmp_hv_inf')
                                           .when(True, p['rr_pneumonia_HIV']),
                                           Predictor('tmp_malnutrition')
                                           .when(True, p['rr_pneumonia_SAM']),
@@ -530,7 +530,7 @@ class Pneumonia(Module):
                                      .when(False, p['rr_pneumonia_HHhandwashing']),
                                      Predictor('li_wood_burn_stove')
                                      .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                     Predictor('hv_inf')
+                                     Predictor('tmp_hv_inf')
                                      .when(True, p['rr_pneumonia_HIV']),
                                      Predictor('tmp_malnutrition')
                                      .when(True, p['rr_pneumonia_SAM']),
@@ -551,7 +551,7 @@ class Pneumonia(Module):
                                      .when(False, p['rr_pneumonia_HHhandwashing']),
                                      Predictor('li_wood_burn_stove')
                                      .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                     Predictor('hv_inf')
+                                     Predictor('tmp_hv_inf')
                                      .when(True, p['rr_pneumonia_HIV']),
                                      Predictor('tmp_malnutrition')
                                      .when(True, p['rr_pneumonia_SAM']),
@@ -572,7 +572,7 @@ class Pneumonia(Module):
                                            .when(False, p['rr_pneumonia_HHhandwashing']),
                                            Predictor('li_wood_burn_stove')
                                            .when(False, p['rr_pneumonia_indoor_air_pollution']),
-                                           Predictor('hv_inf')
+                                           Predictor('tmp_hv_inf')
                                            .when(True, p['rr_pneumonia_HIV']),
                                            Predictor('tmp_malnutrition')
                                            .when(True, p['rr_pneumonia_SAM']),
@@ -608,6 +608,13 @@ class Pneumonia(Module):
                                                   p['prob_pleural_effusion_by_bacterial_pneumonia'])
                                             .otherwise(0.0)
                                             ),
+
+            'empyema': LinearModel(LinearModelType.MULTIPLICATIVE,
+                                   1.0,
+                                   Predictor('ri_last_pneumonia_complications')
+                                   .when('pleural_effusion', p['prob_pleural_effusion_to_empyema'])
+                                   .otherwise(0.0)
+                                   ),
 
             'lung_abscess': LinearModel(LinearModelType.MULTIPLICATIVE,
                                         1.0,
@@ -707,7 +714,7 @@ class Pneumonia(Module):
                         .when('respiratory_failure', p['r_death_from_pneumonia_due_to_respiratory_failure'])
                         .when('meningitis', p['r_death_from_pneumonia_due_to_meningitis'])
                         .otherwise(0.0),
-                        Predictor('hv_inf').when(True, p['rr_death_pneumonia_HIV']),
+                        Predictor('tmp_hv_inf').when(True, p['rr_death_pneumonia_HIV']),
                         Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_SAM']),
                         Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_low_birth_weight']),
                         Predictor('age_years')
@@ -718,7 +725,7 @@ class Pneumonia(Module):
         # TODO: duration of ilness - mean 3.0 days (2.0-5.0 days) from PERCH/hopsitalization days
 
         # Register this disease module with the health system
-        # self.sim.modules['HealthSystem'].register_disease_module(self)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -944,7 +951,7 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
         # Update the properties in the dataframe:
         df.at[person_id, 'ri_last_pneumonia_pathogen'] = self.pathogen
         df.at[person_id, 'ri_last_pneumonia_date_of_onset'] = self.sim.date
-        df.at[person_id, 'ri_last_clinical_severity'] = 'non-severe' # all disease start as non-severe symptoms
+        df.at[person_id, 'ri_last_pneumonia_complications'] = 'none' # all disease start as non-severe symptoms
 
         # Onset symptoms:
         for symptom in self.symptoms:
@@ -997,7 +1004,7 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
         """
             This Event is for the onset of Clinical Severe Pneumonia. For some untreated children,
             this occurs a set number of days after onset of disease.
-            It sets the property 'ri_last_clinical_severity' to 'severe' and schedules the death.
+            It sets the property 'ri_last_pneumonia_complications' to each complication and schedules the death.
             """
 
         def __init__(self, module, person_id, duration_in_days, symptoms, complication):

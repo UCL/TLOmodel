@@ -7,7 +7,8 @@ import datetime
 from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography, pneumonia, enhanced_lifestyle, hiv
+from tlo.methods import contraception, demography, pneumonia, enhanced_lifestyle, labour, healthsystem, \
+    symptommanager, healthseekingbehaviour, pregnancy_supervisor, dx_algorithm_child
 
 # %%
 outputpath = Path("./outputs")
@@ -29,14 +30,16 @@ sim = Simulation(start_date=start_date)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+
 # sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-# sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-# sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(pneumonia.Pneumonia(resourcefilepath=resourcefilepath))
-# sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
+sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)

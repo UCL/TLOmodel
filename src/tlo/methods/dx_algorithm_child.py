@@ -9,7 +9,6 @@ There should be a method here to respond to every symptom that a child could pre
 from tlo import Module
 from tlo.methods.diarrhoea import HSI_Diarrhoea_Treatment_PlanA, HSI_Diarrhoea_Treatment_PlanB, HSI_Diarrhoea_Treatment_PlanC,\
     HSI_Diarrhoea_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Dysentery
-from tlo.methods.dxmanager import DxTest
 
 
 class DxAlgorithmChild(Module):
@@ -37,13 +36,14 @@ class DxAlgorithmChild(Module):
         """
 
         # Test for the visual inspection of 'Danger signs' for a child who is dehydrated
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            danger_signs_visual_inspection=DxTest(
-                property='gi_current_severe_dehydration',
-                sensitivity=0.90,
-                specificity=0.80
-            )
-        )
+        # self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+        #     danger_signs_visual_inspection=DxTest(
+        #         property='gi_current_severe_dehydration',
+        #         sensitivity=0.90,
+        #         specificity=0.80
+        #     )
+        # )
+        pass
 
     def on_birth(self, mother_id, child_id):
         pass
