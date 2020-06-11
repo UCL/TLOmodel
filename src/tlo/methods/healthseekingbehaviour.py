@@ -88,7 +88,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         alive_person_ids = list(self.sim.population.props.index[self.sim.population.props.is_alive])
         person_ids_with_new_symptoms = list(
             self.module.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms.
-            intersection(alive_person_ids)
+                intersection(alive_person_ids)
         )
 
         # clear the list of person_ids with newly onset symptoms

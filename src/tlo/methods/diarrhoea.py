@@ -1018,7 +1018,6 @@ class Diarrhoea(Module):
 
         return daly_values_by_pathogen
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 #
@@ -1044,11 +1043,16 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
         m = self.module
 
-        # Compute the incidence rate for each person getting diarrhoea and then convert into a probability
-        # getting all children that do not have diarrhoea currently
+        # Compute the incidence rate for each person getting diarrhoea and then convert into a probability:
+        # Those susceptible are childen that do not currently have an episode (never had an episode or last episode
+        # resolved)
         mask_could_get_new_diarrhoea_episode = \
-            df['is_alive'] & (df['age_years'] < 5) & ((df['gi_last_diarrhoea_recovered_date'] <= self.sim.date) |
-                                                      pd.isnull(df['gi_last_diarrhoea_recovered_date']))
+            df['is_alive'] & \
+            (df['age_years'] < 5) & \
+            (
+                (df['gi_last_diarrhoea_recovered_date'] <= self.sim.date) |
+                                                      pd.isnull(df['gi_last_diarrhoea_date_of_onset'])
+            )
 
         inc_of_acquiring_pathogen = pd.DataFrame(index=df.loc[mask_could_get_new_diarrhoea_episode].index)
 
@@ -1096,7 +1100,6 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 ),
                 date=date_onset
             )
-
 
 class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
     """
@@ -1158,6 +1161,12 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
                 disease_module=self.module
             )
 
+        # DEBUG -- check that they have a symptom
+        try:
+            assert len(symptoms_for_this_person) > 0
+        except:
+            print('eh?')
+
         # ----------------------- Determine the progress to severe dehydration for this episode ----------------------
         # Progress to severe dehydration may or may not happen. If it does, it occurs some number of days before
         # the resolution of the episode
@@ -1201,7 +1210,6 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
         # -------------------------------------------------------------------------------------------
 
-
 class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
     """
     #This is the Natural Recovery event. It is part of the natural history and represents the end of an episode of
@@ -1220,15 +1228,15 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # do nothing if the person has already recovered through being cure
+        # do nothing if the person has already recovered (through being cured)
         if not self.sim.date == df.at[person_id, 'gi_last_diarrhoea_recovered_date']:
             try:
-                assert df.at[person_id, 'gi_last_diarrhoea_recovered_date'] < self.sim.date
+                assert (df.at[person_id, 'gi_last_diarrhoea_recovered_date'] < self.sim.date)
             except:
                 print('eh?')
             return
 
-        # check that the person was not scheduled to die in this episode
+        # check that the person was not scheduled to die in this episode (this is only for Natural Recoveries)
         assert pd.isnull(df.at[person_id, 'gi_last_diarrhoea_death_date'])
 
         # Resolve all the symptoms immediately
@@ -1288,15 +1296,19 @@ class DiarrhoeaDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
+        # Check if person should die
+        should_die = (df.at[person_id, 'gi_last_diarrhoea_death_date'] == self.sim.date) and \
+                     pd.isnull(df.at[person_id, 'gi_last_diarrhoea_recovered_date'])
+
         # Check if person should still die of diarrhoea:
-        if (df.at[person_id, 'gi_last_diarrhoea_death_date'] == self.sim.date):
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module,
-                                                                  person_id,
-                                                                  cause='Diarrhoea_' + df.at[
-                                                                      person_id, 'gi_last_diarrhoea_pathogen']
-                                                                  ),
-                                    self.sim.date
-                                    )
+        if should_die:
+            self.sim.schedule_event(
+                demography.InstantaneousDeath(
+                    self.module,
+                    person_id,
+                    cause='Diarrhoea_' + df.at[person_id, 'gi_last_diarrhoea_pathogen']
+                ),
+                self.sim.date)
 
 class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
     """
@@ -1316,6 +1328,13 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
         # The event should not run if the person is not currently alive
         if not df.at[person_id, 'is_alive']:
             return
+
+        # Cure should not happen if the person has already recovered
+        if (df.at[person_id, 'gi_last_diarrhoea_recovered_date'] <= self.sim.date):
+            return
+
+        # This event should only run after the person has received a treatment
+        assert df.at[person_id, 'gi_last_diarrhoea_treatment_date'] <= self.sim.date
 
         # Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date

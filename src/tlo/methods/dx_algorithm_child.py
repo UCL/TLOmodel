@@ -112,6 +112,8 @@ class DxAlgorithmChild(Module):
                          topen=self.sim.date,
                          tclose=None
                          )
+        else:
+            print('no treatment for this person')
 
         # ----------------------------------------------------
 
