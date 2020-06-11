@@ -979,17 +979,17 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
                 complications_for_this_person.append(complication)
                 df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
                 df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
+            else:
+                df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
+                df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
 
-        for i in complications_for_this_person:
-            date_onset_complications = self.module.sim.date + DateOffset(
-                days=np.random.randint(3, self.duration_in_days))
-            self.sim.schedule_event[i](PneumoniaWithComplicationsEvent(
-                self.module, person_id, duration_in_days=self.duration_in_days, symptoms=self.symptoms,
-                complication=complications_for_this_person), date_onset_complications)
-
-        if len(complications_for_this_person) == 0:
-            df.at[person_id, 'ri_last_pneumonia_recovered_date'] = date_of_outcome
-            df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
+        if len(complications_for_this_person) != 0:
+            for i in complications_for_this_person:
+                date_onset_complications = self.module.sim.date + DateOffset(
+                    days=np.random.randint(3, self.duration_in_days))
+                self.sim.schedule_event[i](PneumoniaWithComplicationsEvent(
+                    self.module, person_id, duration_in_days=self.duration_in_days, symptoms=self.symptoms,
+                    complication=complications_for_this_person), date_onset_complications)
 
         # Add this incident case to the tracker
         age = df.loc[person_id, ['age_years']]
@@ -1022,20 +1022,29 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
             if not df.at[person_id, 'is_alive']:
                 return
 
+            df.at[person_id, 'ri_last_pneumonia_complications'] = list(self.complication)
+
             possible_symptoms_by_complication = self.module.prob_extra_symptoms_complications[self.complication]
-            symptoms_for_this_person = list()
+            add_complication_symptoms = list()
             for symptom, prob in possible_symptoms_by_complication.items():
                 if self.module.rng.rand() < prob:
-                    symptoms_for_this_person.append(symptom)
+                    add_complication_symptoms.append(symptom)
+
+            for symptom in add_complication_symptoms:
+                self.module.sim.modules['SymptomManager'].change_symptom(
+                    person_id=person_id,
+                    symptom_string=symptom,
+                    add_or_remove='+',
+                    disease_module=self.module,
+                    duration_in_days=self.duration_in_days
+                )
 
             # Determine death outcome
             date_of_outcome = \
                 df.at[person_id, 'ri_last_pneumonia_date_of_onset'] + DateOffset(days=self.duration_in_days)
-            prob_death_by_disease = pd.DataFrame(index=[person_id])
-            for disease in m.diseases:
-                prob_death_by_disease = \
-                    m.risk_of_death_clinical_severe_pneumonia[disease].predict(df.loc[[person_id]]).values[0]
-            death_outcome = rng.rand() < prob_death_by_disease
+
+            prob_death_from_pneumonia = m.risk_of_death_severe_pneumonia.predict(df.loc[[person_id]]).values[0]
+            death_outcome = rng.rand() < prob_death_from_pneumonia
 
             if death_outcome:
                 df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
