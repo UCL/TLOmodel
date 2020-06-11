@@ -38,7 +38,7 @@ class ChronicSyndrome(Module):
             Types.REAL, 'Probability per year of developing severe symptoms of craving sandwiches'
         ),
         'prob_seek_emergency_care_if_craving_sandwiches': Parameter(
-            Types.REAL, 'Probability that an individual will seak emergency care following onset of craving sandwiches'
+            Types.REAL, 'Probability that an individual will seek emergency care following onset of craving sandwiches'
         ),
         'daly_wts': Parameter(Types.DICT, 'DALY weights for conditions'),
     }
