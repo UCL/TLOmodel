@@ -114,7 +114,7 @@ from sphinx.util import inspect
 # or PROPERTIES dictionary is encountered; we suppress
 # output the first time (i.e. the raw docstring), and
 # only allow it the second time (i.e. the nice table)
-dict_count = {}
+#dict_count = {}
 
 @classmethod
 # (cls, member: Any, membername: str, isattr: bool, parent: Any) -> bool:
@@ -232,6 +232,10 @@ def setup(app):
     '''
     Tell Sphinx which functions to run when it emits certain events.
     '''
+    #import pdb; pdb.set_trace()
+    #myitems = dir(app)
+    if not hasattr(app, 'mydict'):
+        app.mydict = dict()
 
     # The next two lines show two different ways of telling Sphinx to use
     # our local, redefined versions of its internal functions:
@@ -252,25 +256,36 @@ def setup(app):
     # add_dict_to_docstring():
     app.connect("autodoc-process-docstring", add_dicts_to_docstring)
 
-#count = 0
-#mydict = {}
 
 def skip(app, what, name, obj, skip, options):
-    #global count
-    #global mydict
+
     if name in ('PARAMETERS', 'PROPERTIES'):
-        #import pdb; pdb.set_trace()
+
+        #
         # Don't bother displaying PARAMETERS or
         # PROPERTIES dictionaries if they have no data.
         if not obj:
             return True
-        else:
-            #
-            # From Sphinx docs:
-            # "Handlers should return None to fall back
-            # to the skipping behavior of autodoc and
-            # other enabled extensions."
-            return None
+        #
+        #if len(app.mydict.keys()) > 43:
+            #import pdb; pdb.set_trace()
+        #    return False
+
+        mykey = ".".join(obj.keys())  # mykey is a dot-separated string of keys from obj
+        #import pdb; pdb.set_trace()
+        if mykey in app.mydict:  #.values():
+            #import pdb; pdb.set_trace()
+            app.mydict[mykey] += 1
+            #return False
+        else:  # New key, so a new dict; skip it.
+            app.mydict[mykey] = 1
+            #return True
+
+    # From Sphinx docs:
+    # "Handlers should return None to fall back
+    # to the skipping behavior of autodoc and
+    # other enabled extensions."
+    return None
 
 
 
