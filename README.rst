@@ -4,7 +4,7 @@ Overview
 
 .. start-badges
 
-.. image:: https://api.travis-ci.com/UCL/TLOmodel.svg?branch=master
+.. image:: https://travis-ci.com/UCL/TLOmodel.svg?token=UKPSYZnjNU6sajG8DWb9&branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.com/UCL/TLOmodel
 
@@ -82,4 +82,3 @@ Note, to combine test coverage data from all the tox environments run:
       - ::
 
             PYTEST_ADDOPTS=--cov-append tox
-

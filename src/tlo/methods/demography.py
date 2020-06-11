@@ -465,7 +465,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     py.to_dict())
 
 
-def scale_to_population(parsed_output, resourcefilepath):
+def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):
     """
     This helper function scales certain outputs so that they can create statistics for the whole population.
     e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
@@ -491,6 +491,9 @@ def scale_to_population(parsed_output, resourcefilepath):
 
     # Calculate ratio for scaling
     ratio_data_to_model = cens_tot / model_tot
+
+    if rtn_scaling_ratio:
+        return ratio_data_to_model
 
     # Do the scaling on selected columns in the parsed outputs:
     o = parsed_output.copy()
