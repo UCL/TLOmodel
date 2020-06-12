@@ -277,7 +277,8 @@ class Pneumonia(Module):
     }
 
     # declare the symptoms that this module will cause:
-    SYMPTOMS = {'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'danger_signs'}
+    SYMPTOMS = {'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'grunting',
+                'cyanosis', 'severe_respiratory_distress', 'hypoxia', 'danger_signs'}
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -586,73 +587,88 @@ class Pneumonia(Module):
 
         # --------------------------------------------------------------------------------------------
 
-
-
         # check that probability of symptoms have been declared for each severity level
         # assert self.severity == set(list(self.prob_symptoms.keys()))
         # --------------------------------------------------------------------------------------------
         # Create linear models for the risk of acquiring complications from uncomplicated pneumonia
         self.risk_of_developing_pneumonia_complications.update({
-            'pneumothorax': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                        1.0,
-                                        Predictor('ri_last_pneumonia_pathogen')
-                                        .when('is streptococcus| hib | TB | staphylococcus',
-                                              p['prob_pneumothorax_by_bacterial_pneumonia'])
-                                        .otherwise(0.0)
-                                        ),
+            'pneumothorax':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_pathogen')
+                            .when(
+                                ".isin(['streptococcus', 'hib', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                p['prob_pneumothorax_by_bacterial_pneumonia'])
+                            .otherwise(0.0)
+                            ),
 
-            'pleural_effusion': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                            1.0,
-                                            Predictor('ri_last_pneumonia_pathogen')
-                                            .when('is streptococcus| hib | TB | staphylococcus',
-                                                  p['prob_pleural_effusion_by_bacterial_pneumonia'])
-                                            .otherwise(0.0)
-                                            ),
+            'pleural_effusion':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_pathogen')
+                            .when(
+                                ".isin(['streptococcus', 'hib', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                p['prob_pleural_effusion_by_bacterial_pneumonia'])
+                            .otherwise(0.0)
+                            ),
 
-            'empyema': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                   1.0,
-                                   Predictor('ri_last_pneumonia_complications')
-                                   .when('pleural_effusion', p['prob_pleural_effusion_to_empyema'])
-                                   .otherwise(0.0)
-                                   ),
+            'empyema':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_complications')
+                            .when('pleural_effusion', p['prob_pleural_effusion_to_empyema'])
+                            .otherwise(0.0)
+                            ),
 
-            'lung_abscess': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                        1.0,
-                                        Predictor('ri_last_pneumonia_pathogen')
-                                        .when('is streptococcus| hib | TB | staphylococcus',
-                                              p['prob_pleural_effusion_by_bacterial_pneumonia'])
-                                        .otherwise(0.0)
-                                        ),
+            'lung_abscess':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_pathogen')
+                            .when(
+                                ".isin(['streptococcus', 'hib', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                p['prob_lung_abscess_by_bacterial_pneumonia'])
+                            .otherwise(0.0)
+                            ),
 
-            'sepsis': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                  1.0,
-                                  Predictor('ri_last_pneumonia_pathogen')
-                                  .when('is streptococcus| hib | TB | staphylococcus',
-                                        p['prob_sepsis_by_bacterial_pneumonia'])
-                                  .when('is RSV | rhinovirus | hMPV | parainfluenza | influenza',
-                                        p['prob_sepsis_by_viral_pneumonia'])
-                                  .otherwise(0.0)
-                                  ),
+            'sepsis':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_pathogen')
+                            .when(
+                                ".isin(['streptococcus', 'hib', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                p['prob_sepsis_by_bacterial_pneumonia'])
+                            .when(
+                                ".isin(['RSV', 'rhinovirus', 'hMPV', 'parainfluenza', 'influenza'])",
+                                p['prob_sepsis_by_viral_pneumonia'])
+                            .otherwise(0.0)
+                            ),
 
-            'meningitis': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                      1.0,
-                                      Predictor('ri_last_pneumonia_pathogen')
-                                      .when('is streptococcus| hib | TB | staphylococcus',
-                                            p['prob_meningitis_by_bacterial_pneumonia'])
-                                      .when('is RSV | rhinovirus | hMPV | parainfluenza | influenza',
-                                            p['prob_meningitis_by_viral_pneumonia'])
-                                      .otherwise(0.0)
-                                      ),
+            'meningitis':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_pathogen')
+                            .when(
+                                ".isin(['streptococcus', 'hib', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                p['prob_meningitis_by_bacterial_pneumonia'])
+                            .when(
+                                ".isin(['RSV', 'rhinovirus', 'hMPV', 'parainfluenza', 'influenza'])",
+                                p['prob_meningitis_by_viral_pneumonia'])
+                            .otherwise(0.0)
+                            ),
 
-            'respiratory_failure': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                               1.0,
-                                               Predictor('ri_last_pneumonia_pathogen')
-                                               .when('is streptococcus| hib | TB | staphylococcus',
-                                                     p['prob_respiratory_failure_by_bacterial_pneumonia'])
-                                               .when('is RSV | rhinovirus | hMPV | parainfluenza | influenza',
-                                                     p['prob_respiratory_failure_by_viral_pneumonia'])
-                                               .otherwise(0.0)
-                                               ),
+            'respiratory_failure':
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_pathogen')
+                            .when(
+                                ".isin(['streptococcus', 'hib', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                p['prob_respiratory_failure_by_bacterial_pneumonia'])
+
+                            .when(
+                                ".isin(['RSV', 'rhinovirus', 'hMPV', 'parainfluenza', 'influenza'])",
+                                p['prob_respiratory_failure_by_viral_pneumonia'])
+                            .otherwise(0.0)
+                            ),
         }),
 
         # --------------------------------------------------------------------------------------------
@@ -669,7 +685,7 @@ class Pneumonia(Module):
         self.prob_extra_symptoms_complications.update({
             'pneumothorax': {
                 'grunting': 0.9,
-                'sereve_respiratory_distress': 0.5,
+                'severe_respiratory_distress': 0.5,
                 'cyanosis': 1
             },
             'pleural_effusion': {
@@ -692,7 +708,7 @@ class Pneumonia(Module):
                 'chest_indrawing': 0.5,
                 'danger_signs': 1
             },
-            'menigitis': {
+            'meningitis': {
                 'fast_breathing': 0.9,
                 'chest_indrawing': 0.5,
                 'danger_signs': 1
@@ -973,9 +989,9 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
 
         complications_for_this_person = list()
         for complication in self.module.complications:
-            prob_developing_complications = m.risk_of_developing_pneumonia_complications[complication].predict(
+            prob_developing_each_complication = m.risk_of_developing_pneumonia_complications[complication].predict(
                 df.loc[[person_id]]).values[0]
-            if rng.rand() < prob_developing_complications:
+            if rng.rand() < prob_developing_each_complication:
                 complications_for_this_person.append(complication)
                 df.at[person_id, 'ri_last_pneumonia_recovered_date'] = pd.NaT
                 df.at[person_id, 'ri_last_pneumonia_death_date'] = pd.NaT
@@ -986,8 +1002,9 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
         if len(complications_for_this_person) != 0:
             for i in complications_for_this_person:
                 date_onset_complications = self.module.sim.date + DateOffset(
-                    days=np.random.randint(3, self.duration_in_days))
-                self.sim.schedule_event[i](PneumoniaWithComplicationsEvent(
+                    days=np.random.randint(3, high=self.duration_in_days))
+                print(i, date_onset_complications)
+                self.sim.schedule_event(PneumoniaWithComplicationsEvent(
                     self.module, person_id, duration_in_days=self.duration_in_days, symptoms=self.symptoms,
                     complication=complications_for_this_person), date_onset_complications)
 
@@ -1022,15 +1039,31 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
             if not df.at[person_id, 'is_alive']:
                 return
 
+            # complications for this person
             df.at[person_id, 'ri_last_pneumonia_complications'] = list(self.complication)
 
-            possible_symptoms_by_complication = self.module.prob_extra_symptoms_complications[self.complication]
-            add_complication_symptoms = list()
-            for symptom, prob in possible_symptoms_by_complication.items():
-                if self.module.rng.rand() < prob:
-                    add_complication_symptoms.append(symptom)
+            # add to the initial list of uncomplicated pneumonia symptoms
+            all_symptoms_for_this_person = list(self.symptoms)  # original uncomplicated symptoms list to add to
 
-            for symptom in add_complication_symptoms:
+            # keep only the probabilities for the complications of the person:
+            possible_symptoms_by_complication = {key: val for key, val in
+                                                 self.module.prob_extra_symptoms_complications.items()
+                                                 if key in list(self.complication)}
+            print(possible_symptoms_by_complication)
+            symptoms_from_complications = list()
+            for complication in possible_symptoms_by_complication:
+                for symptom, prob in possible_symptoms_by_complication[complication].items():
+                    if self.module.rng.rand() < prob:
+                        symptoms_from_complications.append(symptom)
+                    for i in symptoms_from_complications:
+                        # add symptoms from complications to the list
+                        all_symptoms_for_this_person.append(
+                            i) if i not in all_symptoms_for_this_person \
+                            else all_symptoms_for_this_person
+
+            print(all_symptoms_for_this_person)
+
+            for symptom in all_symptoms_for_this_person:
                 self.module.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string=symptom,
