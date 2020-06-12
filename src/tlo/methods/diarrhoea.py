@@ -1035,7 +1035,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=3))
         # NB. The frequency of the occurrences of this event can be edited safely.
 
     def apply(self, population):
@@ -1240,6 +1240,7 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         assert pd.isnull(df.at[person_id, 'gi_last_diarrhoea_death_date'])
 
         # Resolve all the symptoms immediately
+        df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
 
@@ -1341,6 +1342,7 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
 
         # Resolve all the symptoms immediately
+        df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
         self.sim.modules['SymptomManager'].clear_symptoms(person_id=person_id,
                                                           disease_module=self.sim.modules['Diarrhoea'])
 

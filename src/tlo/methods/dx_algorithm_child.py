@@ -113,7 +113,9 @@ class DxAlgorithmChild(Module):
                          tclose=None
                          )
         else:
-            print('no treatment for this person')
+            # There is no treatment for this person
+            pass
+
 
         # ----------------------------------------------------
 
