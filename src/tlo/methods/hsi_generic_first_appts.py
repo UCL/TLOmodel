@@ -7,7 +7,6 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -208,8 +207,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 priority=1,
                                                                 topen=self.sim.date
                                                                 )
-        if 'em_severe_trauma' in symptoms:
-            self.sim.modules['RTI'].RTI_MedicalIntervention(self.module, person_id=person_id)
+
+        if 'RTI' in self.sim.modules:
+            if 'em_severe_trauma' in symptoms:
+                road_traffic_injuries = self.sim.modules['RTI']
+                road_traffic_injuries.rti_do_when_injured(person_id=person_id, hsi_event=self)
 
 
     def did_not_run(self):
