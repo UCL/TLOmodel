@@ -1,9 +1,7 @@
 """
-Oesophageal Cancer Disease Module
+Prostate Cancer Disease Module
 
 Limitations to note:
-* Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
-* Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
 * Footprints of HSI -- pending input from expert on resources required.
 """
 
@@ -22,23 +20,23 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class OesophagealCancer(Module):
-    """Oesophageal Cancer Disease Module"""
+class ProstateCancer(Module):
+    """Prostate Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.linear_models_for_progession_of_oc_status = dict()
-        self.lm_onset_dysphagia = None
+        self.linear_models_for_progression_of_prostate_cancer_status = dict()
+        self.lm_prostate_ca_onset_urunary_symptoms = None
         self.daly_wts = dict()
 
     PARAMETERS = {
-        "init_prop_oes_cancer_stage": Parameter(
+        "init_prop_prostate_ca_stage": Parameter(
             Types.LIST,
-            "initial proportions in dysplasia/cancer categories for man aged 20 with no excess alcohol and no tobacco"
+            "initial proportions in prostate cancer stages for men aged 35-49"
         ),
-        "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with dysplasia/cancer categories that have the symptom dysphagia"
+        "init_prop_urinary_symptoms_by_stage": Parameter(
+            Types.LIST, "initial proportions of those in prostate ca stages that have urinary symptoms"
         ),
         "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of people that have symptom of dysphagia that have been diagnosed"
