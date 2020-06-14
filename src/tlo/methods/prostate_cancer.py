@@ -47,16 +47,16 @@ class ProstateCancer(Module):
         "init_prob_palliative_care": Parameter(
             Types.REAL, "initial probability of being under palliative care if at metastatic stage"
         ),
-        "r_low_grade_dysplasia_none": Parameter(
+        "r_prostate_confined_prostate_ca_none": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident low grade oesophageal dysplasia, amongst people with no "
-            "oesophageal dysplasia (men, age20, no excess alcohol, no tobacco)",
+            "probabilty per 3 months of incident (prostate confined) prostate cancer amongst people with no "
+            "prostate ca (men, age35-49)",
         ),
-        "rr_low_grade_dysplasia_none_female": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for females"
+        "rr_prostate_confined_prostate_ca_age5069": Parameter(
+            Types.REAL, "rate ratio for incident (prostate confined) prostate cancer amongst men aged 50-69"
         ),
-        "rr_low_grade_dysplasia_none_per_year_older": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia per year older from age 20"
+        "rr_prostate_confined_prostate_ca_agege70": Parameter(
+            Types.REAL, "rate ratio for incident (prostate confined) prostate cancer amongst men aged ge 70"
         ),
         "rr_low_grade_dysplasia_none_tobacco": Parameter(
             Types.REAL, "rate ratio for low grade oesophageal dysplasia for tobacco smokers"
