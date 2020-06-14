@@ -38,14 +38,14 @@ class ProstateCancer(Module):
         "init_prop_urinary_symptoms_by_stage": Parameter(
             Types.LIST, "initial proportions of those in prostate ca stages that have urinary symptoms"
         ),
-        "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people that have symptom of dysphagia that have been diagnosed"
+        "init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage": Parameter(
+            Types.LIST, "initial proportions of people with prostate ca and urinary symptoms that have been diagnosed"
         ),
-        "init_prop_treatment_status_oes_cancer": Parameter(
-            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer that had initiated treatment"
+        "init_prop_treatment_status_prostate_ca": Parameter(
+            Types.LIST, "initial proportions of people with prostate ca that had received treatment"
         ),
         "init_prob_palliative_care": Parameter(
-            Types.REAL, "initial probability of being under palliative care if in stage 4"
+            Types.REAL, "initial probability of being under palliative care if at metastatic stage"
         ),
         "r_low_grade_dysplasia_none": Parameter(
             Types.REAL,
