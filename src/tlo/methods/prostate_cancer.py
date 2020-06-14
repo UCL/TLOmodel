@@ -58,68 +58,54 @@ class ProstateCancer(Module):
         "rr_prostate_confined_prostate_ca_agege70": Parameter(
             Types.REAL, "rate ratio for incident (prostate confined) prostate cancer amongst men aged ge 70"
         ),
-        "rr_low_grade_dysplasia_none_tobacco": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for tobacco smokers"
-        ),
-        "rr_low_grade_dysplasia_none_ex_alc": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for no excess alcohol"
-        ),
-        "r_high_grade_dysplasia_low_grade_dysp": Parameter(
+        "r_local_ln_prostate_ca_prostate_confined": Parameter(
             Types.REAL,
-            "probabilty per 3 months of high grade oesophageal dysplasia, amongst people with low grade dysplasia",
+            "probabilty per 3 months of local lymph node involved prostate ca amongst people with prostate confined "
+            "prostate ca"
         ),
-        "rr_high_grade_dysp_undergone_curative_treatment": Parameter(
+        "rr_local_ln_prostate_ca_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for high grade dysplasia for people with low grade dysplasia "
-            "if had curative treatment at low grade dysplasia stage",
+            "rate ratio for local lymph node involved prostate ca for people with prostate confined prostate ca"
+            "due to undergoing curative treatment"
         ),
-        "r_stage1_high_grade_dysp": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 1 oesophageal cancer amongst people with high grade dysplasia"
+        "r_metastatic_prostate_ca_local_ln": Parameter(
+            Types.REAL, "probabilty per 3 months of metastatic prostate cancer amongst people with local lymph node"
+                        "involved prostate ca"
         ),
-        "rr_stage1_undergone_curative_treatment": Parameter(
+        "rr_metastatic_prostate_ca_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for stage 1 oesophageal cancer for people with high grade "
-            "dysplasia if had curative treatment at high grade dysplasia stage",
+            "rate ratio for metastatic prostate cancer stage 1 for people with lymph node involved prostate ca due to"
+            "undergoing curative treatment"
         ),
-        "r_stage2_stage1": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 2 oesophageal cancer amongst people with stage 1"
+        "rate_palliative_care_metastatic_prostate_ca": Parameter(
+            Types.REAL, "prob palliative care this 3 month period if metastatic prostate ca"
         ),
-        "rr_stage2_undergone_curative_treatment": Parameter(
+        "r_death_metastatic_prostate_cancer": Parameter(
             Types.REAL,
-            "rate ratio for stage 2 oesophageal cancer for people with stage 1 "
-            "oesophageal cancer if had curative treatment at stage 1",
+            "probabilty per 3 months of death from prostate cancer mongst people with metastatic prostate cancer",
         ),
-        "r_stage3_stage2": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 3 oesophageal cancer amongst people with stage 2"
+        "r_urinary_symptoms_prostate_ca": Parameter(
+            Types.REAL, "rate of urinary symptoms if have prostate confined prostate ca"
         ),
-        "rr_stage3_undergone_curative_treatment": Parameter(
+        "rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer": Parameter(
+            Types.REAL, "rate ratio of urinary symptoms in a person with local lymph node or metastatuc prostate cancer "
+                        "compared with prostate confined prostate ca"
+        ),
+        "r_back_pain_symptoms_local_ln_prostate_ca": Parameter(
+            Types.REAL, "rate of urinary symptoms if have local lymph node involved prostate cancer"
+        ),
+        "rr_back_pain_metastatic_prostate_cancer": Parameter(
             Types.REAL,
-            "rate ratio for stage 3 oesophageal cancer for people with stage 2 "
-            "oesophageal cancer if had curative treatment at stage 2",
+            "rate ratio of back pain in a person with metastatuc prostate cancer compared with lymph node involved"
+            "prostate cancer"
         ),
-        "r_stage4_stage3": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 4 oesophageal cancer amongst people with stage 3"
-        ),
-        "rr_stage4_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 4 oesophageal cancer for people with stage 3 "
-            "oesophageal cancer if had curative treatment at stage 3",
-        ),
-        "rate_palliative_care_stage4": Parameter(
-            Types.REAL, "prob palliative care this 3 month period if stage4"
-        ),
-        "r_death_oesoph_cancer": Parameter(
-            Types.REAL,
-            "probabilty per 3 months of death from oesophageal cancer mongst people with stage 4 oesophageal cancer",
-        ),
-        "rr_dysphagia_low_grade_dysp": Parameter(
-            Types.REAL, "probability per 3 months of dysphagia in a person with low grade oesophageal dysplasia"
-        ),
-        "rr_dysphagia_high_grade_dysp": Parameter(
+
+
+
+
+        
+        "rr_urinary_high_grade_dysp": Parameter(
             Types.REAL, "rate ratio for dysphagia if have high grade oesophageal dysplasia"
-        ),
-        "r_dysphagia_stage1": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 1 oesophageal cancer"
         ),
         "rr_dysphagia_stage2": Parameter(
             Types.REAL, "rate ratio for dysphagia if have stage 2 oesophageal cancer"
