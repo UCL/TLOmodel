@@ -80,13 +80,13 @@ def make_simulation_nohsi():
 # %% Manipulation of parameters:
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
-    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.0] * 6
+    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.0] * 4
     return sim
 
 
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
-    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.0] * 6
+    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.0] * 4
     # Put everyone in first stage ('prostate_confied')
     sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'][0] = 1.0
     return sim
@@ -94,7 +94,7 @@ def seed_init_prev_in_first_stage_only(sim):
 
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
-    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.1] * 6
+    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.1] * 4
     return sim
 
 
