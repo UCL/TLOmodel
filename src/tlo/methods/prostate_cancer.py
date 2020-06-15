@@ -255,65 +255,54 @@ class ProstateCancer(Module):
         disease_module = self
         )
 
-# -------------------- oc_date_diagnosis -----------
+# -------------------- pc_date_diagnosis -----------
+        # todo: should depend also on baseline pelvic pain symptoms
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][1])
-                                    .when("stage1",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][2])
-                                    .when("stage2",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][3])
-                                    .when("stage3",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][4])
-                                    .when("stage4",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][5])
+            Predictor('pc_status')  .when("none", 0.0)
+                                    .when("prostate_confined",
+                                          p['init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage'][0])
+                                    .when("local_ln",
+                                          p['init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage'][1])
+                                    .when("metastatic",
+                                          p['init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage'][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
-        # ensure that persons who have not ever had the symptom dysphagia are diagnosed:
-        ever_diagnosed.loc[~has_dysphagia_at_init] = False
+        # ensure that persons who have not ever had urinary or pelvic pain symptoms are not diagnosed:
+        ever_diagnosed.loc[~has_urinary_symptoms_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
         df.loc[ever_diagnosed, "oc_date_diagnosis"] = self.sim.date
 
         # -------------------- oc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_treatment_status_oes_cancer'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_treatment_status_oes_cancer'][1])
-                                    .when("stage1",
-                                          p['init_prop_treatment_status_oes_cancer'][2])
-                                    .when("stage2",
-                                          p['init_prop_treatment_status_oes_cancer'][3])
-                                    .when("stage3",
-                                          p['init_prop_treatment_status_oes_cancer'][4])
-                                    .when("stage4",
-                                          p['init_prop_treatment_status_oes_cancer'][5])
+            Predictor('pc_status')  .when("none", 0.0)
+                                    .when("prostate_confined",
+                                          p['init_prop_treatment_status_prostate_ca'][0])
+                                    .when("local_ln",
+                                          p['init_prop_treatment_status_prostate_ca'][1])
+                                    .when("metastatic",
+                                          p['init_prop_treatment_status_prostate_ca'][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
         # prevent treatment having been initiated for anyone who is not yet diagnosed
-        treatment_initiated.loc[pd.isnull(df.oc_date_diagnosis)] = False
+        treatment_initiated.loc[pd.isnull(df.pc_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "oc_stage_at_which_treatment_applied"] = df.loc[treatment_initiated, "oc_status"]
+        df.loc[treatment_initiated, "pc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "pc_status"]
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
-        df.loc[treatment_initiated, "oc_date_treatment"] = df.loc[treatment_initiated, "oc_date_diagnosis"]
+        df.loc[treatment_initiated, "pc_date_treatment"] = df.loc[treatment_initiated, "pc_date_diagnosis"]
 
         # -------------------- oc_date_palliative_care -----------
-        in_stage4_diagnosed = df.index[df.is_alive & (df.oc_status == 'stage4') & ~pd.isnull(df.oc_date_diagnosis)]
+        in_metastatic_diagnosed = df.index[df.is_alive & (df.pc_status == 'metastatic') & ~pd.isnull(df.pc_date_diagnosis)]
 
-        select_for_care = self.rng.random_sample(size=len(in_stage4_diagnosed)) < p['init_prob_palliative_care']
-        select_for_care = in_stage4_diagnosed[select_for_care]
+        select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
+        select_for_care = in_metastatic_diagnosed[select_for_care]
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
-        df.loc[select_for_care, "oc_date_palliative_care"] = df.loc[select_for_care, "oc_date_diagnosis"]
+        df.loc[select_for_care, "pc_date_palliative_care"] = df.loc[select_for_care, "pc_date_diagnosis"]
 
     def initialise_simulation(self, sim):
         """
