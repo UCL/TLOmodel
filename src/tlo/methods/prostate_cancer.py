@@ -855,7 +855,7 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
-            hsi_event=HSI_OesophagealCancer_PalliativeCare(
+            hsi_event=HSI_ProstateCancer_PalliativeCare(
                 module=self.module,
                 person_id=person_id
             ),
@@ -872,7 +872,7 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
@@ -892,24 +892,24 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Current counts, total
         out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].oc_status.value_counts().items()})
+            f'total_{k}': v for k, v in df.loc[df.is_alive].pc_status.value_counts().items()})
 
         # Current counts, undiagnosed
         out.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
+            pd.isnull(df.pc_date_diagnosis), 'pc_status'].value_counts().items()})
 
         # Current counts, diagnosed
         out.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
+            ~pd.isnull(df.pc_date_diagnosis), 'pc_status'].value_counts().items()})
 
         # Current counts, on treatment (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.oc_date_treatment) & pd.isnull(
-            df.oc_date_palliative_care)), 'oc_status'].value_counts().items()})
+            df.pc_date_treatment) & pd.isnull(
+            df.pc_date_palliative_care)), 'pc_status'].value_counts().items()})
 
         # Current counts, on palliative care
         out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_palliative_care), 'oc_status'].value_counts().items()})
+            ~pd.isnull(df.pc_date_palliative_care), 'pc_status'].value_counts().items()})
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
@@ -917,9 +917,9 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
         out.update({
-            'diagnosed_since_last_log': df.oc_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.oc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.oc_date_palliative_care.between(date_lastlog, date_now).sum()
+            'diagnosed_since_last_log': df.pc_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.pc_date_treatment.between(date_lastlog, date_now).sum(),
+            'palliative_since_last_log': df.pc_date_palliative_care.between(date_lastlog, date_now).sum()
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
