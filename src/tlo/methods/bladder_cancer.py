@@ -50,7 +50,7 @@ class BladderCancer(Module):
             Types.LIST, "initial proportions of people that have symptom of pelvic pain that have been diagnosed"
         ),
         "init_prop_treatment_status_bladder_cancer": Parameter(
-            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer that had initiated treatment"
+            Types.LIST, "initial proportions of people with bladder cancer that had initiated treatment"
         ),
         "init_prob_palliative_care": Parameter(
             Types.REAL, "initial probability of being under palliative care if in stage 4"
