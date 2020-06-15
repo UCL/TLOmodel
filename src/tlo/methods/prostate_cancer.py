@@ -609,15 +609,15 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             disease_module=self.module
         )
 
-        # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
-        # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
-        stage4_idx = df.index[df.is_alive & (df.oc_status == "stage4")]
-        selected_to_die = stage4_idx[
-            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_oesoph_cancer']]
+        # -------------------- DEATH FROM PROSTATE CANCER ---------------------------------------
+        # There is a risk of death for those in metastatic only. Death is assumed to go instantly.
+        metastatic_idx = df.index[df.is_alive & (df.pc_status == "metastatic")]
+        selected_to_die = metastatic_idx[
+            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_prostate_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
+                demography.InstantaneousDeath(self.module, person_id, "ProstateCancer"), self.sim.date
             )
 
 
@@ -625,20 +625,20 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, IndividualScopeEventMixin):
+class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    dysphagia.
-    This event begins the investigation that may result in diagnosis of Oesophageal Cancer and the scheduling of
+    urinary symptoms.
+    This event begins the investigation that may result in diagnosis of prostate cancer and the scheduling of
     treatment or palliative care.
-    It is for people with the symptom dysphagia.
+    It is for men with the symptom urinary.
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
+        self.TREATMENT_ID = "ProstateCancer_Investigation_Following_Urinary_Symptoms"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -651,31 +651,35 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that this event has been called for someone with the symptom dysphagia
-        assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
+        # Check that this event has been called for someone with the urinary symptoms
+        assert 'urinary' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
-        if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
+        if not pd.isnull(df.at[person_id, "pc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
+        # todo: stratify by pc_status
+        # Use a psa test to assess whether the person has prostate cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
+            dx_tests_to_run='psa_for_prostate_cancer_given_prostate_confined',
             hsi_event=self
         )
 
+        # todo: positive psa triggers biopsy hsi and use of biopsy to diagnose prostate cancer (2 parts to diagnose)
+        # todo: and sensitivity of 1st part (psa test) dependent on underlying disease stage
+
         if dx_result:
             # record date of diagnosis:
-            df.at[person_id, 'oc_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'pc_date_diagnosis'] = self.sim.date
 
-            # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'oc_status'] == 'stage4'
-            # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+            # Check if is in metastatic stage:
+            in_metastatic = df.at[person_id, 'pc_status'] == 'metastatic'
+            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made accurately.
 
-            if not in_stage4:
+            if not in_metastatic:
                 # start treatment:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_StartTreatment(
+                    hsi_event=HSI_ProstateCancer_StartTreatment(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -687,7 +691,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             else:
                 # start palliative care:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                    hsi_event=HSI_ProstateCancer_PalliativeCare(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -700,11 +704,11 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         pass
 
 
-class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of
-    Oesophageal Cancer. It initiates the treatment of Oesophageal Cancer.
-    It is only for persons with a cancer that is not in stage4 and who have been diagnosed.
+    This event is scheduled by HSI_ProstateOesophagealCancer_Investigation_Following_Urinary_Symptoms.
+    It initiates the treatment of prostate cancer.
+    It is only for persons with a cancer that is not in metastatic and who have been diagnosed.
     """
 
     def __init__(self, module, person_id):
@@ -714,7 +718,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
+        self.TREATMENT_ID = "ProstateCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -726,19 +730,20 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
-        assert not df.at[person_id, "oc_status"] == 'none'
-        assert not df.at[person_id, "oc_status"] == 'stage4'
-        assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
-        assert pd.isnull(df.at[person_id, "oc_date_treatment"])
+        # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
+        assert not df.at[person_id, "pc_status"] == 'none'
+        assert not df.at[person_id, "c_status"] == 'metastatic'
+        # todo: check this line below
+        assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
+        assert pd.isnull(df.at[person_id, "pc_date_treatment"])
 
         # Record date and stage of starting treatment
-        df.at[person_id, "oc_date_treatment"] = self.sim.date
-        df.at[person_id, "oc_stage_at_which_treatment_applied"] = df.at[person_id, "oc_status"]
+        df.at[person_id, "pc_date_treatment"] = self.sim.date
+        df.at[person_id, "pc_stage_at_which_treatment_applied"] = df.at[person_id, "pc_status"]
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
+            hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
@@ -751,13 +756,20 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         pass
 
 
-class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_OesophagealCancer_StartTreatment and itself.
-    It is only for those who have undergone treatment for Oesophageal Cancer.
-    If the person has developed cancer to stage4, the patient is initiated on palliative care; otherwise a further
+    This event is scheduled by HSI_ProstateCancer_StartTreatment and itself.
+    It is only for those who have undergone treatment for prostate cancer.
+    If the person has developed cancer to metastatic, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
     """
+
+
+
+    # todo: from here
+
+
+
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
