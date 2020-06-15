@@ -556,12 +556,12 @@ class ProstateCancer(Module):
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that updates all Oesophageal cancer properties for population:
-    * Acquisition and progression of Oesophageal Cancer
-    * Symptom Development according to stage of Oesophageal Cancer
-    * Deaths from Oesophageal Cancer for those in stage4
+    Regular event that updates all prostate cancer properties for population:
+    * Acquisition and progression of prostate cancer
+    * Symptom Development according to stage of prostate cancer
+    * Deaths from prostate cancer for those in metastatic
     """
 
     def __init__(self, module):
@@ -573,27 +573,38 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # -------------------- ACQUISITION AND PROGRESSION OF CANCER (oc_status) -----------------------------------
+        # -------------------- ACQUISITION AND PROGRESSION OF CANCER (pc_status) -----------------------------------
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.oc_date_treatment) & \
-            (df.oc_status == df.oc_stage_at_which_treatment_applied)
+            df.is_alive & ~pd.isnull(df.pc_date_treatment) & \
+            (df.pc_status == df.pc_stage_at_which_treatment_given)
 
-        for stage, lm in self.module.linear_models_for_progession_of_oc_status.items():
+        for stage, lm in self.module.linear_models_for_progession_of_pc_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
-            df.loc[idx_gets_new_stage, 'oc_status'] = stage
+            df.loc[idx_gets_new_stage, 'pc_status'] = stage
 
-        # -------------------- UPDATING OF SYMPTOM OF DYSPHAGIA OVER TIME --------------------------------
-        # Each time this event is called (event 3 months) individuals may develop the symptom of dysphagia.
-        # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_dysphagia = self.module.lm_onset_dysphagia.predict(df.loc[df.is_alive], rng)
+        # -------------------- UPDATING OF SYMPTOM OF URINARY OVER TIME --------------------------------
+        # Each time this event is called (event 3 months) individuals may develop urinary symptoms.
+        # Once the symptom is developed it resolves with treatment and may trigger health-care-seeking behaviour.
+        onset_urinary_symptoms = self.module.lm_onset_urinary_symptoms.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_dysphagia[onset_dysphagia].index.tolist(),
-            symptom_string='dysphagia',
+            person_id=onset_urinary_symptoms[onset_urinary_symptoms].index.tolist(),
+            symptom_string='urinary',
+            add_or_remove='+',
+            disease_module=self.module
+        )
+
+        # -------------------- UPDATING OF SYMPTOM OF PELVIC PAIN OVER TIME --------------------------------
+        # Each time this event is called (event 3 months) individuals may develop pelvic pain symptoms.
+        # Once the symptom is developed it resolves with treatment and may trigger health-care-seeking behaviour.
+        onset_pelvic_pain_symptoms = self.module.lm_onset_pelvic_pain.predict(df.loc[df.is_alive], rng)
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=onset_pelvic_pains[onset_pelvic_pain].index.tolist(),
+            symptom_string='pelvic_pain',
             add_or_remove='+',
             disease_module=self.module
         )
