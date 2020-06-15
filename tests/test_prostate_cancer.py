@@ -46,7 +46,7 @@ def make_simulation_healthsystemdisabled():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+                 prostatecancer.ProstateCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
     return sim
@@ -68,7 +68,7 @@ def make_simulation_nohsi():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+                 prostatecancer.ProstateCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
     return sim
@@ -77,63 +77,54 @@ def make_simulation_nohsi():
 # %% Manipulation of parameters:
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
-    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.0] * 6
+    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.0] * 6
     return sim
 
 
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
-    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.0] * 6
-    # Put everyone in first stage ('low-grade-dysplasia')
-    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'][0] = 1.0
+    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.0] * 6
+    # Put everyone in first stage ('prostate_confied')
+    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'][0] = 1.0
     return sim
 
 
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
-    sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.1] * 6
+    sim.modules['ProstateCancer'].parameters['init_prop_prostate_ca_stage'] = [0.1] * 6
     return sim
 
 
 def incr_rate_of_onset_lgd(sim):
     # Rate of cancer onset per 3 months:
-    sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.05
+    sim.modules['ProstateCancer'].parameters['r_prostate_confined_prostate_ca_none'] = 0.05
     return sim
 
 
 def zero_rate_of_onset_lgd(sim):
     # Rate of cancer onset per 3 months:
-    sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.00
+    sim.modules['ProstateCancer'].parameters['r_prostate_confined_prostate_ca_none'] = 0.00
     return sim
 
 
 def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
-    sim.modules['OesophagealCancer'].parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage1_high_grade_dysp'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage2_stage1'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage3_stage2'] *= 5
-    sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
+    sim.modules['ProstateCancer'].parameters['r_local_ln_prostate_ca_prostate_confined'] *= 5
+    sim.modules['ProstateCancer'].parameters['r_metastatic_prostate_ca_local_ln'] *= 5
     return sim
 
 
 def make_treatment_ineffective(sim):
     # Treatment effect of 1.0 will not retard progression
-    sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 1.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage1_undergone_curative_treatment'] = 1.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage2_undergone_curative_treatment'] = 1.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 1.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 1.0
+    sim.modules['ProstateCancer'].parameters['rr_local_ln_prostate_ca_undergone_curative_treatment'] = 1.0
+    sim.modules['ProstateCancer'].parameters['rr_metastatic_prostate_ca_undergone_curative_treatment'] = 1.0
     return sim
 
 
 def make_treamtment_perfectly_effective(sim):
     # Treatment effect of 0.0 will stop progression
-    sim.modules['OesophagealCancer'].parameters['rr_high_grade_dysp_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage1_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage2_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage3_undergone_curative_treatment'] = 0.0
-    sim.modules['OesophagealCancer'].parameters['rr_stage4_undergone_curative_treatment'] = 0.0
+    sim.modules['ProstateCancer'].parameters['rr_local_ln_prostate_ca_undergone_curative_treatment'] = 0.0
+    sim.modules['ProstateCancer'].parameters['rr_metastatic_prostate_ca_undergone_curative_treatment'] = 0.0
     return sim
 
 
@@ -149,8 +140,8 @@ def check_configuration_of_population(sim):
     # get df for alive persons:
     df = sim.population.props.loc[sim.population.props.is_alive]
 
-    # for convenience, define a bool for any stage of dysplasia of cancer
-    df['oc_status_any_dysplasia_or_cancer'] = df.oc_status != 'none'
+    # for convenience, define a bool for any stage of prostate cancer
+    df['pc_status_any_stage'] = df.pc_status != 'none'
 
     # check that no one under twenty has cancer
     assert not df.loc[df.age_years < 20].oc_status_any_dysplasia_or_cancer.any()
