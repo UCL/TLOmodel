@@ -409,14 +409,49 @@ class ProstateCancer(Module):
 
 
         # ----- DX TESTS -----
-        # Create the diagnostic test representing the use of an endoscope to oc_status
-        # This properties of conditional on the test being done only to persons with the Symptom, 'dysphagia'.
+        # Create the diagnostic test representing the use of psa test to diagnose prostate cancer
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            endoscopy_for_oes_cancer_given_dysphagia=DxTest(
-                property='oc_status',
-                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
-                target_categories=["low_grade_dysplasia", "high_grade_dysplasia",
-                                   "stage1", "stage2", "stage3", "stage4"]
+            psa_for_prostate_cancer_given_prostate_confined=DxTest(
+                property='pc_status',
+                sensitivity=self.parameters['sensitivity_of_psa_for_prostate_confined_prostate_ca'],
+                target_categories=["local_ln", "metastatic"]
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            psa_for_prostate_cancer_given_local_ln_prostate_ca=DxTest(
+                property = 'pc_status',
+                sensitivity = self.parameters['sensitivity of psa test for local lymph node involved prostate cancer'],
+                target_categories = ["local_ln", "metastatic"]
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            psa_for_prostate_cancer_given_metastatic=DxTest(
+                property = 'pc_status',
+                sensitivity = self.parameters['sensitivity_of_psa_test_for_metastatic_prostate_ca'],
+                target_categories = ["local_ln", "metastatic"]
+            )
+        )
+
+        # Create the diagnostic test representing the use of biopsy to diagnose prostate cancer
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            biopsy_for_prostate_cancer_given_prostate_confined=DxTest(
+                property='pc_status',
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_prostate_confined_prostate_ca'],
+                target_categories=["local_ln", "metastatic"]
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            biopsy_for_prostate_cancer_given_local_ln_prostate_ca=DxTest(
+                property = 'pc_status',
+                sensitivity = self.parameters['sensitivity of biopsy for local lymph node involved prostate cancer'],
+                target_categories = ["local_ln", "metastatic"]
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            biopsy_for_prostate_cancer_given_metastatic=DxTest(
+                property = 'pc_status',
+                sensitivity = self.parameters['sensitivity_of_biopsy_for_metastatic_prostate_ca'],
+                target_categories = ["local_ln", "metastatic"]
             )
         )
 
