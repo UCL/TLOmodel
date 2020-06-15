@@ -764,13 +764,6 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
     appointment is scheduled for one year.
     """
 
-
-
-    # todo: from here
-
-
-
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -778,7 +771,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_MonitorTreatment"
+        self.TREATMENT_ID = "ProstateCancer_MonitorTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -790,15 +783,15 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person is has cancer and is on treatment
-        assert not df.at[person_id, "oc_status"] == 'none'
-        assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
-        assert not pd.isnull(df.at[person_id, "oc_date_treatment"])
+        # Check that the person is has prostate cancer and is on treatment
+        assert not df.at[person_id, "pc_status"] == 'none'
+        assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
+        assert not pd.isnull(df.at[person_id, "pc_date_treatment"])
 
-        if df.at[person_id, 'oc_status'] == 'stage4':
-            # If has progressed to stage4, then start Palliative Care immediately:
+        if df.at[person_id, 'pc_status'] == 'metastatic'
+            # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                hsi_event=HSI_ProstateCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -808,9 +801,9 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_ProstateCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
+                hsi_event=HSI_ProstateCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -823,15 +816,15 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         pass
 
 
-class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of Oesophageal Cancer at stage4.
-    * HSI_OesophagealCancer_PostTreatmentCheck following progression to stage4 during treatment.
+    * HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms following a diagnosis of metastatic Prostate Cancer .
+    * HSI_ProstateCancer_PostTreatmentCheck following progression to metastatic cancer during treatment.
     * Itself for the continuance of care.
-    It is only for persons with a cancer in stage4.
+    It is only for persons with metastatic cancer.
     """
 
     def __init__(self, module, person_id):
@@ -841,7 +834,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
+        self.TREATMENT_ID = "ProstateCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -853,12 +846,12 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person is in stage4
-        assert df.at[person_id, "oc_status"] == 'stage4'
+        # Check that the person is in metastatic
+        assert df.at[person_id, "pc_status"] == 'metastatic'
 
         # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
-            df.at[person_id, "oc_date_palliative_care"] = self.sim.date
+        if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):
+            df.at[person_id, "pc_date_palliative_care"] = self.sim.date
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
