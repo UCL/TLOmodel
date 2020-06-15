@@ -1,9 +1,8 @@
 """
-Oesophageal Cancer Disease Module
+Bladder Cancer Disease Module
 
 Limitations to note:
-* Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
-* Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
+* Needs to represent the the DxTest 'cytoscopy_blood_urine_bladder_cancer' requires use of a cytoscope
 * Footprints of HSI -- pending input from expert on resources required.
 """
 
@@ -22,28 +21,35 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class OesophagealCancer(Module):
-    """Oesophageal Cancer Disease Module"""
+class BladderCancer(Module):
+    """Bladder Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.linear_models_for_progession_of_oc_status = dict()
-        self.lm_onset_dysphagia = None
+        self.linear_models_for_progession_of_bc_status = dict()
+        self.lm_onset_blood_urine = None
+        self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
 
     PARAMETERS = {
-        "init_prop_oes_cancer_stage": Parameter(
+        "init_prop_bladder_cancer_stage": Parameter(
             Types.LIST,
-            "initial proportions in dysplasia/cancer categories for man aged 20 with no excess alcohol and no tobacco"
+            "initial proportions in bladder cancer categories for person aged 15-19 and no tobacco and no schisto_h"
         ),
-        "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with dysplasia/cancer categories that have the symptom dysphagia"
+        "init_prop_blood_urine_bladder_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of those with bladder cancer categories that have the symptom blood urine"
         ),
-        "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people that have symptom of dysphagia that have been diagnosed"
+        "init_prop_pelvic_pain_bladder_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of those with bladder cancer categories that have pelvic pain"
         ),
-        "init_prop_treatment_status_oes_cancer": Parameter(
+        "init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of people that have symptom of blood urine that have been diagnosed"
+        ),
+        "init_prop_with_pelvic_pain_diagnosed_bladder_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of people that have symptom of pelvic pain that have been diagnosed"
+        ),
+        "init_prop_treatment_status_bladder_cancer": Parameter(
             Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer that had initiated treatment"
         ),
         "init_prob_palliative_care": Parameter(
