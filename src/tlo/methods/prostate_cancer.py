@@ -38,8 +38,14 @@ class ProstateCancer(Module):
         "init_prop_urinary_symptoms_by_stage": Parameter(
             Types.LIST, "initial proportions of those in prostate ca stages that have urinary symptoms"
         ),
+        "init_prop_pelvic_pain_symptoms_by_stage": Parameter(
+            Types.LIST, "initial proportions of those in prostate ca stages that have pelvic pain symptoms"
+        ),
         "init_prop_with_urinary_symptoms_diagnosed_prostate_ca_by_stage": Parameter(
             Types.LIST, "initial proportions of people with prostate ca and urinary symptoms that have been diagnosed"
+        ),
+        "init_prop_with_pelvic_pain_symptoms_diagnosed_prostate_ca_by_stage": Parameter(
+            Types.LIST, "initial proportions of people with prostate ca and pelvic pain symptoms that have been diagnosed"
         ),
         "init_prop_treatment_status_prostate_ca": Parameter(
             Types.LIST, "initial proportions of people with prostate ca that had received treatment"
@@ -185,57 +191,71 @@ class ProstateCancer(Module):
         # -------------------- pc_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-        assert sum(p['init_prop_oes_cancer_stage']) <= 1.0
+        assert sum(p['init_prop_prostate_ca_stage']) <= 1.0
 
-        lm_init_oc_status_any_dysplasia_or_cancer = LinearModel(
+        lm_init_prop_prostate_cancer_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_oes_cancer_stage']),
-            Predictor('li_ex_alc').when(True, p['rp_oes_cancer_ex_alc']),
-            Predictor('li_tob').when(True, p['rp_oes_cancer_tobacco']),
-            Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_oes_cancer_per_year_older']) if x > 20 else 0.0)
+            sum(p['init_prop_prostate_cancer_stage']),
+            Predictor('sex').when('M', 1.0).otherwise(0.0)
+            # todo
+            Predictor('age_years').apply(lambda x: p['rp_prostate_cancer_age5069']) if x < 70)
         )
 
-        oc_status_any_dysplasia_or_cancer = \
-            lm_init_oc_status_any_dysplasia_or_cancer.predict(df.loc[df.is_alive], self.rng)
+        pc_status_ = \
+            lm_init_prop_prostate_cancer_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        if oc_status_any_dysplasia_or_cancer.sum():
-            sum_probs = sum(p['init_prop_oes_cancer_stage'])
+        if pc_status_.sum():
+            sum_probs = sum(p['init_prop_prostate_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_oes_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_prostate_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
-                df.loc[oc_status_any_dysplasia_or_cancer, "oc_status"] = self.rng.choice(
-                    [val for val in df.oc_status.cat.categories if val != 'none'],
-                    size=oc_status_any_dysplasia_or_cancer.sum(),
+                df.loc[pc_status_, "pc_status"] = self.rng.choice(
+                    [val for val in df.pc_status.cat.categories if val != 'none'],
+                    size=pc_status_.sum(),
                     p=prob_by_stage_of_cancer_if_cancer
                 )
 
         # -------------------- SYMPTOMS -----------
-        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of dysphagia:
-        lm_init_disphagia = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][1])
-                                    .when("stage1",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][2])
-                                    .when("stage2",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][3])
-                                    .when("stage3",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][4])
-                                    .when("stage4",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][5])
+        # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
+        lm_init_urinary = LinearModel.multiplicative(
+            Predictor('pc_status')  .when("none", 0.0)
+                                    .when("prostate_confined",
+                                          p['init_prop_urinary_symptoms_by_stage'][0])
+                                    .when("local_ln",
+                                          p['init_prop_urinary_symptoms_by_stage'][1])
+                                    .when("metastatic",
+                                          p['init_prop_urinary_symptoms_by_stage'][2])
+
         )
-        has_dysphagia_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
+        has_urinary_symptoms_at_init = lm_init_urinary_symptoms.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_dysphagia_at_init.index[has_dysphagia_at_init].tolist(),
-            symptom_string='dysphagia',
+            person_id=has_urinary_symptoms_at_init.index[has_urinary_symptoms_at_init].tolist(),
+            symptom_string='urinary',
             add_or_remove='+',
             disease_module=self
         )
 
-        # -------------------- oc_date_diagnosis -----------
+        # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
+        lm_init_pelvic_pain = LinearModel.multiplicative(
+        Predictor('pc_status').when("none", 0.0)
+        .when("prostate_confined",
+            p['init_prop_urinary_symptoms_by_stage'][0])
+        .when("local_ln",
+            p['init_prop_urinary_symptoms_by_stage'][1])
+        .when("metastatic",
+            p['init_prop_urinary_symptoms_by_stage'][2])
+        )
+
+        has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain_symptoms.predict(df.loc[df.is_alive], self.rng)
+        self.sim.modules['SymptomManager'].change_symptom(
+        person_id = has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
+        symptom_string = 'pelvic_pain',
+        add_or_remove = '+',
+        disease_module = self
+        )
+
+# -------------------- oc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')  .when("none", 0.0)
                                     .when("low_grade_dysplasia",
