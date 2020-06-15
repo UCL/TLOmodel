@@ -1,3 +1,4 @@
+import pandas as pd
 from pytest import fixture
 
 from tests.logging.mock_disease import MockModule
@@ -5,11 +6,11 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 
 
-@fixture
-def mock_disease_log_df(tmpdir):
+@fixture(scope="class")
+def mock_disease_log_df(tmpdir_factory):
     """
     Runs simulation of mock disease, parses the logfile and returns the dictionary mock disease keys
-    :param tmpdir: tmpdir for logfile
+    :param tmpdir_factory: tmpdir_factory for logfile
     :return: mock disease logging dictionary
     """
     # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
@@ -21,6 +22,7 @@ def mock_disease_log_df(tmpdir):
     # By default, all output is recorded at the "INFO" level (and up) to standard out. You can
     # configure the behaviour by passing options to the `log_config` argument of
     # Simulation.
+    tmpdir = tmpdir_factory.mktemp("logs")
     log_config = {
         "filename": "mock_sim",  # The prefix for the output file. A timestamp will be added to this.
         "directory": tmpdir,  # The default output path is `./output`. Change it here, if necessary
@@ -49,5 +51,54 @@ def mock_disease_log_df(tmpdir):
 
 
 class TestWriteAndReadLogFile:
+    def setup(self):
+        self.dates = [pd.Timestamp("2010-01-01 00:00:00"), pd.Timestamp("2010-01-29 00:00:00")]
+
     def test_dictionary(self, mock_disease_log_df):
-        assert mock_disease_log_df
+        expected_df = pd.DataFrame(
+            {"date": self.dates,
+             "count_a_over_50": [4, 4],
+             "count_b_over_50": [6, 6],
+             "count_c_over_50": [2.0, 2.0],
+             }
+        )
+        log_df = mock_disease_log_df['each_group_over_50_unscaled']
+
+        assert expected_df.equals(log_df)
+
+    def test_fixed_length_list(self, mock_disease_log_df):
+        expected_df = pd.DataFrame(
+            {"date": self.dates,
+             "item_1": [2.0, 2.0],
+             "item_2": [2.0, 2.0],
+             "item_3": [1.5, 1.5]
+             }
+        )
+        log_df = mock_disease_log_df['a_fixed_length_list']
+
+        assert expected_df.equals(log_df)
+
+    def test_variable_length_list(self, mock_disease_log_df):
+        expected_df = pd.DataFrame(
+            {
+                "date": self.dates,
+                "list_head": [
+                    [46, 33, 95, 9, 66, 67],
+                    [46, 33, 95, 9, 66, 67, 12],
+                ],
+            }
+        )
+        log_df = mock_disease_log_df['a_variable_length_list']
+
+        assert expected_df.equals(log_df)
+
+    def test_string(self, mock_disease_log_df):
+        expected_df = pd.DataFrame(
+            {"date": self.dates,
+             "message": ["we currently have 16 total count over 50",
+                           "we currently have 16 total count over 50"],
+             }
+        )
+        log_df = mock_disease_log_df['counting_but_string']
+
+        assert expected_df.equals(log_df)
