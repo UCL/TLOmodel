@@ -92,44 +92,46 @@ class ProstateCancer(Module):
                         "compared with prostate confined prostate ca"
         ),
         "r_back_pain_symptoms_local_ln_prostate_ca": Parameter(
-            Types.REAL, "rate of urinary symptoms if have local lymph node involved prostate cancer"
+            Types.REAL, "rate of back pain symptoms if have local lymph node involved prostate cancer"
         ),
         "rr_back_pain_metastatic_prostate_cancer": Parameter(
             Types.REAL,
-            "rate ratio of back pain in a person with metastatuc prostate cancer compared with lymph node involved"
+            "rate ratio of back pain in a person with metastatic prostate cancer compared with lymph node involved"
             "prostate cancer"
         ),
+        "r_bone_pain_symptoms_local_ln_prostate_ca": Parameter(
+            Types.REAL, "rate of bone pain symptoms if have local lymph node involved prostate cancer"
+        ),
+        "rr_bone_pain_metastatic_prostate_cancer": Parameter(
+            Types.REAL,
+            "rate ratio of bone pain in a person with metastatic prostate cancer compared with lymph node involved"
+            "prostate cancer"
+        ),
+        "rp_oes_cancer_age5069": Parameter(
+            Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 50-69"
+        ),
+        "rp_oes_cancer_agege 70": Parameter(
+            Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 70+"
+        ),
 
 
-
-
-        
-        "rr_urinary_high_grade_dysp": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have high grade oesophageal dysplasia"
+        "sensitivity_of_psa_test_for_prostate_confined_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of psa test for prostate confined_prostate cancer"
         ),
-        "rr_dysphagia_stage2": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 2 oesophageal cancer"
+        "sensitivity_of_psa_test_for_local_ln_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of psa test for local lymph node involved prostate cancer"
         ),
-        "rr_dysphagia_stage3": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 3 oesophageal cancer"
+        "sensitivity_of_psa_test_for_metastatic_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of psa test for metastatic prostate cancer"
         ),
-        "rr_dysphagia_stage4": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 4 oesophageal cancer"
+        "sensitivity_of_biopsy_for_prostate_confined_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of biopsy for prostate confined prostate cancer"
         ),
-        "rp_oes_cancer_female": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if female"
+        "sensitivity_of_biopsy_for_local_ln_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of biopsy for local lymph node involved prostate cancer"
         ),
-        "rp_oes_cancer_per_year_older": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer per year older than 20"
-        ),
-        "rp_oes_cancer_tobacco": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if tobacco"
-        ),
-        "rp_oes_cancer_ex_alc": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer"
-        ),
-        "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
-            Types.REAL, "sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia"
+        "sensitivity_of_biopsy_for_metastatic_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of biopsy for metastatic prostate cancer"
         ),
     }
 
