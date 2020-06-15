@@ -3,8 +3,8 @@ Plot to demonstrate correspondence between model and data outputs wrt births, po
 In the combination of both the codes from Tim C in Contraception and Tim H in Demography
 """
 
-# %% Import Statements and initial declarations
 import datetime
+# %% Import Statements and initial declarations
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -25,49 +25,74 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    labour,
+    pregnancy_supervisor,
     symptommanager,
 )
 from tlo.util import create_age_range_lookup
 
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+
+def run():
+    # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
+    # will seed the random number generators for each module when they are registered.
+    # If a seed argument is not given, one is generated. It is output in the log and can be
+    # used to reproduce results of a run
+    seed = 0
+
+    # By default, all output is recorded at the "INFO" level (and up) to standard out. You can
+    # configure the behaviour by passing options to the `log_config` argument of
+    # Simulation.
+    log_config = {
+        "filename": "demography_calibrations",  # The prefix for the output file. A timestamp will be added to this.
+    }
+    # For default configuration, uncomment the next line
+    # log_config = dict()
+
+    # Basic arguments required for the simulation
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2018, 1, 2)
+    pop_size = 200
+
+    # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
+    # `log_config` arguments, these will override the default behaviour.
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    # Path to the resource files used by the disease and intervention methods
+    resources = "./resources"
+
+    # We register all modules in a single call to the register method, calling once with multiple
+    # objects. This is preferred to registering each module in multiple calls because we will be
+    # able to handle dependencies if modules are registered together
+    sim.register(
+        demography.Demography(resourcefilepath=resources),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resources),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resources),
+        labour.Labour(resourcefilepath=resources),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    )
+
+    sim.make_initial_population(n=pop_size)
+    sim.simulate(end_date=end_date)
+    return sim
+
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
-# The resource file for demography module
-# assume Python console is started in the top-leve TLOModel directory
-# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
-resourcefilepath = Path("./resources")
+resourcefilepath = "./resources"
+outputpath = Path("./outputs")
 
 # %% Run the Simulation
-
-start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 2)
-popsize = 200
-
-# add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
-logfile = sim.configure_logging('LogFile')
-
-# run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-
-sim.seed_rngs(0)
-sim.make_initial_population(n=popsize)
-sim.simulate(end_date=end_date)
+sim = run()
 
 # %% read the results
 
 # FOR STORED RESULTS
-# logfile = 'LogFile__2020_01_07.log'
 
-parsed_output = parse_log_file(logfile)
+parsed_output = parse_log_file(sim.log_filepath)
 
 scale_to_population = demography.scale_to_population
 scaled_output = scale_to_population(parsed_output, resourcefilepath)
@@ -97,7 +122,7 @@ plt.xlabel("Year")
 plt.ylabel("Population Size")
 plt.gca().set_xlim(2010, 2050)
 plt.legend(["Model", "WPP", "Census 2018"])
-plt.savefig(outputpath / ("Pop_Over_Time" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / f"Pop_Over_Time{datestamp}.pdf", format='pdf')
 plt.show()
 
 # Population Size in 2018
@@ -116,7 +141,7 @@ popsize.columns = ['Females', 'Males']
 popsize.transpose().plot(kind='bar')
 plt.title('Population Size (2018)')
 plt.xticks(rotation=0)
-plt.savefig(outputpath / ("Pop_Size_2018" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / f"Pop_Size_2018{datestamp}.pdf", format='pdf')
 plt.show()
 
 # %% Population Pyramid
@@ -176,7 +201,7 @@ for year in [2018, 2030]:
     pop_f.plot.bar(ax=axes[1], align="center")
     axes[1].set_xlabel('Age Group')
     axes[1].set_title('Females: ' + str(year))
-    plt.savefig(outputpath / ("Pop_Size_" + str(year) + datestamp + ".pdf"), format='pdf')
+    plt.savefig(outputpath / f"Pop_Size_{year}{datestamp}.pdf", format='pdf')
     plt.show()
 
 # %% Births: Number over time
@@ -218,7 +243,6 @@ ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
 plt.savefig(outputpath / ("Births_Over_Time_" + datestamp + ".pdf"), format='pdf')
 plt.show()
-
 
 # %% Deaths
 
