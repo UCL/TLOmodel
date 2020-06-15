@@ -359,48 +359,54 @@ class ProstateCancer(Module):
                                   .otherwise(0.0)
         )
 
-        lm['stage2'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_stage2_stage1'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
-            Predictor('oc_status').when('stage1', 1.0)
+
+
+"""
+
+       "r_urinary_symptoms_prostate_ca": Parameter(
+            Types.REAL, "rate of urinary symptoms if have prostate confined prostate ca"
+        ),
+        "rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer": Parameter(
+            Types.REAL, "rate ratio of urinary symptoms in a person with local lymph node or metastatuc prostate cancer "
+                        "compared with prostate confined prostate ca"
+        ),
+        "r_pelvic_pain_symptoms_local_ln_prostate_ca": Parameter(
+            Types.REAL, "rate of pelvic pain or numbness symptoms if have local lymph node involved prostate cancer"
+        ),
+        "rr_pelvic_pain_metastatic_prostate_cancer": Parameter(
+            Types.REAL,
+            "rate ratio of pelvic pain or numbness in a person with metastatic prostate cancer compared with lymph node involved"
+            "prostate cancer"
+        ),
+
+
+"""
+
+        # Check that the dict labels are correct as these are used to set the value of pc_status
+        assert set(lm).union({'none'}) == set(df.pc_status.cat.categories)
+
+        # Linear Model for the onset of urinary symptoms in each 3 month period
+        self.lm_onset_urinary_symptoms = LinearModel.multiplicative(
+            Predictor('pc_status').when('prostate_confined',
+                                        p['r_urinary_symptoms_prostate_ca'])
+                                  .when('local_ln',
+                                        p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer']
+                                        * p['r_urinary_symptoms_prostate_ca'])
+                                  .when('metastatic',
+                                        p['rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer']
+                                        *p['r_urinary_symptoms_prostate_ca'])
                                   .otherwise(0.0)
         )
 
-        lm['stage3'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_stage3_stage2'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
-            Predictor('oc_status').when('stage2', 1.0)
+        # Linear Model for the onset of pelvic pain symptoms in each 3 month period
+        self.lm_onset_urinary_symptoms = LinearModel.multiplicative(
+            Predictor('pc_status').when('local_ln', p['r_pelvic_pain_symptoms_local_ln_prostate_ca'])
+                                  .when('metastatic',
+                                        p['rr_pelvic_pain_metastatic_prostate_cancer']
+                                        * p['r_pelvic_pain_symptoms_local_ln_prostate_ca'])
                                   .otherwise(0.0)
         )
 
-        lm['stage4'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_stage4_stage3'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
-            Predictor('oc_status').when('stage3', 1.0)
-                                  .otherwise(0.0)
-        )
-
-        # Check that the dict labels are correct as these are used to set the value of oc_status
-        assert set(lm).union({'none'}) == set(df.oc_status.cat.categories)
-
-        # Linear Model for the onset of dysphagia, in each 3 month period
-        self.lm_onset_dysphagia = LinearModel.multiplicative(
-            Predictor('oc_status').when('low_grade_dysplasia',
-                                        p['rr_dysphagia_low_grade_dysp'] * p['r_dysphagia_stage1'])
-                                  .when('high_grade_dysplaisa',
-                                        p['rr_dysphagia_high_grade_dysp'] * p['r_dysphagia_stage1'])
-                                  .when('stage1', p['r_dysphagia_stage1'])
-                                  .when('stage2', p['rr_dysphagia_stage2'] * p['r_dysphagia_stage1'])
-                                  .when('stage3', p['rr_dysphagia_stage3'] * p['r_dysphagia_stage1'])
-                                  .when('stage4', p['rr_dysphagia_stage4'] * p['r_dysphagia_stage1'])
-                                  .otherwise(0.0)
-        )
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of an endoscope to oc_status
