@@ -1,4 +1,5 @@
-from pandas import DateOffset, np
+import numpy as np
+import pandas as pd
 
 from tlo import Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -31,17 +32,21 @@ class MockModule(Module):
         pass
 
     def initialise_simulation(self, sim):
-        sim.schedule_event(MockLogEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(MockLogEvent(self), sim.date + pd.DateOffset(months=0))
 
     def initialise_population(self, population):
         df = population.props
         for name, _type in self.PROPERTIES.items():
-            df[name] = self.rng.randint(0, 100, population.initial_size)
+            if name == "mm_date":
+                df[name] = self.rng.randint(1400, 1600, population.initial_size) * 1_000_000_000_000_000
+                df[name] = df[name].astype('datetime64[ns]')
+            else:
+                df[name] = self.rng.randint(0, 100, population.initial_size)
 
 
 class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(weeks=4))
+        super().__init__(module, frequency=pd.DateOffset(weeks=4))
 
     def apply(self, population):
         df = population.props
