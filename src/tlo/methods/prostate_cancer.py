@@ -458,37 +458,37 @@ class ProstateCancer(Module):
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
-            self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["prostate_confined_or_local_ln_untreated"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=550
-                # "Diagnosis and primary therapy phase of esophageal cancer":
+                # "Diagnosis and primary therapy phase of prostate cancer":
                 #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
             # For those with cancer (any stage prior to stage 4) and has been treated
-            self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["prostate_confined_or_local_ln_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=547
-                # "Controlled phase of esophageal cancer,Generic uncomplicated disease":
+                # "Controlled phase of prostate cancer,Generic uncomplicated disease":
                 # "worry and daily medication,has a chronic disease that requires medication every day and causes some
                 #   worry but minimal interference with daily activities".
             )
 
-            # For those in stage 4: no palliative care
-            self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            # For those in metastatic: no palliative care
+            self.daly_wts["metastatic"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=549
-                # "Metastatic phase of esophageal cancer:
+                # "Metastatic phase of metastatic cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
             )
 
-            # For those in stage 4: with palliative care
-            self.daly_wts["stage4_palliative_care"] = self.daly_wts["stage_1_3"]
-            # By assumption, we say that that the weight for those in stage 4 with palliative care is the same as
-            # that for those with stage 1-3 cancers.
+            # For those in metastatic: with palliative care
+            self.daly_wts["metastatic_palliative_care"] = self.daly_wts["prostate_confined_or_local_ln_untreated"]
+            # By assumption, we say that that the weight for those with metastatic with palliative care is the same as
+            # that for those with prostate_confined_or_local_ln_untreated cancers.
 
         # ----- HSI FOR PALLIATIVE CARE -----
         on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.oc_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PalliativeCare(module=self, person_id=person_id),
+                hsi_event=HSI_ProstateCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
@@ -500,11 +500,11 @@ class ProstateCancer(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
-        df.at[child_id, "oc_status"] = "none"
-        df.at[child_id, "oc_date_diagnosis"] = pd.NaT
-        df.at[child_id, "oc_date_treatment"] = pd.NaT
-        df.at[child_id, "oc_stage_at_which_treatment_applied"] = "none"
-        df.at[child_id, "oc_date_palliative_care"] = pd.NaT
+        df.at[child_id, "pc_status"] = "none"
+        df.at[child_id, "pc_date_diagnosis"] = pd.NaT
+        df.at[child_id, "pc_date_treatment"] = pd.NaT
+        df.at[child_id, "pc_stage_at_which_treatment_applied"] = "none"
+        df.at[child_id, "pc_date_palliative_care"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
@@ -517,39 +517,37 @@ class ProstateCancer(Module):
 
         disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
 
-        # Assign daly_wt to those with cancer stages before stage4 and have either never been treated or are no longer
+        # Assign daly_wt to those with cancer stages before metastatic and have either never been treated or are no longer
         # in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
-                (df.oc_status == "stage1") |
-                (df.oc_status == "stage2") |
-                (df.oc_status == "stage3")
+                (df.pc_status == "prostate_confined") |
+                (df.pc_status == "local_ln")
             )
-        ] = self.daly_wts['stage_1_3']
+        ] = self.daly_wts['prostate_confined_or_local_ln_untreated']
 
-        # Assign daly_wt to those with cancer stages before stage4 and who have been treated and who are still in the
+        # Assign daly_wt to those with cancer stages before metastatic and who have been treated and who are still in the
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
                 ~pd.isnull(df.oc_date_treatment) & (
-                    (df.oc_status == "stage1") |
-                    (df.oc_status == "stage2") |
-                    (df.oc_status == "stage3")
-                ) & (df.oc_status == df.oc_stage_at_which_treatment_applied)
+                (df.pc_status == "prostate_confined") |
+                (df.pc_status == "local_ln")
+            ) & (df.pc_status == df.pc_stage_at_which_treatment_given)
             )
-        ] = self.daly_wts['stage_1_3_treated']
+        ] = self.daly_wts['prostate_confined_or_local_ln_treated']
 
-        # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
+        # Assign daly_wt to those in metastatic cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
-            (df.oc_status == "stage4") &
+            (df.pc_status == "metastatic") &
             (pd.isnull(df.oc_date_palliative_care))
-            ] = self.daly_wts['stage4']
+            ] = self.daly_wts['metastatic']
 
-        # Assign daly_wt to those in stage4 cancer, who have had palliative care
+        # Assign daly_wt to those in metastatic cancer, who have had palliative care
         disability_series_for_alive_persons.loc[
-            (df.oc_status == "stage4") &
-            (~pd.isnull(df.oc_date_palliative_care))
-            ] = self.daly_wts['stage4_palliative_care']
+            (df.pc_status == "metastatic") &
+            (~pd.isnull(df.pc_date_palliative_care))
+            ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
 
