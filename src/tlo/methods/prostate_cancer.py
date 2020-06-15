@@ -91,30 +91,20 @@ class ProstateCancer(Module):
             Types.REAL, "rate ratio of urinary symptoms in a person with local lymph node or metastatuc prostate cancer "
                         "compared with prostate confined prostate ca"
         ),
-        "r_back_pain_symptoms_local_ln_prostate_ca": Parameter(
-            Types.REAL, "rate of back pain symptoms if have local lymph node involved prostate cancer"
+        "r_pelvic_pain_symptoms_local_ln_prostate_ca": Parameter(
+            Types.REAL, "rate of pelvic pain or numbness symptoms if have local lymph node involved prostate cancer"
         ),
-        "rr_back_pain_metastatic_prostate_cancer": Parameter(
+        "rr_pelvic_pain_metastatic_prostate_cancer": Parameter(
             Types.REAL,
-            "rate ratio of back pain in a person with metastatic prostate cancer compared with lymph node involved"
+            "rate ratio of pelvic pain or numbness in a person with metastatic prostate cancer compared with lymph node involved"
             "prostate cancer"
         ),
-        "r_bone_pain_symptoms_local_ln_prostate_ca": Parameter(
-            Types.REAL, "rate of bone pain symptoms if have local lymph node involved prostate cancer"
-        ),
-        "rr_bone_pain_metastatic_prostate_cancer": Parameter(
-            Types.REAL,
-            "rate ratio of bone pain in a person with metastatic prostate cancer compared with lymph node involved"
-            "prostate cancer"
-        ),
-        "rp_oes_cancer_age5069": Parameter(
+        "rp_prostate_cancer_age5069": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 50-69"
         ),
-        "rp_oes_cancer_agege 70": Parameter(
+        "rp_prostate_cancer_agege 70": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 70+"
         ),
-
-
         "sensitivity_of_psa_test_for_prostate_confined_prostate_ca": Parameter(
             Types.REAL, "sensitivity of psa test for prostate confined_prostate cancer"
         ),
@@ -136,37 +126,37 @@ class ProstateCancer(Module):
     }
 
     PROPERTIES = {
-        "oc_status": Property(
+        "pc_status": Property(
             Types.CATEGORICAL,
-            "Current status of the health condition, oesophageal dysplasia",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            "Current status of the health condition, prostate cancer",
+            categories=["none", "prostate_confined", "local_ln", "metastatic"],
         ),
 
-        "oc_date_diagnosis": Property(
+        "pc_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnsosis of the oes_cancer (pd.NaT if never diagnosed)"
+            "the date of diagnsosis of the prostate cancer (pd.NaT if never diagnosed)"
         ),
 
-        "oc_date_treatment": Property(
+        "pc_date_treatment": Property(
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
 
-        "oc_stage_at_which_treatment_applied": Property(
+        "pc_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
-            "the cancer stage at which treatment is applied (because the treatment only has an effect during the stage"
-            "at which it is applied.",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
+            "at which it is given.",
+            categories=["prostate_confined", "local_ln", "metastatic"],
         ),
 
-        "oc_date_palliative_care": Property(
+        "pc_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
     }
 
-    # Symptom that this module will use
-    SYMPTOMS = {'dysphagia'}
+    # Symptoms that this module will use
+    SYMPTOMS = {'urinary', 'pelvic_pain'}
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
@@ -176,7 +166,7 @@ class ProstateCancer(Module):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 
@@ -186,13 +176,13 @@ class ProstateCancer(Module):
         p = self.parameters
 
         # defaults
-        df.loc[df.is_alive, "oc_status"] = "none"
-        df.loc[df.is_alive, "oc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "oc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "oc_stage_at_which_treatment_applied"] = "none"
-        df.loc[df.is_alive, "oc_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "pc_status"] = "none"
+        df.loc[df.is_alive, "pc_date_diagnosis"] = pd.NaT
+        df.loc[df.is_alive, "pc_date_treatment"] = pd.NaT
+        df.loc[df.is_alive, "pc_stage_at_which_treatment_given"] = "none"
+        df.loc[df.is_alive, "pc_date_palliative_care"] = pd.NaT
 
-        # -------------------- oc_status -----------
+        # -------------------- pc_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
         assert sum(p['init_prop_oes_cancer_stage']) <= 1.0
