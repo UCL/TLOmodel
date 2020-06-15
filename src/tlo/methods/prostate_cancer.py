@@ -198,7 +198,8 @@ class ProstateCancer(Module):
             sum(p['init_prop_prostate_cancer_stage']),
             Predictor('sex').when('M', 1.0).otherwise(0.0)
             # todo
-            Predictor('age_years').apply(lambda x: p['rp_prostate_cancer_age5069']) if x < 70)
+            Predictor('age_years').apply(lambda x: p['rp_prostate_cancer_age5069']) if 50 < x < 70)
+            Predictor('age_years').apply(lambda x: p['rp_prostate_cancer_age5069']) if x > 70)
         )
 
         pc_status_ = \
@@ -316,11 +317,11 @@ class ProstateCancer(Module):
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
-        sim.schedule_event(OesCancerLoggingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(ProstateCancerLoggingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(ProstateCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -329,36 +330,32 @@ class ProstateCancer(Module):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_oc_status
+        lm = self.linear_models_for_progession_of_pc_status
 
-        lm['low_grade_dysplasia'] = LinearModel(
+        lm['prostate_confined'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_low_grade_dysplasia_none'],
-            Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_dysplasia_none_per_year_older']
-            ),
-            Predictor('sex').when('F', p['rr_low_grade_dysplasia_none_female']),
-            Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_low_grade_dysplasia_none_ex_alc']),
-            Predictor('oc_status').when('none', 1.0)
+            p['r_prostate_confined_prostate_ca'],
+            Predictor('sex').when('F', 0),
+            # todo
+            Predictor('age_years').apply(lambda x: p['rr_prostate_confined_prostate_ca_age5069']) if 50 < x < 70)
+            Predictor('age_years').apply(lambda x: p['rr_prostate_confined_prostate_ca_agege70']) if x > 70)
+        )
+
+        lm['local_ln'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_local_ln_prostate_ca_prostate_confined'],
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_local_ln_prostate_ca_undergone_curative_treatment']),
+            Predictor('pc_status').when('prostate_confined', 1.0)
                                   .otherwise(0.0)
         )
 
-        lm['high_grade_dysplasia'] = LinearModel(
+        lm['metastatic'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_high_grade_dysplasia_low_grade_dysp'],
+            p['r_metastatic_prostate_ca_local_ln'],
             Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_high_grade_dysp_undergone_curative_treatment']),
-            Predictor('oc_status').when('low_grade_dysplasia', 1.0)
-                                  .otherwise(0.0)
-        )
-
-        lm['stage1'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_stage1_high_grade_dysp'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
-            Predictor('oc_status').when('high_grade_dysplasia', 1.0)
+                      external=True).when(True, p['rr_metastatic_prostate_ca_undergone_curative_treatment']),
+            Predictor('pc_status').when('local_ln', 1.0)
                                   .otherwise(0.0)
         )
 
