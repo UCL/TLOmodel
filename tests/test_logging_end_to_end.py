@@ -1,9 +1,10 @@
 import pandas as pd
 from pytest import fixture
 
-from tests.logging.mock_disease import MockModule
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
+
+from .mock_disease import MockModule
 
 
 @fixture(scope="class")
