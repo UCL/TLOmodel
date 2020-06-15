@@ -294,7 +294,7 @@ class Pneumonia(Module):
         self.risk_of_death_severe_pneumonia = dict()
 
         # dict to hold the probability of onset of different types of symptom given underlying complications:
-        self.prob_symptoms_uncomplicated_pneumonia = set()
+        self.prob_symptoms_uncomplicated_pneumonia = dict()
         self.prob_extra_symptoms_complications = dict()
 
         # dict to hold the DALY weights
@@ -722,21 +722,25 @@ class Pneumonia(Module):
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the risk of dying due to pneumonia
-        self.risk_of_death_severe_pneumonia =\
-            LinearModel(LinearModelType.MULTIPLICATIVE,
-                        1.0,
-                        Predictor('ri_last_pneumonia_complications')
-                        .when('sepsis', p['r_death_from_pneumonia_due_to_sepsis'])
-                        .when('respiratory_failure', p['r_death_from_pneumonia_due_to_respiratory_failure'])
-                        .when('meningitis', p['r_death_from_pneumonia_due_to_meningitis'])
-                        .otherwise(0.0),
-                        Predictor('tmp_hv_inf').when(True, p['rr_death_pneumonia_HIV']),
-                        Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_SAM']),
-                        Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_low_birth_weight']),
-                        Predictor('age_years')
-                        .when('.between(1,1)', p['rr_death_pneumonia_age12to23mo'])
-                        .when('.between(2,4)', p['rr_death_pneumonia_age24to59mo'])
-                        )
+        self.risk_of_death_severe_pneumonia.update({
+            'death_risk': {
+                LinearModel(LinearModelType.MULTIPLICATIVE,
+                            1.0,
+                            Predictor('ri_last_pneumonia_complications')
+                            .when('sepsis', p['r_death_from_pneumonia_due_to_sepsis'])
+                            .when('respiratory_failure', p['r_death_from_pneumonia_due_to_respiratory_failure'])
+                            .when('meningitis', p['r_death_from_pneumonia_due_to_meningitis'])
+                            .otherwise(0.0),
+                            Predictor('tmp_hv_inf').when(True, p['rr_death_pneumonia_HIV']),
+                            Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_SAM']),
+                            Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_low_birth_weight']),
+                            Predictor('age_years')
+                            .when('.between(1,1)', p['rr_death_pneumonia_age12to23mo'])
+                            .when('.between(2,4)', p['rr_death_pneumonia_age24to59mo'])
+                            )
+            }
+        })
+
 
         # TODO: duration of ilness - mean 3.0 days (2.0-5.0 days) from PERCH/hopsitalization days
 
@@ -768,6 +772,8 @@ class Pneumonia(Module):
 
         # ---- Temporary values ----
         df['tmp_malnutrition'] = False
+        df['tmp_hv_inf'] = False
+        df['tmp_low_birth_weight'] = False
         df['tmp_exclusive_breastfeeding'] = False
         df['tmp_continued_breastfeeding'] = False
 
@@ -804,6 +810,7 @@ class Pneumonia(Module):
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
+        df.at[child_id, 'tmp_hv_inf'] = False
         df.at[child_id, 'tmp_low_birth_weight'] = False
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
         df.at[child_id, 'tmp_continued_breastfeeding'] = False
@@ -1072,11 +1079,11 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
                     duration_in_days=self.duration_in_days
                 )
 
-            # Determine death outcome
+            # Determine death outcome -------------------------------------------------------------------------
             date_of_outcome = \
                 df.at[person_id, 'ri_last_pneumonia_date_of_onset'] + DateOffset(days=self.duration_in_days)
 
-            prob_death_from_pneumonia = m.risk_of_death_severe_pneumonia.predict(df.loc[[person_id]]).values[0]
+            prob_death_from_pneumonia = m.risk_of_death_severe_pneumonia['death_risk'].predict(df.loc[[person_id]]).values[0]
             death_outcome = rng.rand() < prob_death_from_pneumonia
 
             if death_outcome:
