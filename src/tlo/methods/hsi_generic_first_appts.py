@@ -7,8 +7,10 @@ from tlo.events import IndividualScopeEventMixin
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+import pandas as pd
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -170,6 +172,74 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         else:
             the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
 
+        df = self.sim.population.props
+        # =============================== Adjust generic first appt for RTI requirements ===============================
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        persons_injuries = df.loc[[person_id], columns]
+
+        def find_and_count_injuries(dataframe, tloinjcodes):
+            index = pd.Index([])
+            counts = 0
+            for code in tloinjcodes:
+                inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
+                if len(inj) > 0:
+                    injidx = inj.index[inj]
+                    counts += len(injidx)
+                    index = index.union(injidx)
+            return index, counts
+        # ================================ Fractures require x-rays ====================================================
+        fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+        idx, counts = find_and_count_injuries(persons_injuries, fracture_codes)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1
+        # ========================= Traumatic brain injuries require ct scan ===========================================
+        codes = ['133', '134', '135']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+        # ============================= Abdominal trauma requires ct scan ==============================================
+        codes = ['552', '553', '554']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1
+
+        # ============================== Spinal cord injury require x ray ==============================================
+        codes = ['673', '674', '675', '676']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+
+        # ============================== Dislocations require x ray ==============================================
+        codes = ['322', '323', '722', '822']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+
+        # --------------------------------- Soft tissue injury in neck ---------------------------------------------
+        codes = ['342', '343']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+
+        # --------------------------------- Soft tissue injury in thorax/ lung injury ------------------------------
+        codes = ['441', '443', '453']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+
+
+        # -------------------------------- Internal bleeding -------------------------------------------------------
+        codes = ['361', '363', '461', '463']
+        idx, counts = find_and_count_injuries(persons_injuries, codes)
+        idx2, counts = find_and_count_injuries(persons_injuries, ['461', '463'])
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            if len(idx2) > 0:
+                the_appt_footprint['MinorSurg'] = 1
+
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
@@ -210,9 +280,55 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
         if 'RTI' in self.sim.modules:
             if 'em_severe_trauma' in symptoms:
+                df = self.sim.population.props
+                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+                columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                           'rt_injury_7', 'rt_injury_8']
+                persons_injuries = df.loc[[person_id], columns]
+
+                def find_and_count_injuries(dataframe, tloinjcodes):
+                    index = pd.Index([])
+                    counts = 0
+                    for code in tloinjcodes:
+                        inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
+                        if len(inj) > 0:
+                            injidx = inj.index[inj]
+                            counts += len(injidx)
+                            index = index.union(injidx)
+                    return index, counts
+                # Request multiple x-rays here, note that the diagradio requirement for the appointment footprint
+                # is dealt with in the RTI module itself.
+
+                fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+                idx, counts = find_and_count_injuries(persons_injuries, fracture_codes)
+                if counts > 1:
+                    pkg_code_x_ray = pd.unique(
+                        consumables.loc[consumables['Intervention_Pkg'] ==
+                                        'Treatment of injuries (Fracture and dislocation)',
+                                        'Intervention_Pkg_Code'])[0]
+                    item_code_x_ray_film = pd.unique(
+                        consumables.loc[consumables['Items'] ==
+                                        "Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm",
+                                        'Item_Code'])[0]
+                    consumables_x_ray = {
+                        'Intervention_Package_Code': {pkg_code_x_ray: 1},
+                        'Item_Code': {item_code_x_ray_film: counts}}
+                    is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=self,
+                        cons_req_as_footprint=consumables_x_ray,
+                        to_log=False)
+                    cond = is_cons_available_1['Intervention_Package_Code'][pkg_code_x_ray]
+                    if cond:
+                        logger.debug(
+                            'This facility has x-ray capability which has been used to diagnose person %d.',
+                            person_id)
+                        logger.debug(f'Person %d had x-rays for their {counts} fractures')
+                    else:
+                        logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
+                df.loc[person_id, 'rt_diagnosed'] = True
                 road_traffic_injuries = self.sim.modules['RTI']
                 road_traffic_injuries.rti_do_when_injured(person_id=person_id, hsi_event=self)
-
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')

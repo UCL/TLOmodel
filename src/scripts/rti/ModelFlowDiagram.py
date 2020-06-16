@@ -4,7 +4,7 @@ from matplotlib.sankey import Sankey
 from floweaver import *
 import matplotlib
 
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 
 df = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/outputdf.csv')
@@ -26,40 +26,45 @@ No_treatment_available = healthappointment.loc[~healthappointment.did_run]
 soughthealthcare = len(df_did_run)
 persons_delayed_care = df_did_not_run['Person_ID'].nunique()
 diedwithouthealthcare = len(newdf.loc[newdf['cause'] == 'RTI_death_without_med'])
-ordering = [['start'], ['end']]
-nodes = {
-    'start': ProcessGroup(['Number of injured persons']),
-    'end': ProcessGroup(list(['Died on scene', 'Sought health care']))
-}
-bundles = [Bundle('start', 'end')]
-nodes['start'].partition = Partition.Simple('source', ['Number of injured persons'])
-nodes['end'].partition = Partition.Simple('target', list(['Died on scene', 'Sought health care']))
-sdd = SankeyDefinition(nodes, bundles, ordering)
-# fig = plt.figure(figsize=(20, 10))
-# ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
-#                      title=f"{2} year model run, N={5000}: model flow")
-# sankey = Sankey(ax=ax,
-#                 scale=data[0] / (data[0] * data[0]),
-#                 offset=0.2,
-#                 format='%d')
-#
-# sankey.add(flows=[data[0], - persons_delayed_care, -diedimm, -soughthealthcare],
-#            labels=['Number of injured persons', 'Delay in care', 'Died on scene', 'Sought health care without delay'],
-#            orientations=[0, 1, -1, 0],  # arrow directions
-#            pathlengths=[0.4, 0.2, 0.1, 0.1],
-#            trunklength=0.5,
-#            edgecolor='#027368',
-#            facecolor='#027368')
-# sankey.add(flows=[soughthealthcare, -diedaftermed, -data[4], -(soughthealthcare - diedaftermed -
-#                                                                                       data[4])],
-#            labels=['', 'Died after treatment', 'Treated but still disabled', 'Recovered'],
-#            prior=0,
-#            connect=(1, 0),
-#            orientations=[0, 1, -1, 0],
-#            pathlengths=[0.4, 0.2, 0.2, 0.1],
-#            trunklength=0.5,
-#            edgecolor='#58A4B0',
-#            facecolor='#58A4B0')
+print([data[0], - persons_delayed_care, -diedimm, -soughthealthcare],
+      sum([data[0], - persons_delayed_care, -diedimm, -soughthealthcare]))
+print([soughthealthcare, -diedaftermed, -data[4], -(soughthealthcare - diedaftermed -
+                                                                                      data[4])],
+      sum([soughthealthcare, -diedaftermed, -data[4], -(soughthealthcare - diedaftermed -
+                                                                                      data[4])]))
+fig = plt.figure(figsize=(20, 10))
+ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
+                     title=f"{2} year model run, N={5000}: model flow")
+sankey = Sankey(ax=ax,
+                scale=data[0] / (data[0] * data[0]),
+                offset=0.2,
+                format='%d')
+
+sankey.add(flows=[int(data[0]), int(-soughthealthcare), int(- persons_delayed_care), int(-diedimm)],
+           labels=['Number of injured persons', 'Sought health care without delay', 'Delay in care', 'Died on scene'],
+           orientations=[0, 0, 1, -1],  # arrow directions
+           pathlengths=[0.4, 0.2, 0.1, 0.1],
+           trunklength=0.5,
+           edgecolor='blue',
+           facecolor='blue')
+testflow = [int(soughthealthcare)]
+realflow = [int(soughthealthcare), int(-diedaftermed), int(-data[4]),
+                  int(-(soughthealthcare - diedaftermed - data[4]))]
+testlabel = ['']
+reallabel = ['', 'Died after treatment', 'Treated but still disabled', 'Recovered']
+testorientation = [0]
+realorientation = [0, 1, -1, 0]
+testpathlength = [0.4]
+realpathlength = [0.4, 0.2, 0.2, 0.1]
+sankey.add(flows=realflow,
+           labels=reallabel,
+           prior=0,
+           connect=(1, 0),
+           orientations=realorientation,
+           pathlengths=realpathlength,
+           trunklength=0.5,
+           edgecolor='red',
+           facecolor='red')
 # sankey.add(flows=[persons_delayed_care, - numdiedwithoutmed, -(persons_delayed_care-numdiedwithoutmed)],
 #            labels=['', 'Died without access to care', 'Sought care with delay'],
 #            prior=0,
@@ -81,7 +86,7 @@ sdd = SankeyDefinition(nodes, bundles, ordering)
 #            facecolor='#022368'
 #            )
 #
-# sankey.finish()
-# plt.show()
+sankey.finish()
+plt.show()
 # plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIModelFlow.png')
 # plt.clf()
