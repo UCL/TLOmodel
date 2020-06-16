@@ -222,7 +222,7 @@ class BladderCancer(Module):
         )
 
         bc_status_any_stage = \
-            lm_init_oc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
+            lm_init_bc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
         if bc_status_any_stage.sum():
@@ -328,7 +328,7 @@ class BladderCancer(Module):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_oc_status
+        lm = self.linear_models_for_progession_of_bc_status
 
         lm['tis_t1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -348,7 +348,7 @@ class BladderCancer(Module):
             p['r_t2p_bladder_cancer_low_grade_dysp'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_t2p_bladder_cancer_undergone_curative_treatment']),
-            Predictor('oc_status').when('tis_t1', 1.0)
+            Predictor('bc_status').when('tis_t1', 1.0)
                                   .otherwise(0.0)
         )
         lm['metastatic'] = LinearModel(
@@ -557,7 +557,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- DEATH FROM bladder CANCER ---------------------------------------
         # There is a risk of death for those in metastatic only. Death is assumed to go instantly.
-        metastatic_idx = df.index[df.is_alive & (df.oc_status == "metastatic")]
+        metastatic_idx = df.index[df.is_alive & (df.bc_status == "metastatic")]
         selected_to_die = metastatic_idx[
             rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_bladder_cancer']]
 
@@ -575,7 +575,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
     blood_urine.
-    This event begins the investigation that may result in diagnosis of bladder Cancer and the scheduling of
+    This event begins the investigation that may result in diagnosis of Bladder Cancer and the scheduling of
     treatment or palliative care.
     It is for people with the symptom blood_urine.
     """
@@ -750,18 +750,18 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
-        assert not df.at[person_id, "oc_status"] == 'none'
-        assert not df.at[person_id, "oc_status"] == 'metastatic'
-        assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
-        assert pd.isnull(df.at[person_id, "oc_date_treatment"])
+        assert not df.at[person_id, "bc_status"] == 'none'
+        assert not df.at[person_id, "bc_status"] == 'metastatic'
+        assert not pd.isnull(df.at[person_id, "bc_date_diagnosis"])
+        assert pd.isnull(df.at[person_id, "bc_date_treatment"])
 
         # Record date and stage of starting treatment
-        df.at[person_id, "oc_date_treatment"] = self.sim.date
-        df.at[person_id, "oc_stage_at_which_treatment_given"] = df.at[person_id, "oc_status"]
+        df.at[person_id, "bc_date_treatment"] = self.sim.date
+        df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_bladderCancer_PostTreatmentCheck(
+            hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
@@ -774,10 +774,10 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_bladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_bladderCancer_StartTreatment and itself.
-    It is only for those who have undergone treatment for bladder Cancer.
+    This event is scheduled by HSI_BladderCancer_StartTreatment and itself.
+    It is only for those who have undergone treatment for Bladder Cancer.
     If the person has developed cancer to metastatic, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
     """
@@ -789,7 +789,7 @@ class HSI_bladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "bladderCancer_MonitorTreatment"
+        self.TREATMENT_ID = "BladderCancer_MonitorTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -802,14 +802,14 @@ class HSI_bladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
             return hs.get_blank_appt_footprint()
 
         # Check that the person is has cancer and is on treatment
-        assert not df.at[person_id, "oc_status"] == 'none'
-        assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
-        assert not pd.isnull(df.at[person_id, "oc_date_treatment"])
+        assert not df.at[person_id, "bc_status"] == 'none'
+        assert not pd.isnull(df.at[person_id, "bc_date_diagnosis"])
+        assert not pd.isnull(df.at[person_id, "bc_date_treatment"])
 
-        if df.at[person_id, 'oc_status'] == 'metastatic':
+        if df.at[person_id, 'bc_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_bladderCancer_PalliativeCare(
+                hsi_event=HSI_BladderCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -819,9 +819,9 @@ class HSI_bladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
             )
 
         else:
-            # Schedule another HSI_bladderCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_BladderCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_bladderCancer_PostTreatmentCheck(
+                hsi_event=HSI_BladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -834,7 +834,7 @@ class HSI_bladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
         pass
 
 
-class HSI_bladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
@@ -852,7 +852,7 @@ class HSI_bladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "bladderCancer_PalliativeCare"
+        self.TREATMENT_ID = "BladderCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -865,15 +865,15 @@ class HSI_bladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # Check that the person is in metastatic
-        assert df.at[person_id, "oc_status"] == 'metastatic'
+        assert df.at[person_id, "bc_status"] == 'metastatic'
 
         # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
-            df.at[person_id, "oc_date_palliative_care"] = self.sim.date
+        if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):
+            df.at[person_id, "bc_date_palliative_care"] = self.sim.date
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
-            hsi_event=HSI_bladderCancer_PalliativeCare(
+            hsi_event=HSI_BladderCancer_PalliativeCare(
                 module=self.module,
                 person_id=person_id
             ),
@@ -890,7 +890,7 @@ class HSI_bladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
@@ -910,24 +910,24 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Current counts, total
         out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].oc_status.value_counts().items()})
+            f'total_{k}': v for k, v in df.loc[df.is_alive].bc_status.value_counts().items()})
 
         # Current counts, undiagnosed
         out.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
+            pd.isnull(df.bc_date_diagnosis), 'bc_status'].value_counts().items()})
 
         # Current counts, diagnosed
         out.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
+            ~pd.isnull(df.bc_date_diagnosis), 'bc_status'].value_counts().items()})
 
         # Current counts, on treatment (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.oc_date_treatment) & pd.isnull(
-            df.oc_date_palliative_care)), 'oc_status'].value_counts().items()})
+            df.bc_date_treatment) & pd.isnull(
+            df.bc_date_palliative_care)), 'bc_status'].value_counts().items()})
 
         # Current counts, on palliative care
         out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_palliative_care), 'oc_status'].value_counts().items()})
+            ~pd.isnull(df.bc_date_palliative_care), 'bc_status'].value_counts().items()})
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
@@ -935,9 +935,9 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
         out.update({
-            'diagnosed_since_last_log': df.oc_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.oc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.oc_date_palliative_care.between(date_lastlog, date_now).sum()
+            'diagnosed_since_last_log': df.bc_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.bc_date_treatment.between(date_lastlog, date_now).sum(),
+            'palliative_since_last_log': df.bc_date_palliative_care.between(date_lastlog, date_now).sum()
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
