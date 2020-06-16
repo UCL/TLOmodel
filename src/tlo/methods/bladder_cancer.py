@@ -53,113 +53,90 @@ class BladderCancer(Module):
             Types.LIST, "initial proportions of people with bladder cancer that had initiated treatment"
         ),
         "init_prob_palliative_care": Parameter(
-            Types.REAL, "initial probability of being under palliative care if in stage 4"
+            Types.REAL, "initial probability of being under palliative care if in metastatic"
         ),
-        "r_low_grade_dysplasia_none": Parameter(
+        "r_tis_t1_bladder_cancer_none": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident low grade oesophageal dysplasia, amongst people with no "
-            "oesophageal dysplasia (men, age20, no excess alcohol, no tobacco)",
+            "probabilty per 3 months of incident tis_t1 bladder cancer, amongst people with no bladder cancer"
+            "(for person aged 15-19 and no tobacco and no schisto_h)",
         ),
-        "rr_low_grade_dysplasia_none_female": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for females"
+        "rr_tis_t1_bladder_cancer_none_age3049": Parameter(
+            Types.REAL, "rate ratio for tis_t1 bladder cancer for age 30-49"
         ),
-        "rr_low_grade_dysplasia_none_per_year_older": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia per year older from age 20"
+        "rr_tis_t1_bladder_cancer_none_age5069": Parameter(
+            Types.REAL, "rate ratio for tis_t1 bladder cancer for age 30-49"
         ),
-        "rr_low_grade_dysplasia_none_tobacco": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for tobacco smokers"
+        "rr_tis_t1_bladder_cancer_none_agege70": Parameter(
+            Types.REAL, "rate ratio for tis_t1 bladder cancer for age 70+"
         ),
-        "rr_low_grade_dysplasia_none_ex_alc": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for no excess alcohol"
+        "rr_tis_t1_bladder_cancer_none_tobacco": Parameter(
+            Types.REAL, "rate ratio for tis_t1 bladder cancer for tobacco smokers"
         ),
-        "r_high_grade_dysplasia_low_grade_dysp": Parameter(
+        "r_t2p_bladder_cancer_tis_t1": Parameter(
             Types.REAL,
-            "probabilty per 3 months of high grade oesophageal dysplasia, amongst people with low grade dysplasia",
+            "probabilty per 3 months of t2+ bladder cancer, amongst people with tis_t1 bladder cancer",
         ),
-        "rr_high_grade_dysp_undergone_curative_treatment": Parameter(
+        "rr_t2p_bladder_cancer_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for high grade dysplasia for people with low grade dysplasia "
-            "if had curative treatment at low grade dysplasia stage",
+            "rate ratio for t2+ bladder cancer for people with tis_t1 bladder cancer "
+            "if had curative treatment at tis_t1 bladder cancer stage",
         ),
-        "r_stage1_high_grade_dysp": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 1 oesophageal cancer amongst people with high grade dysplasia"
+        "r_metastatic_t2p_bladder_cancer": Parameter(
+            Types.REAL, "probabilty per 3 months of metastatic bladder cancer amongst people with t2+ bladder cancer"
         ),
-        "rr_stage1_undergone_curative_treatment": Parameter(
+        "rr_metastatic_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for stage 1 oesophageal cancer for people with high grade "
-            "dysplasia if had curative treatment at high grade dysplasia stage",
+            "rate ratio for metastatic bladder cancer for people with t2+ bladder cancer "
+            "if had curative treatment at t2+ bladder cancer stage",
         ),
-        "r_stage2_stage1": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 2 oesophageal cancer amongst people with stage 1"
+         "rate_palliative_care_metastatic": Parameter(
+            Types.REAL, "prob palliative care this 3 month period if metastatic bladder cancer"
         ),
-        "rr_stage2_undergone_curative_treatment": Parameter(
+        "r_death_bladder_cancer": Parameter(
             Types.REAL,
-            "rate ratio for stage 2 oesophageal cancer for people with stage 1 "
-            "oesophageal cancer if had curative treatment at stage 1",
+            "probabilty per 3 months of death from bladder cancer amongst people with metastatic bladder cancer",
         ),
-        "r_stage3_stage2": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 3 oesophageal cancer amongst people with stage 2"
+        "r_blood_urine_tis_t1_bladder_cancer": Parameter(
+            Types.REAL, "probability per 3 months of blood_urine in a person with tis_t1 bladder cancer"
         ),
-        "rr_stage3_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 3 oesophageal cancer for people with stage 2 "
-            "oesophageal cancer if had curative treatment at stage 2",
+        "rr_blood_urine_t2p_bladder_cancer": Parameter(
+            Types.REAL, "rate ratio for blood_urine if have t2p bladder cancer"
         ),
-        "r_stage4_stage3": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 4 oesophageal cancer amongst people with stage 3"
+        "rr_blood_urine_metastatic_bladder_cancer": Parameter(
+            Types.REAL, "rate ratio for blood_urine if have metastatic bladder cancer"
         ),
-        "rr_stage4_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 4 oesophageal cancer for people with stage 3 "
-            "oesophageal cancer if had curative treatment at stage 3",
+
+        "rr_blood_urine_stage2": Parameter(
+            Types.REAL, "rate ratio for blood_urine if have stage 2 bladder cancer"
         ),
-        "rate_palliative_care_stage4": Parameter(
-            Types.REAL, "prob palliative care this 3 month period if stage4"
+        "rr_blood_urine_stage3": Parameter(
+            Types.REAL, "rate ratio for blood_urine if have stage 3 bladder cancer"
         ),
-        "r_death_oesoph_cancer": Parameter(
-            Types.REAL,
-            "probabilty per 3 months of death from oesophageal cancer mongst people with stage 4 oesophageal cancer",
-        ),
-        "rr_dysphagia_low_grade_dysp": Parameter(
-            Types.REAL, "probability per 3 months of dysphagia in a person with low grade oesophageal dysplasia"
-        ),
-        "rr_dysphagia_high_grade_dysp": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have high grade oesophageal dysplasia"
-        ),
-        "r_dysphagia_stage1": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 1 oesophageal cancer"
-        ),
-        "rr_dysphagia_stage2": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 2 oesophageal cancer"
-        ),
-        "rr_dysphagia_stage3": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 3 oesophageal cancer"
-        ),
-        "rr_dysphagia_stage4": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 4 oesophageal cancer"
+        "rr_blood_urine_metastatic": Parameter(
+            Types.REAL, "rate ratio for blood_urine if have metastatic bladder cancer"
         ),
         "rp_oes_cancer_female": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if female"
+            Types.REAL, "relative prevalence at baseline of bladder cancer/cancer if female"
         ),
         "rp_oes_cancer_per_year_older": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer per year older than 20"
+            Types.REAL, "relative prevalence at baseline of bladder cancer/cancer per year older than 20"
         ),
         "rp_oes_cancer_tobacco": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if tobacco"
+            Types.REAL, "relative prevalence at baseline of bladder cancer/cancer if tobacco"
         ),
         "rp_oes_cancer_ex_alc": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer"
+            Types.REAL, "relative prevalence at baseline of bladder cancer/cancer"
         ),
-        "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
-            Types.REAL, "sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia"
+        "sensitivity_of_cytoscopy_for_oes_cancer_with_blood_urine": Parameter(
+            Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer for those with blood_urine"
         ),
     }
 
     PROPERTIES = {
         "oc_status": Property(
             Types.CATEGORICAL,
-            "Current status of the health condition, oesophageal dysplasia",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            "Current status of the health condition, bladder cancer",
+            categories=["none", "tis_t1_bladder_cancer", "t2p_bladder_cancer", "stage1", "stage2", "stage3", "metastatic"],
         ),
 
         "oc_date_diagnosis": Property(
@@ -176,17 +153,24 @@ class BladderCancer(Module):
             Types.CATEGORICAL,
             "the cancer stage at which treatment is applied (because the treatment only has an effect during the stage"
             "at which it is applied.",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            categories=["none", "tis_t1_bladder_cancer", "t2p_bladder_cancer", "stage1", "stage2", "stage3", "metastatic"],
         ),
 
         "oc_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
-        ),
+        )
     }
+    """  from schisto module:
+       
+            'sh_infection_status': Property(
+                Types.CATEGORICAL, 'Current status of schistosomiasis infection',
+                categories=['Non-infected', 'Low-infection', 'High-infection']),
+    """
+
 
     # Symptom that this module will use
-    SYMPTOMS = {'dysphagia'}
+    SYMPTOMS = {'blood_urine'}
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
@@ -196,7 +180,7 @@ class BladderCancer(Module):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_bladder_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 
@@ -241,26 +225,26 @@ class BladderCancer(Module):
                 )
 
         # -------------------- SYMPTOMS -----------
-        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of dysphagia:
+        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of blood_urine:
         lm_init_disphagia = LinearModel.multiplicative(
             Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][1])
+                                    .when("tis_t1_bladder_cancer",
+                                          p['init_prop_blood_urine_oes_cancer_by_stage'][0])
+                                    .when("t2p_bladder_cancer",
+                                          p['init_prop_blood_urine_oes_cancer_by_stage'][1])
                                     .when("stage1",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][2])
+                                          p['init_prop_blood_urine_oes_cancer_by_stage'][2])
                                     .when("stage2",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][3])
+                                          p['init_prop_blood_urine_oes_cancer_by_stage'][3])
                                     .when("stage3",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][4])
-                                    .when("stage4",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][5])
+                                          p['init_prop_blood_urine_oes_cancer_by_stage'][4])
+                                    .when("metastatic",
+                                          p['init_prop_blood_urine_oes_cancer_by_stage'][5])
         )
-        has_dysphagia_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
+        has_blood_urine_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_dysphagia_at_init.index[has_dysphagia_at_init].tolist(),
-            symptom_string='dysphagia',
+            person_id=has_blood_urine_at_init.index[has_blood_urine_at_init].tolist(),
+            symptom_string='blood_urine',
             add_or_remove='+',
             disease_module=self
         )
@@ -268,23 +252,23 @@ class BladderCancer(Module):
         # -------------------- oc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][1])
+                                    .when("tis_t1_bladder_cancer",
+                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][0])
+                                    .when("t2p_bladder_cancer",
+                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][1])
                                     .when("stage1",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][2])
+                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][2])
                                     .when("stage2",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][3])
+                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][3])
                                     .when("stage3",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][4])
-                                    .when("stage4",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][5])
+                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][4])
+                                    .when("metastatic",
+                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][5])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
-        # ensure that persons who have not ever had the symptom dysphagia are diagnosed:
-        ever_diagnosed.loc[~has_dysphagia_at_init] = False
+        # ensure that persons who have not ever had the symptom blood_urine are diagnosed:
+        ever_diagnosed.loc[~has_blood_urine_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
         df.loc[ever_diagnosed, "oc_date_diagnosis"] = self.sim.date
@@ -292,9 +276,9 @@ class BladderCancer(Module):
         # -------------------- oc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
+                                    .when("tis_t1_bladder_cancer",
                                           p['init_prop_treatment_status_oes_cancer'][0])
-                                    .when("high_grade_dysplasia",
+                                    .when("t2p_bladder_cancer",
                                           p['init_prop_treatment_status_oes_cancer'][1])
                                     .when("stage1",
                                           p['init_prop_treatment_status_oes_cancer'][2])
@@ -302,7 +286,7 @@ class BladderCancer(Module):
                                           p['init_prop_treatment_status_oes_cancer'][3])
                                     .when("stage3",
                                           p['init_prop_treatment_status_oes_cancer'][4])
-                                    .when("stage4",
+                                    .when("metastatic",
                                           p['init_prop_treatment_status_oes_cancer'][5])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
@@ -317,10 +301,10 @@ class BladderCancer(Module):
         df.loc[treatment_initiated, "oc_date_treatment"] = df.loc[treatment_initiated, "oc_date_diagnosis"]
 
         # -------------------- oc_date_palliative_care -----------
-        in_stage4_diagnosed = df.index[df.is_alive & (df.oc_status == 'stage4') & ~pd.isnull(df.oc_date_diagnosis)]
+        in_metastatic_diagnosed = df.index[df.is_alive & (df.oc_status == 'metastatic') & ~pd.isnull(df.oc_date_diagnosis)]
 
-        select_for_care = self.rng.random_sample(size=len(in_stage4_diagnosed)) < p['init_prob_palliative_care']
-        select_for_care = in_stage4_diagnosed[select_for_care]
+        select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
+        select_for_care = in_metastatic_diagnosed[select_for_care]
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
         df.loc[select_for_care, "oc_date_palliative_care"] = df.loc[select_for_care, "oc_date_diagnosis"]
@@ -352,25 +336,25 @@ class BladderCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_oc_status
 
-        lm['low_grade_dysplasia'] = LinearModel(
+        lm['tis_t1_bladder_cancer'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_low_grade_dysplasia_none'],
+            p['r_tis_t1_bladder_cancer_none'],
             Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_dysplasia_none_per_year_older']
+                lambda x: 0 if x < 20 else (x - 20) ** p['rr_tis_t1_bladder_cancer_none_per_year_older']
             ),
-            Predictor('sex').when('F', p['rr_low_grade_dysplasia_none_female']),
-            Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_low_grade_dysplasia_none_ex_alc']),
+            Predictor('sex').when('F', p['rr_tis_t1_bladder_cancer_none_female']),
+            Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
+            Predictor('li_ex_alc').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
             Predictor('oc_status').when('none', 1.0)
                                   .otherwise(0.0)
         )
 
-        lm['high_grade_dysplasia'] = LinearModel(
+        lm['t2p_bladder_cancer'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_high_grade_dysplasia_low_grade_dysp'],
+            p['r_t2p_bladder_cancer_low_grade_dysp'],
             Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_high_grade_dysp_undergone_curative_treatment']),
-            Predictor('oc_status').when('low_grade_dysplasia', 1.0)
+                      external=True).when(True, p['rr_t2p_bladder_cancer_undergone_curative_treatment']),
+            Predictor('oc_status').when('tis_t1_bladder_cancer', 1.0)
                                   .otherwise(0.0)
         )
 
@@ -379,7 +363,7 @@ class BladderCancer(Module):
             p['r_stage1_high_grade_dysp'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
-            Predictor('oc_status').when('high_grade_dysplasia', 1.0)
+            Predictor('oc_status').when('t2p_bladder_cancer', 1.0)
                                   .otherwise(0.0)
         )
 
@@ -401,11 +385,11 @@ class BladderCancer(Module):
                                   .otherwise(0.0)
         )
 
-        lm['stage4'] = LinearModel(
+        lm['metastatic'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_stage4_stage3'],
+            p['r_metastatic_stage3'],
             Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
+                      external=True).when(True, p['rr_metastatic_undergone_curative_treatment']),
             Predictor('oc_status').when('stage3', 1.0)
                                   .otherwise(0.0)
         )
@@ -413,41 +397,41 @@ class BladderCancer(Module):
         # Check that the dict labels are correct as these are used to set the value of oc_status
         assert set(lm).union({'none'}) == set(df.oc_status.cat.categories)
 
-        # Linear Model for the onset of dysphagia, in each 3 month period
-        self.lm_onset_dysphagia = LinearModel.multiplicative(
-            Predictor('oc_status').when('low_grade_dysplasia',
-                                        p['rr_dysphagia_low_grade_dysp'] * p['r_dysphagia_stage1'])
+        # Linear Model for the onset of blood_urine, in each 3 month period
+        self.lm_onset_blood_urine = LinearModel.multiplicative(
+            Predictor('oc_status').when('tis_t1_bladder_cancer',
+                                        p['rr_blood_urine_low_grade_dysp'] * p['r_blood_urine_stage1'])
                                   .when('high_grade_dysplaisa',
-                                        p['rr_dysphagia_high_grade_dysp'] * p['r_dysphagia_stage1'])
-                                  .when('stage1', p['r_dysphagia_stage1'])
-                                  .when('stage2', p['rr_dysphagia_stage2'] * p['r_dysphagia_stage1'])
-                                  .when('stage3', p['rr_dysphagia_stage3'] * p['r_dysphagia_stage1'])
-                                  .when('stage4', p['rr_dysphagia_stage4'] * p['r_dysphagia_stage1'])
+                                        p['rr_blood_urine_high_grade_dysp'] * p['r_blood_urine_stage1'])
+                                  .when('stage1', p['r_blood_urine_stage1'])
+                                  .when('stage2', p['rr_blood_urine_stage2'] * p['r_blood_urine_stage1'])
+                                  .when('stage3', p['rr_blood_urine_stage3'] * p['r_blood_urine_stage1'])
+                                  .when('metastatic', p['rr_blood_urine_metastatic'] * p['r_blood_urine_stage1'])
                                   .otherwise(0.0)
         )
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of an endoscope to oc_status
-        # This properties of conditional on the test being done only to persons with the Symptom, 'dysphagia'.
+        # This properties of conditional on the test being done only to persons with the Symptom, 'blood_urine'.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            endoscopy_for_oes_cancer_given_dysphagia=DxTest(
+            cytoscopy_for_oes_cancer_given_blood_urine=DxTest(
                 property='oc_status',
-                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
-                target_categories=["low_grade_dysplasia", "high_grade_dysplasia",
-                                   "stage1", "stage2", "stage3", "stage4"]
+                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_oes_cancer_with_blood_urine'],
+                target_categories=["tis_t1_bladder_cancer", "t2p_bladder_cancer",
+                                   "stage1", "stage2", "stage3", "metastatic"]
             )
         )
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
-            # For those with cancer (any stage prior to stage 4) and never treated
+            # For those with cancer (any stage prior to metastatic) and never treated
             self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=550
                 # "Diagnosis and primary therapy phase of esophageal cancer":
                 #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
-            # For those with cancer (any stage prior to stage 4) and has been treated
+            # For those with cancer (any stage prior to metastatic) and has been treated
             self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=547
                 # "Controlled phase of esophageal cancer,Generic uncomplicated disease":
@@ -455,23 +439,23 @@ class BladderCancer(Module):
                 #   worry but minimal interference with daily activities".
             )
 
-            # For those in stage 4: no palliative care
-            self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            # For those in metastatic: no palliative care
+            self.daly_wts["metastatic"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=549
                 # "Metastatic phase of esophageal cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
             )
 
-            # For those in stage 4: with palliative care
-            self.daly_wts["stage4_palliative_care"] = self.daly_wts["stage_1_3"]
-            # By assumption, we say that that the weight for those in stage 4 with palliative care is the same as
+            # For those in metastatic: with palliative care
+            self.daly_wts["metastatic_palliative_care"] = self.daly_wts["stage_1_3"]
+            # By assumption, we say that that the weight for those in metastatic with palliative care is the same as
             # that for those with stage 1-3 cancers.
 
         # ----- HSI FOR PALLIATIVE CARE -----
         on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.oc_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PalliativeCare(module=self, person_id=person_id),
+                hsi_event=HSI_bladderCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
@@ -500,7 +484,7 @@ class BladderCancer(Module):
 
         disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
 
-        # Assign daly_wt to those with cancer stages before stage4 and have either never been treated or are no longer
+        # Assign daly_wt to those with cancer stages before metastatic and have either never been treated or are no longer
         # in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
@@ -510,7 +494,7 @@ class BladderCancer(Module):
             )
         ] = self.daly_wts['stage_1_3']
 
-        # Assign daly_wt to those with cancer stages before stage4 and who have been treated and who are still in the
+        # Assign daly_wt to those with cancer stages before metastatic and who have been treated and who are still in the
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
@@ -522,17 +506,17 @@ class BladderCancer(Module):
             )
         ] = self.daly_wts['stage_1_3_treated']
 
-        # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
+        # Assign daly_wt to those in metastatic cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
-            (df.oc_status == "stage4") &
+            (df.oc_status == "metastatic") &
             (pd.isnull(df.oc_date_palliative_care))
-            ] = self.daly_wts['stage4']
+            ] = self.daly_wts['metastatic']
 
-        # Assign daly_wt to those in stage4 cancer, who have had palliative care
+        # Assign daly_wt to those in metastatic cancer, who have had palliative care
         disability_series_for_alive_persons.loc[
-            (df.oc_status == "stage4") &
+            (df.oc_status == "metastatic") &
             (~pd.isnull(df.oc_date_palliative_care))
-            ] = self.daly_wts['stage4_palliative_care']
+            ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
 
@@ -543,10 +527,10 @@ class BladderCancer(Module):
 
 class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that updates all Oesophageal cancer properties for population:
-    * Acquisition and progression of Oesophageal Cancer
-    * Symptom Development according to stage of Oesophageal Cancer
-    * Deaths from Oesophageal Cancer for those in stage4
+    Regular event that updates all bladder cancer properties for population:
+    * Acquisition and progression of bladder Cancer
+    * Symptom Development according to stage of bladder Cancer
+    * Deaths from bladder Cancer for those in metastatic
     """
 
     def __init__(self, module):
@@ -572,26 +556,26 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'oc_status'] = stage
 
-        # -------------------- UPDATING OF SYMPTOM OF DYSPHAGIA OVER TIME --------------------------------
-        # Each time this event is called (event 3 months) individuals may develop the symptom of dysphagia.
+        # -------------------- UPDATING OF SYMPTOM OF blood_urine OVER TIME --------------------------------
+        # Each time this event is called (event 3 months) individuals may develop the symptom of blood_urine.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_dysphagia = self.module.lm_onset_dysphagia.predict(df.loc[df.is_alive], rng)
+        onset_blood_urine = self.module.lm_onset_blood_urine.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_dysphagia[onset_dysphagia].index.tolist(),
-            symptom_string='dysphagia',
+            person_id=onset_blood_urine[onset_blood_urine].index.tolist(),
+            symptom_string='blood_urine',
             add_or_remove='+',
             disease_module=self.module
         )
 
-        # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
-        # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
-        stage4_idx = df.index[df.is_alive & (df.oc_status == "stage4")]
-        selected_to_die = stage4_idx[
-            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_oesoph_cancer']]
+        # -------------------- DEATH FROM bladder CANCER ---------------------------------------
+        # There is a risk of death for those in metastatic only. Death is assumed to go instantly.
+        metastatic_idx = df.index[df.is_alive & (df.oc_status == "metastatic")]
+        selected_to_die = metastatic_idx[
+            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_oesoph_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
+                demography.InstantaneousDeath(self.module, person_id, "bladderCancer"), self.sim.date
             )
 
 
@@ -599,20 +583,20 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, IndividualScopeEventMixin):
+class HSI_bladderCancer_Investigation_Following_blood_urine(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    dysphagia.
-    This event begins the investigation that may result in diagnosis of Oesophageal Cancer and the scheduling of
+    blood_urine.
+    This event begins the investigation that may result in diagnosis of bladder Cancer and the scheduling of
     treatment or palliative care.
-    It is for people with the symptom dysphagia.
+    It is for people with the symptom blood_urine.
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
+        self.TREATMENT_ID = "bladderCancer_Investigation_Following_blood_urine"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -625,16 +609,16 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that this event has been called for someone with the symptom dysphagia
-        assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
+        # Check that this event has been called for someone with the symptom blood_urine
+        assert 'blood_urine' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
+        # Use an endoscope to diagnose whether the person has bladder Cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
+            dx_tests_to_run='cytoscopy_for_oes_cancer_given_blood_urine',
             hsi_event=self
         )
 
@@ -642,14 +626,14 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             # record date of diagnosis:
             df.at[person_id, 'oc_date_diagnosis'] = self.sim.date
 
-            # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'oc_status'] == 'stage4'
-            # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+            # Check if is in metastatic:
+            in_metastatic = df.at[person_id, 'oc_status'] == 'metastatic'
+            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made accurately.
 
-            if not in_stage4:
+            if not in_metastatic:
                 # start treatment:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_StartTreatment(
+                    hsi_event=HSI_bladderCancer_StartTreatment(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -661,7 +645,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             else:
                 # start palliative care:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                    hsi_event=HSI_bladderCancer_PalliativeCare(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -674,11 +658,11 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         pass
 
 
-class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_bladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of
-    Oesophageal Cancer. It initiates the treatment of Oesophageal Cancer.
-    It is only for persons with a cancer that is not in stage4 and who have been diagnosed.
+    This event is scheduled by HSI_bladderCancer_Investigation_Following_blood_urine following a diagnosis of
+    bladder Cancer. It initiates the treatment of bladder Cancer.
+    It is only for persons with a cancer that is not in metastatic and who have been diagnosed.
     """
 
     def __init__(self, module, person_id):
@@ -688,7 +672,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
+        self.TREATMENT_ID = "bladderCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -700,9 +684,9 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
+        # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
         assert not df.at[person_id, "oc_status"] == 'none'
-        assert not df.at[person_id, "oc_status"] == 'stage4'
+        assert not df.at[person_id, "oc_status"] == 'metastatic'
         assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "oc_date_treatment"])
 
@@ -712,7 +696,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
+            hsi_event=HSI_bladderCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
@@ -725,11 +709,11 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         pass
 
 
-class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_bladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_OesophagealCancer_StartTreatment and itself.
-    It is only for those who have undergone treatment for Oesophageal Cancer.
-    If the person has developed cancer to stage4, the patient is initiated on palliative care; otherwise a further
+    This event is scheduled by HSI_bladderCancer_StartTreatment and itself.
+    It is only for those who have undergone treatment for bladder Cancer.
+    If the person has developed cancer to metastatic, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
     """
 
@@ -740,7 +724,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_MonitorTreatment"
+        self.TREATMENT_ID = "bladderCancer_MonitorTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -757,10 +741,10 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "oc_date_treatment"])
 
-        if df.at[person_id, 'oc_status'] == 'stage4':
-            # If has progressed to stage4, then start Palliative Care immediately:
+        if df.at[person_id, 'oc_status'] == 'metastatic':
+            # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                hsi_event=HSI_bladderCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -770,9 +754,9 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
             )
 
         else:
-            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_bladderCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
+                hsi_event=HSI_bladderCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -785,15 +769,15 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         pass
 
 
-class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_bladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of Oesophageal Cancer at stage4.
-    * HSI_OesophagealCancer_PostTreatmentCheck following progression to stage4 during treatment.
+    * HSI_bladderCancer_Investigation_Following_blood_urine following a diagnosis of bladder Cancer at metastatic.
+    * HSI_bladderCancer_PostTreatmentCheck following progression to metastatic during treatment.
     * Itself for the continuance of care.
-    It is only for persons with a cancer in stage4.
+    It is only for persons with a cancer in metastatic.
     """
 
     def __init__(self, module, person_id):
@@ -803,7 +787,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
+        self.TREATMENT_ID = "bladderCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -815,8 +799,8 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person is in stage4
-        assert df.at[person_id, "oc_status"] == 'stage4'
+        # Check that the person is in metastatic
+        assert df.at[person_id, "oc_status"] == 'metastatic'
 
         # Record the start of palliative care if this is first appointment
         if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
@@ -824,7 +808,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
-            hsi_event=HSI_OesophagealCancer_PalliativeCare(
+            hsi_event=HSI_bladderCancer_PalliativeCare(
                 module=self.module,
                 person_id=person_id
             ),
