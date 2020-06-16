@@ -1,4 +1,5 @@
 # %% Import Statements
+import logging
 from pathlib import Path
 
 from tlo import Date, Simulation
@@ -27,6 +28,10 @@ def run():
     # Simulation.
     log_config = {
         "filename": "enhanced_lifestyle",  # The prefix for the output file. A timestamp will be added to this.
+        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            "tlo.methods.demography": logging.INFO,
+            "tlo.methods.enhanced_lifestyle": logging.INFO
+        }
     }
     # For default configuration, uncomment the next line
     # log_config = dict()
