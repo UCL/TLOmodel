@@ -16,9 +16,11 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    labour,
     mockitis,
+    pregnancy_supervisor,
     symptommanager,
-)
+    )
 from tlo.methods.depression import compute_key_outputs_for_last_3_years
 
 # Where will outputs go
@@ -44,32 +46,32 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
     :param healthsystemdisable: bool to indicate whether or not to disable healthsystem (see HealthSystem)
     :return: logfile name
     """
-
-    sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
+    log_config = {"filename": "depression"}
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        service_availability=service_availability,
-        disable=healthsystemdisable
-    ))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
-
-    # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile")
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=service_availability,
+            disable=healthsystemdisable
+        ),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        depression.Depression(resourcefilepath=resourcefilepath),
+    )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    return logfile
+    return sim.log_filepath
 
 
 # %%  Run model with all interventions working to check that outputs of depression match thge calibration points
@@ -117,26 +119,31 @@ def run_simulation_with_intvs_maximised():
     :param healthsystemdisable: bool to indicate whether or not to disable healthsystem (see HealthSystem)
     :return: logfile name
     """
+    log_config = {"filename": "depression"}
 
-    sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        service_availability=['*'],
-        disable=True
-    ))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
-    sim.register(mockitis.Mockitis())
-    sim.register(chronicsyndrome.ChronicSyndrome())
-    sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=['*'],
+            disable=True
+        ),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        depression.Depression(resourcefilepath=resourcefilepath),
+        mockitis.Mockitis(),
+        chronicsyndrome.ChronicSyndrome(),
+        dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+    )
+
 
     sim.modules['Depression'].parameters['rr_depr_on_antidepr'] = 50
     sim.modules['Depression'].parameters['rr_resol_depr_on_antidepr'] = 50
@@ -144,14 +151,11 @@ def run_simulation_with_intvs_maximised():
     sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
     sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] = 1.0
 
-    # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile")
-
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    return logfile
+    return sim.log_filepath
 
 
 results_max_intvs = compute_key_outputs_for_last_3_years(
