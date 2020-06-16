@@ -17,7 +17,7 @@ from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import contraception, demography, pneumonia, healthsystem, enhanced_lifestyle, \
-    symptommanager
+    symptommanager, labour, pregnancy_supervisor, healthseekingbehaviour, dx_algorithm_child
 
 # %%
 outputpath = Path("./outputs")
@@ -38,11 +38,16 @@ sim = Simulation(start_date=start_date)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+
 # sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(pneumonia.Pneumonia(resourcefilepath=resourcefilepath))
+sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
 logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(0)

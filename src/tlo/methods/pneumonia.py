@@ -722,25 +722,27 @@ class Pneumonia(Module):
 
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the risk of dying due to pneumonia
-        self.risk_of_death_severe_pneumonia.update({
-            'death_risk': {
-                LinearModel(LinearModelType.MULTIPLICATIVE,
-                            1.0,
-                            Predictor('ri_last_pneumonia_complications')
-                            .when('sepsis', p['r_death_from_pneumonia_due_to_sepsis'])
-                            .when('respiratory_failure', p['r_death_from_pneumonia_due_to_respiratory_failure'])
-                            .when('meningitis', p['r_death_from_pneumonia_due_to_meningitis'])
-                            .otherwise(0.0),
-                            Predictor('tmp_hv_inf').when(True, p['rr_death_pneumonia_HIV']),
-                            Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_SAM']),
-                            Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_low_birth_weight']),
-                            Predictor('age_years')
-                            .when('.between(1,1)', p['rr_death_pneumonia_age12to23mo'])
-                            .when('.between(2,4)', p['rr_death_pneumonia_age24to59mo'])
-                            )
-            }
-        })
+        def death_risk(complications_list):
+            total = 0
+            if 'sepsis' in complications_list:
+                total += p['r_death_from_pneumonia_due_to_sepsis']
+            if 'respiratory_failure' in complications_list:
+                total += p['r_death_from_pneumonia_due_to_respiratory_failure']
+            if 'meningitis' in complications_list:
+                total += p['r_death_from_pneumonia_due_to_meningitis']
+            return total
 
+        self.risk_of_death_severe_pneumonia = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            1.0,
+            Predictor('ri_last_pneumonia_complications').apply(death_risk),
+            Predictor('tmp_hv_inf').when(True, p['rr_death_pneumonia_HIV']),
+            Predictor('tmp_malnutrition').when(True, p['rr_death_pneumonia_SAM']),
+            Predictor('tmp_low_birth_weight').when(True, p['rr_death_pneumonia_low_birth_weight']),
+            Predictor('age_years')
+                .when('.between(1,1)', p['rr_death_pneumonia_age12to23mo'])
+                .when('.between(2,4)', p['rr_death_pneumonia_age24to59mo'])
+        )
 
         # TODO: duration of ilness - mean 3.0 days (2.0-5.0 days) from PERCH/hopsitalization days
 
@@ -790,6 +792,7 @@ class Pneumonia(Module):
 
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(years=1))
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -1083,7 +1086,8 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
             date_of_outcome = \
                 df.at[person_id, 'ri_last_pneumonia_date_of_onset'] + DateOffset(days=self.duration_in_days)
 
-            prob_death_from_pneumonia = m.risk_of_death_severe_pneumonia['death_risk'].predict(df.loc[[person_id]]).values[0]
+            prob_death_from_pneumonia =\
+                m.risk_of_death_severe_pneumonia.predict(df.loc[[person_id]]).values[0]
             death_outcome = rng.rand() < prob_death_from_pneumonia
 
             if death_outcome:
@@ -1141,6 +1145,86 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
                                                                       person_id, 'ri_last_pneumonia_pathogen']
                                                                   ), self.sim.date)
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   HEALTH SYSTEM INTERACTION EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+# class HSI_Pneumonia_Investigation_Following_Symptoms(HSI_Event, IndividualScopeEventMixin):
+#     """
+#     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with
+#     respiratory symptoms.
+#     This event begins the investigation that may result in diagnosis of Pneumonia and the scheduling of
+#     treatment or a cascade of HSI events.
+#     It is for people with respiratory symptoms including, cough, difficult breathing, fast breathing,
+#     and chest indrawing.
+#     """
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+#         the_appt_footprint["Over5OPD"] = 1
+#
+#         self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
+#         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+#         self.ACCEPTED_FACILITY_LEVEL = 1
+#         self.ALERT_OTHER_DISEASES = []
+#
+#     def apply(self, person_id, squeeze_factor):
+#         df = self.sim.population.props
+#         hs = self.sim.modules["HealthSystem"]
+#
+#         # Ignore this event if the person is no longer alive:
+#         if not df.at[person_id, 'is_alive']:
+#             return hs.get_blank_appt_footprint()
+#
+#         # Check that this event has been called for someone with the symptom dysphagia
+#         assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
+#
+#         # If the person is already diagnosed, then take no action:
+#         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
+#             return hs.get_blank_appt_footprint()
+#
+#         # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
+#         dx_result = hs.dx_manager.run_dx_test(
+#             dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
+#             hsi_event=self
+#         )
+#
+#         if dx_result:
+#             # record date of diagnosis:
+#             df.at[person_id, 'oc_date_diagnosis'] = self.sim.date
+#
+#             # Check if is in stage4:
+#             in_stage4 = df.at[person_id, 'oc_status'] == 'stage4'
+#             # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+#
+#             if not in_stage4:
+#                 # start treatment:
+#                 hs.schedule_hsi_event(
+#                     hsi_event=HSI_OesophagealCancer_StartTreatment(
+#                         module=self.module,
+#                         person_id=person_id
+#                     ),
+#                     priority=0,
+#                     topen=self.sim.date,
+#                     tclose=None
+#                 )
+#
+#             else:
+#                 # start palliative care:
+#                 hs.schedule_hsi_event(
+#                     hsi_event=HSI_OesophagealCancer_PalliativeCare(
+#                         module=self.module,
+#                         person_id=person_id
+#                     ),
+#                     priority=0,
+#                     topen=self.sim.date,
+#                     tclose=None
+#                 )
+#
+#     def did_not_run(self):
+#         pass
+#
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
