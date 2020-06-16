@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-from .core import _FORMATTER, DEBUG, getLogger
+from .core import _FORMATTER, DEBUG, getLogger, _LOGGERS
 
 
 def set_output_file(log_path: Path) -> _logging.FileHandler:
@@ -40,8 +40,8 @@ def init_logging():
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
     handler.setFormatter(_FORMATTER)
-    logger = getLogger('tlo')
-    logger.reset_attributes()
+    for logger_name, logger in _LOGGERS.items():
+        logger.reset_attributes()
 
     logger.addHandler(handler)
     _logging.basicConfig(level=_logging.WARNING)
