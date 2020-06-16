@@ -61,8 +61,8 @@ def run_sim(service_availability):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 bladdercancer.bladderCancer(resourcefilepath=resourcefilepath)
-                 bladdercancer.bladderCancer(resourcefilepath=resourcefilepath)
+                 bladdercancer.BladderCancer(resourcefilepath=resourcefilepath),
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
