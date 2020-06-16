@@ -25,7 +25,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    oesophagealcancer,
+    bladdercancer,
+    bladdercancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -60,7 +61,8 @@ def run_sim(service_availability):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+                 bladdercancer.bladderCancer(resourcefilepath=resourcefilepath)
+                 bladdercancer.bladderCancer(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
@@ -79,7 +81,7 @@ def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
     # 1) TOTAL COUNTS BY STAGE OVER TIME
-    counts_by_stage = output['tlo.methods.oesophagealcancer']['summary_stats']
+    counts_by_stage = output['tlo.methods.bladdercancer']['summary_stats']
     counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
     counts_by_stage = counts_by_stage.set_index('date', drop=True)
 
@@ -110,9 +112,9 @@ def get_summary_stats(logfile):
     deaths = output['tlo.methods.demography']['death']
     deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
 
-    oes_cancer_deaths = pd.Series(deaths.loc[deaths.cause == 'OesophagealCancer'].groupby(by=['age_group']).size())
-    oes_cancer_deaths.index = oes_cancer_deaths.index.astype(make_age_grp_types())
-    oes_cancer_deaths = oes_cancer_deaths.sort_index()
+    bladder_cancer_deaths = pd.Series(deaths.loc[deaths.cause == 'BladderCancer'].groupby(by=['age_group']).size())
+    bladder_cancer_deaths.index = bladder_cancer_deaths.index.astype(make_age_grp_types())
+    bladder_cancer_deaths = bladder_cancer_deaths.sort_index()
 
     # 5) Rates of diagnosis per year:
     counts_by_stage['year'] = counts_by_stage.index.year
@@ -125,7 +127,7 @@ def get_summary_stats(logfile):
         'counts_by_cascade': counts_by_cascade,
         'dalys': dalys,
         'deaths': deaths,
-        'oes_cancer_deaths': oes_cancer_deaths,
+        'bladder_cancer_deaths': bladder_cancer_deaths,
         'annual_count_of_dxtr': annual_count_of_dxtr
     }
 
@@ -144,11 +146,9 @@ results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 
 # Examine Counts by Stage Over Time
 counts = results_no_healthsystem['total_counts_by_stage_over_time']
-counts.plot(y=['total_low_grade_dysplasia',
-               'total_high_grade_dysplasia',
-               'total_stage1', 'total_stage2',
-               'total_stage3',
-               'total_stage4'
+counts.plot(y=['total_tis_t1',
+               'total_t2p',
+               'total_metastatic'
                ])
 plt.title('Count in Each Stage of Disease Over Time')
 plt.xlabel('Time')
@@ -172,7 +172,7 @@ plt.show()
 
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
-    y=['YLD_OesophagealCancer_0', 'YLL_OesophagealCancer_OesophagealCancer'],
+    y=['YLD_BladderCancer_0', 'YLL_BladderCancer'],
     stacked=True)
 plt.xlabel('Age-group')
 plt.ylabel('DALYS')
@@ -181,7 +181,7 @@ plt.title("With No Health System")
 plt.show()
 
 # Examine Deaths (summed over whole simulation)
-deaths = results_no_healthsystem['oes_cancer_deaths']
+deaths = results_no_healthsystem['bladder_cancer_deaths']
 deaths.index = deaths.index.astype(make_age_grp_types())
 # # make a series with the right categories and zero so formats nicely in the grapsh:
 agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
@@ -189,7 +189,7 @@ totdeaths = pd.Series(index=agegrps, data=np.nan)
 totdeaths.index = totdeaths.index.astype(make_age_grp_types())
 totdeaths = totdeaths.combine_first(deaths).fillna(0.0)
 totdeaths.plot.bar()
-plt.title('Deaths due to Oesophageal Cancer')
+plt.title('Deaths due to bladder Cancer')
 plt.xlabel('Age-group')
 plt.ylabel('Total Deaths During Simulation')
 # plt.gca().get_legend().remove()
@@ -197,12 +197,12 @@ plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = pd.concat({
-    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths'][0]),
-    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'][0])
+    'No_HealthSystem': sum(results_no_healthsystem['bladder_cancer_deaths'][0]),
+    'With_HealthSystem': sum(results_with_healthsystem['bladder_cancer_deaths'][0])
 }, axis=1, sort=True)
 
 deaths.plot.bar()
-plt.title('Deaths due to Oesophageal Cancer')
+plt.title('Deaths due to Bladder Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
 plt.show()
@@ -210,39 +210,33 @@ plt.show()
 
 # %% Get Statistics for Table in write-up (from results_with_healthsystem);
 
-# ** Current prevalence (end-2019) of people who have diagnosed oesophageal cancer in 2020 (total; and current stage
+# ** Current prevalence (end-2019) of people who have diagnosed bladder cancer in 2020 (total; and current stage
 # 1, 2, 3,
 # 4), per 100,000 population aged 20+
 
 counts = results_with_healthsystem['total_counts_by_stage_over_time'][[
-    'total_low_grade_dysplasia',
-    'total_high_grade_dysplasia',
-    'total_stage1',
-    'total_stage2',
-    'total_stage3',
-    'total_stage4'
+    'total_tis_t1',
+    'total_t2p',
+    'total_metastatic'
 ]].iloc[-1]
 
 totpopsize = results_with_healthsystem['total_counts_by_stage_over_time'][[
     'total_none',
-    'total_low_grade_dysplasia',
-    'total_high_grade_dysplasia',
-    'total_stage1',
-    'total_stage2',
-    'total_stage3',
-    'total_stage4'
+    'total_tis_t1',
+    'total_t2p',
+    'total_metastatic'
 ]].iloc[-1].sum()
 
 prev_per_100k = 1e5 * counts.sum() / totpopsize
 
-# ** Number of deaths from oesophageal cancer per year per 100,000 population.
+# ** Number of deaths from bladder cancer per year per 100,000 population.
 # average deaths per year = deaths over ten years divided by ten, * 100k/population size
-(results_with_healthsystem['oes_cancer_deaths'].sum()/10) * 1e5/popsize
+(results_with_healthsystem['bladder_cancer_deaths'].sum()/10) * 1e5/popsize
 
-# ** Incidence rate of diagnosis, treatment, palliative care for oesophageal cancer (all stages combined),
+# ** Incidence rate of diagnosis, treatment, palliative care for bladder cancer (all stages combined),
 # per 100,000 population
 (results_with_healthsystem['annual_count_of_dxtr']).mean() * 1e5/popsize
 
 
 # ** 5-year survival following treatment
-# See sepaerate file
+# See separate file
