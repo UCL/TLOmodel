@@ -69,7 +69,7 @@ def run():
         healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
         symptommanager.SymptomManager(resourcefilepath=resources),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resources),
         contraception.Contraception(resourcefilepath=resources),
         labour.Labour(resourcefilepath=resources),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
