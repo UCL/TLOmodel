@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -69,3 +71,11 @@ def run():
 sim = run()
 
 output = parse_log_file(sim.log_filepath)
+
+# TODO: remove me before mering
+import pickle
+output_path = Path("./outputs")
+with open(output_path / f"depression_analysis_parsed_logs.pickle", "wb") as handle:
+    pickle.dump(output, handle)
+
+###
