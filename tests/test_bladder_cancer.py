@@ -265,9 +265,9 @@ def test_check_progression_through_stages_is_happeneing():
     assert not pd.isnull(df.bc_status).any()
     assert (df.loc[df.is_alive].bc_status.value_counts().drop(index='none') > 0).all()
 
-    # check that some people have died of oesophagal cancer
+    # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
+    assert yll['YLL_BladderCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
     assert (df.bc_date_diagnosis > start_date).any()
@@ -300,7 +300,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
 
     # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "bc_status"] = 'low_grade_dysplasia'
+        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "bc_status"] = 'tis_t1'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -314,9 +314,9 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     assert not pd.isnull(df.bc_status).any()
     assert (df.loc[df.is_alive].bc_status.value_counts().drop(index='none') > 0).all()
 
-    # check that some people have died of oesophagal cancer
+    # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
+    assert yll['YLL_BladderCancer'].sum() > 0
 
     # w/o healthsystem - check that people are NOT being diagnosed, going onto treatment and palliative care:
     assert not (df.bc_date_diagnosis > start_date).any()
@@ -345,23 +345,24 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     # make inital popuation
     sim.make_initial_population(n=popsize)
 
-    # force that all persons aged over 20 are in the low_grade dysplasis stage to begin with:
-    has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 20)
-    sim.population.props.loc[has_lgd, "bc_status"] = 'low_grade_dysplasia'
+    # force that all persons aged over 15 are in the tis_t1 stage to begin with:
+    has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 15)
+    sim.population.props.loc[has_lgd, "bc_status"] = 'tis_t1'
 
+    # todo:not we have the pelvic pain symptom to consider also
     # force that they are all symptomatic, diagnosed and already on treatment:
     sim.modules['SymptomManager'].change_symptom(
         person_id=has_lgd.index[has_lgd].tolist(),
-        symptom_string='dysphagia',
+        symptom_string='blood_urine',
         add_or_remove='+',
         disease_module=sim.modules['BladderCancer']
     )
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "bc_date_diagnosis"] = sim.date
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15), "bc_date_diagnosis"] = sim.date
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "bc_date_treatment"] = sim.date
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15), "bc_date_treatment"] = sim.date
     sim.population.props.loc[sim.population.props.is_alive & (
-            sim.population.props.age_years >= 20), "bc_stage_at_which_treatment_applied"] = 'low_grade_dysplasia'
+            sim.population.props.age_years >= 15), "bc_stage_at_which_treatment_applied"] = 'tis_t1'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -371,10 +372,10 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
 
     # check that there are not any people in each of the later stages and everyone is still in 'low_grade_dysplasia':
     df = sim.population.props
-    assert len(df.loc[df.is_alive & (df.age_years >= 20), "bc_status"]) > 0
-    assert (df.loc[df.is_alive & (df.age_years >= 20), "bc_status"].isin(["none", "low_grade_dysplasia"])).all()
-    assert (df.loc[has_lgd.index[has_lgd].tolist(), "bc_status"] == "low_grade_dysplasia").all()
+    assert len(df.loc[df.is_alive & (df.age_years >= 15), "bc_status"]) > 0
+    assert (df.loc[df.is_alive & (df.age_years >= 15), "bc_status"].isin(["none", "tis_t1"])).all()
+    assert (df.loc[has_lgd.index[has_lgd].tolist(), "bc_status"] == "tis_t1").all()
 
     # check that no people have died of Bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert 'YLL_BladderCancer_BladderCancer' not in yll.columns
+    assert 'YLL_BladderCancer' not in yll.columns
