@@ -27,123 +27,103 @@ class Other_adultCancer(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_oac_status = dict()
-        self.lm_onset_Other_adult_ca_symptom = None
+        self.lm_onset_other_adult_ca_symptom = None
         self.daly_wts = dict()
 
     PARAMETERS = {
         "init_prop_other_adult_cancer_stage": Parameter(
             Types.LIST,
-            "initial proportions in other adult cancer stages for person aged 15"
+            "initial proportions in other adult cancer stages for person aged 15-29"
         ),
-        "init_prop_Other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
+        "init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of those with other adult cancer categories that have other_"
                         "adult_ca_symptom"
         ),
-        "init_prop_with_Other_adult_ca_symptom_diagnosed_by_stage": Parameter(
-            Types.LIST, "initial proportions of people that have symptom of Other_adult_ca_symptom that have been diagnosed"
+        "init_prop_with_other_adult_ca_symptom_diagnosed_by_stage": Parameter(
+            Types.LIST, "initial proportions of people that have symptom of other_adult_ca_symptom that "
+                        "have been diagnosed"
         ),
         "init_prop_treatment_status_other_adult_cancer": Parameter(
-            Types.LIST, "initial proportions of people with Other_adult dysplasia/cancer that had initiated treatment"
+            Types.LIST, "initial proportions of people with other_adult cancer previously given treatment"
         ),
         "init_prob_palliative_care": Parameter(
             Types.REAL, "initial probability of being under palliative care if in metastatic"
         ),
         "r_site_confined_none": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident low grade Other_adult dysplasia, amongst people with no "
-            "Other_adult dysplasia (men, age20, no excess alcohol, no tobacco)",
+            "probabilty per 3 months of incident site_confined other_adult cancer amongst people age 15-29 with no "
+            "other adult cancer",
         ),
-        "rr_site_confined_none_female": Parameter(
-            Types.REAL, "rate ratio for low grade Other_adult dysplasia for females"
+         "rr_site_confined_age3049": Parameter(
+            Types.REAL, "rate ratio for site-confined other_adult cancer for age 30-49"
         ),
-        "rr_site_confined_none_per_year_older": Parameter(
-            Types.REAL, "rate ratio for low grade Other_adult dysplasia per year older from age 20"
+        "rr_site_confined_age5069": Parameter(
+            Types.REAL, "rate ratio for site-confined other_adult cancer for age 50-69"
         ),
-        "rr_site_confined_none_tobacco": Parameter(
-            Types.REAL, "rate ratio for low grade Other_adult dysplasia for tobacco smokers"
-        ),
-        "rr_site_confined_none_ex_alc": Parameter(
-            Types.REAL, "rate ratio for low grade Other_adult dysplasia for no excess alcohol"
+        "rr_site_confined_agege70": Parameter(
+            Types.REAL, "rate ratio for site-confined other_adult cancer for age ge 70"
         ),
         "r_local_ln_site_confined_other_adult_ca": Parameter(
             Types.REAL,
-            "probabilty per 3 months of high grade Other_adult dysplasia, amongst people with low grade dysplasia",
+            "probabilty per 3 months of local ln other_adult cancer amongst people with site confined",
         ),
         "rr_local_ln_other_adult_ca_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for high grade dysplasia for people with low grade dysplasia "
-            "if had curative treatment at low grade dysplasia stage",
+            "rate ratio for local_ln for people with site_confined "
+            "if had curative treatment at site_confined stage",
         ),
-        "r_stage1_local_ln_other_adult_ca": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 1 Other_adult cancer amongst people with high grade dysplasia"
-        ),
-        "rr_stage1_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 1 Other_adult cancer for people with high grade "
-            "dysplasia if had curative treatment at high grade dysplasia stage",
-        ),
-        "r_stage2_stage1": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 2 Other_adult cancer amongst people with stage 1"
-        ),
-        "rr_stage2_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 2 Other_adult cancer for people with stage 1 "
-            "Other_adult cancer if had curative treatment at stage 1",
-        ),
-        "r_stage3_stage2": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 3 Other_adult cancer amongst people with stage 2"
-        ),
-        "rr_stage3_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 3 Other_adult cancer for people with stage 2 "
-            "Other_adult cancer if had curative treatment at stage 2",
-        ),
-        "r_metastatic_stage3": Parameter(
-            Types.REAL, "probabilty per 3 months of metastatic Other_adult cancer amongst people with stage 3"
+        "r_metastatic_local_ln": Parameter(
+            Types.REAL, "probabilty per 3 months of metastatic other_adult cancer amongst people with local_ln"
         ),
         "rr_metastatic_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for metastatic Other_adult cancer for people with stage 3 "
-            "Other_adult cancer if had curative treatment at stage 3",
+            "rate ratio for metastatic Other_adult cancer for people with local_ln"
+            "Other_adult cancer if had curative treatment at local_ln",
         ),
         "rate_palliative_care_metastatic": Parameter(
             Types.REAL, "prob palliative care this 3 month period if metastatic"
         ),
-        "r_death_oesoph_cancer": Parameter(
+        "r_death_other_adult_cancer": Parameter(
             Types.REAL,
-            "probabilty per 3 months of death from Other_adult cancer mongst people with metastatic Other_adult cancer",
+            "probabilty per 3 months of death from other adult cancer mongst people with metastatic other_adult cancer",
         ),
-        "rr_Other_adult_ca_symptom_site_confined_other_adult_ca": Parameter(
-            Types.REAL, "probability per 3 months of Other_adult_ca_symptom in a person with low grade Other_adult dysplasia"
+        "rr_other_adult_ca_symptom_site_confined_other_adult_ca": Parameter(
+            Types.REAL, "probability per 3 months of other_adult_ca_symptom in a person with site confined other_adult cancer"
         ),
-        "rr_Other_adult_ca_symptom_local_ln_other_adult_ca": Parameter(
-            Types.REAL, "rate ratio for Other_adult_ca_symptom if have high grade Other_adult dysplasia"
+        "rr_other_adult_ca_symptom_local_ln_other_adult_ca": Parameter(
+            Types.REAL, "rate ratio for other_adult_ca_symptom if have high grade other_adult cancer"
         ),
-        "rr_Other_adult_ca_symptom_metastatic": Parameter(
-            Types.REAL, "rate ratio for Other_adult_ca_symptom if have metastatic Other_adult cancer"
+        "rr_other_adult_ca_symptom_metastatic": Parameter(
+            Types.REAL, "rate ratio for other_adult_ca_symptom if have metastatic other_adult cancer"
         ),
-        "rp_other_adult_cancer_female": Parameter(
-            Types.REAL, "relative prevalence at baseline of Other_adult dysplasia/cancer if female"
+        "rp_other_adult_cancer_age3049": Parameter(
+            Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 30-49"
         ),
-        "rp_other_adult_cancer_per_year_older": Parameter(
-            Types.REAL, "relative prevalence at baseline of Other_adult dysplasia/cancer per year older than 20"
+        "rp_other_adult_cancer_age5069": Parameter(
+            Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 50-69"
         ),
-        "rp_other_adult_cancer_tobacco": Parameter(
-            Types.REAL, "relative prevalence at baseline of Other_adult dysplasia/cancer if tobacco"
+        "rp_other_adult_cancer_agege70": Parameter(
+            Types.REAL, "relative prevalence at baseline of bladder cancer/cancer age 70+"
         ),
-        "rp_other_adult_cancer_ex_alc": Parameter(
-            Types.REAL, "relative prevalence at baseline of Other_adult dysplasia/cancer"
+        "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_site_confined": Parameter(
+            Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
+                        "other_adult_ca_site-confined"
         ),
-        "sensitivity_of_endoscopy_for_other_adult_cancer_with_Other_adult_ca_symptom": Parameter(
-            Types.REAL, "sensitivity of endoscopy_for diagnosis of Other_adult cancer for those with Other_adult_ca_symptom"
+        "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_local_ln": Parameter(
+            Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
+                        "other_adult_local_ln"
         ),
+        "sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_metastatic": Parameter(
+            Types.REAL, "sensitivity of diagnostic_device_for diagnosis of other_adult cancer for those with "
+                        "other_adult_ca metastatic"
+        )
     }
 
     PROPERTIES = {
         "oac_status": Property(
             Types.CATEGORICAL,
-            "Current status of the health condition, Other_adult dysplasia",
-            categories=["none", "site_confined", "local_ln", "stage1", "stage2", "stage3", "metastatic"],
+            "Current status of the health condition, other_adult cancer",
+            categories=["none", "site_confined", "local_ln", "metastatic"],
         ),
 
         "oac_date_diagnosis": Property(
@@ -156,11 +136,11 @@ class Other_adultCancer(Module):
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
 
-        "oac_stage_at_which_treatment_applied": Property(
+        "oac_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
-            "the cancer stage at which treatment is applied (because the treatment only has an effect during the stage"
-            "at which it is applied.",
-            categories=["none", "site_confined", "local_ln", "stage1", "stage2", "stage3", "metastatic"],
+            "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
+            "at which it is given.",
+            categories=["none", "site_confined", "local_ln", "metastatic"],
         ),
 
         "oac_date_palliative_care": Property(
@@ -170,7 +150,7 @@ class Other_adultCancer(Module):
     }
 
     # Symptom that this module will use
-    SYMPTOMS = {'early_adult_ca symptom '}
+    SYMPTOMS = {'early_other_adult_ca_symptom'}
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
@@ -180,7 +160,7 @@ class Other_adultCancer(Module):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Other_adult_Cancer.xlsx",
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Other_Adult_Cancers.xlsx",
                           sheet_name="parameter_values")
         )
 
@@ -193,7 +173,7 @@ class Other_adultCancer(Module):
         df.loc[df.is_alive, "oac_status"] = "none"
         df.loc[df.is_alive, "oac_date_diagnosis"] = pd.NaT
         df.loc[df.is_alive, "oac_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "oac_stage_at_which_treatment_applied"] = "none"
+        df.loc[df.is_alive, "oac_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "oac_date_palliative_care"] = pd.NaT
 
         # -------------------- oac_status -----------
@@ -201,50 +181,44 @@ class Other_adultCancer(Module):
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
         assert sum(p['init_prop_other_adult_cancer_stage']) <= 1.0
 
-        lm_init_oac_status_any_dysplasia_or_cancer = LinearModel(
+        lm_init_oac_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prop_other_adult_cancer_stage']),
-            Predictor('li_ex_alc').when(True, p['rp_other_adult_cancer_ex_alc']),
-            Predictor('li_tob').when(True, p['rp_other_adult_cancer_tobacco']),
-            Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_other_adult_cancer_per_year_older']) if x > 20 else 0.0)
+            Predictor('age_years').when(> 30 < 50, p['rp_other_adult_cancer_age3049']),
+            Predictor('age_years').when( > 70 < 30, p['rp_other_adult_cancer_age5069']),
+            Predictor('age_years').when( > 70     , p['rp_other_adult_cancer_agege70']),
         )
 
-        oac_status_any_dysplasia_or_cancer = \
-            lm_init_oac_status_any_dysplasia_or_cancer.predict(df.loc[df.is_alive], self.rng)
+        oac_status_any_stage = \
+            lm_init_oac_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        if oac_status_any_dysplasia_or_cancer.sum():
+        if oac_status_any_stage.sum():
             sum_probs = sum(p['init_prop_other_adult_cancer_stage'])
             if sum_probs > 0:
                 prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_other_adult_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
-                df.loc[oac_status_any_dysplasia_or_cancer, "oac_status"] = self.rng.choice(
+                df.loc[oac_status_any_stage, "oac_status"] = self.rng.choice(
                     [val for val in df.oac_status.cat.categories if val != 'none'],
-                    size=oac_status_any_dysplasia_or_cancer.sum(),
+                    size=oac_status_any_stage.sum(),
                     p=prob_by_stage_of_cancer_if_cancer
                 )
 
         # -------------------- SYMPTOMS -----------
-        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of Other_adult_ca_symptom:
+        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of other_adult_ca_symptom:
         lm_init_disphagia = LinearModel.multiplicative(
             Predictor('oac_status')  .when("none", 0.0)
                                     .when("site_confined",
-                                          p['init_prop_Other_adult_ca_symptom_other_adult_cancer_by_stage'][0])
+                                          p['init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage'][0])
                                     .when("local_ln",
-                                          p['init_prop_Other_adult_ca_symptom_other_adult_cancer_by_stage'][1])
-                                    .when("stage1",
-                                          p['init_prop_Other_adult_ca_symptom_other_adult_cancer_by_stage'][2])
-                                    .when("stage2",
-                                          p['init_prop_Other_adult_ca_symptom_other_adult_cancer_by_stage'][3])
-                                    .when("stage3",
-                                          p['init_prop_Other_adult_ca_symptom_other_adult_cancer_by_stage'][4])
+                                          p['init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage'][1])
                                     .when("metastatic",
-                                          p['init_prop_Other_adult_ca_symptom_other_adult_cancer_by_stage'][5])
+                                          p['init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage'][2])
         )
-        has_Other_adult_ca_symptom_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
+        has_other_adult_ca_symptom_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_Other_adult_ca_symptom_at_init.index[has_Other_adult_ca_symptom_at_init].tolist(),
-            symptom_string='Other_adult_ca_symptom',
+            person_id=has_other_adult_ca_symptom_at_init.index[has_other_adult_ca_symptom_at_init].tolist(),
+            symptom_string='early_other_adult_ca_symptom',
             add_or_remove='+',
             disease_module=self
         )
@@ -253,22 +227,16 @@ class Other_adultCancer(Module):
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('oac_status')  .when("none", 0.0)
                                     .when("site_confined",
-                                          p['init_prop_with_Other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][0])
+                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][0])
                                     .when("local_ln",
-                                          p['init_prop_with_Other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][1])
-                                    .when("stage1",
-                                          p['init_prop_with_Other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][2])
-                                    .when("stage2",
-                                          p['init_prop_with_Other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][3])
-                                    .when("stage3",
-                                          p['init_prop_with_Other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][4])
+                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][1])
                                     .when("metastatic",
-                                          p['init_prop_with_Other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][5])
+                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
-        # ensure that persons who have not ever had the symptom Other_adult_ca_symptom are diagnosed:
-        ever_diagnosed.loc[~has_Other_adult_ca_symptom_at_init] = False
+        # ensure that persons who have not ever had the symptom other_adult_ca_symptom are diagnosed:
+        ever_diagnosed.loc[~has_early_other_adult_ca_symptom_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
         df.loc[ever_diagnosed, "oac_date_diagnosis"] = self.sim.date
@@ -280,12 +248,6 @@ class Other_adultCancer(Module):
                                           p['init_prop_treatment_status_other_adult_cancer'][0])
                                     .when("local_ln",
                                           p['init_prop_treatment_status_other_adult_cancer'][1])
-                                    .when("stage1",
-                                          p['init_prop_treatment_status_other_adult_cancer'][2])
-                                    .when("stage2",
-                                          p['init_prop_treatment_status_other_adult_cancer'][3])
-                                    .when("stage3",
-                                          p['init_prop_treatment_status_other_adult_cancer'][4])
                                     .when("metastatic",
                                           p['init_prop_treatment_status_other_adult_cancer'][5])
         )
@@ -295,7 +257,7 @@ class Other_adultCancer(Module):
         treatment_initiated.loc[pd.isnull(df.oac_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "oac_stage_at_which_treatment_applied"] = df.loc[treatment_initiated, "oac_status"]
+        df.loc[treatment_initiated, "oac_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "oac_status"]
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "oac_date_treatment"] = df.loc[treatment_initiated, "oac_date_diagnosis"]
@@ -321,11 +283,11 @@ class Other_adultCancer(Module):
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
-        sim.schedule_event(OesCancerLoggingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(OACancerLoggingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(OACancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -339,14 +301,11 @@ class Other_adultCancer(Module):
         lm['site_confined'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_site_confined_none'],
-            Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_site_confined_none_per_year_older']
-            ),
-            Predictor('sex').when('F', p['rr_site_confined_none_female']),
-            Predictor('li_tob').when(True, p['rr_site_confined_none_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_site_confined_none_ex_alc']),
-            Predictor('oac_status').when('none', 1.0)
-                                  .otherwise(0.0)
+            # todo:
+            Predictor('age_years').when( > 30 < 50, p['rp_other_adult_cancer_age3049']),
+            Predictor('age_years').when( > 30 < 50, p['rp_other_adult_cancer_age3049']),
+            Predictor('age_years').when( > 30 < 50, p['rp_other_adult_cancer_age3049']),
+            Predictor('oac_status').when('none', 1.0).otherwise(0.0)
         )
 
         lm['local_ln'] = LinearModel(
@@ -358,65 +317,37 @@ class Other_adultCancer(Module):
                                   .otherwise(0.0)
         )
 
-        lm['stage1'] = LinearModel(
+       lm['metastatic'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_stage1_local_ln_other_adult_ca'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
-            Predictor('oac_status').when('local_ln', 1.0)
-                                  .otherwise(0.0)
-        )
-
-        lm['stage2'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_stage2_stage1'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
-            Predictor('oac_status').when('stage1', 1.0)
-                                  .otherwise(0.0)
-        )
-
-        lm['stage3'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_stage3_stage2'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
-            Predictor('oac_status').when('stage2', 1.0)
-                                  .otherwise(0.0)
-        )
-
-        lm['metastatic'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_metastatic_stage3'],
+            p['r_metastatic_local_ln'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_metastatic_undergone_curative_treatment']),
-            Predictor('oac_status').when('stage3', 1.0)
+            Predictor('oac_status').when('local_ln', 1.0)
                                   .otherwise(0.0)
         )
 
         # Check that the dict labels are correct as these are used to set the value of oac_status
         assert set(lm).union({'none'}) == set(df.oac_status.cat.categories)
 
-        # Linear Model for the onset of Other_adult_ca_symptom, in each 3 month period
-        self.lm_onset_Other_adult_ca_symptom = LinearModel.multiplicative(
-            Predictor('oac_status').when('site_confined',
-                                        p['rr_Other_adult_ca_symptom_site_confined_other_adult_ca'] * p['r_Other_adult_ca_symptom_stage1'])
+        # Linear Model for the onset of other_adult_ca_symptom, in each 3 month period
+        self.lm_onset_other_adult_ca_symptom = LinearModel.multiplicative(
+            Predictor('oac_status').when('site_confined', p['r_other_adult_ca_symptom_site_confined'])
                                   .when('local_ln_other_adult_calaisa',
-                                        p['rr_Other_adult_ca_symptom_local_ln_other_adult_ca'] * p['r_Other_adult_ca_symptom_stage1'])
-                                  .when('stage1', p['r_Other_adult_ca_symptom_stage1'])
-                                  .when('stage2', p['rr_Other_adult_ca_symptom_stage2'] * p['r_Other_adult_ca_symptom_stage1'])
-                                  .when('stage3', p['rr_Other_adult_ca_symptom_stage3'] * p['r_Other_adult_ca_symptom_stage1'])
-                                  .when('metastatic', p['rr_Other_adult_ca_symptom_metastatic'] * p['r_Other_adult_ca_symptom_stage1'])
+                                        p['rr_other_adult_ca_symptom_local_ln_other_adult_ca'] * p['r_other_adult_ca_symptom_stage1'])
+                                  .when('stage1', p['r_other_adult_ca_symptom_stage1'])
+                                  .when('stage2', p['rr_other_adult_ca_symptom_stage2'] * p['r_other_adult_ca_symptom_stage1'])
+                                  .when('stage3', p['rr_other_adult_ca_symptom_stage3'] * p['r_other_adult_ca_symptom_stage1'])
+                                  .when('metastatic', p['rr_other_adult_ca_symptom_metastatic'] * p['r_other_adult_ca_symptom_stage1'])
                                   .otherwise(0.0)
         )
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of an endoscope to oac_status
-        # This properties of conditional on the test being done only to persons with the Symptom, 'Other_adult_ca_symptom'.
+        # This properties of conditional on the test being done only to persons with the Symptom, 'other_adult_ca_symptom'.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            endoscopy_for_other_adult_cancer_given_Other_adult_ca_symptom=DxTest(
+            diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
                 property='oac_status',
-                sensitivity=self.parameters['sensitivity_of_endoscopy_for_other_adult_cancer_with_Other_adult_ca_symptom'],
+                sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_symptom'],
                 target_categories=["site_confined", "local_ln",
                                    "stage1", "stage2", "stage3", "metastatic"]
             )
@@ -470,7 +401,7 @@ class Other_adultCancer(Module):
         df.at[child_id, "oac_status"] = "none"
         df.at[child_id, "oac_date_diagnosis"] = pd.NaT
         df.at[child_id, "oac_date_treatment"] = pd.NaT
-        df.at[child_id, "oac_stage_at_which_treatment_applied"] = "none"
+        df.at[child_id, "oac_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "oac_date_palliative_care"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -502,7 +433,7 @@ class Other_adultCancer(Module):
                     (df.oac_status == "stage1") |
                     (df.oac_status == "stage2") |
                     (df.oac_status == "stage3")
-                ) & (df.oac_status == df.oac_stage_at_which_treatment_applied)
+                ) & (df.oac_status == df.oac_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['stage_1_3_treated']
 
@@ -548,7 +479,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
             df.is_alive & ~pd.isnull(df.oac_date_treatment) & \
-            (df.oac_status == df.oac_stage_at_which_treatment_applied)
+            (df.oac_status == df.oac_stage_at_which_treatment_given)
 
         for stage, lm in self.module.linear_models_for_progession_of_oac_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
@@ -556,13 +487,13 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'oac_status'] = stage
 
-        # -------------------- UPDATING OF SYMPTOM OF Other_adult_ca_symptom OVER TIME --------------------------------
-        # Each time this event is called (event 3 months) individuals may develop the symptom of Other_adult_ca_symptom.
+        # -------------------- UPDATING OF SYMPTOM OF other_adult_ca_symptom OVER TIME --------------------------------
+        # Each time this event is called (event 3 months) individuals may develop the symptom of other_adult_ca_symptom.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_Other_adult_ca_symptom = self.module.lm_onset_Other_adult_ca_symptom.predict(df.loc[df.is_alive], rng)
+        onset_other_adult_ca_symptom = self.module.lm_onset_other_adult_ca_symptom.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_Other_adult_ca_symptom[onset_Other_adult_ca_symptom].index.tolist(),
-            symptom_string='Other_adult_ca_symptom',
+            person_id=onset_other_adult_ca_symptom[onset_other_adult_ca_symptom].index.tolist(),
+            symptom_string='other_adult_ca_symptom',
             add_or_remove='+',
             disease_module=self.module
         )
@@ -583,20 +514,20 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_Other_adultCancer_Investigation_Following_Other_adult_ca_symptom(HSI_Event, IndividualScopeEventMixin):
+class HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    Other_adult_ca_symptom.
+    other_adult_ca_symptom.
     This event begins the investigation that may result in diagnosis of Other_adult Cancer and the scheduling of
     treatment or palliative care.
-    It is for people with the symptom Other_adult_ca_symptom.
+    It is for people with the symptom other_adult_ca_symptom.
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "Other_adultCancer_Investigation_Following_Other_adult_ca_symptom"
+        self.TREATMENT_ID = "Other_adultCancer_Investigation_Following_other_adult_ca_symptom"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -609,8 +540,8 @@ class HSI_Other_adultCancer_Investigation_Following_Other_adult_ca_symptom(HSI_E
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that this event has been called for someone with the symptom Other_adult_ca_symptom
-        assert 'Other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id)
+        # Check that this event has been called for someone with the symptom other_adult_ca_symptom
+        assert 'other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oac_date_diagnosis"]):
@@ -618,7 +549,7 @@ class HSI_Other_adultCancer_Investigation_Following_Other_adult_ca_symptom(HSI_E
 
         # Use an endoscope to diagnose whether the person has Other_adult Cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='endoscopy_for_other_adult_cancer_given_Other_adult_ca_symptom',
+            dx_tests_to_run='diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom',
             hsi_event=self
         )
 
@@ -660,7 +591,7 @@ class HSI_Other_adultCancer_Investigation_Following_Other_adult_ca_symptom(HSI_E
 
 class HSI_Other_adultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_Other_adultCancer_Investigation_Following_Other_adult_ca_symptom following a diagnosis of
+    This event is scheduled by HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom following a diagnosis of
     Other_adult Cancer. It initiates the treatment of Other_adult Cancer.
     It is only for persons with a cancer that is not in metastatic and who have been diagnosed.
     """
@@ -692,7 +623,7 @@ class HSI_Other_adultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         # Record date and stage of starting treatment
         df.at[person_id, "oac_date_treatment"] = self.sim.date
-        df.at[person_id, "oac_stage_at_which_treatment_applied"] = df.at[person_id, "oac_status"]
+        df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
@@ -774,7 +705,7 @@ class HSI_Other_adultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_Other_adultCancer_Investigation_Following_Other_adult_ca_symptom following a diagnosis of Other_adult Cancer at metastatic.
+    * HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom following a diagnosis of Other_adult Cancer at metastatic.
     * HSI_Other_adultCancer_PostTreatmentCheck following progression to metastatic during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in metastatic.
