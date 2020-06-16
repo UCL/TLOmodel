@@ -87,13 +87,13 @@ class Other_adultCancer(Module):
             Types.REAL,
             "probabilty per 3 months of death from other adult cancer mongst people with metastatic other_adult cancer",
         ),
-        "rr_other_adult_ca_symptom_site_confined_other_adult_ca": Parameter(
+        "r_early_other_adult_ca_symptom_site_confined_other_adult_ca": Parameter(
             Types.REAL, "probability per 3 months of other_adult_ca_symptom in a person with site confined other_adult cancer"
         ),
-        "rr_other_adult_ca_symptom_local_ln_other_adult_ca": Parameter(
+        "rr_early_other_adult_ca_symptom_local_ln_other_adult_ca": Parameter(
             Types.REAL, "rate ratio for other_adult_ca_symptom if have high grade other_adult cancer"
         ),
-        "rr_other_adult_ca_symptom_metastatic": Parameter(
+        "rr_early_other_adult_ca_symptom_metastatic": Parameter(
             Types.REAL, "rate ratio for other_adult_ca_symptom if have metastatic other_adult cancer"
         ),
         "rp_other_adult_cancer_age3049": Parameter(
@@ -331,25 +331,25 @@ class Other_adultCancer(Module):
 
         # Linear Model for the onset of other_adult_ca_symptom, in each 3 month period
         self.lm_onset_other_adult_ca_symptom = LinearModel.multiplicative(
-            Predictor('oac_status').when('site_confined', p['r_other_adult_ca_symptom_site_confined'])
-                                  .when('local_ln_other_adult_calaisa',
-                                        p['rr_other_adult_ca_symptom_local_ln_other_adult_ca'] * p['r_other_adult_ca_symptom_stage1'])
-                                  .when('stage1', p['r_other_adult_ca_symptom_stage1'])
-                                  .when('stage2', p['rr_other_adult_ca_symptom_stage2'] * p['r_other_adult_ca_symptom_stage1'])
-                                  .when('stage3', p['rr_other_adult_ca_symptom_stage3'] * p['r_other_adult_ca_symptom_stage1'])
-                                  .when('metastatic', p['rr_other_adult_ca_symptom_metastatic'] * p['r_other_adult_ca_symptom_stage1'])
-                                  .otherwise(0.0)
+            Predictor('oac_status').when('site_confined', p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca'])
+                                  .when('local_ln',
+                                        p['rr_early_other_adult_ca_symptom_local_ln_other_adult_ca'] *
+                                        p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca'])
+                                  .when('metastatic',
+                                        p['rr_early_other_adult_ca_symptom_metastatic_other_adult_ca'] *
+                                        p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca'])
+                                        .otherwise(0.0)
         )
 
         # ----- DX TESTS -----
-        # Create the diagnostic test representing the use of an endoscope to oac_status
-        # This properties of conditional on the test being done only to persons with the Symptom, 'other_adult_ca_symptom'.
+        # Create the diagnostic test representing the use of an diagnostic_device to oac_status
+        # This properties of conditional on the test being done only to persons with the Symptom, 'early_other_adult_ca_symptom'.
+        # todo: note dependent on underlying status not symptoms
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom=DxTest(
+            diagnostic_device_for_other_adult_cancer_given_site_confined=DxTest(
                 property='oac_status',
                 sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_symptom'],
-                target_categories=["site_confined", "local_ln",
-                                   "stage1", "stage2", "stage3", "metastatic"]
+                target_categories=["site_confined", "local_ln", "metastatic"]
             )
         )
 
