@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Other_adultCancer(Module):
+class OtherAdultCancer(Module):
     """Other_adult Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -486,13 +486,13 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'oac_status'] = stage
 
-        # -------------------- UPDATING OF SYMPTOM OF other_adult_ca_symptom OVER TIME --------------------------------
+        # -------------------- UPDATING OF SYMPTOM OF early_other_adult_ca_symptom OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of other_adult_ca_symptom.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_other_adult_ca_symptom = self.module.lm_onset_other_adult_ca_symptom.predict(df.loc[df.is_alive], rng)
+        onset_other_adult_ca_symptom = self.module.lm_onset_early_other_adult_ca_symptom.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_other_adult_ca_symptom[onset_other_adult_ca_symptom].index.tolist(),
-            symptom_string='other_adult_ca_symptom',
+            person_id=onset_early_other_adult_ca_symptom[onset_early_other_adult_ca_symptom].index.tolist(),
+            symptom_string='early_other_adult_ca_symptom',
             add_or_remove='+',
             disease_module=self.module
         )
@@ -501,11 +501,11 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # There is a risk of death for those in metastatic only. Death is assumed to go instantly.
         metastatic_idx = df.index[df.is_alive & (df.oac_status == "metastatic")]
         selected_to_die = metastatic_idx[
-            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_oesoph_cancer']]
+            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_other_adult_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "Other_adultCancer"), self.sim.date
+                demography.InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
             )
 
 
@@ -513,7 +513,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom(HSI_Event, IndividualScopeEventMixin):
+class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
     other_adult_ca_symptom.
@@ -526,7 +526,7 @@ class HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom(HSI_E
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "Other_adultCancer_Investigation_Following_other_adult_ca_symptom"
+        self.TREATMENT_ID = "OtherAdultCancer_Investigation_Following_other_adult_ca_symptom"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -540,13 +540,13 @@ class HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom(HSI_E
             return hs.get_blank_appt_footprint()
 
         # Check that this event has been called for someone with the symptom other_adult_ca_symptom
-        assert 'other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id)
+        assert 'early_other_adult_ca_symptom' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oac_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use an endoscope to diagnose whether the person has Other_adult Cancer:
+        # Use a diagnostic_device to diagnose whether the person has other adult cancer:
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom',
             hsi_event=self
@@ -563,7 +563,7 @@ class HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom(HSI_E
             if not in_metastatic:
                 # start treatment:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_Other_adultCancer_StartTreatment(
+                    hsi_event=HSI_OtherAdultCancer_StartTreatment(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -575,7 +575,7 @@ class HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom(HSI_E
             else:
                 # start palliative care:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_Other_adultCancer_PalliativeCare(
+                    hsi_event=HSI_OtherAdultCancer_PalliativeCare(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -588,9 +588,9 @@ class HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom(HSI_E
         pass
 
 
-class HSI_Other_adultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom following a diagnosis of
+    This event is scheduled by HSI_OtherAdultCancer_Investigation_Following_other_adult_ca_symptom following a diagnosis of
     Other_adult Cancer. It initiates the treatment of Other_adult Cancer.
     It is only for persons with a cancer that is not in metastatic and who have been diagnosed.
     """
@@ -602,7 +602,7 @@ class HSI_Other_adultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Other_adultCancer_StartTreatment"
+        self.TREATMENT_ID = "OtherAdultCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -626,7 +626,7 @@ class HSI_Other_adultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_Other_adultCancer_PostTreatmentCheck(
+            hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
@@ -639,9 +639,9 @@ class HSI_Other_adultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         pass
 
 
-class HSI_Other_adultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_Other_adultCancer_StartTreatment and itself.
+    This event is scheduled by HSI_OtherAdultCancer_StartTreatment and itself.
     It is only for those who have undergone treatment for Other_adult Cancer.
     If the person has developed cancer to metastatic, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
@@ -654,7 +654,7 @@ class HSI_Other_adultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Other_adultCancer_MonitorTreatment"
+        self.TREATMENT_ID = "OtherAdultCancer_MonitorTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -674,7 +674,7 @@ class HSI_Other_adultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         if df.at[person_id, 'oac_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_Other_adultCancer_PalliativeCare(
+                hsi_event=HSI_OtherAdultCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -684,9 +684,9 @@ class HSI_Other_adultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
             )
 
         else:
-            # Schedule another HSI_Other_adultCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_OtherAdultCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_Other_adultCancer_PostTreatmentCheck(
+                hsi_event=HSI_OtherAdultCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -699,13 +699,13 @@ class HSI_Other_adultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         pass
 
 
-class HSI_Other_adultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_Other_adultCancer_Investigation_Following_other_adult_ca_symptom following a diagnosis of Other_adult Cancer at metastatic.
-    * HSI_Other_adultCancer_PostTreatmentCheck following progression to metastatic during treatment.
+    * HSI_OtherAdultCancer_Investigation_Following_other_adult_ca_symptom following a diagnosis of Other_adult Cancer at metastatic.
+    * HSI_OtherAdultCancer_PostTreatmentCheck following progression to metastatic during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in metastatic.
     """
@@ -717,7 +717,7 @@ class HSI_Other_adultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Other_adultCancer_PalliativeCare"
+        self.TREATMENT_ID = "OtherAdultCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -738,7 +738,7 @@ class HSI_Other_adultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
-            hsi_event=HSI_Other_adultCancer_PalliativeCare(
+            hsi_event=HSI_OtherAdultCancer_PalliativeCare(
                 module=self.module,
                 person_id=person_id
             ),
@@ -755,7 +755,7 @@ class HSI_Other_adultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class OtherAdultCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
