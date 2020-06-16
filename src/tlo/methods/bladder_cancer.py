@@ -259,11 +259,11 @@ class BladderCancer(Module):
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('bc_status')  .when("none", 0.0)
                                     .when("tis_t1",
-                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][0])
+                                          p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][0])
                                     .when("t2p",
-                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][1])
+                                          p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][1])
                                     .when("metastatic",
-                                          p['init_prop_with_blood_urine_diagnosed_oes_cancer_by_stage'][2])
+                                          p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -271,43 +271,37 @@ class BladderCancer(Module):
         ever_diagnosed.loc[~has_blood_urine_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
-        df.loc[ever_diagnosed, "oc_date_diagnosis"] = self.sim.date
+        df.loc[ever_diagnosed, "bc_date_diagnosis"] = self.sim.date
 
-        # -------------------- oc_date_treatment -----------
+        # -------------------- bc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("tis_t1_bladder_cancer",
-                                          p['init_prop_treatment_status_oes_cancer'][0])
-                                    .when("t2p_bladder_cancer",
-                                          p['init_prop_treatment_status_oes_cancer'][1])
-                                    .when("stage1",
-                                          p['init_prop_treatment_status_oes_cancer'][2])
-                                    .when("stage2",
-                                          p['init_prop_treatment_status_oes_cancer'][3])
-                                    .when("stage3",
-                                          p['init_prop_treatment_status_oes_cancer'][4])
+            Predictor('bc_status')  .when("none", 0.0)
+                                    .when("tis_t1",
+                                          p['init_prop_treatment_status_bladder_cancer'][0])
+                                    .when("t2p",
+                                          p['init_prop_treatment_status_bladder_cancer'][1])
                                     .when("metastatic",
-                                          p['init_prop_treatment_status_oes_cancer'][5])
+                                          p['init_prop_treatment_status_bladder_cancer'][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
         # prevent treatment having been initiated for anyone who is not yet diagnosed
-        treatment_initiated.loc[pd.isnull(df.oc_date_diagnosis)] = False
+        treatment_initiated.loc[pd.isnull(df.bc_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "oc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "oc_status"]
+        df.loc[treatment_initiated, "bc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "bc_status"]
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
-        df.loc[treatment_initiated, "oc_date_treatment"] = df.loc[treatment_initiated, "oc_date_diagnosis"]
+        df.loc[treatment_initiated, "bc_date_treatment"] = df.loc[treatment_initiated, "bc_date_diagnosis"]
 
-        # -------------------- oc_date_palliative_care -----------
-        in_metastatic_diagnosed = df.index[df.is_alive & (df.oc_status == 'metastatic') & ~pd.isnull(df.oc_date_diagnosis)]
+        # -------------------- bc_date_palliative_care -----------
+        in_metastatic_diagnosed = df.index[df.is_alive & (df.bc_status == 'metastatic') & ~pd.isnull(df.bc_date_diagnosis)]
 
         select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
         select_for_care = in_metastatic_diagnosed[select_for_care]
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
-        df.loc[select_for_care, "oc_date_palliative_care"] = df.loc[select_for_care, "oc_date_diagnosis"]
+        df.loc[select_for_care, "bc_date_palliative_care"] = df.loc[select_for_care, "bc_date_diagnosis"]
 
     def initialise_simulation(self, sim):
         """
@@ -321,11 +315,11 @@ class BladderCancer(Module):
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
-        sim.schedule_event(OesCancerLoggingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(BladderCancerLoggingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(BladderCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -336,17 +330,17 @@ class BladderCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_oc_status
 
-        lm['tis_t1_bladder_cancer'] = LinearModel(
+        lm['tis_t1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_tis_t1_bladder_cancer_none'],
-            Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_tis_t1_bladder_cancer_none_per_year_older']
-            ),
-            Predictor('sex').when('F', p['rr_tis_t1_bladder_cancer_none_female']),
+            Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+            # todo:
+            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
+            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
+            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
-            Predictor('oc_status').when('none', 1.0)
-                                  .otherwise(0.0)
+            Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
+            Predictor('bc_status').when('none', 1.0).otherwise(0.0)
         )
 
         lm['t2p_bladder_cancer'] = LinearModel(
