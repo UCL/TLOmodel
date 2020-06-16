@@ -164,13 +164,13 @@ def check_configuration_of_population(sim):
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(df.index[df.oac_status_any_stage])
-    assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('dysphagia'))
+    assert set(df.index[~pd.isnull(df.oac_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('early_other_adult_cancer_symptom'))
     assert (df.loc[~pd.isnull(df.oac_date_diagnosis)].oac_date_diagnosis <= sim.date).all()
 
-    # check that date diagnosed is consistent with the age of the person (ie. not before they were 20.0
+    # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0
     age_at_dx = (df.loc[~pd.isnull(df.oac_date_diagnosis)].oac_date_diagnosis - df.loc[
         ~pd.isnull(df.oac_date_diagnosis)].date_of_birth)
-    assert all([int(x.days / 365.25) >= 20 for x in age_at_dx])
+    assert all([int(x.days / 365.25) >= 15 for x in age_at_dx])
 
     # check that those treated are a subset of those diagnosed (and that the order of dates makes sense):
     assert set(df.index[~pd.isnull(df.oac_date_treatment)]).issubset(df.index[~pd.isnull(df.oac_date_diagnosis)])
@@ -225,7 +225,7 @@ def test_run_sim_from_high_prevalence():
     check_configuration_of_population(sim)
 
 
-def test_check_progression_through_stages_is_happeneing():
+def test_check_progression_through_stages_is_happening():
     """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
     up in late stages and some die of this cause.
     Use a functioning healthsystem that allows HSI and check that diagnosis, treatment and palliative care is happening.
@@ -247,9 +247,9 @@ def test_check_progression_through_stages_is_happeneing():
     # make initial population
     sim.make_initial_population(n=popsize)
 
-    # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
+    # force that all persons aged over 15 are in the site_confined stage to begin with:
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oac_status"] = 'site_confined'
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15), "oac_status"] = 'site_confined'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -263,7 +263,7 @@ def test_check_progression_through_stages_is_happeneing():
     assert not pd.isnull(df.oac_status).any()
     assert (df.loc[df.is_alive].oac_status.value_counts().drop(index='none') > 0).all()
 
-    # check that some people have died of oesophagal cancer
+    # check that some people have died of other adult cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
     assert yll['YLL_OtherAdultCancer_OtherAdultCancer'].sum() > 0
 
@@ -298,7 +298,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
 
     # force that all persons aged over 20 are in the low_grade dysplasia stage to begin with:
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oac_status"] = 'site_confined'
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15), "oac_status"] = 'site_confined'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -312,7 +312,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     assert not pd.isnull(df.oac_status).any()
     assert (df.loc[df.is_alive].oac_status.value_counts().drop(index='none') > 0).all()
 
-    # check that some people have died of oesophagal cancer
+    # check that some people have died of other adult cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
     assert yll['YLL_OtherAdultCancer_OtherAdultCancer'].sum() > 0
 
@@ -343,23 +343,23 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     # make inital popuation
     sim.make_initial_population(n=popsize)
 
-    # force that all persons aged over 20 are in the low_grade dysplasis stage to begin with:
+    # force that all persons aged over 15 are in the site-confined stage to begin with:
     has_lgd = sim.population.props.is_alive & (sim.population.props.age_years >= 20)
     sim.population.props.loc[has_lgd, "oac_status"] = 'site_confined'
 
     # force that they are all symptomatic, diagnosed and already on treatment:
     sim.modules['SymptomManager'].change_symptom(
         person_id=has_lgd.index[has_lgd].tolist(),
-        symptom_string='dysphagia',
+        symptom_string='early_other_adult_cancer_symptom',
         add_or_remove='+',
         disease_module=sim.modules['OtherAdultCancer']
     )
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oac_date_diagnosis"] = sim.date
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15), "oac_date_diagnosis"] = sim.date
     sim.population.props.loc[
-        sim.population.props.is_alive & (sim.population.props.age_years >= 20), "oac_date_treatment"] = sim.date
+        sim.population.props.is_alive & (sim.population.props.age_years >= 15), "oac_date_treatment"] = sim.date
     sim.population.props.loc[sim.population.props.is_alive & (
-            sim.population.props.age_years >= 20), "oac_stage_at_which_treatment_given"] = 'site_confined'
+            sim.population.props.age_years >= 15), "oac_stage_at_which_treatment_given"] = 'site_confined'
     check_configuration_of_population(sim)
 
     # Simulate
@@ -369,10 +369,10 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
 
     # check that there are not any people in each of the later stages and everyone is still in 'site_confined':
     df = sim.population.props
-    assert len(df.loc[df.is_alive & (df.age_years >= 20), "oac_status"]) > 0
-    assert (df.loc[df.is_alive & (df.age_years >= 20), "oac_status"].isin(["none", "site_confined"])).all()
+    assert len(df.loc[df.is_alive & (df.age_years >= 15), "oac_status"]) > 0
+    assert (df.loc[df.is_alive & (df.age_years >= 15), "oac_status"].isin(["none", "site_confined"])).all()
     assert (df.loc[has_lgd.index[has_lgd].tolist(), "oac_status"] == "site_confined").all()
 
-    # check that no people have died of oesophageal cancer
+    # check that no people have died of other adult cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-    assert 'YLL_OtherAdultCancer_OtherAdultCancer' not in yll.columns
+    assert 'YLL_OtherAdultCancer' not in yll.columns
