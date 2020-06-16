@@ -94,6 +94,14 @@ sim = run()
 
 parsed_output = parse_log_file(sim.log_filepath)
 
+# TODO: remove me before mering
+import pickle
+
+with open(outputpath / f"demography_analysis_parsed_logs{datestamp}.pickle", "wb") as handle:
+    pickle.dump(parsed_output, handle)
+
+###
+
 scale_to_population = demography.scale_to_population
 scaled_output = scale_to_population(parsed_output, resourcefilepath)
 
