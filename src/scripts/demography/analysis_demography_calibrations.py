@@ -97,8 +97,26 @@ parsed_output = parse_log_file(sim.log_filepath)
 # TODO: remove me before mering
 import pickle
 
-with open(outputpath / f"demography_analysis_parsed_logs{datestamp}.pickle", "wb") as handle:
+with open(outputpath / f"demography_analysis_parsed_structured_logs{datestamp}.pickle", "wb") as handle:
     pickle.dump(parsed_output, handle)
+
+structured_log = parsed_output
+
+with open(outputpath / f"demography_analysis_parsed_logs{datestamp}.pickle", "rb") as handle:
+    stdlib_log = pickle.load(handle)
+
+for key in stdlib_log['tlo.methods.demography']:
+    stdlib_table = stdlib_log['tlo.methods.demography'][key]
+    # convert all types to strings, ad this is what happens with stdlib logging
+    structured_table = structured_log['tlo.methods.demography'][key].astype('object')
+
+    # Set both dates to be the correct type (when both as strings, they don't match)
+    stdlib_table.date = stdlib_table.date.astype('datetime64[ns]')
+    structured_table.date = structured_table.date.astype('datetime64[ns]')
+
+    tables_match = stdlib_table.equals(structured_table)
+    print(f"Table {key} matches before and after adding structured logging: {tables_match}")
+    assert tables_match
 
 ###
 
