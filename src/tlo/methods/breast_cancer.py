@@ -311,27 +311,10 @@ class BreastCancer(Module):
         lm['stage1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_stage1_none'],
+            # todo: fix coding below
             Predictor('sex').when('M', 0.0),
-            Predictor('age_years').apply(lambda x: p['rr_breaststate_confined_prostate_ca_age5069']) if 50 < x < 70)
-            Predictor('age_years').apply(lambda x: p['rr_prostate_confined_prostate_ca_agege70']) if x > 70)
-        )
-
-        lm['high_grade_cancer'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_high_grade_cancer_low_grade_dysp'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_high_grade_dysp_undergone_curative_treatment']),
-            Predictor('brc_status').when('low_grade_cancer', 1.0)
-                                  .otherwise(0.0)
-        )
-
-        lm['stage1'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_stage1_high_grade_dysp'],
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
-            Predictor('brc_status').when('high_grade_cancer', 1.0)
-                                  .otherwise(0.0)
+            Predictor('age_years').apply(lambda x: p['rr_stage1_none_age3049']) if 30 < x < 50)
+            Predictor('age_years').apply(lambda x: p['rr_stage1_none_age3049']) if x > 50)
         )
 
         lm['stage2'] = LinearModel(
@@ -366,11 +349,7 @@ class BreastCancer(Module):
 
         # Linear Model for the onset of breast_lump_discernible, in each 3 month period
         self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(
-            Predictor('brc_status').when('low_grade_cancer',
-                                        p['rr_breast_lump_discernible_low_grade_dysp'] * p['r_breast_lump_discernible_stage1'])
-                                  .when('high_grade_dysplaisa',
-                                        p['rr_breast_lump_discernible_high_grade_dysp'] * p['r_breast_lump_discernible_stage1'])
-                                  .when('stage1', p['r_breast_lump_discernible_stage1'])
+            Predictor('brc_status').when('stage1', p['r_breast_lump_discernible_stage1'])
                                   .when('stage2', p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_discernible_stage1'])
                                   .when('stage3', p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_discernible_stage1'])
                                   .when('stage4', p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_discernible_stage1'])
@@ -378,16 +357,41 @@ class BreastCancer(Module):
         )
 
         # ----- DX TESTS -----
-        # Create the diagnostic test representing the use of an endoscope to brc_status
+        # Create the diagnostic test representing the use of a biopsy to brc_status
         # This properties of conditional on the test being done only to persons with the Symptom, 'breast_lump_discernible'.
+        # todo: depends on underlying stage not symptoms
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            endoscopy_for_breast_cancer_given_breast_lump_discernible=DxTest(
+            biopsy_for_breast_cancer_stage1=DxTest(
                 property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_endoscopy_for_breast_cancer_with_breast_lump_discernible'],
-                target_categories=["low_grade_cancer", "high_grade_cancer",
-                                   "stage1", "stage2", "stage3", "stage4"]
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage1'],
+                target_categories=["stage1", "stage2", "stage3", "stage4"]
             )
         )
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            biopsy_for_breast_cancer_stage2=DxTest(
+                property='brc_status',
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage2'],
+                target_categories=["stage1", "stage2", "stage3", "stage4"]
+            )
+        )
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            biopsy_for_breast_cancer_stage3=DxTest(
+                property='brc_status',
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage3'],
+                target_categories=["stage1", "stage2", "stage3", "stage4"]
+            )
+        )
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            biopsy_for_breast_cancer_stage4=DxTest(
+                property='brc_status',
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage4'],
+                target_categories=["stage1", "stage2", "stage3", "stage4"]
+            )
+        )
+
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
@@ -492,7 +496,7 @@ class BreastCancer(Module):
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all breast cancer properties for population:
     * Acquisition and progression of breast Cancer
@@ -538,11 +542,11 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
         stage4_idx = df.index[df.is_alive & (df.brc_status == "stage4")]
         selected_to_die = stage4_idx[
-            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_oesoph_cancer']]
+            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_breast_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "breastCancer"), self.sim.date
+                demography.InstantaneousDeath(self.module, person_id, "BreastCancer"), self.sim.date
             )
 
 
@@ -550,7 +554,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event, IndividualScopeEventMixin):
+class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
     breast_lump_discernible.
@@ -563,7 +567,7 @@ class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "breastCancer_Investigation_Following_breast_lump_discernible"
+        self.TREATMENT_ID = "BreastCancer_Investigation_Following_breast_lump_discernible"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -583,9 +587,9 @@ class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use an endoscope to diagnose whether the person has breast Cancer:
+        # Use a biopsy to diagnose whether the person has breast Cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='endoscopy_for_breast_cancer_given_breast_lump_discernible',
+            dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
             hsi_event=self
         )
 
@@ -600,7 +604,7 @@ class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
             if not in_stage4:
                 # start treatment:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_breastCancer_StartTreatment(
+                    hsi_event=HSI_BreastCancer_StartTreatment(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -625,9 +629,9 @@ class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         pass
 
 
-class HSI_breastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_breastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of
+    This event is scheduled by HSI_BreastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of
     breast Cancer. It initiates the treatment of breast Cancer.
     It is only for persons with a cancer that is not in stage4 and who have been diagnosed.
     """
@@ -663,7 +667,7 @@ class HSI_breastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_breastCancer_PostTreatmentCheck(
+            hsi_event=HSI_BreastCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
@@ -676,9 +680,9 @@ class HSI_breastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_breastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_breastCancer_StartTreatment and itself.
+    This event is scheduled by HSI_BreastCancer_StartTreatment and itself.
     It is only for those who have undergone treatment for breast Cancer.
     If the person has developed cancer to stage4, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
@@ -691,7 +695,7 @@ class HSI_breastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "breastCancer_MonitorTreatment"
+        self.TREATMENT_ID = "BreastCancer_MonitorTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -711,7 +715,7 @@ class HSI_breastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         if df.at[person_id, 'brc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_breastCancer_PalliativeCare(
+                hsi_event=HSI_BreastCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -721,9 +725,9 @@ class HSI_breastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
             )
 
         else:
-            # Schedule another HSI_breastCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_BreastCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_breastCancer_PostTreatmentCheck(
+                hsi_event=HSI_BreastCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -736,13 +740,13 @@ class HSI_breastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_breastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_breastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of breast Cancer at stage4.
-    * HSI_breastCancer_PostTreatmentCheck following progression to stage4 during treatment.
+    * HSI_BreastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of breast Cancer at stage4.
+    * HSI_BreastCancer_PostTreatmentCheck following progression to stage4 during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in stage4.
     """
@@ -754,7 +758,7 @@ class HSI_breastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "breastCancer_PalliativeCare"
+        self.TREATMENT_ID = "BreastCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -775,7 +779,7 @@ class HSI_breastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
-            hsi_event=HSI_breastCancer_PalliativeCare(
+            hsi_event=HSI_BreastCancer_PalliativeCare(
                 module=self.module,
                 person_id=person_id
             ),
@@ -792,7 +796,7 @@ class HSI_breastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
