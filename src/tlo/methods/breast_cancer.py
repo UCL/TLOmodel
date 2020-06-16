@@ -52,6 +52,12 @@ class BreastCancer(Module):
             "probabilty per 3 months of incident stage 1 breast, amongst people with no "
             "breast cancer",
         ),
+        "rr_stage1_none_age3049": Parameter(
+            Types.REAL, "rate ratio for stage1 breast cancer for age 30-49"
+        ),
+        "rr_stage1_none_age3ge50": Parameter(
+            Types.REAL, "rate ratio for stage1 breast cancer for age 50+"
+        ),
         "r_stage2_stage1": Parameter(
             Types.REAL, "probabilty per 3 months of stage 2 breast cancer amongst people with stage 1"
         ),
@@ -177,47 +183,45 @@ class BreastCancer(Module):
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
         assert sum(p['init_prop_breast_cancer_stage']) <= 1.0
 
-        lm_init_brc_status_any_cancer_or_cancer = LinearModel(
+        lm_init_brc_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prop_breast_cancer_stage']),
-            Predictor('li_ex_alc').when(True, p['rp_breast_cancer_ex_alc']),
-            Predictor('li_tob').when(True, p['rp_breast_cancer_tobacco']),
-            Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_breast_cancer_per_year_older']) if x > 20 else 0.0)
+            Predictor('sex').when('F', 1.0).otherwise(0.0)
+            # todo
+            Predictor('age_years').apply(lambda x: p['rp_breast_cancer_age3049']) if 30 < x < 50)
+            Predictor('age_years').apply(lambda x: p['rp_breast_cancer_agege50']) if x > 50)
         )
 
-        brc_status_any_cancer_or_cancer = \
-            lm_init_brc_status_any_cancer_or_cancer.predict(df.loc[df.is_alive], self.rng)
+        brc_status_any_stage = \
+            lm_init_brc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        if brc_status_any_cancer_or_cancer.sum():
+        if brc_status_any_stage.sum():
             sum_probs = sum(p['init_prop_breast_cancer_stage'])
             if sum_probs > 0:
                 prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_breast_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
-                df.loc[brc_status_any_cancer_or_cancer, "brc_status"] = self.rng.choice(
+                df.loc[brc_status_any_stage, "brc_status"] = self.rng.choice(
                     [val for val in df.brc_status.cat.categories if val != 'none'],
-                    size=brc_status_any_cancer_or_cancer.sum(),
+                    size=brc_status_any_stage.sum(),
                     p=prob_by_stage_of_cancer_if_cancer
                 )
 
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_lump_discernible:
-        lm_init_disphagia = LinearModel.multiplicative(
+        # todo: note dysphagia was mis-spelled here in oesophageal cancer module in master so may not be working
+        lm_init_breast_lump_discernible = LinearModel.multiplicative(
             Predictor('brc_status')  .when("none", 0.0)
-                                    .when("low_grade_cancer",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][0])
-                                    .when("high_grade_cancer",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][1])
                                     .when("stage1",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][2])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][0])
                                     .when("stage2",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][3])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][1])
                                     .when("stage3",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][4])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][2])
                                     .when("stage4",
-                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][5])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][3])
         )
-        has_breast_lump_discernible_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
+        has_breast_lump_discernible_at_init = lm_init_breast_lump_discernible.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=has_breast_lump_discernible_at_init.index[has_breast_lump_discernible_at_init].tolist(),
             symptom_string='breast_lump_discernible',
@@ -227,19 +231,15 @@ class BreastCancer(Module):
 
         # -------------------- brc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('brc_status')  .when("none", 0.0)
-                                    .when("low_grade_cancer",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][0])
-                                    .when("high_grade_cancer",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][1])
+            Predictor('brc_status') .when("none", 0.0)
                                     .when("stage1",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][2])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][0])
                                     .when("stage2",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][3])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][1])
                                     .when("stage3",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][4])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][2])
                                     .when("stage4",
-                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][5])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][3])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -252,18 +252,14 @@ class BreastCancer(Module):
         # -------------------- brc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor('brc_status')  .when("none", 0.0)
-                                    .when("low_grade_cancer",
-                                          p['init_prop_treatment_status_breast_cancer'][0])
-                                    .when("high_grade_cancer",
-                                          p['init_prop_treatment_status_breast_cancer'][1])
                                     .when("stage1",
-                                          p['init_prop_treatment_status_breast_cancer'][2])
+                                          p['init_prop_treatment_status_breast_cancer'][0])
                                     .when("stage2",
-                                          p['init_prop_treatment_status_breast_cancer'][3])
+                                          p['init_prop_treatment_status_breast_cancer'][1])
                                     .when("stage3",
-                                          p['init_prop_treatment_status_breast_cancer'][4])
+                                          p['init_prop_treatment_status_breast_cancer'][2])
                                     .when("stage4",
-                                          p['init_prop_treatment_status_breast_cancer'][5])
+                                          p['init_prop_treatment_status_breast_cancer'][3])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -297,11 +293,11 @@ class BreastCancer(Module):
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
-        sim.schedule_event(OesCancerLoggingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(BreastCancerLoggingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OesCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
@@ -312,17 +308,12 @@ class BreastCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_brc_status
 
-        lm['low_grade_cancer'] = LinearModel(
+        lm['stage1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_low_grade_cancer_none'],
-            Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_cancer_none_per_year_older']
-            ),
-            Predictor('sex').when('F', p['rr_low_grade_cancer_none_female']),
-            Predictor('li_tob').when(True, p['rr_low_grade_cancer_none_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_low_grade_cancer_none_ex_alc']),
-            Predictor('brc_status').when('none', 1.0)
-                                  .otherwise(0.0)
+            p['r_stage1_none'],
+            Predictor('sex').when('M', 0.0),
+            Predictor('age_years').apply(lambda x: p['rr_breaststate_confined_prostate_ca_age5069']) if 50 < x < 70)
+            Predictor('age_years').apply(lambda x: p['rr_prostate_confined_prostate_ca_agege70']) if x > 70)
         )
 
         lm['high_grade_cancer'] = LinearModel(
