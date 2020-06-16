@@ -48,7 +48,7 @@ def make_simulation_healthsystemdisabled():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  OtherAdultCancer.OtherAdultCancer(resourcefilepath=resourcefilepath),
-                 otheradultcancer.OtherAdultCancer(resourcefilepath=resourcefilepath)
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
     return sim
@@ -71,7 +71,7 @@ def make_simulation_nohsi():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  OtherAdultCancer.OtherAdultCancer(resourcefilepath=resourcefilepath),
-                 otheradultcancer.OtherAdultCancer(resourcefilepath=resourcefilepath)
+                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
     return sim
