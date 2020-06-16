@@ -1,7 +1,7 @@
 """ Compute the 5-YEAR SURVIVAL following treatment
 
 To this by creating a simulation with:
- * a very high prevalence of low-grade-dysplasia at initiation
+ * a very high prevalence of ssite-confined at initiation
  * no one on treatment or diagnosed
  * and usual survival
  * no births
@@ -23,6 +23,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     oesophagealcancer,
+    otheradultcancer,
     symptommanager,
 )
 
@@ -55,18 +56,19 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              # labour.Labour(resourcefilepath=resourcefilepath),
              # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
+             otheradultcancer.OtherAdultCancer(resourcefilepath=resourcefilepath)
              )
 
 sim.seed_rngs(0)
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
-sim.modules['OesophagealCancer'].parameters['r_low_grade_dysplasia_none'] = 0.00
-sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-sim.modules['OesophagealCancer'].parameters["init_prop_dysphagia_oes_cancer_by_stage"] = [0.0] * 6
-sim.modules['OesophagealCancer'].parameters["init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage"] = [0.0] * 6
-sim.modules['OesophagealCancer'].parameters["init_prop_treatment_status_oes_cancer"] = [0.0] * 6
-sim.modules['OesophagealCancer'].parameters["init_prob_palliative_care"] = 0.0
+sim.modules['OtherAdult_Cancer'].parameters['r_site_confined_none'] = 0.00
+sim.modules['OtherAdult_Cancer'].parameters['init_prop_other_adult_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
+sim.modules['OtherAdult_Cancer'].parameters["init_prop_early_other_adult_cancer_symptom_by_stage"] = [0.0] * 4
+sim.modules['OtherAdult_Cancer'].parameters["init_prop_with_early_other_adult_cancer_diagnosed_other_adult_cancer_by_stage"] = [0.0] * 4
+sim.modules['OtherAdult_Cancer'].parameters["init_prop_treatment_status_other_adult_cancer"] = [0.0] * 4
+sim.modules['OtherAdult_Cancer'].parameters["init_prob_palliative_care"] = 0.0
 
 # Establish the logger and look at only demography
 custom_levels = {"*": logging.WARNING,  # <--
@@ -89,7 +91,7 @@ df = sim.population.props
 cohort = df.iloc[1:popsize].index
 
 # get the person_ids of the original cohort who started treatment
-treated = pd.DataFrame(df.loc[df.index.isin(cohort) & ~pd.isnull(df.oc_date_treatment), 'oc_date_treatment'].copy())
+treated = pd.DataFrame(df.loc[df.index.isin(cohort) & ~pd.isnull(df.oc_date_treatment), 'oac_date_treatment'].copy())
 
 # for each person that started treatment, get their date of starting treatment
 deaths = pd.DataFrame(output['tlo.methods.demography']['death']).copy()
@@ -98,10 +100,10 @@ deaths = pd.DataFrame(output['tlo.methods.demography']['death']).copy()
 deaths['person_id'] = deaths['person_id'].astype(int)
 deaths = deaths.merge(treated, left_on='person_id', right_index=True, how='outer')
 
-cohort_treated = deaths.dropna(subset=['oc_date_treatment']).copy()
+cohort_treated = deaths.dropna(subset=['oac_date_treatment']).copy()
 cohort_treated['date'] = pd.to_datetime(cohort_treated['date'])
-cohort_treated['oc_date_treatment'] = pd.to_datetime(cohort_treated['oc_date_treatment'])
-cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_treated['oc_date_treatment']).dt.days
+cohort_treated['oc_date_treatment'] = pd.to_datetime(cohort_treated['oac_date_treatment'])
+cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_treated['oac_date_treatment']).dt.days
 
 # calc % of those that were alive 5 years after starting treatment (not died of any cause):
 1 - (
@@ -109,10 +111,10 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
     len(cohort_treated)
 )  # 0.77
 
-# calc % of those that had not died of oesophageal cancer 5 years after starting treatment (could have died of another
+# calc % of those that had not died of Other_Adult cancer 5 years after starting treatment (could have died of another
 # cause):
 1 - (
-    len(cohort_treated.loc[(cohort_treated['cause'] == 'OesophagealCancer') & (cohort_treated['days_treatment_to_death']
+    len(cohort_treated.loc[(cohort_treated['cause'] == 'OtherAdultCancer') & (cohort_treated['days_treatment_to_death']
                                                                                < (5*365.25))]) /
     len(cohort_treated)
 )   # 0.87
