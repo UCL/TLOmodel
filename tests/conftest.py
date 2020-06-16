@@ -1,12 +1,13 @@
 """Collection of shared fixtures"""
 import pytest
 
-from tlo import logging
+from tlo.logging.core import _LOGGERS
 
 
 @pytest.fixture(autouse=True)
 def reset_logging():
-    """Reset all logging in test setup"""
-    logger = logging.getLogger('tlo.test.logger')
-    logger.reset_attributes()
+    """Reset all disease module loggers before each test functions/methods"""
+    for logger_name, logger in _LOGGERS.items():
+        if logger_name != 'tlo':
+            logger.reset_attributes()
     yield
