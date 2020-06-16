@@ -356,16 +356,17 @@ class Other_adultCancer(Module):
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to metastatic) and never treated
-            self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["site_confined_local_ln"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=550
+                #  todo: maybe this is too high for early cancer
                 # "Diagnosis and primary therapy phase of esophageal cancer":
                 #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
             # For those with cancer (any stage prior to metastatic) and has been treated
-            self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["site_confined_local_ln_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=547
-                # "Controlled phase of esophageal cancer,Generic uncomplicated disease":
+                # "Controlled phase of cancer,Generic uncomplicated disease":
                 # "worry and daily medication,has a chronic disease that requires medication every day and causes some
                 #   worry but minimal interference with daily activities".
             )
@@ -373,20 +374,20 @@ class Other_adultCancer(Module):
             # For those in metastatic: no palliative care
             self.daly_wts["metastatic"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=549
-                # "Metastatic phase of esophageal cancer:
+                # "Metastatic phase of cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
             )
 
             # For those in metastatic: with palliative care
-            self.daly_wts["metastatic_palliative_care"] = self.daly_wts["stage_1_3"]
+            self.daly_wts["metastatic_palliative_care"] = self.daly_wts["site_confined_local_ln_treated"]
             # By assumption, we say that that the weight for those in metastatic with palliative care is the same as
-            # that for those with stage 1-3 cancers.
+            # that for those with site confined local ln cancers
 
         # ----- HSI FOR PALLIATIVE CARE -----
         on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.oac_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Other_adultCancer_PalliativeCare(module=self, person_id=person_id),
+                hsi_event=HSI_OtherAdultCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
@@ -419,23 +420,21 @@ class Other_adultCancer(Module):
         # in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
-                (df.oac_status == "stage1") |
-                (df.oac_status == "stage2") |
-                (df.oac_status == "stage3")
+                (df.oac_status == "site_confined") |
+                (df.oac_status == "local_ln")
             )
-        ] = self.daly_wts['stage_1_3']
+        ] = self.daly_wts['site_confined_local_ln']
 
         # Assign daly_wt to those with cancer stages before metastatic and who have been treated and who are still in the
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
                 ~pd.isnull(df.oac_date_treatment) & (
-                    (df.oac_status == "stage1") |
-                    (df.oac_status == "stage2") |
-                    (df.oac_status == "stage3")
+                    (df.oac_status == "site_confined") |
+                    (df.oac_status == "local_ln")
                 ) & (df.oac_status == df.oac_stage_at_which_treatment_given)
             )
-        ] = self.daly_wts['stage_1_3_treated']
+        ] = self.daly_wts['site_confined_local_ln_treated']
 
         # Assign daly_wt to those in metastatic cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
@@ -456,7 +455,7 @@ class Other_adultCancer(Module):
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all Other_adult cancer properties for population:
     * Acquisition and progression of Other_adult Cancer
