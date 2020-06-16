@@ -7,6 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging, util
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
+from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -83,6 +84,10 @@ class PregnancySupervisor(Module):
             Types.REAL, 'underlying risk of death following an induced abortion'),
         'prob_spontaneous_abortion_death': Parameter(
             Types.REAL, 'underlying risk of death following an spontaneous abortion'),
+        'prob_first_anc_visit_gestational_age': Parameter(
+            Types.LIST, 'probability of initiation of ANC by month'),
+        'prob_four_or_more_anc_visits': Parameter(
+            Types.REAL, 'probability of a woman undergoing 4 or more basic ANC visits'),
     }
 
     PROPERTIES = {
@@ -91,6 +96,8 @@ class PregnancySupervisor(Module):
         'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether this womans pregnancy is ectopic'),
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
         'ps_anaemia_in_pregnancy': Property(Types.BOOL, 'Whether this womans is anaemic during pregnancy'),
+        'ps_will_attend_four_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
+                                                                'antenatal care visits during her pregnancy'),
         'ps_induced_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
                                                                  'following an induced abortion'),
         'ps_spontaneous_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
@@ -117,6 +124,7 @@ class PregnancySupervisor(Module):
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
                                                                   'premature rupture of membranes'),
+        'dummy_anc_counter' :Property(Types.INT,'dummy tester')
     }
 
     # Symptoms that are associated with conditions of pregnancy are defined here
@@ -217,8 +225,11 @@ class PregnancySupervisor(Module):
 
                 'spontaneous_abortion_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_spontaneous_abortion_death'])
-        }
+                    params['prob_spontaneous_abortion_death']),
+
+                'four_or_more_anc_visits': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_four_or_more_anc_visits'])}
 
     def initialise_population(self, population):
 
@@ -228,6 +239,7 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = False
+        df.loc[df.is_alive, 'ps_will_attend_four_or_more_anc'] = False
         df.loc[df.is_alive, 'ps_induced_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_spontaneous_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
@@ -241,6 +253,8 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_gest_diab'] = False
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
+        df.loc[df.is_alive, 'dummy_anc_counter'] = 0
+
 
     def initialise_simulation(self, sim):
 
@@ -263,6 +277,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_ectopic_pregnancy'] = False
         df.at[child_id, 'ps_multiple_pregnancy'] = False
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = False
+        df.at[child_id, 'ps_will_attend_four_or_more_anc'] = False
         df.at[child_id, 'ps_induced_abortion_complication'] = 'none'
         df.at[child_id, 'ps_spontaneous_abortion_complication'] = 'none'
         df.at[child_id, 'ps_antepartum_still_birth'] = False
@@ -276,6 +291,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_gest_diab'] = False
         df.at[child_id, 'ps_prev_gest_diab'] = False
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
+        df.at[child_id, 'dummy_anc_counter'] = 0
 
         # We reset all womens gestational age when they deliver
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
@@ -608,9 +624,41 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # For women who don't experience and ectopic pregnancy we use the same function to assess risk of multiple
         # pregnancy
         np_no_ectopic = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 1) &
-                               ~df.ps_ectopic_pregnancy]
+                               ~df.ps_ectopic_pregnancy] #& (df.dummy_anc_counter == 0)]
         self.module.set_pregnancy_complications(np_no_ectopic, 'multiples')
         # TODO: Review the necessity of including multiple pregnancies
+
+        # ====================================== Scheduling first ANC visit ===========================================
+        # For women whose pregnancy continues, we determine at what stage in their pregnancy they will seek antenatal
+        # care
+        for person in np_no_ectopic.index:
+            # We use a probability weighted random draw to determine when this woman will attend ANC1,
+            # and scheduled the visit accordingly
+            assert df.loc[person, 'dummy_anc_counter'] == 0
+            df.loc[person, 'dummy_anc_counter'] += 1
+
+            # TODO: this should maybe start at week 12
+            random_draw_gest_at_anc = self.module.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                                                             p=params['prob_first_anc_visit_gestational_age'])
+
+            first_anc_date = self.sim.date + DateOffset(months=random_draw_gest_at_anc)
+            first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
+                                                                topen=first_anc_date,
+                                                                tclose=first_anc_date + DateOffset(days=7))
+
+        # Additionally, we use the linear model to predict if recently pregnant women will attended greater or fewer
+        # than 4 ANC visits during pregnancy
+        result = params['ps_linear_equations']['four_or_more_anc_visits'].predict(np_no_ectopic)
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(np_no_ectopic)), index=np_no_ectopic.index)
+        temp_df = pd.concat([result, random_draw], axis=1)
+        temp_df.columns = ['result', 'random_draw']
+
+        # And store changes in the data frame accordingly
+        positive_index = temp_df.index[temp_df.random_draw < temp_df.result]
+        df.loc[positive_index, 'ps_will_attend_four_or_more_anc'] = True
 
         # =========================================== MONTH 1 =========================================================
         # Here we look at all the women who have reached one month gestation and apply the risk of early pregnancy loss
