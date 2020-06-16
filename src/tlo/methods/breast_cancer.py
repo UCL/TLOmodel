@@ -26,7 +26,7 @@ class BreastCancer(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.linear_models_for_progession_of_oc_status = dict()
+        self.linear_models_for_progession_of_brc_status = dict()
         self.lm_onset_breast_lump_discernible = None
         self.daly_wts = dict()
 
@@ -79,15 +79,9 @@ class BreastCancer(Module):
         "rate_palliative_care_stage4": Parameter(
             Types.REAL, "prob palliative care this 3 month period if stage4"
         ),
-        "r_death_oesoph_cancer": Parameter(
+        "r_death_breast_cancer": Parameter(
             Types.REAL,
-            "probabilty per 3 months of death from breast cancer mongst people with stage 4 breast cancer",
-        ),
-        "rr_breast_lump_discernible_low_grade_dysp": Parameter(
-            Types.REAL, "probability per 3 months of breast_lump_discernible in a person with low grade breast dysplasia"
-        ),
-        "rr_breast_lump_discernible_high_grade_dysp": Parameter(
-            Types.REAL, "rate ratio for breast_lump_discernible if have high grade breast dysplasia"
+            "probabilty per 3 months of death from breast cancer amongst people with stage 4 breast cancer",
         ),
         "r_breast_lump_discernible_stage1": Parameter(
             Types.REAL, "rate ratio for breast_lump_discernible if have stage 1 breast cancer"
@@ -101,48 +95,51 @@ class BreastCancer(Module):
         "rr_breast_lump_discernible_stage4": Parameter(
             Types.REAL, "rate ratio for breast_lump_discernible if have stage 4 breast cancer"
         ),
-        "rp_breast_cancer_female": Parameter(
-            Types.REAL, "relative prevalence at baseline of breast cancer if female"
+        "rp_breast_cancer_age3049": Parameter(
+            Types.REAL, "relative prevalence at baseline of breast cancer if age3049"
         ),
-        "rp_breast_cancer_per_year_older": Parameter(
-            Types.REAL, "relative prevalence at baseline of breast cancer per year older than 20"
+        "rp_breast_cancer_agege50": Parameter(
+            Types.REAL, "relative prevalence at baseline of breast cancer if agege50"
         ),
-        "rp_breast_cancer_tobacco": Parameter(
-            Types.REAL, "relative prevalence at baseline of breast cancer if tobacco"
+        "sensitivity_of_biopsy_for_stage1_breast_cancer": Parameter(
+            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 1 breast cancer"
         ),
-        "rp_breast_cancer_ex_alc": Parameter(
-            Types.REAL, "relative prevalence at baseline of breast cancer"
+        "sensitivity_of_biopsy_for_stage2_breast_cancer": Parameter(
+            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 2 breast cancer"
         ),
-        "sensitivity_of_endoscopy_for_breast_cancer_with_breast_lump_discernible": Parameter(
-            Types.REAL, "sensitivity of endoscopy_for diagnosis of breast cancer for those with breast_lump_discernible"
+        "sensitivity_of_biopsy_for_stage3_breast_cancer": Parameter(
+            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 3 breast cancer"
+        ),
+        "sensitivity_of_biopsy_for_stage4_breast_cancer": Parameter(
+            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 4 breast cancer"
         ),
     }
 
     PROPERTIES = {
-        "oc_status": Property(
+        "brc_status": Property(
             Types.CATEGORICAL,
-            "Current status of the health condition, breast dysplasia",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            "Current status of the health condition, breast cancer",
+            categories=["none", "stage1", "stage2", "stage3", "stage4"],
         ),
 
-        "oc_date_diagnosis": Property(
+        "brc_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnsosis of the breast_cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of the breast_cancer (pd.NaT if never diagnosed)"
         ),
 
-        "oc_date_treatment": Property(
+        "brc_date_treatment": Property(
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
 
-        "oc_stage_at_which_treatment_applied": Property(
+        "brc_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
-            "the cancer stage at which treatment is applied (because the treatment only has an effect during the stage"
-            "at which it is applied.",
-            categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
+            "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
+            "at which it is given).",
+            categories=["none", "stage1", "stage2", "stage3", "stage4"],
         ),
 
-        "oc_date_palliative_care": Property(
+        "brc_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
@@ -159,7 +156,7 @@ class BreastCancer(Module):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_breast_Cancer.xlsx",
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Breast_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 
@@ -169,18 +166,18 @@ class BreastCancer(Module):
         p = self.parameters
 
         # defaults
-        df.loc[df.is_alive, "oc_status"] = "none"
-        df.loc[df.is_alive, "oc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "oc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "oc_stage_at_which_treatment_applied"] = "none"
-        df.loc[df.is_alive, "oc_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "brc_status"] = "none"
+        df.loc[df.is_alive, "brc_date_diagnosis"] = pd.NaT
+        df.loc[df.is_alive, "brc_date_treatment"] = pd.NaT
+        df.loc[df.is_alive, "brc_stage_at_which_treatment_given"] = "none"
+        df.loc[df.is_alive, "brc_date_palliative_care"] = pd.NaT
 
-        # -------------------- oc_status -----------
+        # -------------------- brc_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
         assert sum(p['init_prop_breast_cancer_stage']) <= 1.0
 
-        lm_init_oc_status_any_dysplasia_or_cancer = LinearModel(
+        lm_init_brc_status_any_cancer_or_cancer = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prop_breast_cancer_stage']),
             Predictor('li_ex_alc').when(True, p['rp_breast_cancer_ex_alc']),
@@ -188,28 +185,28 @@ class BreastCancer(Module):
             Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_breast_cancer_per_year_older']) if x > 20 else 0.0)
         )
 
-        oc_status_any_dysplasia_or_cancer = \
-            lm_init_oc_status_any_dysplasia_or_cancer.predict(df.loc[df.is_alive], self.rng)
+        brc_status_any_cancer_or_cancer = \
+            lm_init_brc_status_any_cancer_or_cancer.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        if oc_status_any_dysplasia_or_cancer.sum():
+        if brc_status_any_cancer_or_cancer.sum():
             sum_probs = sum(p['init_prop_breast_cancer_stage'])
             if sum_probs > 0:
                 prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_breast_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
-                df.loc[oc_status_any_dysplasia_or_cancer, "oc_status"] = self.rng.choice(
-                    [val for val in df.oc_status.cat.categories if val != 'none'],
-                    size=oc_status_any_dysplasia_or_cancer.sum(),
+                df.loc[brc_status_any_cancer_or_cancer, "brc_status"] = self.rng.choice(
+                    [val for val in df.brc_status.cat.categories if val != 'none'],
+                    size=brc_status_any_cancer_or_cancer.sum(),
                     p=prob_by_stage_of_cancer_if_cancer
                 )
 
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_lump_discernible:
         lm_init_disphagia = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
+            Predictor('brc_status')  .when("none", 0.0)
+                                    .when("low_grade_cancer",
                                           p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
+                                    .when("high_grade_cancer",
                                           p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][1])
                                     .when("stage1",
                                           p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][2])
@@ -228,12 +225,12 @@ class BreastCancer(Module):
             disease_module=self
         )
 
-        # -------------------- oc_date_diagnosis -----------
+        # -------------------- brc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
+            Predictor('brc_status')  .when("none", 0.0)
+                                    .when("low_grade_cancer",
                                           p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
+                                    .when("high_grade_cancer",
                                           p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][1])
                                     .when("stage1",
                                           p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][2])
@@ -250,14 +247,14 @@ class BreastCancer(Module):
         ever_diagnosed.loc[~has_breast_lump_discernible_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
-        df.loc[ever_diagnosed, "oc_date_diagnosis"] = self.sim.date
+        df.loc[ever_diagnosed, "brc_date_diagnosis"] = self.sim.date
 
-        # -------------------- oc_date_treatment -----------
+        # -------------------- brc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
+            Predictor('brc_status')  .when("none", 0.0)
+                                    .when("low_grade_cancer",
                                           p['init_prop_treatment_status_breast_cancer'][0])
-                                    .when("high_grade_dysplasia",
+                                    .when("high_grade_cancer",
                                           p['init_prop_treatment_status_breast_cancer'][1])
                                     .when("stage1",
                                           p['init_prop_treatment_status_breast_cancer'][2])
@@ -271,22 +268,22 @@ class BreastCancer(Module):
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
         # prevent treatment having been initiated for anyone who is not yet diagnosed
-        treatment_initiated.loc[pd.isnull(df.oc_date_diagnosis)] = False
+        treatment_initiated.loc[pd.isnull(df.brc_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "oc_stage_at_which_treatment_applied"] = df.loc[treatment_initiated, "oc_status"]
+        df.loc[treatment_initiated, "brc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "brc_status"]
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
-        df.loc[treatment_initiated, "oc_date_treatment"] = df.loc[treatment_initiated, "oc_date_diagnosis"]
+        df.loc[treatment_initiated, "brc_date_treatment"] = df.loc[treatment_initiated, "brc_date_diagnosis"]
 
-        # -------------------- oc_date_palliative_care -----------
-        in_stage4_diagnosed = df.index[df.is_alive & (df.oc_status == 'stage4') & ~pd.isnull(df.oc_date_diagnosis)]
+        # -------------------- brc_date_palliative_care -----------
+        in_stage4_diagnosed = df.index[df.is_alive & (df.brc_status == 'stage4') & ~pd.isnull(df.brc_date_diagnosis)]
 
         select_for_care = self.rng.random_sample(size=len(in_stage4_diagnosed)) < p['init_prob_palliative_care']
         select_for_care = in_stage4_diagnosed[select_for_care]
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
-        df.loc[select_for_care, "oc_date_palliative_care"] = df.loc[select_for_care, "oc_date_diagnosis"]
+        df.loc[select_for_care, "brc_date_palliative_care"] = df.loc[select_for_care, "brc_date_diagnosis"]
 
     def initialise_simulation(self, sim):
         """
@@ -313,27 +310,27 @@ class BreastCancer(Module):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_oc_status
+        lm = self.linear_models_for_progession_of_brc_status
 
-        lm['low_grade_dysplasia'] = LinearModel(
+        lm['low_grade_cancer'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_low_grade_dysplasia_none'],
+            p['r_low_grade_cancer_none'],
             Predictor('age_years').apply(
-                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_dysplasia_none_per_year_older']
+                lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_cancer_none_per_year_older']
             ),
-            Predictor('sex').when('F', p['rr_low_grade_dysplasia_none_female']),
-            Predictor('li_tob').when(True, p['rr_low_grade_dysplasia_none_tobacco']),
-            Predictor('li_ex_alc').when(True, p['rr_low_grade_dysplasia_none_ex_alc']),
-            Predictor('oc_status').when('none', 1.0)
+            Predictor('sex').when('F', p['rr_low_grade_cancer_none_female']),
+            Predictor('li_tob').when(True, p['rr_low_grade_cancer_none_tobacco']),
+            Predictor('li_ex_alc').when(True, p['rr_low_grade_cancer_none_ex_alc']),
+            Predictor('brc_status').when('none', 1.0)
                                   .otherwise(0.0)
         )
 
-        lm['high_grade_dysplasia'] = LinearModel(
+        lm['high_grade_cancer'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_high_grade_dysplasia_low_grade_dysp'],
+            p['r_high_grade_cancer_low_grade_dysp'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_high_grade_dysp_undergone_curative_treatment']),
-            Predictor('oc_status').when('low_grade_dysplasia', 1.0)
+            Predictor('brc_status').when('low_grade_cancer', 1.0)
                                   .otherwise(0.0)
         )
 
@@ -342,7 +339,7 @@ class BreastCancer(Module):
             p['r_stage1_high_grade_dysp'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage1_undergone_curative_treatment']),
-            Predictor('oc_status').when('high_grade_dysplasia', 1.0)
+            Predictor('brc_status').when('high_grade_cancer', 1.0)
                                   .otherwise(0.0)
         )
 
@@ -351,7 +348,7 @@ class BreastCancer(Module):
             p['r_stage2_stage1'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
-            Predictor('oc_status').when('stage1', 1.0)
+            Predictor('brc_status').when('stage1', 1.0)
                                   .otherwise(0.0)
         )
 
@@ -360,7 +357,7 @@ class BreastCancer(Module):
             p['r_stage3_stage2'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
-            Predictor('oc_status').when('stage2', 1.0)
+            Predictor('brc_status').when('stage2', 1.0)
                                   .otherwise(0.0)
         )
 
@@ -369,16 +366,16 @@ class BreastCancer(Module):
             p['r_stage4_stage3'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
-            Predictor('oc_status').when('stage3', 1.0)
+            Predictor('brc_status').when('stage3', 1.0)
                                   .otherwise(0.0)
         )
 
-        # Check that the dict labels are correct as these are used to set the value of oc_status
-        assert set(lm).union({'none'}) == set(df.oc_status.cat.categories)
+        # Check that the dict labels are correct as these are used to set the value of brc_status
+        assert set(lm).union({'none'}) == set(df.brc_status.cat.categories)
 
         # Linear Model for the onset of breast_lump_discernible, in each 3 month period
         self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(
-            Predictor('oc_status').when('low_grade_dysplasia',
+            Predictor('brc_status').when('low_grade_cancer',
                                         p['rr_breast_lump_discernible_low_grade_dysp'] * p['r_breast_lump_discernible_stage1'])
                                   .when('high_grade_dysplaisa',
                                         p['rr_breast_lump_discernible_high_grade_dysp'] * p['r_breast_lump_discernible_stage1'])
@@ -390,13 +387,13 @@ class BreastCancer(Module):
         )
 
         # ----- DX TESTS -----
-        # Create the diagnostic test representing the use of an endoscope to oc_status
+        # Create the diagnostic test representing the use of an endoscope to brc_status
         # This properties of conditional on the test being done only to persons with the Symptom, 'breast_lump_discernible'.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             endoscopy_for_breast_cancer_given_breast_lump_discernible=DxTest(
-                property='oc_status',
+                property='brc_status',
                 sensitivity=self.parameters['sensitivity_of_endoscopy_for_breast_cancer_with_breast_lump_discernible'],
-                target_categories=["low_grade_dysplasia", "high_grade_dysplasia",
+                target_categories=["low_grade_cancer", "high_grade_cancer",
                                    "stage1", "stage2", "stage3", "stage4"]
             )
         )
@@ -431,7 +428,7 @@ class BreastCancer(Module):
             # that for those with stage 1-3 cancers.
 
         # ----- HSI FOR PALLIATIVE CARE -----
-        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.oc_date_palliative_care)]
+        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.brc_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_breastCancer_PalliativeCare(module=self, person_id=person_id),
@@ -446,11 +443,11 @@ class BreastCancer(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
-        df.at[child_id, "oc_status"] = "none"
-        df.at[child_id, "oc_date_diagnosis"] = pd.NaT
-        df.at[child_id, "oc_date_treatment"] = pd.NaT
-        df.at[child_id, "oc_stage_at_which_treatment_applied"] = "none"
-        df.at[child_id, "oc_date_palliative_care"] = pd.NaT
+        df.at[child_id, "brc_status"] = "none"
+        df.at[child_id, "brc_date_diagnosis"] = pd.NaT
+        df.at[child_id, "brc_date_treatment"] = pd.NaT
+        df.at[child_id, "brc_stage_at_which_treatment_given"] = "none"
+        df.at[child_id, "brc_date_palliative_care"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
@@ -467,9 +464,9 @@ class BreastCancer(Module):
         # in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
-                (df.oc_status == "stage1") |
-                (df.oc_status == "stage2") |
-                (df.oc_status == "stage3")
+                (df.brc_status == "stage1") |
+                (df.brc_status == "stage2") |
+                (df.brc_status == "stage3")
             )
         ] = self.daly_wts['stage_1_3']
 
@@ -477,24 +474,24 @@ class BreastCancer(Module):
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.oc_date_treatment) & (
-                    (df.oc_status == "stage1") |
-                    (df.oc_status == "stage2") |
-                    (df.oc_status == "stage3")
-                ) & (df.oc_status == df.oc_stage_at_which_treatment_applied)
+                ~pd.isnull(df.brc_date_treatment) & (
+                    (df.brc_status == "stage1") |
+                    (df.brc_status == "stage2") |
+                    (df.brc_status == "stage3")
+                ) & (df.brc_status == df.brc_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['stage_1_3_treated']
 
         # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
-            (df.oc_status == "stage4") &
-            (pd.isnull(df.oc_date_palliative_care))
+            (df.brc_status == "stage4") &
+            (pd.isnull(df.brc_date_palliative_care))
             ] = self.daly_wts['stage4']
 
         # Assign daly_wt to those in stage4 cancer, who have had palliative care
         disability_series_for_alive_persons.loc[
-            (df.oc_status == "stage4") &
-            (~pd.isnull(df.oc_date_palliative_care))
+            (df.brc_status == "stage4") &
+            (~pd.isnull(df.brc_date_palliative_care))
             ] = self.daly_wts['stage4_palliative_care']
 
         return disability_series_for_alive_persons
@@ -521,19 +518,19 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # -------------------- ACQUISITION AND PROGRESSION OF CANCER (oc_status) -----------------------------------
+        # -------------------- ACQUISITION AND PROGRESSION OF CANCER (brc_status) -----------------------------------
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.oc_date_treatment) & \
-            (df.oc_status == df.oc_stage_at_which_treatment_applied)
+            df.is_alive & ~pd.isnull(df.brc_date_treatment) & \
+            (df.brc_status == df.brc_stage_at_which_treatment_given)
 
-        for stage, lm in self.module.linear_models_for_progession_of_oc_status.items():
+        for stage, lm in self.module.linear_models_for_progession_of_brc_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
-            df.loc[idx_gets_new_stage, 'oc_status'] = stage
+            df.loc[idx_gets_new_stage, 'brc_status'] = stage
 
         # -------------------- UPDATING OF SYMPTOM OF breast_lump_discernible OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_discernible.
@@ -548,7 +545,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- DEATH FROM breast CANCER ---------------------------------------
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
-        stage4_idx = df.index[df.is_alive & (df.oc_status == "stage4")]
+        stage4_idx = df.index[df.is_alive & (df.brc_status == "stage4")]
         selected_to_die = stage4_idx[
             rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_oesoph_cancer']]
 
@@ -592,7 +589,7 @@ class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         assert 'breast_lump_discernible' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
-        if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
+        if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
         # Use an endoscope to diagnose whether the person has breast Cancer:
@@ -603,10 +600,10 @@ class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         if dx_result:
             # record date of diagnosis:
-            df.at[person_id, 'oc_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'brc_date_diagnosis'] = self.sim.date
 
             # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'oc_status'] == 'stage4'
+            in_stage4 = df.at[person_id, 'brc_status'] == 'stage4'
             # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
 
             if not in_stage4:
@@ -664,14 +661,14 @@ class HSI_breastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # Check that the person has cancer, not in stage4, has been diagnosed and is not on treatment
-        assert not df.at[person_id, "oc_status"] == 'none'
-        assert not df.at[person_id, "oc_status"] == 'stage4'
-        assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
-        assert pd.isnull(df.at[person_id, "oc_date_treatment"])
+        assert not df.at[person_id, "brc_status"] == 'none'
+        assert not df.at[person_id, "brc_status"] == 'stage4'
+        assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
+        assert pd.isnull(df.at[person_id, "brc_date_treatment"])
 
         # Record date and stage of starting treatment
-        df.at[person_id, "oc_date_treatment"] = self.sim.date
-        df.at[person_id, "oc_stage_at_which_treatment_applied"] = df.at[person_id, "oc_status"]
+        df.at[person_id, "brc_date_treatment"] = self.sim.date
+        df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
@@ -716,11 +713,11 @@ class HSI_breastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # Check that the person is has cancer and is on treatment
-        assert not df.at[person_id, "oc_status"] == 'none'
-        assert not pd.isnull(df.at[person_id, "oc_date_diagnosis"])
-        assert not pd.isnull(df.at[person_id, "oc_date_treatment"])
+        assert not df.at[person_id, "brc_status"] == 'none'
+        assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
+        assert not pd.isnull(df.at[person_id, "brc_date_treatment"])
 
-        if df.at[person_id, 'oc_status'] == 'stage4':
+        if df.at[person_id, 'brc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
             hs.schedule_hsi_event(
                 hsi_event=HSI_breastCancer_PalliativeCare(
@@ -779,11 +776,11 @@ class HSI_breastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # Check that the person is in stage4
-        assert df.at[person_id, "oc_status"] == 'stage4'
+        assert df.at[person_id, "brc_status"] == 'stage4'
 
         # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
-            df.at[person_id, "oc_date_palliative_care"] = self.sim.date
+        if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
+            df.at[person_id, "brc_date_palliative_care"] = self.sim.date
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
@@ -824,24 +821,24 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Current counts, total
         out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].oc_status.value_counts().items()})
+            f'total_{k}': v for k, v in df.loc[df.is_alive].brc_status.value_counts().items()})
 
         # Current counts, undiagnosed
         out.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
+            pd.isnull(df.brc_date_diagnosis), 'brc_status'].value_counts().items()})
 
         # Current counts, diagnosed
         out.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_diagnosis), 'oc_status'].value_counts().items()})
+            ~pd.isnull(df.brc_date_diagnosis), 'brc_status'].value_counts().items()})
 
         # Current counts, on treatment (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.oc_date_treatment) & pd.isnull(
-            df.oc_date_palliative_care)), 'oc_status'].value_counts().items()})
+            df.brc_date_treatment) & pd.isnull(
+            df.brc_date_palliative_care)), 'brc_status'].value_counts().items()})
 
         # Current counts, on palliative care
         out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.oc_date_palliative_care), 'oc_status'].value_counts().items()})
+            ~pd.isnull(df.brc_date_palliative_care), 'brc_status'].value_counts().items()})
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
@@ -849,9 +846,9 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
         out.update({
-            'diagnosed_since_last_log': df.oc_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.oc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.oc_date_palliative_care.between(date_lastlog, date_now).sum()
+            'diagnosed_since_last_log': df.brc_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.brc_date_treatment.between(date_lastlog, date_now).sum(),
+            'palliative_since_last_log': df.brc_date_palliative_care.between(date_lastlog, date_now).sum()
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
