@@ -1,9 +1,7 @@
 """
-Oesophageal Cancer Disease Module
+Breast Cancer Disease Module
 
 Limitations to note:
-* Needs to represent the the DxTest 'endoscopy_dysphagia_oes_cancer' requires use of an endoscope
-* Perhaps need to add (i) wood burning fire / indoor pollution (ii) white maize flour in diet (both risk factors)
 * Footprints of HSI -- pending input from expert on resources required.
 """
 
@@ -22,143 +20,114 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class OesophagealCancer(Module):
-    """Oesophageal Cancer Disease Module"""
+class BreastCancer(Module):
+    """Breast Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_oc_status = dict()
-        self.lm_onset_dysphagia = None
+        self.lm_onset_breast_lump_discernible = None
         self.daly_wts = dict()
 
     PARAMETERS = {
-        "init_prop_oes_cancer_stage": Parameter(
+        "init_prop_breast_cancer_stage": Parameter(
             Types.LIST,
-            "initial proportions in dysplasia/cancer categories for man aged 20 with no excess alcohol and no tobacco"
+            "initial proportions in cancer categories for woman aged 15-29"
         ),
-        "init_prop_dysphagia_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with dysplasia/cancer categories that have the symptom dysphagia"
+        "init_prop_breast_lump_discernible_breast_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of those with cancer categories that have the symptom breast_lump_discernible"
         ),
-        "init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people that have symptom of dysphagia that have been diagnosed"
+        "init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage": Parameter(
+            Types.LIST, "initial proportions of people that have breast_lump_discernible that have been diagnosed"
         ),
-        "init_prop_treatment_status_oes_cancer": Parameter(
-            Types.LIST, "initial proportions of people with oesophageal dysplasia/cancer that had initiated treatment"
+        "init_prop_treatment_status_breast_cancer": Parameter(
+            Types.LIST, "initial proportions of people with breast cancer previously treated"
         ),
         "init_prob_palliative_care": Parameter(
             Types.REAL, "initial probability of being under palliative care if in stage 4"
         ),
-        "r_low_grade_dysplasia_none": Parameter(
+        "r_stage1_none": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident low grade oesophageal dysplasia, amongst people with no "
-            "oesophageal dysplasia (men, age20, no excess alcohol, no tobacco)",
-        ),
-        "rr_low_grade_dysplasia_none_female": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for females"
-        ),
-        "rr_low_grade_dysplasia_none_per_year_older": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia per year older from age 20"
-        ),
-        "rr_low_grade_dysplasia_none_tobacco": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for tobacco smokers"
-        ),
-        "rr_low_grade_dysplasia_none_ex_alc": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for no excess alcohol"
-        ),
-        "r_high_grade_dysplasia_low_grade_dysp": Parameter(
-            Types.REAL,
-            "probabilty per 3 months of high grade oesophageal dysplasia, amongst people with low grade dysplasia",
-        ),
-        "rr_high_grade_dysp_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for high grade dysplasia for people with low grade dysplasia "
-            "if had curative treatment at low grade dysplasia stage",
-        ),
-        "r_stage1_high_grade_dysp": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 1 oesophageal cancer amongst people with high grade dysplasia"
-        ),
-        "rr_stage1_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 1 oesophageal cancer for people with high grade "
-            "dysplasia if had curative treatment at high grade dysplasia stage",
+            "probabilty per 3 months of incident stage 1 breast, amongst people with no "
+            "breast cancer",
         ),
         "r_stage2_stage1": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 2 oesophageal cancer amongst people with stage 1"
+            Types.REAL, "probabilty per 3 months of stage 2 breast cancer amongst people with stage 1"
         ),
         "rr_stage2_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for stage 2 oesophageal cancer for people with stage 1 "
-            "oesophageal cancer if had curative treatment at stage 1",
+            "rate ratio for stage 2 breast cancer for people with stage 1 "
+            "breast cancer if had curative treatment at stage 1",
         ),
         "r_stage3_stage2": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 3 oesophageal cancer amongst people with stage 2"
+            Types.REAL, "probabilty per 3 months of stage 3 breast cancer amongst people with stage 2"
         ),
         "rr_stage3_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for stage 3 oesophageal cancer for people with stage 2 "
-            "oesophageal cancer if had curative treatment at stage 2",
+            "rate ratio for stage 3 breast cancer for people with stage 2 "
+            "breast cancer if had curative treatment at stage 2",
         ),
         "r_stage4_stage3": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 4 oesophageal cancer amongst people with stage 3"
+            Types.REAL, "probabilty per 3 months of stage 4 breast cancer amongst people with stage 3"
         ),
         "rr_stage4_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for stage 4 oesophageal cancer for people with stage 3 "
-            "oesophageal cancer if had curative treatment at stage 3",
+            "rate ratio for stage 4 breast cancer for people with stage 3 "
+            "breast cancer if had curative treatment at stage 3",
         ),
         "rate_palliative_care_stage4": Parameter(
             Types.REAL, "prob palliative care this 3 month period if stage4"
         ),
         "r_death_oesoph_cancer": Parameter(
             Types.REAL,
-            "probabilty per 3 months of death from oesophageal cancer mongst people with stage 4 oesophageal cancer",
+            "probabilty per 3 months of death from breast cancer mongst people with stage 4 breast cancer",
         ),
-        "rr_dysphagia_low_grade_dysp": Parameter(
-            Types.REAL, "probability per 3 months of dysphagia in a person with low grade oesophageal dysplasia"
+        "rr_breast_lump_discernible_low_grade_dysp": Parameter(
+            Types.REAL, "probability per 3 months of breast_lump_discernible in a person with low grade breast dysplasia"
         ),
-        "rr_dysphagia_high_grade_dysp": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have high grade oesophageal dysplasia"
+        "rr_breast_lump_discernible_high_grade_dysp": Parameter(
+            Types.REAL, "rate ratio for breast_lump_discernible if have high grade breast dysplasia"
         ),
-        "r_dysphagia_stage1": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 1 oesophageal cancer"
+        "r_breast_lump_discernible_stage1": Parameter(
+            Types.REAL, "rate ratio for breast_lump_discernible if have stage 1 breast cancer"
         ),
-        "rr_dysphagia_stage2": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 2 oesophageal cancer"
+        "rr_breast_lump_discernible_stage2": Parameter(
+            Types.REAL, "rate ratio for breast_lump_discernible if have stage 2 breast cancer"
         ),
-        "rr_dysphagia_stage3": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 3 oesophageal cancer"
+        "rr_breast_lump_discernible_stage3": Parameter(
+            Types.REAL, "rate ratio for breast_lump_discernible if have stage 3 breast cancer"
         ),
-        "rr_dysphagia_stage4": Parameter(
-            Types.REAL, "rate ratio for dysphagia if have stage 4 oesophageal cancer"
+        "rr_breast_lump_discernible_stage4": Parameter(
+            Types.REAL, "rate ratio for breast_lump_discernible if have stage 4 breast cancer"
         ),
-        "rp_oes_cancer_female": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if female"
+        "rp_breast_cancer_female": Parameter(
+            Types.REAL, "relative prevalence at baseline of breast cancer if female"
         ),
-        "rp_oes_cancer_per_year_older": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer per year older than 20"
+        "rp_breast_cancer_per_year_older": Parameter(
+            Types.REAL, "relative prevalence at baseline of breast cancer per year older than 20"
         ),
-        "rp_oes_cancer_tobacco": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer if tobacco"
+        "rp_breast_cancer_tobacco": Parameter(
+            Types.REAL, "relative prevalence at baseline of breast cancer if tobacco"
         ),
-        "rp_oes_cancer_ex_alc": Parameter(
-            Types.REAL, "relative prevalence at baseline of oesophageal dysplasia/cancer"
+        "rp_breast_cancer_ex_alc": Parameter(
+            Types.REAL, "relative prevalence at baseline of breast cancer"
         ),
-        "sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia": Parameter(
-            Types.REAL, "sensitivity of endoscopy_for diagnosis of oesophageal cancer for those with dysphagia"
+        "sensitivity_of_endoscopy_for_breast_cancer_with_breast_lump_discernible": Parameter(
+            Types.REAL, "sensitivity of endoscopy_for diagnosis of breast cancer for those with breast_lump_discernible"
         ),
     }
 
     PROPERTIES = {
         "oc_status": Property(
             Types.CATEGORICAL,
-            "Current status of the health condition, oesophageal dysplasia",
+            "Current status of the health condition, breast dysplasia",
             categories=["none", "low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
         ),
 
         "oc_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnsosis of the oes_cancer (pd.NaT if never diagnosed)"
+            "the date of diagnsosis of the breast_cancer (pd.NaT if never diagnosed)"
         ),
 
         "oc_date_treatment": Property(
@@ -180,7 +149,7 @@ class OesophagealCancer(Module):
     }
 
     # Symptom that this module will use
-    SYMPTOMS = {'dysphagia'}
+    SYMPTOMS = {'breast_lump_discernible'}
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
@@ -190,7 +159,7 @@ class OesophagealCancer(Module):
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_breast_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 
@@ -209,14 +178,14 @@ class OesophagealCancer(Module):
         # -------------------- oc_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-        assert sum(p['init_prop_oes_cancer_stage']) <= 1.0
+        assert sum(p['init_prop_breast_cancer_stage']) <= 1.0
 
         lm_init_oc_status_any_dysplasia_or_cancer = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_oes_cancer_stage']),
-            Predictor('li_ex_alc').when(True, p['rp_oes_cancer_ex_alc']),
-            Predictor('li_tob').when(True, p['rp_oes_cancer_tobacco']),
-            Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_oes_cancer_per_year_older']) if x > 20 else 0.0)
+            sum(p['init_prop_breast_cancer_stage']),
+            Predictor('li_ex_alc').when(True, p['rp_breast_cancer_ex_alc']),
+            Predictor('li_tob').when(True, p['rp_breast_cancer_tobacco']),
+            Predictor('age_years').apply(lambda x: ((x - 20) ** p['rp_breast_cancer_per_year_older']) if x > 20 else 0.0)
         )
 
         oc_status_any_dysplasia_or_cancer = \
@@ -224,9 +193,9 @@ class OesophagealCancer(Module):
 
         # Determine the stage of the cancer for those who do have a cancer:
         if oc_status_any_dysplasia_or_cancer.sum():
-            sum_probs = sum(p['init_prop_oes_cancer_stage'])
+            sum_probs = sum(p['init_prop_breast_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_oes_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_breast_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[oc_status_any_dysplasia_or_cancer, "oc_status"] = self.rng.choice(
                     [val for val in df.oc_status.cat.categories if val != 'none'],
@@ -235,26 +204,26 @@ class OesophagealCancer(Module):
                 )
 
         # -------------------- SYMPTOMS -----------
-        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of dysphagia:
+        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_lump_discernible:
         lm_init_disphagia = LinearModel.multiplicative(
             Predictor('oc_status')  .when("none", 0.0)
                                     .when("low_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][0])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][0])
                                     .when("high_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][1])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][1])
                                     .when("stage1",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][2])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][2])
                                     .when("stage2",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][3])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][3])
                                     .when("stage3",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][4])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][4])
                                     .when("stage4",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][5])
+                                          p['init_prop_breast_lump_discernible_breast_cancer_by_stage'][5])
         )
-        has_dysphagia_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
+        has_breast_lump_discernible_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_dysphagia_at_init.index[has_dysphagia_at_init].tolist(),
-            symptom_string='dysphagia',
+            person_id=has_breast_lump_discernible_at_init.index[has_breast_lump_discernible_at_init].tolist(),
+            symptom_string='breast_lump_discernible',
             add_or_remove='+',
             disease_module=self
         )
@@ -263,22 +232,22 @@ class OesophagealCancer(Module):
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')  .when("none", 0.0)
                                     .when("low_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][0])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][0])
                                     .when("high_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][1])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][1])
                                     .when("stage1",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][2])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][2])
                                     .when("stage2",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][3])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][3])
                                     .when("stage3",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][4])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][4])
                                     .when("stage4",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][5])
+                                          p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage'][5])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
-        # ensure that persons who have not ever had the symptom dysphagia are diagnosed:
-        ever_diagnosed.loc[~has_dysphagia_at_init] = False
+        # ensure that persons who have not ever had the symptom breast_lump_discernible are diagnosed:
+        ever_diagnosed.loc[~has_breast_lump_discernible_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
         df.loc[ever_diagnosed, "oc_date_diagnosis"] = self.sim.date
@@ -287,17 +256,17 @@ class OesophagealCancer(Module):
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor('oc_status')  .when("none", 0.0)
                                     .when("low_grade_dysplasia",
-                                          p['init_prop_treatment_status_oes_cancer'][0])
+                                          p['init_prop_treatment_status_breast_cancer'][0])
                                     .when("high_grade_dysplasia",
-                                          p['init_prop_treatment_status_oes_cancer'][1])
+                                          p['init_prop_treatment_status_breast_cancer'][1])
                                     .when("stage1",
-                                          p['init_prop_treatment_status_oes_cancer'][2])
+                                          p['init_prop_treatment_status_breast_cancer'][2])
                                     .when("stage2",
-                                          p['init_prop_treatment_status_oes_cancer'][3])
+                                          p['init_prop_treatment_status_breast_cancer'][3])
                                     .when("stage3",
-                                          p['init_prop_treatment_status_oes_cancer'][4])
+                                          p['init_prop_treatment_status_breast_cancer'][4])
                                     .when("stage4",
-                                          p['init_prop_treatment_status_oes_cancer'][5])
+                                          p['init_prop_treatment_status_breast_cancer'][5])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -407,26 +376,26 @@ class OesophagealCancer(Module):
         # Check that the dict labels are correct as these are used to set the value of oc_status
         assert set(lm).union({'none'}) == set(df.oc_status.cat.categories)
 
-        # Linear Model for the onset of dysphagia, in each 3 month period
-        self.lm_onset_dysphagia = LinearModel.multiplicative(
+        # Linear Model for the onset of breast_lump_discernible, in each 3 month period
+        self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(
             Predictor('oc_status').when('low_grade_dysplasia',
-                                        p['rr_dysphagia_low_grade_dysp'] * p['r_dysphagia_stage1'])
+                                        p['rr_breast_lump_discernible_low_grade_dysp'] * p['r_breast_lump_discernible_stage1'])
                                   .when('high_grade_dysplaisa',
-                                        p['rr_dysphagia_high_grade_dysp'] * p['r_dysphagia_stage1'])
-                                  .when('stage1', p['r_dysphagia_stage1'])
-                                  .when('stage2', p['rr_dysphagia_stage2'] * p['r_dysphagia_stage1'])
-                                  .when('stage3', p['rr_dysphagia_stage3'] * p['r_dysphagia_stage1'])
-                                  .when('stage4', p['rr_dysphagia_stage4'] * p['r_dysphagia_stage1'])
+                                        p['rr_breast_lump_discernible_high_grade_dysp'] * p['r_breast_lump_discernible_stage1'])
+                                  .when('stage1', p['r_breast_lump_discernible_stage1'])
+                                  .when('stage2', p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_discernible_stage1'])
+                                  .when('stage3', p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_discernible_stage1'])
+                                  .when('stage4', p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_discernible_stage1'])
                                   .otherwise(0.0)
         )
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of an endoscope to oc_status
-        # This properties of conditional on the test being done only to persons with the Symptom, 'dysphagia'.
+        # This properties of conditional on the test being done only to persons with the Symptom, 'breast_lump_discernible'.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            endoscopy_for_oes_cancer_given_dysphagia=DxTest(
+            endoscopy_for_breast_cancer_given_breast_lump_discernible=DxTest(
                 property='oc_status',
-                sensitivity=self.parameters['sensitivity_of_endoscopy_for_oes_cancer_with_dysphagia'],
+                sensitivity=self.parameters['sensitivity_of_endoscopy_for_breast_cancer_with_breast_lump_discernible'],
                 target_categories=["low_grade_dysplasia", "high_grade_dysplasia",
                                    "stage1", "stage2", "stage3", "stage4"]
             )
@@ -465,7 +434,7 @@ class OesophagealCancer(Module):
         on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.oc_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PalliativeCare(module=self, person_id=person_id),
+                hsi_event=HSI_breastCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
@@ -537,10 +506,10 @@ class OesophagealCancer(Module):
 
 class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that updates all Oesophageal cancer properties for population:
-    * Acquisition and progression of Oesophageal Cancer
-    * Symptom Development according to stage of Oesophageal Cancer
-    * Deaths from Oesophageal Cancer for those in stage4
+    Regular event that updates all breast cancer properties for population:
+    * Acquisition and progression of breast Cancer
+    * Symptom Development according to stage of breast Cancer
+    * Deaths from breast Cancer for those in stage4
     """
 
     def __init__(self, module):
@@ -566,18 +535,18 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'oc_status'] = stage
 
-        # -------------------- UPDATING OF SYMPTOM OF DYSPHAGIA OVER TIME --------------------------------
-        # Each time this event is called (event 3 months) individuals may develop the symptom of dysphagia.
+        # -------------------- UPDATING OF SYMPTOM OF breast_lump_discernible OVER TIME --------------------------------
+        # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_discernible.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_dysphagia = self.module.lm_onset_dysphagia.predict(df.loc[df.is_alive], rng)
+        onset_breast_lump_discernible = self.module.lm_onset_breast_lump_discernible.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_dysphagia[onset_dysphagia].index.tolist(),
-            symptom_string='dysphagia',
+            person_id=onset_breast_lump_discernible[onset_breast_lump_discernible].index.tolist(),
+            symptom_string='breast_lump_discernible',
             add_or_remove='+',
             disease_module=self.module
         )
 
-        # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
+        # -------------------- DEATH FROM breast CANCER ---------------------------------------
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
         stage4_idx = df.index[df.is_alive & (df.oc_status == "stage4")]
         selected_to_die = stage4_idx[
@@ -585,7 +554,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
+                demography.InstantaneousDeath(self.module, person_id, "breastCancer"), self.sim.date
             )
 
 
@@ -593,20 +562,20 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, IndividualScopeEventMixin):
+class HSI_breastCancer_Investigation_Following_breast_lump_discernible(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    dysphagia.
-    This event begins the investigation that may result in diagnosis of Oesophageal Cancer and the scheduling of
+    breast_lump_discernible.
+    This event begins the investigation that may result in diagnosis of breast Cancer and the scheduling of
     treatment or palliative care.
-    It is for people with the symptom dysphagia.
+    It is for people with the symptom breast_lump_discernible.
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
+        self.TREATMENT_ID = "breastCancer_Investigation_Following_breast_lump_discernible"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -619,16 +588,16 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that this event has been called for someone with the symptom dysphagia
-        assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
+        # Check that this event has been called for someone with the symptom breast_lump_discernible
+        assert 'breast_lump_discernible' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
+        # Use an endoscope to diagnose whether the person has breast Cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
+            dx_tests_to_run='endoscopy_for_breast_cancer_given_breast_lump_discernible',
             hsi_event=self
         )
 
@@ -643,7 +612,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             if not in_stage4:
                 # start treatment:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_StartTreatment(
+                    hsi_event=HSI_breastCancer_StartTreatment(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -655,7 +624,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
             else:
                 # start palliative care:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                    hsi_event=HSI_breastCancer_PalliativeCare(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -668,10 +637,10 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         pass
 
 
-class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_breastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of
-    Oesophageal Cancer. It initiates the treatment of Oesophageal Cancer.
+    This event is scheduled by HSI_breastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of
+    breast Cancer. It initiates the treatment of breast Cancer.
     It is only for persons with a cancer that is not in stage4 and who have been diagnosed.
     """
 
@@ -682,7 +651,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_StartTreatment"
+        self.TREATMENT_ID = "breastCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -706,7 +675,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
+            hsi_event=HSI_breastCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
@@ -719,10 +688,10 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         pass
 
 
-class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_breastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_OesophagealCancer_StartTreatment and itself.
-    It is only for those who have undergone treatment for Oesophageal Cancer.
+    This event is scheduled by HSI_breastCancer_StartTreatment and itself.
+    It is only for those who have undergone treatment for breast Cancer.
     If the person has developed cancer to stage4, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
     """
@@ -734,7 +703,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_MonitorTreatment"
+        self.TREATMENT_ID = "breastCancer_MonitorTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -754,7 +723,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         if df.at[person_id, 'oc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                hsi_event=HSI_breastCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -764,9 +733,9 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
             )
 
         else:
-            # Schedule another HSI_OesophagealCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_breastCancer_PostTreatmentCheck event in one month
             hs.schedule_hsi_event(
-                hsi_event=HSI_OesophagealCancer_PostTreatmentCheck(
+                hsi_event=HSI_breastCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -779,13 +748,13 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         pass
 
 
-class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_breastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_OesophagealCancer_Investigation_Following_Dysphagia following a diagnosis of Oesophageal Cancer at stage4.
-    * HSI_OesophagealCancer_PostTreatmentCheck following progression to stage4 during treatment.
+    * HSI_breastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of breast Cancer at stage4.
+    * HSI_breastCancer_PostTreatmentCheck following progression to stage4 during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in stage4.
     """
@@ -797,7 +766,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "OesophagealCancer_PalliativeCare"
+        self.TREATMENT_ID = "breastCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -818,7 +787,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
-            hsi_event=HSI_OesophagealCancer_PalliativeCare(
+            hsi_event=HSI_breastCancer_PalliativeCare(
                 module=self.module,
                 person_id=person_id
             ),
