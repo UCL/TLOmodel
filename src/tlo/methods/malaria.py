@@ -867,17 +867,18 @@ class Malaria(Module):
         # and registers it with the Diagnostic Test Manager
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
+        # need to convert this from int64 to int for the dx_manager using tolist()
         item_code1 = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Malaria test kit (RDT)",
                 "Item_Code",
             ]
-        )[0]
+        )[0].tolist()
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             malaria_rdt=DxTest(
                 property='ma_is_infected',
-                # cons_req_as_item_code=item_code1,
+                cons_req_as_item_code=item_code1,
                 sensitivity=self.parameters['sensitivity_rdt'],
             )
         )

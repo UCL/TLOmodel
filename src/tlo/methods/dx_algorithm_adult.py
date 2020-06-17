@@ -58,6 +58,7 @@ class DxAlgorithmAdult(Module):
         """
         df = self.sim.population.props
         params = self.sim.modules["Malaria"].parameters
+        hs = self.sim.modules["HealthSystem"]
 
         diagnosis_str = "unknown"
 
@@ -66,34 +67,17 @@ class DxAlgorithmAdult(Module):
         # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
         if "fever" in self.sim.modules["SymptomManager"].has_what(person_id):
-            # Make request for some malaria rdt consumables
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-            # this package contains treatment too
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Items"] == "Malaria test kit (RDT)",
-                    "Intervention_Pkg_Code",
-                ]
-            )[0]
 
-            consumables_needed = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=hsi_event,
-                cons_req_as_footprint=consumables_needed
+            # call the DxTest RDT to diagnose malaria
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='malaria_rdt',
+                hsi_event=self
             )
 
-            if outcome_of_request_for_consumables:
+            if dx_result:
 
                 # severe malaria
-                if df.at[person_id, "ma_is_infected"] & (
-                    df.at[person_id, "ma_inf_type"] == "severe"
-                ):
+                if df.at[person_id, "ma_inf_type"] == "severe":
                     diagnosis_str = "severe_malaria"
 
                     logger.debug(
@@ -103,31 +87,18 @@ class DxAlgorithmAdult(Module):
                     )
 
                 # clinical malaria
-                elif df.at[person_id, "ma_is_infected"] & (
-                    df.at[person_id, "ma_inf_type"] == "clinical"
-                ):
+                elif df.at[person_id, "ma_inf_type"] == "clinical":
 
-                    # diagnosis of clinical disease dependent on RDT sensitivity
-                    diagnosed = self.sim.rng.choice(
-                        [True, False],
-                        size=1,
-                        p=[params["sensitivity_rdt"], (1 - params["sensitivity_rdt"])],
+                    diagnosis_str = "clinical_malaria"
+
+                    logger.debug(
+                        "DxAlgorithmAdult diagnosing clinical malaria for person %d on date %s",
+                        person_id,
+                        self.sim.date,
                     )
 
-                    # diagnosis
-                    if diagnosed:
-                        diagnosis_str = "clinical_malaria"
-
-                        logger.debug(
-                            "DxAlgorithmAdult diagnosing clinical malaria for person %d on date %s",
-                            person_id,
-                            self.sim.date,
-                        )
-                else:
-                    diagnosis_str = "negative_malaria_test"
-
             else:
-                diagnosis_str = "no_rdt_available"
+                diagnosis_str = "negative_malaria_test"
 
         logger.debug(f"{person_id} diagnosis is {diagnosis_str}")
 
