@@ -126,6 +126,23 @@ class Predictor(object):
             matched = (matched | mask)
         return output
 
+    def __str__(self):
+        if self.property_name and self.property_name.startswith('__'):
+            name = f'{self.property_name.strip("__")} (external)'
+        else:
+            name = self.property_name
+        if self.callback:
+            return f"{name} -> callback({self.callback})"
+        out = []
+        previous_condition = None
+        for condition, value in self.conditions:
+            if condition is None:
+                out.append(f'{" " * len(previous_condition)} -> {value} (otherwise)')
+            else:
+                out.append(f"{condition} -> {value}")
+                previous_condition = condition
+        return "\n  ".join(out)
+
 
 class LinearModelType(Enum):
     """
@@ -157,7 +174,7 @@ class LinearModel(object):
             assert isinstance(predictor, Predictor)
             self.predictors.append(predictor)
 
-    def predict(self, df: pd.DataFrame, **kwargs) -> pd.Series:
+    def predict(self, df: pd.DataFrame, rng: np.random.RandomState = None, **kwargs) -> pd.Series:
         """Will call each Predictor's `predict` methods passing the supplied dataframe"""
 
         # addition external variables used in the model but not part of the population dataframe
@@ -176,7 +193,7 @@ class LinearModel(object):
 
         assert all([p.property_name in df.columns
                     for p in self.predictors
-                    if p.property_name is not None]), f"Predictor variables not in df"
+                    if p.property_name is not None]), "Predictor variables not in dataframe"
 
         # Store the result of the calculated values of Predictors
         res_by_predictor = pd.DataFrame(index=df.index)
@@ -188,16 +205,46 @@ class LinearModel(object):
         # Do appropriate transformation on output
         if self.lm_type is LinearModelType.ADDITIVE:
             # print("Linear Model: Prediction will be sum of each effect size.")
-            return res_by_predictor.sum(axis=1, skipna=True)
+            res_by_predictor = res_by_predictor.sum(axis=1, skipna=True)
 
         elif self.lm_type is LinearModelType.LOGISTIC:
             # print("Logistic Regression Model: Prediction will be transform to probabilities. " \
             #       "Intercept assumed to be Odds and effect sizes assumed to be Odds Ratios.")
             odds = res_by_predictor.prod(axis=1, skipna=True)
-            return odds / (1 + odds)
+            res_by_predictor = odds / (1 + odds)
 
         elif self.lm_type is LinearModelType.MULTIPLICATIVE:
             # print("Multiplicative Model: Prediction will be multiplication of each effect size.")
-            return res_by_predictor.prod(axis=1, skipna=True)
+            res_by_predictor = res_by_predictor.prod(axis=1, skipna=True)
 
-        raise ValueError(f'Unhandled linear model type: {self.lm_type}')
+        else:
+            raise ValueError(f'Unhandled linear model type: {self.lm_type}')
+
+        # if the user supplied a random number generator then they want outcomes, not probabilities
+        if rng:
+            outcome = rng.random_sample(len(res_by_predictor)) < res_by_predictor
+            # pop the boolean out of the series if we have a single row, otherwise return the series
+            if len(outcome) == 1:
+                return outcome.iloc[0]
+            else:
+                return outcome
+
+        # return the raw result from the model
+        return res_by_predictor
+
+    @staticmethod
+    def multiplicative(*predictors: Predictor):
+        """Returns a multplicative LinearModel with intercept=1.0
+
+        :param predictors: One or more Predictor objects defining the model
+        """
+        return LinearModel(LinearModelType.MULTIPLICATIVE, 1.0, *predictors)
+
+    def __str__(self):
+        out = "LinearModel(\n"\
+              f"  {self.lm_type},\n"\
+              f"  intercept = {self.intercept},\n"
+        for predictor in self.predictors:
+            out += f'  {predictor}\n'
+        out += ")"
+        return out
