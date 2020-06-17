@@ -55,8 +55,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              # labour.Labour(resourcefilepath=resourcefilepath),
              # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             Bladdercancer.BladderCancer(resourcefilepath=resourcefilepath)
-             bladdercancer.BladderCancer(resourcefilepath=resourcefilepath)
+             bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
+             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
              )
 
 sim.seed_rngs(0)
