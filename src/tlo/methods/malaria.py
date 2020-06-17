@@ -407,48 +407,44 @@ class Malaria(Module):
                 "float"
             )  # for merge with malaria data
 
-            # merge the incidence into the main df and replace each event call
             df_ml = (
-                df.reset_index()
-                .merge(
+                df.merge(
                     inf_prob,
                     left_on=["district_of_residence", "ma_age_edited"],
                     right_on=["admin", "age"],
                     how="left",
                     indicator=True,
                 )
-                .set_index("person")
             )
+
             df_ml["monthly_prob_inf"] = df_ml["monthly_prob_inf"].fillna(
                 0
             )  # 0 if over 80 yrs
             assert not pd.isnull(df_ml["monthly_prob_inf"]).any()
 
             df_ml = (
-                df_ml.reset_index()
-                .merge(
+                df_ml.merge(
                     clin_prob,
                     left_on=["district_of_residence", "ma_age_edited"],
                     right_on=["admin", "age"],
                     how="left",
                 )
-                .set_index("person")
             )
+
             df_ml["monthly_prob_clin"] = df_ml["monthly_prob_clin"].fillna(
                 0
             )  # 0 if over 80 yrs
             assert not pd.isnull(df_ml["monthly_prob_clin"]).any()
 
             df_ml = (
-                df_ml.reset_index()
-                .merge(
+                df_ml.merge(
                     sev_prob,
                     left_on=["district_of_residence", "ma_age_edited"],
                     right_on=["admin", "age"],
                     how="left",
                 )
-                .set_index("person")
             )
+
             df_ml["monthly_prob_sev"] = df_ml["monthly_prob_sev"].fillna(
                 0
             )  # 0 if over 80 yrs
@@ -1552,15 +1548,13 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         # merge the incidence into the main df and replace each event call
         df_ml = (
-            df.reset_index()
-            .merge(
+            df.merge(
                 inf_prob,
                 left_on=["district_of_residence", "ma_age_edited"],
                 right_on=["admin", "age"],
                 how="left",
                 indicator=True,
             )
-            .set_index("person")
         )
         df_ml["monthly_prob_inf"] = df_ml["monthly_prob_inf"].fillna(
             0
@@ -1568,14 +1562,12 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         assert not pd.isnull(df_ml["monthly_prob_inf"]).any()
 
         df_ml = (
-            df_ml.reset_index()
-            .merge(
+            df_ml.merge(
                 clin_prob,
                 left_on=["district_of_residence", "ma_age_edited"],
                 right_on=["admin", "age"],
                 how="left",
             )
-            .set_index("person")
         )
         df_ml["monthly_prob_clin"] = df_ml["monthly_prob_clin"].fillna(
             0
@@ -1583,14 +1575,12 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         assert not pd.isnull(df_ml["monthly_prob_clin"]).any()
 
         df_ml = (
-            df_ml.reset_index()
-            .merge(
+            df_ml.merge(
                 sev_prob,
                 left_on=["district_of_residence", "ma_age_edited"],
                 right_on=["admin", "age"],
                 how="left",
             )
-            .set_index("person")
         )
         df_ml["monthly_prob_sev"] = df_ml["monthly_prob_sev"].fillna(
             0
