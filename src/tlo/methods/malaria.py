@@ -1,3 +1,12 @@
+"""
+this is the malaria module which assigns malaria infections to the population: asymptomatic, clinical and severe
+it also holds the hsi events pertaining to malaria testing and treatment
+including the malaria RDT using DxTest
+
+write-up
+https://www.dropbox.com/scl/fi/p696ddbwlpn2yug2xuuuk/Method_malaria-Sept2019.docx?dl=0
+"""
+
 import os
 from pathlib import Path
 
@@ -82,6 +91,9 @@ class Malaria(Module):
         "mortality_adjust": Parameter(
             Types.REAL, "adjustment of case-fatality rate to match WHO/MAP"
         ),
+        "data_end": Parameter(
+            Types.REAL, "final year of ICL malaria model outputs, after 2018 = projections"
+        ),
     }
 
     PROPERTIES = {
@@ -144,6 +156,7 @@ class Malaria(Module):
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
+
         # baseline characteristics
         p["mal_inc"] = workbook["incidence"]
         p["interv"] = workbook["interventions"]
@@ -199,10 +212,10 @@ class Malaria(Module):
         df["ma_clinical_preg_counter"] = 0
         df["ma_iptp"] = False
 
-        if now.year <= 2018:
+        if now.year <= p["data_end"]:
             current_year = now.year
         else:
-            current_year = 2018  # fix values for 2018 onwards
+            current_year = p["data_end"]  # fix values for 2018 onwards
 
         if self.level == 0:
             # ----------------------------------- INCIDENCE - NATIONAL -----------------------------------
@@ -2236,8 +2249,9 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                     # diagnosis / treatment for children 5-15
                     if (
                         diagnosed
-                        & (df.at[person_id, "age_years"].between(5, 15))
-                    ):
+                        & (df.at[person_id, "age_years"] >= 5) &
+                           (df.at[person_id, "age_years"] < 15)
+                           ):
                         logger.debug(
                             "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
                             person_id,

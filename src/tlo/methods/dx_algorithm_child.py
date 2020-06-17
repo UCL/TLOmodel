@@ -70,7 +70,7 @@ class DxAlgorithmChild(Module):
             # call the DxTest RDT to diagnose malaria
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='malaria_rdt',
-                hsi_event=self
+                hsi_event=hsi_event
             )
 
             if dx_result:
