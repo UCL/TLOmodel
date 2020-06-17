@@ -21,6 +21,7 @@ from tlo.methods.dxmanager import DxTest
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# TODO consider removing national level events
 
 class Malaria(Module):
     def __init__(
@@ -971,12 +972,12 @@ class Malaria(Module):
                 "severe": p["daly_wt_severe"],
             }
         )
-        health_values.name = "Malaria Symptoms"  # label the cause of this disability
+        health_values.name = "Malaria_Symptoms"  # label the cause of this disability
 
         return health_values.loc[df.is_alive]  # returns the series
 
 
-class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
+class MalariaPollingEventNational(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
@@ -1666,14 +1667,11 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             asym = df.index[(df.ma_inf_type == "asym") & (df.ma_date_infected == now)]
 
             for person in df.loc[asym].index:
-                # logger.debug(
-                #     'Malaria Event: scheduling parasite clearance for asymptomatic person %d', person)
-
-                random_date = rng.randint(low=0, high=p["dur_asym"])
-                random_days = pd.to_timedelta(random_date, unit="d")
+                logger.debug(
+                    'Malaria Event: scheduling parasite clearance for asymptomatic person %d', person)
 
                 cure = MalariaParasiteClearanceEvent(self.module, person)
-                self.sim.schedule_event(cure, (self.sim.date + random_days))
+                self.sim.schedule_event(cure, (self.sim.date + DateOffset(days=rng.randint(0, p["dur_asym"]))))
 
             # clinical
             clin = df.index[
