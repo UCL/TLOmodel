@@ -25,8 +25,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    otheradultcancer,
-    otheradultcancer,
+    other_adult_cancers,
+    oesophagealcancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -61,7 +61,7 @@ def run_sim(service_availability):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 otheradultcancer.otheradultcancer(resourcefilepath=resourcefilepath),
+                 other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
     )
 

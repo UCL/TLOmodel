@@ -189,18 +189,18 @@ class OtherAdultCancer(Module):
                                   .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
         )
 
-        oac_status_any_stage = \
+        oac_status_ = \
             lm_init_oac_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
-        if oac_status_any_stage.sum():
+        if oac_status_.sum():
             sum_probs = sum(p['init_prop_other_adult_cancer_stage'])
             if sum_probs > 0:
                 prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_other_adult_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
-                df.loc[oac_status_any_stage, "oac_status"] = self.rng.choice(
+                df.loc[oac_status_, "oac_status"] = self.rng.choice(
                     [val for val in df.oac_status.cat.categories if val != 'none'],
-                    size=oac_status_any_stage.sum(),
+                    size=oac_status_.sum(),
                     p=prob_by_stage_of_cancer_if_cancer
                 )
 
@@ -227,11 +227,11 @@ class OtherAdultCancer(Module):
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('oac_status')  .when("none", 0.0)
                                     .when("site_confined",
-                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][0])
+                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_by_stage'][0])
                                     .when("local_ln",
-                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][1])
+                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_by_stage'][1])
                                     .when("metastatic",
-                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_other_adult_cancer_by_stage'][2])
+                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_by_stage'][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -316,7 +316,7 @@ class OtherAdultCancer(Module):
                                   .otherwise(0.0)
         )
 
-       lm['metastatic'] = LinearModel(
+        lm['metastatic'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_metastatic_local_ln'],
             Predictor('had_treatment_during_this_stage',
