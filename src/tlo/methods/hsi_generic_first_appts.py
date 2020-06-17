@@ -72,6 +72,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             logger.debug('Run the ICMI algorithm for this child')
             # It's a child and we are in FacilityLevel1, so run the the child management routine:
             symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
 
             # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
             if 'diarrhoea' in symptoms:

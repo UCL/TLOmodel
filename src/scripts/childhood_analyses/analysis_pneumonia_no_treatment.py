@@ -217,34 +217,6 @@ calibration_death_rate_per_year = {
     '2015': 0.129141 / 100.0
 }
 
-
-# # Produce a bar plot for means of death rate during the simulation:
-# death_mean = pd.DataFrame()
-# death_mean['0y_model_output'] = death_rate['0y'].mean()
-# death_mean['1y_model_output'] = death_rate['1y'].mean()
-# death_mean['2-4y_model_output'] = death_rate['2-4y'].mean()
-#
-# # put in the inputs:
-# # no calibration data for deaths by age
-#
-# # 0 year-olds
-# death_mean.plot.bar(y=['0y_model_output'])
-# plt.title('Death Rate: 0 year-olds')
-# plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
-# plt.show()
-#
-# # 1 year-olds
-# death_mean.plot.bar(y=['1y_model_output'])
-# plt.title('Death Rate: 1 year-olds')
-# plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
-# plt.show()
-#
-# # 2-4 year-olds
-# death_mean.plot.bar(y=['2-4y_model_output'])
-# plt.title('Death Rate: 2-4 year-olds')
-# plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
-# plt.show()
-
 # ---------------------------------------------------------------------------------------------
 # ---------------------------- MODEL OUTPUT FOR DEATH RATE BY YEAR ----------------------------
 # Mortality rate among in years
@@ -281,36 +253,6 @@ death_rate = deaths.div(py)
 # produce plot:
 death_rate.plot()
 plt.show()
-
-
-# deaths['health_data.org'] = pd.Series(data=calibration_death_rate_per_year).groupby(by=)
-
-# mortality_rate.plot.bar(y=['count', 'health_data.org'])
-# plt.title('Under 5 mortality rate')
-# plt.savefig(outputpath / ("Diarrhoea_death_rate_calibration" + datestamp + ".pdf"), format='pdf')
-# plt.show()
-#
-# Model_Years = pd.to_datetime(all_deaths.date)
-# ig1, ax = plt.subplots()
-# ax.plot(np.asarray(all_deaths['year']), mortality_rate['0y'])
-# ax.plot(np.asarray(all_deaths['year']), mortality_rate['1y'])
-# ax.plot(np.asarray(all_deaths['year']), mortality_rate['2-4y'])
-#
-# # %% Plot Incidence of Diarrhoea Over time:
-# years = mdates.YearLocator()   # every year
-# months = mdates.MonthLocator()  # every month
-# years_fmt = mdates.DateFormatter('%Y')
-# # format the ticks
-# ax.xaxis.set_major_locator(years)
-# ax.xaxis.set_major_formatter(years_fmt)
-#
-# plt.title("Mortality rate by age group")
-# plt.xlabel("Year")
-# plt.ylabel("death rate per person-years")
-# # plt.legend([])
-# plt.savefig(outputpath + 'Diarrhoea mortality rate' + datestamp + '.pdf')
-#
-# plt.show()
 
 
 

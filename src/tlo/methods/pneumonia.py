@@ -248,6 +248,15 @@ class Pneumonia(Module):
                                                                 'respiratory_failure'] + ['none']
                                                     ),
 
+        # ---- Symptoms associated with pneumonia ----
+        'ri_last_pneumonia_symptoms': Property(Types.LIST,
+                                               'symptoms of last pneumonia event',
+                                               categories=['fever', 'cough', 'difficult_breathing',
+                                                           'fast_breathing', 'chest_indrawing', 'grunting',
+                                                           'cyanosis', 'severe_respiratory_distress', 'hypoxia',
+                                                           'danger_signs']
+                                               ),
+
         # ---- Internal variables to schedule onset and deaths due to pneumonia ----
         'ri_last_pneumonia_date_of_onset': Property(Types.DATE, 'date of onset of last pneumonia event'),
         'ri_last_pneumonia_recovered_date': Property(Types.DATE, 'date of recovery from last pneumonia event'),
@@ -336,10 +345,10 @@ class Pneumonia(Module):
                           type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
         # DALY weights
-        if 'HealthBurden' in self.sim.modules.keys():
-            p['daly_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
-            p['daly_severe_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
-            p['daly_very_severe_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
+        # if 'HealthBurden' in self.sim.modules.keys():
+        #     p['daly_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
+        #     p['daly_severe_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
+        #     p['daly_very_severe_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
         # --------------------------------------------------------------------------------------------
         # Make a dict to hold the equations that govern the probability that a person acquires pneumonia
@@ -978,6 +987,7 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_last_pneumonia_pathogen'] = self.pathogen
         df.at[person_id, 'ri_last_pneumonia_date_of_onset'] = self.sim.date
         df.at[person_id, 'ri_last_pneumonia_complications'] = 'none' # all disease start as non-severe symptoms
+        df.at[person_id, 'ri_last_pneumonia_symptoms'] = self.symptoms
 
         # Onset symptoms:
         for symptom in self.symptoms:
@@ -1072,6 +1082,7 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
                             else all_symptoms_for_this_person
 
             print(all_symptoms_for_this_person)
+            df.at[person_id, 'ri_last_pneumonia_symptoms'] = all_symptoms_for_this_person
 
             for symptom in all_symptoms_for_this_person:
                 self.module.sim.modules['SymptomManager'].change_symptom(
@@ -1149,82 +1160,6 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
-
-# class HSI_Pneumonia_Investigation_Following_Symptoms(HSI_Event, IndividualScopeEventMixin):
-#     """
-#     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with
-#     respiratory symptoms.
-#     This event begins the investigation that may result in diagnosis of Pneumonia and the scheduling of
-#     treatment or a cascade of HSI events.
-#     It is for people with respiratory symptoms including, cough, difficult breathing, fast breathing,
-#     and chest indrawing.
-#     """
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-#         the_appt_footprint["Over5OPD"] = 1
-#
-#         self.TREATMENT_ID = "OesophagealCancer_Investigation_Following_Dysphagia"
-#         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-#         self.ACCEPTED_FACILITY_LEVEL = 1
-#         self.ALERT_OTHER_DISEASES = []
-#
-#     def apply(self, person_id, squeeze_factor):
-#         df = self.sim.population.props
-#         hs = self.sim.modules["HealthSystem"]
-#
-#         # Ignore this event if the person is no longer alive:
-#         if not df.at[person_id, 'is_alive']:
-#             return hs.get_blank_appt_footprint()
-#
-#         # Check that this event has been called for someone with the symptom dysphagia
-#         assert 'dysphagia' in self.sim.modules['SymptomManager'].has_what(person_id)
-#
-#         # If the person is already diagnosed, then take no action:
-#         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
-#             return hs.get_blank_appt_footprint()
-#
-#         # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
-#         dx_result = hs.dx_manager.run_dx_test(
-#             dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
-#             hsi_event=self
-#         )
-#
-#         if dx_result:
-#             # record date of diagnosis:
-#             df.at[person_id, 'oc_date_diagnosis'] = self.sim.date
-#
-#             # Check if is in stage4:
-#             in_stage4 = df.at[person_id, 'oc_status'] == 'stage4'
-#             # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
-#
-#             if not in_stage4:
-#                 # start treatment:
-#                 hs.schedule_hsi_event(
-#                     hsi_event=HSI_OesophagealCancer_StartTreatment(
-#                         module=self.module,
-#                         person_id=person_id
-#                     ),
-#                     priority=0,
-#                     topen=self.sim.date,
-#                     tclose=None
-#                 )
-#
-#             else:
-#                 # start palliative care:
-#                 hs.schedule_hsi_event(
-#                     hsi_event=HSI_OesophagealCancer_PalliativeCare(
-#                         module=self.module,
-#                         person_id=person_id
-#                     ),
-#                     priority=0,
-#                     topen=self.sim.date,
-#                     tclose=None
-#                 )
-#
-#     def did_not_run(self):
-#         pass
-#
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
