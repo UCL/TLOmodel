@@ -2006,14 +2006,11 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
                     person,
                 )
 
-                random_date = rng.randint(low=0, high=7)
-                random_days = pd.to_timedelta(random_date, unit="d")
-
                 death_event = MalariaDeathEvent(
                     self.module, individual_id=person, cause="malaria"
                 )  # make that death event
                 self.sim.schedule_event(
-                    death_event, self.sim.date + random_days
+                    death_event, self.sim.date + DateOffset(days=rng.randint(low=0, high=7))
                 )  # schedule the death
 
         else:
