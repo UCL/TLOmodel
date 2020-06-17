@@ -8,7 +8,7 @@ import pandas as pd
 from tlo.analysis.utils import parse_log_file
 
 # model outputs
-outputpath = "./outputs/malaria/"
+outputpath = Path("./outputs/malaria")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 resourcefilepath = Path("./resources")
