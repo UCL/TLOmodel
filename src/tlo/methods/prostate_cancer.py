@@ -26,7 +26,7 @@ class ProstateCancer(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.linear_models_for_progression_of_prostate_cancer_status = dict()
+        self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urunary_symptoms = None
         self.daly_wts = dict()
 
@@ -206,9 +206,9 @@ class ProstateCancer(Module):
 
         # Determine the stage of the cancer for those who do have a cancer:
         if pc_status_.sum():
-            sum_probs = sum(p['init_prop_prostate_cancer_stage'])
+            sum_probs = sum(p['init_prop_prostate_ca_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_prostate_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_prostate_ca_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[pc_status_, "pc_status"] = self.rng.choice(
                     [val for val in df.pc_status.cat.categories if val != 'none'],
@@ -326,7 +326,7 @@ class ProstateCancer(Module):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_pc_status
+        lm = self.linear_models_for_progression_of_pc_status
 
         lm['prostate_confined'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -554,7 +554,7 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & ~pd.isnull(df.pc_date_treatment) & \
             (df.pc_status == df.pc_stage_at_which_treatment_given)
 
-        for stage, lm in self.module.linear_models_for_progession_of_pc_status.items():
+        for stage, lm in self.module.linear_models_for_progression_of_pc_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
