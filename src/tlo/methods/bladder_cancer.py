@@ -64,7 +64,7 @@ class BladderCancer(Module):
             Types.REAL, "rate ratio for tis_t1 bladder cancer for age 30-49"
         ),
         "rr_tis_t1_bladder_cancer_none_age5069": Parameter(
-            Types.REAL, "rate ratio for tis_t1 bladder cancer for age 30-49"
+            Types.REAL, "rate ratio for tis_t1 bladder cancer for age 50-69"
         ),
         "rr_tis_t1_bladder_cancer_none_agege70": Parameter(
             Types.REAL, "rate ratio for tis_t1 bladder cancer for age 70+"
