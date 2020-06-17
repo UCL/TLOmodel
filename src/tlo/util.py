@@ -185,7 +185,7 @@ class BitsetHandler():
         value = np.invert(np.array(value, np.int64))
         self.df.loc[where, self._column] = np.bitwise_and(self.df.loc[where, self._column], value)
 
-    def has_all(self, where, *elements: str, pop=False) -> Union[pd.Series, bool]:
+    def has_all(self, where, *elements: str, first=False) -> Union[pd.Series, bool]:
         """Check whether individual(s) have all the elements given set to True
 
         The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
@@ -197,24 +197,24 @@ class BitsetHandler():
 
         :param where: condition to filter rows that will checked
         :param elements: one or more elements to set to True
-        :param pop: a keyword argument to return first item in Series instead of Series"""
+        :param first: a keyword argument to return first item in Series instead of Series"""
         value = sum([self._lookup[x] for x in elements])
         matched = np.bitwise_and(self.df.loc[where, self._column], value) == value
-        if pop:
+        if first:
             return matched.iloc[0]
         return matched
 
-    def has_any(self, where, *elements: str, pop=False):
+    def has_any(self, where, *elements: str, first=False):
         """Sister method to `has_all` but instead checks whether matching rows have any of the elements
         set to True"""
         matched = pd.Series(False, index=self.df.index[where])
         for element in elements:
             matched = matched.where(matched, self.has_all(where, element))
-        if pop:
+        if first:
             return matched.iloc[0]
         return matched
 
-    def get(self, where, pop=False):
+    def get(self, where, first=False):
         """Returns a Series with set of string of elements where bit is True
 
         The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
@@ -228,7 +228,7 @@ class BitsetHandler():
             bin_repr = format(integer, 'b')
             return {self._lookup[2 ** k] for k, v in enumerate(reversed(list(bin_repr))) if v == '1'}
         sets = self.df.loc[where, self._column].apply(int_to_set)
-        if pop:
+        if first:
             return sets.iloc[0]
         return sets
 

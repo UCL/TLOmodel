@@ -54,7 +54,7 @@ def test_bitset():
     assert (symptoms.has_all(df.is_alive, 'cough') == [True, False, True, True, True]).all()
 
     # does individual 1 have vomiting or fever - use 'pop' to get single entry, not Series
-    assert (symptoms.has_any([0], 'fever', 'vomiting', pop=True))
+    assert (symptoms.has_any([0], 'fever', 'vomiting', first=True))
 
     # who has both cough and vomiting
     assert (symptoms.has_all(df.is_alive, 'cough', 'vomiting') == [True, False, True, False, True]).all()
@@ -78,7 +78,7 @@ def test_bitset():
     assert len(sets.loc[1]) == 0
     assert len(sets.loc[3]) == 1 and 'cough' in sets.loc[3]
 
-    person_symptoms = symptoms.get([4], pop=True)
+    person_symptoms = symptoms.get([4], first=True)
     assert person_symptoms.difference({'cough', 'vomiting'}) == set()
 
 
