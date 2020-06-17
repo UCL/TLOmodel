@@ -56,44 +56,50 @@ class DxAlgorithmChild(Module):
         :param hsi_event: The calling hsi_event.
         :return: a string representing the diagnosis
         """
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
         diagnosis_str = "unknown"
 
-        # NOTES:
-        # here I tried to call malaria.HSI_Malaria_rdt but couldn't get appropriate return value
-        # wanted to return diagnosis = 'clinical_malaria' etc but kept getting 'None' returned
-        # we end up with lots of repeated code in this case
-
         # get the symptoms of the person:
-        symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
-        num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
+        # num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
+        # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
 
-        # Make a request for consumables (making reference to the hsi_event from which this is called)
-        # TODO: Finish this demonstration **
+        if "fever" in self.sim.modules["SymptomManager"].has_what(person_id):
 
-        # Make request for some consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        item_code_test = pd.unique(
-            consumables.loc[consumables['Items'] == 'Proteinuria test (dipstick)', 'Item_Code']
-        )[0]
-        consumables_needed = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_test: 1},
-        }
+            # call the DxTest RDT to diagnose malaria
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='malaria_rdt',
+                hsi_event=self
+            )
 
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event, cons_req_as_footprint=consumables_needed
-        )
+            if dx_result:
 
-        if outcome_of_request_for_consumables['Item_Code'][item_code_test]:
-            # The neccessary diagnosis was available...
+                # severe malaria
+                if df.at[person_id, "ma_inf_type"] == "severe":
+                    diagnosis_str = "severe_malaria"
 
-            # Example of a diangostic algorithm
-            if num_of_symptoms > 2:
-                diagnosis_str = 'measles'
+                    logger.debug(
+                        "dx_algorithm_child diagnosing severe malaria for person %d on date %s",
+                        person_id,
+                        self.sim.date,
+                    )
+
+                # clinical malaria
+                elif df.at[person_id, "ma_inf_type"] == "clinical":
+
+                    diagnosis_str = "clinical_malaria"
+
+                    logger.debug(
+                        "dx_algorithm_child diagnosing clinical malaria for person %d on date %s",
+                        person_id,
+                        self.sim.date,
+                    )
+
             else:
-                diagnosis_str = "no_rdt_available"
+                diagnosis_str = "negative_malaria_test"
 
-            logger.debug(f"{person_id} diagnosis is {diagnosis_str}")
+        logger.debug(f"{person_id} diagnosis is {diagnosis_str}")
 
         # return the diagnosis as a string
         return diagnosis_str

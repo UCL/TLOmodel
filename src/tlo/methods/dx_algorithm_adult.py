@@ -57,7 +57,6 @@ class DxAlgorithmAdult(Module):
         :return: a string representing the diagnosis
         """
         df = self.sim.population.props
-        params = self.sim.modules["Malaria"].parameters
         hs = self.sim.modules["HealthSystem"]
 
         diagnosis_str = "unknown"
