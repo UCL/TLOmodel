@@ -2137,44 +2137,54 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         params = self.module.parameters
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
 
         district = df.at[person_id, "district_of_residence"]
         logger.debug(f"HSI_Malaria_rdt: rdt test for person {person_id} in {district}")
 
-        # the OneHealth consumables have Intervention_Pkg_Code= -99 which causes errors
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        # this package contains treatment too
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Malaria test kit (RDT)",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
+        # # the OneHealth consumables have Intervention_Pkg_Code= -99 which causes errors
+        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # # this package contains treatment too
+        # pkg_code1 = pd.unique(
+        #     consumables.loc[
+        #         consumables["Items"] == "Malaria test kit (RDT)",
+        #         "Intervention_Pkg_Code",
+        #     ]
+        # )[0]
+        #
+        # consumables_needed = {
+        #     "Intervention_Package_Code": {pkg_code1: 1},
+        #     "Item_Code": {},
+        # }
+        #
+        # # request the RDT
+        # outcome_of_request_for_consumables = self.sim.modules[
+        #     "HealthSystem"
+        # ].request_consumables(
+        #     hsi_event=self, cons_req_as_footprint=consumables_needed
+        # )
 
-        consumables_needed = {
-            "Intervention_Package_Code": {pkg_code1: 1},
-            "Item_Code": {},
-        }
-
-        # request the RDT
-        outcome_of_request_for_consumables = self.sim.modules[
-            "HealthSystem"
-        ].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed
+        # call the DxTest RDT to diagnose malaria
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='malaria_rdt',
+            hsi_event=self
         )
 
-        if outcome_of_request_for_consumables:
+        if dx_result:
 
-            # check if still alive
-            if df.at[person_id, "is_alive"]:
+            # check if currently on treatment
+            if not df.at[person_id, "ma_tx"]:
 
                 # ----------------------------------- SEVERE MALARIA -----------------------------------
 
                 # if severe malaria, treat for complicated malaria
-                if df.at[person_id, "ma_is_infected"] & (
-                    df.at[person_id, "ma_inf_type"] == "severe"
-                ):
+                if df.at[person_id, "ma_inf_type"] == "severe":
 
+                    # paediatric severe malaria case
                     if df.at[person_id, "age_years"] < 15:
 
                         logger.debug(
@@ -2189,6 +2199,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                         )
 
                     else:
+                        # adult severe malaria case
                         logger.debug(
                             "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
                             person_id,
@@ -2204,9 +2215,8 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                 # ----------------------------------- TREATMENT CLINICAL DISEASE -----------------------------------
 
-                elif df.at[person_id, "ma_is_infected"] & (
-                    df.at[person_id, "ma_inf_type"] == "clinical"
-                ):
+                # clinical malaria - not severe
+                elif df.at[person_id, "ma_inf_type"] == "clinical":
 
                     # diagnosis of clinical disease dependent on RDT sensitivity
                     diagnosed = self.sim.rng.choice(
@@ -2231,8 +2241,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                     # diagnosis / treatment for children 5-15
                     if (
                         diagnosed
-                        & (df.at[person_id, "age_years"] >= 5)
-                        & (df.at[person_id, "age_years"] < 15)
+                        & (df.at[person_id, "age_years"].between(5, 15))
                     ):
                         logger.debug(
                             "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
