@@ -94,6 +94,18 @@ class Malaria(Module):
         "data_end": Parameter(
             Types.REAL, "final year of ICL malaria model outputs, after 2018 = projections"
         ),
+        "prob_sev": Parameter(
+            Types.REAL, "probability of infected case becoming severe"
+        ),
+        "irs_rates_boundary": Parameter(
+            Types.REAL, "threshold for indoor residual spraying coverage"
+        ),
+        "irs_rates_upper": Parameter(
+            Types.REAL, "indoor residual spraying high coverage"
+        ),
+        "irs_rates_lower": Parameter(
+            Types.REAL, "indoor residual spraying low coverage"
+        ),
     }
 
     PROPERTIES = {
@@ -265,17 +277,18 @@ class Malaria(Module):
                 ] += 1  # counter only for pregnant women
 
                 # severe - subset of newly clinical
-                prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
-
                 new_inf = df.index[
                     df.is_alive
                     & df.ma_is_infected
                     & (df.ma_date_infected == now)
                     & (df.ma_inf_type == "clinical")
                 ]
-                now_severe = rng.choice(
-                    [True, False], size=len(new_inf), p=[prob_sev, 1 - prob_sev]
-                )
+                # now_severe = rng.choice(
+                #     [True, False], size=len(new_inf), p=[p["prob_sev"], 1 - p["prob_sev"]]
+                # )
+
+                select_now_severe = self.rng.random_sample(size=len(new_inf)) < p['prob_sev']
+                now_severe = new_inf[select_now_severe]
 
                 if now_severe.sum():
                     severe_idx = new_inf[now_severe]
@@ -1044,9 +1057,12 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 & (df.ma_date_infected == now)
                 & (df.ma_inf_type == "clinical")
             ]
-            now_severe = rng.choice(
-                [True, False], size=len(new_inf), p=[prob_sev, 1 - prob_sev]
-            )
+            # now_severe = rng.choice(
+            #     [True, False], size=len(new_inf), p=[prob_sev, 1 - prob_sev]
+            # )
+
+            select_now_severe = self.rng.random_sample(size=len(new_inf)) < p['prob_sev']
+            now_severe = new_inf[select_now_severe]
 
             if now_severe.sum():
                 severe_idx = new_inf[now_severe]
@@ -1458,8 +1474,8 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         # IRS coverage rates
         irs_curr = p["irs_district"].copy()
         irs_curr = irs_curr.loc[irs_curr.Year == current_year]
-        irs_curr.loc[irs_curr.irs_rates > 0.5, "irs_rates_round"] = 0.8
-        irs_curr.loc[irs_curr.irs_rates <= 0.5, "irs_rates_round"] = 0
+        irs_curr.loc[irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
+        irs_curr.loc[irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # inf_inc select current month and irs
