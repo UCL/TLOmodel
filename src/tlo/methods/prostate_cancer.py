@@ -330,7 +330,7 @@ class ProstateCancer(Module):
 
         lm['prostate_confined'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_prostate_confined_prostate_ca'],
+            p['r_prostate_confined_prostate_ca_none'],
             Predictor('sex').when('F', 0),
             Predictor('age_years').when('.between(50,69)', p['rr_prostate_confined_prostate_ca_age5069'])
                                   .when('.between(70,120)', p['rr_prostate_confined_prostate_ca_agege70'])
@@ -373,7 +373,7 @@ class ProstateCancer(Module):
         )
 
         # Linear Model for the onset of pelvic pain symptoms in each 3 month period
-        self.lm_onset_urinary_symptoms = LinearModel.multiplicative(
+        self.lm_onset_pelvic_pain = LinearModel.multiplicative(
             Predictor('pc_status').when('local_ln', p['r_pelvic_pain_symptoms_local_ln_prostate_ca'])
                                   .when('metastatic',
                                         p['rr_pelvic_pain_metastatic_prostate_cancer']
@@ -386,47 +386,54 @@ class ProstateCancer(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             psa_for_prostate_cancer_given_prostate_confined=DxTest(
                 property='pc_status',
-                sensitivity=self.parameters['sensitivity_of_psa_for_prostate_confined_prostate_ca'],
-                target_categories=["local_ln", "metastatic"]
+                sensitivity=self.parameters['sensitivity_of_psa_test_for_prostate_confined_prostate_ca'],
+                target_categories=["prostate_confined", "local_ln", "metastatic"]
             )
         )
+
+        """
+        # todo: discuss inclusion of these below
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             psa_for_prostate_cancer_given_local_ln_prostate_ca=DxTest(
                 property = 'pc_status',
-                sensitivity = self.parameters['sensitivity of psa test for local lymph node involved prostate cancer'],
-                target_categories = ["local_ln", "metastatic"]
+                sensitivity = self.parameters['sensitivity_of_psa_test_for_local_ln_prostate_ca'],
+                target_categories = ["prostate_confined", "local_ln", "metastatic"]
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             psa_for_prostate_cancer_given_metastatic=DxTest(
                 property = 'pc_status',
                 sensitivity = self.parameters['sensitivity_of_psa_test_for_metastatic_prostate_ca'],
-                target_categories = ["local_ln", "metastatic"]
+                target_categories = ["prostate_confined", "local_ln", "metastatic"]
             )
         )
+        """
 
         # Create the diagnostic test representing the use of biopsy to diagnose prostate cancer
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_prostate_cancer_given_prostate_confined=DxTest(
                 property='pc_status',
                 sensitivity=self.parameters['sensitivity_of_biopsy_for_prostate_confined_prostate_ca'],
-                target_categories=["local_ln", "metastatic"]
+                target_categories=["prostate_confined", "local_ln", "metastatic"]
             )
         )
+
+        """
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_prostate_cancer_given_local_ln_prostate_ca=DxTest(
                 property = 'pc_status',
                 sensitivity = self.parameters['sensitivity of biopsy for local lymph node involved prostate cancer'],
-                target_categories = ["local_ln", "metastatic"]
+                target_categories = ["prostate_confined", "local_ln", "metastatic"]
             )
         )
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_prostate_cancer_given_metastatic=DxTest(
                 property = 'pc_status',
                 sensitivity = self.parameters['sensitivity_of_biopsy_for_metastatic_prostate_ca'],
-                target_categories = ["local_ln", "metastatic"]
+                target_categories = ["prostate_confined", "local_ln", "metastatic"]
             )
         )
+        """
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
@@ -574,9 +581,9 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING OF SYMPTOM OF PELVIC PAIN OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop pelvic pain symptoms.
         # Once the symptom is developed it resolves with treatment and may trigger health-care-seeking behaviour.
-        onset_pelvic_pain_symptoms = self.module.lm_onset_pelvic_pain.predict(df.loc[df.is_alive], rng)
+        onset_pelvic_pain = self.module.lm_onset_pelvic_pain.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_pelvic_pains[onset_pelvic_pain].index.tolist(),
+            person_id=onset_pelvic_pain[onset_pelvic_pain].index.tolist(),
             symptom_string='pelvic_pain',
             add_or_remove='+',
             disease_module=self.module
@@ -586,7 +593,7 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # There is a risk of death for those in metastatic only. Death is assumed to go instantly.
         metastatic_idx = df.index[df.is_alive & (df.pc_status == "metastatic")]
         selected_to_die = metastatic_idx[
-            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_prostate_cancer']]
+            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_metastatic_prostate_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
