@@ -184,9 +184,9 @@ class OtherAdultCancer(Module):
         lm_init_oac_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prop_other_adult_cancer_stage']),
-            Predictor('age_years').when(> 30 < 50, p['rp_other_adult_cancer_age3049']),
-            Predictor('age_years').when( > 70 < 30, p['rp_other_adult_cancer_age5069']),
-            Predictor('age_years').when( > 70     , p['rp_other_adult_cancer_agege70']),
+            Predictor('age_years').when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
+                                  .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
+                                  .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
         )
 
         oac_status_any_stage = \
@@ -301,10 +301,9 @@ class OtherAdultCancer(Module):
         lm['site_confined'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_site_confined_none'],
-            # todo:
-            Predictor('age_years').when( > 30 < 50, p['rp_other_adult_cancer_age3049']),
-            Predictor('age_years').when( > 30 < 50, p['rp_other_adult_cancer_age3049']),
-            Predictor('age_years').when( > 30 < 50, p['rp_other_adult_cancer_age3049']),
+            Predictor('age_years').when('.between(30,49)', p['rr_site_confined_age3049'])
+                                  .when('.between(50,69)', p['rr_site_confined_age5069'])
+                                  .when('.between(70,120)', p['rr_site_confined_agege70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
         )
 
