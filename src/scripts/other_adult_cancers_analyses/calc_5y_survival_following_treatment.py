@@ -23,7 +23,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     oesophagealcancer,
-    otheradultcancer,
+    other_adult_cancers,
     symptommanager,
 )
 
@@ -55,8 +55,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              # labour.Labour(resourcefilepath=resourcefilepath),
              # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
-             otheradultcancer.OtherAdultCancer(resourcefilepath=resourcefilepath)
+             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)''
+             other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
              )
 
 sim.seed_rngs(0)
