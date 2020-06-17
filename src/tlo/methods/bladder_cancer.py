@@ -169,13 +169,6 @@ class BladderCancer(Module):
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         )
     }
-    """  from schisto module:
-       
-            'sh_infection_status': Property(
-                Types.CATEGORICAL, 'Current status of schistosomiasis infection',
-                categories=['Non-infected', 'Low-infection', 'High-infection']),
-    """
-
 
     # Symptom that this module will use
     SYMPTOMS = {'blood_urine', 'pelvic_pain'}
@@ -211,12 +204,13 @@ class BladderCancer(Module):
 
         lm_init_bc_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_oes_cancer_stage']),
-            Predictor('li_tob').when(True, p['rp_oes_cancer_tobacco']),
-            Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+            sum(p['init_prop_bladder_cancer_stage']),
+            Predictor('li_tob').when(True, p['rp_bladder_cancer_tobacco']),
+            # todo: add line when schisto is merged
+#           Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
                                   .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
-                                  .when('>=70', p['rp_bladder_cancer_agege70']),
+                                  .when('.between(70,120)', p['rp_bladder_cancer_agege70']),
         )
 
         bc_status_any_stage = \
@@ -228,7 +222,7 @@ class BladderCancer(Module):
             if sum_probs > 0:
                 prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_bladder_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
-                df.loc[bc_status_any_dysplasia_or_cancer, "bc_status"] = self.rng.choice(
+                df.loc[bc_status_any_stage, "bc_status"] = self.rng.choice(
                     [val for val in df.bc_status.cat.categories if val != 'none'],
                     size=bc_status_any_stage.sum(),
                     p=prob_by_stage_of_cancer_if_cancer
@@ -331,19 +325,20 @@ class BladderCancer(Module):
         lm['tis_t1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_tis_t1_bladder_cancer_none'],
-            Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
-            # todo:
+            # todo: add in when schisto is in
+     #      Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
                                   .when( '.between(50,69)', p['rp_bladder_cancer_age5069'])
-                                  .when( '.>=70', p['rp_bladder_cancer_agege70']),
+                                  .when( '.between(70,120)', p['rp_bladder_cancer_agege70']),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
-            Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
+            # todo: add in when schisto module in master
+#           Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
             Predictor('bc_status').when('none', 1.0).otherwise(0.0)
         )
 
         lm['t2p'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_t2p_bladder_cancer_low_grade_dysp'],
+            p['r_t2p_bladder_cancer_tis_t1'],
             Predictor('had_treatment_during_this_stage',
                       external=True).when(True, p['rr_t2p_bladder_cancer_undergone_curative_treatment']),
             Predictor('bc_status').when('tis_t1', 1.0)
@@ -372,6 +367,17 @@ class BladderCancer(Module):
                                   .otherwise(0.0)
         )
 
+        # Linear Model for the onset of pelvic_pain, in each 3 month period
+        self.lm_onset_pelvic_pain = LinearModel.multiplicative(
+            Predictor('bc_status').when('tis_t1',
+                                         p['r_pelvic_pain_tis_t1_bladder_cancer'])
+                                  .when('t2p',
+                                        p['rr_pelvic_pain_t2p_bladder_cancer'] * p['r_pelvic_pain_tis_t1_bladder_cancer'])
+                                  .when('metastatic', p['rr_pelvic_pain_metastatic_bladder_cancer']
+                                        * p['r_pelvic_pain_tis_t1_bladder_cancer'])
+                                  .otherwise(0.0)
+        )
+
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of a cytoscope to diagnose bladder cancer
         # This properties of conditional on the test being done only to persons with the Symptom, 'blood_urine'.
@@ -379,10 +385,19 @@ class BladderCancer(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             cytoscopy_for_bladder_cancer_given_tis_t1=DxTest(
                 property='bc_status',
-                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_bladder_cancer_with_tis_t1'],
+                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_tis_t1_bladder_cancer'],
                 target_categories=["tis_t1", "t2p", "metastatic"]
             )
         )
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            cytoscopy_for_bladder_cancer_given_t2p=DxTest(
+                property='bc_status',
+                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_t2p_bladder_cancer'],
+                target_categories=["tis_t1", "t2p", "metastatic"]
+            )
+        )
+
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
@@ -418,7 +433,7 @@ class BladderCancer(Module):
         on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.bc_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_bladderCancer_PalliativeCare(module=self, person_id=person_id),
+                hsi_event=HSI_BladderCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
@@ -520,16 +535,9 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # -------------------- UPDATING OF SYMPTOM OF blood_urine OVER TIME --------------------------------
             # Each time this event is called (event 3 months) individuals may develop the symptom of blood_urine.
             # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_blood_urine_tis_t1 = self.module.lm_onset_blood_urine_tis_t1.predict(df.loc[df.is_alive], rng)
+        onset_blood_urine = self.module.lm_onset_blood_urine.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_blood_urine_tis_t1[onset_blood_urine].index.tolist(),
-            symptom_string='blood_urine',
-            add_or_remove='+',
-            disease_module=self.module
-        )
-        onset_blood_urine_t2p = self.module.lm_onset_blood_urine_t2p.predict(df.loc[df.is_alive], rng)
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_blood_urine_t2p[onset_blood_urine_t2p].index.tolist(),
+            person_id=onset_blood_urine[onset_blood_urine].index.tolist(),
             symptom_string='blood_urine',
             add_or_remove='+',
             disease_module=self.module
@@ -538,16 +546,9 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING OF SYMPTOM OF PELVIC PAIN OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of pelvic pain.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_pelvic_pain_tis_t1 = self.module.lm_onset_pelvic_pain_tis_t1.predict(df.loc[df.is_alive], rng)
+        onset_pelvic_pain = self.module.lm_onset_pelvic_pain.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_pelvic_pain_tis_t1[onset_pelvic_pain].index.tolist(),
-            symptom_string='pelvic_pain',
-            add_or_remove='+',
-            disease_module=self.module
-        )
-        onset_pelvic_pain_t2p = self.module.lm_onset_pelvic_pain_t2p.predict(df.loc[df.is_alive], rng)
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_pelvic_pain_t2p[onset_pelvic_pain_t2p].index.tolist(),
+            person_id=onset_pelvic_pain[onset_pelvic_pain].index.tolist(),
             symptom_string='pelvic_pain',
             add_or_remove='+',
             disease_module=self.module
