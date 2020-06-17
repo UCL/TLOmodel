@@ -24,6 +24,10 @@ from tlo.methods import (
     dx_algorithm_adult,
     healthseekingbehaviour,
     symptommanager,
+    antenatal_care,
+    labour,
+    newborn_outcomes,
+    pregnancy_supervisor
 )
 
 t0 = time.time()
@@ -73,6 +77,10 @@ sim.register(dx_algorithm_adult.DxAlgorithmAdult())
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
 sim.register(
     malaria.Malaria(
         resourcefilepath=resourcefilepath,

@@ -867,23 +867,17 @@ class Malaria(Module):
         # and registers it with the Diagnostic Test Manager
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
-        # this package contains treatment too
-        pkg_code1 = pd.unique(
+        item_code1 = pd.unique(
             consumables.loc[
                 consumables["Items"] == "Malaria test kit (RDT)",
-                "Intervention_Pkg_Code",
+                "Item_Code",
             ]
         )[0]
-
-        consumables_needed = {
-            "Intervention_Package_Code": {pkg_code1: 1},
-            "Item_Code": {},
-        }
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             malaria_rdt=DxTest(
                 property='ma_is_infected',
-                cons_req_as_footprint=consumables_needed,
+                # cons_req_as_item_code=item_code1,
                 sensitivity=self.parameters['sensitivity_rdt'],
             )
         )
