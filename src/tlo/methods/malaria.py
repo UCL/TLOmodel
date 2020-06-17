@@ -7,6 +7,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.dxmanager import DxTest
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -861,6 +862,32 @@ class Malaria(Module):
             MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1)
         )
 
+        # ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
+        # Create the diagnostic test representing the use of RDT for malaria diagnosis
+        # and registers it with the Diagnostic Test Manager
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        # this package contains treatment too
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Malaria test kit (RDT)",
+                "Intervention_Pkg_Code",
+            ]
+        )[0]
+
+        consumables_needed = {
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
+        }
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            malaria_rdt=DxTest(
+                property='ma_is_infected',
+                cons_req_as_footprint=consumables_needed,
+                sensitivity=self.parameters['sensitivity_rdt'],
+            )
+        )
+
     def on_birth(self, mother_id, child_id):
 
         df = self.sim.population.props
@@ -872,7 +899,6 @@ class Malaria(Module):
         df.at[child_id, "ma_tx"] = False
         df.at[child_id, "ma_date_tx"] = pd.NaT
         df.at[child_id, "ma_inf_type"] = "none"
-        # df.at[child_id, "ma_district_edited"] = df.at[child_id, "district_of_residence"]
         df.at[child_id, "ma_age_edited"] = 0
         df.at[child_id, "ma_clinical_counter"] = 0
         df.at[child_id, "ma_clinical_preg_counter"] = 0
