@@ -214,11 +214,9 @@ class BladderCancer(Module):
             sum(p['init_prop_oes_cancer_stage']),
             Predictor('li_tob').when(True, p['rp_oes_cancer_tobacco']),
             Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
-            # todo:
-            Predictor('age_years').when(> 30 < 50, p['rp_bladder_cancer_age3049']),
-            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
-            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
-
+            Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
+                                  .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
+                                  .when('>=70', p['rp_bladder_cancer_agege70']),
         )
 
         bc_status_any_stage = \

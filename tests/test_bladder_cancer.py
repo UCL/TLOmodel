@@ -12,7 +12,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    Bladdercancer,
+    oesophagealcancer,
     bladdercancer,
     pregnancy_supervisor,
     symptommanager,
