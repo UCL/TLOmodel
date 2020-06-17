@@ -99,9 +99,9 @@ class Malaria(Module):
             "specific symptoms with malaria infection",
             categories=["none", "asym", "clinical", "severe"],
         ),
-        "ma_district_edited": Property(
-            Types.STRING, "edited districts to match with malaria data"
-        ),
+        # "ma_district_edited": Property(
+        #     Types.STRING, "edited districts to match with malaria data"
+        # ),
         "ma_age_edited": Property(
             Types.REAL, "age values redefined to match with malaria data"
         ),
@@ -151,15 +151,15 @@ class Malaria(Module):
         p["sev_symp_prob"] = workbook["severe_symptoms"]
 
         p["inf_inc"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_malaria_InfInc.csv"
+            Path(self.resourcefilepath) / "ResourceFile_malaria_InfInc_expanded.csv"
         )
 
         p["clin_inc"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_malaria_ClinInc.csv"
+            Path(self.resourcefilepath) / "ResourceFile_malaria_ClinInc_expanded.csv"
         )
 
         p["sev_inc"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_malaria_SevInc.csv"
+            Path(self.resourcefilepath) / "ResourceFile_malaria_SevInc_expanded.csv"
         )
 
         p["testing_adj"] = self.testing
@@ -190,7 +190,7 @@ class Malaria(Module):
         df["ma_tx"] = False
         df["ma_date_tx"] = pd.NaT
         df["ma_inf_type"].values[:] = "none"
-        df["ma_district_edited"] = df["district_of_residence"]
+        # df["ma_district_edited"] = df["district_of_residence"]
         df["ma_age_edited"] = 0
 
         df["ma_clinical_counter"] = 0
@@ -276,24 +276,24 @@ class Malaria(Module):
             # ----------------------------------- INCIDENCE - DISTRICT -----------------------------------
 
             # ----------------------------------- RENAME DISTRICTS -----------------------------------
-            # rename districts to match malaria data
-            df.loc[
-                (df.district_of_residence == "Lilongwe City"), "ma_district_edited"
-            ] = "Lilongwe"
-            df.loc[
-                (df.district_of_residence == "Blantyre City"), "ma_district_edited"
-            ] = "Blantyre"
-            df.loc[
-                (df.district_of_residence == "Zomba City"), "ma_district_edited"
-            ] = "Zomba"
-            df.loc[
-                (df.district_of_residence == "Mzuzu City"), "ma_district_edited"
-            ] = "Mzimba"
-            df.loc[
-                (df.district_of_residence == "Nkhata Bay"), "ma_district_edited"
-            ] = "Mzimba"
-
-            assert not pd.isnull(df["ma_district_edited"]).any()
+            # # rename districts to match malaria data
+            # df.loc[
+            #     (df.district_of_residence == "Lilongwe City"), "ma_district_edited"
+            # ] = "Lilongwe"
+            # df.loc[
+            #     (df.district_of_residence == "Blantyre City"), "ma_district_edited"
+            # ] = "Blantyre"
+            # df.loc[
+            #     (df.district_of_residence == "Zomba City"), "ma_district_edited"
+            # ] = "Zomba"
+            # df.loc[
+            #     (df.district_of_residence == "Mzuzu City"), "ma_district_edited"
+            # ] = "Mzimba"
+            # df.loc[
+            #     (df.district_of_residence == "Nkhata Bay"), "ma_district_edited"
+            # ] = "Mzimba"
+            #
+            # assert not pd.isnull(df["ma_district_edited"]).any()
 
             # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
             # using .copy() avoids SettingWithCopyWarning due to chained indexing
@@ -385,7 +385,7 @@ class Malaria(Module):
                 df.reset_index()
                 .merge(
                     inf_prob,
-                    left_on=["ma_district_edited", "ma_age_edited"],
+                    left_on=["district_of_residence", "ma_age_edited"],
                     right_on=["admin", "age"],
                     how="left",
                     indicator=True,
@@ -401,7 +401,7 @@ class Malaria(Module):
                 df_ml.reset_index()
                 .merge(
                     clin_prob,
-                    left_on=["ma_district_edited", "ma_age_edited"],
+                    left_on=["district_of_residence", "ma_age_edited"],
                     right_on=["admin", "age"],
                     how="left",
                 )
@@ -416,7 +416,7 @@ class Malaria(Module):
                 df_ml.reset_index()
                 .merge(
                     sev_prob,
-                    left_on=["ma_district_edited", "ma_age_edited"],
+                    left_on=["district_of_residence", "ma_age_edited"],
                     right_on=["admin", "age"],
                     how="left",
                 )
@@ -872,29 +872,29 @@ class Malaria(Module):
         df.at[child_id, "ma_tx"] = False
         df.at[child_id, "ma_date_tx"] = pd.NaT
         df.at[child_id, "ma_inf_type"] = "none"
-        df.at[child_id, "ma_district_edited"] = df.at[child_id, "district_of_residence"]
+        # df.at[child_id, "ma_district_edited"] = df.at[child_id, "district_of_residence"]
         df.at[child_id, "ma_age_edited"] = 0
         df.at[child_id, "ma_clinical_counter"] = 0
         df.at[child_id, "ma_clinical_preg_counter"] = 0
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
 
-        # ----------------------------------- RENAME DISTRICTS -----------------------------------
-        # rename districts to match malaria data
-        if df.at[child_id, "ma_district_edited"] == "Lilongwe City":
-            df.at[child_id, "ma_district_edited"] = "Lilongwe"
-
-        elif df.at[child_id, "ma_district_edited"] == "Blantyre City":
-            df.at[child_id, "ma_district_edited"] = "Blantyre"
-
-        elif df.at[child_id, "ma_district_edited"] == "Zomba City":
-            df.at[child_id, "ma_district_edited"] = "Zomba"
-
-        elif df.at[child_id, "ma_district_edited"] == "Mzuzu City":
-            df.at[child_id, "ma_district_edited"] = "Mzuzu"
-
-        elif df.at[child_id, "ma_district_edited"] == "Nkhata Bay":
-            df.at[child_id, "ma_district_edited"] = "Mzimba"
+        # # ----------------------------------- RENAME DISTRICTS -----------------------------------
+        # # rename districts to match malaria data
+        # if df.at[child_id, "ma_district_edited"] == "Lilongwe City":
+        #     df.at[child_id, "ma_district_edited"] = "Lilongwe"
+        #
+        # elif df.at[child_id, "ma_district_edited"] == "Blantyre City":
+        #     df.at[child_id, "ma_district_edited"] = "Blantyre"
+        #
+        # elif df.at[child_id, "ma_district_edited"] == "Zomba City":
+        #     df.at[child_id, "ma_district_edited"] = "Zomba"
+        #
+        # elif df.at[child_id, "ma_district_edited"] == "Mzuzu City":
+        #     df.at[child_id, "ma_district_edited"] = "Mzuzu"
+        #
+        # elif df.at[child_id, "ma_district_edited"] == "Nkhata Bay":
+        #     df.at[child_id, "ma_district_edited"] = "Mzimba"
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -1505,7 +1505,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             df.reset_index()
             .merge(
                 inf_prob,
-                left_on=["ma_district_edited", "ma_age_edited"],
+                left_on=["district_of_residence", "ma_age_edited"],
                 right_on=["admin", "age"],
                 how="left",
                 indicator=True,
@@ -1521,7 +1521,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             df_ml.reset_index()
             .merge(
                 clin_prob,
-                left_on=["ma_district_edited", "ma_age_edited"],
+                left_on=["district_of_residence", "ma_age_edited"],
                 right_on=["admin", "age"],
                 how="left",
             )
@@ -1536,7 +1536,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             df_ml.reset_index()
             .merge(
                 sev_prob,
-                left_on=["ma_district_edited", "ma_age_edited"],
+                left_on=["district_of_residence", "ma_age_edited"],
                 right_on=["admin", "age"],
                 how="left",
             )
@@ -2937,9 +2937,9 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo this could be PfPR in 2-10 yr olds and clinical incidence too
         # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
         infected = (
-            df[df.is_alive & df.ma_is_infected].groupby("ma_district_edited").size()
+            df[df.is_alive & df.ma_is_infected].groupby("district_of_residence").size()
         )
-        pop = df[df.is_alive].groupby("ma_district_edited").size()
+        pop = df[df.is_alive].groupby("district_of_residence").size()
         prev = infected / pop
         prev_ed = prev.fillna(0)
         assert prev_ed.all() >= 0  # checks
