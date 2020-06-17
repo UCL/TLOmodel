@@ -2126,15 +2126,15 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         consumables_needed = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [],
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {},
         }
 
         # request the RDT
         outcome_of_request_for_consumables = self.sim.modules[
             "HealthSystem"
         ].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed, to_log=False
+            hsi_event=self, cons_req_as_footprint=consumables_needed
         )
 
         if outcome_of_request_for_consumables:
@@ -2232,11 +2232,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             treat, priority=1, topen=self.sim.date, tclose=None
                         )
 
-            # log the consumables used
-            self.sim.modules["HealthSystem"].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed, to_log=True
-            )
-
     def did_not_run(self):
         logger.debug("HSI_Malaria_rdt: did not run")
         pass
@@ -2283,15 +2278,15 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
             ]  # this pkg_code includes another rdt
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
             outcome_of_request_for_consumables = self.sim.modules[
                 "HealthSystem"
             ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint
             )
 
             if outcome_of_request_for_consumables:
@@ -2308,13 +2303,6 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(
                         MalariaCureEvent(self.module, person_id),
                         self.sim.date + DateOffset(weeks=1),
-                    )
-
-                    # log the consumables
-                    self.sim.modules["HealthSystem"].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=the_cons_footprint,
-                        to_log=True,
                     )
 
     def did_not_run(self):
@@ -2363,15 +2351,15 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
             ]  # this pkg_code includes another rdt
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
             outcome_of_request_for_consumables = self.sim.modules[
                 "HealthSystem"
             ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint
             )
 
             if outcome_of_request_for_consumables:
@@ -2388,13 +2376,6 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(
                         MalariaCureEvent(self.module, person_id),
                         self.sim.date + DateOffset(weeks=1),
-                    )
-
-                    # log the consumables
-                    self.sim.modules["HealthSystem"].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=the_cons_footprint,
-                        to_log=True,
                     )
 
     def did_not_run(self):
@@ -2442,8 +2423,8 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
             ]  # this pkg_code includes another rdt
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
@@ -2467,13 +2448,6 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(
                         MalariaCureEvent(self.module, person_id),
                         self.sim.date + DateOffset(weeks=1),
-                    )
-
-                    # log the consumables
-                    self.sim.modules["HealthSystem"].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=the_cons_footprint,
-                        to_log=True,
                     )
 
     def did_not_run(self):
@@ -2520,8 +2494,8 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
             )[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
@@ -2545,13 +2519,6 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(
                         MalariaCureEvent(self.module, person_id),
                         self.sim.date + DateOffset(weeks=1),
-                    )
-
-                    # log the consumables
-                    self.sim.modules["HealthSystem"].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=the_cons_footprint,
-                        to_log=True,
                     )
 
     def did_not_run(self):
@@ -2598,15 +2565,15 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
             )[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
             outcome_of_request_for_consumables = self.sim.modules[
                 "HealthSystem"
             ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint
             )
 
             if outcome_of_request_for_consumables:
@@ -2623,13 +2590,6 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(
                         MalariaCureEvent(self.module, person_id),
                         self.sim.date + DateOffset(weeks=1),
-                    )
-
-                    # log the consumables
-                    self.sim.modules["HealthSystem"].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=the_cons_footprint,
-                        to_log=True,
                     )
 
     def did_not_run(self):
@@ -2676,28 +2636,21 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
             )[0]
 
             the_cons_footprint = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             # request the treatment
             outcome_of_request_for_consumables = self.sim.modules[
                 "HealthSystem"
             ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint
             )
 
             if outcome_of_request_for_consumables:
                 logger.debug("HSI_MalariaIPTp: giving IPTp for person %d", person_id)
 
                 df.at[person_id, "ma_iptp"] = True
-
-                # log the consumables
-                self.sim.modules["HealthSystem"].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=the_cons_footprint,
-                    to_log=True,
-                )
 
     def did_not_run(self):
         logger.debug("HSI_MalariaIPTp: did not run")

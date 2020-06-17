@@ -77,28 +77,18 @@ class DxAlgorithmAdult(Module):
             )[0]
 
             consumables_needed = {
-                "Intervention_Package_Code": [{pkg_code1: 1}],
-                "Item_Code": [],
+                "Intervention_Package_Code": {pkg_code1: 1},
+                "Item_Code": {},
             }
 
             outcome_of_request_for_consumables = self.sim.modules[
                 "HealthSystem"
             ].request_consumables(
                 hsi_event=hsi_event,
-                cons_req_as_footprint=consumables_needed,
-                to_log=False,
+                cons_req_as_footprint=consumables_needed
             )
 
             if outcome_of_request_for_consumables:
-
-                # log the consumable use
-                outcome_of_request_for_consumables = self.sim.modules[
-                    "HealthSystem"
-                ].request_consumables(
-                    hsi_event=hsi_event,
-                    cons_req_as_footprint=consumables_needed,
-                    to_log=True,
-                )
 
                 # severe malaria
                 if df.at[person_id, "ma_is_infected"] & (

@@ -1,3 +1,9 @@
+"""
+this file ran multiple simulations using the malaria module with changing intervention levels (ITN)
+it reads in the output files and produces plots
+now obsolete as the output files have been removed
+"""
+
 import datetime
 import logging
 import os
@@ -26,7 +32,7 @@ from tlo.methods import (
 t0 = time.time()
 
 # Where will output go
-outputpath = "./src/scripts/outputs/"
+outputpath = Path("./outputs/malaria")
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

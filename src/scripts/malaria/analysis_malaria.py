@@ -1,3 +1,7 @@
+"""
+this file runs the malaria module and outputs graphs with data for comparison
+"""
+
 import time
 from tlo.analysis.utils import parse_log_file
 import datetime
@@ -40,7 +44,6 @@ popsize = 500
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
 
-# TODO change the seed and filepath for each simulation
 sim.seed_rngs(25)
 
 # ----- Control over the types of intervention that can occur -----
@@ -79,7 +82,7 @@ sim.register(
     )
 )
 
-# Sets all modules to WARNING threshold, then alters hiv, tb and male_circumcision to INFO
+# Sets all modules to WARNING threshold, then alters malaria to INFO
 custom_levels = {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
 # configure_logging automatically appends datetime
 logfile = sim.configure_logging(filename="Malaria_LogFile", custom_levels=custom_levels)
