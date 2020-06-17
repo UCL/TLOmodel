@@ -108,7 +108,7 @@ class ProstateCancer(Module):
         "rp_prostate_cancer_age5069": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 50-69"
         ),
-        "rp_prostate_cancer_agege 70": Parameter(
+        "rp_prostate_cancer_agege70": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 70+"
         ),
         "sensitivity_of_psa_test_for_prostate_confined_prostate_ca": Parameter(
@@ -152,7 +152,7 @@ class ProstateCancer(Module):
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given.",
-            categories=["prostate_confined", "local_ln", "metastatic"],
+            categories=["none", "prostate_confined", "local_ln", "metastatic"],
         ),
 
         "pc_date_palliative_care": Property(
@@ -195,11 +195,10 @@ class ProstateCancer(Module):
 
         lm_init_prop_prostate_cancer_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_prostate_cancer_stage']),
-            Predictor('sex').when('M', 1.0).otherwise(0.0)
-            # todo
-            Predictor('age_years').apply(lambda x: p['rp_prostate_cancer_age5069']) if 50 < x < 70)
-            Predictor('age_years').apply(lambda x: p['rp_prostate_cancer_age5069']) if x > 70)
+            sum(p['init_prop_prostate_ca_stage']),
+            Predictor('sex').when('M', 1.0).otherwise(0.0),
+            Predictor('age_years').when('.between(50,69)', p['rp_prostate_cancer_age5069'])
+                                  .when('.between(70,120)', p['rp_prostate_cancer_agege70'])
         )
 
         pc_status_ = \
@@ -229,7 +228,7 @@ class ProstateCancer(Module):
                                           p['init_prop_urinary_symptoms_by_stage'][2])
 
         )
-        has_urinary_symptoms_at_init = lm_init_urinary_symptoms.predict(df.loc[df.is_alive], self.rng)
+        has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=has_urinary_symptoms_at_init.index[has_urinary_symptoms_at_init].tolist(),
             symptom_string='urinary',
@@ -240,20 +239,17 @@ class ProstateCancer(Module):
         # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
         lm_init_pelvic_pain = LinearModel.multiplicative(
         Predictor('pc_status').when("none", 0.0)
-        .when("prostate_confined",
-            p['init_prop_urinary_symptoms_by_stage'][0])
-        .when("local_ln",
-            p['init_prop_urinary_symptoms_by_stage'][1])
-        .when("metastatic",
-            p['init_prop_urinary_symptoms_by_stage'][2])
+                            .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
+                            .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
+                            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
         )
 
-        has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain_symptoms.predict(df.loc[df.is_alive], self.rng)
+        has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-        person_id = has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
-        symptom_string = 'pelvic_pain',
-        add_or_remove = '+',
-        disease_module = self
+            person_id=has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
+            symptom_string='pelvic_pain',
+            add_or_remove='+',
+            disease_module=self
         )
 
 # -------------------- pc_date_diagnosis -----------
@@ -336,10 +332,11 @@ class ProstateCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_prostate_confined_prostate_ca'],
             Predictor('sex').when('F', 0),
-            # todo
-            Predictor('age_years').apply(lambda x: p['rr_prostate_confined_prostate_ca_age5069']) if 50 < x < 70)
-            Predictor('age_years').apply(lambda x: p['rr_prostate_confined_prostate_ca_agege70']) if x > 70)
+            Predictor('age_years').when('.between(50,69)', p['rr_prostate_confined_prostate_ca_age5069'])
+                                  .when('.between(70,120)', p['rr_prostate_confined_prostate_ca_agege70'])
         )
+
+
 
         lm['local_ln'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -358,29 +355,6 @@ class ProstateCancer(Module):
             Predictor('pc_status').when('local_ln', 1.0)
                                   .otherwise(0.0)
         )
-
-
-
-"""
-
-       "r_urinary_symptoms_prostate_ca": Parameter(
-            Types.REAL, "rate of urinary symptoms if have prostate confined prostate ca"
-        ),
-        "rr_urinary_symptoms_local_ln_or_metastatic_prostate_cancer": Parameter(
-            Types.REAL, "rate ratio of urinary symptoms in a person with local lymph node or metastatuc prostate cancer "
-                        "compared with prostate confined prostate ca"
-        ),
-        "r_pelvic_pain_symptoms_local_ln_prostate_ca": Parameter(
-            Types.REAL, "rate of pelvic pain or numbness symptoms if have local lymph node involved prostate cancer"
-        ),
-        "rr_pelvic_pain_metastatic_prostate_cancer": Parameter(
-            Types.REAL,
-            "rate ratio of pelvic pain or numbness in a person with metastatic prostate cancer compared with lymph node involved"
-            "prostate cancer"
-        ),
-
-
-"""
 
         # Check that the dict labels are correct as these are used to set the value of pc_status
         assert set(lm).union({'none'}) == set(df.pc_status.cat.categories)
@@ -406,7 +380,6 @@ class ProstateCancer(Module):
                                         * p['r_pelvic_pain_symptoms_local_ln_prostate_ca'])
                                   .otherwise(0.0)
         )
-
 
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of psa test to diagnose prostate cancer
@@ -870,7 +843,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "pc_date_treatment"])
 
-        if df.at[person_id, 'pc_status'] == 'metastatic'
+        if df.at[person_id, 'pc_status'] == 'metastatic':
             # If has progressed to metastatic, then start Palliative Care immediately:
             hs.schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PalliativeCare(
