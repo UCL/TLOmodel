@@ -333,9 +333,9 @@ class BladderCancer(Module):
             p['r_tis_t1_bladder_cancer_none'],
             Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             # todo:
-            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
-            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
-            Predictor('age_years').when( > 30 < 50, p['rp_bladder_cancer_age3049']),
+            Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
+                                  .when( '.between(50,69)', p['rp_bladder_cancer_age5069'])
+                                  .when( '.>=70', p['rp_bladder_cancer_agege70']),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
             Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
             Predictor('bc_status').when('none', 1.0).otherwise(0.0)
