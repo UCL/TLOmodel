@@ -52,9 +52,9 @@ class Mockitis(Module):
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
-        'weird_sense_of_deja_vu',       # will not trigger any health seeking behaviour
-        'coughing_and_irritable',       # will not trigger any health seeking behaviour
-        'em_extreme_pain_in_the_nose'   # symptom that will trigger emergency HSI
+        'weird_sense_of_deja_vu',  # will not trigger any health seeking behaviour
+        'coughing_and_irritable',  # will not trigger any health seeking behaviour
+        'em_extreme_pain_in_the_nose'  # symptom that will trigger emergency HSI
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -269,7 +269,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        logger.debug('This is MockitisEvent, tracking the disease progression of the population.')
+        logger.debug(key='debug', data='This is MockitisEvent, tracking the disease progression of the population.')
 
         df = population.props
 
@@ -323,7 +323,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                     )
 
         else:
-            logger.debug('This is MockitisEvent, no one is newly infected.')
+            logger.debug(key='debug', data='This is MockitisEvent, no one is newly infected.')
 
 
 class MockitisDeathEvent(Event, IndividualScopeEventMixin):
@@ -373,13 +373,16 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
-                     person_id)
+        logger.debug(
+            key='debug',
+            data=f'This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person {person_id}',
+        )
 
         logger.debug(
-            '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: \
-            there should now be treatment for person %d',
-            person_id)
+            key='debug',
+            data=('...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: '
+                  f'there should now be treatment for person {person_id}'),
+        )
 
         event = HSI_Mockitis_StartTreatment(self.module, person_id=person_id)
         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -388,7 +391,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
                                                             tclose=None)
 
     def did_not_run(self):
-        logger.debug('HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
+        logger.debug(key='debug', data='HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
         # return False to prevent this event from being rescheduled if it did not run.
         return False
 
@@ -417,7 +420,8 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
+        logger.debug(key='debug',
+                     data=f'This is HSI_Mockitis_StartTreatment: initiating treatent for person {person_id}')
         df = self.sim.population.props
 
         if not df.at[person_id, 'is_alive']:
@@ -455,8 +459,10 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
 
         logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
+            key='debug',
+            data=('....This is HSI_Mockitis_StartTreatment: '
+                  f'scheduling a follow-up appointment for person {person_id} on date {target_date_for_followup_appt}'),
+        )
 
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
@@ -468,7 +474,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                                                             )
 
     def did_not_run(self):
-        logger.debug('HSI_Mockitis_StartTreatment: did not run')
+        logger.debug(key='debug', data='HSI_Mockitis_StartTreatment: did not run')
         pass
 
 
@@ -509,8 +515,10 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
 
         logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
+            key='debug',
+            data=('....This is HSI_Mockitis_StartTreatment: '
+                  f'scheduling a follow-up appointment for person {person_id} on date {target_date_for_followup_appt}'),
+        )
 
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
@@ -521,7 +529,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
                                                             tclose=target_date_for_followup_appt + DateOffset(weeks=2))
 
     def did_not_run(self):
-        logger.debug('HSI_Mockitis_TreatmentMonitoring: did not run')
+        logger.debug(key='debug', data='HSI_Mockitis_TreatmentMonitoring: did not run')
         pass
 
 
@@ -553,12 +561,11 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
         counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
 
-        logger.info('%s|summary|%s', self.sim.date,
-                    {
-                        'TotalInf': infected_total,
-                        'PropInf': proportion_infected,
-                        'PrevMonth': infected_in_last_month,
-                        'Cured': cured_in_last_month,
-                    })
+        logger.info(key='summary',
+                    data={'TotalInf': infected_total,
+                          'PropInf': proportion_infected,
+                          'PrevMonth': infected_in_last_month,
+                          'Cured': cured_in_last_month,
+                          })
 
-        logger.info('%s|status_counts|%s', self.sim.date, counts)
+        logger.info(key='status_counts', data=counts)
