@@ -5,20 +5,20 @@ from tlo import Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.logging import INFO, getLogger
 
-logger = getLogger("tlo.testing.MockModule")
+logger = getLogger("tlo.testing.loggernaires")
 logger.setLevel(INFO)
 
 
-class MockModule(Module):
+class LoggerNaires(Module):
     PARAMETERS = {
         'test': Parameter(Types.REAL, 'this is a test')
     }
 
     PROPERTIES = {
-        'mm_a': Property(Types.REAL, 'numeric a'),
-        'mm_b': Property(Types.REAL, 'numeric b'),
-        'mm_c': Property(Types.REAL, 'numeric c'),
-        'mm_date': Property(Types.DATE, 'date'),
+        'ln_a': Property(Types.REAL, 'numeric a'),
+        'ln_b': Property(Types.REAL, 'numeric b'),
+        'ln_c': Property(Types.REAL, 'numeric c'),
+        'ln_date': Property(Types.DATE, 'date'),
 
     }
 
@@ -37,7 +37,7 @@ class MockModule(Module):
     def initialise_population(self, population):
         df = population.props
         for name, _type in self.PROPERTIES.items():
-            if name == "mm_date":
+            if name == "ln_date":
                 df[name] = self.rng.randint(1400, 1600, population.initial_size) * 1_000_000_000_000_000
                 df[name] = df[name].astype('datetime64[ns]')
             else:
@@ -50,9 +50,9 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        a_over_50 = sum(df.mm_a > 50)
-        b_over_50 = sum(df.mm_b > 50)
-        c_over_50 = sum(df.mm_c > 50)
+        a_over_50 = sum(df.ln_a > 50)
+        b_over_50 = sum(df.ln_b > 50)
+        c_over_50 = sum(df.ln_c > 50)
 
         # the preferred way to log, because it maps naturally to a row in a dataframe
         logger.info(key="each_group_over_50_unscaled",
@@ -71,7 +71,7 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
                     description="divide a, b, c by 2, 3, 4 respectively")
 
         logger.info(key="a_variable_length_list",
-                    data={"list_head": list(df.loc[0:self.module.rng.randint(2, 8), "mm_a"])},
+                    data={"list_head": list(df.loc[0:self.module.rng.randint(2, 8), "ln_a"])},
                     description="the first few interesting items from property a, random selection")
 
         logger.info(key="counting_but_string",
@@ -91,6 +91,6 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
                           "mostly_nan": np.nan,
                           "c_over_50_div_2": c_over_50 / 2,
                           "b_over_50_as_list": [b_over_50],
-                          "random_date": df.loc[self.module.rng.randint(0, len(df)), "mm_date"]
+                          "random_date": df.loc[self.module.rng.randint(0, len(df)), "ln_date"]
                           },
                     description="including a little bit of everything, columns have different types")
