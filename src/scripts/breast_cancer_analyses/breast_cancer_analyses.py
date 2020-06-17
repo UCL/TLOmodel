@@ -26,7 +26,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     oesophagealcancer,
-    prostatecancer,
+    breast_cancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -62,7 +62,7 @@ def run_sim(service_availability):
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 breastcancer.BreastCancer(resourcefilepath=resourcefilepath)
+                 breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)

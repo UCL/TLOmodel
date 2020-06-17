@@ -55,7 +55,7 @@ class BreastCancer(Module):
         "rr_stage1_none_age3049": Parameter(
             Types.REAL, "rate ratio for stage1 breast cancer for age 30-49"
         ),
-        "rr_stage1_none_age3ge50": Parameter(
+        "rr_stage1_none_agege50": Parameter(
             Types.REAL, "rate ratio for stage1 breast cancer for age 50+"
         ),
         "r_stage2_stage1": Parameter(
@@ -186,10 +186,9 @@ class BreastCancer(Module):
         lm_init_brc_status_any_stage = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             sum(p['init_prop_breast_cancer_stage']),
-            Predictor('sex').when('F', 1.0).otherwise(0.0)
-            # todo
-            Predictor('age_years').apply(lambda x: p['rp_breast_cancer_age3049']) if 30 < x < 50)
-            Predictor('age_years').apply(lambda x: p['rp_breast_cancer_agege50']) if x > 50)
+            Predictor('sex').when('F', 1.0).otherwise(0.0),
+            Predictor('age_years').when('.between(30,49)', p['rp_breast_cancer_age3049'])
+                                  .when('.between(50,120)', p['rp_breast_cancer_agege50']),
         )
 
         brc_status_any_stage = \
@@ -311,10 +310,9 @@ class BreastCancer(Module):
         lm['stage1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_stage1_none'],
-            # todo: fix coding below
             Predictor('sex').when('M', 0.0),
-            Predictor('age_years').apply(lambda x: p['rr_stage1_none_age3049']) if 30 < x < 50)
-            Predictor('age_years').apply(lambda x: p['rr_stage1_none_age3049']) if x > 50)
+            Predictor('age_years').when('.between(30,49)', p['rr_stage1_none_age3049'])
+                                  .when('.between(50,120)', p['rr_stage1_none_agege50'])
         )
 
         lm['stage2'] = LinearModel(
@@ -363,15 +361,17 @@ class BreastCancer(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_breast_cancer_stage1=DxTest(
                 property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage1'],
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage1_breast_cancer'],
                 target_categories=["stage1", "stage2", "stage3", "stage4"]
             )
         )
 
+        # todo: possibly un-comment out below when can discuss with Tim
+        """
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_breast_cancer_stage2=DxTest(
                 property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage2'],
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage2_breast_cancer'],
                 target_categories=["stage1", "stage2", "stage3", "stage4"]
             )
         )
@@ -379,7 +379,7 @@ class BreastCancer(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_breast_cancer_stage3=DxTest(
                 property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage3'],
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage3_breast_cancer'],
                 target_categories=["stage1", "stage2", "stage3", "stage4"]
             )
         )
@@ -387,12 +387,11 @@ class BreastCancer(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_breast_cancer_stage4=DxTest(
                 property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_breast_cancer_with_stage4'],
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage4_breast_cancer'],
                 target_categories=["stage1", "stage2", "stage3", "stage4"]
             )
         )
-
-
+        """
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
