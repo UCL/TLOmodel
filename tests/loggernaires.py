@@ -86,11 +86,27 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
                     data=df.loc[[0, 1, 2]],
                     description="three people (0-2, inclusive), flattened to single row")
 
+        logger.info(key="nested_dictionary",
+                    data={
+                        "count_over_50":
+                            {"a": a_over_50,
+                             "b": b_over_50,
+                             "c": c_over_50 / 3
+                             },
+                    },
+                    description="count over 50 for each group")
+
+        logger.info(key="set_in_dict",
+                    data={"count_over_50": set([a_over_50, b_over_50, c_over_50 / 3])},
+                    description="count over 50 for each group")
+
         logger.info(key="with_every_type",
                     data={"a_over_50": a_over_50,
                           "mostly_nan": np.nan,
                           "c_over_50_div_2": c_over_50 / 2,
                           "b_over_50_as_list": [b_over_50],
-                          "random_date": df.loc[self.module.rng.randint(0, len(df)), "ln_date"]
+                          "random_date": df.loc[self.module.rng.randint(0, len(df)), "ln_date"],
+                          "count_over_50_as_dict": {"a": a_over_50, "b": b_over_50, "c": c_over_50 / 3},
+                          "count_over_50_as_set": {a_over_50, b_over_50, c_over_50 / 3}
                           },
                     description="including a little bit of everything, columns have different types")

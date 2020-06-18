@@ -14,4 +14,6 @@ class PandasEncoder(json.JSONEncoder):
             return int(obj)
         elif isinstance(obj, pd.Timestamp):
             return obj.isoformat()
+        elif isinstance(obj, set):
+            return list(obj)
         return json.JSONEncoder.default(self, obj)

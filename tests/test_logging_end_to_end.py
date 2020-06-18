@@ -3,7 +3,6 @@ from pytest import fixture
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-
 from .loggernaires import LoggerNaires
 
 
@@ -140,14 +139,48 @@ class TestWriteAndReadLogFile:
 
         assert expected_df.equals(log_df)
 
+    def test_nested_dictionary(self, loggernaires_log_df):
+        counts = {"a": 4, "b": 6, "c": 2.0}
+
+        expected_df = pd.DataFrame(
+            {
+                "date": self.dates,
+                "count_over_50": [counts, counts],
+
+            }
+        )
+        log_df = loggernaires_log_df['nested_dictionary']
+
+        assert expected_df.equals(log_df)
+
+    def test_set_in_dict(self, loggernaires_log_df):
+        # converting set to list so that ordering is correct
+        counts = list({4, 6, 2.0})
+
+        expected_df = pd.DataFrame(
+            {
+                "date": self.dates,
+                "count_over_50": [counts, counts],
+
+            }
+        )
+        log_df = loggernaires_log_df['set_in_dict']
+
+        assert expected_df.equals(log_df)
+
     def test_every_type(self, loggernaires_log_df):
+        counts_over_50_dict = {"a": 4, "b": 6, "c": 2.0}
+        counts_over_50_list = list({4, 6, 2.0})
+
         expected_df = pd.DataFrame(
             {"date": self.dates,
              "a_over_50": [4, 4],
              "mostly_nan": [float("nan") for x in range(2)],
              "c_over_50_div_2": [3.0, 3.0],
              "b_over_50_as_list": [[6], [6]],
-             "random_date": [pd.Timestamp("2020-06-24 12:00:00"), pd.Timestamp("2015-05-07 12:00:00")]
+             "random_date": [pd.Timestamp("2020-06-24 12:00:00"), pd.Timestamp("2015-05-07 12:00:00")],
+             "count_over_50_as_dict": [counts_over_50_dict, counts_over_50_dict],
+             "count_over_50_as_set": [counts_over_50_list, counts_over_50_list]
              }
         )
         log_df = loggernaires_log_df['with_every_type']
