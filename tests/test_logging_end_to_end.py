@@ -55,6 +55,8 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
         a_over_50 = sum(df.ln_a > 50)
         b_over_50 = sum(df.ln_b > 50)
         c_over_50 = sum(df.ln_c > 50)
+        # Allowing logging of entire dataframe only for testing
+        logger._disable_dataframe_logging = False
 
         # the preferred way to log, because it maps naturally to a row in a dataframe
         logger.info(key="each_group_over_50_unscaled",

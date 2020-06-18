@@ -41,6 +41,7 @@ class Logger:
         # can be removed after transition
         self.logged_stdlib = False
         self.logged_structured = False
+        self._disable_dataframe_logging = True
 
     def __repr__(self):
         return f'<TLO Logger containing {self._std_logger}>'
@@ -82,6 +83,8 @@ class Logger:
         if isinstance(data, pd.DataFrame):
             if len(data.index) == 1:
                 converted_data = data.to_dict('records')[0]
+            elif self._disable_dataframe_logging:
+                raise ValueError("Logging an entire dataframe is disabled, if you need this feature let us know")
             else:
                 converted_data = {'dataframe': data.to_dict('index')}
             return converted_data
