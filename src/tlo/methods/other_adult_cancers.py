@@ -27,7 +27,7 @@ class OtherAdultCancer(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.linear_models_for_progession_of_oac_status = dict()
-        self.lm_onset_other_adult_ca_symptom = None
+        self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
 
     PARAMETERS = {
@@ -329,7 +329,7 @@ class OtherAdultCancer(Module):
         assert set(lm).union({'none'}) == set(df.oac_status.cat.categories)
 
         # Linear Model for the onset of other_adult_ca_symptom, in each 3 month period
-        self.lm_onset_other_adult_ca_symptom = LinearModel.multiplicative(
+        self.lm_onset_early_other_adult_ca_symptom = LinearModel.multiplicative(
             Predictor('oac_status').when('site_confined', p['r_early_other_adult_ca_symptom_site_confined_other_adult_ca'])
                                   .when('local_ln',
                                         p['rr_early_other_adult_ca_symptom_local_ln_other_adult_ca'] *
@@ -343,11 +343,12 @@ class OtherAdultCancer(Module):
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of an diagnostic_device to oac_status
         # This properties of conditional on the test being done only to persons with the Symptom, 'early_other_adult_ca_symptom'.
-        # todo: note dependent on underlying status not symptoms
+        # todo: note dependent on underlying status not symptoms + add for other stages
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             diagnostic_device_for_other_adult_cancer_given_site_confined=DxTest(
                 property='oac_status',
-                sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_adult_ca_symptom'],
+                sensitivity=self.parameters['sensitivity_of_diagnostic_device_for_other_adult_cancer_with_other_'
+                                            'adult_ca_site_confined'],
                 target_categories=["site_confined", "local_ln", "metastatic"]
             )
         )
@@ -488,7 +489,7 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING OF SYMPTOM OF early_other_adult_ca_symptom OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of other_adult_ca_symptom.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_other_adult_ca_symptom = self.module.lm_onset_early_other_adult_ca_symptom.predict(df.loc[df.is_alive], rng)
+        onset_early_other_adult_ca_symptom = self.module.lm_onset_early_other_adult_ca_symptom.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_early_other_adult_ca_symptom[onset_early_other_adult_ca_symptom].index.tolist(),
             symptom_string='early_other_adult_ca_symptom',
