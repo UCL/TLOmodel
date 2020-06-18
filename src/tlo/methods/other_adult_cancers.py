@@ -93,7 +93,7 @@ class OtherAdultCancer(Module):
         "rr_early_other_adult_ca_symptom_local_ln_other_adult_ca": Parameter(
             Types.REAL, "rate ratio for other_adult_ca_symptom if have high grade other_adult cancer"
         ),
-        "rr_early_other_adult_ca_symptom_metastatic": Parameter(
+        "rr_early_other_adult_ca_symptom_metastatic_other_adult_ca": Parameter(
             Types.REAL, "rate ratio for other_adult_ca_symptom if have metastatic other_adult cancer"
         ),
         "rp_other_adult_cancer_age3049": Parameter(
@@ -206,7 +206,7 @@ class OtherAdultCancer(Module):
 
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of other_adult_ca_symptom:
-        lm_init_disphagia = LinearModel.multiplicative(
+        lm_init_early_other_adult_ca_symptom = LinearModel.multiplicative(
             Predictor('oac_status')  .when("none", 0.0)
                                     .when("site_confined",
                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][0])
@@ -215,7 +215,7 @@ class OtherAdultCancer(Module):
                                     .when("metastatic",
                                           p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][2])
         )
-        early_ = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
+        has_early_other_adult_ca_symptom_at_init = lm_init_early_other_adult_ca_symptom.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=has_early_other_adult_ca_symptom_at_init.index[has_early_other_adult_ca_symptom_at_init].tolist(),
             symptom_string='early_other_adult_ca_symptom',
@@ -283,11 +283,11 @@ class OtherAdultCancer(Module):
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
-        sim.schedule_event(OACancerLoggingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(OtherAdultCancerLoggingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(OACancerMainPollingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(OtherAdultCancerMainPollingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- LINEAR MODELS -----
         # Define LinearModels for the progression of cancer, in each 3 month period
