@@ -20,6 +20,7 @@ class LoggerNaires(Module):
         'ln_a': Property(Types.REAL, 'numeric a'),
         'ln_b': Property(Types.REAL, 'numeric b'),
         'ln_c': Property(Types.REAL, 'numeric c'),
+        'ln_set': Property(Types.LIST, 'set of values'),
         'ln_date': Property(Types.DATE, 'date'),
 
     }
@@ -37,13 +38,18 @@ class LoggerNaires(Module):
         sim.schedule_event(MockLogEvent(self), sim.date + pd.DateOffset(months=0))
 
     def initialise_population(self, population):
+        rows = population.initial_size
         df = population.props
         for name, _type in self.PROPERTIES.items():
             if name == "ln_date":
-                df[name] = self.rng.randint(1400, 1600, population.initial_size) * 1_000_000_000_000_000
+                df[name] = self.rng.randint(1400, 1600, rows) * 1_000_000_000_000_000
                 df[name] = df[name].astype('datetime64[ns]')
+            elif name == "ln_set":
+                df[name] = {(r1, r2) for r1, r2 in zip(self.rng.randint(0, 100, rows), self.rng.randint(0, 100, rows))}
+                df[name][0] = None
+                df[name][1] = set()
             else:
-                df[name] = self.rng.randint(0, 100, population.initial_size)
+                df[name] = self.rng.randint(0, 100, rows)
 
 
 class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
@@ -219,8 +225,8 @@ class TestWriteAndReadLogFile:
              "ln_a": [46, 46],
              "ln_b": [58, 58],
              "ln_c": [22, 22],
-             "ln_date": [pd.Timestamp("2016-08-12 11:06:40") for x in range(2)],
-
+             "ln_set": [None, None],
+             "ln_date": [pd.Timestamp("2014-09-06 10:40:00") for x in range(2)],
              }
         )
         log_df = loggernaires_log_df['single_individual']
@@ -229,36 +235,42 @@ class TestWriteAndReadLogFile:
 
     def test_three_people(self, loggernaires_log_df):
         expected_df = pd.DataFrame.from_dict(
-            data={(0, '0'): {'date': pd.Timestamp('2010-01-01 00:00:00'),
+            data={(0, '0'): {'date': self.dates[0],
                              'ln_a': 46,
                              'ln_b': 58,
                              'ln_c': 22,
-                             'ln_date': '2016-08-12T11:06:40'},
-                  (0, '1'): {'date': pd.Timestamp('2010-01-01 00:00:00'),
+                             'ln_set': None,
+                             'ln_date': '2014-09-06T10:40:00'},
+                  (0, '1'): {'date': self.dates[0],
                              'ln_a': 33,
                              'ln_b': 52,
                              'ln_c': 91,
-                             'ln_date': '2017-11-18T10:13:20'},
-                  (0, '2'): {'date': pd.Timestamp('2010-01-01 00:00:00'),
+                             'ln_set': [],
+                             'ln_date': '2015-02-27T01:20:00'},
+                  (0, '2'): {'date': self.dates[0],
                              'ln_a': 95,
                              'ln_b': 93,
                              'ln_c': 47,
-                             'ln_date': '2017-08-29T09:46:40'},
-                  (1, '0'): {'date': pd.Timestamp('2010-01-29 00:00:00'),
+                             'ln_set': [12, 78],
+                             'ln_date': '2020-06-12T22:13:20'},
+                  (1, '0'): {'date': self.dates[1],
                              'ln_a': 46,
                              'ln_b': 58,
                              'ln_c': 22,
-                             'ln_date': '2016-08-12T11:06:40'},
-                  (1, '1'): {'date': pd.Timestamp('2010-01-29 00:00:00'),
+                             'ln_set': None,
+                             'ln_date': '2014-09-06T10:40:00'},
+                  (1, '1'): {'date': self.dates[1],
                              'ln_a': 33,
                              'ln_b': 52,
                              'ln_c': 91,
-                             'ln_date': '2017-11-18T10:13:20'},
-                  (1, '2'): {'date': pd.Timestamp('2010-01-29 00:00:00'),
+                             'ln_set': [],
+                             'ln_date': '2015-02-27T01:20:00'},
+                  (1, '2'): {'date': self.dates[1],
                              'ln_a': 95,
                              'ln_b': 93,
                              'ln_c': 47,
-                             'ln_date': '2017-08-29T09:46:40'}},
+                             'ln_set': [12, 78],
+                             'ln_date': '2020-06-12T22:13:20'}},
             orient='index'
         )
         log_df = loggernaires_log_df['three_people']
@@ -304,7 +316,7 @@ class TestWriteAndReadLogFile:
              "mostly_nan": [float("nan") for x in range(2)],
              "c_over_50_div_2": [3.0, 3.0],
              "b_over_50_as_list": [[6], [6]],
-             "random_date": [pd.Timestamp("2020-06-24 12:00:00"), pd.Timestamp("2015-05-07 12:00:00")],
+             "random_date": [pd.Timestamp("2020-06-12 22:13:20"), pd.Timestamp("2019-07-01 16:53:20")],
              "count_over_50_as_dict": [counts_over_50_dict, counts_over_50_dict],
              "count_over_50_as_set": [counts_over_50_list, counts_over_50_list]
              }
