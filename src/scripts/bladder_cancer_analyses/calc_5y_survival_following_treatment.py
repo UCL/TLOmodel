@@ -22,10 +22,8 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    Bladdercancer,
-    bladdercancer,
     symptommanager,
-)
+    bladder_cancer)
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -56,7 +54,6 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              # labour.Labour(resourcefilepath=resourcefilepath),
              # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
              )
 
 sim.seed_rngs(0)
