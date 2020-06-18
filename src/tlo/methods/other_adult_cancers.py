@@ -249,7 +249,7 @@ class OtherAdultCancer(Module):
                                     .when("local_ln",
                                           p['init_prop_treatment_status_other_adult_cancer'][1])
                                     .when("metastatic",
-                                          p['init_prop_treatment_status_other_adult_cancer'][5])
+                                          p['init_prop_treatment_status_other_adult_cancer'][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
