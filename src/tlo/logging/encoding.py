@@ -16,4 +16,6 @@ class PandasEncoder(json.JSONEncoder):
             return obj.isoformat()
         elif isinstance(obj, set):
             return list(obj)
+        elif isinstance(obj, type(pd.NaT)):
+            return None
         return json.JSONEncoder.default(self, obj)
