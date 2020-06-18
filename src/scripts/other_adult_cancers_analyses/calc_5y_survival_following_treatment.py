@@ -66,7 +66,7 @@ sim.seed_rngs(0)
 sim.modules['OtherAdultCancer'].parameters['r_site_confined_none'] = 0.00
 sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
 sim.modules['OtherAdultCancer'].parameters["init_prop_early_other_adult_cancer_symptom_by_stage"] = [0.0] * 4
-sim.modules['OtherAdultCancer'].parameters["init_prop_with_early_other_adult_cancer_diagnosed_other_adult_cancer_by_stage"] = [0.0] * 4
+sim.modules['OtherAdultCancer'].parameters["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"] = [0.0] * 4
 sim.modules['OtherAdultCancer'].parameters["init_prop_treatment_status_other_adult_cancer"] = [0.0] * 4
 sim.modules['OtherAdultCancer'].parameters["init_prob_palliative_care"] = 0.0
 

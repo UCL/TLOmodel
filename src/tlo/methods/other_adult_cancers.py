@@ -35,11 +35,11 @@ class OtherAdultCancer(Module):
             Types.LIST,
             "initial proportions in other adult cancer stages for person aged 15-29"
         ),
-        "init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
+        "init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage": Parameter(
             Types.LIST, "initial proportions of those with other adult cancer categories that have other_"
                         "adult_ca_symptom"
         ),
-        "init_prop_with_other_adult_ca_symptom_diagnosed_by_stage": Parameter(
+        "init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage": Parameter(
             Types.LIST, "initial proportions of people that have symptom of other_adult_ca_symptom that "
                         "have been diagnosed"
         ),
@@ -209,15 +209,15 @@ class OtherAdultCancer(Module):
         lm_init_disphagia = LinearModel.multiplicative(
             Predictor('oac_status')  .when("none", 0.0)
                                     .when("site_confined",
-                                          p['init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage'][0])
+                                          p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][0])
                                     .when("local_ln",
-                                          p['init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage'][1])
+                                          p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][1])
                                     .when("metastatic",
-                                          p['init_prop_other_adult_ca_symptom_other_adult_cancer_by_stage'][2])
+                                          p['init_prop_early_other_adult_ca_symptom_other_adult_cancer_by_stage'][2])
         )
-        has_other_adult_ca_symptom_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
+        early_ = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_other_adult_ca_symptom_at_init.index[has_other_adult_ca_symptom_at_init].tolist(),
+            person_id=has_early_other_adult_ca_symptom_at_init.index[has_early_other_adult_ca_symptom_at_init].tolist(),
             symptom_string='early_other_adult_ca_symptom',
             add_or_remove='+',
             disease_module=self
@@ -227,11 +227,11 @@ class OtherAdultCancer(Module):
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('oac_status')  .when("none", 0.0)
                                     .when("site_confined",
-                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_by_stage'][0])
+                                          p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][0])
                                     .when("local_ln",
-                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_by_stage'][1])
+                                          p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][1])
                                     .when("metastatic",
-                                          p['init_prop_with_other_adult_ca_symptom_diagnosed_by_stage'][2])
+                                          p['init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage'][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
