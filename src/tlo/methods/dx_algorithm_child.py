@@ -6,10 +6,10 @@ are put here rather than the individual disease modules.
 There should be a method here to respond to every symptom that a child could present with:
 """
 
-from tlo import Module, Property, Types
+from tlo import Module, Property, Parameter, Types
 from tlo.methods.diarrhoea import HSI_Diarrhoea_Treatment_PlanA, HSI_Diarrhoea_Treatment_PlanB, HSI_Diarrhoea_Treatment_PlanC,\
     HSI_Diarrhoea_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Dysentery
-
+from tlo.methods.dxmanager import DxTest
 
 class DxAlgorithmChild(Module):
     """
@@ -17,11 +17,39 @@ class DxAlgorithmChild(Module):
     These functions are called by an HSI (usually a Generic HSI)
     """
 
-    PARAMETERS = {}
+    PARAMETERS = {
+        'sensitivity_of_assessment_of_pneumonia_level_0': Parameter
+        (Types.REAL,
+         'sensitivity of assessment and classification of pneumonia at facility level 0'
+         ),
+        'sensitivity_of_assessment_of_pneumonia_level_1': Parameter
+        (Types.REAL,
+         'sensitivity of assessment and classification of pneumonia at facility level 1'
+         ),
+        'sensitivity_of_assessment_of_pneumonia_level_2': Parameter
+        (Types.REAL,
+         'sensitivity of assessment and classification of pneumonia at facility level 2'
+         ),
+        'sensitivity_of_classification_of_pneumonia_severity_level_0': Parameter
+        (Types.REAL,
+         'sensitivity of classification of pneumonia severity at facility level 0'
+         ),
+        'sensitivity_of_classification_of_pneumonia_severity_level_1': Parameter
+        (Types.REAL,
+         'sensitivity of classification of pneumonia severity at facility level 1'
+         ),
+        'sensitivity_of_classification_of_pneumonia_severity_level_2': Parameter
+        (Types.REAL,
+         'sensitivity of classification of pneumonia severity at facility level 2'
+         ),
+
+    }
     PROPERTIES = {
         'ri_pneumonia_IMCI_classification': Property(Types.CATEGORICAL,
                                                'Classification of pneumonia based on IMCI definitions',
                                                categories=['common cold', 'non-severe pneumonia', 'severe pneumonia']),
+        'ri_imci_pneumonia_status': Property(Types.BOOL, 'IMCI-defined pneumonia - this includes both pneumonia '
+                                                         'and bronchiolitis'),
 
     }
 
@@ -30,7 +58,13 @@ class DxAlgorithmChild(Module):
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
-        pass
+        p = self.parameters
+        p['sensitivity_of_assessment_of_pneumonia_level_0'] = 0.3
+        p['sensitivity_of_assessment_of_pneumonia_level_1'] = 0.5
+        p['sensitivity_of_assessment_of_pneumonia_level_2'] = 0.7
+        p['sensitivity_of_classification_of_pneumonia_severity_level_0'] = 0.3
+        p['sensitivity_of_classification_of_pneumonia_severity_level_1'] = 0.4
+        p['sensitivity_of_classification_of_pneumonia_severity_level_2'] = 0.5
 
     def initialise_population(self, population):
         pass
@@ -46,48 +80,49 @@ class DxAlgorithmChild(Module):
         # Register dx_tests needed for the childhood diseases HSI events. dx_tests in this module represent assessment
         # of main signs and symptoms, and the sensitivity & specificity of the assessment by the health worker at
         # each facility level, leading to the diagnosis, treatment or referral for treatment.
+        p = self.parameters
 
         # Sensitivity of testing varies between community (level_0), health centres (level_1), and hospitals (level_2),
-        # p = self.parameters
-        #
-        # self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-        #     # test for he visual inspection of 'Danger signs'
-        #     assess_general_danger_signs=DxTest(
-        #         property='ri_pneumonia_status',
-        #         sensitivity=p['sensitivity_of_assessment_of_pneumonia']),
-        #     specificity = 0.8,
-        #
-        #     assess_obstructed_labour_hp=DxTest(
-        #         property='la_obstructed_labour',
-        #         sensitivity=p['sensitivity_of_assessment_of_obstructed_labour_hp']),
-        #
-        #     # Sepsis diagnosis intrapartum...
-        #     # dx_tests for intrapartum and postpartum sepsis only differ in the 'property' variable
-        #     assess_sepsis_hc_ip=DxTest(
-        #         property='la_sepsis',
-        #         sensitivity=p['sensitivity_of_assessment_of_sepsis_hc']),
-        #
-        #     assess_sepsis_hp_ip=DxTest(
-        #         property='la_sepsis',
-        #         sensitivity=p['sensitivity_of_assessment_of_sepsis_hp']),
-        #
-        #     # Sepsis diagnosis postpartum
-        #     assess_sepsis_hc_pp=DxTest(
-        #         property='la_sepsis_postpartum',
-        #         sensitivity=p['sensitivity_of_assessment_of_sepsis_hc']),
-        #
-        #     assess_sepsis_hp_pp=DxTest(
-        #         property='la_sepsis_postpartum',
-        #         sensitivity=p['sensitivity_of_assessment_of_sepsis_hp']),
-        #
-        #     # Hypertension diagnosis
-        #     assess_hypertension_hc=DxTest(
-        #         property='ps_currently_hypertensive',
-        #         sensitivity=p['sensitivity_of_assessment_of_hypertension_hc']),
-        #
-        #     assess_hypertension_hp=DxTest(
-        #         property='ps_currently_hypertensive',
-        #         sensitivity=p['sensitivity_of_assessment_of_hypertension_hp']),
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            # sensitivities of the assessements for IMCI-defined pneumonia at different facility levels
+            # test the assessment performance of pneumonia symptoms at the community level
+            assess_IMCI_pneumonia_level_0=DxTest(
+                property='ri_imci_pneumonia_status',
+                sensitivity=p['sensitivity_of_assessment_of_pneumonia_level_0']),
+
+            # test the assessment performance at the health centre level
+            assess_IMCI_pneumonia_level_1=DxTest(
+                property='ri_imci_pneumonia_status',
+                sensitivity=p['sensitivity_of_assessment_of_pneumonia_level_1']),
+
+            # test the assessment performance of pneumonia symptoms at the hospital level
+            assess_IMCI_pneumonia_level_2=DxTest(
+                property='ri_imci_pneumonia_status',
+                sensitivity=p['sensitivity_of_assessment_of_pneumonia_level_2']),
+
+            # sensitivities of the severity classification for IMCI-defined pneumonia at different facility levels
+            # test the classification of pneumonia performance at the community level
+            classify_IMCI_pneumonia_level_0=DxTest(
+                property='ri_pneumonia_IMCI_classification',
+                sensitivity=p['sensitivity_of_classification_of_pneumonia_severity_level_0'],
+                # target_categories=['common cold', 'non-severe pneumonia', 'severe pneumonia']
+                ),
+
+            # test the classification of pneumonia performance at the health centre level
+            classify_IMCI_pneumonia_level_1=DxTest(
+                property='ri_pneumonia_IMCI_classification',
+                sensitivity=p['sensitivity_of_classification_of_pneumonia_severity_level_1']
+                # target_categories=['common cold', 'non-severe pneumonia', 'severe pneumonia']
+                ),
+
+            # test the classification of pneumonia performance at the hospital level
+            classify_IMCI_pneumonia_level_2=DxTest(
+                property='ri_pneumonia_IMCI_classification',
+                sensitivity=p['sensitivity_of_classification_of_pneumonia_severity_level_2']
+                # target_categories=['common cold', 'non-severe pneumonia', 'severe pneumonia']
+                )
+        )
 
     def on_birth(self, mother_id, child_id):
         pass
@@ -200,26 +235,6 @@ class DxAlgorithmChild(Module):
         )
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
-        # ---------------------- FOR COUGH OR DIFFICULT BREATHING ------------------------------
-
-        if (('fast_breathing' or 'chest_indrawing') in self.sim.modules['Pneumonia']['ri_last_pneumonia_symptoms']) & ((
-            'grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'hypoxia' or 'danger_signs') not in
-            self.sim.modules['Pneumonia']['ri_last_pneumonia_symptoms'](person_id)):
-            df.at[person_id, 'ri_pneumonia_IMCI_classification'] = 'non-severe pneumonia'
-
-        if (('cough' or 'difficult_breathing' or 'fast_breathing' or 'chest_indrawing') in
-            self.sim.modules['Pneumonia']['ri_last_pneumonia_symptoms'](person_id)) & ((
-            'grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'hypoxia' or 'danger_signs') in
-            self.sim.modules['Pneumonia']['ri_last_pneumonia_symptoms'](person_id)):
-            df.at[person_id, 'ri_pneumonia_IMCI_classification'] = 'severe pneumonia'
-
-        if (('cough' or 'difficult_breathing') in
-            self.sim.modules['Pneumonia']['ri_last_pneumonia_symptoms'](person_id)) & (
-            ('fast_breathing' or 'chest_indrawing' or 'grunting' or 'cyanosis' or 'severe_respiratory_distress' or
-                'hypoxia' or 'danger_signs') not in
-            self.sim.modules['Pneumonia']['ri_last_pneumonia_symptoms'](person_id)):
-            df.at[person_id, 'ri_pneumonia_IMCI_classification'] = 'common cold'
-
         # FIRST check for general danger signs -------------------------------------------------------------------
         # if 'inability_to_drink_or_breastfeed' in symptoms:
         #     df.at[person_id, 'at_least_one_danger_sign'] = True
@@ -229,3 +244,25 @@ class DxAlgorithmChild(Module):
         #     df.at[person_id, 'at_least_one_danger_sign'] = True
         # if 'lethargic' in symptoms:
         #     df.at[person_id, 'at_least_one_danger_sign'] = True
+
+        # ---------------------- FOR COUGH OR DIFFICULT BREATHING ------------------------------
+        # check those that have the IMCI classification of pneumonia
+
+        if (('fast_breathing' or 'chest_indrawing') in list(df.at[person_id, 'ri_last_pneumonia_symptoms'])) &\
+            (('grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'hypoxia' or 'danger_signs') not in
+             list(df.at[person_id, 'ri_last_pneumonia_symptoms'])):
+            df.at[person_id, 'ri_pneumonia_IMCI_classification'] = 'non-severe pneumonia'
+
+        if (('cough' or 'difficult_breathing' or 'fast_breathing' or 'chest_indrawing') in
+            list(df.at[person_id, 'ri_last_pneumonia_symptoms'])) & (
+            ('grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'hypoxia' or 'danger_signs') in
+            list(df.at[person_id, 'ri_last_pneumonia_symptoms'])):
+            df.at[person_id, 'ri_pneumonia_IMCI_classification'] = 'severe pneumonia'
+
+        if (('cough' or 'difficult_breathing') in
+            list(df.at[person_id, 'ri_last_pneumonia_symptoms'])) & (
+            ('fast_breathing' or 'chest_indrawing' or 'grunting' or 'cyanosis' or 'severe_respiratory_distress' or
+                'hypoxia' or 'danger_signs') not in list(df.at[person_id, 'ri_last_pneumonia_symptoms'])):
+            df.at[person_id, 'ri_pneumonia_IMCI_classification'] = 'common cold'
+
+
