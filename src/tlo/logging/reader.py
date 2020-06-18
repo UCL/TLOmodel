@@ -59,7 +59,8 @@ class LogData:
                 for n, t in data['header']['columns'].items():
                     if t == "Timestamp":
                         output_logs[module][key][n] = output_logs[module][key][n].astype('datetime64[ns]')
-
+                    elif t == "set":
+                        output_logs[module][key][n] = output_logs[module][key][n].apply(set)
         return output_logs
 
     def parse_logged_dataframe(self, values: List[List[Dict[str, Dict[str, Any]]]], dates: List[str]) -> pd.DataFrame:

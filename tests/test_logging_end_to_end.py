@@ -45,9 +45,11 @@ class LoggerNaires(Module):
                 df[name] = self.rng.randint(1400, 1600, rows) * 1_000_000_000_000_000
                 df[name] = df[name].astype('datetime64[ns]')
             elif name == "ln_set":
-                df[name] = {(r1, r2) for r1, r2 in zip(self.rng.randint(0, 100, rows), self.rng.randint(0, 100, rows))}
-                df[name][0] = None
-                df[name][1] = set()
+                df[name] = list(
+                    {r1, r2} for r1, r2 in zip(self.rng.randint(0, 100, rows), self.rng.randint(0, 100, rows))
+                )
+                df[name][1] = None
+                df[name][2] = set()
             else:
                 df[name] = self.rng.randint(0, 100, rows)
 
@@ -234,7 +236,7 @@ class TestWriteAndReadLogFile:
              "ln_a": [46, 46],
              "ln_b": [58, 58],
              "ln_c": [22, 22],
-             "ln_set": [None, None],
+             "ln_set": [{5, 94}, {5, 94}],
              "ln_date": [pd.Timestamp("2014-09-06 10:40:00") for x in range(2)],
              }
         )
@@ -248,37 +250,37 @@ class TestWriteAndReadLogFile:
                              'ln_a': 46,
                              'ln_b': 58,
                              'ln_c': 22,
-                             'ln_set': None,
+                             'ln_set': [5, 94],
                              'ln_date': '2014-09-06T10:40:00'},
                   (0, '1'): {'date': self.dates[0],
                              'ln_a': 33,
                              'ln_b': 52,
                              'ln_c': 91,
-                             'ln_set': [],
+                             'ln_set': None,
                              'ln_date': '2015-02-27T01:20:00'},
                   (0, '2'): {'date': self.dates[0],
                              'ln_a': 95,
                              'ln_b': 93,
                              'ln_c': 47,
-                             'ln_set': [12, 78],
+                             'ln_set': [],
                              'ln_date': '2020-06-12T22:13:20'},
                   (1, '0'): {'date': self.dates[1],
                              'ln_a': 46,
                              'ln_b': 58,
                              'ln_c': 22,
-                             'ln_set': None,
+                             'ln_set': [5, 94],
                              'ln_date': '2014-09-06T10:40:00'},
                   (1, '1'): {'date': self.dates[1],
                              'ln_a': 33,
                              'ln_b': 52,
                              'ln_c': 91,
-                             'ln_set': [],
+                             'ln_set': None,
                              'ln_date': '2015-02-27T01:20:00'},
                   (1, '2'): {'date': self.dates[1],
                              'ln_a': 95,
                              'ln_b': 93,
                              'ln_c': 47,
-                             'ln_set': [12, 78],
+                             'ln_set': [],
                              'ln_date': '2020-06-12T22:13:20'}},
             orient='index'
         )
@@ -301,8 +303,7 @@ class TestWriteAndReadLogFile:
         assert expected_df.equals(log_df)
 
     def test_set_in_dict(self, loggernaires_log_df):
-        # converting set to list so that ordering is correct
-        counts = list({4, 6, 2.0})
+        counts = {4, 6, 2.0}
 
         expected_df = pd.DataFrame(
             {
@@ -332,7 +333,7 @@ class TestWriteAndReadLogFile:
 
     def test_every_type(self, loggernaires_log_df):
         counts_over_50_dict = {"a": 4, "b": 6, "c": 2.0}
-        counts_over_50_list = list({4, 6, 2.0})
+        counts_over_50_set = {4, 6, 2.0}
 
         expected_df = pd.DataFrame(
             {"date": self.dates,
@@ -342,7 +343,7 @@ class TestWriteAndReadLogFile:
              "b_over_50_as_list": [[6], [6]],
              "random_date": [pd.Timestamp("2020-06-12 22:13:20"), pd.Timestamp("2019-07-01 16:53:20")],
              "count_over_50_as_dict": [counts_over_50_dict, counts_over_50_dict],
-             "count_over_50_as_set": [counts_over_50_list, counts_over_50_list]
+             "count_over_50_as_set": [counts_over_50_set, counts_over_50_set]
              }
         )
         log_df = loggernaires_log_df['with_every_type']
