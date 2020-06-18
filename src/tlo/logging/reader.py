@@ -1,4 +1,5 @@
 import json
+import logging as _logging
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List
 
@@ -14,7 +15,7 @@ class LogData:
         self.allowed_logs = set()
         self.uuid_to_module = dict()
 
-    def parse_log_line(self, log_line: str, level: str):
+    def parse_log_line(self, log_line: str, level: int):
         """
         Parse LogRow at desired level
 
@@ -26,7 +27,7 @@ class LogData:
 
         if 'type' in log_data and log_data['type'] == 'header':
             self.uuid_to_module[log_data['uuid']] = log_id = (log_data['module'], log_data['key'])
-            if log_data['level'] == level:
+            if getattr(_logging, log_data['level']) >= level:
                 self.allowed_logs.add(log_id)
                 self.data[log_data['module']][log_data['key']] = {'header': log_data, 'values': [], 'dates': []}
         else:

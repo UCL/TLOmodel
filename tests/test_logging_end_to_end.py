@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pytest import fixture
 
-from tlo import Date, Module, Parameter, Property, Simulation, Types
+from tlo import Date, Module, Parameter, Property, Simulation, Types, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.logging import INFO, getLogger
@@ -134,11 +134,11 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 @fixture(scope="class")
-def loggernaires_log_df(tmpdir_factory):
+def loggernaires_sim(tmpdir_factory):
     """
-    Runs simulation of mock disease, parses the logfile and returns the dictionary mock disease keys
+    Runs simulation of mock disease, returns the logfile path
     :param tmpdir_factory: tmpdir_factory for logfile
-    :return: mock disease logging dictionary
+    :return: logfile path
     """
     # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
     # will seed the random number generators for each module when they are registered.
@@ -173,8 +173,17 @@ def loggernaires_log_df(tmpdir_factory):
 
     sim.make_initial_population(n=pop_size)
     sim.simulate(end_date=end_date)
-    log_df = parse_log_file(sim.log_filepath)
-    return log_df['tlo.testing.loggernaires']
+    return sim.log_filepath
+
+
+@fixture(scope="class")
+def loggernaires_log_df(loggernaires_sim):
+    """
+    Convenience fixture to run loggernaires simulation, parse the logfile and return the data for loggernaires module
+    :param loggernaires_sim: fixture to run the simulation
+    :return: dictionary of loggernaires dataframes
+    """
+    return parse_log_file(loggernaires_sim)['tlo.testing.loggernaires']
 
 
 class TestWriteAndReadLogFile:
@@ -349,3 +358,23 @@ class TestWriteAndReadLogFile:
         log_df = loggernaires_log_df['with_every_type']
 
         assert expected_df.equals(log_df)
+
+
+class TestParseLogAtLoggingLevel:
+    def setup(self):
+        self.dates = [pd.Timestamp("2010-01-01 00:00:00"), pd.Timestamp("2010-01-29 00:00:00")]
+
+    def test_same_level(self, loggernaires_sim):
+        parsed_log = parse_log_file(loggernaires_sim, level=logging.INFO)
+
+        assert 'tlo.testing.loggernaires' in parsed_log.keys()
+
+    def test_parse_log_at_higher_level(self, loggernaires_sim):
+        parsed_log = parse_log_file(loggernaires_sim, level=logging.CRITICAL)
+
+        assert parsed_log == {}
+
+    def test_parse_log_at_lower_level(self, loggernaires_sim):
+        parsed_log = parse_log_file(loggernaires_sim, level=logging.DEBUG)
+
+        assert 'tlo.testing.loggernaires' in parsed_log.keys()

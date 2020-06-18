@@ -51,7 +51,7 @@ def parse_line(line):
     return info
 
 
-def parse_log_file(filepath, level="INFO"):
+def parse_log_file(filepath, level: int = logging.INFO):
     """
     Parses logged output from a TLO run and create Pandas dataframes for analysis. See
     parse_output() for details of stdlib logging parsing
