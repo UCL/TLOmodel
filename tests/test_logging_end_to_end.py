@@ -110,6 +110,15 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
                     data={"count_over_50": set([a_over_50, b_over_50, c_over_50 / 3])},
                     description="count over 50 for each group")
 
+        logger.info(key="missing_values",
+                    data={"NaT": pd.NaT,
+                          "NaN": np.nan,
+                          "float_inf": float("inf"),
+                          "float_-inf": float("-inf"),
+                          "float_nan": float("nan")
+                          },
+                    description="missing times, numbers and floats")
+
         logger.info(key="with_every_type",
                     data={"a_over_50": a_over_50,
                           "mostly_nan": np.nan,
@@ -303,6 +312,21 @@ class TestWriteAndReadLogFile:
             }
         )
         log_df = loggernaires_log_df['set_in_dict']
+
+        assert expected_df.equals(log_df)
+
+    def test_missing_values(self, loggernaires_log_df):
+        """Only NaT is converted to None, other missing values are only valid in python's parsing of json"""
+        expected_df = pd.DataFrame(
+            {"date": self.dates,
+             "NaT": [None, None],
+             "NaN": [np.nan, np.nan],
+             "float_inf": [float("inf"), float("inf")],
+             "float_-inf": [float("-inf"), float("-inf")],
+             "float_nan": [float("nan"), float("nan")],
+             }
+        )
+        log_df = loggernaires_log_df['missing_values']
 
         assert expected_df.equals(log_df)
 
