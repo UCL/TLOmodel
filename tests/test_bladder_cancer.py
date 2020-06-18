@@ -12,7 +12,6 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    oesophagealcancer,
     bladder_cancer,
     pregnancy_supervisor,
     symptommanager,
@@ -48,7 +47,6 @@ def make_simulation_healthsystemdisabled():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
     return sim
@@ -71,7 +69,6 @@ def make_simulation_nohsi():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)
     return sim
