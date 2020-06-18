@@ -12,8 +12,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    OtherAdultCancer,
-    otheradultcancer,
+    oesophagealcancer,
+    other_adult_cancers,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -47,7 +47,7 @@ def make_simulation_healthsystemdisabled():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 OtherAdultCancer.OtherAdultCancer(resourcefilepath=resourcefilepath),
+                 other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
     sim.seed_rngs(0)

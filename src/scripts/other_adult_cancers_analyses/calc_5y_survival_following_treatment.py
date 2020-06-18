@@ -64,10 +64,10 @@ sim.seed_rngs(0)
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
 sim.modules['OtherAdultCancer'].parameters['r_site_confined_none'] = 0.00
-sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
-sim.modules['OtherAdultCancer'].parameters["init_prop_early_other_adult_cancer_symptom_by_stage"] = [0.0] * 4
-sim.modules['OtherAdultCancer'].parameters["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"] = [0.0] * 4
-sim.modules['OtherAdultCancer'].parameters["init_prop_treatment_status_other_adult_cancer"] = [0.0] * 4
+sim.modules['OtherAdultCancer'].parameters['init_prop_other_adult_cancer_stage'] = [0.0, 0.0, 0.0]
+sim.modules['OtherAdultCancer'].parameters["init_prop_early_other_adult_cancer_symptom_by_stage"] = [0.0] * 3
+sim.modules['OtherAdultCancer'].parameters["init_prop_with_early_other_adult_ca_symptom_diagnosed_by_stage"] = [0.0] * 3
+sim.modules['OtherAdultCancer'].parameters["init_prop_treatment_status_other_adult_cancer"] = [0.0] * 3
 sim.modules['OtherAdultCancer'].parameters["init_prob_palliative_care"] = 0.0
 
 # Establish the logger and look at only demography
