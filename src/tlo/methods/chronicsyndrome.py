@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging  #, mattdict, nullstr
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
@@ -29,11 +29,14 @@ class ChronicSyndrome(Module):
     """
 
     PARAMETERS = {
-        'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
-        'prob_of_symptoms': Parameter(
+        'p_acquisition_per_year' : Parameter(
+            Types.REAL, 'Probability that an uninfected individual becomes infected'),
+        'prob_of_symptoms' : Parameter(
             Types.DICT, 'Probabilities of developing each type of symptom at onset'),
-        'p_cure': Parameter(Types.REAL, 'Probability that a treatment is succesful in curing the individual'),
-        'initial_prevalence': Parameter(Types.REAL, 'Prevalence of the disease in the initial population'),
+        'p_cure' :  Parameter(
+            Types.REAL, 'Probability that a treatment is succesful in curing the individual'),
+        'initial_prevalence': Parameter(
+            Types.REAL, 'Prevalence of the disease in the initial population'),
         'prob_dev_symptom_craving_sandwiches': Parameter(
             Types.REAL, 'Probability per year of developing severe symptoms of craving sandwiches'
         ),

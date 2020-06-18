@@ -14,7 +14,7 @@ from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS, Documenter, Module
 from sphinx.util.inspect import object_description
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
-from tlo.core import Specifiable, Parameter, Types
+from tlo.core import Specifiable, Parameter, Types   #, nullstr
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -92,7 +92,7 @@ napoleon_use_param = False
 autodoc_default_options = {
     #'members': None,  ##'on_birth',
     #'private-members': None,
-    #'undoc-members': None, ##False,
+    'undoc-members': False,
     #'special-members': None,
     #'show-inheritance': False, ####True,
     #'inherited_members': 'PARAMETERS',
@@ -228,6 +228,46 @@ def add_directive_header(self, sig):
                       sourcename)
 
 
+def before_process_signature(app, obj, bound_method):
+    '''
+    Emitted before autodoc formats a signature for an object.
+    The event handler can modify an object to change its signature.
+
+    app = sphinx.application.Sphinx object
+    obj = the object itself (e.g.) <function Module.initialise_simulation>
+         -> obj.__name__ = initialise_simulation,
+         obj.__class__ = <class 'function'>
+    bound_method: a boolean indicates if an object is bound method or not
+    '''
+    #if not bound_method:
+    if 'PARAMETERS' in obj.__name__:
+        import pdb; pdb.set_trace()
+    pass
+
+#from sphinx.ext.autodoc import cut_lines
+
+# Example:
+# name: 'tlo.methods.antenatal_care.CareOfWomenDuringPregnancy.PARAMETERS'
+# obj = PARAMETERS dictionary
+# options = {'members': <object object at 0x105cc86b0>, 'undoc-members': True,
+#     'show-inheritance': True,
+#     'exclude-members': {'sim', 'name', '__dict__', 'rng'},
+#     'member-order': 'bysource'}
+# signature : None
+
+def process_signature(app, what, name, obj, options, signature, return_annotation):
+    if what == "attribute" and name == "tlo.methods.antenatal_care.CareOfWomenDuringPregnancy.PARAMETERS":
+
+        #"PARAMETERS" in name:
+        #obj = {}
+        #import pdb; pdb.set_trace()    # 'tlo.core.Module.parameters'
+        if 'prob_seek_care_first_anc' in obj:
+            del obj['prob_seek_care_first_anc']  # Removes from table as well :-(
+            options['undoc-members'] = False
+    pass
+
+
+
 def setup(app):
     '''
     Tell Sphinx which functions to run when it emits certain events.
@@ -239,11 +279,14 @@ def setup(app):
 
     # The next two lines show two different ways of telling Sphinx to use
     # our local, redefined versions of its internal functions:
-    ##AttributeDocumenter.add_directive_header = add_directive_header
+    ###AttributeDocumenter.add_directive_header = add_directive_header
 
     # Not impl in Documenter base class:
     AttributeDocumenter.can_document_member = can_document_member
     #AttributeDocumenter.can_document_member = matt_can_document_member
+
+    #app.connect('autodoc-process-docstring',
+    #            cut_lines(1))  #, what=['tlo.methods.antenatal_care.CareOfWomenDuringPregnancy.PARAMETERS']))
 
     # We want to define our own version of Documenter.can_document_member()
     # and put our functionality in there, rather than having our own versions
@@ -251,8 +294,9 @@ def setup(app):
 
     app.connect('autodoc-skip-member', skip)
     app.connect("autodoc-process-docstring", anotherfunc)
+    #app.connect("autodoc-process-signature", process_signature)
 
-                # When the autodoc-process-docstring event is emitted, handle it with
+    # When the autodoc-process-docstring event is emitted, handle it with
     # add_dict_to_docstring():
     app.connect("autodoc-process-docstring", add_dicts_to_docstring)
 
@@ -260,7 +304,7 @@ def setup(app):
 def skip(app, what, name, obj, skip, options):
 
     if name in ('PARAMETERS', 'PROPERTIES'):
-
+        #options['undoc-members'] = False
         #
         # Don't bother displaying PARAMETERS or
         # PROPERTIES dictionaries if they have no data.
@@ -290,7 +334,7 @@ def skip(app, what, name, obj, skip, options):
 
 
 #  Emitted when autodoc has read and processed a docstring
-# i.e. **too late** to affect first appearance of dict.
+# i.e. **too late** to affect first appearance of dict???
 def anotherfunc(app, what, name, obj, options, lines):
     pass
     #import pdb; pdb.set_trace()
@@ -299,9 +343,10 @@ def anotherfunc(app, what, name, obj, options, lines):
     #if name == 'tlo.methods.antenatal_care.CareOfWomenDuringPregnancy.PARAMETERS':
        # import pdb; pdb.set_trace()
        # if count == 0:
-            #import pdb; pdb.set_trace()
+        #options['undoc-members'] = False
+        #import pdb; pdb.set_trace()
             #lines[-1] = '***Goodbye***'
-            #obj['something'] = Parameter(Types.REAL, "write something here")
+        #obj['something'] = Parameter(Types.REAL, "write something here")
         #count += 1
 
 
@@ -356,7 +401,10 @@ def create_table(mydict):
         examplestr += row
     else:
         for key in mydict:
+            #import pdb; pdb.set_trace()
             item = mydict[key]
+            #temp = nullstr(key)
+            #k = str(temp.sigh())
             description = item.description
             mytype = item.type_  # e.g. <Types.REAL: 4>
             the_type = mytype.name  # e.g. 'REAL'
