@@ -86,7 +86,7 @@ class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info(key="three_people",
                     data=df.loc[[0, 1, 2]],
-                    description="three people (0-2, inclusive), flattened to single row")
+                    description="three people (0-2, inclusive), output as a multi-indexed dataframe")
 
         logger.info(key="nested_dictionary",
                     data={
@@ -226,22 +226,38 @@ class TestWriteAndReadLogFile:
         assert expected_df.equals(log_df)
 
     def test_three_people(self, loggernaires_log_df):
-        expected_df = pd.DataFrame(
-            {"date": self.dates,
-             "ln_a_0": [46, 46],
-             "ln_a_1": [33, 33],
-             "ln_a_2": [95, 95],
-             "ln_b_0": [58, 58],
-             "ln_b_1": [52, 52],
-             "ln_b_2": [93, 93],
-             "ln_c_0": [22, 22],
-             "ln_c_1": [91, 91],
-             "ln_c_2": [47, 47],
-             "ln_date_0": [pd.Timestamp("2016-08-12 11:06:40") for x in range(2)],
-             "ln_date_1": [pd.Timestamp("2017-11-18 10:13:20") for x in range(2)],
-             "ln_date_2": [pd.Timestamp("2017-08-29 09:46:40") for x in range(2)],
-
-             }
+        expected_df = pd.DataFrame.from_dict(
+            data={(0, '0'): {'date': pd.Timestamp('2010-01-01 00:00:00'),
+                             'ln_a': 46,
+                             'ln_b': 58,
+                             'ln_c': 22,
+                             'ln_date': '2016-08-12T11:06:40'},
+                  (0, '1'): {'date': pd.Timestamp('2010-01-01 00:00:00'),
+                             'ln_a': 33,
+                             'ln_b': 52,
+                             'ln_c': 91,
+                             'ln_date': '2017-11-18T10:13:20'},
+                  (0, '2'): {'date': pd.Timestamp('2010-01-01 00:00:00'),
+                             'ln_a': 95,
+                             'ln_b': 93,
+                             'ln_c': 47,
+                             'ln_date': '2017-08-29T09:46:40'},
+                  (1, '0'): {'date': pd.Timestamp('2010-01-29 00:00:00'),
+                             'ln_a': 46,
+                             'ln_b': 58,
+                             'ln_c': 22,
+                             'ln_date': '2016-08-12T11:06:40'},
+                  (1, '1'): {'date': pd.Timestamp('2010-01-29 00:00:00'),
+                             'ln_a': 33,
+                             'ln_b': 52,
+                             'ln_c': 91,
+                             'ln_date': '2017-11-18T10:13:20'},
+                  (1, '2'): {'date': pd.Timestamp('2010-01-29 00:00:00'),
+                             'ln_a': 95,
+                             'ln_b': 93,
+                             'ln_c': 47,
+                             'ln_date': '2017-08-29T09:46:40'}},
+            orient='index'
         )
         log_df = loggernaires_log_df['three_people']
 

@@ -5,7 +5,6 @@ from typing import Union
 
 import pandas as pd
 
-from tlo import util
 from tlo.logging import encoding
 
 
@@ -84,7 +83,7 @@ class Logger:
             if len(data.index) == 1:
                 converted_data = data.to_dict('records')[0]
             else:
-                converted_data = util.nested_to_record(data)
+                converted_data = {'dataframe': data.to_dict('index')}
             return converted_data
         if isinstance(data, (list, set, tuple)):
             return {f'item_{index + 1}': value for index, value in enumerate(data)}
