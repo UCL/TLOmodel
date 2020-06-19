@@ -44,6 +44,7 @@ def log_input():
 def log_path(tmpdir_factory, log_input):
     """
     Runs simulation of mock disease, returns the logfile path
+    :param log_input: dataframe to log from
     :param tmpdir_factory: tmpdir_factory for logfile
     :return: logfile path
     """
