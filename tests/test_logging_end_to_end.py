@@ -19,9 +19,11 @@ col8_fixed_list;['one', 1];['two', 2];[None, None];['three', 3];['four', 4];['fi
 """
 # read in, then transpose
 log_input = pd.read_csv(StringIO(LOG_INPUT), sep=';', skiprows=1).T
+log_input.reset_index(inplace=True)
 log_input.columns = log_input.iloc[0]
 log_input.drop(log_input.index[0], axis=0, inplace=True)
-log_input.reset_index(inplace=True)
+log_input.reset_index(inplace=True, drop=True)
+
 # give columns the proper type
 log_input.col4_cat = log_input.col4_cat.astype('category')
 log_input.col5_set = log_input.col5_set.apply(lambda x: eval(x))  # use python eval to create a column of sets
@@ -59,8 +61,10 @@ def log_path(tmpdir_factory):
         sim.date = sim.date + pd.DateOffset(days=1)
 
     # log data as multi-row dataframe
-    logger.info(key='multi_row_df', data=log_input)
-    sim.date = sim.date + pd.DateOffset(days=1)
+    for _ in range(2):
+        logger.info(key='multi_row_df', data=log_input)
+        sim.date = sim.date + pd.DateOffset(days=1)
+
 
     # log data as fixed length list
     for item in log_input.col8_fixed_list.values:
@@ -118,12 +122,17 @@ class TestWriteAndReadLog:
 
     def test_log_entire_df(self, test_log_df):
         # get table to compare
-        log_output = test_log_df['rows_as_individuals'].drop(['date'], axis=1)
+        log_output = test_log_df['multi_row_df'].drop(['date'], axis=1)
 
-        # categories need to be set manually
+        # within nested dicts/entire df, need manual setting of special types
         log_output.col4_cat = log_output.col4_cat.astype('category')
+        log_input.col5_set = log_input.col5_set.apply(list)
+        log_output.col7_date = log_output.col7_date.astype('datetime64')
+        # deal with index matching by resetting index
+        log_output.reset_index(inplace=True, drop=True)
+        expected_output = log_input.append(log_input, ignore_index=True)
 
-        assert log_input.equals(log_output)
+        assert expected_output.equals(log_output)
 
     def test_fixed_length_list(self, test_log_df):
         log_df = test_log_df['a_fixed_length_list'].drop(['date'], axis=1)
