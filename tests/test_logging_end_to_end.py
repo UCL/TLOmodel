@@ -16,6 +16,7 @@ col4_cat;cat1;cat1;cat2;cat2;cat1;cat2
 col5_set;set();{'one'};{None};{'three','four'};{'eight'};set()
 col6_list;[];['two'];[None];[5, 6, 7];[];[]
 col7_date;2020-06-19T00:22:58.586101;2020-06-20T00:23:58.586101;2020-06-21T00:24:58.586101;2020-06-22T00:25:58.586101;2020-06-23T00:25:58.586101;null
+col8_fixed_list;['one', 1];['two', 2];[None, None];['three', 3];['four', 4];['five', 5]
 """
 # read in, then transpose
 log_input = pd.read_csv(StringIO(LOG_INPUT), sep=';', skiprows=1).T
@@ -27,6 +28,7 @@ log_input.col4_cat = log_input.col4_cat.astype('category')
 log_input.col5_set = log_input.col5_set.apply(lambda x: eval(x))  # use python eval to create a column of sets
 log_input.col6_list = log_input.col6_list.apply(lambda x: eval(x))  # use python eval to create a column of lists
 log_input.col7_date = log_input.col7_date.astype('datetime64')
+log_input.col8_fixed_list = log_input.col8_fixed_list.apply(lambda x: eval(x))  # use python eval to create a column of lists
 
 
 @fixture(scope="class")
@@ -61,6 +63,18 @@ def log_path(tmpdir_factory):
     logger.info(key='multi_row_df', data=log_input)
     sim.date = sim.date + pd.DateOffset(days=1)
 
+    # log data as fixed length list
+    for item in log_input.col8_fixed_list.values:
+        logger.info(key='a_fixed_length_list',
+                    data=item)
+        sim.date = sim.date + pd.DateOffset(days=1)
+
+    # log data as fixed length list
+    for item in log_input.col6_list.values:
+        logger.info(key='a_variable_length_list',
+                    data={'list_header': item})
+        sim.date = sim.date + pd.DateOffset(days=1)
+
     # end the simulation
     sim.simulate(end_date=sim.date)
 
@@ -88,7 +102,6 @@ class TestWriteAndReadLog:
         # categories need to be set manually
         log_output.col4_cat = log_output.col4_cat.astype('category')
 
-        test = log_input
         assert log_input.equals(log_output)
 
     def test_rows_as_individuals(self, test_log_df):
@@ -109,30 +122,19 @@ class TestWriteAndReadLog:
         assert log_input.equals(log_output)
 
     def test_fixed_length_list(self, test_log_df):
-        expected_df = pd.DataFrame(
-            {"date": self.dates,
-             "item_1": [2.0, 2.0],
-             "item_2": [2.0, 2.0],
-             "item_3": [1.5, 1.5]
-             }
-        )
-        log_df = test_log_df['a_fixed_length_list']
+        log_df = test_log_df['a_fixed_length_list'].drop(['date'], axis=1)
 
-        assert expected_df.equals(log_df)
+        expected_output = pd.DataFrame(
+            {'item_1': ['one', 'two', None, 'three', 'four', 'five'],
+             'item_2': [1, 2, None, 3, 4 ,5]}
+        )
+
+        assert expected_output.equals(log_df)
 
     def test_variable_length_list(self, test_log_df):
-        expected_df = pd.DataFrame(
-            {
-                "date": self.dates,
-                "list_head": [
-                    [46, 33, 95, 9, 66, 67],
-                    [46, 33, 95, 9, 66, 67, 12],
-                ],
-            }
-        )
         log_df = test_log_df['a_variable_length_list']
 
-        assert expected_df.equals(log_df)
+        assert log_input.col6_list.equals(log_df.list_header)
 
     def test_string(self, test_log_df):
         expected_df = pd.DataFrame(
@@ -144,129 +146,6 @@ class TestWriteAndReadLog:
         log_df = test_log_df['counting_but_string']
 
         assert expected_df.equals(log_df)
-
-    def test_individual(self, test_log_df):
-        expected_df = pd.DataFrame(
-            {"date": self.dates,
-             "ln_a": [46, 46],
-             "ln_b": [58, 58],
-             "ln_c": [22, 22],
-             "ln_set": [{5, 94}, {5, 94}],
-             "ln_date": [pd.Timestamp("2014-09-06 10:40:00") for x in range(2)],
-             }
-        )
-        log_df = test_log_df['single_individual']
-
-        assert expected_df.equals(log_df)
-
-    def test_three_people(self, test_log_df):
-        expected_df = pd.DataFrame.from_dict(
-            data={(0, '0'): {'date': self.dates[0],
-                             'ln_a': 46,
-                             'ln_b': 58,
-                             'ln_c': 22,
-                             'ln_set': [5, 94],
-                             'ln_date': '2014-09-06T10:40:00'},
-                  (0, '1'): {'date': self.dates[0],
-                             'ln_a': 33,
-                             'ln_b': 52,
-                             'ln_c': 91,
-                             'ln_set': None,
-                             'ln_date': '2015-02-27T01:20:00'},
-                  (0, '2'): {'date': self.dates[0],
-                             'ln_a': 95,
-                             'ln_b': 93,
-                             'ln_c': 47,
-                             'ln_set': [],
-                             'ln_date': '2020-06-12T22:13:20'},
-                  (1, '0'): {'date': self.dates[1],
-                             'ln_a': 46,
-                             'ln_b': 58,
-                             'ln_c': 22,
-                             'ln_set': [5, 94],
-                             'ln_date': '2014-09-06T10:40:00'},
-                  (1, '1'): {'date': self.dates[1],
-                             'ln_a': 33,
-                             'ln_b': 52,
-                             'ln_c': 91,
-                             'ln_set': None,
-                             'ln_date': '2015-02-27T01:20:00'},
-                  (1, '2'): {'date': self.dates[1],
-                             'ln_a': 95,
-                             'ln_b': 93,
-                             'ln_c': 47,
-                             'ln_set': [],
-                             'ln_date': '2020-06-12T22:13:20'}},
-            orient='index'
-        )
-        log_df = test_log_df['three_people']
-
-        assert expected_df.equals(log_df)
-
-    def test_nested_dictionary(self, test_log_df):
-        counts = {"a": 4, "b": 6, "c": 2.0}
-
-        expected_df = pd.DataFrame(
-            {
-                "date": self.dates,
-                "count_over_50": [counts, counts],
-
-            }
-        )
-        log_df = test_log_df['nested_dictionary']
-
-        assert expected_df.equals(log_df)
-
-    def test_set_in_dict(self, test_log_df):
-        counts = {4, 6, 2.0}
-
-        expected_df = pd.DataFrame(
-            {
-                "date": self.dates,
-                "count_over_50": [counts, counts],
-
-            }
-        )
-        log_df = test_log_df['set_in_dict']
-
-        assert expected_df.equals(log_df)
-
-
-def test_missing_values(self, test_log_df):
-    """Only NaT is converted to None, other missing values are only valid in python's parsing of json"""
-    expected_df = pd.DataFrame(
-        {"date": self.dates,
-         "NaT": [None, None],
-         "NaN": [np.nan, np.nan],
-         "float_inf": [float("inf"), float("inf")],
-         "float_-inf": [float("-inf"), float("-inf")],
-         "float_nan": [float("nan"), float("nan")],
-         }
-    )
-    log_df = test_log_df['missing_values']
-
-    assert expected_df.equals(log_df)
-
-
-def test_every_type(self, test_log_df):
-    counts_over_50_dict = {"a": 4, "b": 6, "c": 2.0}
-    counts_over_50_set = {4, 6, 2.0}
-
-    expected_df = pd.DataFrame(
-        {"date": self.dates,
-         "a_over_50": [4, 4],
-         "mostly_nan": [float("nan") for x in range(2)],
-         "c_over_50_div_2": [3.0, 3.0],
-         "b_over_50_as_list": [[6], [6]],
-         "random_date": [pd.Timestamp("2020-06-12 22:13:20"), pd.Timestamp("2019-07-01 16:53:20")],
-         "count_over_50_as_dict": [counts_over_50_dict, counts_over_50_dict],
-         "count_over_50_as_set": [counts_over_50_set, counts_over_50_set]
-         }
-    )
-    log_df = test_log_df['with_every_type']
-
-    assert expected_df.equals(log_df)
-
 
 class TestParseLogAtLoggingLevel:
     def setup(self):
