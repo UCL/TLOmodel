@@ -1,6 +1,5 @@
 from io import StringIO
 
-import numpy as np
 import pandas as pd
 from pytest import fixture
 
@@ -75,6 +74,11 @@ def log_path(tmpdir_factory):
                     data={'list_header': item})
         sim.date = sim.date + pd.DateOffset(days=1)
 
+    # test logging of strings
+    logger.info(key='string_value',
+                data='I am a message.')
+    sim.date = sim.date + pd.DateOffset(days=1)
+
     # end the simulation
     sim.simulate(end_date=sim.date)
 
@@ -126,7 +130,7 @@ class TestWriteAndReadLog:
 
         expected_output = pd.DataFrame(
             {'item_1': ['one', 'two', None, 'three', 'four', 'five'],
-             'item_2': [1, 2, None, 3, 4 ,5]}
+             'item_2': [1, 2, None, 3, 4, 5]}
         )
 
         assert expected_output.equals(log_df)
@@ -137,15 +141,10 @@ class TestWriteAndReadLog:
         assert log_input.col6_list.equals(log_df.list_header)
 
     def test_string(self, test_log_df):
-        expected_df = pd.DataFrame(
-            {"date": self.dates,
-             "message": ["we currently have 16 total count over 50",
-                         "we currently have 16 total count over 50"],
-             }
-        )
-        log_df = test_log_df['counting_but_string']
+        log_df = test_log_df['string_value']
 
-        assert expected_df.equals(log_df)
+        assert pd.Series('I am a message.').equals(log_df.message)
+
 
 class TestParseLogAtLoggingLevel:
     def setup(self):
