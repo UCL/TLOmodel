@@ -25,16 +25,14 @@ logger.setLevel(logging.INFO)
 
 class Malaria(Module):
     def __init__(
-        self, name=None, resourcefilepath=None, level=None, testing=None, itn=None
+        self, name=None, resourcefilepath=None, testing=None, itn=None
     ):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.level = level  # set to national or district-level malaria infection events
         self.testing = testing  # calibrate value to match treatment coverage
         self.itn = itn  # projected ITN values from 2020
 
-        logger.info(f"Malaria infection event running at level {self.level}")
         logger.info(f"Malaria infection event running with projected ITN {self.itn}")
 
     PARAMETERS = {
@@ -125,9 +123,6 @@ class Malaria(Module):
             "specific symptoms with malaria infection",
             categories=["none", "asym", "clinical", "severe"],
         ),
-        # "ma_district_edited": Property(
-        #     Types.STRING, "edited districts to match with malaria data"
-        # ),
         "ma_age_edited": Property(
             Types.REAL, "age values redefined to match with malaria data"
         ),
@@ -156,11 +151,6 @@ class Malaria(Module):
     }
 
     def read_parameters(self, data_folder):
-
-        # dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_malaria.xlsx', sheet_name='parameters')
-        # self.load_parameters_from_dataframe(dfd)
-        #
-        # p = self.parameters
 
         workbook = pd.read_excel(
             os.path.join(self.resourcefilepath, "ResourceFile_malaria.xlsx"),
@@ -230,294 +220,201 @@ class Malaria(Module):
         else:
             current_year = p["data_end"]  # fix values for 2018 onwards
 
-        if self.level == 0:
-            # ----------------------------------- INCIDENCE - NATIONAL -----------------------------------
-            # these values are just clinical incidence
-            inf_inc = p["mal_inc"]
-            inf_inc_month = inf_inc.loc[
-                (inf_inc.year == current_year), "monthly_inc_rate"
-            ]
+        # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
+        # using .copy() avoids SettingWithCopyWarning due to chained indexing
+        itn_curr = p["itn_district"].copy()
+        itn_curr["itn_rates"] = itn_curr["itn_rates"].round(decimals=1)
+        itn_curr = itn_curr.loc[itn_curr.Year == current_year]
 
-            # ----------------------------------- NEW CLINICAL INFECTIONS -----------------------------------
-            # new clinical infections
-            uninf = df.index[
-                ((df.ma_inf_type == "none") | (df.ma_inf_type == "asym")) & df.is_alive
-            ]
-            now_infected = rng.choice(
-                [True, False],
-                size=len(uninf),
-                p=[inf_inc_month.values[0], 1 - inf_inc_month.values[0]],
+        # IRS coverage rates
+        irs_curr = p["irs_district"].copy()
+        irs_curr = irs_curr.loc[irs_curr.Year == current_year]
+        irs_curr.loc[irs_curr.irs_rates > 0.5, "irs_rates_round"] = 0.8
+        irs_curr.loc[irs_curr.irs_rates <= 0.5, "irs_rates_round"] = 0
+
+        # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
+        # inf_inc select current month and irs
+        month = now.month
+
+        inf_inc = p["inf_inc"]  # datasheet with infection incidence
+        inf_inc_month = inf_inc.loc[(inf_inc.month == month)]
+        clin_inc = p["clin_inc"]
+        clin_inc_month = clin_inc.loc[(clin_inc.month == month)]
+        sev_inc = p["sev_inc"]
+        sev_inc_month = sev_inc.loc[(sev_inc.month == month)]
+
+        # from lookup table, select entries which match the reported ITN and IRS coverage each year
+        # merge incidence dataframes with itn_curr and keep only matching rows
+        inf_inc_month_itn = inf_inc_month.merge(
+            itn_curr,
+            left_on=["admin", "llin"],
+            right_on=["District", "itn_rates"],
+            how="inner",
+        )
+        clin_inc_month_itn = clin_inc_month.merge(
+            itn_curr,
+            left_on=["admin", "llin"],
+            right_on=["District", "itn_rates"],
+            how="inner",
+        )
+        sev_inc_month_itn = sev_inc_month.merge(
+            itn_curr,
+            left_on=["admin", "llin"],
+            right_on=["District", "itn_rates"],
+            how="inner",
+        )
+
+        # merge incidence dataframes with irs_curr and keep only matching rows
+        inf_inc_month_irs = inf_inc_month_itn.merge(
+            irs_curr,
+            left_on=["admin", "irs"],
+            right_on=["District", "irs_rates_round"],
+            how="inner",
+        )
+        clin_inc_month_irs = clin_inc_month_itn.merge(
+            irs_curr,
+            left_on=["admin", "irs"],
+            right_on=["District", "irs_rates_round"],
+            how="inner",
+        )
+        sev_inc_month_irs = sev_inc_month_itn.merge(
+            irs_curr,
+            left_on=["admin", "irs"],
+            right_on=["District", "irs_rates_round"],
+            how="inner",
+        )
+
+        inf_prob = inf_inc_month_irs[["admin", "age", "monthly_prob_inf"]]
+        clin_prob = clin_inc_month_irs[["admin", "age", "monthly_prob_clin"]]
+        sev_prob = sev_inc_month_irs[["admin", "age", "monthly_prob_sev"]]
+
+        # tidy up - large files now not needed
+        del inf_inc, inf_inc_month, inf_inc_month_itn, inf_inc_month_irs
+        del clin_inc, clin_inc_month, clin_inc_month_itn, clin_inc_month_irs
+        del sev_inc, sev_inc_month, sev_inc_month_itn, sev_inc_month_irs
+
+        # for each district and age, look up incidence estimate using itn_2010 and irs_2010
+        # create new age column with 0, 0.5, 1, 2, ...
+        df.loc[df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
+        df.loc[df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
+        df.loc[(df.age_exact_years >= 1), "ma_age_edited"] = df.age_years[
+            df.age_years >= 1
+        ]
+        assert not pd.isnull(df["ma_age_edited"]).any()
+        df["ma_age_edited"] = df["ma_age_edited"].astype(
+            "float"
+        )  # for merge with malaria data
+
+        df_ml = (
+            df.merge(
+                inf_prob,
+                left_on=["district_of_residence", "ma_age_edited"],
+                right_on=["admin", "age"],
+                how="left",
+                indicator=True,
             )
+        )
 
-            # if any are infected
-            if now_infected.sum():
+        df_ml["monthly_prob_inf"] = df_ml["monthly_prob_inf"].fillna(
+            0
+        )  # 0 if over 80 yrs
+        assert not pd.isnull(df_ml["monthly_prob_inf"]).any()
 
-                infected_idx = uninf[now_infected]
-                len_new = len(infected_idx)
-                logger.debug(
-                    f"Malaria Module: assigning {len_new} clinical malaria infections"
-                )
-
-                df.loc[infected_idx, "ma_is_infected"] = True
-                df.loc[
-                    infected_idx, "ma_date_infected"
-                ] = now  # TODO: scatter dates across month
-                df.loc[infected_idx, "ma_inf_type"] = "clinical"
-                df.loc[infected_idx, "ma_date_symptoms"] = now
-                df.loc[
-                    infected_idx, "ma_clinical_counter"
-                ] += 1  # counter only for new clinical cases (inc severe)
-
-                inf_preg = df.index[
-                    (df.ma_date_infected == now)
-                    & (df.ma_inf_type == "clinical")
-                    & df.is_pregnant
-                ]
-                df.loc[
-                    inf_preg, "ma_clinical_preg_counter"
-                ] += 1  # counter only for pregnant women
-
-                # severe - subset of newly clinical
-                new_inf = df.index[
-                    df.is_alive
-                    & df.ma_is_infected
-                    & (df.ma_date_infected == now)
-                    & (df.ma_inf_type == "clinical")
-                ]
-                # now_severe = rng.choice(
-                #     [True, False], size=len(new_inf), p=[p["prob_sev"], 1 - p["prob_sev"]]
-                # )
-
-                select_now_severe = self.rng.random_sample(size=len(new_inf)) < p['prob_sev']
-                now_severe = new_inf[select_now_severe]
-
-                if now_severe.sum():
-                    severe_idx = new_inf[now_severe]
-                    len_sev = len(severe_idx)
-                    logger.debug(
-                        f"Malaria Module: assigning {len_sev} severe malaria infections"
-                    )
-
-                    df.loc[severe_idx, "ma_inf_type"] = "severe"
-
-        else:
-            # ----------------------------------- INCIDENCE - DISTRICT -----------------------------------
-
-            # ----------------------------------- RENAME DISTRICTS -----------------------------------
-            # # rename districts to match malaria data
-            # df.loc[
-            #     (df.district_of_residence == "Lilongwe City"), "ma_district_edited"
-            # ] = "Lilongwe"
-            # df.loc[
-            #     (df.district_of_residence == "Blantyre City"), "ma_district_edited"
-            # ] = "Blantyre"
-            # df.loc[
-            #     (df.district_of_residence == "Zomba City"), "ma_district_edited"
-            # ] = "Zomba"
-            # df.loc[
-            #     (df.district_of_residence == "Mzuzu City"), "ma_district_edited"
-            # ] = "Mzimba"
-            # df.loc[
-            #     (df.district_of_residence == "Nkhata Bay"), "ma_district_edited"
-            # ] = "Mzimba"
-            #
-            # assert not pd.isnull(df["ma_district_edited"]).any()
-
-            # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
-            # using .copy() avoids SettingWithCopyWarning due to chained indexing
-            itn_curr = p["itn_district"].copy()
-            itn_curr["itn_rates"] = itn_curr["itn_rates"].round(decimals=1)
-            itn_curr = itn_curr.loc[itn_curr.Year == current_year]
-
-            # IRS coverage rates
-            irs_curr = p["irs_district"].copy()
-            irs_curr = irs_curr.loc[irs_curr.Year == current_year]
-            irs_curr.loc[irs_curr.irs_rates > 0.5, "irs_rates_round"] = 0.8
-            irs_curr.loc[irs_curr.irs_rates <= 0.5, "irs_rates_round"] = 0
-
-            # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
-            # inf_inc select current month and irs
-            month = now.month
-
-            inf_inc = p["inf_inc"]  # datasheet with infection incidence
-            inf_inc_month = inf_inc.loc[(inf_inc.month == month)]
-            clin_inc = p["clin_inc"]
-            clin_inc_month = clin_inc.loc[(clin_inc.month == month)]
-            sev_inc = p["sev_inc"]
-            sev_inc_month = sev_inc.loc[(sev_inc.month == month)]
-
-            # from lookup table, select entries which match the reported ITN and IRS coverage each year
-            # merge incidence dataframes with itn_curr and keep only matching rows
-            inf_inc_month_itn = inf_inc_month.merge(
-                itn_curr,
-                left_on=["admin", "llin"],
-                right_on=["District", "itn_rates"],
-                how="inner",
+        df_ml = (
+            df_ml.merge(
+                clin_prob,
+                left_on=["district_of_residence", "ma_age_edited"],
+                right_on=["admin", "age"],
+                how="left",
             )
-            clin_inc_month_itn = clin_inc_month.merge(
-                itn_curr,
-                left_on=["admin", "llin"],
-                right_on=["District", "itn_rates"],
-                how="inner",
+        )
+
+        df_ml["monthly_prob_clin"] = df_ml["monthly_prob_clin"].fillna(
+            0
+        )  # 0 if over 80 yrs
+        assert not pd.isnull(df_ml["monthly_prob_clin"]).any()
+
+        df_ml = (
+            df_ml.merge(
+                sev_prob,
+                left_on=["district_of_residence", "ma_age_edited"],
+                right_on=["admin", "age"],
+                how="left",
             )
-            sev_inc_month_itn = sev_inc_month.merge(
-                itn_curr,
-                left_on=["admin", "llin"],
-                right_on=["District", "itn_rates"],
-                how="inner",
-            )
+        )
 
-            # merge incidence dataframes with irs_curr and keep only matching rows
-            inf_inc_month_irs = inf_inc_month_itn.merge(
-                irs_curr,
-                left_on=["admin", "irs"],
-                right_on=["District", "irs_rates_round"],
-                how="inner",
-            )
-            clin_inc_month_irs = clin_inc_month_itn.merge(
-                irs_curr,
-                left_on=["admin", "irs"],
-                right_on=["District", "irs_rates_round"],
-                how="inner",
-            )
-            sev_inc_month_irs = sev_inc_month_itn.merge(
-                irs_curr,
-                left_on=["admin", "irs"],
-                right_on=["District", "irs_rates_round"],
-                how="inner",
-            )
+        df_ml["monthly_prob_sev"] = df_ml["monthly_prob_sev"].fillna(
+            0
+        )  # 0 if over 80 yrs
+        assert not pd.isnull(df_ml["monthly_prob_sev"]).any()
 
-            inf_prob = inf_inc_month_irs[["admin", "age", "monthly_prob_inf"]]
-            clin_prob = clin_inc_month_irs[["admin", "age", "monthly_prob_clin"]]
-            sev_prob = sev_inc_month_irs[["admin", "age", "monthly_prob_sev"]]
+        # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
 
-            # tidy up - large files now not needed
-            del inf_inc, inf_inc_month, inf_inc_month_itn, inf_inc_month_irs
-            del clin_inc, clin_inc_month, clin_inc_month_itn, clin_inc_month_irs
-            del sev_inc, sev_inc_month, sev_inc_month_itn, sev_inc_month_irs
+        # infected
+        risk_ml = pd.Series(0, index=df.index)
+        risk_ml.loc[df.is_alive] = 1  # applied to everyone
+        # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
 
-            # for each district and age, look up incidence estimate using itn_2010 and irs_2010
-            # create new age column with 0, 0.5, 1, 2, ...
-            df.loc[df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
-            df.loc[df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
-            df.loc[(df.age_exact_years >= 1), "ma_age_edited"] = df.age_years[
-                df.age_years >= 1
-            ]
-            assert not pd.isnull(df["ma_age_edited"]).any()
-            df["ma_age_edited"] = df["ma_age_edited"].astype(
-                "float"
-            )  # for merge with malaria data
+        # update new df_ml dataframe using appended monthly probabilities, then update main df
+        # new infections - sample from uninfected
+        random_draw = rng.random_sample(size=len(df_ml))
+        ml_idx = df_ml[
+            df_ml.is_alive
+            & ~df_ml.ma_is_infected
+            & (random_draw < df_ml.monthly_prob_inf)
+        ].index
+        df_ml.loc[ml_idx, "ma_is_infected"] = True
+        df_ml.loc[
+            ml_idx, "ma_date_infected"
+        ] = now  # TODO: scatter dates across month
+        df_ml.loc[ml_idx, "ma_inf_type"] = "clinical"
+        # print('len ml_idx', len(ml_idx))
 
-            df_ml = (
-                df.merge(
-                    inf_prob,
-                    left_on=["district_of_residence", "ma_age_edited"],
-                    right_on=["admin", "age"],
-                    how="left",
-                    indicator=True,
-                )
-            )
+        # clinical - subset of anyone currently infected
+        random_draw = rng.random_sample(size=len(df_ml))
+        clin_idx = df_ml[
+            df_ml.is_alive
+            & df_ml.ma_is_infected
+            & (df_ml.ma_inf_type == "asym")
+            & (random_draw < df_ml.monthly_prob_clin)
+        ].index
+        df_ml.loc[clin_idx, "ma_inf_type"] = "clinical"
+        # print('len clin_idx', len(clin_idx))
 
-            df_ml["monthly_prob_inf"] = df_ml["monthly_prob_inf"].fillna(
-                0
-            )  # 0 if over 80 yrs
-            assert not pd.isnull(df_ml["monthly_prob_inf"]).any()
+        # severe - subset of anyone currently clinical
+        random_draw = rng.random_sample(size=len(df_ml))
+        sev_idx = df_ml[
+            df_ml.is_alive
+            & df_ml.ma_is_infected
+            & (df_ml.ma_inf_type == "clinical")
+            & (random_draw < df_ml.monthly_prob_sev)
+        ].index
+        # print('sev_idx', sev_idx)
 
-            df_ml = (
-                df_ml.merge(
-                    clin_prob,
-                    left_on=["district_of_residence", "ma_age_edited"],
-                    right_on=["admin", "age"],
-                    how="left",
-                )
-            )
+        # update the main dataframe
+        df.loc[ml_idx, "ma_date_infected"] = now
+        df.loc[ml_idx, "ma_is_infected"] = True
+        df.loc[ml_idx, "ma_inf_type"] = "asym"
 
-            df_ml["monthly_prob_clin"] = df_ml["monthly_prob_clin"].fillna(
-                0
-            )  # 0 if over 80 yrs
-            assert not pd.isnull(df_ml["monthly_prob_clin"]).any()
+        df.loc[clin_idx, "ma_inf_type"] = "clinical"
+        df.loc[clin_idx, "ma_date_symptoms"] = now
+        df.loc[
+            clin_idx, "ma_clinical_counter"
+        ] += 1  # counter only for new clinical cases (inc severe)
 
-            df_ml = (
-                df_ml.merge(
-                    sev_prob,
-                    left_on=["district_of_residence", "ma_age_edited"],
-                    right_on=["admin", "age"],
-                    how="left",
-                )
-            )
+        inf_preg = df.index[
+            (df.ma_date_infected == now)
+            & (df.ma_inf_type == "clinical")
+            & df.is_pregnant
+        ]
+        df.loc[
+            inf_preg, "ma_clinical_preg_counter"
+        ] += 1  # counter only for pregnant women
 
-            df_ml["monthly_prob_sev"] = df_ml["monthly_prob_sev"].fillna(
-                0
-            )  # 0 if over 80 yrs
-            assert not pd.isnull(df_ml["monthly_prob_sev"]).any()
+        df.loc[sev_idx, "ma_inf_type"] = "severe"
 
-            # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
-
-            # infected
-            risk_ml = pd.Series(0, index=df.index)
-            risk_ml.loc[df.is_alive] = 1  # applied to everyone
-            # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
-
-            # update new df_ml dataframe using appended monthly probabilities, then update main df
-            # new infections - sample from uninfected
-            random_draw = rng.random_sample(size=len(df_ml))
-            ml_idx = df_ml[
-                df_ml.is_alive
-                & ~df_ml.ma_is_infected
-                & (random_draw < df_ml.monthly_prob_inf)
-            ].index
-            df_ml.loc[ml_idx, "ma_is_infected"] = True
-            df_ml.loc[
-                ml_idx, "ma_date_infected"
-            ] = now  # TODO: scatter dates across month
-            df_ml.loc[ml_idx, "ma_inf_type"] = "clinical"
-            # print('len ml_idx', len(ml_idx))
-
-            # clinical - subset of anyone currently infected
-            random_draw = rng.random_sample(size=len(df_ml))
-            clin_idx = df_ml[
-                df_ml.is_alive
-                & df_ml.ma_is_infected
-                & (df_ml.ma_inf_type == "asym")
-                & (random_draw < df_ml.monthly_prob_clin)
-            ].index
-            df_ml.loc[clin_idx, "ma_inf_type"] = "clinical"
-            # print('len clin_idx', len(clin_idx))
-
-            # severe - subset of anyone currently clinical
-            random_draw = rng.random_sample(size=len(df_ml))
-            sev_idx = df_ml[
-                df_ml.is_alive
-                & df_ml.ma_is_infected
-                & (df_ml.ma_inf_type == "clinical")
-                & (random_draw < df_ml.monthly_prob_sev)
-            ].index
-            # print('sev_idx', sev_idx)
-
-            # update the main dataframe
-            df.loc[ml_idx, "ma_date_infected"] = now
-            df.loc[ml_idx, "ma_is_infected"] = True
-            df.loc[ml_idx, "ma_inf_type"] = "asym"
-
-            df.loc[clin_idx, "ma_inf_type"] = "clinical"
-            df.loc[clin_idx, "ma_date_symptoms"] = now
-            df.loc[
-                clin_idx, "ma_clinical_counter"
-            ] += 1  # counter only for new clinical cases (inc severe)
-
-            inf_preg = df.index[
-                (df.ma_date_infected == now)
-                & (df.ma_inf_type == "clinical")
-                & df.is_pregnant
-            ]
-            df.loc[
-                inf_preg, "ma_clinical_preg_counter"
-            ] += 1  # counter only for pregnant women
-
-            df.loc[sev_idx, "ma_inf_type"] = "severe"
-
-            # tidy up
-            del df_ml
+        # tidy up
+        del df_ml
 
         # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
         # schedule self-cure if no treatment, no self-cure from severe malaria
@@ -538,6 +435,9 @@ class Malaria(Module):
         # clinical
         clin = df.index[(df.ma_inf_type == "clinical") & (df.ma_date_infected == now)]
 
+        # update clinical symptoms for all new clinical infections
+        self.clinical_symptoms(df, clin)
+
         for person in df.loc[clin].index:
             # logger.debug(
             #     'Malaria Event: scheduling parasite clearance and symptom end for symptomatic person %d',
@@ -547,293 +447,230 @@ class Malaria(Module):
             date_para_days = pd.to_timedelta(date_para, unit="d")
             # print('date_para_days', date_para_days)
 
-            # # TODO: if clinical symptoms too short maybe no healthcare seeking scheduled
-            # projected date moving from clinical back to asymptomatic
-            date_clin = rng.randint(low=p["dur_clin"] - 2, high=p["dur_clin"] + 2)
-            date_clin_days = pd.to_timedelta(date_clin, unit="d")
-            # print('date_clin_days', date_clin_days)
-
             cure = MalariaParasiteClearanceEvent(self, person)
             self.sim.schedule_event(cure, (self.sim.date + date_para_days))
 
-            # schedule symptom end (5 days +/- 2 days)
-            symp_end = MalariaClinEndEvent(self, person)
-            self.sim.schedule_event(symp_end, self.sim.date + date_clin_days)
-
-        # ----------------------------------- SYMPTOMS -----------------------------------
-        # CLINICAL CASES
-        if len(clin) > 0:
-
-            df.loc[clin, "ma_date_symptoms"] = now
-
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(clin),
-                symptom_string="fever",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=p["dur_clin"],
-            )
-
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(clin),
-                symptom_string="headache",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=p["dur_clin"],
-            )
-
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(clin),
-                symptom_string="vomiting",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=p["dur_clin"],
-            )
-
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(clin),
-                symptom_string="stomachache",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=p["dur_clin"],
-            )
-
-            # additional risk of severe anaemia in pregnancy
-            random_draw = rng.random_sample(size=len(df))
-            preg_infected = df.index[
-                (df.ma_inf_type == "clinical")
-                & (df.ma_date_infected == now)
-                & df.is_pregnant
-                & (random_draw < p["p_sev_anaemia_preg"])
-            ]
-
-            if len(preg_infected) > 0:
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(preg_infected),
-                    symptom_string="severe_anaemia",
-                    add_or_remove="+",
-                    disease_module=self,
-                    duration_in_days=None,
-                )
-
         # SEVERE CASES
         severe = df.index[(df.ma_inf_type == "severe") & (df.ma_date_infected == now)]
+        children = df.index[df.index.isin(severe) & (df.age_exact_years < 5)]
 
-        df.loc[severe, "ma_date_symptoms"] = now
+        # update symptoms for all new severe infections
+        self.severe_symptoms_child(df, asym)
 
-        # generic symptoms present in clinical and severe
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=list(severe),
-            symptom_string="fever",
-            add_or_remove="+",
-            disease_module=self,
-            duration_in_days=None,
-        )
-
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=list(severe),
-            symptom_string="headache",
-            add_or_remove="+",
-            disease_module=self,
-            duration_in_days=None,
-        )
-
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=list(severe),
-            symptom_string="vomiting",
-            add_or_remove="+",
-            disease_module=self,
-            duration_in_days=None,
-        )
-
-        self.sim.modules["SymptomManager"].change_symptom(
-            person_id=list(severe),
-            symptom_string="stomachache",
-            add_or_remove="+",
-            disease_module=self,
-            duration_in_days=None,
-        )
-
-        # symptoms specific to severe cases
-        # get range of probabilities of each symptom for severe cases for children and adults
-        range_symp = p["sev_symp_prob"]
-        range_symp_child = range_symp.loc[range_symp.age_group == "0_5"]
-        range_symp_adult = range_symp.loc[range_symp.age_group == "5_60"]
-
-        # returns array of probabilities for each symptom
-        symp_prob_child = rng.uniform(
-            low=range_symp_child.prop_lower,
-            high=range_symp_child.prop_upper,
-            size=len(range_symp_child),
-        )
-        symp_prob_adult = rng.uniform(
-            low=range_symp_adult.prop_lower,
-            high=range_symp_adult.prop_upper,
-            size=len(range_symp_adult),
-        )
-
-        # turn series into indexed series
-        symp_prob_child_series = pd.Series(
-            symp_prob_child, index=range_symp_child.symptom
-        )
-        symp_prob_adult_series = pd.Series(
-            symp_prob_adult, index=range_symp_adult.symptom
-        )
+        # df.loc[severe, "ma_date_symptoms"] = now
+        #
+        # # generic symptoms present in clinical and severe
+        # self.sim.modules["SymptomManager"].change_symptom(
+        #     person_id=list(severe),
+        #     symptom_string="fever",
+        #     add_or_remove="+",
+        #     disease_module=self,
+        #     duration_in_days=None,
+        # )
+        #
+        # self.sim.modules["SymptomManager"].change_symptom(
+        #     person_id=list(severe),
+        #     symptom_string="headache",
+        #     add_or_remove="+",
+        #     disease_module=self,
+        #     duration_in_days=None,
+        # )
+        #
+        # self.sim.modules["SymptomManager"].change_symptom(
+        #     person_id=list(severe),
+        #     symptom_string="vomiting",
+        #     add_or_remove="+",
+        #     disease_module=self,
+        #     duration_in_days=None,
+        # )
+        #
+        # self.sim.modules["SymptomManager"].change_symptom(
+        #     person_id=list(severe),
+        #     symptom_string="stomachache",
+        #     add_or_remove="+",
+        #     disease_module=self,
+        #     duration_in_days=None,
+        # )
+        #
+        # # symptoms specific to severe cases
+        # # get range of probabilities of each symptom for severe cases for children and adults
+        # range_symp = p["sev_symp_prob"]
+        # range_symp_child = range_symp.loc[range_symp.age_group == "0_5"]
+        # range_symp_adult = range_symp.loc[range_symp.age_group == "5_60"]
+        #
+        # # returns array of probabilities for each symptom
+        # symp_prob_child = rng.uniform(
+        #     low=range_symp_child.prop_lower,
+        #     high=range_symp_child.prop_upper,
+        #     size=len(range_symp_child),
+        # )
+        # symp_prob_adult = rng.uniform(
+        #     low=range_symp_adult.prop_lower,
+        #     high=range_symp_adult.prop_upper,
+        #     size=len(range_symp_adult),
+        # )
+        #
+        # # turn series into indexed series
+        # symp_prob_child_series = pd.Series(
+        #     symp_prob_child, index=range_symp_child.symptom
+        # )
+        # symp_prob_adult_series = pd.Series(
+        #     symp_prob_adult, index=range_symp_adult.symptom
+        # )
 
         # decide presence of all symptoms - all clinical symptoms included, severe included with some probability
         # children
-        children = df.index[df.index.isin(severe) & (df.age_exact_years < 5)]
-
-        jaundice_ch = (
-            df[df.index.isin(severe) & (df.age_exact_years < 5)]
-            .sample(frac=symp_prob_child_series.jaundice, replace=False)
-            .index
-            if children.any()
-            else []
-        )
-        acidosis_ch = (
-            df[df.index.isin(severe) & (df.age_exact_years < 5)]
-            .sample(frac=symp_prob_child_series.acidosis, replace=False)
-            .index
-            if children.any()
-            else []
-        )
-        coma_convulsions_ch = (
-            df[df.index.isin(severe) & (df.age_exact_years < 5)]
-            .sample(frac=symp_prob_child_series.coma_convulsions, replace=False)
-            .index
-            if children.any()
-            else []
-        )
-        renal_failure_ch = (
-            df[df.index.isin(severe) & (df.age_exact_years < 5)]
-            .sample(frac=symp_prob_child_series.renal_failure, replace=False)
-            .index
-            if children.any()
-            else []
-        )
-        anaemia_ch = (
-            df[df.index.isin(severe) & (df.age_exact_years < 5)]
-            .sample(frac=symp_prob_child_series.anaemia, replace=False)
-            .index
-            if children.any()
-            else []
-        )
-        shock_ch = (
-            df[df.index.isin(severe) & (df.age_exact_years < 5)]
-            .sample(frac=symp_prob_child_series.shock, replace=False)
-            .index
-            if children.any()
-            else []
-        )
-
-        # adults
-        adults = df.index[df.index.isin(severe) & (df.age_exact_years >= 5)]
-
-        jaundice_ad = (
-            df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-            .sample(frac=symp_prob_adult_series.jaundice, replace=False)
-            .index
-            if adults.any()
-            else []
-        )
-        acidosis_ad = (
-            df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-            .sample(frac=symp_prob_adult_series.acidosis, replace=False)
-            .index
-            if adults.any()
-            else []
-        )
-        coma_convulsions_ad = (
-            df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-            .sample(frac=symp_prob_adult_series.coma_convulsions, replace=False)
-            .index
-            if adults.any()
-            else []
-        )
-        renal_failure_ad = (
-            df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-            .sample(frac=symp_prob_adult_series.renal_failure, replace=False)
-            .index
-            if adults.any()
-            else []
-        )
-        anaemia_ad = (
-            df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-            .sample(frac=symp_prob_adult_series.anaemia, replace=False)
-            .index
-            if adults.any()
-            else []
-        )
-        shock_ad = (
-            df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-            .sample(frac=symp_prob_adult_series.shock, replace=False)
-            .index
-            if adults.any()
-            else []
-        )
-
-        # join the two sets of indices together ready to call the symptom manager
-        jaundice = jaundice_ch.append(jaundice_ad)
-        acidosis = acidosis_ch.append(acidosis_ad)
-        coma_convulsions = coma_convulsions_ch.append(coma_convulsions_ad)
-        renal_failure = renal_failure_ch.append(renal_failure_ad)
-        anaemia = anaemia_ch.append(anaemia_ad)
-        shock = shock_ch.append(shock_ad)
-
-        if jaundice is not None:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(jaundice),
-                symptom_string="jaundice",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
-
-        if acidosis is not None:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(acidosis),
-                symptom_string="em_acidosis",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
-
-        if coma_convulsions is not None:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(coma_convulsions),
-                symptom_string="em_coma_convulsions",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
-
-        if renal_failure is not None:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(renal_failure),
-                symptom_string="em_renal_failure",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
-
-        if anaemia is not None:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(anaemia),
-                symptom_string="severe_anaemia",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
-
-        if shock is not None:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(shock),
-                symptom_string="em_shock",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
+        #
+        # jaundice_ch = (
+        #     df[df.index.isin(severe) & (df.age_exact_years < 5)]
+        #     .sample(frac=symp_prob_child_series.jaundice, replace=False)
+        #     .index
+        #     if children.any()
+        #     else []
+        # )
+        # acidosis_ch = (
+        #     df[df.index.isin(severe) & (df.age_exact_years < 5)]
+        #     .sample(frac=symp_prob_child_series.acidosis, replace=False)
+        #     .index
+        #     if children.any()
+        #     else []
+        # )
+        # coma_convulsions_ch = (
+        #     df[df.index.isin(severe) & (df.age_exact_years < 5)]
+        #     .sample(frac=symp_prob_child_series.coma_convulsions, replace=False)
+        #     .index
+        #     if children.any()
+        #     else []
+        # )
+        # renal_failure_ch = (
+        #     df[df.index.isin(severe) & (df.age_exact_years < 5)]
+        #     .sample(frac=symp_prob_child_series.renal_failure, replace=False)
+        #     .index
+        #     if children.any()
+        #     else []
+        # )
+        # anaemia_ch = (
+        #     df[df.index.isin(severe) & (df.age_exact_years < 5)]
+        #     .sample(frac=symp_prob_child_series.anaemia, replace=False)
+        #     .index
+        #     if children.any()
+        #     else []
+        # )
+        # shock_ch = (
+        #     df[df.index.isin(severe) & (df.age_exact_years < 5)]
+        #     .sample(frac=symp_prob_child_series.shock, replace=False)
+        #     .index
+        #     if children.any()
+        #     else []
+        # )
+        #
+        # # adults
+        # adults = df.index[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        #
+        # jaundice_ad = (
+        #     df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        #     .sample(frac=symp_prob_adult_series.jaundice, replace=False)
+        #     .index
+        #     if adults.any()
+        #     else []
+        # )
+        # acidosis_ad = (
+        #     df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        #     .sample(frac=symp_prob_adult_series.acidosis, replace=False)
+        #     .index
+        #     if adults.any()
+        #     else []
+        # )
+        # coma_convulsions_ad = (
+        #     df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        #     .sample(frac=symp_prob_adult_series.coma_convulsions, replace=False)
+        #     .index
+        #     if adults.any()
+        #     else []
+        # )
+        # renal_failure_ad = (
+        #     df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        #     .sample(frac=symp_prob_adult_series.renal_failure, replace=False)
+        #     .index
+        #     if adults.any()
+        #     else []
+        # )
+        # anaemia_ad = (
+        #     df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        #     .sample(frac=symp_prob_adult_series.anaemia, replace=False)
+        #     .index
+        #     if adults.any()
+        #     else []
+        # )
+        # shock_ad = (
+        #     df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        #     .sample(frac=symp_prob_adult_series.shock, replace=False)
+        #     .index
+        #     if adults.any()
+        #     else []
+        # )
+        #
+        # # join the two sets of indices together ready to call the symptom manager
+        # jaundice = jaundice_ch.append(jaundice_ad)
+        # acidosis = acidosis_ch.append(acidosis_ad)
+        # coma_convulsions = coma_convulsions_ch.append(coma_convulsions_ad)
+        # renal_failure = renal_failure_ch.append(renal_failure_ad)
+        # anaemia = anaemia_ch.append(anaemia_ad)
+        # shock = shock_ch.append(shock_ad)
+        #
+        # if jaundice is not None:
+        #     self.sim.modules["SymptomManager"].change_symptom(
+        #         person_id=list(jaundice),
+        #         symptom_string="jaundice",
+        #         add_or_remove="+",
+        #         disease_module=self,
+        #         duration_in_days=None,
+        #     )
+        #
+        # if acidosis is not None:
+        #     self.sim.modules["SymptomManager"].change_symptom(
+        #         person_id=list(acidosis),
+        #         symptom_string="em_acidosis",
+        #         add_or_remove="+",
+        #         disease_module=self,
+        #         duration_in_days=None,
+        #     )
+        #
+        # if coma_convulsions is not None:
+        #     self.sim.modules["SymptomManager"].change_symptom(
+        #         person_id=list(coma_convulsions),
+        #         symptom_string="em_coma_convulsions",
+        #         add_or_remove="+",
+        #         disease_module=self,
+        #         duration_in_days=None,
+        #     )
+        #
+        # if renal_failure is not None:
+        #     self.sim.modules["SymptomManager"].change_symptom(
+        #         person_id=list(renal_failure),
+        #         symptom_string="em_renal_failure",
+        #         add_or_remove="+",
+        #         disease_module=self,
+        #         duration_in_days=None,
+        #     )
+        #
+        # if anaemia is not None:
+        #     self.sim.modules["SymptomManager"].change_symptom(
+        #         person_id=list(anaemia),
+        #         symptom_string="severe_anaemia",
+        #         add_or_remove="+",
+        #         disease_module=self,
+        #         duration_in_days=None,
+        #     )
+        #
+        # if shock is not None:
+        #     self.sim.modules["SymptomManager"].change_symptom(
+        #         person_id=list(shock),
+        #         symptom_string="em_shock",
+        #         add_or_remove="+",
+        #         disease_module=self,
+        #         duration_in_days=None,
+        #     )
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
@@ -862,14 +699,9 @@ class Malaria(Module):
 
     def initialise_simulation(self, sim):
 
-        if self.level == 0:
-            sim.schedule_event(
-                MalariaEventNational(self), sim.date + DateOffset(months=1)
-            )
-        else:
-            sim.schedule_event(
-                MalariaEventDistrict(self), sim.date + DateOffset(months=1)
-            )
+        sim.schedule_event(
+            MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1)
+        )
 
         sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
         sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(months=1))
@@ -923,23 +755,6 @@ class Malaria(Module):
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
 
-        # # ----------------------------------- RENAME DISTRICTS -----------------------------------
-        # # rename districts to match malaria data
-        # if df.at[child_id, "ma_district_edited"] == "Lilongwe City":
-        #     df.at[child_id, "ma_district_edited"] = "Lilongwe"
-        #
-        # elif df.at[child_id, "ma_district_edited"] == "Blantyre City":
-        #     df.at[child_id, "ma_district_edited"] = "Blantyre"
-        #
-        # elif df.at[child_id, "ma_district_edited"] == "Zomba City":
-        #     df.at[child_id, "ma_district_edited"] = "Zomba"
-        #
-        # elif df.at[child_id, "ma_district_edited"] == "Mzuzu City":
-        #     df.at[child_id, "ma_district_edited"] = "Mzuzu"
-        #
-        # elif df.at[child_id, "ma_district_edited"] == "Nkhata Bay":
-        #     df.at[child_id, "ma_district_edited"] = "Mzimba"
-
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -975,6 +790,110 @@ class Malaria(Module):
         health_values.name = "Malaria_Symptoms"  # label the cause of this disability
 
         return health_values.loc[df.is_alive]  # returns the series
+
+    def clinical_symptoms(self, population, clinical_index):
+        """
+        assign clinical symptoms to new clinical malaria cases and schedule symptom resolution
+
+        :param population:
+        :param clinical_index:
+        """
+
+        df = population
+        p = self.parameters
+        rng = self.rng
+        now = self.sim.date
+
+        # TODO this schedules symptom onset on 1st of each month for everybody
+        df.loc[clinical_index, "ma_date_symptoms"] = now
+
+        symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+
+        for symptom in symptom_list:
+            print(symptom)
+            # this also schedules symptom resolution in 5 days
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=list(clinical_index),
+                symptom_string=symptom,
+                add_or_remove="+",
+                disease_module=self,
+                duration_in_days=p["dur_clin"],
+            )
+
+        # additional risk of severe anaemia in pregnancy
+        random_draw = rng.random_sample(size=len(df))
+        preg_infected = df.index[
+            (df.ma_inf_type == "clinical")
+            & (df.ma_date_infected == now)
+            & df.is_pregnant
+            & (random_draw < p["p_sev_anaemia_preg"])
+            ]
+
+        if len(preg_infected) > 0:
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=list(preg_infected),
+                symptom_string="severe_anaemia",
+                add_or_remove="+",
+                disease_module=self.module,
+                duration_in_days=None,
+            )
+
+    def severe_symptoms_child(self, population, severe_index):
+        """
+        assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
+
+        :param population: the population dataframe
+        :param severe_index: the indices of new clinical cases
+        """
+
+        df = population
+        p = self.parameters
+        rng = self.rng
+        now = self.sim.date
+
+        df.loc[severe_index, "ma_date_symptoms"] = now
+
+        # general symptoms - applied to all
+        symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+
+        for symptom in symptom_list:
+            self.sim.modules["SymptomManager"].change_symptom(
+                person_id=list(severe_index),
+                symptom_string=symptom,
+                add_or_remove="+",
+                disease_module=self,
+                duration_in_days=None,
+            )
+
+        # symptoms specific to severe cases
+        # get range of probabilities of each symptom for severe cases for children and adults
+        range_symp = p["sev_symp_prob"]
+        range_symp_child = range_symp.loc[range_symp.age_group == "0_5"]
+
+        symptom_list_severe = list(range_symp_child.symptom)
+
+        # assign symptoms
+        for child in severe_index:
+
+            for symptom in symptom_list_severe:
+
+                # random sample whether child will have symptom
+                symptom_probability = rng.uniform(
+                    low=range_symp_child.loc[range_symp_child.symptom == symptom, "prop_lower"],
+                    high=range_symp_child.loc[range_symp_child.symptom == symptom, "prop_upper"],
+                    size=1
+                )[0]
+
+                if self.rng.random_sample(size=1) < symptom_probability:
+
+                    # schedule symptom onset
+                    self.sim.modules["SymptomManager"].change_symptom(
+                        person_id=child,
+                        symptom_string=symptom,
+                        add_or_remove="+",
+                        disease_module=self,
+                        duration_in_days=None,
+                    )
 
 
 class MalariaPollingEventNational(RegularEvent, PopulationScopeEventMixin):
@@ -1119,62 +1038,67 @@ class MalariaPollingEventNational(RegularEvent, PopulationScopeEventMixin):
             # Give everyone with clinical malaria generic symptom fever (some will go to care for this)
             # Report this to the unified symptom manager:
             # the symptom manager just gives the person the symptom
-            if len(clin) > 0:
-                # TODO: if clinical symptoms too short maybe no healthcare seeking scheduled in time
-                # TODO: symptoms may occur with different probabilities, lasting for diff durations
 
-                df.loc[clin, "ma_date_symptoms"] = now
+            # TODO call the clinical symptom function
 
-                # this also schedules symptom resolution in 5 days
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(clin),
-                    symptom_string="fever",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=p["dur_clin"],
-                )
 
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(clin),
-                    symptom_string="headache",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=p["dur_clin"],
-                )
 
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(clin),
-                    symptom_string="vomiting",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=p["dur_clin"],
-                )
-
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(clin),
-                    symptom_string="stomachache",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=p["dur_clin"],
-                )
-
-                # additional risk of severe anaemia in pregnancy
-                random_draw = rng.random_sample(size=len(df))
-                preg_infected = df.index[
-                    (df.ma_inf_type == "clinical")
-                    & (df.ma_date_infected == now)
-                    & df.is_pregnant
-                    & (random_draw < p["p_sev_anaemia_preg"])
-                ]
-
-                if len(preg_infected) > 0:
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=list(preg_infected),
-                        symptom_string="severe_anaemia",
-                        add_or_remove="+",
-                        disease_module=self.module,
-                        duration_in_days=None,
-                    )
+            # if len(clin) > 0:
+            #     # TODO: if clinical symptoms too short maybe no healthcare seeking scheduled in time
+            #     # TODO: symptoms may occur with different probabilities, lasting for diff durations
+            #
+            #     df.loc[clin, "ma_date_symptoms"] = now
+            #
+            #     # this also schedules symptom resolution in 5 days
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(clin),
+            #         symptom_string="fever",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=p["dur_clin"],
+            #     )
+            #
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(clin),
+            #         symptom_string="headache",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=p["dur_clin"],
+            #     )
+            #
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(clin),
+            #         symptom_string="vomiting",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=p["dur_clin"],
+            #     )
+            #
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(clin),
+            #         symptom_string="stomachache",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=p["dur_clin"],
+            #     )
+            #
+            #     # additional risk of severe anaemia in pregnancy
+            #     random_draw = rng.random_sample(size=len(df))
+            #     preg_infected = df.index[
+            #         (df.ma_inf_type == "clinical")
+            #         & (df.ma_date_infected == now)
+            #         & df.is_pregnant
+            #         & (random_draw < p["p_sev_anaemia_preg"])
+            #     ]
+            #
+            #     if len(preg_infected) > 0:
+            #         self.sim.modules["SymptomManager"].change_symptom(
+            #             person_id=list(preg_infected),
+            #             symptom_string="severe_anaemia",
+            #             add_or_remove="+",
+            #             disease_module=self.module,
+            #             duration_in_days=None,
+            #         )
 
             # TODO:'duration_in_days' schedules symptom resolution and treatment also schedules resolution!
             # TODO: check symptoms still present if treated before scheduling symptom resolution
@@ -1185,225 +1109,225 @@ class MalariaPollingEventNational(RegularEvent, PopulationScopeEventMixin):
             severe = df.index[
                 (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
             ]
-
-            if len(severe) > 0:
-
-                df.loc[severe, "ma_date_symptoms"] = now
-
-                # generic symptoms present in clinical and severe
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(severe),
-                    symptom_string="fever",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=None,
-                )
-
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(severe),
-                    symptom_string="headache",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=None,
-                )
-
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(severe),
-                    symptom_string="vomiting",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=None,
-                )
-
-                self.sim.modules["SymptomManager"].change_symptom(
-                    person_id=list(severe),
-                    symptom_string="stomachache",
-                    add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=None,
-                )
-
-                # symptoms specific to severe cases
-                # get range of probabilities of each symptom for severe cases for children and adults
-                range_symp = p["sev_symp_prob"]
-                range_symp_child = range_symp.loc[range_symp.age_group == "0_5"]
-                range_symp_adult = range_symp.loc[range_symp.age_group == "5_60"]
-
-                # returns array of probabilities for each symptom
-                symp_prob_child = rng.uniform(
-                    low=range_symp_child.prop_lower,
-                    high=range_symp_child.prop_upper,
-                    size=len(range_symp_child),
-                )
-                symp_prob_adult = rng.uniform(
-                    low=range_symp_adult.prop_lower,
-                    high=range_symp_adult.prop_upper,
-                    size=len(range_symp_adult),
-                )
-
-                # turn series into indexed series
-                symp_prob_child_series = pd.Series(
-                    symp_prob_child, index=range_symp_child.symptom
-                )
-                symp_prob_adult_series = pd.Series(
-                    symp_prob_adult, index=range_symp_adult.symptom
-                )
-
-                # decide presence of all symptoms
-                # all clinical symptoms included, severe included with some probability
-                # children
-                children = df.index[df.index.isin(severe) & (df.age_exact_years < 5)]
-
-                jaundice_ch = (
-                    df[df.index.isin(severe) & (df.age_exact_years < 5)]
-                    .sample(frac=symp_prob_child_series.jaundice, replace=False)
-                    .index
-                    if children.any()
-                    else []
-                )
-                acidosis_ch = (
-                    df[df.index.isin(severe) & (df.age_exact_years < 5)]
-                    .sample(frac=symp_prob_child_series.acidosis, replace=False)
-                    .index
-                    if children.any()
-                    else []
-                )
-                coma_convulsions_ch = (
-                    df[df.index.isin(severe) & (df.age_exact_years < 5)]
-                    .sample(frac=symp_prob_child_series.coma_convulsions, replace=False)
-                    .index
-                    if children.any()
-                    else []
-                )
-                renal_failure_ch = (
-                    df[df.index.isin(severe) & (df.age_exact_years < 5)]
-                    .sample(frac=symp_prob_child_series.renal_failure, replace=False)
-                    .index
-                    if children.any()
-                    else []
-                )
-                anaemia_ch = (
-                    df[df.index.isin(severe) & (df.age_exact_years < 5)]
-                    .sample(frac=symp_prob_child_series.anaemia, replace=False)
-                    .index
-                    if children.any()
-                    else []
-                )
-                shock_ch = (
-                    df[df.index.isin(severe) & (df.age_exact_years < 5)]
-                    .sample(frac=symp_prob_child_series.shock, replace=False)
-                    .index
-                    if children.any()
-                    else []
-                )
-
-                # adults
-                adults = df.index[df.index.isin(severe) & (df.age_exact_years >= 5)]
-
-                jaundice_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                    .sample(frac=symp_prob_adult_series.jaundice, replace=False)
-                    .index
-                    if adults.any()
-                    else []
-                )
-                acidosis_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                    .sample(frac=symp_prob_adult_series.acidosis, replace=False)
-                    .index
-                    if adults.any()
-                    else []
-                )
-                coma_convulsions_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                    .sample(frac=symp_prob_adult_series.coma_convulsions, replace=False)
-                    .index
-                    if adults.any()
-                    else []
-                )
-                renal_failure_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                    .sample(frac=symp_prob_adult_series.renal_failure, replace=False)
-                    .index
-                    if adults.any()
-                    else []
-                )
-                anaemia_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                    .sample(frac=symp_prob_adult_series.anaemia, replace=False)
-                    .index
-                    if adults.any()
-                    else []
-                )
-                shock_ad = (
-                    df[df.index.isin(severe) & (df.age_exact_years >= 5)]
-                    .sample(frac=symp_prob_adult_series.shock, replace=False)
-                    .index
-                    if adults.any()
-                    else []
-                )
-
-                # join the two sets of indices together ready to call the symptom manager
-                jaundice = jaundice_ch.append(jaundice_ad)
-                acidosis = acidosis_ch.append(acidosis_ad)
-                coma_convulsions = coma_convulsions_ch.append(coma_convulsions_ad)
-                renal_failure = renal_failure_ch.append(renal_failure_ad)
-                anaemia = anaemia_ch.append(anaemia_ad)
-                shock = shock_ch.append(shock_ad)
-
-                if jaundice is not None:
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=list(jaundice),
-                        symptom_string="jaundice",
-                        add_or_remove="+",
-                        disease_module=self.module,
-                        duration_in_days=None,
-                    )
-
-                if acidosis is not None:
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=list(acidosis),
-                        symptom_string="em_acidosis",
-                        add_or_remove="+",
-                        disease_module=self.module,
-                        duration_in_days=None,
-                    )
-
-                if coma_convulsions is not None:
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=list(coma_convulsions),
-                        symptom_string="em_coma_convulsions",
-                        add_or_remove="+",
-                        disease_module=self.module,
-                        duration_in_days=None,
-                    )
-
-                if renal_failure is not None:
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=list(renal_failure),
-                        symptom_string="em_renal_failure",
-                        add_or_remove="+",
-                        disease_module=self.module,
-                        duration_in_days=None,
-                    )
-
-                if anaemia is not None:
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=list(anaemia),
-                        symptom_string="severe_anaemia",
-                        add_or_remove="+",
-                        disease_module=self.module,
-                        duration_in_days=None,
-                    )
-
-                if shock is not None:
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=list(shock),
-                        symptom_string="em_shock",
-                        add_or_remove="+",
-                        disease_module=self.module,
-                        duration_in_days=None,
-                    )
+            #
+            # if len(severe) > 0:
+            #
+            #     df.loc[severe, "ma_date_symptoms"] = now
+            #
+            #     # generic symptoms present in clinical and severe
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(severe),
+            #         symptom_string="fever",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=None,
+            #     )
+            #
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(severe),
+            #         symptom_string="headache",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=None,
+            #     )
+            #
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(severe),
+            #         symptom_string="vomiting",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=None,
+            #     )
+            #
+            #     self.sim.modules["SymptomManager"].change_symptom(
+            #         person_id=list(severe),
+            #         symptom_string="stomachache",
+            #         add_or_remove="+",
+            #         disease_module=self.module,
+            #         duration_in_days=None,
+            #     )
+            #
+            #     # symptoms specific to severe cases
+            #     # get range of probabilities of each symptom for severe cases for children and adults
+            #     range_symp = p["sev_symp_prob"]
+            #     range_symp_child = range_symp.loc[range_symp.age_group == "0_5"]
+            #     range_symp_adult = range_symp.loc[range_symp.age_group == "5_60"]
+            #
+            #     # returns array of probabilities for each symptom
+            #     symp_prob_child = rng.uniform(
+            #         low=range_symp_child.prop_lower,
+            #         high=range_symp_child.prop_upper,
+            #         size=len(range_symp_child),
+            #     )
+            #     symp_prob_adult = rng.uniform(
+            #         low=range_symp_adult.prop_lower,
+            #         high=range_symp_adult.prop_upper,
+            #         size=len(range_symp_adult),
+            #     )
+            #
+            #     # turn series into indexed series
+            #     symp_prob_child_series = pd.Series(
+            #         symp_prob_child, index=range_symp_child.symptom
+            #     )
+            #     symp_prob_adult_series = pd.Series(
+            #         symp_prob_adult, index=range_symp_adult.symptom
+            #     )
+            #
+            #     # decide presence of all symptoms
+            #     # all clinical symptoms included, severe included with some probability
+            #     # children
+            #     children = df.index[df.index.isin(severe) & (df.age_exact_years < 5)]
+            #
+            #     jaundice_ch = (
+            #         df[df.index.isin(severe) & (df.age_exact_years < 5)]
+            #         .sample(frac=symp_prob_child_series.jaundice, replace=False)
+            #         .index
+            #         if children.any()
+            #         else []
+            #     )
+            #     acidosis_ch = (
+            #         df[df.index.isin(severe) & (df.age_exact_years < 5)]
+            #         .sample(frac=symp_prob_child_series.acidosis, replace=False)
+            #         .index
+            #         if children.any()
+            #         else []
+            #     )
+            #     coma_convulsions_ch = (
+            #         df[df.index.isin(severe) & (df.age_exact_years < 5)]
+            #         .sample(frac=symp_prob_child_series.coma_convulsions, replace=False)
+            #         .index
+            #         if children.any()
+            #         else []
+            #     )
+            #     renal_failure_ch = (
+            #         df[df.index.isin(severe) & (df.age_exact_years < 5)]
+            #         .sample(frac=symp_prob_child_series.renal_failure, replace=False)
+            #         .index
+            #         if children.any()
+            #         else []
+            #     )
+            #     anaemia_ch = (
+            #         df[df.index.isin(severe) & (df.age_exact_years < 5)]
+            #         .sample(frac=symp_prob_child_series.anaemia, replace=False)
+            #         .index
+            #         if children.any()
+            #         else []
+            #     )
+            #     shock_ch = (
+            #         df[df.index.isin(severe) & (df.age_exact_years < 5)]
+            #         .sample(frac=symp_prob_child_series.shock, replace=False)
+            #         .index
+            #         if children.any()
+            #         else []
+            #     )
+            #
+            #     # adults
+            #     adults = df.index[df.index.isin(severe) & (df.age_exact_years >= 5)]
+            #
+            #     jaundice_ad = (
+            #         df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+            #         .sample(frac=symp_prob_adult_series.jaundice, replace=False)
+            #         .index
+            #         if adults.any()
+            #         else []
+            #     )
+            #     acidosis_ad = (
+            #         df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+            #         .sample(frac=symp_prob_adult_series.acidosis, replace=False)
+            #         .index
+            #         if adults.any()
+            #         else []
+            #     )
+            #     coma_convulsions_ad = (
+            #         df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+            #         .sample(frac=symp_prob_adult_series.coma_convulsions, replace=False)
+            #         .index
+            #         if adults.any()
+            #         else []
+            #     )
+            #     renal_failure_ad = (
+            #         df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+            #         .sample(frac=symp_prob_adult_series.renal_failure, replace=False)
+            #         .index
+            #         if adults.any()
+            #         else []
+            #     )
+            #     anaemia_ad = (
+            #         df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+            #         .sample(frac=symp_prob_adult_series.anaemia, replace=False)
+            #         .index
+            #         if adults.any()
+            #         else []
+            #     )
+            #     shock_ad = (
+            #         df[df.index.isin(severe) & (df.age_exact_years >= 5)]
+            #         .sample(frac=symp_prob_adult_series.shock, replace=False)
+            #         .index
+            #         if adults.any()
+            #         else []
+            #     )
+            #
+            #     # join the two sets of indices together ready to call the symptom manager
+            #     jaundice = jaundice_ch.append(jaundice_ad)
+            #     acidosis = acidosis_ch.append(acidosis_ad)
+            #     coma_convulsions = coma_convulsions_ch.append(coma_convulsions_ad)
+            #     renal_failure = renal_failure_ch.append(renal_failure_ad)
+            #     anaemia = anaemia_ch.append(anaemia_ad)
+            #     shock = shock_ch.append(shock_ad)
+            #
+            #     if jaundice is not None:
+            #         self.sim.modules["SymptomManager"].change_symptom(
+            #             person_id=list(jaundice),
+            #             symptom_string="jaundice",
+            #             add_or_remove="+",
+            #             disease_module=self.module,
+            #             duration_in_days=None,
+            #         )
+            #
+            #     if acidosis is not None:
+            #         self.sim.modules["SymptomManager"].change_symptom(
+            #             person_id=list(acidosis),
+            #             symptom_string="em_acidosis",
+            #             add_or_remove="+",
+            #             disease_module=self.module,
+            #             duration_in_days=None,
+            #         )
+            #
+            #     if coma_convulsions is not None:
+            #         self.sim.modules["SymptomManager"].change_symptom(
+            #             person_id=list(coma_convulsions),
+            #             symptom_string="em_coma_convulsions",
+            #             add_or_remove="+",
+            #             disease_module=self.module,
+            #             duration_in_days=None,
+            #         )
+            #
+            #     if renal_failure is not None:
+            #         self.sim.modules["SymptomManager"].change_symptom(
+            #             person_id=list(renal_failure),
+            #             symptom_string="em_renal_failure",
+            #             add_or_remove="+",
+            #             disease_module=self.module,
+            #             duration_in_days=None,
+            #         )
+            #
+            #     if anaemia is not None:
+            #         self.sim.modules["SymptomManager"].change_symptom(
+            #             person_id=list(anaemia),
+            #             symptom_string="severe_anaemia",
+            #             add_or_remove="+",
+            #             disease_module=self.module,
+            #             duration_in_days=None,
+            #         )
+            #
+            #     if shock is not None:
+            #         self.sim.modules["SymptomManager"].change_symptom(
+            #             person_id=list(shock),
+            #             symptom_string="em_shock",
+            #             add_or_remove="+",
+            #             disease_module=self.module,
+            #             duration_in_days=None,
+            #         )
 
             # ----------------------------------- SCHEDULED DEATHS -----------------------------------
             # schedule deaths within the next week
@@ -1436,7 +1360,7 @@ class MalariaPollingEventNational(RegularEvent, PopulationScopeEventMixin):
             logger.debug("MalariaEventNational: no one is newly infected.")
 
 
-class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
+class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
@@ -2883,14 +2807,6 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             now,
             {"child2_10_prev": child_prev, "clinical_prev": prev_clin},
         )
-
-        # ------------------------------------ MORTALITY ------------------------------------
-        # deaths reported in the last 12 months per person
-        deaths = len(df[(df.ma_date_death > (now - DateOffset(months=self.repeat)))])
-
-        mort_rate = deaths / pop
-
-        logger.info("%s|ma_mortality|%s", now, {"mort_rate": mort_rate})
 
 
 class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):

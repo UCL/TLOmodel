@@ -33,7 +33,7 @@ from tlo.methods import (
 t0 = time.time()
 
 # Where will outputs go - by default, wherever this script is run
-outputpath = Path("./outputs/malaria")
+outputpath = Path("./outputs")
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -54,7 +54,6 @@ sim.seed_rngs(25)
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ["*"]
-malaria_strat = 1  # levels: 0 = national; 1 = district
 malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
 # Register the appropriate modules
@@ -84,7 +83,6 @@ sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcef
 sim.register(
     malaria.Malaria(
         resourcefilepath=resourcefilepath,
-        level=malaria_strat,
         testing=malaria_testing,
         itn=None,
     )
@@ -110,7 +108,7 @@ resourcefilepath = Path("./resources")
 inc = output["tlo.methods.malaria"]["incidence"]
 pfpr = output["tlo.methods.malaria"]["prevalence"]
 tx = output["tlo.methods.malaria"]["tx_coverage"]
-mort = output["tlo.methods.malaria"]["ma_mortality"]
+# mort = output["tlo.methods.malaria"]["ma_mortality"]
 # symp = output['tlo.methods.malaria']['symptoms']
 
 prev_district = output["tlo.methods.malaria"]["prev_district"]
@@ -234,31 +232,31 @@ plt.gca().set_ylim(0.0, 1.0)
 plt.legend(["MAP", "Model"])
 plt.tight_layout()
 
-# Malaria mortality rate - all ages with MAP model estimates
-ax4 = plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(mortMAP_data.Year, mortMAP_data.mortality_rate_median)  # MAP data
-plt.fill_between(
-    mortMAP_data.Year,
-    mortMAP_data.mortality_rate_LCI,
-    mortMAP_data.mortality_rate_UCI,
-    alpha=0.5,
-)
-plt.plot(WHO_data.Year, WHO_data.MortRatePerPersonPoint)  # WHO data
-plt.fill_between(
-    WHO_data.Year,
-    WHO_data.MortRatePerPersonLower,
-    WHO_data.MortRatePerPersonUpper,
-    alpha=0.5,
-)
-plt.plot(model_years, mort.mort_rate, color="mediumseagreen")  # model
-plt.title("Malaria Mortality Rate")
-plt.xlabel("Year")
-plt.xticks(rotation=90)
-plt.ylabel("Mortality rate")
-plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0.0, 0.0015)
-plt.legend(["MAP", "WHO", "Model"])
-plt.tight_layout()
+# # Malaria mortality rate - all ages with MAP model estimates
+# ax4 = plt.subplot(224)  # numrows, numcols, fignum
+# plt.plot(mortMAP_data.Year, mortMAP_data.mortality_rate_median)  # MAP data
+# plt.fill_between(
+#     mortMAP_data.Year,
+#     mortMAP_data.mortality_rate_LCI,
+#     mortMAP_data.mortality_rate_UCI,
+#     alpha=0.5,
+# )
+# plt.plot(WHO_data.Year, WHO_data.MortRatePerPersonPoint)  # WHO data
+# plt.fill_between(
+#     WHO_data.Year,
+#     WHO_data.MortRatePerPersonLower,
+#     WHO_data.MortRatePerPersonUpper,
+#     alpha=0.5,
+# )
+# plt.plot(model_years, mort.mort_rate, color="mediumseagreen")  # model
+# plt.title("Malaria Mortality Rate")
+# plt.xlabel("Year")
+# plt.xticks(rotation=90)
+# plt.ylabel("Mortality rate")
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0.0, 0.0015)
+# plt.legend(["MAP", "WHO", "Model"])
+# plt.tight_layout()
 
 # out_path = "//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/ITN_projections_28Jan2010/"
 # figpath = out_path + "Baseline_averages29Jan2010" + datestamp + ".png"
