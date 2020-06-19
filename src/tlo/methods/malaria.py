@@ -2053,7 +2053,8 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if df.at[individual_id, "is_alive"]:
+        if not df.at[individual_id, "is_alive"]:
+            return
 
             # if on treatment, will reduce probability of death
             # use random number generator - currently param treatment_adjustment set to 0.5
