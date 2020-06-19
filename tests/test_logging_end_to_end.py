@@ -83,6 +83,11 @@ def log_path(tmpdir_factory):
                 data='I am a message.')
     sim.date = sim.date + pd.DateOffset(days=1)
 
+    # test categorical
+    for item in log_input.col4_cat:
+        logger.info(key='categorical',
+                    data={'cat': pd.Categorical(item, categories=['cat1', 'cat2'])})
+
     # end the simulation
     sim.simulate(end_date=sim.date)
 
@@ -153,6 +158,11 @@ class TestWriteAndReadLog:
         log_df = test_log_df['string_value']
 
         assert pd.Series('I am a message.').equals(log_df.message)
+
+    def test_categorical(self, test_log_df):
+        log_df = test_log_df['categorical']
+        assert log_input.col4_cat.equals(log_df.cat)
+
 
 
 class TestParseLogAtLoggingLevel:

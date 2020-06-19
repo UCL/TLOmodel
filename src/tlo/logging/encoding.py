@@ -15,7 +15,8 @@ class PandasEncoder(json.JSONEncoder):
         elif isinstance(obj, pd.Timestamp):
             return obj.isoformat()
         elif isinstance(obj, pd.Categorical):
-            return str(obj)
+            # assume only only one categorical value per cell
+            return obj.tolist()[0]
         elif isinstance(obj, set):
             return list(obj)
         elif isinstance(obj, type(pd.NaT)):
