@@ -68,7 +68,7 @@ def log_path(tmpdir_factory):
                     data=item)
         sim.date = sim.date + pd.DateOffset(days=1)
 
-    # log data as fixed length list
+    # log data as variable length list
     for item in log_input.col6_list.values:
         logger.info(key='a_variable_length_list',
                     data={'list_header': item})
