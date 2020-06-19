@@ -1,208 +1,114 @@
+from io import StringIO
+
 import numpy as np
 import pandas as pd
 from pytest import fixture
 
-from tlo import Date, Module, Parameter, Property, Simulation, Types, logging
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.events import PopulationScopeEventMixin, RegularEvent
-from tlo.logging import INFO, getLogger
 
-logger = getLogger("tlo.testing.loggernaires")
-logger.setLevel(INFO)
-
-
-class LoggerNaires(Module):
-    PARAMETERS = {
-        'test': Parameter(Types.REAL, 'this is a test')
-    }
-
-    PROPERTIES = {
-        'ln_a': Property(Types.REAL, 'numeric a'),
-        'ln_b': Property(Types.REAL, 'numeric b'),
-        'ln_c': Property(Types.REAL, 'numeric c'),
-        'ln_set': Property(Types.LIST, 'set of values'),
-        'ln_date': Property(Types.DATE, 'date'),
-
-    }
-
-    def __init__(self, name=None, resourcefilepath=None):
-        super().__init__(name)
-
-    def on_birth(self, mother, child):
-        pass
-
-    def read_parameters(self, data_folder):
-        pass
-
-    def initialise_simulation(self, sim):
-        sim.schedule_event(MockLogEvent(self), sim.date + pd.DateOffset(months=0))
-
-    def initialise_population(self, population):
-        rows = population.initial_size
-        df = population.props
-        for name, _type in self.PROPERTIES.items():
-            if name == "ln_date":
-                df[name] = self.rng.randint(1400, 1600, rows) * 1_000_000_000_000_000
-                df[name] = df[name].astype('datetime64[ns]')
-            elif name == "ln_set":
-                df[name] = list(
-                    {r1, r2} for r1, r2 in zip(self.rng.randint(0, 100, rows), self.rng.randint(0, 100, rows))
-                )
-                df[name][1] = None
-                df[name][2] = set()
-            else:
-                df[name] = self.rng.randint(0, 100, rows)
-
-
-class MockLogEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        super().__init__(module, frequency=pd.DateOffset(weeks=4))
-
-    def apply(self, population):
-        df = population.props
-        a_over_50 = sum(df.ln_a > 50)
-        b_over_50 = sum(df.ln_b > 50)
-        c_over_50 = sum(df.ln_c > 50)
-        # Allowing logging of entire dataframe only for testing
-        logger._disable_dataframe_logging = False
-
-        # the preferred way to log, because it maps naturally to a row in a dataframe
-        logger.info(key="each_group_over_50_unscaled",
-                    data={"count_a_over_50": a_over_50, "count_b_over_50": b_over_50,
-                          "count_c_over_50": c_over_50 / 3},
-                    description="count over 50 for each group")
-
-        logger.info(key="each_group_over_50_scaled",
-                    data={"count_a_over_50": a_over_50, "count_b_over_50": b_over_50,
-                          "count_c_over_50": c_over_50 / 3},
-                    description="count over 50 for each group; a and b are raw numbers, c is normalised",
-                    scale_me=['count_a_over_50', 'count_c_over_50'])
-
-        logger.info(key="a_fixed_length_list",
-                    data=[a_over_50 / 2, b_over_50 / 3, c_over_50 / 4],
-                    description="divide a, b, c by 2, 3, 4 respectively")
-
-        logger.info(key="a_variable_length_list",
-                    data={"list_head": list(df.loc[0:self.module.rng.randint(2, 8), "ln_a"])},
-                    description="the first few interesting items from property a, random selection")
-
-        logger.info(key="counting_but_string",
-                    data="we currently have %d total count over 50" % (a_over_50 + b_over_50 + c_over_50),
-                    description="total count of loggernaires over 50, but as a string")
-
-        logger.info(key="single_individual",
-                    data=df.loc[[0]],
-                    description="entire record for person 0")
-
-        logger.info(key="three_people",
-                    data=df.loc[[0, 1, 2]],
-                    description="three people (0-2, inclusive), output as a multi-indexed dataframe")
-
-        logger.info(key="nested_dictionary",
-                    data={
-                        "count_over_50":
-                            {"a": a_over_50,
-                             "b": b_over_50,
-                             "c": c_over_50 / 3
-                             },
-                    },
-                    description="count over 50 for each group")
-
-        logger.info(key="set_in_dict",
-                    data={"count_over_50": set([a_over_50, b_over_50, c_over_50 / 3])},
-                    description="count over 50 for each group")
-
-        logger.info(key="missing_values",
-                    data={"NaT": pd.NaT,
-                          "NaN": np.nan,
-                          "float_inf": float("inf"),
-                          "float_-inf": float("-inf"),
-                          "float_nan": float("nan")
-                          },
-                    description="missing times, numbers and floats")
-
-        logger.info(key="with_every_type",
-                    data={"a_over_50": a_over_50,
-                          "mostly_nan": np.nan,
-                          "c_over_50_div_2": c_over_50 / 2,
-                          "b_over_50_as_list": [b_over_50],
-                          "random_date": df.loc[self.module.rng.randint(0, len(df)), "ln_date"],
-                          "count_over_50_as_dict": {"a": a_over_50, "b": b_over_50, "c": c_over_50 / 3},
-                          "count_over_50_as_set": {a_over_50, b_over_50, c_over_50 / 3}
-                          },
-                    description="including a little bit of everything, columns have different types")
+# a dataframe containing data we want to log (and get back out)
+LOG_INPUT = """
+col1_str;hello;world;lorem;ipsum;dolor;sit
+col2_int;1;3;5;7;8;10
+col3_float;2;4;6;8;9;null
+col4_cat;cat1;cat1;cat2;cat2;cat1;cat2
+col5_set;set();{'one'};{None};{'three','four'};{'eight'};set()
+col6_list;[];['two'];[None];[5, 6, 7];[];[]
+col7_date;2020-06-19T00:22:58.586101;2020-06-20T00:23:58.586101;2020-06-21T00:24:58.586101;2020-06-22T00:25:58.586101;2020-06-23T00:25:58.586101;null
+"""
+# read in, then transpose
+log_input = pd.read_csv(StringIO(LOG_INPUT), sep=';', skiprows=1).T
+log_input.columns = log_input.iloc[0]
+log_input.drop(log_input.index[0], axis=0, inplace=True)
+log_input.reset_index(inplace=True)
+# give columns the proper type
+log_input.col4_cat = log_input.col4_cat.astype('category')
+log_input.col5_set = log_input.col5_set.apply(lambda x: eval(x))  # use python eval to create a column of sets
+log_input.col6_list = log_input.col6_list.apply(lambda x: eval(x))  # use python eval to create a column of lists
+log_input.col7_date = log_input.col7_date.astype('datetime64')
 
 
 @fixture(scope="class")
-def loggernaires_sim(tmpdir_factory):
+def log_path(tmpdir_factory):
     """
     Runs simulation of mock disease, returns the logfile path
     :param tmpdir_factory: tmpdir_factory for logfile
     :return: logfile path
     """
-    # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
-    # will seed the random number generators for each module when they are registered.
-    # If a seed argument is not given, one is generated. It is output in the log and can be
-    # used to reproduce results of a run
-    seed = 567
+    # imagine we have a simulation
+    sim = Simulation(start_date=Date(2010, 1, 1),
+                     seed=0,
+                     log_config={'filename': 'logfile', 'directory': tmpdir_factory.mktemp("logs")})
 
-    # By default, all output is recorded at the "INFO" level (and up) to standard out. You can
-    # configure the behaviour by passing options to the `log_config` argument of
-    # Simulation.
-    tmpdir = tmpdir_factory.mktemp("logs")
-    log_config = {
-        "filename": "loggernaires_sim",  # The prefix for the output file. A timestamp will be added to this.
-        "directory": tmpdir,  # The default output path is `./output`. Change it here, if necessary
-    }
+    # a logger connected to that simulation
+    logger = logging.getLogger('tlo.test')
+    logger.setLevel(logging.INFO)
+    # Allowing logging of entire dataframe only for testing
+    logger._disable_dataframe_logging = False
 
-    # Basic arguments required for the simulation
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2010, 2, 1)
-    pop_size = 10
+    # log data as dicts
+    for index, row in log_input.iterrows():
+        logger.info(key='rows_as_dicts', data=row.to_dict())
+        sim.date = sim.date + pd.DateOffset(days=1)
 
-    # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
-    # `log_config` arguments, these will override the default behaviour.
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    # log data as single-row dataframe
+    for index in range(len(log_input)):
+        logger.info(key='rows_as_individuals', data=log_input.loc[[index]])
+        sim.date = sim.date + pd.DateOffset(days=1)
 
-    # We register all modules in a single call to the register method, calling once with multiple
-    # objects. This is preferred to registering each module in multiple calls because we will be
-    # able to handle dependencies if modules are registered together
-    sim.register(
-        LoggerNaires("unused_resources")
-    )
+    # log data as multi-row dataframe
+    logger.info(key='multi_row_df', data=log_input)
+    sim.date = sim.date + pd.DateOffset(days=1)
 
-    sim.make_initial_population(n=pop_size)
-    sim.simulate(end_date=end_date)
+    # end the simulation
+    sim.simulate(end_date=sim.date)
+
     return sim.log_filepath
 
 
 @fixture(scope="class")
-def loggernaires_log_df(loggernaires_sim):
+def test_log_df(log_path):
     """
     Convenience fixture to run loggernaires simulation, parse the logfile and return the data for loggernaires module
-    :param loggernaires_sim: fixture to run the simulation
-    :return: dictionary of loggernaires dataframes
+    :param log_path: fixture to run the simulation, returining the log path
+    :return: dictionary of 'tlo.test' dataframes
     """
-    return parse_log_file(loggernaires_sim)['tlo.testing.loggernaires']
+    return parse_log_file(log_path)['tlo.test']
 
 
-class TestWriteAndReadLogFile:
+class TestWriteAndReadLog:
     def setup(self):
         self.dates = [pd.Timestamp("2010-01-01 00:00:00"), pd.Timestamp("2010-01-29 00:00:00")]
 
-    def test_dictionary(self, loggernaires_log_df):
-        expected_df = pd.DataFrame(
-            {"date": self.dates,
-             "count_a_over_50": [4, 4],
-             "count_b_over_50": [6, 6],
-             "count_c_over_50": [2.0, 2.0],
-             }
-        )
-        log_df = loggernaires_log_df['each_group_over_50_unscaled']
+    def test_rows_as_dicts(self, test_log_df):
+        # get table to compare
+        log_output = test_log_df['rows_as_dicts'].drop(['date'], axis=1)
 
-        assert expected_df.equals(log_df)
+        # categories need to be set manually
+        log_output.col4_cat = log_output.col4_cat.astype('category')
 
-    def test_fixed_length_list(self, loggernaires_log_df):
+        test = log_input
+        assert log_input.equals(log_output)
+
+    def test_rows_as_individuals(self, test_log_df):
+        # get table to compare
+        log_output = test_log_df['rows_as_individuals'].drop(['date'], axis=1)
+
+        # categories need to be set manually
+        log_output.col4_cat = log_output.col4_cat.astype('category')
+        assert log_input.equals(log_output)
+
+    def test_log_entire_df(self, test_log_df):
+        # get table to compare
+        log_output = test_log_df['rows_as_individuals'].drop(['date'], axis=1)
+
+        # categories need to be set manually
+        log_output.col4_cat = log_output.col4_cat.astype('category')
+
+        assert log_input.equals(log_output)
+
+    def test_fixed_length_list(self, test_log_df):
         expected_df = pd.DataFrame(
             {"date": self.dates,
              "item_1": [2.0, 2.0],
@@ -210,11 +116,11 @@ class TestWriteAndReadLogFile:
              "item_3": [1.5, 1.5]
              }
         )
-        log_df = loggernaires_log_df['a_fixed_length_list']
+        log_df = test_log_df['a_fixed_length_list']
 
         assert expected_df.equals(log_df)
 
-    def test_variable_length_list(self, loggernaires_log_df):
+    def test_variable_length_list(self, test_log_df):
         expected_df = pd.DataFrame(
             {
                 "date": self.dates,
@@ -224,22 +130,22 @@ class TestWriteAndReadLogFile:
                 ],
             }
         )
-        log_df = loggernaires_log_df['a_variable_length_list']
+        log_df = test_log_df['a_variable_length_list']
 
         assert expected_df.equals(log_df)
 
-    def test_string(self, loggernaires_log_df):
+    def test_string(self, test_log_df):
         expected_df = pd.DataFrame(
             {"date": self.dates,
              "message": ["we currently have 16 total count over 50",
                          "we currently have 16 total count over 50"],
              }
         )
-        log_df = loggernaires_log_df['counting_but_string']
+        log_df = test_log_df['counting_but_string']
 
         assert expected_df.equals(log_df)
 
-    def test_individual(self, loggernaires_log_df):
+    def test_individual(self, test_log_df):
         expected_df = pd.DataFrame(
             {"date": self.dates,
              "ln_a": [46, 46],
@@ -249,11 +155,11 @@ class TestWriteAndReadLogFile:
              "ln_date": [pd.Timestamp("2014-09-06 10:40:00") for x in range(2)],
              }
         )
-        log_df = loggernaires_log_df['single_individual']
+        log_df = test_log_df['single_individual']
 
         assert expected_df.equals(log_df)
 
-    def test_three_people(self, loggernaires_log_df):
+    def test_three_people(self, test_log_df):
         expected_df = pd.DataFrame.from_dict(
             data={(0, '0'): {'date': self.dates[0],
                              'ln_a': 46,
@@ -293,11 +199,11 @@ class TestWriteAndReadLogFile:
                              'ln_date': '2020-06-12T22:13:20'}},
             orient='index'
         )
-        log_df = loggernaires_log_df['three_people']
+        log_df = test_log_df['three_people']
 
         assert expected_df.equals(log_df)
 
-    def test_nested_dictionary(self, loggernaires_log_df):
+    def test_nested_dictionary(self, test_log_df):
         counts = {"a": 4, "b": 6, "c": 2.0}
 
         expected_df = pd.DataFrame(
@@ -307,11 +213,11 @@ class TestWriteAndReadLogFile:
 
             }
         )
-        log_df = loggernaires_log_df['nested_dictionary']
+        log_df = test_log_df['nested_dictionary']
 
         assert expected_df.equals(log_df)
 
-    def test_set_in_dict(self, loggernaires_log_df):
+    def test_set_in_dict(self, test_log_df):
         counts = {4, 6, 2.0}
 
         expected_df = pd.DataFrame(
@@ -321,60 +227,62 @@ class TestWriteAndReadLogFile:
 
             }
         )
-        log_df = loggernaires_log_df['set_in_dict']
+        log_df = test_log_df['set_in_dict']
 
         assert expected_df.equals(log_df)
 
-    def test_missing_values(self, loggernaires_log_df):
-        """Only NaT is converted to None, other missing values are only valid in python's parsing of json"""
-        expected_df = pd.DataFrame(
-            {"date": self.dates,
-             "NaT": [None, None],
-             "NaN": [np.nan, np.nan],
-             "float_inf": [float("inf"), float("inf")],
-             "float_-inf": [float("-inf"), float("-inf")],
-             "float_nan": [float("nan"), float("nan")],
-             }
-        )
-        log_df = loggernaires_log_df['missing_values']
 
-        assert expected_df.equals(log_df)
+def test_missing_values(self, test_log_df):
+    """Only NaT is converted to None, other missing values are only valid in python's parsing of json"""
+    expected_df = pd.DataFrame(
+        {"date": self.dates,
+         "NaT": [None, None],
+         "NaN": [np.nan, np.nan],
+         "float_inf": [float("inf"), float("inf")],
+         "float_-inf": [float("-inf"), float("-inf")],
+         "float_nan": [float("nan"), float("nan")],
+         }
+    )
+    log_df = test_log_df['missing_values']
 
-    def test_every_type(self, loggernaires_log_df):
-        counts_over_50_dict = {"a": 4, "b": 6, "c": 2.0}
-        counts_over_50_set = {4, 6, 2.0}
+    assert expected_df.equals(log_df)
 
-        expected_df = pd.DataFrame(
-            {"date": self.dates,
-             "a_over_50": [4, 4],
-             "mostly_nan": [float("nan") for x in range(2)],
-             "c_over_50_div_2": [3.0, 3.0],
-             "b_over_50_as_list": [[6], [6]],
-             "random_date": [pd.Timestamp("2020-06-12 22:13:20"), pd.Timestamp("2019-07-01 16:53:20")],
-             "count_over_50_as_dict": [counts_over_50_dict, counts_over_50_dict],
-             "count_over_50_as_set": [counts_over_50_set, counts_over_50_set]
-             }
-        )
-        log_df = loggernaires_log_df['with_every_type']
 
-        assert expected_df.equals(log_df)
+def test_every_type(self, test_log_df):
+    counts_over_50_dict = {"a": 4, "b": 6, "c": 2.0}
+    counts_over_50_set = {4, 6, 2.0}
+
+    expected_df = pd.DataFrame(
+        {"date": self.dates,
+         "a_over_50": [4, 4],
+         "mostly_nan": [float("nan") for x in range(2)],
+         "c_over_50_div_2": [3.0, 3.0],
+         "b_over_50_as_list": [[6], [6]],
+         "random_date": [pd.Timestamp("2020-06-12 22:13:20"), pd.Timestamp("2019-07-01 16:53:20")],
+         "count_over_50_as_dict": [counts_over_50_dict, counts_over_50_dict],
+         "count_over_50_as_set": [counts_over_50_set, counts_over_50_set]
+         }
+    )
+    log_df = test_log_df['with_every_type']
+
+    assert expected_df.equals(log_df)
 
 
 class TestParseLogAtLoggingLevel:
     def setup(self):
         self.dates = [pd.Timestamp("2010-01-01 00:00:00"), pd.Timestamp("2010-01-29 00:00:00")]
 
-    def test_same_level(self, loggernaires_sim):
-        parsed_log = parse_log_file(loggernaires_sim, level=logging.INFO)
+    def test_same_level(self, log_path):
+        parsed_log = parse_log_file(log_path, level=logging.INFO)
 
-        assert 'tlo.testing.loggernaires' in parsed_log.keys()
+        assert 'tlo.test' in parsed_log.keys()
 
-    def test_parse_log_at_higher_level(self, loggernaires_sim):
-        parsed_log = parse_log_file(loggernaires_sim, level=logging.CRITICAL)
+    def test_parse_log_at_higher_level(self, log_path):
+        parsed_log = parse_log_file(log_path, level=logging.CRITICAL)
 
         assert parsed_log == {}
 
-    def test_parse_log_at_lower_level(self, loggernaires_sim):
-        parsed_log = parse_log_file(loggernaires_sim, level=logging.DEBUG)
+    def test_parse_log_at_lower_level(self, log_path):
+        parsed_log = parse_log_file(log_path, level=logging.DEBUG)
 
-        assert 'tlo.testing.loggernaires' in parsed_log.keys()
+        assert 'tlo.test' in parsed_log.keys()
