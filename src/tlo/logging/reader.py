@@ -60,6 +60,8 @@ class LogData:
                 for n, t in data['header']['columns'].items():
                     if t == "Timestamp":
                         output_logs[module][key][n] = output_logs[module][key][n].astype('datetime64[ns]')
+                    elif t == "Categorical":
+                        output_logs[module][key][n] = output_logs[module][key][n].astype('category')
                     elif t == "set":
                         output_logs[module][key][n] = output_logs[module][key][n].apply(set)
         return output_logs
