@@ -21,7 +21,6 @@ from tlo.methods.dxmanager import DxTest
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# TODO consider removing national level events
 
 class Malaria(Module):
     def __init__(
@@ -620,7 +619,7 @@ class Malaria(Module):
                 person_id=list(preg_infected),
                 symptom_string="severe_anaemia",
                 add_or_remove="+",
-                disease_module=self.module,
+                disease_module=self,
                 duration_in_days=None,
             )
 
@@ -1116,8 +1115,8 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         # if on treatment, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
         if df.at[individual_id, "ma_tx"]:
-            prob = self.module.rng()
-            # TODO reset treatment_adjustment to 0.5
+            prob = self.module.rng.rand()
+
             if prob < self.module.parameters["treatment_adjustment"]:
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
