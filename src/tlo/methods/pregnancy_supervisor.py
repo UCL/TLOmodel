@@ -434,6 +434,7 @@ class PregnancySupervisor(Module):
             df.loc[positive_index, 'is_pregnant'] = False
             df.loc[positive_index, 'la_due_date_current_pregnancy'] = pd.NaT
             df.loc[positive_index, 'ps_gestational_age_in_weeks'] = 0
+            # todo: reset total ANC visits?
 
             # And are scheduled to the AbortionEvent where they may develop complications, symptoms and seek care
             for person in positive_index:
@@ -624,7 +625,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # For women who don't experience and ectopic pregnancy we use the same function to assess risk of multiple
         # pregnancy
         np_no_ectopic = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 1) &
-                               ~df.ps_ectopic_pregnancy] #& (df.dummy_anc_counter == 0)]
+                               ~df.ps_ectopic_pregnancy & (df.dummy_anc_counter == 0)]
         self.module.set_pregnancy_complications(np_no_ectopic, 'multiples')
         # TODO: Review the necessity of including multiple pregnancies
 
@@ -634,7 +635,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for person in np_no_ectopic.index:
             # We use a probability weighted random draw to determine when this woman will attend ANC1,
             # and scheduled the visit accordingly
-            assert df.loc[person, 'dummy_anc_counter'] == 0
+            # assert df.loc[person, 'dummy_anc_counter'] == 0
             df.loc[person, 'dummy_anc_counter'] += 1
 
             # TODO: this should maybe start at week 12
