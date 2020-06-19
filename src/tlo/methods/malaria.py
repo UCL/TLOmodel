@@ -1028,7 +1028,7 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
                 )
 
                 death_event = MalariaDeathEvent(
-                    self.module, individual_id=person, cause="malaria"
+                    self.module, individual_id=person, cause="severe_malaria"
                 )  # make that death event
                 self.sim.schedule_event(
                     death_event, self.sim.date + DateOffset(days=rng.randint(low=0, high=7))
@@ -1072,6 +1072,7 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
             )
 
 
+# TODO link this with ANC appts
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     """ malaria prophylaxis for pregnant women
     """
@@ -1109,32 +1110,33 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if df.at[individual_id, "is_alive"]:
+        if not df.at[individual_id, "is_alive"]:
+            return
 
-            # if on treatment, will reduce probability of death
-            # use random number generator - currently param treatment_adjustment set to 0.5
-            if df.at[individual_id, "ma_tx"]:
-                prob = self.module.rng.random_sample(size=1)
-                # TODO reset treatment_adjustment to 0.5
-                if prob < self.module.parameters["treatment_adjustment"]:
-                    self.sim.schedule_event(
-                        demography.InstantaneousDeath(
-                            self.module, individual_id, cause="malaria"
-                        ),
-                        self.sim.date,
-                    )
-
-                    df.at[individual_id, "ma_date_death"] = self.sim.date
-
-            else:
+        # if on treatment, will reduce probability of death
+        # use random number generator - currently param treatment_adjustment set to 0.5
+        if df.at[individual_id, "ma_tx"]:
+            prob = self.module.rng()
+            # TODO reset treatment_adjustment to 0.5
+            if prob < self.module.parameters["treatment_adjustment"]:
                 self.sim.schedule_event(
                     demography.InstantaneousDeath(
-                        self.module, individual_id, cause="malaria"
+                        self.module, individual_id, cause="severe_malaria"
                     ),
                     self.sim.date,
                 )
 
                 df.at[individual_id, "ma_date_death"] = self.sim.date
+
+        else:
+            self.sim.schedule_event(
+                demography.InstantaneousDeath(
+                    self.module, individual_id, cause="severe_malaria"
+                ),
+                self.sim.date,
+            )
+
+            df.at[individual_id, "ma_date_death"] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------
@@ -1685,10 +1687,12 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        if (
+
+        if not df.at[person_id, "is_alive"]:
+            return
+
+        elif (
             not df.at[person_id, "ma_tx"]
-            and not df.at[person_id, "ma_tx"]
-            and df.at[person_id, "is_alive"]
         ):
 
             logger.debug("HSI_MalariaIPTp: requesting IPTp for person %d", person_id)
