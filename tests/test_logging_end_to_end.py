@@ -6,39 +6,47 @@ from pytest import fixture
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 
-# a dataframe containing data we want to log (and get back out)
-LOG_INPUT = """
-col1_str;hello;world;lorem;ipsum;dolor;sit
-col2_int;1;3;5;7;8;10
-col3_float;2;4;6;8;9;null
-col4_cat;cat1;cat1;cat2;cat2;cat1;cat2
-col5_set;set();{'one'};{None};{'three','four'};{'eight'};set()
-col6_list;[];['two'];[None];[5, 6, 7];[];[]
-col7_date;2020-06-19T00:22:58.586101;2020-06-20T00:23:58.586101;2020-06-21T00:24:58.586101;2020-06-22T00:25:58.586101;2020-06-23T00:25:58.586101;null
-col8_fixed_list;['one', 1];['two', 2];[None, None];['three', 3];['four', 4];['five', 5]
-"""
-# read in, then transpose
-log_input = pd.read_csv(StringIO(LOG_INPUT), sep=';', skiprows=1).T
-log_input.reset_index(inplace=True)
-log_input.columns = log_input.iloc[0]
-log_input.drop(log_input.index[0], axis=0, inplace=True)
-log_input.reset_index(inplace=True, drop=True)
 
-# give columns the proper type
-log_input.col4_cat = log_input.col4_cat.astype('category')
-log_input.col5_set = log_input.col5_set.apply(lambda x: eval(x))  # use python eval to create a column of sets
-log_input.col6_list = log_input.col6_list.apply(lambda x: eval(x))  # use python eval to create a column of lists
-log_input.col7_date = log_input.col7_date.astype('datetime64')
-log_input.col8_fixed_list = log_input.col8_fixed_list.apply(lambda x: eval(x))  # use python eval to create a column of lists
+@fixture(scope="session")
+def log_input():
+    """Creates dataframe for logging"""
+    # a dataframe containing data we want to log (and get back out)
+    log_string = "\n".join((
+        "col1_str;hello;world;lorem;ipsum;dolor;sit",
+        "col2_int;1;3;5;7;8;10",
+        "col3_float;2;4;6;8;9;null",
+        "col4_cat;cat1;cat1;cat2;cat2;cat1;cat2",
+        "col5_set;set();{'one'};{None};{'three','four'};{'eight'};set()",
+        "col6_list;[];['two'];[None];[5, 6, 7];[];[]",
+        "col7_date;2020-06-19T00:22:58.586101;2020-06-20T00:23:58.586101;2020-06-21T00:24:58.586101;2020-06-22T00:25"
+        ":58.586101;2020-06-23T00:25:58.586101;null",
+        "col8_fixed_list;['one', 1];['two', 2];[None, None];['three', 3];['four', 4];['five', 5]"
+    ))
+    # read in, then transpose
+    log_input = pd.read_csv(StringIO(log_string), sep=';', skiprows=1).T
+    log_input.reset_index(inplace=True)
+    log_input.columns = log_input.iloc[0]
+    log_input.drop(log_input.index[0], axis=0, inplace=True)
+    log_input.reset_index(inplace=True, drop=True)
+
+    # give columns the proper type
+    log_input.col4_cat = log_input.col4_cat.astype('category')
+    log_input.col5_set = log_input.col5_set.apply(lambda x: eval(x))  # use python eval to create a column of sets
+    log_input.col6_list = log_input.col6_list.apply(lambda x: eval(x))  # use python eval to create a column of lists
+    log_input.col7_date = log_input.col7_date.astype('datetime64')
+    log_input.col8_fixed_list = log_input.col8_fixed_list.apply(
+        lambda x: eval(x))  # use python eval to create a column of lists
+    return log_input
 
 
 @fixture(scope="class")
-def log_path(tmpdir_factory):
+def log_path(tmpdir_factory, log_input):
     """
     Runs simulation of mock disease, returns the logfile path
     :param tmpdir_factory: tmpdir_factory for logfile
     :return: logfile path
     """
+
     # imagine we have a simulation
     sim = Simulation(start_date=Date(2010, 1, 1),
                      seed=0,
@@ -64,7 +72,6 @@ def log_path(tmpdir_factory):
     for _ in range(2):
         logger.info(key='multi_row_df', data=log_input)
         sim.date = sim.date + pd.DateOffset(days=1)
-
 
     # log data as fixed length list
     for item in log_input.col8_fixed_list.values:
@@ -108,7 +115,7 @@ class TestWriteAndReadLog:
     def setup(self):
         self.dates = [pd.Timestamp("2010-01-01 00:00:00"), pd.Timestamp("2010-01-29 00:00:00")]
 
-    def test_rows_as_dicts(self, test_log_df):
+    def test_rows_as_dicts(self, test_log_df, log_input):
         # get table to compare
         log_output = test_log_df['rows_as_dicts'].drop(['date'], axis=1)
 
@@ -117,7 +124,7 @@ class TestWriteAndReadLog:
 
         assert log_input.equals(log_output)
 
-    def test_rows_as_individuals(self, test_log_df):
+    def test_rows_as_individuals(self, test_log_df, log_input):
         # get table to compare
         log_output = test_log_df['rows_as_individuals'].drop(['date'], axis=1)
 
@@ -125,7 +132,7 @@ class TestWriteAndReadLog:
         log_output.col4_cat = log_output.col4_cat.astype('category')
         assert log_input.equals(log_output)
 
-    def test_log_entire_df(self, test_log_df):
+    def test_log_entire_df(self, test_log_df, log_input):
         # get table to compare
         log_output = test_log_df['multi_row_df'].drop(['date'], axis=1)
 
@@ -149,7 +156,7 @@ class TestWriteAndReadLog:
 
         assert expected_output.equals(log_df)
 
-    def test_variable_length_list(self, test_log_df):
+    def test_variable_length_list(self, test_log_df, log_input):
         log_df = test_log_df['a_variable_length_list']
 
         assert log_input.col6_list.equals(log_df.list_header)
@@ -159,10 +166,9 @@ class TestWriteAndReadLog:
 
         assert pd.Series('I am a message.').equals(log_df.message)
 
-    def test_categorical(self, test_log_df):
+    def test_categorical(self, test_log_df, log_input):
         log_df = test_log_df['categorical']
         assert log_input.col4_cat.equals(log_df.cat)
-
 
 
 class TestParseLogAtLoggingLevel:
