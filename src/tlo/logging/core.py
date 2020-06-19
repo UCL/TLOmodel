@@ -88,7 +88,7 @@ class Logger:
             else:
                 converted_data = {'dataframe': data.to_dict('index')}
             return converted_data
-        if isinstance(data, (list, set, tuple)):
+        if isinstance(data, (list, set, tuple, pd.Series)):
             return {f'item_{index + 1}': value for index, value in enumerate(data)}
         if isinstance(data, str):
             return {'message': data}
