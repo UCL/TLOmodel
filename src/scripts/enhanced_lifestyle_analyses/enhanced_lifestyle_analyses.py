@@ -75,29 +75,3 @@ sim = run()
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
-
-# TODO: remove me before mering
-import pickle
-output_path = Path("./outputs")
-with open(output_path / f"lifestyle_analysis_structured_logs.pickle", "wb") as handle:
-    pickle.dump(output, handle)
-
-structured_log = output
-
-with open(output_path / f"lifestyle_analysis_parsed_logs.pickle", "rb") as handle:
-    stdlib_log = pickle.load(handle)
-
-for key in stdlib_log['tlo.methods.enhanced_lifestyle']:
-    # round floats to the same precision (stdlib has 6 decimals, structured has 7)
-    # convert all types to strings, ad this is what happens with stdlib logging
-    stdlib_table = stdlib_log['tlo.methods.enhanced_lifestyle'][key].round(6).astype('object')
-    structured_table = structured_log['tlo.methods.enhanced_lifestyle'][key].round(6).astype('object')
-
-    # Set both dates to be the correct type (when both as strings, they don't match)
-    stdlib_table.date = stdlib_table.date.astype('datetime64[ns]')
-    structured_table.date = structured_table.date.astype('datetime64[ns]')
-
-    tables_match = stdlib_table.equals(structured_table)
-    print(f"Table {key} matches before and after adding structured logging: {tables_match}")
-    assert tables_match
-###
