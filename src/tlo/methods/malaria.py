@@ -1776,35 +1776,6 @@ class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, "ma_inf_type"] = "none"
 
 
-class MalariaClinEndEvent(Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-    def apply(self, person_id):
-        logger.debug(
-            "This is MalariaClinEndEvent changing person %d from clinical to asymptomatic",
-            person_id,
-        )
-
-        # need to move clinical people back from ma_inf_type = clinical to asymptomatic
-        df = self.sim.population.props
-
-        if df.at[person_id, "is_alive"]:
-
-            if ("fever" in self.sim.modules["SymptomManager"].has_what(person_id)) & (
-                "Malaria"
-                in self.sim.modules["SymptomManager"].causes_of(person_id, "fever")
-            ):
-
-                # this will clear all malaria symptoms
-                self.sim.modules["SymptomManager"].clear_symptoms(
-                    person_id=person_id, disease_module=self.module
-                )
-
-            df.at[person_id, "ma_inf_type"] = "asym"
-            df.at[person_id, "ma_date_symptoms"] = pd.NaT
-
-
 # ---------------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------------
