@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-from .core import _FORMATTER, DEBUG, getLogger, _LOGGERS
+from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
 
 
 def set_output_file(log_path: Path) -> _logging.FileHandler:

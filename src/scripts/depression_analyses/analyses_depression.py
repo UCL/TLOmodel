@@ -20,7 +20,7 @@ from tlo.methods import (
     mockitis,
     pregnancy_supervisor,
     symptommanager,
-    )
+)
 from tlo.methods.depression import compute_key_outputs_for_last_3_years
 
 # Where will outputs go
