@@ -3,7 +3,6 @@ Plot to demonstrate correspondence between model and data outputs wrt births, po
 In the combination of both the codes from Tim C in Contraception and Tim H in Demography
 """
 
-import datetime
 # %% Import Statements and initial declarations
 from pathlib import Path
 

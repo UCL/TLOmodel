@@ -313,8 +313,10 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                                                   - set(
             self.sim.modules['SymptomManager'].who_has('em_craving_sandwiches')))
 
-        become_severe = self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches)) \
-                        < p['prob_dev_severe_symptoms_per_year'] / 12
+        become_severe = (
+            self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches))
+            < p['prob_dev_severe_symptoms_per_year'] / 12
+        )
         become_severe_idx = np.array(curr_cs_but_not_craving_sandwiches)[become_severe]
 
         self.sim.modules['SymptomManager'].change_symptom(

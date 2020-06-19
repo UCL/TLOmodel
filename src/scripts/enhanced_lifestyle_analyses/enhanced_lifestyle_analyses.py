@@ -1,6 +1,5 @@
 # %% Import Statements
 import logging
-from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -57,7 +56,7 @@ def run():
     sim.register(
         demography.Demography(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+        healthsystem.HealthSystem(resourcefilepath=resources, disable=True, service_availability=service_availability),
         symptommanager.SymptomManager(resourcefilepath=resources),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         contraception.Contraception(resourcefilepath=resources),
