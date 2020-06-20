@@ -95,7 +95,7 @@ class Logger:
 
         raise ValueError(f'Unexpected type given as data:\n{data}')
 
-    def _log_message(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None):
+    def _get_json(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None):
         """Writes structured log message if handler allows this and logging level is allowed
 
         Will write a header line the first time a new logging key is encountered
@@ -111,7 +111,7 @@ class Logger:
             return
 
         data = self._get_data_as_dict(data)
-        data_json = ""
+        header_json = ""
 
         if key not in self.keys:
             # new log key, so create header json row
@@ -128,7 +128,7 @@ class Logger:
                 "columns": {key: type(value).__name__ for key, value in data.items()},
                 "description": description
             }
-            data_json = json.dumps(header) + "\n"
+            header_json = json.dumps(header) + "\n"
 
         uuid = self.keys[key]
 
@@ -144,14 +144,14 @@ class Logger:
                    "date": getLogger('tlo').simulation.date.isoformat(),
                    "values": list(data.values())}
 
-        data_json += json.dumps(row, cls=encoding.PandasEncoder)
+        row_json = json.dumps(row, cls=encoding.PandasEncoder)
 
-        return data_json
+        return f"{header_json}{row_json}"
 
     def _make_old_style_msg(self, level, msg):
         return '%s|%s|%s' % (level, self.name, msg)
 
-    def _mixed_logging_check(self, is_structured: bool):
+    def _check_logging_style(self, is_structured: bool):
         """Set booleans for logging type and throw exception if both types of logging haven't been used"""
         if is_structured:
             self.logged_structured = True
@@ -162,56 +162,37 @@ class Logger:
             raise ValueError(f"Both oldstyle and structured logging has been used for {self.name}, "
                              "please update all logging to use structured logging")
 
-    def _try_log_message(self, level, key, data, description):
-        """Log strucured message, if key or data are None, then throw exception"""
-        if key is not None and data is not None:
-            self._mixed_logging_check(is_structured=True)
-            return self._log_message(level=level, key=key, data=data, description=description)
-        raise ValueError("Logging information was not recognised. Structured logging requires both key and data")
-
-    def critical(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
-                 description=None, **kwargs):
-        if self._std_logger.isEnabledFor(CRITICAL):
-            # std logger branch can be removed once transition is completed
+    def _handle_old_or_new(self, msg=None, *args, key=None, data=None, description=None, level, **kwargs):
+        if self._std_logger.isEnabledFor(level):
+            level_str = _logging.getLevelName(level)  # e.g. 'CRITICAL', 'INFO' etc.
+            level_function = getattr(self._std_logger, level_str.lower())  # e.g. `critical` or `info` methods
+            # if this is an old-style logging call
             if msg or msg == []:
-                self._mixed_logging_check(is_structured=False)
-                self._std_logger.critical(self._make_old_style_msg('CRITICAL', msg), *args, **kwargs)
+                # NOTE: std logger branch can be removed once transition is completed
+                self._check_logging_style(is_structured=False)
+                level_function(self._make_old_style_msg(level_str, msg), *args, **kwargs)
+            # otherwise, this is a new-style structure logging call
             else:
-                msg = self._try_log_message(level=CRITICAL, key=key, data=data, description=description)
-                self._std_logger.critical(msg)
+                if key is None or data is None:
+                    raise ValueError("Structured logging requires `key` and `data` keyword arguments")
+                self._check_logging_style(is_structured=True)
+                level_function(self._get_json(level=level, key=key, data=data, description=description))
 
-    def debug(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
-              description=None, **kwargs):
-        if self._std_logger.isEnabledFor(DEBUG):
-            # std logger branch can be removed once transition is completed
-            if msg or msg == []:
-                self._mixed_logging_check(is_structured=False)
-                self._std_logger.debug(self._make_old_style_msg('DEBUG', msg), *args, **kwargs)
-            else:
-                msg = self._try_log_message(level=DEBUG, key=key, data=data, description=description)
-                self._std_logger.debug(msg)
+    def critical(self, msg=None, *args, key: str = None,
+                 data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
+        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=CRITICAL, **kwargs)
 
-    def info(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
-             description=None, **kwargs):
-        if self._std_logger.isEnabledFor(INFO):
-            # std logger branch can be removed once transition is completed
-            if msg or msg == []:
-                self._mixed_logging_check(is_structured=False)
-                self._std_logger.info(self._make_old_style_msg('INFO', msg), *args, **kwargs)
-            else:
-                msg = self._try_log_message(level=INFO, key=key, data=data, description=description)
-                self._std_logger.info(msg)
+    def debug(self, msg=None, *args, key: str = None,
+              data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
+        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=DEBUG, **kwargs)
 
-    def warning(self, msg=None, *args, key: str = None, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
-                description=None, **kwargs):
-        if self._std_logger.isEnabledFor(WARNING):
-            # std logger branch can be removed once transition is completed
-            if msg or msg == []:
-                self._mixed_logging_check(is_structured=False)
-                self._std_logger.warning(self._make_old_style_msg('WARNING', msg), *args, **kwargs)
-            else:
-                msg = self._try_log_message(level=WARNING, key=key, data=data, description=description)
-                self._std_logger.warning(msg)
+    def info(self, msg=None, *args, key: str = None,
+             data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
+        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=INFO, **kwargs)
+
+    def warning(self, msg=None, *args, key: str = None,
+                data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
+        self._handle_old_or_new(msg, *args, key=key, data=data, description=description, level=WARNING, **kwargs)
 
 
 CRITICAL = _logging.CRITICAL
