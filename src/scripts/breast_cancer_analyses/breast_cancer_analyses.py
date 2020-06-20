@@ -43,7 +43,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 10000
+popsize = 100
 
 
 def run_sim(service_availability):
@@ -81,7 +81,7 @@ def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
     # 1) TOTAL COUNTS BY STAGE OVER TIME
-    counts_by_stage = output['tlo.methods.breastcancer']['summary_stats']
+    counts_by_stage = output['tlo.methods.breast_cancer']['summary_stats']
     counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
     counts_by_stage = counts_by_stage.set_index('date', drop=True)
 
@@ -172,7 +172,7 @@ plt.show()
 
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
-    y=['YLD_OesophagealCancer_0', 'YLL_OesophagealCancer'],
+    y=['YLD_BreastCancer_0', 'YLL_BreastCancer_BreastCancer'],
     stacked=True)
 plt.xlabel('Age-group')
 plt.ylabel('DALYS')
