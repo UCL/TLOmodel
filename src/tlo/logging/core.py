@@ -111,8 +111,8 @@ class Logger:
             return
 
         data = self._get_data_as_dict(data)
+        data_json = ""
 
-        header = {}
         if key not in self.keys:
             # new log key, so create header json row
             uuid = hashlib.md5(f"{self.name}+{key}".encode()).hexdigest()[:Logger.HASH_LEN]
@@ -128,10 +128,11 @@ class Logger:
                 "columns": {key: type(value).__name__ for key, value in data.items()},
                 "description": description
             }
+            data_json = json.dumps(header) + "\n"
 
         uuid = self.keys[key]
 
-        # create data json row; in DEBUG model we echo the module and key
+        # create data json row; in DEBUG mode we echo the module and key for easier eyeballing
         if self._std_logger.level == DEBUG:
             row = {"date": getLogger('tlo').simulation.date.isoformat(),
                    "module": self.name,
@@ -143,11 +144,9 @@ class Logger:
                    "date": getLogger('tlo').simulation.date.isoformat(),
                    "values": list(data.values())}
 
-        out = ""
-        if header:
-            out = json.dumps(header) + "\n"
-        out += json.dumps(row, cls=encoding.PandasEncoder)
-        return out
+        data_json += json.dumps(row, cls=encoding.PandasEncoder)
+
+        return data_json
 
     def _make_old_style_msg(self, level, msg):
         return '%s|%s|%s' % (level, self.name, msg)
