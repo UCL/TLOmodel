@@ -172,7 +172,7 @@ plt.show()
 
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
-    y=['YLD_ProstateCancer_0', 'YLL_ProstateCancer'],
+    y=['YLD_ProstateCancer_0', 'YLL_ProstateCancer_ProstateCancer'],
     stacked=True)
 plt.xlabel('Age-group')
 plt.ylabel('DALYS')
