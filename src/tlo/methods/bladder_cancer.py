@@ -480,7 +480,7 @@ class BladderCancer(Module):
                     (df.bc_status == "t2p")
                 ) & (df.bc_status == df.bc_stage_at_which_treatment_given)
             )
-        ] = self.daly_wts['stage_1_3_treated']
+        ] = self.daly_wts['tis_t1_t2p_treated']
 
         # Assign daly_wt to those in metastatic cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
