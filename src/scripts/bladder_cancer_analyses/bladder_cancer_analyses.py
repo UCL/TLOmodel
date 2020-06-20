@@ -26,10 +26,9 @@ from tlo.methods import (
     healthsystem,
     labour,
     bladder_cancer,
-    oesophagealcancer,
     pregnancy_supervisor,
     symptommanager,
-)
+    dx_algorithm_child)
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -61,8 +60,8 @@ def run_sim(service_availability):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
 
     sim.seed_rngs(0)
