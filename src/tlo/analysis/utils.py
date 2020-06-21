@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def parse_line(line):
+def _parse_line(line):
     """
     Parses a single line of logged output. It has the format:
     INFO|<logger name>|<simulation date>|<log key>|<python object>
@@ -52,12 +52,9 @@ def parse_line(line):
 
 
 def parse_log_file(filepath, level: int = logging.INFO):
-    """
-    Parses logged output from a TLO run and create Pandas dataframes for analysis. See
-    parse_output() for details of stdlib logging parsing
-    and parse_structured_logging() for tlo structured logging parsing
+    """Parses logged output from a TLO run and returns Pandas dataframes.
 
-    The format can be one of two style, stdlib logging like :
+    The format can be one of two style, old-style TLO logging like :
         INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
 
     or a JSON representation with the first instance from a log key being a header line, and all following
@@ -94,15 +91,14 @@ def parse_log_file(filepath, level: int = logging.INFO):
                 oldstyle_loglines.append(line)
 
     # convert dictionaries to dataframes
-    output_logs = {**log_data.get_log_dataframes(), **oldstyle_parse_output(oldstyle_loglines)}
+    output_logs = {**log_data.get_log_dataframes(), **_oldstyle_parse_output(oldstyle_loglines)}
     return output_logs
 
 
-def oldstyle_parse_output(list_of_log_lines):
-    """
-    Parses logged output from a TLO run and create Pandas dataframes for analysis.
+def _oldstyle_parse_output(list_of_log_lines):
+    """Parses logged output from a TLO run and create Pandas dataframes for analysis.
 
-    Used by parse_log_file() to handle stdlib logging
+    Used by parse_log_file() to handle old-style TLO logging
 
     Each input line follows the format:
     INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
@@ -141,7 +137,7 @@ def oldstyle_parse_output(list_of_log_lines):
     for line in list_of_log_lines:
         # we only parse 'INFO' lines that have 5 parts
         if line.startswith('INFO'):
-            i = parse_line(line.strip())
+            i = _parse_line(line.strip())
             # if this line isn't in the right format
             if not i:
                 continue

@@ -9,42 +9,47 @@ from tlo.logging import encoding
 
 
 def disable(level):
-    _logging.disable(level=level)
+    _logging.disable(level)
 
 
 def getLogger(name='tlo'):
     """Returns a TLO logger of the specified name"""
-    if name not in _LOGGERS.keys():
+    if name not in _LOGGERS:
         _LOGGERS[name] = Logger(name)
     return _LOGGERS[name]
 
 
 class Logger:
-    """
-    TLO logging facade so that logging can be intercepted and customised
-    """
+    """A Logger for TLO log messages, with simplified usage. Outputs structured log messages in JSON
+    format and is connected to the Simulation instance."""
     HASH_LEN = 10
 
     def __init__(self, name: str, level=_logging.NOTSET):
-        assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
-        # std library logger for oldstyle logging and tracking
+        assert name.startswith('tlo'), 'Only logging of TLO modules is allowed'
+        # we build our logger on top of the standard python logging
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)
+        self.name = self._std_logger.name
+
+        # don't propograte messages up from "tlo" to root logger
         if name == 'tlo':
             self._std_logger.propagate = False
-        self.name = self._std_logger.name
-        # track keys given during structured logging
+
+        # the key of the structured logging calls for this logger
         self.keys = dict()
-        # populated by init_logging(simulation)
+
+        # populated by init_logging(simulation) for the top-level "tlo" logger
         self.simulation = None
-        # to ensure only structured or oldstyle logging used for a single module
-        # can be removed after transition
+
+        # a logger should only be using old-style or new-style logging, not a mixture
         self.logged_stdlib = False
         self.logged_structured = False
+
+        # disable logging multirow dataframes until we're confident it's robust
         self._disable_dataframe_logging = True
 
     def __repr__(self):
-        return f'<TLO Logger containing {self._std_logger}>'
+        return f'<TLOmodel Logger `{self.name}` ({_logging.getLevelName(self.level)})>'
 
     @property
     def handlers(self):
@@ -82,12 +87,11 @@ class Logger:
             return data
         if isinstance(data, pd.DataFrame):
             if len(data.index) == 1:
-                converted_data = data.to_dict('records')[0]
+                return data.to_dict('records')[0]
             elif self._disable_dataframe_logging:
-                raise ValueError("Logging an entire dataframe is disabled, if you need this feature let us know")
+                raise ValueError("Logging multirow dataframes is disabled - if you need this feature let us know")
             else:
-                converted_data = {'dataframe': data.to_dict('index')}
-            return converted_data
+                return {'dataframe': data.to_dict('index')}
         if isinstance(data, (list, set, tuple, pd.Series)):
             return {f'item_{index + 1}': value for index, value in enumerate(data)}
         if isinstance(data, str):
@@ -149,7 +153,7 @@ class Logger:
         return f"{header_json}{row_json}"
 
     def _make_old_style_msg(self, level, msg):
-        return '%s|%s|%s' % (level, self.name, msg)
+        return f'{level}|{self.name}|{msg}'
 
     def _check_logging_style(self, is_structured: bool):
         """Set booleans for logging type and throw exception if both types of logging haven't been used"""

@@ -56,7 +56,7 @@ class LogData:
                     output_logs[module][key].insert(
                         0, "date", pd.Series(data["dates"], dtype=np.dtype('datetime64[ns]'))
                     )
-                # timestamps are encoded as strings
+                # for each column, cast to the correct type if necessary
                 for n, t in data['header']['columns'].items():
                     if t == "Timestamp":
                         output_logs[module][key][n] = output_logs[module][key][n].astype('datetime64[ns]')
