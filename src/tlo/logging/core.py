@@ -68,6 +68,9 @@ class Logger:
     def addHandler(self, hdlr):
         self._std_logger.addHandler(hdlr=hdlr)
 
+    def isEnabledFor(self, level):
+        return self._std_logger.isEnabledFor(level)
+
     def reset_attributes(self):
         """Reset logger attributes to an unset state"""
         # clear all logger settings
