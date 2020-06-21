@@ -34,7 +34,7 @@ def _parse_line(line):
     if len(parts) != 5:
         return None
 
-    logger.debug('%s', line)
+    logger.debug(key='debug', data=line)
 
     try:
         parsed = literal_eval(parts[4])
@@ -47,7 +47,7 @@ def _parse_line(line):
         'key': parts[3],
         'object': parsed
     }
-    logger.debug('%s', info)
+    logger.debug(key='debug', data=str(info))
     return info
 
 
@@ -164,7 +164,7 @@ def _oldstyle_parse_output(list_of_log_lines):
                 row['date'] = i['sim_date']
             elif isinstance(i['object'], list):
                 if len(df.columns) - 1 != len(i['object']):
-                    logger.warning('List to dataframe %s, number of columns do not match', i['key'])
+                    logger.warning(key='warning', data=f'List to dataframe {i["key"]} number of columns do not match')
                 # add list to columns (skip first column, which is date)
                 row = dict(zip(df.columns[1:], i['object']))
                 row['date'] = i['sim_date']

@@ -69,7 +69,7 @@ class Simulation:
         else:
             seed_from = 'user'
         self._seed = seed
-        logger.info("Simulation RNG %s seed: %d", seed_from, self._seed)
+        logger.info(key='info', data=f'Simulation RNG {seed_from} seed: {self._seed}')
         self.rng = np.random.RandomState(self._seed)
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
@@ -100,10 +100,10 @@ class Simulation:
                 self._custom_log_levels = custom_levels
 
         if filename:
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
-            logger.info("Log output: %s", log_path)
+            logger.info(key='info', data=f'Log output: {log_path}')
             self._log_filepath = log_path
             return log_path
 
@@ -126,7 +126,7 @@ class Simulation:
 
             # set the rng seed for the registered module
             module_seed = self.rng.randint(2 ** 31 - 1)
-            logger.info("%s RNG auto seed: %d", module.name, module_seed)
+            logger.info(key='info', data=f'{module.name} RNG auto seed: {module_seed}')
             module.rng = np.random.RandomState(module_seed)
 
             # if user provided custom log levels
@@ -152,12 +152,12 @@ class Simulation:
         :param seed: the seed for the Simulation RNG. If seed is not provided, a random seed will be
             used.
         """
-        logger.warning("seed_rngs() is deprecated. Provide `seed` argument to Simulation().")
+        logger.warning(key='warning', data='seed_rngs() is deprecated. Provide `seed` argument to Simulation().')
         self.rng.seed(seed)
-        logger.info("Simulation RNG user seed: %d", seed)
+        logger.info(key='info', data=f'Simulation RNG user seed: {seed}')
         for module in self.modules.values():
             module_seed = self.rng.randint(2 ** 31 - 1)
-            logger.info("%s RNG auto seed: %d", module.name, module_seed)
+            logger.info(key='info', data=f'{module.name} RNG auto seed: {module_seed}')
             module.rng = np.random.RandomState(module_seed)
 
     def make_initial_population(self, *, n):
