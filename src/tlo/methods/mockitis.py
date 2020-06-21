@@ -236,8 +236,9 @@ class Mockitis(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Mockitis, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        logger.debug(key='debug',
+                     data='This is Mockitis, being alerted about a health system interaction '
+                          'person %d for: %s' % (person_id, treatment_id))
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -245,7 +246,7 @@ class Mockitis(Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug('This is mockitis reporting my daly values')
+        logger.debug(key='debug', data='This is mockitis reporting my daly values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
