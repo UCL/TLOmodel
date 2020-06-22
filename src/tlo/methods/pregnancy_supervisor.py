@@ -40,6 +40,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'underlying risk of induced abortion per month without the impact of risk factors'),
         'prob_anaemia_per_month': Parameter(
             Types.REAL, 'underlying risk of induced abortion per month without the impact of risk factors'),
+        'rr_anaemia_iron_folic_acid': Parameter(
+            Types.REAL, 'risk reduction of maternal anaemia for women taking daily iron/folic acid'),
         'prob_pre_eclampsia_per_month': Parameter(
             Types.REAL, 'underlying risk of pre-eclampsia per month without the impact of risk factors'),
         'prob_of_symptoms_mild_pre_eclampsia': Parameter(
@@ -57,6 +59,8 @@ class PregnancySupervisor(Module):
                         'and/or polyphagia and/or polydipsia'),
         'prob_still_birth_per_month': Parameter(
             Types.REAL, 'underlying risk of stillbirth per month without the impact of risk factors'),
+        'rr_still_birth_food_supps': Parameter(
+            Types.REAL, 'risk reduction of still birth for women receiving nutritional supplements'),
         'prob_antenatal_death_per_month': Parameter(
             Types.REAL, 'underlying risk of antenatal maternal death per month without the impact of risk factors'),
         'prob_ectopic_pregnancy_death': Parameter(
@@ -191,7 +195,8 @@ class PregnancySupervisor(Module):
 
                 'maternal_anaemia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_anaemia_per_month']),
+                    params['prob_anaemia_per_month'],
+                    Predictor('ac_receiving_iron_folic_acid').when(True, params['rr_anaemia_iron_folic_acid'])),
 
                 'pre_eclampsia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -207,8 +212,8 @@ class PregnancySupervisor(Module):
 
                 'antenatal_stillbirth': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_still_birth_per_month']),
-                # todo: antenatal disease will act as predictors here
+                    params['prob_still_birth_per_month'],
+                    Predictor('ac_receiving_diet_supplements').when(True, params['rr_still_birth_food_supps'])),
 
                 'antenatal_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
