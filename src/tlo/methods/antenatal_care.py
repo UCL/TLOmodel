@@ -86,6 +86,9 @@ class CareOfWomenDuringPregnancy(Module):
 
     # These functions will contain the interventions/tests associated with each visit.
 
+    def interventions_at_all_anc_visits(self, individual_id):
+        pass
+
     def interventions_for_first_anc_visit(self, individual_id):
         pass
 
@@ -239,14 +242,15 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit, person %d has '
-                     'presented for the first antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
-
         df.at[person_id, 'ac_attended_first_anc'] = True
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
+
+            logger.debug('This is HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit, person %d has '
+                         'presented for the first antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1
 
@@ -320,12 +324,13 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit, person %d has '
-                     'presented for the second antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
-
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
+
+            logger.debug('This is HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit, person %d has '
+                         'presented for the second antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2
 
@@ -384,10 +389,16 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
+
         df = self.sim.population.props
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
+
+            logger.debug('This is HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact, person %d has '
+                         'presented for the third antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3
 
@@ -433,7 +444,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FourthAntenatalCareVisit'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FourthAntenatalCareContact'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['ANCSubsequent'] = 1
@@ -447,10 +458,14 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
+
+            logger.debug('This is HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact, person %d has '
+                         'presented for the fourth antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4
 
-            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             if df.at[person_id, 'ps_gestational_age_in_weeks'] <= 34:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=5,
                                                      recommended_gestation_next_anc=34)
@@ -487,7 +502,7 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FifthAntenatalCareVisit'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_FifthAntenatalCareContact'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['ANCSubsequent'] = 1
@@ -501,7 +516,11 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
-            print (person_id)
+
+            logger.debug('This is CareOfWomenDuringPregnancy_FifthAntenatalCareContact, person %d has '
+                         'presented for the fifth antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 5
 
@@ -537,7 +556,7 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SixthAntenatalCareVisit'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SixthAntenatalCareContact'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['ANCSubsequent'] = 1
@@ -551,9 +570,13 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
+
+            logger.debug('This is CareOfWomenDuringPregnancy_SixthAntenatalCareContact, person %d has '
+                         'presented for the sixth antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 6
-
 
             if df.at[person_id, 'ps_gestational_age_in_weeks'] <= 38:
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=7,
@@ -583,7 +606,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SeventhAntenatalCareVisit'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SeventhAntenatalCareContact'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['ANCSubsequent'] = 1
@@ -597,6 +620,11 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
+
+            logger.debug('This is CareOfWomenDuringPregnancy_SeventhAntenatalCareContact, person %d has '
+                         'presented for the seventh antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 7
 
@@ -638,6 +666,11 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour']:
+
+            logger.debug('This is CareOfWomenDuringPregnancy_EighthAntenatalCareContact, person %d has '
+                         'presented for the eighth antenatal care visit of their pregnancy on date %s at '
+                         'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 8
 
