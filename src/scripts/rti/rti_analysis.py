@@ -1,10 +1,12 @@
 from pathlib import Path
 import numpy as np
 from matplotlib.sankey import Sankey
+from matplotlib import cm
 from floweaver import *
 # matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import pandas as pd
+# import os
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -29,6 +31,8 @@ from tlo.methods import (
     tb_hs_engagement,
     antenatal_care
 )
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import numpy as np
 
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
@@ -37,7 +41,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 1000
+popsize = 10000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")
@@ -106,6 +110,22 @@ rt_df.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts
 # print(len(death_with_medical), len(imm_death))
 
 data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injcategories.txt')
+
+fig, ax = plt.subplots()
+theme = plt.get_cmap('Pastel2')
+
+ax.set_prop_cycle("color", [theme(1. * i / len(data))
+                            for i in range(len(data))])
+labels = ['Fractures', 'Dislocations', 'TBI', 'Soft tiss', 'Int. org', 'Int. bleed',
+          'SCI', 'Amputation', 'Eye injury', 'Skin wounds', 'Burns']
+explode = [0, 0, 0, 0, 0, 0, 0.2, 0, 0, 0, 0]
+ax.pie(data, explode=explode, labels=labels, autopct='%1.1f%%',
+       shadow=True, startangle=90)
+ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.title(f"{yearsrun} year model run, N={popsize}: injury categories")
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InjuryCategoriesPie.png')
+plt.clf()
+
 fig = plt.figure(figsize=(20, 10))
 ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
                      title=f"{yearsrun} year model run, N={popsize}: injury characteristics")
@@ -123,8 +143,8 @@ sankey.add(flows=[sum(data), -data[0], -data[1], -data[2], -data[3], -data[4],
            orientations=[0, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1],  # arrow directions
            pathlengths=[0.1, 0.5, 0.8, 0.5, 0.5, 0.8, 0.8, 0.5, 0.4, 0.8, 0.5, 0.8],
            trunklength=2,
-           edgecolor='#027368',
-           facecolor='#027368')
+           edgecolor='paleturquoise',
+           facecolor='paleturquoise')
 sankey.finish()
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InjuryCharacteristics.png')
 plt.clf()
@@ -136,6 +156,10 @@ ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
 
 fig, ax = plt.subplots()
 data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injlocs.txt')
+theme = plt.get_cmap('Pastel2')
+
+ax.set_prop_cycle("color", [theme(1. * i / len(data))
+                            for i in range(len(data))])
 labels = ['head', 'face', 'neck', 'thorax', 'abdomen', 'spine', 'upper x', 'lower x']
 explode = [0, 0, 0, 0, 0, 0.2, 0, 0]
 ax.pie(data, explode=explode, labels=labels, autopct='%1.1f%%',
@@ -146,7 +170,7 @@ plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/AISr
 plt.clf()
 
 data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injnumber.txt')
-plt.bar(['1', '2', '3', '4', '5', '6', '7', '8'], data / sum(data))
+plt.bar(['1', '2', '3', '4', '5', '6', '7', '8'], data / sum(data), color='lightsteelblue')
 plt.xlabel('Number of injured body regions')
 plt.ylabel('Frequency')
 plt.title(f'{yearsrun} year model run, N={popsize}:'
@@ -157,6 +181,10 @@ plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/Numb
 plt.clf()
 fig, ax = plt.subplots()
 data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injsev.txt')
+theme = plt.get_cmap('Pastel2')
+
+ax.set_prop_cycle("color", [theme(1. * i / len(data))
+                            for i in range(len(data))])
 labels = ['mild', 'severe']
 explode = [0, 0]
 ax.pie(data, explode=explode, labels=labels, autopct='%1.1f%%',
@@ -169,10 +197,443 @@ data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src
 scores, counts = np.unique(data, return_counts=True)
 fig, ax = plt.subplots()
 
-ax.bar(scores, counts / sum(counts))
+ax.bar(scores, counts / sum(counts), color='lightsteelblue')
 plt.xlabel('ISS scores')
 plt.ylabel('Frequency')
 plt.title(f'{yearsrun} year model run, N={popsize}: Distribution of ISS scores')
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/ISSscoreDistribution.png')
 
+df = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/outputdf.csv')
+rt_df = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/rti_summary_df.csv')
+newdf = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/deathsdf.csv')
+data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIflow.txt')
+print('Number involved in a rti')
+NumberInRTI = rt_df['number involved in a rti'].sum()
+print(NumberInRTI)
+diedaftermed = len(newdf.loc[newdf['cause'] == 'RTI_death_with_med'])
+print('Number who died immediately')
+diedimm = len(newdf.loc[newdf['cause'] == 'RTI_imm_death'])
+print(diedimm)
+diedwithoutmed = newdf.loc[newdf['cause'] == 'RTI_death_without_med']
+numdiedwithoutmed = diedwithoutmed['person_id'].nunique()
+print('Number who sought A and E')
+FirstAandE = df.loc[df['TREATMENT_ID'] == 'GenericEmergencyFirstApptAtFacilityLevel1']
+FirstAandEran = FirstAandE.did_run
+print(len(FirstAandE))
+print('Number seen without delay')
+print(len(FirstAandEran))
+FirstAandEDelay = FirstAandE.loc[FirstAandE['did_run'] == False]
+print('Number delayed in their A&E appointment')
+print(len(FirstAandEDelay))
+PostAandEFlow = [len(FirstAandEran)]
+allhealthappointment = df.loc[(df['TREATMENT_ID'] == 'RTI_MedicalIntervention')]
+print('Treatment recieved without delay')
+healthappointmentran = allhealthappointment.loc[allhealthappointment['did_run'] == True]
+print(len(healthappointmentran))
+print('Number of people with delayed treatment')
+healthappointmentdelay = allhealthappointment.loc[allhealthappointment['did_run'] == False]
+numberofpersonsdelayed = len(healthappointmentdelay.Person_ID.unique())
+print('First flow')
+PreAandEFlow = [NumberInRTI, -len(FirstAandE), -diedimm]
+print(PreAandEFlow)
+PreAandELabels = ["Number "
+                  "\n"
+                  "involved"
+                  "\n"
+                  "in road traffic"
+                  "\n"
+                  " accident", "Sought "
+                               "\n"
+                               "health care", 'Died on scene']
+PreAandEOrientation = [0, 0, 1]
+PreAandEPathLength = [0.25, 0.25, 0.1]
+print('Second flow')
+AandEFlow = [len(FirstAandE), -len(FirstAandEran), -len(FirstAandEDelay)]
+print(AandEFlow)
+AandELabels = ['', "Received "
+                   "\n"
+                   "A&E appointment "
+                   "\n"
+                   "without delay", 'Delayed in initial appointment']
+AandEOrientations = [0, 0, 1]
+AandEPathLength = [0.25, 0.25, 0.1]
+print('Third flow')
+HealthSystemFlows = [len(FirstAandEran), - len(healthappointmentran), -numberofpersonsdelayed]
+print(HealthSystemFlows)
+HealthSystemLabels = ['', "Received "
+                          "\n"
+                          "treatment "
+                          "\n"
+                          "without delay",
+                      "Delay in "
+                      "\n"
+                      "receiving treatment"]
+HealthSystemPathLength = [0.25, 0.25, 0.1]
+HealthSystemOrientations = [0, 0, 1]
+print('Fourth flow')
+DeathWithoutMedFlows = [numberofpersonsdelayed, -len(diedwithoutmed), -(numberofpersonsdelayed - len(diedwithoutmed))]
+print(DeathWithoutMedFlows)
+DeathWithoutMedLabels = ['', "Died without "
+                             "\n"
+                             "receiving care", 'Survived with delay']
+DeathWithoutMedPathLength = [0.1, 0.1, 0.1]
+DeathWithoutMedOrientations = [0, -1, -1]
+print('Fifth flow')
+OutcomesFlows = [len(healthappointmentran), -(len(healthappointmentran) - diedaftermed -
+                                              rt_df['number permanently disabled'].max()), -diedaftermed,
+                 -rt_df['number permanently disabled'].max()]
+print(OutcomesFlows)
+OutcomesLabels = ['', 'Survived', 'Died after medical intervention', 'Permanently disabled']
+OutcomesPathLength = [0.25, 0.25, 0.1, 0.1]
+OutcomesOrientations = [0, 0, 1, -1]
 
+fig = plt.figure(figsize=(20, 10))
+ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
+                     title=f"{yearsrun} year model run, N={popsize}: model flow")
+sankey = Sankey(ax=ax,
+                scale=PreAandEFlow[0] / (PreAandEFlow[0] * PreAandEFlow[0]),
+                offset=0.2,
+                format='%d')
+
+sankey.add(flows=PreAandEFlow,
+           labels=PreAandELabels,
+           orientations=PreAandEOrientation,  # arrow directions
+           pathlengths=PreAandEPathLength,
+           trunklength=0.5,
+           edgecolor='red',
+           facecolor='red')
+sankey.add(flows=AandEFlow,
+           labels=AandELabels,
+           prior=0,
+           connect=(1, 0),
+           orientations=AandEOrientations,
+           pathlengths=AandEPathLength,
+           trunklength=0.5,
+           edgecolor='gold',
+           facecolor='gold')
+sankey.add(flows=HealthSystemFlows,
+           labels=HealthSystemLabels,
+           prior=1,
+           connect=(1, 0),
+           orientations=HealthSystemOrientations,
+           pathlengths=HealthSystemPathLength,
+           trunklength=0.5,
+           edgecolor='darkgreen',
+           facecolor='darkgreen'
+           )
+sankey.add(flows=DeathWithoutMedFlows,
+           labels=DeathWithoutMedLabels,
+           prior=2,
+           connect=(2, 0),
+           orientations=DeathWithoutMedOrientations,
+           pathlengths=DeathWithoutMedPathLength,
+           trunklength=0.5,
+           edgecolor='darkseagreen',
+           facecolor='darkseagreen'
+           )
+sankey.add(flows=OutcomesFlows,
+           labels=OutcomesLabels,
+           prior=2,
+           connect=(1, 0),
+           orientations=OutcomesOrientations,
+           pathlengths=OutcomesPathLength,
+           trunklength=0.5,
+           edgecolor='black',
+           facecolor='black',
+           )
+# sankey.finish()
+diagrams = sankey.finish()
+diagrams[1].texts[1].set_color('white')
+diagrams[2].texts[1].set_color('white')
+
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIModelFlow.png')
+
+data = \
+    pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/GBD2017InjuryCategories.csv')
+labels = data.columns.tolist()
+weights = data.iloc[0, :].tolist()
+
+fig, ax = plt.subplots()
+theme = plt.get_cmap('Pastel2')
+
+ax.set_prop_cycle("color", [theme(1. * i / len(weights))
+                            for i in range(len(weights))])
+
+explode = [0, 0, 0, 0.2, 0, 0, 0, 0]
+ax.pie(weights, explode=explode, labels=labels, autopct='%1.1f%%',
+       shadow=True, startangle=90)
+ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+plt.title("GBD 2017 Malawi road traffic injury categories")
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/GBDCategoriesPie.png')
+plt.clf()
+
+
+# =========================== Plot where injuries occured on body
+
+data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injlocs.txt')
+def main():
+    try:
+        img = Image.open('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/bodies-cropped.jpg')
+        # img = img.filter(ImageFilter.SHARPEN)
+        thresh = 230
+        fn = lambda x: 255 if x > thresh else 0
+        img = img.convert('L').point(fn, mode='1')
+        # img = img.convert('1')
+        #
+
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_R.TTF"
+        fnt = ImageFont.truetype(font_path, 15)
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_B.TTF"
+        titlefnt = ImageFont.truetype(font_path, 20)
+        d = ImageDraw.Draw(img)
+        d.text((0, 10), f"The distribution of injury location: {yearsrun} year model run,"
+                        "\n"
+                        f"population size = {popsize}", font=titlefnt, fill='black')
+        d.text((120, 80), "Head:"
+                          "\n"
+                          f"{round(data[0] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 90, 200, 90], fill='black', width=1)
+        d.text((300, 100), "Face:"
+                           "\n"
+                           f"{round(data[1] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[230, 110, 270, 110], fill='black', width=1)
+
+        d.text((120, 120), "Neck:"
+                           "\n"
+                           f"{round(data[2] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 140, 210, 150], fill='black', width=1)
+
+        d.text((200, 180), "Thorax:"
+                           "\n"
+                           f"{round(data[3] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 250), "Spine:"
+                           "\n"
+                           f"{round(data[5] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 300), "Abdomen"
+                           "\n"
+                           f"{round(data[4] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((350, 220), "Upper"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[6] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[340, 240, 160, 220], fill='black', width=1)
+        d.line(xy=[340, 240, 300, 260], fill='black', width=1)
+
+        d.text((300, 420), "Lower"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[7] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[290, 440, 200, 440], fill='black', width=1)
+        d.line(xy=[290, 440, 260, 540], fill='black', width=1)
+
+        img.save('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/ModelInjuryLocationOnBody.jpg')
+
+    except IOError:
+        pass
+if __name__ == "__main__":
+    main()
+
+data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/OpenWoundDistribution.txt')
+def main():
+    try:
+        img = Image.open('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/bodies-cropped.jpg')
+        # img = img.filter(ImageFilter.SHARPEN)
+        thresh = 230
+        fn = lambda x: 255 if x > thresh else 0
+        img = img.convert('L').point(fn, mode='1')
+        # img = img.convert('1')
+        #
+
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_R.TTF"
+        fnt = ImageFont.truetype(font_path, 15)
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_B.TTF"
+        titlefnt = ImageFont.truetype(font_path, 20)
+        d = ImageDraw.Draw(img)
+        d.text((0, 10), f"The distribution of open wound location: {yearsrun} year model run,"
+                        "\n"
+                        f"population size = {popsize}", font=titlefnt, fill='black')
+        d.text((120, 80), "Head:"
+                          "\n"
+                          f"{round(data[0] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 90, 200, 90], fill='black', width=1)
+        d.text((300, 100), "Face:"
+                           "\n"
+                           f"{round(data[1] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[230, 110, 270, 110], fill='black', width=1)
+
+        d.text((120, 120), "Neck:"
+                           "\n"
+                           f"{round(data[2] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 140, 210, 150], fill='black', width=1)
+
+        d.text((200, 180), "Thorax:"
+                           "\n"
+                           f"{round(data[3] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 250), "Spine:"
+                           "\n"
+                           f"{round(data[5] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 300), "Abdomen"
+                           "\n"
+                           f"{round(data[4] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((350, 220), "Upper"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[6] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[340, 240, 160, 220], fill='black', width=1)
+        d.line(xy=[340, 240, 300, 260], fill='black', width=1)
+
+        d.text((300, 420), "Lower"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[7] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[290, 440, 200, 440], fill='black', width=1)
+        d.line(xy=[290, 440, 260, 540], fill='black', width=1)
+
+        img.save('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/OpenWoundLocationOnBody.jpg')
+
+    except IOError:
+        pass
+if __name__ == "__main__":
+    main()
+
+data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/FractureDistribution.txt')
+
+
+def main():
+    try:
+        img = Image.open('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/bodies-cropped.jpg')
+        # img = img.filter(ImageFilter.SHARPEN)
+        thresh = 230
+        fn = lambda x: 255 if x > thresh else 0
+        img = img.convert('L').point(fn, mode='1')
+        # img = img.convert('1')
+        #
+
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_R.TTF"
+        fnt = ImageFont.truetype(font_path, 15)
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_B.TTF"
+        titlefnt = ImageFont.truetype(font_path, 20)
+        d = ImageDraw.Draw(img)
+        d.text((0, 10), f"The distribution of fracture location: {yearsrun} year model run,"
+                        "\n"
+                        f"population size = {popsize}", font=titlefnt, fill='black')
+        d.text((120, 80), "Head:"
+                          "\n"
+                          f"{round(data[0] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 90, 200, 90], fill='black', width=1)
+        d.text((300, 100), "Face:"
+                           "\n"
+                           f"{round(data[1] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[230, 110, 270, 110], fill='black', width=1)
+
+        d.text((120, 120), "Neck:"
+                           "\n"
+                           f"{round(data[2] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 140, 210, 150], fill='black', width=1)
+
+        d.text((200, 180), "Thorax:"
+                           "\n"
+                           f"{round(data[3] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 250), "Spine:"
+                           "\n"
+                           f"{round(data[5] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 300), "Abdomen"
+                           "\n"
+                           f"{round(data[4] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((350, 220), "Upper"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[6] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[340, 240, 160, 220], fill='black', width=1)
+        d.line(xy=[340, 240, 300, 260], fill='black', width=1)
+
+        d.text((300, 420), "Lower"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[7] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[290, 440, 200, 440], fill='black', width=1)
+        d.line(xy=[290, 440, 260, 540], fill='black', width=1)
+
+        img.save('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/FractureLocationOnBody.jpg')
+
+    except IOError:
+        pass
+
+
+if __name__ == "__main__":
+    main()
+
+data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/BurnDistribution.txt')
+
+
+def main():
+    try:
+        img = Image.open('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/bodies-cropped.jpg')
+        # img = img.filter(ImageFilter.SHARPEN)
+        thresh = 230
+        fn = lambda x: 255 if x > thresh else 0
+        img = img.convert('L').point(fn, mode='1')
+        # img = img.convert('1')
+        #
+
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_R.TTF"
+        fnt = ImageFont.truetype(font_path, 15)
+        font_path = "C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Fonts/BOD_B.TTF"
+        titlefnt = ImageFont.truetype(font_path, 20)
+        d = ImageDraw.Draw(img)
+        d.text((0, 10), f"The distribution of burn location: {yearsrun} year model run,"
+                        "\n"
+                        f"population size = {popsize}", font=titlefnt, fill='black')
+        d.text((120, 80), "Head:"
+                          "\n"
+                          f"{round(data[0] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 90, 200, 90], fill='black', width=1)
+        d.text((300, 100), "Face:"
+                           "\n"
+                           f"{round(data[1] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[230, 110, 270, 110], fill='black', width=1)
+
+        d.text((120, 120), "Neck:"
+                           "\n"
+                           f"{round(data[2] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[170, 140, 210, 150], fill='black', width=1)
+
+        d.text((200, 180), "Thorax:"
+                           "\n"
+                           f"{round(data[3] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 250), "Spine:"
+                           "\n"
+                           f"{round(data[5] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((205, 300), "Abdomen"
+                           "\n"
+                           f"{round(data[4] / sum(data), 2)} %", font=fnt, fill='black')
+        d.text((350, 220), "Upper"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[6] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[340, 240, 160, 220], fill='black', width=1)
+        d.line(xy=[340, 240, 300, 260], fill='black', width=1)
+
+        d.text((300, 420), "Lower"
+                           "\n"
+                           "extremity:"
+                           "\n"
+                           f"{round(data[7] / sum(data), 2)} %", font=fnt, fill='black')
+        d.line(xy=[290, 440, 200, 440], fill='black', width=1)
+        d.line(xy=[290, 440, 260, 540], fill='black', width=1)
+
+        img.save('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/BurnLocationOnBody.jpg')
+
+    except IOError:
+        pass
+
+
+if __name__ == "__main__":
+    main()

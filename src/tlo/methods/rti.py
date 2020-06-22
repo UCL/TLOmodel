@@ -22,443 +22,6 @@ logger.setLevel(logging.DEBUG)
 
 # ================Put inj randomizer function here for now====================================
 
-def injrandomizer(number):
-    # A function that can be called specifying the number of people affected by RTI injuries
-    #  and provides outputs for the number of injuries each person experiences from a RTI event, the location of the
-    #  injury, the TLO injury categories and the severity of the injuries. The severity of the injuries will then be
-    #  used to calculate the injury severity score (ISS), which will then inform mortality and disability
-
-    # Import the distribution of injured body regions from the VIBES study
-    totalinjdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/resources/'
-                                 'ResourceFile_RTI_NumberOfInjuredBodyLocations.csv')
-    # Import the predicted rate of mortality from the ISS score of injuries
-    # ISSmort = np.genfromtxt('AssignInjuryTraits/data/ISSmortality.csv', delimiter=',')
-    predinjlocs = []
-    predinjsev = []
-    predinjcat = []
-    predinjiss = []
-    predpolytrauma = []
-    medintmort = []
-    nomedintmort = []
-    injlocstring = []
-    injcatstring = []
-    injaisstring = []
-
-    for n in range(0, number):
-
-        # Reset the distribution of body regions which can injured.
-        injlocdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/resources/'
-                                   'ResourceFile_RTI_InjuredBodyRegionPercentage.csv', delimiter=',')
-
-        ninjdecide = np.random.uniform(0, sum(totalinjdist))
-        # This generates a random number which will decide how many injuries the person will have,
-        # the number of injuries is decided by where the randomly generated number falls on the number line,
-        # with regions of the number line designated to the proportions of the nth injury
-
-        cprop = 0
-        # cprop is the cumulative frequency of the proportion of total number of injuries, this will be used
-        # to find the region of the number line which corresponds to the number of injuries that ninjdecide
-        # 'lands' in, which will correspond to the number of injuries
-
-        for i in range(0, len(totalinjdist)):
-            # This part of the for loop calculates the cumulative frequency of the proportion of total number of
-            # injury, stopping when it finds the region of the cumulative frequency where ninjdecide lies and then
-            # uses this to assign a number of injuries, ninj.
-            iprop = totalinjdist[i]
-            cprop += iprop
-            if cprop > ninjdecide:
-                ninj = i + 1
-                break
-        try:
-            # This part of the process isn't perfect, but essentially assigns the maximum number of
-            # injuries found in the sample if the number of injuries isn't otherwise classified.
-            ninj
-        except UnboundLocalError:
-            ninj = len(totalinjdist)
-        # Create an empty vector which will store the injury locations (numberically coded using the
-        # abbreviated injury scale coding system, where 1 corresponds to head, 2 to face, 3 to neck, 4 to
-        # thorax, 5 to abdomen, 6 to spine, 7 to upper extremity and 8 to lower extremity
-        allinjlocs = []
-        # Create an empty vector to store the type of injury
-        injcat = []
-        # Create an empty vector which will store the severity of the injuries
-        injais = []
-        # print(ninj)
-
-        for j in range(0, ninj):
-            upperlim = np.sum(injlocdist[-1:])
-            locinvector = np.random.uniform(0, upperlim)
-            cat = np.random.uniform(0, 1)
-            # loc is a variable which determine which body location will be injured.
-            # For each injury assigned to a person, loc will determine the injury location by calculating the
-            # cumulative frequency of the proportion of injury location for the jth injury and determining which
-            # cumulative frequency boundary loc falls in.
-            cprop = 0
-            # cumulative proportion
-            for k in range(0, len(injlocdist[0])):
-                # for the jth injury we find the cumulative frequency of injury location proportion and store it
-                # in cprop
-                injproprow = injlocdist[1, k]
-                cprop += injproprow
-                if cprop > locinvector:
-                    injlocs = injlocdist[0, k]
-                    # Once we find the region of the cumulative frequency of proportion of injury location
-                    # loc falls in, we can determine use this to determine where the injury is located, the jth
-                    # injury a person has is stored in injlocs initially and then injlocs is stored the vector
-                    # allinjlocs and returned as an output at the end of the function
-                    allinjlocs.append(int(injlocs))
-                    injlocdist = np.delete(injlocdist, k, 1)
-                    # print(injlocs)
-                    # In injury categories I will use the following mapping:
-                    # Fracture - 1
-                    # Dislocation - 2
-                    # Traumatic brain injury - 3
-                    # Soft tissue injury - 4
-                    # Internal organ injury - 5
-                    # Internal bleeding - 6
-                    # Spinal cord injury - 7
-                    # Amputation - 8
-                    # Eye injury - 9
-                    # Cuts etc (minor wounds) - 10
-                    # Burns - 11
-
-                    if injlocs == 1:
-                        if cat <= 0.14:
-                            # Open wound
-                            injcat.append(int(10))
-                            injais.append(1)
-                        elif 0.14 < cat <= 0.185:
-                            # Burn
-                            injcat.append(int(11))
-                            injais.append(4)
-                        elif 0.185 < cat <= 0.38:
-                            # Skull fractures
-                            injcat.append(int(1))
-                            if cat <= 0.36:
-                                injais.append(2)
-                            else:
-                                injais.append(3)
-                        elif 0.38 < cat:
-                            injcat.append(int(3))
-                            # Traumatic brain injuries
-                            if cat <= 0.79:
-                                # Mild TBI
-                                injais.append(3)
-                            elif 0.79 < cat <= 0.98:
-                                # Moderate TBI
-                                injais.append(4)
-                            else:
-                                # Severe TBI
-                                injais.append(5)
-                    if injlocs == 2:
-                        if cat <= 0.105:
-                            # Open wound
-                            injcat.append(int(10))
-                            injais.append(1)
-                        elif 0.105 < cat <= 0.13:
-                            # Burn
-                            injcat.append(int(11))
-                            injais.append(4)
-                        elif 0.13 < cat <= 0.54:
-                            injcat.append(int(1))
-                            if cat <= 0.27:
-                                # Nasal and unspecified fractures of the face
-                                injais.append(1)
-                            else:
-                                # Mandible and Zygomatic fractures
-                                injais.append(2)
-                        elif 0.54 < cat < 0.996:
-                            # soft tissue injury
-                            injcat.append(4)
-                            injais.append(1)
-                        else:
-                            # eye injury
-                            injcat.append(int(9))
-                            injais.append(1)
-                    if injlocs == 3:
-                        if cat <= 0.08:
-                            # Burn
-                            injcat.append(int(11))
-                            injais.append(3)
-                        elif 0.08 < cat <= 0.12:
-                            # Open wound
-                            injcat.append(int(10))
-                            injais.append(1)
-                        elif 0.012 < cat <= 0.0129:
-                            injcat.append(int(4))
-                            # Soft tissue injuries of the neck
-                            if cat <= 0.01245:
-                                # Vertebral artery laceration
-                                injais.append(2)
-                            else:
-                                # Pharynx contusion
-                                injais.append(3)
-                        elif 0.0129 < cat <= 0.991:
-                            # Internal bleeding
-                            injcat.append(int(6))
-                            if cat < 0.6031:
-                                # Sternomastoid m. hemorrhage,
-                                # Hemorrhage, supraclavicular triangle
-                                # Hemorrhage, posterior triangle
-                                # Anterior vertebral vessel hemorrhage
-                                # Neck muscle hemorrhage
-                                injais.append(1)
-                            else:
-                                # Hematoma in carotid sheath
-                                # Carotid sheath hemorrhage
-                                injais.append(3)
-                        else:
-                            # Dislocation
-                            injcat.append(int(2))
-                            if cat < 0.994:
-                                # Atlanto-axial subluxation
-                                injais.append(3)
-                            else:
-                                # Atlanto-occipital subluxation
-                                injais.append(2)
-                    if injlocs == 4:
-                        if cat <= 0.26:
-                            # Open wound
-                            injcat.append(int(10))
-                            injais.append(1)
-                        elif 0.26 < cat <= 0.51:
-                            # Burn
-                            injcat.append(int(11))
-                            injais.append(3)
-                        elif 0.51 < cat <= 0.71:
-                            # Internal Bleeding
-                            injcat.append(int(6))
-                            if cat <= 0.61:
-                                # Chest wall bruises/haematoma
-                                injais.append(1)
-                            else:
-                                # Haemothorax
-                                injais.append(3)
-                        elif 0.71 < cat <= 0.78:
-                            # Internal organ injury
-                            injcat.append(int(5))
-                            # Lung contusion and Diaphragm rupture
-                            injais.append(3)
-                        elif 0.78 < cat <= 0.83:
-                            # Fractures to ribs and flail chest
-                            injcat.append(int(1))
-                            if 0.78 < cat <= 0.82:
-                                # fracture to rib(s)
-                                injais.append(2)
-                            else:
-                                # flail chest
-                                injais.append(4)
-                        else:
-                            injcat.append(int(4))
-                            if 0.83 < cat <= 0.92:
-                                # Chest wall lacerations/avulsions
-                                injais.append(1)
-                            elif 0.92 < cat <= 0.97:
-                                # Open/closed pneumothorax
-                                injais.append(3)
-                            else:
-                                # surgical emphysema
-                                injais.append(2)
-                    if injlocs == 5:
-                        if cat <= 0.06:
-                            # Open wound
-                            injcat.append(int(10))
-                            injais.append(1)
-                        elif 0.06 < cat <= 0.11:
-                            # Burn
-                            injcat.append(int(11))
-                            injais.append(3)
-                        else:
-                            # Internal organ injuries
-                            injcat.append(int(5))
-                            if 0.11 < cat <= 0.16:
-                                # Intestines, Stomach and colon injury
-                                injais.append(2)
-                            elif 0.16 < cat <= 0.97:
-                                # Spleen, bladder, liver, urethra and diaphragm injury
-                                injais.append(3)
-                            elif cat > 0.97:
-                                # Kidney injury
-                                injais.append(4)
-                    if injlocs == 6:
-                        if cat <= 0.364:
-                            # Fracture to vertebrae
-                            injcat.append(int(1))
-                            injais.append(2)
-                        else:
-                            # Spinal cord injury
-                            injcat.append(int(7))
-                            if 0.364 < cat <= 0.42:
-                                injais.append(3)
-                            elif 0.42 < cat < 0.62:
-                                injais.append(4)
-                            elif 0.62 < cat < 0.97:
-                                injais.append(5)
-                            else:
-                                injais.append(6)
-                    if injlocs == 7:
-                        if cat <= 0.24:
-                            # Open wound
-                            injcat.append(int(10))
-                            injais.append(1)
-                        elif 0.24 < cat <= 0.38:
-                            # Burn
-                            injcat.append(int(11))
-                            injais.append(3)
-                        elif 0.38 < cat <= 0.966:
-                            # Fracture to arm
-                            injcat.append(int(1))
-                            injais.append(2)
-                        elif 0.966 < cat <= 0.968:
-                            # Dislocation to arm
-                            injcat.append(int(2))
-                            injais.append(2)
-                        elif 0.968 < cat <= 0.998:
-                            # Amputation to finger/thumb/unilateral arm
-                            injcat.append(int(8))
-                            injais.append(2)
-                        else:
-                            # Amputation, arm, bilateral
-                            injcat.append(int(8))
-                            injais.append(3)
-                    if injlocs == 8:
-                        if cat <= 0.1:
-                            # Open wound
-                            injcat.append(int(10))
-                            injais.append(1)
-                        elif 0.1 < cat <= 0.15:
-                            # Burn
-                            injcat.append(int(11))
-                            injais.append(3)
-                        elif 0.15 < cat <= 0.85:
-                            # Fractures
-                            injcat.append(int(1))
-                            if 0.15 < cat < 0.185:
-                                # Foot fracture
-                                injais.append(1)
-                            elif 0.185 < cat <= 0.71:
-                                # Lower leg fracture
-                                injais.append(2)
-                            elif 0.71 < cat <= 0.85:
-                                # Upper leg fracture
-                                injais.append(3)
-                        elif 0.85 < cat <= 0.869:
-                            # dislocation of hip or knee
-                            injcat.append(int(2))
-                            injais.append(2)
-                        elif 0.869 < cat:
-                            # Amputations
-                            injcat.append(int(8))
-                            if 0.869 < cat <= 0.874:
-                                # Bilateral limb amputation
-                                injais.append(4)
-                            elif 0.874 < cat <= 0.943:
-                                # Unilateral limb amputation
-                                injais.append(3)
-                            else:
-                                # Toe/toes amputation
-                                injais.append(2)
-                    break
-
-        # Create a dataframe that stores the injury location and severity for each person, the point of this
-        # dataframe is to use some of the pandas tools to manipulate the generated injury data to calculate
-        # the ISS score and from this, the probability of mortality resulting from the injuries.
-        injlocstring.append(' '.join(map(str, allinjlocs)))
-        injcatstring.append(' '.join(map(str, injcat)))
-        injaisstring.append(' '.join(map(str, injais)))
-        injdata = {'AIS location': allinjlocs, 'AIS severity': injais}
-        df = pd.DataFrame(injdata, columns=['AIS location', 'AIS severity'])
-        # Find the most severe injury to the person in each body region, creates a new column containing the
-        # maximum AIS value of each injured body region
-        df['Severity max'] = df.groupby(['AIS location'], sort=False)['AIS severity'].transform(max)
-        # column no longer needed and will get in the way of future calculations
-        df = df.drop(columns='AIS severity')
-        # drops the duplicate values in the location data, preserving the most severe injuries in each body
-        # location.
-        df = df.drop_duplicates(['AIS location'], keep='first')
-        # Finds the AIS score for the most severely injured body regions and stores them in a new dataframe z
-        z = df.nlargest(3, 'Severity max', 'first')
-        # Find the 3 most severely injured body regions
-        z = z.iloc[:3]
-        # Need to determine whether the persons injuries qualify as polytrauma as such injuries have a different
-        # prognosis, set default as False. Polytrauma is defined via the new Berlin definition, 'when two or more
-        # injuries have an AIS severity score of 3 or higher'.
-        polytrauma = False
-        # Determine where more than one injured body region has occurred
-        if len(z) > 1:
-            # Find where the injuries have an AIS score of 3 or higher
-            cond = np.where(z['Severity max'] > 2)
-            if len(z.iloc[cond]) > 1:
-                # if two or more injuries have a AIS score of 3 or higher then this person has polytrauma.
-                polytrauma = True
-        # Calculate the squares of the AIS scores for the three most severely injured body regions
-        z['sqrsev'] = z['Severity max'] ** 2
-        # From the squared AIS scores, calculate the ISS score
-        ISSscore = sum(z['sqrsev'])
-        # Use ISS score to determine the percentage of mortality
-        # If there is a fatal injury (AIS score > 5) then assume this injury is fatal.
-
-        # ====================Dose Response=======================
-        # if ISSscore > 74:
-        #     ISSscore = 75
-        #     ISSpercmort = 1
-        # else:
-        #     ISSpercmort = ISSmort[ISSscore]
-
-        # ==================Bounded Mortality====================
-
-        if ISSscore <= 15:
-            ISSpercmort = 0.046
-        elif 15 < ISSscore <= 74:
-            ISSpercmort = 0.27
-        elif ISSscore > 74:
-            ISSscore = 75
-            ISSpercmort = 1
-
-        # Include effects of polytrauma here
-        if polytrauma is True:
-            pass
-            ISSpercmort = 1.9 * ISSpercmort
-            if ISSpercmort > 1:
-                ISSpercmort = 1
-
-        # Turn the vectors into a string to store as one entry in a dataframe
-        allinjlocs = np.array(allinjlocs)
-        allinjlocs = allinjlocs.astype(int)
-        allinjlocs = ''.join([str(elem) for elem in allinjlocs])
-        predinjlocs.append(allinjlocs)
-        predinjsev.append(injais)
-        predinjcat.append(injcat)
-        predinjiss.append(ISSscore)
-        predpolytrauma.append(polytrauma)
-        medintmort.append(ISSpercmort)
-        nomedintmort.append(1 if ISSscore >= 9 else 0.07)
-    injdf = pd.DataFrame()
-    injdf['Injury locations'] = predinjlocs
-    injdf['Injury locations string'] = injlocstring
-    injdf['Injury AIS'] = predinjsev
-    injdf['Injury AIS string'] = injaisstring
-    injdf['Injury category'] = predinjcat
-    injdf['Injury category string'] = injcatstring
-    injdf['ISS'] = predinjiss
-    injdf['Polytrauma'] = predpolytrauma
-    injdf['Percent mortality with treatment'] = medintmort
-    injdf['Percent mortality without treatment'] = nomedintmort
-    injdf['Injury category string'] = injdf['Injury category string'].astype(str)
-    injurycategories = injdf['Injury category string'].str.split(expand=True)
-    injdf['Injury locations string'] = injdf['Injury locations string'].astype(str)
-    injurylocations = injdf['Injury locations string'].str.split(expand=True)
-    injdf['Injury AIS string'] = injdf['Injury AIS string'].astype(str)
-    injuryais = injdf['Injury AIS string'].str.split(expand=True)
-    injurydescription = injurylocations + injurycategories + injuryais
-    injurydescription = injurydescription.astype(str)
-    for (columnname, columndata) in injurydescription.iteritems():
-        injurydescription.rename(columns={injurydescription.columns[columnname]: "Injury " + str(columnname + 1)},
-                                 inplace=True)
-
-    injurydescription = injurydescription.fillna("none")
-    return injdf, injurydescription
-
 
 def find_and_count_injuries(dataframe, tloinjcodes):
     index = pd.Index([])
@@ -488,6 +51,7 @@ class RTI(Module):
 
     # Module parameters
     PARAMETERS = {
+        # Transitioning parameters
         'base_rate_injrti': Parameter(
             Types.REAL,
             'Base rate of RTI per year',
@@ -560,6 +124,338 @@ class RTI(Module):
         'prob_death_fractures_no_treatment': Parameter(
             Types.REAL,
             'probability that someone with a fracture injury will die without treatment'
+        ),
+        'head_prob_skin_wound': Parameter(
+            Types.REAL,
+            'Proportion of head wounds that result in a skin wound'
+        ),
+        'head_prob_skin_wound_open': Parameter(
+            Types.REAL,
+            'Proportion of skin wounds in the head that result in an open wound'
+        ),
+        'head_prob_skin_wound_burn': Parameter(
+            Types.REAL,
+            'Proportion of skin wounds in the head that result in an open wound'
+        ),
+        'head_prob_fracture': Parameter(
+            Types.REAL,
+            'Proportion of head wounds that result in a fractured skull'
+        ),
+        'head_prob_fracture_unspecified': Parameter(
+            Types.REAL,
+            'Proportion of skull fractures in an unspecified location in the skull, carrying a lower AIS score'
+        ),
+        'head_prob_fracture_basilar': Parameter(
+            Types.REAL,
+            'Proportion of skull fractures in the base of the skull, carrying a higher AIS score'
+        ),
+        'head_prob_TBI': Parameter(
+            Types.REAL,
+            'Proportion of head injuries that result in traumatic brain injury'
+        ),
+        'head_prob_TBI_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of traumatic brain injuries with an AIS score of 3'
+        ),
+        'head_prob_TBI_AIS4': Parameter(
+            Types.REAL,
+            'Proportion of traumatic brain injuries with an AIS score of 4'
+        ),
+        'head_prob_TBI_AIS5': Parameter(
+            Types.REAL,
+            'Proportion of traumatic brain injuries with an AIS score of 3'
+        ),
+        'face_prob_skin_wound': Parameter(
+            Types.REAL,
+            'Proportion of facial wounds that result in a skin wound'
+        ),
+        'face_prob_skin_wound_open': Parameter(
+            Types.REAL,
+            'Proportion of skin wounds in the face that result in an open wound'
+        ),
+        'face_prob_skin_wound_burn': Parameter(
+            Types.REAL,
+            'Proportion of skin wounds in the face that result in an open wound'
+        ),
+        'face_prob_fracture': Parameter(
+            Types.REAL,
+            'Proportion of facial wounds that result in a fractured skull'
+        ),
+        'face_prob_fracture_AIS1': Parameter(
+            Types.REAL,
+            'Proportion of facial fractures with an AIS score of 1'
+        ),
+        'face_prob_fracture_AIS2': Parameter(
+            Types.REAL,
+            'Proportion of facial fractures with an AIS score of 2'
+        ),
+        'face_prob_soft_tissue_injury': Parameter(
+            Types.REAL,
+            'Proportion of facial injuries that result in soft tissue injury'
+        ),
+        'face_prob_eye_injury': Parameter(
+            Types.REAL,
+            'Proportion of facial injuries that result in eye injury'
+        ),
+        'neck_prob_skin_wound': Parameter(
+            Types.REAL,
+            'Proportion of neck injuries that result in skin wounds'
+        ),
+        'neck_prob_skin_wound_open': Parameter(
+            Types.REAL,
+            'Proportion of skin wounds in the neck that are open wounds'
+        ),
+        'neck_prob_skin_wound_burn': Parameter(
+            Types.REAL,
+            'Proportion of skin wounds in the neck that are burns'
+        ),
+        'neck_prob_soft_tissue_injury': Parameter(
+            Types.REAL,
+            'Proportion of neck injuries that result in soft tissue injury'
+        ),
+        'neck_prob_soft_tissue_injury_AIS2': Parameter(
+            Types.REAL,
+            'Proportion of soft tissue injuries with an AIS score of 2'
+        ),
+        'neck_prob_soft_tissue_injury_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of soft tissue injuries with an AIS score of 3'
+        ),
+        'neck_prob_internal_bleeding': Parameter(
+            Types.REAL,
+            'Proportion of neck injuries that result in internal bleeding'
+        ),
+        'neck_prob_internal_bleeding_AIS1': Parameter(
+            Types.REAL,
+            'Proportion of internal bleeding in the neck with an AIS score of 1'
+        ),
+        'neck_prob_internal_bleeding_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of internal bleeding in the neck with an AIS score of 3'
+        ),
+        'neck_prob_dislocation': Parameter(
+            Types.REAL,
+            'Proportion of neck injuries that result in a dislocated neck vertebrae'
+        ),
+        'neck_prob_dislocation_AIS2': Parameter(
+            Types.REAL,
+            'Proportion dislocated neck vertebrae with an AIS score of 2'
+        ),
+        'neck_prob_dislocation_AIS3': Parameter(
+            Types.REAL,
+            'Proportion dislocated neck vertebrae with an AIS score of 3'
+        ),
+        'thorax_prob_skin_wound': Parameter(
+            Types.REAL,
+            'Proportion of thorax injuries that result in a skin wound'
+        ),
+        'thorax_prob_skin_wound_open': Parameter(
+            Types.REAL,
+            'Proportion of thorax skin wounds that are open wounds'
+        ),
+        'thorax_prob_skin_wound_burn': Parameter(
+            Types.REAL,
+            'Proportion of thorax skin wounds that are burns'
+        ),
+        'thorax_prob_internal_bleeding': Parameter(
+            Types.REAL,
+            'Proportion of thorax injuries that result in internal bleeding'
+        ),
+        'thorax_prob_internal_bleeding_AIS1': Parameter(
+            Types.REAL,
+            'Proportion of internal bleeding in thorax with AIS score of 1'
+        ),
+        'thorax_prob_internal_bleeding_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of internal bleeding in thorax with AIS score of 3'
+        ),
+        'thorax_prob_internal_organ_injury': Parameter(
+            Types.REAL,
+            'Proportion of thorax injuries that result in internal organ injuries'
+        ),
+        'thorax_prob_fracture': Parameter(
+            Types.REAL,
+            'Proportion of thorax injuries that result in rib fractures/ flail chest'
+        ),
+        'thorax_prob_fracture_ribs': Parameter(
+            Types.REAL,
+            'Proportion of rib fractures in  thorax fractures'
+        ),
+        'thorax_prob_fracture_flail_chest': Parameter(
+            Types.REAL,
+            'Proportion of flail chest in thorax fractures'
+        ),
+        'thorax_soft_tissue_injury': Parameter(
+            Types.REAL,
+            'Proportion of thorax injuries resulting in soft tissue injury'
+        ),
+        'thorax_soft_tissue_injury_AIS1': Parameter(
+            Types.REAL,
+            'Proportion of soft tissue injuries in the thorax with an AIS score of 1'
+        ),
+        'thorax_soft_tissue_injury_AIS2': Parameter(
+            Types.REAL,
+            'Proportion of soft tissue injuries in the thorax with an AIS score of 2'
+        ),
+        'thorax_soft_tissue_injury_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of soft tissue injuries in the thorax with an AIS score of 3'
+        ),
+        'abdomen_skin_wound': Parameter(
+            Types.REAL,
+            'Proportion of abdomen injuries that are skin wounds'
+        ),
+        'abdomen_skin_wound_open': Parameter(
+            Types.REAL,
+            'Proportion skin wounds to the abdomen that are open wounds'
+        ),
+        'abdomen_skin_wound_burn': Parameter(
+            Types.REAL,
+            'Proportion skin wounds to the abdomen that are burns'
+        ),
+        'abdomen_internal_organ_injury': Parameter(
+            Types.REAL,
+            'Proportion of abdomen injuries that result in internal organ injury'
+        ),
+        'abdomen_internal_organ_injury_AIS2': Parameter(
+            Types.REAL,
+            'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
+        ),
+        'abdomen_internal_organ_injury_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
+        ),
+        'abdomen_internal_organ_injury_AIS4': Parameter(
+            Types.REAL,
+            'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
+        ),
+        'spine_prob_spinal_cord_lesion': Parameter(
+            Types.REAL,
+            'Proportion of injuries to spine that result in spinal cord lesions'
+        ),
+        'spine_prob_spinal_cord_lesion': Parameter(
+            Types.REAL,
+            'Proportion of injuries to spine that result in spinal cord lesions'
+        ),
+        'spine_prob_spinal_cord_lesion_neck_level': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen at neck level'
+        ),
+        'spine_prob_spinal_cord_lesion_neck_level_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 3'
+        ),
+        'spine_prob_spinal_cord_lesion_neck_level_AIS4': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 4'
+        ),
+        'spine_prob_spinal_cord_lesion_neck_level_AIS5': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 5'
+        ),
+        'spine_prob_spinal_cord_lesion_neck_level_AIS6': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen at neck level with an AIS score of 6'
+        ),
+        'spine_prob_spinal_cord_lesion_below_neck_level': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen below neck level'
+        ),
+        'spine_prob_spinal_cord_lesion_below_neck_level_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen below neck level with an AIS score of 3'
+        ),
+        'spine_prob_spinal_cord_lesion_below_neck_level_AIS4': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen below neck level with an AIS score of 4'
+        ),
+        'spine_prob_spinal_cord_lesion_below_neck_level_AIS5': Parameter(
+            Types.REAL,
+            'Proportion of spinal cord lesions that happen below neck level with an AIS score of 5'
+        ),
+        'spine_prob_fracture': Parameter(
+            Types.REAL,
+            'Proportion of spinal injuries that result in vertebrae fractures'
+        ),
+        'upper_ex_prob_skin_wound': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in skin wounds'
+        ),
+        'upper_ex_prob_skin_wound_open': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in open wounds'
+        ),
+        'upper_ex_prob_skin_wound_burn': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in burns'
+        ),
+        'upper_ex_prob_fracture': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in fractures'
+        ),
+        'upper_ex_prob_dislocation': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in dislocation'
+        ),
+        'upper_ex_prob_amputation': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in amputation'
+        ),
+        'upper_ex_prob_amputation_AIS2': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in amputation with AIS 2'
+        ),
+        'upper_ex_prob_amputation_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of upper extremity injuries that result in amputation with AIS 3'
+        ),
+        'lower_ex_prob_skin_wound': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in skin wounds'
+        ),
+        'lower_ex_prob_skin_wound_open': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in open wounds'
+        ),
+        'lower_ex_prob_skin_wound_burn': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in burns'
+        ),
+        'lower_ex_prob_fracture': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in fractures'
+        ),
+        'lower_ex_prob_fracture_AIS1': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in fractures with an AIS of 1'
+        ),
+        'lower_ex_prob_fracture_AIS2': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in fractures with an AIS of 2'
+        ),
+        'lower_ex_prob_fracture_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in fractures with an AIS of 3'
+        ),
+        'lower_ex_prob_dislocation': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in dislocation'
+        ),
+        'lower_ex_prob_amputation': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in amputation'
+        ),
+        'lower_ex_prob_amputation_AIS2': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in amputation with AIS 2'
+        ),
+        'lower_ex_prob_amputation_AIS3': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in amputation with AIS 3'
+        ),
+        'lower_ex_prob_amputation_AIS4': Parameter(
+            Types.REAL,
+            'Proportion of lower extremity injuries that result in amputation with AIS 4'
         ),
         'daly_wt_unspecified_skull_fracture': Parameter(
             Types.REAL,
@@ -1343,6 +1239,535 @@ class RTI(Module):
         disability_series_for_alive_persons = df.loc[df["is_alive"], "rt_disability"]
         return disability_series_for_alive_persons
 
+    def injrandomizer(self, number):
+        # A function that can be called specifying the number of people affected by RTI injuries
+        #  and provides outputs for the number of injuries each person experiences from a RTI event, the location of the
+        #  injury, the TLO injury categories and the severity of the injuries. The severity of the injuries will then be
+        #  used to calculate the injury severity score (ISS), which will then inform mortality and disability
+
+        # Import the distribution of injured body regions from the VIBES study
+        totalinjdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/resources/'
+                                     'ResourceFile_RTI_NumberOfInjuredBodyLocations.csv')
+        # Import the predicted rate of mortality from the ISS score of injuries
+        # ISSmort = np.genfromtxt('AssignInjuryTraits/data/ISSmortality.csv', delimiter=',')
+        predinjlocs = []
+        predinjsev = []
+        predinjcat = []
+        predinjiss = []
+        predpolytrauma = []
+        medintmort = []
+        nomedintmort = []
+        injlocstring = []
+        injcatstring = []
+        injaisstring = []
+
+        for n in range(0, number):
+
+            # Reset the distribution of body regions which can injured.
+            injlocdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/resources/'
+                                       'ResourceFile_RTI_InjuredBodyRegionPercentage.csv', delimiter=',')
+
+            ninjdecide = np.random.uniform(0, sum(totalinjdist))
+            # This generates a random number which will decide how many injuries the person will have,
+            # the number of injuries is decided by where the randomly generated number falls on the number line,
+            # with regions of the number line designated to the proportions of the nth injury
+
+            cprop = 0
+            # cprop is the cumulative frequency of the proportion of total number of injuries, this will be used
+            # to find the region of the number line which corresponds to the number of injuries that ninjdecide
+            # 'lands' in, which will correspond to the number of injuries
+
+            for i in range(0, len(totalinjdist)):
+                # This part of the for loop calculates the cumulative frequency of the proportion of total number of
+                # injury, stopping when it finds the region of the cumulative frequency where ninjdecide lies and then
+                # uses this to assign a number of injuries, ninj.
+                iprop = totalinjdist[i]
+                cprop += iprop
+                if cprop > ninjdecide:
+                    ninj = i + 1
+                    break
+            try:
+                # This part of the process isn't perfect, but essentially assigns the maximum number of
+                # injuries found in the sample if the number of injuries isn't otherwise classified.
+                ninj
+            except UnboundLocalError:
+                ninj = len(totalinjdist)
+            # Create an empty vector which will store the injury locations (numberically coded using the
+            # abbreviated injury scale coding system, where 1 corresponds to head, 2 to face, 3 to neck, 4 to
+            # thorax, 5 to abdomen, 6 to spine, 7 to upper extremity and 8 to lower extremity
+            allinjlocs = []
+            # Create an empty vector to store the type of injury
+            injcat = []
+            # Create an empty vector which will store the severity of the injuries
+            injais = []
+            # print(ninj)
+
+            for j in range(0, ninj):
+                upperlim = np.sum(injlocdist[-1:])
+                locinvector = np.random.uniform(0, upperlim)
+                cat = np.random.uniform(0, 1)
+                severity = np.random.uniform(0, 1)
+                # loc is a variable which determine which body location will be injured.
+                # For each injury assigned to a person, loc will determine the injury location by calculating the
+                # cumulative frequency of the proportion of injury location for the jth injury and determining which
+                # cumulative frequency boundary loc falls in.
+                cprop = 0
+                # cumulative proportion
+                for k in range(0, len(injlocdist[0])):
+                    # for the jth injury we find the cumulative frequency of injury location proportion and store it
+                    # in cprop
+                    injproprow = injlocdist[1, k]
+                    cprop += injproprow
+                    if cprop > locinvector:
+                        injlocs = injlocdist[0, k]
+                        # Once we find the region of the cumulative frequency of proportion of injury location
+                        # loc falls in, we can determine use this to determine where the injury is located, the jth
+                        # injury a person has is stored in injlocs initially and then injlocs is stored the vector
+                        # allinjlocs and returned as an output at the end of the function
+                        allinjlocs.append(int(injlocs))
+                        injlocdist = np.delete(injlocdist, k, 1)
+                        # print(injlocs)
+                        # In injury categories I will use the following mapping:
+                        # Fracture - 1
+                        # Dislocation - 2
+                        # Traumatic brain injury - 3
+                        # Soft tissue injury - 4
+                        # Internal organ injury - 5
+                        # Internal bleeding - 6
+                        # Spinal cord injury - 7
+                        # Amputation - 8
+                        # Eye injury - 9
+                        # Cuts etc (minor wounds) - 10
+                        # Burns - 11
+
+                        if injlocs == 1:
+                            if cat <= self.head_prob_skin_wound:
+                                if severity <= self.head_prob_skin_wound_open:
+                                    # Open wound
+                                    injcat.append(int(10))
+                                    injais.append(1)
+                                else:
+                                    # Burn
+                                    injcat.append(int(11))
+                                    injais.append(4)
+                                    logger.debug('gave a burn to head')
+                                    logger.debug(severity)
+                                    logger.debug(self.head_prob_skin_wound_open)
+                            elif self.head_prob_skin_wound < cat <= self.head_prob_skin_wound + \
+                                self.head_prob_fracture:
+                                # Skull fractures
+                                injcat.append(int(1))
+                                if severity <= self.head_prob_fracture_unspecified:
+                                    injais.append(2)
+                                else:
+                                    injais.append(3)
+                            elif self.head_prob_skin_wound + self.head_prob_fracture < cat:
+                                # Traumatic brain injuries
+                                injcat.append(int(3))
+                                base = self.head_prob_skin_wound + self.head_prob_fracture
+                                prob_tbi_ais3 = base + \
+                                                self.head_prob_TBI * self.head_prob_TBI_AIS3
+                                prob_tbi_ais4 = base + \
+                                                self.head_prob_TBI * (self.head_prob_TBI_AIS3 +
+                                                                      self.head_prob_TBI_AIS4)
+                                if severity <= self.head_prob_TBI_AIS3:
+                                    # Mild TBI
+                                    injais.append(3)
+                                elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + self.head_prob_TBI_AIS4:
+                                    # Moderate TBI
+                                    injais.append(4)
+                                elif self.head_prob_TBI_AIS3 + self.head_prob_TBI_AIS4 < severity:
+                                    # Severe TBI
+                                    injais.append(5)
+                        if injlocs == 2:
+                            if cat <= self.face_prob_skin_wound:
+                                if severity <= self.face_prob_skin_wound_open:
+                                    # Open wound
+                                    injcat.append(int(10))
+                                    injais.append(1)
+                                else:
+                                    # Burn
+                                    injcat.append(int(11))
+                                    injais.append(4)
+                                    logger.debug('gave a burn to face')
+                                    logger.debug(severity)
+                                    logger.debug(self.face_prob_skin_wound_open)
+                            elif self.face_prob_skin_wound < cat <= self.face_prob_skin_wound + self.face_prob_fracture:
+                                # Facial fracture
+                                injcat.append(int(1))
+                                if severity <= self.face_prob_fracture_AIS1:
+                                    # Nasal and unspecified fractures of the face
+                                    injais.append(1)
+                                else:
+                                    # Mandible and Zygomatic fractures
+                                    injais.append(2)
+                            elif self.face_prob_skin_wound + self.face_prob_fracture < cat < self.face_prob_skin_wound \
+                                    + self.face_prob_fracture + self.face_prob_soft_tissue_injury:
+                                # soft tissue injury
+                                injcat.append(int(4))
+                                injais.append(1)
+                            elif self.face_prob_skin_wound + self.face_prob_fracture + \
+                                    self.face_prob_soft_tissue_injury < cat:
+                                # eye injury
+                                injcat.append(int(9))
+                                injais.append(1)
+                        if injlocs == 3:
+                            if cat <= self.neck_prob_skin_wound:
+                                if severity <= self.neck_prob_skin_wound_open:
+                                    # Open wound
+                                    injcat.append(int(10))
+                                    injais.append(1)
+                                else:
+                                    # Burn
+                                    injcat.append(int(11))
+                                    injais.append(3)
+                                    logger.debug('gave a burn to neck')
+                                    logger.debug(severity)
+                                    logger.debug(self.neck_prob_skin_wound_open)
+                            elif self.neck_prob_skin_wound < cat <= self.neck_prob_skin_wound + \
+                                self.neck_prob_soft_tissue_injury:
+                                # Soft tissue injuries of the neck
+                                injcat.append(int(4))
+                                base = self.neck_prob_skin_wound
+                                if severity <= self.neck_prob_soft_tissue_injury_AIS2:
+                                    # Vertebral artery laceration
+                                    injais.append(2)
+                                else:
+                                    # Pharynx contusion
+                                    injais.append(3)
+                            elif self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury < cat <= \
+                                self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury + \
+                                self.neck_prob_internal_bleeding:
+                                # Internal bleeding
+                                injcat.append(int(6))
+
+                                if severity <= self.neck_prob_internal_bleeding_AIS1:
+                                    # Sternomastoid m. hemorrhage,
+                                    # Hemorrhage, supraclavicular triangle
+                                    # Hemorrhage, posterior triangle
+                                    # Anterior vertebral vessel hemorrhage
+                                    # Neck muscle hemorrhage
+                                    injais.append(1)
+                                else:
+                                    # Hematoma in carotid sheath
+                                    # Carotid sheath hemorrhage
+                                    injais.append(3)
+                            elif self.neck_prob_skin_wound + self.neck_prob_soft_tissue_injury + \
+                                self.neck_prob_internal_bleeding < cat:
+                                # Dislocation
+                                injcat.append(int(2))
+                                if severity <= self.neck_prob_dislocation_AIS3:
+                                    # Atlanto-axial subluxation
+                                    injais.append(3)
+                                else:
+                                    # Atlanto-occipital subluxation
+                                    injais.append(2)
+                        if injlocs == 4:
+                            if cat <= self.thorax_prob_skin_wound:
+                                if severity <= self.thorax_prob_skin_wound_open:
+                                    # Open wound
+                                    injcat.append(int(10))
+                                    injais.append(1)
+                                else:
+                                    # Burn
+                                    injcat.append(int(11))
+                                    injais.append(3)
+                                    logger.debug('gave a burn to thorax')
+                                    logger.debug(severity)
+                                    logger.debug(self.thorax_prob_skin_wound_open)
+                            elif self.thorax_prob_skin_wound < cat <= self.thorax_prob_skin_wound + \
+                                self.thorax_prob_internal_bleeding:
+                                # Internal Bleeding
+                                injcat.append(int(6))
+
+                                if severity <= self.thorax_prob_internal_bleeding_AIS1:
+                                    # Chest wall bruises/haematoma
+                                    injais.append(1)
+                                else:
+                                    # Haemothorax
+                                    injais.append(3)
+                            elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding < cat <= \
+                                self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
+                                self.thorax_prob_internal_organ_injury:
+                                # Internal organ injury
+                                injcat.append(int(5))
+                                # Lung contusion and Diaphragm rupture
+                                injais.append(3)
+                            elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
+                                self.thorax_prob_internal_organ_injury < cat <= self.thorax_prob_skin_wound + \
+                                self.thorax_prob_internal_bleeding + self.thorax_prob_internal_organ_injury + \
+                                self.thorax_prob_fracture:
+                                # Fractures to ribs and flail chest
+                                injcat.append(int(1))
+                                if severity <= self.thorax_prob_fracture_ribs:
+                                    # fracture to rib(s)
+                                    injais.append(2)
+                                else:
+                                    # flail chest
+                                    injais.append(4)
+                            elif self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding +\
+                                    self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture < cat <= \
+                                    self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
+                                    self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture + \
+                                    self.thorax_soft_tissue_injury:
+                                # Soft tissue injury
+                                injcat.append(int(4))
+                                if severity <= self.thorax_soft_tissue_injury_AIS1:
+                                    # Chest wall lacerations/avulsions
+                                    injais.append(1)
+                                elif self.thorax_soft_tissue_injury_AIS1 < severity <= \
+                                        self.thorax_soft_tissue_injury_AIS1 + self.thorax_soft_tissue_injury_AIS2:
+                                    # surgical emphysema
+                                    injais.append(2)
+                                else:
+                                    # Open/closed pneumothorax
+                                    injais.append(3)
+                        if injlocs == 5:
+                            if cat <= self.abdomen_skin_wound:
+                                if severity <= self.abdomen_skin_wound_open:
+                                    # Open wound
+                                    injcat.append(int(10))
+                                    injais.append(1)
+                                else:
+                                    # Burn
+                                    injcat.append(int(11))
+                                    injais.append(3)
+                                    logger.debug('gave a burn to abdomen')
+                                    logger.debug(severity)
+                                    logger.debug(self.abdomen_skin_wound_open)
+                            else:
+                                # Internal organ injuries
+                                injcat.append(int(5))
+                                if severity <= self.abdomen_internal_organ_injury_AIS2:
+                                    # Intestines, Stomach and colon injury
+                                    injais.append(2)
+                                elif self.abdomen_internal_organ_injury_AIS2 < severity <= \
+                                    self.abdomen_internal_organ_injury_AIS2 + self.abdomen_internal_organ_injury_AIS3:
+                                    # Spleen, bladder, liver, urethra and diaphragm injury
+                                    injais.append(3)
+                                else:
+                                    # Kidney injury
+                                    injais.append(4)
+                        if injlocs == 6:
+                            if cat <= self.spine_prob_fracture:
+                                # Fracture to vertebrae
+                                injcat.append(int(1))
+                                injais.append(2)
+                            elif self.spine_prob_fracture < cat <= self.spine_prob_fracture + \
+                                self.spine_prob_spinal_cord_lesion:
+                                # Spinal cord injury
+                                injcat.append(int(7))
+                                base1 = self.spine_prob_spinal_cord_lesion_neck_level * \
+                                        self.spine_prob_spinal_cord_lesion_neck_level_AIS3 + \
+                                        self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                                        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3
+                                base2 = self.spine_prob_spinal_cord_lesion_neck_level * \
+                                        self.spine_prob_spinal_cord_lesion_neck_level_AIS4 + \
+                                        self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                                        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4
+                                base3 = self.spine_prob_spinal_cord_lesion_neck_level * \
+                                        self.spine_prob_spinal_cord_lesion_neck_level_AIS5 + \
+                                        self.spine_prob_spinal_cord_lesion_below_neck_level * \
+                                        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5
+                                if severity <= base1:
+                                    injais.append(3)
+                                elif base1 < cat <= base1 + base2:
+                                    injais.append(4)
+                                elif base1 + base2 < cat <= base1 + base2 + base3:
+                                    injais.append(5)
+                                else:
+                                    injais.append(6)
+                        if injlocs == 7:
+                            if cat <= self.upper_ex_prob_skin_wound:
+                                if severity <= self.upper_ex_prob_skin_wound_open:
+                                    # Open wound
+                                    injcat.append(int(10))
+                                    injais.append(1)
+                                else:
+                                    # Burn
+                                    injcat.append(int(11))
+                                    injais.append(3)
+                                    logger.debug('gave a burn to upper ex')
+                                    logger.debug(severity)
+                                    logger.debug(self.upper_ex_prob_skin_wound_open)
+                            elif self.upper_ex_prob_skin_wound < cat <= self.upper_ex_prob_skin_wound + \
+                                self.upper_ex_prob_fracture:
+                                # Fracture to arm
+                                injcat.append(int(1))
+                                injais.append(2)
+                            elif self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture < cat <= \
+                                self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture + \
+                                self.upper_ex_prob_dislocation:
+                                # Dislocation to arm
+                                injcat.append(int(2))
+                                injais.append(2)
+                            elif self.upper_ex_prob_skin_wound + self.upper_ex_prob_fracture + \
+                                self.upper_ex_prob_dislocation < cat:
+                                # Amputation in upper limb
+                                injcat.append(int(8))
+                                if severity <= self.upper_ex_prob_amputation_AIS2:
+                                    # Amputation to finger/thumb/unilateral arm
+                                    injais.append(2)
+                                else:
+                                    # Amputation, arm, bilateral
+                                    injais.append(3)
+                        if injlocs == 8:
+                            if cat <= self.lower_ex_prob_skin_wound:
+                                if severity <= self.lower_ex_prob_skin_wound_open:
+                                    # Open wound
+                                    injcat.append(int(10))
+                                    injais.append(1)
+                                else:
+                                    # Burn
+                                    injcat.append(int(11))
+                                    injais.append(3)
+                                    logger.debug('gave a burn to lower ex')
+                                    logger.debug(severity)
+                                    logger.debug(self.lower_ex_prob_skin_wound_open)
+                            elif self.lower_ex_prob_skin_wound < cat <= self.lower_ex_prob_skin_wound + \
+                                    self.lower_ex_prob_fracture:
+                                # Fractures
+                                injcat.append(int(1))
+                                if severity < self.lower_ex_prob_fracture_AIS1:
+                                    # Foot fracture
+                                    injais.append(1)
+                                elif self.lower_ex_prob_fracture_AIS1 < severity <= self.lower_ex_prob_fracture_AIS1 + \
+                                    self.lower_ex_prob_fracture_AIS2:
+                                    # Lower leg fracture
+                                    injais.append(2)
+                                else:
+                                    # Upper leg fracture
+                                    injais.append(3)
+                            elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture < cat <= \
+                                self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
+                                self.lower_ex_prob_dislocation:
+                                # dislocation of hip or knee
+                                injcat.append(int(2))
+                                injais.append(2)
+                            elif self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
+                                self.lower_ex_prob_dislocation < cat:
+                                # Amputations
+                                injcat.append(int(8))
+                                base = self.lower_ex_prob_skin_wound + self.lower_ex_prob_fracture + \
+                                       self.lower_ex_prob_dislocation
+                                prob_AIS_2 = base + self.lower_ex_prob_amputation * \
+                                                self.lower_ex_prob_amputation_AIS2
+                                prob_AIS_3 = base + self.lower_ex_prob_amputation * \
+                                             (self.lower_ex_prob_amputation_AIS2 +
+                                              self.lower_ex_prob_amputation_AIS3)
+                                if severity <= self.lower_ex_prob_amputation_AIS2:
+                                    # Toe/toes amputation
+                                    injais.append(2)
+                                elif self.lower_ex_prob_amputation_AIS2 < severity <= \
+                                    self.lower_ex_prob_amputation_AIS2 + self.lower_ex_prob_amputation_AIS3:
+                                    # Unilateral limb amputation
+                                    injais.append(3)
+                                else:
+                                    # Bilateral limb amputation
+                                    injais.append(4)
+
+                        break
+
+            # Create a dataframe that stores the injury location and severity for each person, the point of this
+            # dataframe is to use some of the pandas tools to manipulate the generated injury data to calculate
+            # the ISS score and from this, the probability of mortality resulting from the injuries.
+            injlocstring.append(' '.join(map(str, allinjlocs)))
+            injcatstring.append(' '.join(map(str, injcat)))
+            injaisstring.append(' '.join(map(str, injais)))
+            injdata = {'AIS location': allinjlocs, 'AIS severity': injais}
+            df = pd.DataFrame(injdata, columns=['AIS location', 'AIS severity'])
+            # Find the most severe injury to the person in each body region, creates a new column containing the
+            # maximum AIS value of each injured body region
+            df['Severity max'] = df.groupby(['AIS location'], sort=False)['AIS severity'].transform(max)
+            # column no longer needed and will get in the way of future calculations
+            df = df.drop(columns='AIS severity')
+            # drops the duplicate values in the location data, preserving the most severe injuries in each body
+            # location.
+            df = df.drop_duplicates(['AIS location'], keep='first')
+            # Finds the AIS score for the most severely injured body regions and stores them in a new dataframe z
+            z = df.nlargest(3, 'Severity max', 'first')
+            # Find the 3 most severely injured body regions
+            z = z.iloc[:3]
+            # Need to determine whether the persons injuries qualify as polytrauma as such injuries have a different
+            # prognosis, set default as False. Polytrauma is defined via the new Berlin definition, 'when two or more
+            # injuries have an AIS severity score of 3 or higher'.
+            polytrauma = False
+            # Determine where more than one injured body region has occurred
+            if len(z) > 1:
+                # Find where the injuries have an AIS score of 3 or higher
+                cond = np.where(z['Severity max'] > 2)
+                if len(z.iloc[cond]) > 1:
+                    # if two or more injuries have a AIS score of 3 or higher then this person has polytrauma.
+                    polytrauma = True
+            # Calculate the squares of the AIS scores for the three most severely injured body regions
+            z['sqrsev'] = z['Severity max'] ** 2
+            # From the squared AIS scores, calculate the ISS score
+            ISSscore = sum(z['sqrsev'])
+            # Use ISS score to determine the percentage of mortality
+            # If there is a fatal injury (AIS score > 5) then assume this injury is fatal.
+
+            # ====================Dose Response=======================
+            # if ISSscore > 74:
+            #     ISSscore = 75
+            #     ISSpercmort = 1
+            # else:
+            #     ISSpercmort = ISSmort[ISSscore]
+
+            # ==================Bounded Mortality====================
+
+            if ISSscore <= 15:
+                ISSpercmort = 0.046
+            elif 15 < ISSscore <= 74:
+                ISSpercmort = 0.27
+            elif ISSscore > 74:
+                ISSscore = 75
+                ISSpercmort = 1
+
+            # Include effects of polytrauma here
+            if polytrauma is True:
+                pass
+                ISSpercmort = 1.9 * ISSpercmort
+                if ISSpercmort > 1:
+                    ISSpercmort = 1
+
+            # Turn the vectors into a string to store as one entry in a dataframe
+            allinjlocs = np.array(allinjlocs)
+            allinjlocs = allinjlocs.astype(int)
+            allinjlocs = ''.join([str(elem) for elem in allinjlocs])
+            predinjlocs.append(allinjlocs)
+            predinjsev.append(injais)
+            predinjcat.append(injcat)
+            predinjiss.append(ISSscore)
+            predpolytrauma.append(polytrauma)
+            medintmort.append(ISSpercmort)
+            nomedintmort.append(1 if ISSscore >= 9 else 0.07)
+        injdf = pd.DataFrame()
+        injdf['Injury locations'] = predinjlocs
+        injdf['Injury locations string'] = injlocstring
+        injdf['Injury AIS'] = predinjsev
+        injdf['Injury AIS string'] = injaisstring
+        injdf['Injury category'] = predinjcat
+        injdf['Injury category string'] = injcatstring
+        injdf['ISS'] = predinjiss
+        injdf['Polytrauma'] = predpolytrauma
+        injdf['Percent mortality with treatment'] = medintmort
+        injdf['Percent mortality without treatment'] = nomedintmort
+        injdf['Injury category string'] = injdf['Injury category string'].astype(str)
+        injurycategories = injdf['Injury category string'].str.split(expand=True)
+        injdf['Injury locations string'] = injdf['Injury locations string'].astype(str)
+        injurylocations = injdf['Injury locations string'].str.split(expand=True)
+        injdf['Injury AIS string'] = injdf['Injury AIS string'].astype(str)
+        injuryais = injdf['Injury AIS string'].str.split(expand=True)
+        injurydescription = injurylocations + injurycategories + injuryais
+        injurydescription = injurydescription.astype(str)
+        for (columnname, columndata) in injurydescription.iteritems():
+            injurydescription.rename(
+                columns={injurydescription.columns[columnname]: "Injury " + str(columnname + 1)},
+                inplace=True)
+
+        injurydescription = injurydescription.fillna("none")
+        return injdf, injurydescription
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -1365,6 +1790,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(months=1))
         p = module.parameters
+        # Parameters which transition the model between states
         self.base_1m_prob_rti = p['base_rate_injrti'] / 12
         self.rr_injrti_age1829 = p['rr_injrti_age1829']
         self.rr_injrti_age3039 = p['rr_injrti_age3039']
@@ -1374,6 +1800,103 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         self.imm_death_proportion_rti = p['imm_death_proportion_rti']
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.prob_perm_disability_with_treatment_sci = p['prob_perm_disability_with_treatment_sci']
+
+        # Parameters used to assign injuries in the injrandomizer function
+        # Injuries to AIS region 1
+        self.head_prob_skin_wound = p['head_prob_skin_wound']
+        self.head_prob_skin_wound_open = p['head_prob_skin_wound_open']
+        self.head_prob_skin_wound_burn = p['head_prob_skin_wound_burn']
+        self.head_prob_fracture = p['head_prob_fracture']
+        self.head_prob_fracture_unspecified = p['head_prob_fracture_unspecified']
+        self.head_prob_fracture_basilar = p['head_prob_fracture_basilar']
+        self.head_prob_TBI = p['head_prob_TBI']
+        self.head_prob_TBI_AIS3 = p['head_prob_TBI_AIS3']
+        self.head_prob_TBI_AIS4 = p['head_prob_TBI_AIS4']
+        self.head_prob_TBI_AIS5 = p['head_prob_TBI_AIS5']
+        # Injuries to AIS region 2
+        self.face_prob_skin_wound = p['face_prob_skin_wound']
+        self.face_prob_skin_wound_open = p['face_prob_skin_wound_open']
+        self.face_prob_skin_wound_burn = p['face_prob_skin_wound_burn']
+        self.face_prob_fracture = p['face_prob_fracture']
+        self.face_prob_fracture_AIS1 = p['face_prob_fracture_AIS1']
+        self.face_prob_fracture_AIS2 = p['face_prob_fracture_AIS2']
+        self.face_prob_soft_tissue_injury = p['face_prob_soft_tissue_injury']
+        self.face_prob_eye_injury = p['face_prob_eye_injury']
+        # Injuries to AIS region 3
+        self.neck_prob_skin_wound = p['neck_prob_skin_wound']
+        self.neck_prob_skin_wound_open = p['neck_prob_skin_wound_open']
+        self.neck_prob_skin_wound_burn = p['neck_prob_skin_wound_burn']
+        self.neck_prob_soft_tissue_injury = p['neck_prob_soft_tissue_injury']
+        self.neck_prob_soft_tissue_injury_AIS2 = p['neck_prob_soft_tissue_injury_AIS2']
+        self.neck_prob_soft_tissue_injury_AIS3 = p['neck_prob_soft_tissue_injury_AIS3']
+        self.neck_prob_internal_bleeding = p['neck_prob_internal_bleeding']
+        self.neck_prob_internal_bleeding_AIS1 = p['neck_prob_internal_bleeding_AIS1']
+        self.neck_prob_internal_bleeding_AIS3 = p['neck_prob_internal_bleeding_AIS3']
+        self.neck_prob_dislocation = p['neck_prob_dislocation']
+        self.neck_prob_dislocation_AIS2 = p['neck_prob_dislocation_AIS2']
+        self.neck_prob_dislocation_AIS3 = p['neck_prob_dislocation_AIS3']
+        # Injuries to AIS region 4
+        self.thorax_prob_skin_wound = p['thorax_prob_skin_wound']
+        self.thorax_prob_skin_wound_open = p['thorax_prob_skin_wound_open']
+        self.thorax_prob_skin_wound_burn = p['thorax_prob_skin_wound_burn']
+        self.thorax_prob_internal_bleeding = p['thorax_prob_internal_bleeding']
+        self.thorax_prob_internal_bleeding_AIS1 = p['thorax_prob_internal_bleeding_AIS1']
+        self.thorax_prob_internal_bleeding_AIS3 = p['thorax_prob_internal_bleeding_AIS3']
+        self.thorax_prob_internal_organ_injury = p['thorax_prob_internal_organ_injury']
+        self.thorax_prob_fracture = p['thorax_prob_fracture']
+        self.thorax_prob_fracture_ribs = p['thorax_prob_fracture_ribs']
+        self.thorax_prob_fracture_flail_chest = p['thorax_prob_fracture_flail_chest']
+        self.thorax_soft_tissue_injury = p['thorax_soft_tissue_injury']
+        self.thorax_soft_tissue_injury_AIS1 = p['thorax_soft_tissue_injury_AIS1']
+        self.thorax_soft_tissue_injury_AIS2 = p['thorax_soft_tissue_injury_AIS2']
+        self.thorax_soft_tissue_injury_AIS3 = p['thorax_soft_tissue_injury_AIS3']
+        # Injuries to AIS region 5
+        self.abdomen_skin_wound = p['abdomen_skin_wound']
+        self.abdomen_skin_wound_open = p['abdomen_skin_wound_open']
+        self.abdomen_skin_wound_burn = p['abdomen_skin_wound_burn']
+        self.abdomen_internal_organ_injury = p['abdomen_internal_organ_injury']
+        self.abdomen_internal_organ_injury_AIS2 = p['abdomen_internal_organ_injury_AIS2']
+        self.abdomen_internal_organ_injury_AIS3 = p['abdomen_internal_organ_injury_AIS3']
+        self.abdomen_internal_organ_injury_AIS4 = p['abdomen_internal_organ_injury_AIS4']
+        # Injuries to AIS region 6
+        self.spine_prob_spinal_cord_lesion = p['spine_prob_spinal_cord_lesion']
+        self.spine_prob_spinal_cord_lesion_neck_level = p['spine_prob_spinal_cord_lesion_neck_level']
+        self.spine_prob_spinal_cord_lesion_neck_level_AIS3 = p['spine_prob_spinal_cord_lesion_neck_level_AIS3']
+        self.spine_prob_spinal_cord_lesion_neck_level_AIS4 = p['spine_prob_spinal_cord_lesion_neck_level_AIS4']
+        self.spine_prob_spinal_cord_lesion_neck_level_AIS5 = p['spine_prob_spinal_cord_lesion_neck_level_AIS5']
+        self.spine_prob_spinal_cord_lesion_neck_level_AIS6 = p['spine_prob_spinal_cord_lesion_neck_level_AIS6']
+        self.spine_prob_spinal_cord_lesion_below_neck_level = p['spine_prob_spinal_cord_lesion_below_neck_level']
+        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS3 = \
+            p['spine_prob_spinal_cord_lesion_below_neck_level_AIS3']
+        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS4 = \
+            p['spine_prob_spinal_cord_lesion_below_neck_level_AIS4']
+        self.spine_prob_spinal_cord_lesion_below_neck_level_AIS5 = \
+            p['spine_prob_spinal_cord_lesion_below_neck_level_AIS5']
+        self.spine_prob_fracture = p['spine_prob_fracture']
+        # Injuries to AIS region 7
+        self.upper_ex_prob_skin_wound = p['upper_ex_prob_skin_wound']
+        self.upper_ex_prob_skin_wound_open = p['upper_ex_prob_skin_wound_open']
+        self.upper_ex_prob_skin_wound_burn = p['upper_ex_prob_skin_wound_burn']
+        self.upper_ex_prob_fracture = p['upper_ex_prob_fracture']
+        self.upper_ex_prob_dislocation = p['upper_ex_prob_dislocation']
+        self.upper_ex_prob_amputation = p['upper_ex_prob_amputation']
+        self.upper_ex_prob_amputation_AIS2 = p['upper_ex_prob_amputation_AIS2']
+        self.upper_ex_prob_amputation_AIS3 = p['upper_ex_prob_amputation_AIS3']
+        # Injuries to AIS region 8
+        self.lower_ex_prob_skin_wound = p['lower_ex_prob_skin_wound']
+        self.lower_ex_prob_skin_wound_open = p['lower_ex_prob_skin_wound_open']
+        self.lower_ex_prob_skin_wound_burn = p['lower_ex_prob_skin_wound_burn']
+        self.lower_ex_prob_fracture = p['lower_ex_prob_fracture']
+        self.lower_ex_prob_fracture_AIS1 = p['lower_ex_prob_fracture_AIS1']
+        self.lower_ex_prob_fracture_AIS2 = p['lower_ex_prob_fracture_AIS2']
+        self.lower_ex_prob_fracture_AIS3 = p['lower_ex_prob_fracture_AIS3']
+        self.lower_ex_prob_dislocation = p['lower_ex_prob_dislocation']
+        self.lower_ex_prob_amputation = p['lower_ex_prob_amputation']
+        self.lower_ex_prob_amputation_AIS2 = p['lower_ex_prob_amputation_AIS2']
+        self.lower_ex_prob_amputation_AIS3 = p['lower_ex_prob_amputation_AIS3']
+        self.lower_ex_prob_amputation_AIS4 = p['lower_ex_prob_amputation_AIS3']
+
+        # DALY weights
         self.daly_wt_unspecified_skull_fracture = p['daly_wt_unspecified_skull_fracture']
         self.daly_wt_basilar_skull_fracture = p['daly_wt_basilar_skull_fracture']
         self.daly_wt_epidural_hematoma = p['daly_wt_epidural_hematoma']
@@ -1536,10 +2059,11 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         selected_for_rti_inj = df.loc[df.is_alive].copy()
         selected_for_rti_inj = selected_for_rti_inj.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death]
 
-        mortality, description = injrandomizer(len(selected_for_rti_inj))
+        mortality, description = RTI.injrandomizer(self, len(selected_for_rti_inj))
         description = description.replace('nan', 'none')
         description = description.set_index(selected_for_rti_inj.index)
         mortality = mortality.set_index(selected_for_rti_inj.index)
+
         selected_for_rti_inj = selected_for_rti_inj.join(mortality.set_index(selected_for_rti_inj.index))
 
         selected_for_rti_inj = selected_for_rti_inj.join(description.set_index(selected_for_rti_inj.index))
@@ -2331,6 +2855,7 @@ class HSI_AdditionalSurgeries(HSI_Event, IndividualScopeEventMixin):
         An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through
         A and E and requires multiple surgeries
         """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
@@ -2348,7 +2873,7 @@ class HSI_AdditionalSurgeries(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is RTI_AdditionalSurgeries supplying multiple surgeries for person %d on date %s!!!!!!',
-                    person_id, self.sim.date)
+                     person_id, self.sim.date)
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -2364,7 +2889,6 @@ class HSI_AdditionalSurgeries(HSI_Event, IndividualScopeEventMixin):
         logger.debug(f'Injury profile of person %d, {injurycodes}', person_id)
 
 
-
 class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
     """This is the MedicalInterventionDeathEvent. It is scheduled by the MedicalInterventionEvent which determines the
     resources required to treat that person and
@@ -2376,7 +2900,6 @@ class RTIMedicalInterventionDeathEvent(Event, IndividualScopeEventMixin):
         self.prob_death_with_med_mild = p['prob_death_with_med_mild']
         self.prob_death_with_med_severe = p['prob_death_with_med_severe']
         self.rr_injrti_mortality_polytrauma = 2.2
-
 
     def apply(self, person_id):
         df = self.sim.population.props
@@ -2587,6 +3110,11 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.numerator = 0
         self.denominator = 0
         self.fracdenominator = 0
+        self.fracdist = [0, 0, 0, 0, 0, 0, 0, 0]
+        self.openwounddist = [0, 0, 0, 0, 0, 0, 0, 0]
+        self.burndist = [0, 0, 0, 0, 0, 0, 0, 0]
+
+
 
     def apply(self, population):
         # Make some summary statitics
@@ -2658,6 +3186,64 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.totAIS7 += AIS7counts
         idx, AIS8counts = find_and_count_injuries(df_injuries, AIS8codes)
         self.totAIS8 += AIS8counts
+
+        skullfracs = ['112', '113']
+        idx, skullfraccounts = find_and_count_injuries(df_injuries, skullfracs)
+        self.fracdist[0] += skullfraccounts
+        facefracs = ['211', '212']
+        idx, facefraccounts = find_and_count_injuries(df_injuries, facefracs)
+        self.fracdist[1] += facefraccounts
+        thoraxfracs  = ['412', '414']
+        idx, thorfraccounts = find_and_count_injuries(df_injuries, thoraxfracs)
+        self.fracdist[3] += thorfraccounts
+        spinefracs = ['612']
+        idx, spinfraccounts = find_and_count_injuries(df_injuries, spinefracs)
+        self.fracdist[5] += spinfraccounts
+        upperexfracs = ['712']
+        idx, upperexfraccounts = find_and_count_injuries(df_injuries, upperexfracs)
+        self.fracdist[6] += upperexfraccounts
+        lowerexfracs = ['811', '812', '813']
+        idx, lowerexfraccounts = find_and_count_injuries(df_injuries, lowerexfracs)
+        self.fracdist[7] += lowerexfraccounts
+
+        skullopen = ['1101']
+        idx, skullopencounts = find_and_count_injuries(df_injuries, skullopen)
+        self.openwounddist[0] += skullopencounts
+        faceopen = ['2101']
+        idx, faceopencounts = find_and_count_injuries(df_injuries, faceopen)
+        self.openwounddist[1] += faceopencounts
+        neckopen = ['3101']
+        idx, neckopencounts = find_and_count_injuries(df_injuries, neckopen)
+        self.openwounddist[2] += neckopencounts
+        thoraxopen = ['4101']
+        idx, thoropencounts = find_and_count_injuries(df_injuries, thoraxopen)
+        self.openwounddist[3] += thoropencounts
+        abdopen = ['5101']
+        idx, abdopencounts = find_and_count_injuries(df_injuries, abdopen)
+        self.openwounddist[4] += abdopencounts
+        upperexopen= ['7101']
+        idx, upperexopencounts = find_and_count_injuries(df_injuries, upperexopen)
+        self.openwounddist[6] += upperexopencounts
+        lowerexopen = ['8101']
+        idx, lowerexopencounts = find_and_count_injuries(df_injuries, lowerexopen)
+        self.openwounddist[7] += lowerexopencounts
+        self.burndist = [0, 0, 0, 0, 0, 0, 0, 0]
+        burncodes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
+        idx, skullburncounts = find_and_count_injuries(df_injuries, burncodes[0])
+        self.burndist[0] = skullburncounts
+        idx, faceburncounts = find_and_count_injuries(df_injuries, burncodes[1])
+        self.burndist[1] = faceburncounts
+        idx, neckburncounts = find_and_count_injuries(df_injuries, burncodes[2])
+        self.burndist[2] = neckburncounts
+        idx, thorburncounts = find_and_count_injuries(df_injuries, burncodes[3])
+        self.burndist[3] = thorburncounts
+        idx, abdburncounts = find_and_count_injuries(df_injuries, burncodes[4])
+        self.burndist[4] = abdburncounts
+        idx, upperexburncounts = find_and_count_injuries(df_injuries, burncodes[5])
+        self.burndist[6] = upperexburncounts
+        idx, lowerexburncounts = find_and_count_injuries(df_injuries, burncodes[6])
+        self.burndist[7] = lowerexburncounts
+
         # ================================== Injury characteristics ===================================================
 
         allfraccodes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
@@ -2775,4 +3361,11 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIflow.txt', rtiflow)
         np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/ISSscores.txt',
                    self.ISSscore)
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/BurnDistribution.txt',
+                   self.burndist)
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/FractureDistribution.txt',
+                   self.fracdist)
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/OpenWoundDistribution.txt',
+                   self.openwounddist)
         logger.info('%s|summary_1m|%s', self.sim.date, dict_to_output)
+
