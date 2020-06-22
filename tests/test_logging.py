@@ -139,11 +139,11 @@ class TestStructuredLogging:
         log_message(message_level, logger_level, message, structured_logging=True)
 
         lines = read_file(file_handler, file_path)
-        header_json = json.loads(lines[4])
-        data_json = json.loads(lines[5])
+        header_json = json.loads(lines[5])
+        data_json = json.loads(lines[6])
 
         # message should be written to log
-        assert len(lines) == 6
+        assert len(lines) == 7
         assert header_json['level'] == message_level.lstrip("logging.")
         assert 'message' in header_json['columns']
         assert header_json['columns']['message'] == 'float64'
@@ -158,11 +158,11 @@ class TestStructuredLogging:
         log_message(message_level, logger_level, message, structured_logging=True)
 
         lines = read_file(file_handler, file_path)
-        header_json = json.loads(lines[4])
-        data_json = json.loads(lines[5])
+        header_json = json.loads(lines[5])
+        data_json = json.loads(lines[6])
 
         # message should be written to log
-        assert len(lines) == 6
+        assert len(lines) == 7
         assert header_json['level'] == message_level.lstrip("logging.")
         assert 'message' in header_json['columns']
         assert header_json['columns']['message'] == 'float64'
@@ -179,7 +179,7 @@ class TestStructuredLogging:
         lines = read_file(file_handler, file_path)
 
         # only simulation info messages should be written to log
-        assert len(lines) == 4
+        assert len(lines) == 5
 
 
 class TestConvertLogData:
