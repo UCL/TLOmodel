@@ -44,6 +44,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'risk reduction of maternal anaemia for women taking daily iron/folic acid'),
         'prob_pre_eclampsia_per_month': Parameter(
             Types.REAL, 'underlying risk of pre-eclampsia per month without the impact of risk factors'),
+        'rr_pre_eclamp_calcium': Parameter(
+            Types.REAL, 'risk reduction of pre-eclampsia for women taking daily calcium supplementation'),
         'prob_of_symptoms_mild_pre_eclampsia': Parameter(
             Types.REAL, 'probability that a woman with mild pre-eclampsia will develop the symptoms of head ache '
                         'and/or blurred vision'),
@@ -200,7 +202,8 @@ class PregnancySupervisor(Module):
 
                 'pre_eclampsia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_pre_eclampsia_per_month']),
+                    params['prob_pre_eclampsia_per_month'],
+                    Predictor('ac_receiving_calcium_supplements').when(True, params['rr_pre_eclamp_calcium'])),
 
                 'gest_htn': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
