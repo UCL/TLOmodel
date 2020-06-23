@@ -197,11 +197,17 @@ plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = pd.concat({
-    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths'][0]),
-    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'][0])
+    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'])
 }, axis=1, sort=True)
 
-deaths.plot.bar()
+deaths={
+    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'])
+}
+
+plt.bar(range(len(deaths)), list(deaths.values()), align='center')
+plt.xticks(range(len(deaths)), list(deaths.keys()))
 plt.title('Deaths due to Oesophageal Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
