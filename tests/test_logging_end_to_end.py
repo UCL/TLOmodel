@@ -24,7 +24,7 @@ def log_input():
         "col8_fixed_list;['one', 1];['two', 2];[None, None];['three', 3];['four', 4];['five', 5]"
     ))
     # read in, then transpose
-    log_input = pd.read_csv(StringIO(log_string), sep=';', skiprows=1).T
+    log_input = pd.read_csv(StringIO(log_string), sep=';').T
     log_input.reset_index(inplace=True)
     log_input.columns = log_input.iloc[0]
     log_input.drop(log_input.index[0], axis=0, inplace=True)
