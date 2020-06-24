@@ -210,7 +210,8 @@ class BladderCancer(Module):
 #           Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
                                   .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
-                                  .when('.between(70,120)', p['rp_bladder_cancer_agege70']),
+                                  .when('.between(70,120)', p['rp_bladder_cancer_agege70']
+                                  .when('.between(0,14)', 0.0)),
         )
 
         bc_status_any_stage = \
@@ -329,7 +330,8 @@ class BladderCancer(Module):
      #      Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
                                   .when( '.between(50,69)', p['rp_bladder_cancer_age5069'])
-                                  .when( '.between(70,120)', p['rp_bladder_cancer_agege70']),
+                                  .when( '.between(70,120)', p['rp_bladder_cancer_agege70']
+                                  .when('.between(0,14)', 0.0)),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
             # todo: add in when schisto module in master
 #           Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
