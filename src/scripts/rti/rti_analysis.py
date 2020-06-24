@@ -13,13 +13,6 @@ from tlo.methods import (
     demography,
     dx_algorithm_child,
     enhanced_lifestyle,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    symptommanager,
-    rti,
-    epilepsy,
-    oesophageal_cancer,
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
@@ -29,7 +22,15 @@ from tlo.methods import (
     hiv_behaviour_change,
     tb,
     tb_hs_engagement,
-    antenatal_care
+    antenatal_care,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    symptommanager,
+    rti,
+    epilepsy,
+    oesophageal_cancer,
+
 )
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import numpy as np
@@ -41,7 +42,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 10000
+popsize = 1000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")
@@ -68,16 +69,16 @@ sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepa
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(epilepsy.Epilepsy(resourcefilepath=resourcefilepath))
 sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
-sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+# sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+# sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+# sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 # sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
 # sim.register(hiv_behaviour_change.BehaviourChange)
 # sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
 # sim.register(tb.tb(resourcefilepath=resourcefilepath))
 # sim.register(tb_hs_engagement.health_system_tb)
-sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+# sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
 # Register disease modules of interest:
 sim.register(rti.RTI(resourcefilepath=resourcefilepath))
 
@@ -97,6 +98,12 @@ output = parse_log_file(logfile)
 output['tlo.methods.healthsystem']['HSI_Event'].to_csv(
     'C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/outputdf.csv')
 rt_df = output['tlo.methods.rti']['summary_1m']
+requested_pain_management = output['tlo.methods.rti']['Requested_Pain_Management']
+successful_pain_management = output['tlo.methods.rti']['Successful_Pain_Management']
+requested_pain_management. \
+    to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/requested_pain.csv')
+successful_pain_management. \
+    to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/succesful_pain.csv')
 deaths_df = output['tlo.methods.demography']['death']
 deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 newdf = deaths_df[['person_id', 'date', 'cause']]
@@ -367,10 +374,93 @@ plt.title("GBD 2017 Malawi road traffic injury categories")
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/GBDCategoriesPie.png')
 plt.clf()
 
+# ================================= Visualise pain management ==========================================================
+req = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/requested_pain.csv')
+suc = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/succesful_pain.csv')
 
-# =========================== Plot where injuries occured on body
+mild = req.loc[req['pain level'] == "mild"]
+sucmild = suc.loc[suc['pain level'] == "mild"]
+mod = req.loc[req['pain level'] == "moderate"]
+sucmod = suc.loc[suc['pain level'] == "moderate"]
+sev = req.loc[req['pain level'] == "severe"]
+sucsev = suc.loc[suc['pain level'] == "severe"]
+flows1 = [len(req), -len(mild), - len(mod), - len(sev)]
+labels1 = ["Total requests"
+           "\n"
+           "for pain management",
+           "Requests for"
+           "\n"
+           "mild pain relief",
+           "Requests for"
+           "\n"
+           "moderate pain relief",
+           "Requests for"
+           "\n"
+           "severe pain relief"
+           ]
+orientations1 = [0, 1, 0, -1]
+PathLengths1 = [0.25, 0.25, 0.25, 0.25]
+mildflow = [len(mild), -len(sucmild)]
+mildlabels = ['', 'Recieved pain relief']
+mildorientations = [0, 0]
+mildlengths = [0.25, 0.25]
+modflow = [len(mod), -len(sucmod)]
+modlabels = ['', 'Recieved pain relief']
+modorientations = [0, 0]
+modlengths = [0.25, 0.25]
+sevflow = [len(sev), -len(sucsev)]
+sevlabels = ['', 'Recieved pain relief']
+sevorientations = [0, 0]
+sevlengths = [0.25, 0.25]
+fig = plt.figure(figsize=(20, 10))
+ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
+                     title=f"{yearsrun} year model run, N={popsize}: pain management flow")
+sankey = Sankey(ax=ax,
+                scale=flows1[0] / (flows1[0] * flows1[0]),
+                offset=0.2,
+                format='%d')
+sankey.add(flows=flows1,
+           labels=labels1,
+           orientations=orientations1,  # arrow directions
+           pathlengths=PathLengths1,
+           trunklength=0.5,
+           edgecolor='red',
+           facecolor='red')
+sankey.add(flows=mildflow,
+           labels=mildlabels,
+           orientations=mildorientations,  # arrow directions
+           pathlengths=mildlengths,
+           prior=0,
+           connect=(1, 0),
+           trunklength=0.5,
+           edgecolor='gold',
+           facecolor='gold')
+sankey.add(flows=modflow,
+           labels=modlabels,
+           orientations=modorientations,  # arrow directions
+           pathlengths=modlengths,
+           prior=0,
+           connect=(2, 0),
+           trunklength=0.5,
+           edgecolor='darkgreen',
+           facecolor='darkgreen')
+sankey.add(flows=sevflow,
+           labels=sevlabels,
+           orientations=sevorientations,  # arrow directions
+           pathlengths=sevlengths,
+           prior=0,
+           connect=(3, 0),
+           trunklength=0.5,
+           edgecolor='black',
+           facecolor='black')
+sankey.finish()
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIPainManagementFlow.png')
+
+# =========================== Plot where injuries occured on body ======================================================
 
 data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injlocs.txt')
+
+
 def main():
     try:
         img = Image.open('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/bodies-cropped.jpg')
@@ -432,10 +522,14 @@ def main():
 
     except IOError:
         pass
+
+
 if __name__ == "__main__":
     main()
 
 data = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/OpenWoundDistribution.txt')
+
+
 def main():
     try:
         img = Image.open('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/bodies-cropped.jpg')
@@ -497,6 +591,8 @@ def main():
 
     except IOError:
         pass
+
+
 if __name__ == "__main__":
     main()
 

@@ -253,28 +253,28 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
         df = self.sim.population.props
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
-        labour_list = self.sim.modules['Labour'].women_in_labour
+        # mni = self.sim.modules['Labour'].mother_and_newborn_info
+        # labour_list = self.sim.modules['Labour'].women_in_labour
 
         # simple diagnosis to work out which HSI event to trigger
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
-
-        # -----  COMPLICATION DURING BIRTH  -----
-        if person_id in labour_list:
-            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
-                event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
-                    module=self.sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
-
-        # -----  COMPLICATION AFTER BIRTH  -----
-            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
-                event = HSI_Labour_ReceivesCareForPostpartumPeriod(
-                    module=self.sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+        #
+        # # -----  COMPLICATION DURING BIRTH  -----
+        # if person_id in labour_list:
+        #     if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+        #             & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+        #         event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+        #             module=self.sim.modules['Labour'], person_id=person_id,
+        #             facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+        #
+        # # -----  COMPLICATION AFTER BIRTH  -----
+        #     if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+        #             & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+        #         event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+        #             module=self.sim.modules['Labour'], person_id=person_id,
+        #             facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  SUSPECTED DEPRESSION  -----
         if 'em_Injuries_From_Self_Harm' in symptoms:
