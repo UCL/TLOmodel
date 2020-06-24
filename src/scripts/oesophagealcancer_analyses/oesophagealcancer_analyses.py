@@ -201,7 +201,7 @@ deaths = pd.concat({
     'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'])
 }, axis=1, sort=True)
 
-deaths={
+deaths = {
     'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths']),
     'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'])
 }

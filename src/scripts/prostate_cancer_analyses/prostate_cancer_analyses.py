@@ -42,7 +42,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 100
 
 
@@ -107,6 +107,10 @@ def get_summary_stats(logfile):
     dalys = dalys.groupby(by=['age_range']).sum()
     dalys.index = dalys.index.astype(make_age_grp_types())
     dalys = dalys.sort_index()
+
+    # if no deaths due to prostate cancer there will be no YLL_ProstateCancer_ProstateCancer, so artificially put it in
+    if 'YLL_ProstateCancer_ProstateCancer' not in dalys.columns:
+        dalys['YLL_ProstateCancer_ProstateCancer'] = 0.0
 
     # 4) DEATHS wrt age (total over whole simulation)
     deaths = output['tlo.methods.demography']['death']
@@ -196,12 +200,13 @@ plt.ylabel('Total Deaths During Simulation')
 plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
-deaths = pd.concat({
-    'No_HealthSystem': sum(results_no_healthsystem['prostate_cancer_deaths'][0]),
-    'With_HealthSystem': sum(results_with_healthsystem['prostate_cancer_deaths'][0])
-}, axis=1, sort=True)
+deaths = {
+    'No_HealthSystem': sum(results_no_healthsystem['prostate_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['prostate_cancer_deaths'])
+}
 
-deaths.plot.bar()
+plt.bar(range(len(deaths)), list(deaths.values()), align='center')
+plt.xticks(range(len(deaths)), list(deaths.keys()))
 plt.title('Deaths due to Prostate Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
