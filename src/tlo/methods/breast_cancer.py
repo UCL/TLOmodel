@@ -188,6 +188,7 @@ class BreastCancer(Module):
             sum(p['init_prop_breast_cancer_stage']),
             Predictor('sex').when('F', 1.0).otherwise(0.0),
             Predictor('age_years').when('.between(30,49)', p['rp_breast_cancer_age3049'])
+                                  .when('.between(0,14)', 0.0)
                                   .when('.between(50,120)', p['rp_breast_cancer_agege50']),
         )
 
@@ -311,7 +312,8 @@ class BreastCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage1_none'],
             Predictor('sex').when('M', 0.0),
-            Predictor('age_years').when('.between(30,49)', p['rr_stage1_none_age3049'])
+            Predictor('age_years').when('.between(0,14)', 0.0)
+                                  .when('.between(30,49)', p['rr_stage1_none_age3049'])
                                   .when('.between(50,120)', p['rr_stage1_none_agege50'])
         )
 
