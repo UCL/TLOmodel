@@ -186,7 +186,8 @@ class OtherAdultCancer(Module):
             sum(p['init_prop_other_adult_cancer_stage']),
             Predictor('age_years').when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
                                   .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
-                                  .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
+                                  .when('.between(70,120)', p['rp_other_adult_cancer_agege70']
+                                  .when('.between(0,14)', 0.0))
         )
 
         oac_status_ = \
