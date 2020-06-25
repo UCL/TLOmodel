@@ -304,6 +304,7 @@ class OtherAdultCancer(Module):
             p['r_site_confined_none'],
             Predictor('age_years').when('.between(30,49)', p['rr_site_confined_age3049'])
                                   .when('.between(50,69)', p['rr_site_confined_age5069'])
+                                  .when('.between(0,14)', 0.0)
                                   .when('.between(70,120)', p['rr_site_confined_agege70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
         )
