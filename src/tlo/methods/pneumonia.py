@@ -235,6 +235,8 @@ class Pneumonia(Module):
     }
 
     PROPERTIES = {
+        # ---- The underlying condition is pneumonia ----
+        'ri_last_pneumonia_status': Property(Types.BOOL, 'underlying condition is pneumonia'),
         # ---- The pathogen which is the attributed cause of pneumonia ----
         'ri_last_pneumonia_pathogen': Property(Types.CATEGORICAL,
                                                'Attributable pathogen for the last pneumonia event',
@@ -243,7 +245,7 @@ class Pneumonia(Module):
         # ---- Complications associated with pneumonia ----
         'ri_last_pneumonia_complications': Property(Types.LIST,
                                                     'complications that arose from last pneumonia event',
-                                                    categories=['pneumothorax', 'pleural_eff usion', 'empyema',
+                                                    categories=['pneumothorax', 'pleural_effusion', 'empyema',
                                                                 'lung_abscess', 'sepsis', 'meningitis',
                                                                 'respiratory_failure'] + ['none']
                                                     ),
@@ -287,7 +289,7 @@ class Pneumonia(Module):
 
     # declare the symptoms that this module will cause:
     SYMPTOMS = {'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'grunting',
-                'cyanosis', 'severe_respiratory_distress', 'hypoxia', 'danger_signs'}
+                'cyanosis', 'severe_respiratory_distress', 'hypoxia', 'danger_signs', 'stridor'}
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -724,7 +726,8 @@ class Pneumonia(Module):
             },
             'respiratory_failure': {
                 'hypoxia': 0.7,
-                'danger_signs': 1
+                'danger_signs': 1,
+                'stridor': 0.7
             }
         })
         # TODO: add the probabilities of symptoms by severity - in parameters
