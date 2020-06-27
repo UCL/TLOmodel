@@ -199,6 +199,7 @@ class ProstateCancer(Module):
             Predictor('sex').when('M', 1.0).otherwise(0.0),
             Predictor('age_years').when('.between(50,69)', p['rp_prostate_cancer_age5069'])
                                   .when('.between(70,120)', p['rp_prostate_cancer_agege70'])
+                                  .when('.between(0,34)', 0.0)
         )
 
         pc_status_ = \
@@ -334,6 +335,7 @@ class ProstateCancer(Module):
             Predictor('sex').when('F', 0),
             Predictor('age_years').when('.between(50,69)', p['rr_prostate_confined_prostate_ca_age5069'])
                                   .when('.between(70,120)', p['rr_prostate_confined_prostate_ca_agege70'])
+                                  .when('.between(0,34)', 0.0)
         )
 
 
