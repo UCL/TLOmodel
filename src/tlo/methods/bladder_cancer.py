@@ -564,7 +564,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "bladderCancer"), self.sim.date
+                demography.InstantaneousDeath(self.module, person_id, "BladderCancer"), self.sim.date
             )
 
 
