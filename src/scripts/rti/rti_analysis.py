@@ -42,7 +42,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 1000
+popsize = 10000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")
@@ -148,10 +148,10 @@ sankey.add(flows=[sum(data), -data[0], -data[1], -data[2], -data[3], -data[4],
            labels=['Number of injuries', 'Fractures', 'Dislocations', 'TBI', 'Soft tiss', 'Int. org', 'Int. bleed',
                    'SCI', 'Amputation', 'Eye injury', 'Skin wounds', 'Burns'],
            orientations=[0, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1],  # arrow directions
-           pathlengths=[0.1, 0.5, 0.8, 0.5, 0.5, 0.8, 0.8, 0.5, 0.4, 0.8, 0.5, 0.8],
+           pathlengths=[0.1, 0.5, 1.2, 0.5, 0.5, 0.8, 0.8, 0.5, 0.4, 0.8, 0.5, 1.2],
            trunklength=2,
-           edgecolor='paleturquoise',
-           facecolor='paleturquoise')
+           edgecolor='lightblue',
+           facecolor='lightblue')
 sankey.finish()
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InjuryCharacteristics.png')
 plt.clf()
@@ -375,16 +375,16 @@ plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/GBDC
 plt.clf()
 
 # ================================= Visualise pain management ==========================================================
-req = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/requested_pain.csv')
+req = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/AllPainReliefRequests.txt')
 suc = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/succesful_pain.csv')
 
-mild = req.loc[req['pain level'] == "mild"]
+mild = req[0]
 sucmild = suc.loc[suc['pain level'] == "mild"]
-mod = req.loc[req['pain level'] == "moderate"]
+mod = req[1]
 sucmod = suc.loc[suc['pain level'] == "moderate"]
-sev = req.loc[req['pain level'] == "severe"]
+sev = req[2]
 sucsev = suc.loc[suc['pain level'] == "severe"]
-flows1 = [len(req), -len(mild), - len(mod), - len(sev)]
+flows1 = [sum(req), -mild, - mod, - sev]
 labels1 = ["Total requests"
            "\n"
            "for pain management",
@@ -400,18 +400,19 @@ labels1 = ["Total requests"
            ]
 orientations1 = [0, 1, 0, -1]
 PathLengths1 = [0.25, 0.25, 0.25, 0.25]
-mildflow = [len(mild), -len(sucmild)]
-mildlabels = ['', 'Recieved pain relief']
-mildorientations = [0, 0]
-mildlengths = [0.25, 0.25]
-modflow = [len(mod), -len(sucmod)]
-modlabels = ['', 'Recieved pain relief']
-modorientations = [0, 0]
-modlengths = [0.25, 0.25]
-sevflow = [len(sev), -len(sucsev)]
-sevlabels = ['', 'Recieved pain relief']
-sevorientations = [0, 0]
-sevlengths = [0.25, 0.25]
+print(len(sucmild))
+mildflow = [mild, -len(sucmild), - (mild - len(sucmild))]
+mildlabels = ['', 'Received pain relief', 'No pain relief available']
+mildorientations = [-1, 0, 1]
+mildlengths = [0.25, 0.25, 0.25]
+modflow = [mod, -len(sucmod), - (mod - len(sucmod))]
+modlabels = ['', 'Received pain relief', 'No pain relief available']
+modorientations = [0, 0, 1]
+modlengths = [0.25, 0.25, 0.25]
+sevflow = [sev, -len(sucsev), - (sev - len(sucsev))]
+sevlabels = ['', 'Received pain relief', 'No pain relief available']
+sevorientations = [1, 0, 1]
+sevlengths = [0.25, 0.25, 0.25]
 fig = plt.figure(figsize=(20, 10))
 ax = fig.add_subplot(1, 1, 1, xticks=[], yticks=[],
                      title=f"{yearsrun} year model run, N={popsize}: pain management flow")
@@ -423,7 +424,7 @@ sankey.add(flows=flows1,
            labels=labels1,
            orientations=orientations1,  # arrow directions
            pathlengths=PathLengths1,
-           trunklength=0.5,
+           trunklength=1,
            edgecolor='red',
            facecolor='red')
 sankey.add(flows=mildflow,
@@ -451,10 +452,11 @@ sankey.add(flows=sevflow,
            prior=0,
            connect=(3, 0),
            trunklength=0.5,
-           edgecolor='black',
-           facecolor='black')
+           edgecolor='slategray',
+           facecolor='slategray')
 sankey.finish()
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/RTIPainManagementFlow.png')
+plt.clf()
 
 # =========================== Plot where injuries occured on body ======================================================
 

@@ -3332,6 +3332,9 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.fracdist = [0, 0, 0, 0, 0, 0, 0, 0]
         self.openwounddist = [0, 0, 0, 0, 0, 0, 0, 0]
         self.burndist = [0, 0, 0, 0, 0, 0, 0, 0]
+        self.severe_pain = 0
+        self.moderate_pain = 0
+        self.mild_pain = 0
 
     def apply(self, population):
         # Make some summary statitics
@@ -3460,7 +3463,35 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.burndist[6] = upperexburncounts
         idx, lowerexburncounts = find_and_count_injuries(df_injuries, burncodes[6])
         self.burndist[7] = lowerexburncounts
-
+        # ===================================== Pain severity =========================================================
+        # Injuries causing mild pain include: Lacerations, mild soft tissue injuries, TBI (for now), eye injury
+        Mild_Pain_Codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',  # lacerations
+                           '241',  # Minor soft tissue injuries
+                           '133', '134', '135',  # TBI
+                           '291',  # Eye injury
+                           ]
+        mild_idx, mild_counts = find_and_count_injuries(df_injuries, Mild_Pain_Codes)
+        # Injuries causing moderate pain include: Fractures, dislocations, soft tissue and neck trauma
+        Moderate_Pain_Codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813',  # fractures
+                               '322', '323', '722', '822'  # dislocations
+                                                    '342', '343', '361', '363'  # neck trauma
+                               ]
+        moderate_idx, moderate_counts = find_and_count_injuries(df_injuries, Moderate_Pain_Codes)
+        # Injuries causing severe pain include: All burns, amputations, spinal cord injuries, abdominal trauma,
+        # severe chest trauma
+        Severe_Pain_Codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113',  # burns
+                             '782', '783', '882', '883', '884',  # amputations
+                             '673', '674', '675', '676',  # spinal cord injury
+                             '552', '553', '554',  # abdominal trauma
+                             '461', '463', '453', '441', '442', '443'  # severe chest trauma
+                             ]
+        severe_idx, severe_counts = find_and_count_injuries(df_injuries, Severe_Pain_Codes)
+        in_severe_pain = severe_idx
+        self.severe_pain += len(in_severe_pain)
+        in_moderate_pain = moderate_idx.difference(moderate_idx.intersection(severe_idx))
+        self.moderate_pain += len(in_moderate_pain)
+        in_mild_pain = mild_idx.difference(moderate_idx.union(severe_idx))
+        self.mild_pain += len(in_mild_pain)
         # ================================== Injury characteristics ===================================================
 
         allfraccodes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
@@ -3584,4 +3615,7 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
                    self.fracdist)
         np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/OpenWoundDistribution.txt',
                    self.openwounddist)
+        pain_array = [self.mild_pain, self.moderate_pain, self.severe_pain]
+        np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/AllPainReliefRequests.txt',
+                   pain_array)
         logger.info('%s|summary_1m|%s', self.sim.date, dict_to_output)
