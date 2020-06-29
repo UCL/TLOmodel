@@ -43,7 +43,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 17000
+popsize = 200
 
 
 def run_sim(service_availability):
@@ -116,9 +116,9 @@ def get_summary_stats(logfile):
     deaths = output['tlo.methods.demography']['death']
     deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
 
-    prostate_cancer_deaths = pd.Series(deaths.loc[deaths.cause == 'ProstateCancer'].groupby(by=['age_group']).size())
-    prostate_cancer_deaths.index = prostate_cancer_deaths.index.astype(make_age_grp_types())
-    prostate_cancer_deaths = prostate_cancer_deaths.sort_index()
+    x = deaths.loc[deaths.cause == 'ProstateCancer'].copy()
+    x['age_group'] = x['age_group'].astype(make_age_grp_types())
+    prostate_cancer_deaths = x.groupby(by=['age_group']).size()
 
     # 5) Rates of diagnosis per year:
     counts_by_stage['year'] = counts_by_stage.index.year
