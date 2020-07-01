@@ -21,4 +21,9 @@ class PandasEncoder(json.JSONEncoder):
             return list(obj)
         elif isinstance(obj, type(pd.NaT)):
             return None
+        # when logging a series directly, numpy datatypes are used
+        elif isinstance(obj, np.datetime64):
+            return pd.Timestamp(obj).isoformat()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
         return json.JSONEncoder.default(self, obj)
