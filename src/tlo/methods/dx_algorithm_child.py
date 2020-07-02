@@ -97,82 +97,20 @@ class DxAlgorithmChild(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
+
+        p['sensitivity_of_classification_of_pneumonia_level_0'] = 0.4
+        p['sensitivity_of_classification_of_pneumonia_level_1'] = [0.812, 0.327, 0.305]
+        p['sensitivity_of_classification_of_pneumonia_level_2'] = 0.6
+        p['prob_no_pneumonia_classified_as_non_severe'] = 0.18
+        p['prob_nonsev_pneumonia_classified_as_no_pneumonia'] = 0.655
+        p['prob_severe_pneumonia_classified_as_no_pneumonia'] = 0.524
+        p['prob_no_pneumonia_classified_as_severe'] = 0.02
         p['sensitivity_of_pneumonia_care_plan_level_0'] = 0.45
         p['sensitivity_of_pneumonia_care_plan_level_1'] = 0.5
         p['sensitivity_of_pneumonia_care_plan_level_2'] = 0.7
-        p['sensitivity_of_classification_of_pneumonia_level_0'] = 0.4
-        p['sensitivity_of_classification_of_pneumonia_level_1'] = 0.3
-        p['sensitivity_of_classification_of_pneumonia_level_2'] = 0.6
-        p['baseline_odds_classification_of_IMCI_pneumonia_level_1'] = 0.43  # prob / (1-prob) prob = 30%
-        p['baseline_odds_classification_of_iCCM_pneumonia_level_0'] = 0.5
-        p['baseline_odds_classification_of_IMCI_pneumonia_level_2'] = 0.5
-        p['or_correct_classification_infants'] = 1.2
-        p['or_correct_classification_guidelines_adherence'] = 1.4
-        p['or_correct_classification_supervision'] = 1.1
-        p['or_correct_classification_counted_breathes_per_minute'] = 1.2
-        p['or_correct_classification_guidelines_adherence'] = 1.3
-        p['or_correct_classification_supervision'] = 1.2
-        p['or_correct_classification_nurse'] = 0.7
-        p['baseline_odds_correct_iCCM_pneumonia_care_level_0'] = 0.5
-        p['baseline_odds_correct_IMCI_pneumonia_care_level_1'] = 0.5
-        p['baseline_odds_correct_IMCI_pneumonia_care_level_2'] = 0.7
-        p['or_correct_pneumonia_care_nurse'] = 0.8
-        p['or_correct_pneumonia_care_guidelines_adherence'] = 1.3
-        p['or_correct_pneumonia_care_supervision'] = 1.2
         p['sensitivity_HSA_assessing_respiratory_rate_for_age'] = 0.81
         p['specificity_HSA_assessing_respiratory_rate_for_age'] = 0.81
 
-        # self.assessment_and_classification_pneumonia_by_facility_level.update({
-        #     'community': LinearModel(
-        #         LinearModelType.LOGISTIC,
-        #         p['baseline_odds_classification_of_iCCM_pneumonia_level_0'],
-        #         Predictor('age_years')
-        #             .when('.between(0,0)', p['or_correct_classification_infants']),
-        #         Predictor('assessed_respiratory_rate' and 'respiratory_assessment_result', external=True)
-        #             .when(True, p['or_correct_classification_counted_breathes_per_minute']),
-        #         Predictor('adherence_to_IMCI_guidelines')
-        #             .when(True, p['or_correct_classification_guidelines_adherence']),
-        #         Predictor('health_worker_supervision')
-        #             .when(True, p['or_correct_classification_supervision']),
-        #     ),
-        #     'health_centre': LinearModel(
-        #         LinearModelType.LOGISTIC, p['baseline_odds_classification_of_IMCI_pneumonia_level_1'],
-        #         Predictor('age_years').when('.between(0,0)', p['or_correct_classification_infants']),
-        #         Predictor('tmp_provider_type').when('nurse', p['or_correct_classification_nurse']),
-        #         Predictor('adherence_to_IMCI_guidelines').when(True, p['or_correct_classification_guidelines_adherence']),
-        #         Predictor('health_worker_supervision').when(True, p['or_correct_classification_supervision']),
-        #     ),
-        #     'hospital': LinearModel(
-        #         LinearModelType.LOGISTIC, p['baseline_odds_classification_of_IMCI_pneumonia_level_2'],
-        #         Predictor('age_years').when('.between(0,0)', p['or_correct_classification_infants']),
-        #         Predictor('assessed_respiratory_rate').when(True,
-        #                                                     p['or_correct_classification_counted_breathes_per_minute']),
-        #         Predictor('tmp_provider_type').when('nurse', p['or_correct_classification_nurse']),
-        #         Predictor('adherence_to_IMCI_guidelines').when(True, p['or_correct_classification_guidelines_adherence']),
-        #         Predictor('health_worker_supervision').when(True, p['or_correct_classification_supervision']),
-        #     ),
-        # })
-        #
-        # self.pneumonia_treatment_by_facility_level.update({
-        #     'community': LinearModel(
-        #         LinearModelType.LOGISTIC, p['baseline_odds_correct_iCCM_pneumonia_care_level_0'],
-        #         Predictor('tmp_provider_type').when('nurse', p['or_correct_pneumonia_care_nurse']),
-        #         Predictor('adherence_to_IMCI_guidelines').when(True, p['or_correct_pneumonia_care_guidelines_adherence']),
-        #         Predictor('health_worker_supervision').when(True, p['or_correct_pneumonia_care_supervision']),
-        #     ),
-        #     'health_centre': LinearModel(
-        #         LinearModelType.LOGISTIC, p['baseline_odds_correct_IMCI_pneumonia_care_level_1'],
-        #         Predictor('tmp_provider_type').when('nurse', p['or_correct_pneumonia_care_nurse']),
-        #         Predictor('adherence_to_IMCI_guidelines').when(True, p['or_correct_pneumonia_care_guidelines_adherence']),
-        #         Predictor('health_worker_supervision').when(True, p['or_correct_pneumonia_care_supervision']),
-        #     ),
-        #     'hospital': LinearModel(
-        #         LinearModelType.LOGISTIC, p['baseline_odds_correct_IMCI_pneumonia_care_level_2'],
-        #         Predictor('tmp_provider_type').when('nurse', p['or_correct_pneumonia_care_nurse']),
-        #         Predictor('adherence_to_IMCI_guidelines').when(True, p['or_correct_pneumonia_care_guidelines_adherence']),
-        #         Predictor('health_worker_supervision').when(True, p['or_correct_pneumonia_care_supervision']),
-        #     ),
-        # })
 
     def initialise_population(self, population):
         pass
@@ -298,7 +236,7 @@ class DxAlgorithmChild(Module):
         # Create some short-cuts:
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
         df = self.sim.population.props
-
+        p = self.parameters
         # -------------------------------------------------------------------------------------------------
         # # # # # # # # # # # # FOR CHILDREN OVER 2 MONTHS AND UNDER 5 YEARS OF AGE # # # # # # # # # # # #
         # -------------------------------------------------------------------------------------------------
@@ -308,7 +246,7 @@ class DxAlgorithmChild(Module):
 
             # ---------------------- FOR COUGH OR DIFFICULT BREATHING -------------------------------------
             # ---------------------------------------------------------------------------------------------
-            # DxTest results - classification and treatment plan -----------------------------------------------
+            # DxTest results - classification and treatment plan for those correctly classified -----------
             classification_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                 dx_tests_to_run='classify_iCCM_pneumonia_level_0', hsi_event=hsi_event)
 
@@ -320,7 +258,7 @@ class DxAlgorithmChild(Module):
                 care_plan_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                     dx_tests_to_run='pneumonia_care_given_level_0', hsi_event=hsi_event)
 
-            # schedule the events following the correct classification and treatment assignment ---------
+                # schedule the events following the correct classification and treatment assignment ---------
                 if care_plan_result and df.at[
                     person_id, 'ri_pneumonia_iCCM_classification'] == 'non-severe pneumonia':
                     schedule_hsi(hsi_event=HSI_iCCM_Pneumonia_Treatment_level_0(person_id=person_id, module=self),
@@ -341,6 +279,48 @@ class DxAlgorithmChild(Module):
                                  )
                     self.child_disease_management_information.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Severe_Pneumonia_Treatment_level_0})
+            # ---------------------------------------------------------------------------------------------
+            # If not correctly classified, determine the classification given:
+            else:
+                self.child_disease_management_information.update({
+                    'facility_level': 1,
+                    'correct_pneumonia_classification': False})
+
+                # Incorrect classifications for those with underlying upper respiratory infection
+                if df.at[person_id, 'ri_pneumonia_IMCI_classification'] == 'common cold':
+                    # IMCI no pneumonia classified as non-severe pneumonia
+                    prob_no_pneumonia_classified_as_nonsev = \
+                        p['sensitivity_of_classification_of_pneumonia_level_0'][0] + \
+                        p['prob_no_pneumonia_classified_as_non_severe']
+                    if self.module.rng.rand() < prob_no_pneumonia_classified_as_nonsev:
+                        self.child_disease_management_information.update({'classification': 'non-severe pneumonia'})
+                    # IMCI non-severe pneumonia classified as severe pneumonia
+                    else:
+                        self.child_disease_management_information.update({'classification': 'severe pneumonia'})
+
+                # Incorrect classifications for those with underlying IMCI non-severe pneumonia
+                if df.at[person_id, 'ri_pneumonia_IMCI_classification'] == 'non-severe pneumonia':
+                    # IMCI non-severe pneumonia classified as no pneumonia or common cold
+                    prob_nonsev_classified_as_no_pneumonia = \
+                        p['sensitivity_of_classification_of_pneumonia_level_0'][1] + \
+                        p['prob_nonsev_pneumonia_classified_as_no_pneumonia']
+                    if self.module.rng.rand() < prob_nonsev_classified_as_no_pneumonia:
+                        self.child_disease_management_information.update({'classification': 'common cold'})
+                    # IMCI non-severe pneumonia classified as severe pneumonia
+                    else:
+                        self.child_disease_management_information.update({'classification': 'severe pneumonia'})
+
+                # Incorrect classifications for those with underlying IMCI severe pneumonia
+                if df.at[person_id, 'ri_pneumonia_IMCI_classification'] == 'severe pneumonia':
+                    # IMCI severe pneumonia classified as no pneumonia or common cold
+                    prob_severe_pneumonia_classified_as_no_pneum = \
+                        p['sensitivity_of_classification_of_pneumonia_level_0'][2] + \
+                        p['prob_severe_pneumonia_classified_as_no_pneumonia']
+                    if self.module.rng.rand() < prob_severe_pneumonia_classified_as_no_pneum:
+                        self.child_disease_management_information.update({'classification': 'common cold'})
+                    # IMCI severe pneumonia classified as non-severe
+                    else:
+                        self.child_disease_management_information.update({'classification': 'non-severe pneumonia'})
 
     def do_when_facility_level_1(self, person_id, hsi_event):
         """
@@ -355,6 +335,7 @@ class DxAlgorithmChild(Module):
         # Create some short-cuts:
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
         df = self.sim.population.props
+        p = self.parameters
         # -------------------------------------------------------------------------------------------------
         # # # # # # # # # # # # FOR CHILDREN OVER 2 MONTHS AND UNDER 5 YEARS OF AGE # # # # # # # # # # # #
         # -------------------------------------------------------------------------------------------------
@@ -364,10 +345,11 @@ class DxAlgorithmChild(Module):
 
             # ---------------------- FOR COUGH OR DIFFICULT BREATHING -------------------------------------
             # ---------------------------------------------------------------------------------------------
-            # DxTest results - classification and treatment plan -----------------------------------------------
+            # DxTest results - classification and treatment plan for those correctly classified ----------------
             classification_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                 dx_tests_to_run='classify_IMCI_pneumonia_level_1', hsi_event=hsi_event)
 
+            # For those correctly classified according to the IMCI guidelines:
             if classification_result:
                 self.child_disease_management_information.update({
                     'facility_level': 1,
@@ -375,6 +357,8 @@ class DxAlgorithmChild(Module):
                     'classification': df.at[person_id, 'ri_pneumonia_IMCI_classification']})
                 care_plan_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                     dx_tests_to_run='pneumonia_care_given_level_1', hsi_event=hsi_event)
+
+                # todo: algorithm for the probabilities of treatment plan given
 
             # # # schedule the events following the correct classification and treatment assignment # # #
                 if care_plan_result and df.at[
@@ -396,6 +380,49 @@ class DxAlgorithmChild(Module):
                                  )
                     self.child_disease_management_information.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Severe_Pneumonia_Treatment_level_1})
+            # ---------------------------------------------------------------------------------------------
+            # If not correctly classified, determine the classification given:
+            else:
+                self.child_disease_management_information.update({
+                    'facility_level': 1,
+                    'correct_pneumonia_classification': False})
+
+                # Incorrect classifications for those with underlying upper respiratory infection
+                if df.at[person_id, 'ri_pneumonia_IMCI_classification'] == 'common cold':
+                    # IMCI no pneumonia classified as non-severe pneumonia
+                    prob_no_pneumonia_classified_as_nonsev = \
+                        p['sensitivity_of_classification_of_pneumonia_level_1'][0] + \
+                        p['prob_no_pneumonia_classified_as_non_severe']
+                    if self.module.rng.rand() < prob_no_pneumonia_classified_as_nonsev:
+                        self.child_disease_management_information.update({'classification': 'non-severe pneumonia'})
+                    # IMCI non-severe pneumonia classified as severe pneumonia
+                    else:
+                        self.child_disease_management_information.update({'classification': 'severe pneumonia'})
+                    # run a test or print
+
+                # Incorrect classifications for those with underlying IMCI non-severe pneumonia
+                if df.at[person_id, 'ri_pneumonia_IMCI_classification'] == 'non-severe pneumonia':
+                    # IMCI non-severe pneumonia classified as no pneumonia or common cold
+                    prob_nonsev_classified_as_no_pneumonia = \
+                        p['sensitivity_of_classification_of_pneumonia_level_1'][1] + \
+                        p['prob_nonsev_pneumonia_classified_as_no_pneumonia']
+                    if self.module.rng.rand() < prob_nonsev_classified_as_no_pneumonia:
+                        self.child_disease_management_information.update({'classification': 'common cold'})
+                    # IMCI non-severe pneumonia classified as severe pneumonia
+                    else:
+                        self.child_disease_management_information.update({'classification': 'severe pneumonia'})
+
+                # Incorrect classifications for those with underlying IMCI severe pneumonia
+                if df.at[person_id, 'ri_pneumonia_IMCI_classification'] == 'severe pneumonia':
+                    # IMCI severe pneumonia classified as no pneumonia or common cold
+                    prob_severe_pneumonia_classified_as_no_pneum = \
+                        p['sensitivity_of_classification_of_pneumonia_level_1'][2] + \
+                        p['prob_severe_pneumonia_classified_as_no_pneumonia']
+                    if self.module.rng.rand() < prob_severe_pneumonia_classified_as_no_pneum:
+                        self.child_disease_management_information.update({'classification': 'common cold'})
+                    # IMCI severe pneumonia classified as non-severe
+                    else:
+                        self.child_disease_management_information.update({'classification': 'non-severe pneumonia'})
 
         # todo:
         #  need to determine what happens in the HSI cascade for those not assessed or those not correctly classified.

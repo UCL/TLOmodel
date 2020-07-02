@@ -1,6 +1,6 @@
 """
 Childhood pneumonia module
-Documentation: 04 - Methods Repository/Method_Child_RespiratoryInfection.xlsx
+Documentation: 04 - Methods Repository/ResourceFile_Childhood_Pneumonia.xlsx
 """
 import copy
 from pathlib import Path
@@ -805,7 +805,6 @@ class Pneumonia(Module):
         # Schedule the main logging event (to first occur in one year)
         sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(years=1))
 
-
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
@@ -1031,6 +1030,8 @@ class PneumoniaIncidentCase(Event, IndividualScopeEventMixin):
                     self.module, person_id, duration_in_days=self.duration_in_days, symptoms=self.symptoms,
                     complication=complications_for_this_person), date_onset_complications)
 
+        self.sim.modules['DxAlgorithmChild'].imnci_as_gold_standard(person_id=person_id)
+
         # Add this incident case to the tracker
         age = df.loc[person_id, ['age_years']]
         if age.values[0] < 5:
@@ -1196,6 +1197,14 @@ class PneumoniaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|incidence_count_by_pathogen|%s',
                     self.sim.date,
                     counts
+                    )
+
+        imci_classification_count = \
+            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
+
+        logger.info('%s|imci_classicications_count|%s',
+                    self.sim.date,
+                    imci_classification_count
                     )
 
         # Reset the counters and the date_last_run
