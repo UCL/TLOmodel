@@ -17,6 +17,13 @@ This is the main software framework for epidemiology and health system modelling
 
 See https://thanzi.org for more about the project.
 
+Prequisites
+===========
+
+We use Git LFS to store large and binary files. Before you clone the repository, install
+`Git LFS <https://git-lfs.github.com/>`_ and run the command :code:`git lfs install`. The TLOmodel repository
+can then be cloned as normal.
+
 Installation
 ============
 
@@ -26,7 +33,7 @@ you prefer, you can carry out the setup using the command line:
 
 ::
 
-    conda create -n tlo python=3.6 virtualenv=15.1.0 pip=9.0.1
+    conda create -n tlo python=3.6 pip=9.0.1
     conda activate tlo
     pip install -r requirements/dev.txt
     pip install -e .
@@ -35,6 +42,13 @@ This will install the software in 'editable' mode, so any changes you make to th
 After the initial install, each time you wish to use the model simply activate the environment::
 
     conda activate tlo
+
+To update dependencies, perform the following steps in the TLOmodel directory:
+
+::
+
+    conda activate tlo
+    pip install -r requirements/dev.txt
 
 
 Documentation
