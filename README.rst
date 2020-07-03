@@ -21,8 +21,9 @@ Prequisites
 ===========
 
 We use Git LFS to store large and binary files. Before you clone the repository, install
-`Git LFS <https://git-lfs.github.com/>`_ and run the command :code:`git lfs install`. The TLOmodel repository
-can then be cloned as normal.
+`Git LFS <https://git-lfs.github.com/>`_ and run the command :code:`git lfs install`. On Windows, simply run the
+installer. On MacOS, extract the contents of the .tar.gz file using :code:`tar xvfz <filename>.tar.gz` and then
+run :code:`./install.sh`. The TLOmodel repository can then be cloned as normal.
 
 Installation
 ============
