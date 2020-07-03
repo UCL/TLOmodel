@@ -37,8 +37,8 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 2)
-popsize = 5000
+end_date = Date(2016, 1, 2)
+popsize = 20000
 
 for label, service_avail in scenarios.items():
     # add file handler for the purpose of logging
@@ -70,6 +70,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # Calculate the "incidence rate" from the output counts of incidence
     maternal_counts = output['tlo.methods.pregnancy_supervisor']['summary_stats']
     maternal_counts['year'] = pd.to_datetime(maternal_counts['date']).dt.year
+    maternal_counts['year'] = maternal_counts['year'] - 1
     maternal_counts.drop(columns='date', inplace=True)
     maternal_counts.set_index(
         'year',
@@ -79,15 +80,19 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
 
     sbr = maternal_counts['antenatal_sbr']
     ar = maternal_counts['anaemia_rate']
+    pe = maternal_counts['crude_pe']
+    gh = maternal_counts['crude_gest_htn']
 
-    return sbr, ar
+    return sbr, ar, pe, gh
 
 
 still_birth_ratio = dict()
 anaemia_rate = dict()
+crude_pre_eclampsia = dict()
+crude_gest_htn = dict()
 
 for label, file in output_files.items():
-    still_birth_ratio[label], anaemia_rate[label] = \
+    still_birth_ratio[label], anaemia_rate[label], crude_pre_eclampsia[label], crude_gest_htn[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
 data = {}
 
@@ -103,4 +108,6 @@ def generate_graphs(dictionary, title, saved_title):
 
 generate_graphs(still_birth_ratio, 'Antenatal SBR by Year', "sbr_death_by_scenario")
 generate_graphs(anaemia_rate, 'Anaemia Rate by Year', "ar_by_scenario")
+generate_graphs(crude_pre_eclampsia, 'Crude new onset pre-eclampsia cases', "cpe_by_scenario")
+generate_graphs(crude_gest_htn, 'Crude new onset gestational hypertension cases', "cpe_by_scenario")
 

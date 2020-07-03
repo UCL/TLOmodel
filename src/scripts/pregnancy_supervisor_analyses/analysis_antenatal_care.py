@@ -1,5 +1,6 @@
 import datetime
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 import pandas as pd
 from tlo import Date, Simulation, logging
@@ -20,8 +21,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 10000
+end_date = Date(2016, 1, 1)
+popsize = 20000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -33,7 +34,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+            # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
@@ -69,5 +70,17 @@ women_with_anc4_by_year.drop(columns='year', inplace=True)
 final_anc4_df = pd.concat([women_with_anc4_by_year, total_births], axis=1)
 final_anc4_df.columns = ['women_with_anc4', 'total_births']
 final_anc4_df['proportion_of_anc4'] = (final_anc4_df.women_with_anc4 / final_anc4_df.total_births) * 100
+
+final_anc4_df.plot.bar(y='proportion_of_anc4', stacked=True)
+plt.title("Proportion of women achieving ANC4+ by year")
+plt.show()
+
+stats.plot.bar(y='mean_ga_first_anc', stacked=True)
+plt.title("Average gestational age of women at ANC1 by year")
+plt.show()
+
+stats.plot.bar(y='proportion_anc1_first_trimester', stacked=True)
+plt.title("Proportion of ANC1 visits occuring in the first trimester by year")
+plt.show()
 
 # TODO: average number of ANC appoitnments per year

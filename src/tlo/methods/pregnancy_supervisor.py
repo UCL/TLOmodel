@@ -54,6 +54,8 @@ class PregnancySupervisor(Module):
                         'and/or blurred vision and/or epigastric pain'),
         'prob_gest_htn_per_month': Parameter(
             Types.REAL, 'underlying risk of gestational hypertension per month without the impact of risk factors'),
+        'rr_gest_htn_calcium': Parameter(
+            Types.REAL, 'risk reduction of gestational hypertension for women taking daily calcium supplementation'),
         'prob_gest_diab_per_month': Parameter(
             Types.REAL, 'underlying risk of gestational diabetes per month without the impact of risk factors'),
         'prob_of_symptoms_gest_diab': Parameter(
@@ -199,6 +201,7 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_anaemia_per_month'],
                     Predictor('ac_receiving_iron_folic_acid').when(True, params['rr_anaemia_iron_folic_acid'])),
+                    #Predictor('ac_date_ifa_runs_out').when(True, params['rr_anaemia_iron_folic_acid'])),
 
                 'pre_eclampsia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -207,7 +210,8 @@ class PregnancySupervisor(Module):
 
                 'gest_htn': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_gest_htn_per_month']),
+                    params['prob_gest_htn_per_month'],
+                    Predictor('ac_receiving_calcium_supplements').when(True, params['rr_gest_htn_calcium'])),
 
                 'gest_diab': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -276,7 +280,8 @@ class PregnancySupervisor(Module):
         self.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
                                         'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
                                         'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
-                                        'antenatal_stillbirth': 0}
+                                        'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0,
+                                        'new_onset_gest_htn': 0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -464,6 +469,7 @@ class PregnancySupervisor(Module):
             df.loc[positive_index, 'ps_mild_pre_eclamp'] = True
             df.loc[positive_index, 'ps_prev_pre_eclamp'] = True
             df.loc[positive_index, 'ps_htn_disorders'] = 'mild_pre_eclamp'
+            self.PregnancyDiseaseTracker['new_onset_pre_eclampsia'] += len(positive_index)
 
             # After the appropriate variables are set in the data frame, the set_symptoms function is called to see if
             # women with new onset pre-eclampsia will be symptomatic
@@ -478,6 +484,7 @@ class PregnancySupervisor(Module):
             # As hypertension is mostly asymptomatic no symptoms are set for these women
             df.loc[positive_index, 'ps_gestational_htn'] = True
             df.loc[positive_index, 'ps_htn_disorders'] = 'gest_htn'
+            self.PregnancyDiseaseTracker['new_onset_gest_htn'] += len(positive_index)
             if not positive_index.empty:
                 logger.debug(f'The following women have developed gestational hypertension,{positive_index}')
 
@@ -1134,6 +1141,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_ectopic_deaths = self.module.PregnancyDiseaseTracker['ectopic_pregnancy_death']
         total_ia_deaths = self.module.PregnancyDiseaseTracker['induced_abortion_death']
         total_sa_deaths = self.module.PregnancyDiseaseTracker['spontaneous_abortion_death']
+        crude_new_onset_pe = self.module.PregnancyDiseaseTracker['new_onset_pre_eclampsia']
+        crude_new_gh = self.module.PregnancyDiseaseTracker['new_onset_gest_htn']
 
         dict_for_output = {'repro_women': total_women_reproductive_age,
                            'antenatal_mmr': (antenatal_maternal_deaths/total_births_last_year) * 100000,
@@ -1149,11 +1158,13 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'ectopic_rate': (total_ectopics / total_women_reproductive_age) * 1000,
                            'ectopic_death_rate': (total_ectopic_deaths / total_women_reproductive_age) * 1000,
                            'crude_anaemia': total_anaemia_cases,
-                           'anaemia_rate': (total_anaemia_cases/total_women_reproductive_age) * 1000}
+                           'anaemia_rate': (total_anaemia_cases/total_women_reproductive_age) * 1000,
+                           'crude_pe': crude_new_onset_pe,
+                           'crude_gest_htn': crude_new_gh}
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
         self.module.PregnancyDiseaseTracker = \
             {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0, 'ectopic_pregnancy_death': 0,
              'induced_abortion_death': 0, 'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
-             'antenatal_stillbirth': 0}
+             'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0, 'new_onset_gest_htn': 0}
