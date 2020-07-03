@@ -182,7 +182,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'Metric_Two': 2.0
         }
 
-        logger.info('%s|summary_12m|%s', self.sim.date, dict_to_output)
+        logger.info(key='summary_12m', data=dict_to_output)
 
 
 # ---------------------------------------------------------------------------------------------------------

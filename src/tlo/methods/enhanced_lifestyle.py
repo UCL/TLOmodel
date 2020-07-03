@@ -3,13 +3,12 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import datetime
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
@@ -1165,29 +1164,14 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             if np.isnan(v):
                 bmi_proportions[k] = 0.0
 
-        logger.info(
-            '%s|bmi_proportions|%s',
-            self.sim.date,
-            bmi_proportions
-        )
+        logger.info(key='bmi_proportions', data=bmi_proportions)
 
         """
-        logger.info('%s|li_urban|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('li_urban').size().to_dict())
-        logger.info('%s|li_wealth|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('li_wealth').size().to_dict())
-        logger.info('%s|li_overwt|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
-        logger.info('%s|li_low_ex|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
-        logger.info('%s|li_tob|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
-        logger.info('%s|li_ed_lev_by_age|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
+        logger.info(key='li_urban', data=df[df.is_alive].groupby('li_urban').size().to_dict())
+        logger.info(key='li_wealth', data=df[df.is_alive].groupby('li_wealth').size().to_dict())
+        logger.info(key='li_overwt', data=df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
+        logger.info(key='li_low_ex', data=df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
+        logger.info(key='li_tob', data=df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
+        logger.info(key='li_ed_lev_by_age',
+                    data=df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
         """
