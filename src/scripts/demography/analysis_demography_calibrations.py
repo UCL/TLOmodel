@@ -6,9 +6,9 @@ In the combination of both the codes from Tim C in Contraception and Tim H in De
 # %% Import Statements and initial declarations
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import (
