@@ -1918,7 +1918,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['sought_care_for_complication'] = True
                         mni[individual_id]['sought_care_labour_phase'] = 'intrapartum'
 
-                        from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+                        from tlo.methods.hsi_generic_first_appts import (
+                            HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+                        )
                         event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                                 module=self.module,
                                 person_id=individual_id
@@ -2073,7 +2075,9 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 mni[individual_id]['sought_care_for_complication'] = True
                 mni[individual_id]['sought_care_labour_phase'] = 'postpartum'
 
-                from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+                from tlo.methods.hsi_generic_first_appts import (
+                    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+                )
                 event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                      module=self.module, person_id=individual_id)
 
