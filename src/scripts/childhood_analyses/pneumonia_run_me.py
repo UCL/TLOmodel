@@ -5,6 +5,7 @@ This script is used in development. It will become the test script for pneumonia
 # %% Import Statements and initial declarations
 import datetime
 from pathlib import Path
+from tlo import logging
 
 from tlo import Date, Simulation
 from tlo.methods import contraception, demography, pneumonia, enhanced_lifestyle, labour, healthsystem, \
@@ -25,7 +26,8 @@ end_date = Date(2015, 1, 2)
 popsize = 5000
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
+# sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
