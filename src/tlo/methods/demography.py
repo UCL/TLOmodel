@@ -187,114 +187,12 @@ class Demography(Module):
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
         # Log the birth:
-        logger.info('%s|on_birth|%s',
-                    self.sim.date,
-                    {
-                        'mother': mother_id,
-                        'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years']
-                    })
-
-    def calc_py_lived_in_last_year(self):
-        """
-        This is a helper method to compute the person-years that were lived in the previous year.
-        It outputs a pd.DataFrame with the index being single year of age
-        """
-        # Making a working data-frame that is limited to those who were alive one year ago
-        df_calc = self.sim.population.props.loc[
-            (self.sim.population.props['date_of_birth'] <= (self.sim.date - DateOffset(years=1)))
-            & ~(self.sim.population.props['date_of_death'] < (self.sim.date - DateOffset(years=1))),
-            ['sex', 'date_of_birth', 'date_of_death', 'age_years', 'age_exact_years', 'is_alive']]
-
-        # Define the time-window that is of interest (the year-long period immediately preceding)
-        df_calc['year_start'] = self.sim.date - DateOffset(years=1)
-        df_calc['year_end'] = self.sim.date
-        duration_of_window_in_days = (self.sim.date - (self.sim.date - DateOffset(years=1))).days
-
-        # Define each person's entry and exit to the time-window
-        df_calc['entry_to_window'] = df_calc[['date_of_birth', 'year_start']].max(axis=1)
-        df_calc['exit_from_window'] = df_calc[['date_of_death', 'year_end']].min(axis=1)
-        df_calc['days_in_window'] = (df_calc['exit_from_window'] - df_calc['entry_to_window']).dt.days
-
-        def find_first_day_month_between_two_dates(day, month, start_date, end_date):
-            # Find the first time that birthday (specified by day and month) occurs between two dates.
-            # NB. If the date is 29th February, then for these purposes, it is interpreted as being 28th February
-            # (... as this date cannot be guaranteed to occur even if the span in the dates is a year or more.)
-            if (day == 29) and (month == 2):
-                day = 28
-
-            date_range = pd.date_range(
-                start=start_date,
-                end=end_date,
-                freq='D')
-            x = date_range[np.logical_and(
-                np.array(date_range.day == day),
-                np.array(date_range.month == month)
-            )]
-            if len(x) > 0:
-                return x[0]
-
-        # Define the time spent at each age during the window
-        df_calc[
-            'birthday_during_window'] = self.sim.date  # Putting a datetime object there to initialise in the right way
-        for i in df_calc.index:
-            df_calc.at[i, 'birthday_during_window'] = find_first_day_month_between_two_dates(
-                day=df_calc.at[i, 'date_of_birth'].day,
-                month=df_calc.at[i, 'date_of_birth'].month,
-                start_date=df_calc.at[i, 'year_start'],
-                end_date=df_calc.at[i, 'year_end']
-            )
-        # Persons less than a year-old did not have a birthday in the last year,so remove thier 'birthday_during_window'
-        df_calc.loc[df_calc['age_exact_years'] < 1.0, 'birthday_during_window'] = pd.NaT
-
-        df_calc['days_at_younger_age_in_window'] = 0
-        df_calc.loc[df_calc['days_in_window'] > 0, 'days_at_younger_age_in_window'] = (
-            df_calc[['exit_from_window', 'birthday_during_window']].min(axis=1) - df_calc['entry_to_window']).dt.days
-        df_calc['days_at_older_age_in_window'] = df_calc['days_in_window'] - df_calc['days_at_younger_age_in_window']
-        df_calc['older_age'] = df_calc['age_years']
-        df_calc['younger_age'] = (df_calc['older_age'] - 1).clip(lower=0.0)
-
-        # Check that results are sensible:
-        assert all(df_calc['days_in_window'] <= duration_of_window_in_days)
-        assert all(df_calc['days_at_younger_age_in_window'] >= 0)
-        assert all(df_calc['days_at_older_age_in_window'] >= 0)
-        assert all((df_calc['days_at_older_age_in_window'] + df_calc['days_at_younger_age_in_window']) == df_calc[
-            'days_in_window'])
-        assert all(df_calc.index >= 0)
-
-        # Perform groupby on the person-days spent at younger_age and on older_age and sum.
-        py = pd.DataFrame(
-            index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name='age_years'),
-            columns=['M', 'F'],
-            data=0.0
+        logger.info(
+            key='on_birth',
+            data={'mother': mother_id,
+                  'child': child_id,
+                  'mother_age': df.at[mother_id, 'age_years']}
         )
-        py['M'] = df_calc.loc[df_calc['sex'] == 'M'].groupby(by='younger_age')[
-            'days_at_younger_age_in_window'].sum().add(
-            df_calc.loc[df_calc['sex'] == 'M'].groupby(by='older_age')['days_at_older_age_in_window'].sum(),
-            fill_value=0.0)
-        py['F'] = df_calc.loc[df_calc['sex'] == 'F'].groupby(by='younger_age')[
-            'days_at_younger_age_in_window'].sum().add(
-            df_calc.loc[df_calc['sex'] == 'F'].groupby(by='older_age')['days_at_older_age_in_window'].sum(),
-            fill_value=0.0)
-        py = py.fillna(0)
-        assert py.sum().sum() == df_calc['days_in_window'].sum()
-
-        # Convert to fractions of a year
-        py = py / duration_of_window_in_days
-
-        # ------------ Additional logical check ------------
-        # Todo: more logical check on the PY calc may be useful
-        # * Number of PY lived last year is between PopSize(one year ago) and PopSize(now)
-        df = self.sim.population.props
-        pop_size_last_year = len(df.loc[(df['date_of_birth'] <= (self.sim.date - DateOffset(years=1))) &
-                                        ((df['date_of_death'] < (self.sim.date - DateOffset(years=1))) | pd.isnull(
-                                            df['date_of_death']))])
-        pop_size_now = len(df.loc[df['is_alive']])
-        check = min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
-        # assert min(pop_size_last_year, pop_size_now) <= py.sum().sum() <= max(pop_size_last_year, pop_size_now)
-        # ----------------------------------------------------
-
-        return py
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -329,7 +227,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        logger.debug('Checking to see if anyone should die...')
+        logger.debug(key='death_poll_start', data='Checking to see if anyone should die...')
 
         # Get shortcut to main dataframe
         df = population.props
@@ -347,7 +245,8 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # confirms that we go to the five year period that we are in, not the exact year.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
-        mort_sched = mort_sched.loc[mort_sched.fallbackyear == fallbackyear, ['age_years', 'sex', 'death_rate']].copy()
+        mort_sched = mort_sched.loc[
+            mort_sched.fallbackyear == fallbackyear, ['age_years', 'sex', 'death_rate']].copy()
 
         # get the population
         alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
@@ -366,7 +265,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < prob_of_dying_during_next_month)
-        logger.debug('Will die count: %d', will_die.sum())
+        logger.debug(key='death_count', data=f'Will die count: {will_die.sum()}')
 
         # loop through to see who is going to die:
         for person in alive.index[will_die]:
@@ -387,7 +286,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        logger.debug("@@@@ A Death is now occurring, to person %s", individual_id)
+        logger.debug(key='death_occuring', data=f"@@@@ A Death is now occuring, to person {individual_id}")
 
         if df.at[individual_id, 'is_alive']:
             # here comes the death.......
@@ -395,23 +294,25 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             # the person is now dead
             df.at[individual_id, 'date_of_death'] = self.sim.date
 
-        logger.debug("*******************************************The person %s "
-                     "is now officially dead and has died of %s", individual_id, self.cause)
+        logger.debug(key='official_death',
+                     data=(f"*******************************************The person {individual_id} "
+                           f"is now officially dead and has died of {self.cause}"))
 
         # Log the death
-        logger.info('%s|death|%s', self.sim.date,
-                    {
-                        'age': df.at[individual_id, 'age_years'],
-                        'sex': df.at[individual_id, 'sex'],
-                        'cause': self.cause,
-                        'person_id': individual_id
-                    })
+        logger.info(
+            key='death',
+            data={'age': df.at[individual_id, 'age_years'],
+                  'sex': df.at[individual_id, 'sex'],
+                  'cause': self.cause,
+                  'person_id': individual_id
+                  })
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
             date_of_birth = df.at[individual_id, 'date_of_birth']
             sex = df.at[individual_id, 'sex']
-            label = self.module.name + '_' + self.cause  # creates a label for these YLL of <ModuleName>_<CauseOfDeath>
+            label = self.module.name + '_' + self.cause  # creates a label for these YLL of
+            # <ModuleName>_<CauseOfDeath>
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=sex,
                                                                     date_of_birth=date_of_birth,
                                                                     label=label)
@@ -430,39 +331,21 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info('%s|population|%s',
-                    self.sim.date,
-                    {
-                        'total': sum(sex_count),
-                        'male': sex_count['M'],
-                        'female': sex_count['F']
-                    })
+        logger.info(
+            key='population',
+            data={'total': sum(sex_count),
+                  'male': sex_count['M'],
+                  'female': sex_count['F']
+                  })
 
         # if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info('%s|age_range_m|%s', self.sim.date,
-                    m_age_counts.to_dict())
+        logger.info(key='age_range_m', data=m_age_counts.to_dict())
 
-        logger.info('%s|age_range_f|%s', self.sim.date,
-                    f_age_counts.to_dict())
-
-        # Output by single year of age for under-fives
-        # (need to gurantee output always is for each of the years - even if size() is 0)
-        num_children = pd.Series(index=range(5), data=0).add(
-            df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
-            fill_value=0
-        )
-
-        logger.info('%s|num_children|%s', self.sim.date,
-                    num_children.to_dict())
-
-        # Output the person-years lived by single year of age in the past year
-        py = self.module.calc_py_lived_in_last_year()
-        logger.info('%s|person_years|%s', self.sim.date,
-                    py.to_dict())
+        logger.info(key='age_range_f', data=f_age_counts.to_dict())
 
 
 def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):

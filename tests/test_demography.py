@@ -15,10 +15,9 @@ popsize = 500
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(core_module)
-    sim.seed_rngs(0)
     return sim
 
 
