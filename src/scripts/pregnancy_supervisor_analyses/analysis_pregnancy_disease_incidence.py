@@ -3,13 +3,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
-    pregnancy_supervisor, antenatal_care, \
-    healthburden, symptommanager, healthseekingbehaviour
+    pregnancy_supervisor, antenatal_care, symptommanager, healthseekingbehaviour
 
 # %%
 outputpath = Path("./outputs")
@@ -78,4 +77,3 @@ plt.show()
 stats.plot.bar(y='anaemia_rate', stacked=True)
 plt.title("Yearly anaemia_rate Rate")
 plt.show()
-

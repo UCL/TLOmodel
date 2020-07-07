@@ -10,7 +10,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    mockitis,
+    mockitis, antenatal_care,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -37,6 +37,7 @@ def test_no_symptoms_if_no_diseases():
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath)
@@ -69,6 +70,7 @@ def test_adding_symptoms():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),

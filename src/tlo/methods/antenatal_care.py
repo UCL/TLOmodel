@@ -4,7 +4,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
 
@@ -302,8 +302,17 @@ class CareOfWomenDuringPregnancy(Module):
         item_code_diet_supps = pd.unique(
             consumables.loc[consumables['Items'] == 'Dietary supplements (country-specific)', 'Item_Code'])[0]
 
-        days_until_next_contact = int(self.determine_gestational_age_for_next_contact(person_id) -
-                                      df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+        # todo: this is a hacky quick fix for bug that i cant work out- sort properly
+        if self.determine_gestational_age_for_next_contact(person_id) is None and df.at[person_id,
+                                                                                        'ps_gestational_age_in_weeks'] \
+                                                                                   == 39:
+            next_visit = 40
+
+            days_until_next_contact = int(next_visit - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+
+        else:
+            days_until_next_contact = int(self.determine_gestational_age_for_next_contact(person_id) -
+                                          df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
 
         # And provide women with enough medication until the next visit
         consumables_anc_1 = {
@@ -585,6 +594,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             # First, interventions that should be delivered at every ANC visit are administered
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+            print(gest_age_next_contact)
 
             # TODO: may be better to save this as a property is we keep using it
 

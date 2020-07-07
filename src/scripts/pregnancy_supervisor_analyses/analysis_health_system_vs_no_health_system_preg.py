@@ -110,4 +110,3 @@ generate_graphs(still_birth_ratio, 'Antenatal SBR by Year', "sbr_death_by_scenar
 generate_graphs(anaemia_rate, 'Anaemia Rate by Year', "ar_by_scenario")
 generate_graphs(crude_pre_eclampsia, 'Crude new onset pre-eclampsia cases', "cpe_by_scenario")
 generate_graphs(crude_gest_htn, 'Crude new onset gestational hypertension cases', "cpe_by_scenario")
-

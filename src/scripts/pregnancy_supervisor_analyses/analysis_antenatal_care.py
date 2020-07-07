@@ -3,13 +3,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import pandas as pd
-from tlo import Date, Simulation, logging
+from tlo import Date, Simulation
 from tlo.analysis.utils import (
     parse_log_file,
 )
 from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
-    pregnancy_supervisor, antenatal_care, \
-    healthburden, symptommanager, healthseekingbehaviour
+    pregnancy_supervisor, antenatal_care, symptommanager, healthseekingbehaviour
 
 # %%
 outputpath = Path("./outputs")
@@ -34,7 +33,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-            # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),

@@ -16,7 +16,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    pregnancy_supervisor,
+    pregnancy_supervisor, antenatal_care,
     symptommanager,
 )
 
@@ -41,6 +41,7 @@ def test_configuration_of_properties():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
@@ -125,6 +126,7 @@ def test_hsi_functions(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
@@ -188,6 +190,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
@@ -261,6 +264,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
