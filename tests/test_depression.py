@@ -30,7 +30,7 @@ except NameError:
 def test_configuration_of_properties():
     # --------------------------------------------------------------------------
     # Create and run a short but big population simulation for use in the tests
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1))
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -45,7 +45,6 @@ def test_configuration_of_properties():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=Date(year=2013, month=1, day=1))
     # --------------------------------------------------------------------------
@@ -113,7 +112,7 @@ def test_hsi_functions(tmpdir):
     #   --- people should have both talking therapies and antidepressants
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population.
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1))
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -139,7 +138,6 @@ def test_hsi_functions(tmpdir):
 
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
 
     df = sim.population.props
@@ -178,7 +176,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
     # --------------------------------------------------------------------------
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1))
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -203,7 +201,6 @@ def test_hsi_functions_no_medication_available(tmpdir):
 
     f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
 
     df = sim.population.props
@@ -249,8 +246,13 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
     #   --- people should have nothing (no talking therapy or antidepressants) and no HSI events run at all
 
     # --------------------------------------------------------------------------
+    log_config = {
+        "filename": "log",   # The prefix for the output file. A timestamp will be added to this.
+        "directory": tmpdir,  # The default output path is `./output`. Change it here, if necessary
+    }
+
     # Create and run a longer simulation on a small population
-    sim = Simulation(start_date=Date(year=2010, month=1, day=1))
+    sim = Simulation(start_date=Date(year=2010, month=1, day=1), seed=0, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -275,9 +277,6 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
         sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
     )
 
-    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
-
-    sim.seed_rngs(0)
     sim.make_initial_population(n=2000)
 
     df = sim.population.props
@@ -298,7 +297,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir):
 
     df = sim.population.props
 
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Check that there have been been no some cases of talking Therapy and anti-depressants
     assert 0 == df['de_ever_talk_ther'].sum()

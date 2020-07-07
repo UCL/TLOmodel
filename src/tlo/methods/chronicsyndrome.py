@@ -56,7 +56,7 @@ class ChronicSyndrome(Module):
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
         'inappropriate_jokes',  # will not trigger any health seeking behaviour
-        'em_craving_sandwiches'    # symptom that will trigger emergency HSI
+        'em_craving_sandwiches'  # symptom that will trigger emergency HSI
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -129,7 +129,7 @@ class ChronicSyndrome(Module):
             # persons who will have symptoms (each can occur independently)
             persons_id_with_symp = np.array(person_id_all_with_cs)[
                 self.rng.rand(len(person_id_all_with_cs)) < self.parameters['prob_of_symptoms'][symp]
-            ]
+                ]
 
             self.sim.modules['SymptomManager'].change_symptom(
                 person_id=list(persons_id_with_symp),
@@ -185,7 +185,7 @@ class ChronicSyndrome(Module):
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             popwide_hsi_event, priority=1, topen=self.sim.date, tclose=None
         )
-        logger.debug('The population wide HSI event has been scheduled succesfully!')
+        logger.debug(key='debug', data='The population wide HSI event has been scheduled successfully!')
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -210,12 +210,12 @@ class ChronicSyndrome(Module):
         """
 
         logger.debug(
-            'This is ChronicSyndrome, being alerted about a health system interaction ' 'person %d for: %s',
-            person_id,
-            treatment_id,
+            key='debug',
+            data=('This is ChronicSyndrome, being alerted about a health system interaction '
+                  f'person {person_id} for: {treatment_id}'),
         )
 
-        # To simulate a "piggy-backing" appointment, whereby additional treatment and test are done
+        # To simulate a 'piggy-backing' appointment, whereby additional treatment and test are done
         # for another disease, schedule another appointment (with smaller resources than a full appointmnet)
         # and set it to priority 0 (to give it highest possible priority).
 
@@ -238,7 +238,7 @@ class ChronicSyndrome(Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug('This is chronicsyndrome reporting my health values')
+        logger.debug(key='debug', data='This is chronicsyndrome reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -299,7 +299,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                 # persons who will have symptoms (each can occur independently)
                 persons_id_with_symp = np.array(newcases_idx)[
                     self.module.rng.rand(len(newcases_idx)) < self.module.parameters['prob_of_symptoms'][symp]
-                ]
+                    ]
 
                 self.sim.modules['SymptomManager'].change_symptom(
                     person_id=list(persons_id_with_symp),
@@ -313,8 +313,10 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                                                   - set(
             self.sim.modules['SymptomManager'].who_has('em_craving_sandwiches')))
 
-        become_severe = self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches)) \
+        become_severe = (
+            self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches))
             < p['prob_dev_severe_symptoms_per_year'] / 12
+        )
         become_severe_idx = np.array(curr_cs_but_not_craving_sandwiches)[become_severe]
 
         self.sim.modules['SymptomManager'].change_symptom(
@@ -393,16 +395,20 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(
-            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d.",
-            person_id,
+            key='debug',
+            data=('This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: '
+                  f'We are now ready to treat this person {person_id}.'),
+
         )
         logger.debug(
-            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-factor is %d.", squeeze_factor
+            key='debug',
+            data=('This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: '
+                  f'The squeeze-factor is {squeeze_factor}.'),
         )
 
         if squeeze_factor < 0.5:
             # If squeeze factor is not too large:
-            logger.debug("Treatment will be provided.")
+            logger.debug(key='debug', data='Treatment will be provided.')
             df = self.sim.population.props
             treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
@@ -420,10 +426,10 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                     disease_module=self.module)
         else:
             # Squeeze factor is too large
-            logger.debug("Treatment will not be provided due to squeeze factor.")
+            logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
 
     def did_not_run(self):
-        logger.debug('HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')
+        logger.debug(key='debug', data='HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')
         pass
 
 
@@ -441,7 +447,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         super().__init__(module, person_id=person_id)
         assert isinstance(module, ChronicSyndrome)
 
-        logger.debug('Outreach event being created.')
+        logger.debug(key='debug', data='Outreach event being created.')
 
         # Define the necessary information for an HSI
         # (These are blank when created; but these should be filled-in by the module that calls it)
@@ -456,7 +462,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('Outreach event running now for person: %s', person_id)
+        logger.debug(key='debug', data=f'Outreach event running now for person: {person_id}', )
 
         # Do here whatever happens during an outreach event with an individual
         # ~~~~~~~~~~~~~~~~~~~~~~
@@ -492,9 +498,9 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
 
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code1]:
-            logger.debug('PkgCode1 is available, so use it.')
+            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
         else:
-            logger.debug('PkgCode1 is not available, so can' 't use it.')
+            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
 
         # Return the actual appt footprints
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
@@ -503,7 +509,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         return actual_appt_footprint
 
     def did_not_run(self):
-        logger.debug('HSI_ChronicSyndrome_Outreach_Individual: did not run')
+        logger.debug(key='debug', data='HSI_ChronicSyndrome_Outreach_Individual: did not run')
         pass
 
 
@@ -521,7 +527,7 @@ class HSI_ChronicSyndrome_PopulationWideBehaviourChange(HSI_Event, PopulationSco
         self.TREATMENT_ID = 'ChronicSyndrome_PopulationWideBehaviourChange'
 
     def apply(self, population, squeeze_factor):
-        logger.debug('This is HSI_ChronicSyndrome_PopulationWideBehaviourChange')
+        logger.debug(key='debug', data='This is HSI_ChronicSyndrome_PopulationWideBehaviourChange')
 
         # As an example, we will reduce the chance of acquisition per year (due to behaviour change)
         self.module.parameters['p_acquisition_per_year'] = self.module.parameters['p_acquisition_per_year'] * 0.5

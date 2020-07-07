@@ -1,8 +1,8 @@
 import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
