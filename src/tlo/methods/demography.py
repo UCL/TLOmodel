@@ -454,13 +454,11 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             fill_value=0
         )
 
-        logger.info('%s|num_children|%s', self.sim.date,
-                    num_children.to_dict())
+        logger.info(key='num_children', data=num_children.to_dict())
 
         # Output the person-years lived by single year of age in the past year
         py = self.module.calc_py_lived_in_last_year()
-        logger.info('%s|person_years|%s', self.sim.date,
-                    py.to_dict())
+        logger.info(key='person_years', data=py.to_dict())
 
 
 def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):
