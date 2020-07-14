@@ -42,7 +42,7 @@ def test_no_health_system(tmpdir):
         'custom_levels': {"*": logging.WARNING, "tlo.methods.epi": logging.INFO}
     }
 
-    sim = Simulation(start_date=start_date, seed=123, log_config=log_config)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
@@ -82,7 +82,12 @@ def test_no_health_system(tmpdir):
 # check epi module does schedule hsi events
 def test_epi_scheduling_hsi_events(tmpdir):
 
-    sim = Simulation(start_date=start_date)
+    log_config = {
+        'filename': 'test_log',
+        'directory': tmpdir,
+    }
+
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -105,16 +110,12 @@ def test_epi_scheduling_hsi_events(tmpdir):
         epi.Epi(resourcefilepath=resourcefilepath),
     )
 
-    sim.seed_rngs(0)
-
-    # Run the simulation and flush the logger
-    f = sim.configure_logging("test_log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
     df = sim.population.props
 
     # check vaccine coverage is above zero for all vaccine types post 2019
