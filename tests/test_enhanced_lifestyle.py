@@ -1,3 +1,4 @@
+
 import os
 import time
 from pathlib import Path
@@ -12,13 +13,12 @@ end_date = Date(2012, 4, 1)
 popsize = 10000
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def simulation():
-    resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
-    sim = Simulation(start_date=start_date)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.seed_rngs(0)
     return sim
 
 
@@ -65,10 +65,10 @@ def test_dypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
     t1 = time.time()
-    print("Time taken", t1 - t0)
+    print('Time taken', t1 - t0)

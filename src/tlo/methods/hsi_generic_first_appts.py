@@ -4,14 +4,18 @@ the health system following the onset of acute generic symptoms.
 """
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
-from tlo.methods.chronicsyndrome import (
-    HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment,
-)
+from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.labour import (
+    HSI_Labour_PresentsForSkilledBirthAttendanceInLabour,
+    HSI_Labour_ReceivesCareForPostpartumPeriod,
+)
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -23,7 +27,6 @@ logger.setLevel(logging.INFO)
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel1
 # ---------------------------------------------------------------------------------------------------------
-
 
 class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
@@ -40,67 +43,77 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         super().__init__(module, person_id=person_id)
 
         # Confirm that this appointment has been created by a registered disease module or HealthSeekingBehaviour
-        acceptable_originating_modules = list(
-            self.sim.modules["HealthSystem"].registered_disease_modules.values()
-        )
-        acceptable_originating_modules.append(
-            self.sim.modules["HealthSeekingBehaviour"]
-        )
+        acceptable_originating_modules = list(self.sim.modules['HealthSystem'].registered_disease_modules.values())
+        acceptable_originating_modules.append(self.sim.modules['HealthSeekingBehaviour'])
         assert module in acceptable_originating_modules
 
         # Work out if this is for a child or an adult
-        is_child = self.sim.population.props.at[person_id, "age_years"] < 5.0
+        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         if is_child:
-            the_appt_footprint["Under5OPD"] = 1.0  # Child out-patient appointment
+            the_appt_footprint['Under5OPD'] = 1.0  # Child out-patient appointment
         else:
-            the_appt_footprint["Over5OPD"] = 1.0  # Adult out-patient appointment
+            the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "GenericFirstApptAtFacilityLevel1"
+        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(
-            "This is HSI_GenericFirstApptAtFacilityLevel1 for person %d", person_id
-        )
-
-        diagnosis = self.module.sim.modules["DxAlgorithmChild"].diagnose(
-            person_id=person_id, hsi_event=self
-        )
+        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
         # Work out what to do with this person....
-        if self.sim.population.props.at[person_id, "age_years"] < 5.0:
+        if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
             # It's a child:
-            logger.debug("Run the ICMI algorithm for this child")
+            logger.debug('Run the ICMI algorithm for this child')
 
             # Get the diagnosis from the algorithm
-            diagnosis = self.module.sim.modules["DxAlgorithmChild"].diagnose(
-                person_id=person_id, hsi_event=self
-            )
+            diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
             # Do something based on this diagnosis...
-            if diagnosis == "measles":
-                logger.debug("Start treatment for measles")
+            if diagnosis == 'measles':
+                logger.debug('Start treatment for measles')
             else:
-                logger.debug("No treatment. HSI ends.")
+                logger.debug('No treatment. HSI ends.')
 
         else:
             # It's an adult
-            logger.debug("To fill in ... what to with an adult")
+            logger.debug('To fill in ... what to with an adult')
+
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+
+            # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
+            if 'dysphagia' in symptoms:
+                hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+                    module=self.sim.modules['OesophagealCancer'],
+                    person_id=person_id,
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+
+            # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
+            if 'Depression' in self.sim.modules:
+                depr = self.sim.modules['Depression']
+                if (squeeze_factor == 0.0) and (self.module.rng.random() <
+                                                depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
+                    depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            # -------------------------------
 
     def did_not_run(self):
-        logger.debug("HSI_GenericFirstApptAtFacilityLevel1: did not run")
+        logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
 
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
 # ---------------------------------------------------------------------------------------------------------
-
 
 class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin):
     """
@@ -117,31 +130,25 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         super().__init__(module, person_id=person_id)
 
         # Confirm that this appointment has been created by a registered disease module or HealthSeekingBehaviour
-        acceptable_originating_modules = list(
-            self.sim.modules["HealthSystem"].registered_disease_modules.values()
-        )
-        acceptable_originating_modules.append(
-            self.sim.modules["HealthSeekingBehaviour"]
-        )
+        acceptable_originating_modules = list(self.sim.modules['HealthSystem'].registered_disease_modules.values())
+        acceptable_originating_modules.append(self.sim.modules['HealthSeekingBehaviour'])
         assert module in acceptable_originating_modules
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1.0  # Consultantion with DCSA
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ConWithDCSA'] = 1.0  # Consultantion with DCSA
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "GenericFirstApptAtFacilityLevel0"
+        self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel0'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(
-            "This is HSI_GenericFirstApptAtFacilityLevel0 for person %d", person_id
-        )
+        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel0 for person %d', person_id)
 
     def did_not_run(self):
-        logger.debug("HSI_GenericFirstApptAtFacilityLevel0: did not run")
+        logger.debug('HSI_GenericFirstApptAtFacilityLevel0: did not run')
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -155,10 +162,7 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 #    HSI_GenericEmergencyFirstApptAtFacilityLevel1
 # ---------------------------------------------------------------------------------------------------------
 
-
-class HSI_GenericEmergencyFirstApptAtFacilityLevel1(
-    HSI_Event, IndividualScopeEventMixin
-):
+class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -173,55 +177,82 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(
         super().__init__(module, person_id=person_id)
 
         # Confirm that this appointment has been created by a registered disease module or HealthSeekingBehaviour
-        acceptable_originating_modules = list(
-            self.sim.modules["HealthSystem"].registered_disease_modules.values()
-        )
-        acceptable_originating_modules.append(
-            self.sim.modules["HealthSeekingBehaviour"]
-        )
+        acceptable_originating_modules = list(self.sim.modules['HealthSystem'].registered_disease_modules.values())
+        acceptable_originating_modules.append(self.sim.modules['HealthSeekingBehaviour'])
         assert module in acceptable_originating_modules
 
         # Work out if this is for a child or an adult
-        is_child = self.sim.population.props.at[person_id, "age_years"] < 5.0
+        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         if is_child:
-            the_appt_footprint["Under5OPD"] = 1.0  # Child out-patient appointment
+            the_appt_footprint['Under5OPD'] = 1.0  # Child out-patient appointment
         else:
-            the_appt_footprint["Over5OPD"] = 1.0  # Adult out-patient appointment
+            the_appt_footprint['Over5OPD'] = 1.0  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "GenericEmergencyFirstApptAtFacilityLevel1"
+        self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(
-            "This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d",
-            person_id,
-        )
+        logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
+        df = self.sim.population.props
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
+        labour_list = self.sim.modules['Labour'].women_in_labour
 
         # simple diagnosis to work out which HSI event to trigger
-        symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
-        if "em_craving_sandwiches" in symptoms:
+        # -----  COMPLICATION DURING BIRTH  -----
+        if person_id in labour_list:
+            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+                    module=self.sim.modules['Labour'], person_id=person_id,
+                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+        # -----  COMPLICATION AFTER BIRTH  -----
+            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+                    module=self.sim.modules['Labour'], person_id=person_id,
+                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+        # -----  SUSPECTED DEPRESSION  -----
+        if 'em_Injuries_From_Self_Harm' in symptoms:
+            self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            # TODO: Trigger surgical care for injuries.
+
+        # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
+        if 'em_craving_sandwiches' in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-                module=self.sim.modules["ChronicSyndrome"], person_id=person_id
+                module=self.sim.modules['ChronicSyndrome'],
+                person_id=person_id
             )
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                event, priority=1, topen=self.sim.date
-            )
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=self.sim.date
+                                                                )
 
-        if "em_extreme_pain_in_the_nose" in symptoms:
+        if 'em_extreme_pain_in_the_nose' in symptoms:
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
-                module=self.sim.modules["Mockitis"], person_id=person_id
+                module=self.sim.modules['Mockitis'],
+                person_id=person_id
             )
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                event, priority=1, topen=self.sim.date
-            )
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=self.sim.date
+                                                                )
 
     def did_not_run(self):
-        logger.debug("HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run")
+        logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
+        return False  # Labour debugging
+        # pass
+
+    def not_available(self):
         pass
