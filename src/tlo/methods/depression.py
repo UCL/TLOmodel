@@ -693,13 +693,13 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'prop_ever_self_harmed': zero_out_nan(n_ever_self_harmed / n_ever_depr),
         }
 
-        logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
+        logger.info(key='summary_stats', data=dict_for_output)
 
         # 2) Log number of Self-Harm and Suicide Events since the last logging event
-        logger.info('%s|event_counts|%s', self.sim.date, {
-            'SelfHarmEvents': self.module.eventsTracker['SelfHarmEvents'],
-            'SuicideEvents': self.module.eventsTracker['SuicideEvents'],
-        })
+        logger.info(key='event_counts',
+                    data={'SelfHarmEvents': self.module.eventsTracker['SelfHarmEvents'],
+                          'SuicideEvents': self.module.eventsTracker['SuicideEvents'],
+                          })
 
         # Reset the EventTracker
         self.module.eventsTracker = {'SelfHarmEvents': 0, 'SuicideEvents': 0}
