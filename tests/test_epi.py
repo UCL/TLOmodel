@@ -10,7 +10,11 @@ from tlo.methods import (
     enhanced_lifestyle,
     epi,
     healthburden,
-    healthsystem, labour, pregnancy_supervisor, healthseekingbehaviour, symptommanager,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 start_date = Date(2010, 1, 1)
