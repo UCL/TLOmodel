@@ -6,14 +6,22 @@ This will demonstrate the effect of different treatment
 import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import (
-    parse_log_file,
+from matplotlib import pyplot as plt
+
+from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import (
+    contraception,
+    demography,
+    diarrhoea,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    symptommanager,
 )
-from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
-    symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child
 
 # %%
 resourcefilepath = Path("./resources")
@@ -81,7 +89,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
     for year in years:
         tot_py = (
-            (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) + \
+            (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
         ).transpose()
 

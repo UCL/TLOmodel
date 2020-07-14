@@ -113,6 +113,7 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
             final_states[state_index] = new_states
     return final_states
 
+
 def choose_outcome_from_a_dict(dict_of_probs: dict, rng: np.random.RandomState) -> str:
     """
     This is a helper function that will chose an outcome from a dict that is organsised as {outcome : p_outcome}
@@ -121,7 +122,6 @@ def choose_outcome_from_a_dict(dict_of_probs: dict, rng: np.random.RandomState) 
     :param rng:
     :return:
     """
-
     outcomes = np.array(list(dict_of_probs.keys()))
     probs = np.array(list(dict_of_probs.values()))
 

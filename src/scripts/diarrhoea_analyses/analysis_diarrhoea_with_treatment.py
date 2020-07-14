@@ -7,14 +7,24 @@ There is treatment.
 import datetime
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import (
-    parse_log_file,
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import (
+    contraception,
+    demography,
+    diarrhoea,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    pregnancy_supervisor,
+    symptommanager,
 )
-from tlo.methods import contraception, demography, diarrhoea, healthsystem, enhanced_lifestyle, \
-    symptommanager, healthburden, healthseekingbehaviour, labour, pregnancy_supervisor, dx_algorithm_child
 
 # %%
 outputpath = Path("./outputs")
@@ -62,7 +72,6 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(logfile)
 
 
-
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------
 
 #  Calculate the "incidence rate" from the output counts of incidence
@@ -81,7 +90,7 @@ years = pd.to_datetime(py_['date']).dt.year
 py = pd.DataFrame(index=years, columns=['0y', '1y', '2-4y'])
 for year in years:
     tot_py = (
-        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) + \
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
         (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
     ).transpose()
 
@@ -207,19 +216,17 @@ plt.tight_layout()
 plt.show()
 
 
-
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
 # # TODO: this set of graphs
 # Load the death data to which we calibrate:
-# IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi, per 100,000 child-years (under 5's)
-# https://vizhub.healthdata.org/gbd-compare/
+# IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi,
+# per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/
 # http://ghdx.healthdata.org/gbd-results-tool?params=gbd-api-2017-permalink/9dd202e225b13cc2df7557a5759a0aca
 
 calibration_death_rate_per_year_under_5s = {
     '2010': 148 / 100000,   # CI: 111-190
     '2017': 93 / 100000     # CI: 61-135
 }
-
 
 all_deaths = output['tlo.methods.demography']['death']
 all_deaths['year'] = pd.to_datetime(all_deaths['date']).dt.year
@@ -259,6 +266,3 @@ plt.ylabel('Risk of pathogen causing diarrhoea per year')
 plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_1_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.tight_layout()
 plt.show()
-
-
-

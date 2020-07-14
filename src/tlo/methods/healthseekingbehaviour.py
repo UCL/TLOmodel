@@ -14,7 +14,6 @@ from tlo.methods.hsi_generic_first_appts import (
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
-from tlo.util import choose_outcome_from_a_dict
 
 
 class HealthSeekingBehaviour(Module):
@@ -87,8 +86,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         #    that have died (since the onset of symptoms)
         alive_person_ids = list(self.sim.population.props.index[self.sim.population.props.is_alive])
         person_ids_with_new_symptoms = list(
-            self.module.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms.
-                intersection(alive_person_ids)
+            self.module.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms.intersection(alive_person_ids)
         )
 
         # clear the list of person_ids with newly onset symptoms
@@ -207,7 +205,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # convert into a probability of seeking care:
                 prob_seeking_care = 1 / (1 + np.exp(-f))
 
-                if self.module.force_any_symptom_to_lead_to_healthcareseeking or (self.module.rng.rand() < prob_seeking_care):
+                if (self.module.force_any_symptom_to_lead_to_healthcareseeking or
+                   (self.module.rng.rand() < prob_seeking_care)):
                     # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
                     # NB. Here we can specify which type of facility they would attend if we need to
 

@@ -11,14 +11,15 @@ from tlo.methods import (
     contraception,
     demography,
     diarrhoea,
-    healthsystem,
+    dx_algorithm_child,
     enhanced_lifestyle,
-    symptommanager,
     healthburden,
     healthseekingbehaviour,
-    dx_algorithm_child,
+    healthsystem,
     labour,
-    pregnancy_supervisor)
+    pregnancy_supervisor,
+    symptommanager,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -32,6 +33,7 @@ def check_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
 
 def check_configuration_of_properties(sim):
     # check that the properties are ok:
@@ -53,7 +55,6 @@ def check_configuration_of_properties(sim):
     assert (df.loc[df['gi_last_diarrhoea_pathogen'] == 'none'].index == df.loc[
         df['gi_last_diarrhoea_dehydration'] == 'none'].index).all()
 
-
     # Those that have had diarrhoea, should have a pathogen and a number of days duration
     assert (df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
@@ -62,7 +63,6 @@ def check_configuration_of_properties(sim):
     assert not pd.isnull(df.loc[
         ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
         'gi_last_diarrhoea_duration']).any()
-
 
     # Those that have had diarrhoea, should have either a recovery date or a death_date (but not bith)
     has_recovery_date = ~pd.isnull(df.loc[
@@ -87,13 +87,14 @@ def check_configuration_of_properties(sim):
     # TODO Those currently in an episode of diarrhoea should have symptoms and no-one else should.
     date_of_outcome = df['gi_last_diarrhoea_recovered_date'].fillna(df['gi_last_diarrhoea_death_date'])
 
-    in_current_episode = ~pd.isnull(df.gi_last_diarrhoea_date_of_onset) & \
-                         (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
-                         ~pd.isnull(date_of_outcome) & \
-                         (date_of_outcome > sim.date)
+    in_current_episode = (~pd.isnull(df.gi_last_diarrhoea_date_of_onset) &
+                          (df.gi_last_diarrhoea_date_of_onset <= sim.date) &
+                          ~pd.isnull(date_of_outcome) &
+                          (date_of_outcome > sim.date))
 
     assert list(in_current_episode[in_current_episode].index.values) ==\
            sim.modules['SymptomManager'].who_has('diarrhoea')
+
 
 def test_basic_run_of_diarrhoea_module_with_default_params():
     # Check that the module run and that properties are maintained correctly, using health system and default parameters
@@ -125,6 +126,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
 
     check_dtypes(sim)
     check_configuration_of_properties(sim)
+
 
 def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     # Run with zero incidence and check for no cases or deaths
@@ -189,6 +191,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
 
     # Check for zero level of death
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
+
 
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment():
     # Check that there are incident cases, treatments and deaths occurring correctly
@@ -259,8 +262,10 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     gi_death_date_in_past = ~pd.isnull(df.gi_last_diarrhoea_death_date) & (df.gi_last_diarrhoea_death_date <= sim.date)
     assert (dead_due_to_diarrhoea == gi_death_date_in_past).all()
 
+
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment():
-    # Run with everyone gets symptoms and seeks care and perfect treatment efficacy: check that everyone is cured and no deaths;
+    # Run with everyone gets symptoms and seeks care and perfect treatment efficacy:
+    # check that everyone is cured and no deaths;
     start_date = Date(2010, 1, 1)
     end_date = Date(2015, 12, 31)
     popsize = 1000
@@ -278,7 +283,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(
                      resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # ensures that every symptom lead to healthcare seeking
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to healthcare seeking
                  ),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
@@ -352,7 +357,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     got_diarrhoea = ~pd.isnull(df.gi_last_diarrhoea_date_of_onset)
     assert not pd.isnull(df.loc[got_diarrhoea, 'gi_last_diarrhoea_treatment_date']).any()
 
-    # ******* todo: this is failing because one person (67) is not getting treatment -- maybe because they are recovered before they are treated
+    # ******* todo: this is failing because one person (67) is not getting treatment -- maybe because they are
+    # recovered before they are treated
     # **** could be to do with short duration episode!?!!?!?
 
     # Check for zero level of death
@@ -368,5 +374,3 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 
 
 # TODO - add 'end of episode' (the date after which nothing else is scheduled), to prevent new episodes being started.
-
-

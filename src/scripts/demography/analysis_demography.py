@@ -4,12 +4,13 @@ import logging
 import os
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, contraception
+from tlo.methods import contraception, demography
 from tlo.methods.demography import make_age_range_lookup
 
 # Where will output go - by default, wherever this script is run

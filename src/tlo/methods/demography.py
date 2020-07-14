@@ -295,6 +295,7 @@ class Demography(Module):
 
         return py
 
+
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This event updates the age_exact_years, age_years and age_range columns for the population based

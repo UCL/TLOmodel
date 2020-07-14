@@ -58,8 +58,8 @@ class HealthSystem(Module):
         ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,          # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,   # multiplier for the capabilities of health officers
-        disable=False,                  # disables the healthsystem (no constraints and no logging).
-        disable_and_reject_all=False    # disables the healthsystem and does not run any HSI (no constraints and no logging)
+        disable=False,                  # disable healthsystem (no constraints, no logging).
+        disable_and_reject_all=False    # disable healthsystem and don't run any HSI (no constraints, no logging)
     ):
 
         super().__init__(name)
