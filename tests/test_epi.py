@@ -10,7 +10,7 @@ from tlo.methods import (
     enhanced_lifestyle,
     epi,
     healthburden,
-    healthsystem,
+    healthsystem, labour, pregnancy_supervisor, healthseekingbehaviour, symptommanager,
 )
 
 start_date = Date(2010, 1, 1)
@@ -36,37 +36,38 @@ def check_dtypes(simulation):
 # coverage should gradually decline for all after 2018
 # hard constraints (mode=2) and zero capabilities
 def test_no_health_system(tmpdir):
+    log_config = {
+        'filename': 'test_log',
+        'directory': tmpdir,
+        'custom_levels': {"*": logging.WARNING, "tlo.methods.epi": logging.INFO}
+    }
 
-    sim = Simulation(start_date=start_date)
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim = Simulation(start_date=start_date, seed=123, log_config=log_config)
     sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
             service_availability=[],  # no services allowed
             mode_appt_constraints=2,  # hard constraints
             ignore_priority=True,
             capabilities_coefficient=0.0  # no officer time
-        )
+        ),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(epi.Epi(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
-
-    # Run the simulation and flush the logger
-    custom_levels = {"*": logging.WARNING, "tlo.methods.epi": logging.INFO}
-
-    # configure_logging automatically appends datetime
-    f = sim.configure_logging("test_log", directory=tmpdir, custom_levels=custom_levels)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # check we can read the results
-    parse_log_file(f)
+    parse_log_file(sim.log_filepath)
     df = sim.population.props
 
     # check no vaccines being administered through health system
