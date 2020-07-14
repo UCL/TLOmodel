@@ -84,8 +84,8 @@ def test_epi_scheduling_hsi_events(tmpdir):
 
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
             service_availability=["*"],  # all services allowed
@@ -94,12 +94,16 @@ def test_epi_scheduling_hsi_events(tmpdir):
             capabilities_coefficient=1.0,  # full capacity
             mode_appt_constraints=0,  # no constraints
             disable=False
-        )
+        ),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(epi.Epi(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 
