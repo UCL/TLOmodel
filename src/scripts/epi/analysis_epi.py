@@ -1,23 +1,24 @@
-from pathlib import Path
-import pandas as pd
-import time
 import datetime
-import matplotlib.pyplot as plt
 import os
+import time
+from pathlib import Path
+
+import pandas as pd
+from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
+    antenatal_care,
     contraception,
-    healthburden,
-    healthsystem,
+    demography,
     enhanced_lifestyle,
     epi,
-    antenatal_care,
+    healthburden,
+    healthsystem,
     labour,
     newborn_outcomes,
-    pregnancy_supervisor
+    pregnancy_supervisor,
 )
 
 start_time = time.time()

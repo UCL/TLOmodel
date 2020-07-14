@@ -39,7 +39,7 @@ print(epi['District'].unique())
 print(master_district_list['District'].unique())
 
 ######################################################################
-### these are the ones that need to match
+# these are the ones that need to match
 # master = epi report
 # Lilongwe City = Lilongwe
 # "Blantyre City" = "Blantyre"
@@ -81,24 +81,3 @@ len(epi_formatted['District'].unique())
 print(epi_formatted['District'].unique())
 
 epi_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_EPI_vaccine_coverage.csv')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

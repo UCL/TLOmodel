@@ -1,16 +1,11 @@
+import os
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from datetime import datetime
-import os
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import (
-    Event,
-    IndividualScopeEventMixin,
-    PopulationScopeEventMixin,
-    RegularEvent,
-)
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)

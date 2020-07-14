@@ -1,17 +1,16 @@
-from pathlib import Path
 import os
-import pytest
 from datetime import datetime
+from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
     contraception,
+    demography,
+    enhanced_lifestyle,
+    epi,
     healthburden,
     healthsystem,
-    enhanced_lifestyle,
-    epi
 )
 
 start_date = Date(2010, 1, 1)
@@ -66,8 +65,8 @@ def test_no_health_system(tmpdir):
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
-    # read the results
-    output = parse_log_file(f)
+    # check we can read the results
+    parse_log_file(f)
     df = sim.population.props
 
     # check no vaccines being administered through health system
