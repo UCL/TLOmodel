@@ -5,6 +5,7 @@ specification for parameters and properties, and the base Module class for
 disease modules.
 """
 import json
+import typing
 from enum import Enum, auto
 
 import numpy as np
@@ -91,6 +92,23 @@ class Specifiable:
     @property
     def pandas_type(self):
         return self.PANDAS_TYPE_MAP[self.type_]
+
+    delimiter = " === "
+
+    def __repr__(self):
+        '''Add docstring here.
+        self.type will be something like "Types.REAL".
+        For printing, we remove the redundant substring "Types." '''
+        sub = "Types."
+        mytype = str(self.type_)  # e.g. "Types.REAL"
+        item = mytype.split(sub)[1]  # e.g. "REAL"
+
+        if self.type_ == Types.CATEGORICAL:
+            return f'{item}' + Specifiable.delimiter + f'{self.description}' \
+                + f'  (Possible values are: {self.categories})'
+        else:
+            return f'{item}' + Specifiable.delimiter + f'{self.description}'
+        # Types.CATEGORICAL might need special treatment
 
 
 class Parameter(Specifiable):
@@ -187,7 +205,7 @@ class Module:
         :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
         self.parameters = {}
-        self.rng = np.random.RandomState()
+        self.rng: typing.Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
         self.sim = None
 

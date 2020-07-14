@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     chronicsyndrome,
@@ -45,9 +45,6 @@ def test_run_with_healthsystem_no_disease_modules_defined():
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
@@ -55,7 +52,11 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
-                 dx_algorithm_child.DxAlgorithmChild())
+                 dx_algorithm_child.DxAlgorithmChild(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
 
@@ -78,9 +79,6 @@ def test_run_no_interventions_allowed(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -90,12 +88,16 @@ def test_run_no_interventions_allowed(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 )
 
     sim.seed_rngs(0)
 
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
+    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
@@ -129,9 +131,6 @@ def test_run_in_mode_0_with_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -141,7 +140,11 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
 
@@ -182,9 +185,6 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
@@ -193,7 +193,11 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
 
@@ -227,9 +231,6 @@ def test_run_in_mode_1_with_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -239,7 +240,11 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 )
 
     sim.seed_rngs(0)
 
@@ -273,9 +278,6 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -285,7 +287,11 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
 
@@ -321,9 +327,6 @@ def test_run_in_mode_2_with_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -333,7 +336,11 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
 
@@ -368,9 +375,6 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -380,7 +384,11 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
 
@@ -417,9 +425,6 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -430,7 +435,11 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
+                 )
 
     sim.seed_rngs(0)
 
@@ -462,9 +471,6 @@ def test_run_in_with_hs_disabled(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -475,7 +481,11 @@ def test_run_in_with_hs_disabled(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 )
 
     sim.seed_rngs(0)
 
@@ -510,9 +520,6 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
@@ -522,7 +529,11 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome(),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 )
 
     sim.seed_rngs(0)
 
