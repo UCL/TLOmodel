@@ -43,7 +43,7 @@ def test_no_health_system(tmpdir):
     log_config = {
         'filename': 'test_log',
         'directory': tmpdir,
-        'custom_levels': {"*": logging.WARNING, "tlo.methods.epi": logging.INFO}
+        'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
     }
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
@@ -89,6 +89,7 @@ def test_epi_scheduling_hsi_events(tmpdir):
     log_config = {
         'filename': 'test_log',
         'directory': tmpdir,
+        'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
     }
 
     sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
