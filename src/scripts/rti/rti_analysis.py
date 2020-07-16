@@ -1,6 +1,7 @@
 from pathlib import Path
 import numpy as np
 from matplotlib.sankey import Sankey
+import seaborn as sns
 from matplotlib import cm
 from floweaver import *
 # matplotlib.use('TkAgg')
@@ -41,10 +42,10 @@ import numpy as np
 resourcefilepath = Path('./resources')
 
 # Establish the simulation object
-yearsrun = 4
+yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 10000
+popsize = 1000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")
@@ -734,3 +735,27 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ======================================= Plot Demographics ===========================================================
+data = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIInjuryDemographics.csv')
+genderData = data['sex']
+values, counts = np.unique(genderData, return_counts=True)
+
+fig, ax = plt.subplots()
+
+ax.bar(values, counts / sum(counts), color='lightsteelblue')
+plt.xlabel('Gender')
+plt.ylabel('Percentage of those with RTIs')
+plt.title(f'{yearsrun} year model run, N={popsize}: Gender demographic distribution of RTIs')
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InRTIGenderDistribution.png')
+plt.clf()
+ageData = data['age_years']
+values, counts = np.unique(ageData, return_counts=True)
+fig, ax = plt.subplots()
+
+ax.bar(values, counts / sum(counts), color='lightsteelblue')
+plt.xlabel('Age')
+plt.ylabel('Percentage of those with RTIs')
+plt.title(f'{yearsrun} year model run, N={popsize}: Age demographic distribution of RTIs')
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InRTIAgeDistribution.png')
+plt.clf()

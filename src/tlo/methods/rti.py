@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+
+
 def find_and_count_injuries(dataframe, tloinjcodes):
     index = pd.Index([])
     counts = 0
@@ -3335,11 +3337,13 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.severe_pain = 0
         self.moderate_pain = 0
         self.mild_pain = 0
+        self.rti_demographics = pd.DataFrame()
+
 
     def apply(self, population):
         # Make some summary statitics
         df = population.props
-        n_in_RTI = (df.rt_road_traffic_inc).sum()
+        n_in_RTI = df.rt_road_traffic_inc.sum()
         self.numerator += n_in_RTI
         self.totinjured += n_in_RTI
         n_perm_disabled = (df.is_alive & df.rt_perm_disability).sum()
@@ -3594,6 +3598,14 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
             # 'ISS scores': ISSlist,
 
         }
+        # =========================== Get population demographics of those with RTIs ==================================
+        columnsOfInterest = ['sex', 'age_years', 'li_ex_alc']
+        injuredDemographics = df.loc[df.rt_road_traffic_inc]
+
+        injuredDemographics = injuredDemographics.loc[:, columnsOfInterest]
+        self.rti_demographics = self.rti_demographics.append(injuredDemographics)
+        self.rti_demographics.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/'
+                                     'RTIInjuryDemographics.csv')
         # -------------------------------------- Stored outputs -------------------------------------------------------
         injcategories = [self.totfracnumber, self.totdisnumber, self.tottbi, self.totsoft, self.totintorg,
                          self.totintbled, self.totsci, self.totamp, self.toteye, self.totextlac, self.totburns]
