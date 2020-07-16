@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 
 from tlo import Simulation, Date
-from tlo.methods import demography, contraception
+from tlo.methods import demography, contraception, labour, newborn_outcomes, pregnancy_supervisor, antenatal_care,\
+    healthseekingbehaviour, symptommanager, healthburden, healthsystem
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -17,7 +18,15 @@ popsize = 10
 def simulation():
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    # sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+    # sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+    # sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+    # sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
+    # sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     return sim
 
 

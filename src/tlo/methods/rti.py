@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types, logging, Date
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
-from tlo.methods import demography
+from tlo.methods import demography, symptommanager
 from tlo.methods.healthsystem import HSI_Event
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
@@ -1198,7 +1198,7 @@ class RTI(Module):
         if person.is_alive:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_RTI_Acute_Pain_Management(module=self,
-                                                  person_id=person_id),
+                                                        person_id=person_id),
                 priority=0,
                 topen=self.sim.date,
                 tclose=self.sim.date + DateOffset(days=15))
@@ -2895,14 +2895,14 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         # Injuries causing moderate pain include: Fractures, dislocations, soft tissue and neck trauma
         Moderate_Pain_Codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813',  # fractures
                                '322', '323', '722', '822'  # dislocations
-                               '342', '343', '361', '363'  # neck trauma
+                                                    '342', '343', '361', '363'  # neck trauma
                                ]
         moderate_idx, moderate_counts = find_and_count_injuries(person_injuries, Moderate_Pain_Codes)
         # Injuries causing severe pain include: All burns, amputations, spinal cord injuries, abdominal trauma see
         # (https://bestbets.org/bets/bet.php?id=1247), severe chest trauma
         Severe_Pain_Codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113',  # burns
                              '782', '783', '882', '883', '884',  # amputations
-                             '673', '674', '675', '676',   # spinal cord injury
+                             '673', '674', '675', '676',  # spinal cord injury
                              '552', '553', '554',  # abdominal trauma
                              '461', '463', '453', '441', '442', '443'  # severe chest trauma
                              ]
@@ -3051,7 +3051,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug('This facility has no pain management available for severe pain for person %d.', person_id)
                 # HSI_RTI_Acute_Pain_Management.did_not_run(self, person_id)
             dict_to_output = {'person': person_id,
-                'pain level': pain_level}
+                              'pain level': pain_level}
             logger.info('%s|Successful_Pain_Management|%s', self.sim.date, dict_to_output)
 
     def did_not_run(self, person_id):
@@ -3532,6 +3532,9 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
                    internalbleedingcounts + spinalcordinjurycounts + amputationcounts + externallacerationcounts + \
                    burncounts
 
+        # =============================== Breakdown fractures =========================================================
+        allfraccodes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+
         # ================================= Injury severity ===========================================================
         sev = df.loc[df.rt_road_traffic_inc]
         sev = sev['rt_injseverity']
@@ -3619,3 +3622,4 @@ class RTILoggingEvent(RegularEvent, PopulationScopeEventMixin):
         np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/AllPainReliefRequests.txt',
                    pain_array)
         logger.info('%s|summary_1m|%s', self.sim.date, dict_to_output)
+

@@ -180,69 +180,70 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # =============================== Adjust generic first appt for RTI requirements ===============================
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
-        persons_injuries = df.loc[[person_id], columns]
+        if columns[0] in df.columns:  # Simple check to see if RTI module is registered
+            persons_injuries = df.loc[[person_id], columns]
 
-        def find_and_count_injuries(dataframe, tloinjcodes):
-            index = pd.Index([])
-            counts = 0
-            for code in tloinjcodes:
-                inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
-                if len(inj) > 0:
-                    injidx = inj.index[inj]
-                    counts += len(injidx)
-                    index = index.union(injidx)
-            return index, counts
-        # ================================ Fractures require x-rays ====================================================
-        fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
-        idx, counts = find_and_count_injuries(persons_injuries, fracture_codes)
-        if len(idx) > 0:
-            the_appt_footprint['DiagRadio'] = 1
-        # ========================= Traumatic brain injuries require ct scan ===========================================
-        codes = ['133', '134', '135']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-        # ============================= Abdominal trauma requires ct scan ==============================================
-        codes = ['552', '553', '554']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1
+            def find_and_count_injuries(dataframe, tloinjcodes):
+                index = pd.Index([])
+                counts = 0
+                for code in tloinjcodes:
+                    inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
+                    if len(inj) > 0:
+                        injidx = inj.index[inj]
+                        counts += len(injidx)
+                        index = index.union(injidx)
+                return index, counts
+            # ================================ Fractures require x-rays ===============================================
+            fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+            idx, counts = find_and_count_injuries(persons_injuries, fracture_codes)
+            if len(idx) > 0:
+                the_appt_footprint['DiagRadio'] = 1
+            # ========================= Traumatic brain injuries require ct scan =======================================
+            codes = ['133', '134', '135']
+            idx, counts = find_and_count_injuries(persons_injuries, codes)
+            if len(idx) > 0:
+                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            # ============================= Abdominal trauma requires ct scan ==========================================
+            codes = ['552', '553', '554']
+            idx, counts = find_and_count_injuries(persons_injuries, codes)
+            if len(idx) > 0:
+                the_appt_footprint['Tomography'] = 1
 
-        # ============================== Spinal cord injury require x ray ==============================================
-        codes = ['673', '674', '675', '676']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+            # ============================== Spinal cord injury require x ray ==========================================
+            codes = ['673', '674', '675', '676']
+            idx, counts = find_and_count_injuries(persons_injuries, codes)
+            if len(idx) > 0:
+                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
 
-        # ============================== Dislocations require x ray ==============================================
-        codes = ['322', '323', '722', '822']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+            # ============================== Dislocations require x ray ==============================================
+            codes = ['322', '323', '722', '822']
+            idx, counts = find_and_count_injuries(persons_injuries, codes)
+            if len(idx) > 0:
+                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
 
-        # --------------------------------- Soft tissue injury in neck ---------------------------------------------
-        codes = ['342', '343']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+            # --------------------------------- Soft tissue injury in neck ---------------------------------------------
+            codes = ['342', '343']
+            idx, counts = find_and_count_injuries(persons_injuries, codes)
+            if len(idx) > 0:
+                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
 
-        # --------------------------------- Soft tissue injury in thorax/ lung injury ------------------------------
-        codes = ['441', '443', '453']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+            # --------------------------------- Soft tissue injury in thorax/ lung injury ------------------------------
+            codes = ['441', '443', '453']
+            idx, counts = find_and_count_injuries(persons_injuries, codes)
+            if len(idx) > 0:
+                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
 
 
-        # -------------------------------- Internal bleeding -------------------------------------------------------
-        codes = ['361', '363', '461', '463']
-        idx, counts = find_and_count_injuries(persons_injuries, codes)
-        idx2, counts = find_and_count_injuries(persons_injuries, ['461', '463'])
-        if len(idx) > 0:
-            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-            if len(idx2) > 0:
-                the_appt_footprint['MinorSurg'] = 1
+            # -------------------------------- Internal bleeding ------------------------------------------------------
+            codes = ['361', '363', '461', '463']
+            idx, counts = find_and_count_injuries(persons_injuries, codes)
+            idx2, counts = find_and_count_injuries(persons_injuries, ['461', '463'])
+            if len(idx) > 0:
+                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+                if len(idx2) > 0:
+                    the_appt_footprint['MinorSurg'] = 1
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'

@@ -12,6 +12,7 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     rti,
+    symptommanager
 )
 
 start_date = Date(2010, 1, 1)
@@ -29,7 +30,7 @@ def simulation():
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(rti.RTI(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
