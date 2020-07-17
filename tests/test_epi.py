@@ -76,11 +76,11 @@ def test_no_health_system(tmpdir):
 
     # check no vaccines being administered through health system
     # only hpv currently, all others start as individual events
-    assert (df.ep_hpv == 0).all()
+    assert (df.va_hpv == 0).all()
 
     # check all infants born after Jan 2019 have no bcg / penta etc. through HSIs
-    assert not ((df.ep_bcg > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
-    assert not ((df.ep_dtp > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
+    assert not ((df.va_bcg > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
+    assert not ((df.va_dtp > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
 
 
 # check epi module does schedule hsi events
@@ -140,5 +140,5 @@ def test_epi_scheduling_hsi_events(tmpdir):
     assert (ep_out.epHpvCoverage > 0).any()
 
     # check only 3 doses max of dtp/pneumo
-    assert (df.ep_dtp <= 3).all()
-    assert (df.ep_pneumo <= 3).all()
+    assert (df.va_dtp <= 3).all()
+    assert (df.va_pneumo <= 3).all()
