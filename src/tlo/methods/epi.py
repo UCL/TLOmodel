@@ -435,6 +435,10 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         """subclasses should implement this method to return the TREATMENT_ID"""
         raise NotImplementedError
 
+    def apply(self, *args, **kwargs):
+        """must be implemented by subclasses"""
+        raise NotImplementedError
+
     def request_vax_consumables(self, *, items=None, packages=None):
         """pull together the construction of consumables (items & packages) needed and returns the outcome after
         requesting them from the health system module
@@ -659,47 +663,45 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = population.props
 
-        def get_coverage(condition, total):
-            has_condition = sum(condition)
+        def get_coverage(condition, subset):
+            total = sum(subset)
+            has_condition = sum(condition & subset)
             coverage = has_condition / total * 100 if total else 0
             assert coverage <= 100
             return coverage
 
         under_ones = df.is_alive & (df.age_years <= 1)
-        from_14_weeks_to_one = df.is_alive & (df.age_years <= 1) & (df.age_exact_years >= 0.27)
-        from_15_months_to_two = df.is_alive & (df.age_exact_years >= 1.25) & (df.age_years <= 2)
-        girls_from_ten_to_twelve = df.is_alive & (df.sex == 'F') & (df.age_exact_years >= 10) & (df.age_years <= 12)
-
-        bcg_coverage = get_coverage(under_ones & df.va_bcg, sum(under_ones))
+        bcg_coverage = get_coverage(df.va_bcg, under_ones)
 
         # the eligible group for coverage estimates will be those from 14 weeks and older
         # younger infants won't have had the three-dose course yet
-        # infants_denom = sum(from_14_weeks_to_one)
-        toddler_count = sum(from_14_weeks_to_one)
-        dtp3_coverage = get_coverage(from_14_weeks_to_one & (df.va_dtp >= 3), toddler_count)
-        opv3_coverage = get_coverage(from_14_weeks_to_one & (df.va_opv >= 3), toddler_count)
-        hib3_coverage = get_coverage(from_14_weeks_to_one & (df.va_hib >= 3), toddler_count)
-        hep3_coverage = get_coverage(from_14_weeks_to_one & (df.va_hep >= 3), toddler_count)
-        pneumo3_coverage = get_coverage(from_14_weeks_to_one & (df.va_pneumo >= 3), toddler_count)
-        rota_coverage = get_coverage(from_14_weeks_to_one & (df.va_rota >= 2), toddler_count)
+        from_14_weeks_to_one = df.is_alive & (df.age_years <= 1) & (df.age_exact_years >= 0.27)
+        dtp3_coverage = get_coverage(df.va_dtp >= 3, from_14_weeks_to_one)
+        opv3_coverage = get_coverage(df.va_opv >= 3, from_14_weeks_to_one)
+        hib3_coverage = get_coverage(df.va_hib >= 3, from_14_weeks_to_one)
+        hep3_coverage = get_coverage(df.va_hep >= 3, from_14_weeks_to_one)
+        pneumo3_coverage = get_coverage(df.va_pneumo >= 3, from_14_weeks_to_one)
+        rota_coverage = get_coverage(df.va_rota >= 2, from_14_weeks_to_one)
 
         # measles vaccination coverage in <2 year old children - 1 dose
         # first dose is at 9 months, second dose is 15 months
         # so check coverage in 15 month -2 year olds
-        measles_coverage = get_coverage(from_15_months_to_two & (df.va_measles >= 1), sum(from_15_months_to_two))
+        from_15_months_to_two = df.is_alive & (df.age_exact_years >= 1.25) & (df.age_years <= 2)
+        measles_coverage = get_coverage(df.va_measles >= 1, from_15_months_to_two)
 
         # rubella vaccination coverage in <2 year old children - 1 dose
         # first dose is at 9 months, second dose is 15 months
-        rubella_coverage = get_coverage(from_15_months_to_two & (df.va_rubella >= 1), sum(from_15_months_to_two))
+        rubella_coverage = get_coverage(df.va_rubella >= 1, from_15_months_to_two)
 
         # HPV vaccination coverage in adolescent girls - 1 dose
         # first dose is at 9 years
-        hpv_coverage = get_coverage(girls_from_ten_to_twelve & (df.va_hpv >= 1), sum(girls_from_ten_to_twelve))
+        girls_from_ten_to_twelve = df.is_alive & (df.sex == 'F') & (df.age_exact_years >= 10) & (df.age_years <= 12)
+        hpv_coverage = get_coverage(df.va_hpv >= 1, girls_from_ten_to_twelve)
 
         logger.info(
             key="ep_vaccine_coverage",
             data={
-                "epNumInfantsUnder1": toddler_count,
+                "epNumInfantsUnder1": sum(from_14_weeks_to_one),
                 "epBcgCoverage": bcg_coverage,
                 "epDtp3Coverage": dtp3_coverage,
                 "epOpv3Coverage": opv3_coverage,
