@@ -5,6 +5,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -53,11 +54,27 @@ class ChronicSyndrome(Module):
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
 
+    """Old way:
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
         'inappropriate_jokes',  # will not trigger any health seeking behaviour
         'em_craving_sandwiches'  # symptom that will trigger emergency HSI
     }
+    """
+    # Declaration of the symptoms that this module will use
+    SYMPTOMS = {
+        Symptom(
+            name='inappropriate_jokes',
+            odds_ratio_health_seeking_in_adults=3.0
+        ),
+        Symptom(
+            name='em_craving_sandwiches',
+            odds_ratio_health_seeking_in_children=1.5,
+            odds_ratio_health_seeking_in_adults=3.0
+        )
+    }
+
+
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.

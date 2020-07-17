@@ -9,6 +9,33 @@ from tlo.events import Event, PopulationScopeEventMixin
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+class Symptom(object):
+    def __init__(self,
+                 name: str = None,
+                 emergency_in_adults: bool = False,
+                 emergency_in_children: bool = False,
+                 odds_ratio_health_seeking_in_adults: float = 1.0,
+                 odds_ratio_health_seeking_in_children: float = 1.0
+                 ):
+
+        # Check that the types are correct and not nonsensical
+        assert isinstance(name, str)
+        assert name is not ''
+
+        assert isinstance(emergency_in_adults, bool)
+        assert isinstance(emergency_in_children, bool)
+
+        assert isinstance(odds_ratio_health_seeking_in_adults, float)
+        assert 0 < odds_ratio_health_seeking_in_adults
+
+        assert isinstance(odds_ratio_health_seeking_in_children, float)
+        assert 0 < odds_ratio_health_seeking_in_children
+
+        self.name = name
+        self.emergency_in_adults = emergency_in_adults
+        self.emergency_in_children = emergency_in_children
+        self.odds_ratio_health_seeking_in_adults = odds_ratio_health_seeking_in_adults
+        self.odds_ratio_health_seeking_in_children = odds_ratio_health_seeking_in_children
 
 
 class SymptomManager(Module):

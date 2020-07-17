@@ -4,6 +4,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -52,9 +53,12 @@ class Mockitis(Module):
 
     # Declaration of the symptoms that this module will use
     SYMPTOMS = {
-        'weird_sense_of_deja_vu',  # will not trigger any health seeking behaviour
-        'coughing_and_irritable',  # will not trigger any health seeking behaviour
-        'em_extreme_pain_in_the_nose'  # symptom that will trigger emergency HSI
+        Symptom(name='weird_sense_of_deja_vu'),                        # will not trigger any health seeking behaviour
+        Symptom(name='coughing_and_irritable'),                        # will not trigger any health seeking behaviour
+        Symptom(name='em_extreme_pain_in_the_nose',
+                emergency_in_adults=True,                              # symptom that will trigger emergency HSI
+                emergency_in_children=True                             # symptom that will trigger emergency HSI
+                )
     }
 
     def __init__(self, name=None, resourcefilepath=None):
