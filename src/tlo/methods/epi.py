@@ -12,21 +12,14 @@ logger.setLevel(logging.INFO)
 
 # TODO Vitamin A
 class Epi(Module):
-    """
-    This is the expanded programme on immunisation module
+    """This is the expanded programme on immunisation module
     it sets up the vaccination schedule for all children from birth
     """
-
     PARAMETERS = {
-        "baseline_coverage": Parameter(
-            Types.DATA_FRAME, "baseline vaccination coverage (all vaccines)"
-        ),
-        "vaccine_schedule": Parameter(
-            Types.SERIES, "vaccination schedule applicable from 2018 onwards"
-        ),
-
+        "baseline_coverage": Parameter(Types.DATA_FRAME, "baseline vaccination coverage (all vaccines)"),
+        "vaccine_schedule": Parameter(Types.SERIES, "vaccination schedule applicable from 2018 onwards"),
         "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "coverage of each vaccine type by year and district")
-        }
+    }
 
     PROPERTIES = {
         "va_bcg": Property(Types.BOOL, "received bcg vaccination"),
@@ -47,16 +40,14 @@ class Epi(Module):
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
-
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
-
         p = self.parameters
-
-        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
-                                              'ResourceFile_EPI_WHO_estimates.xlsx'), sheet_name=None)
+        workbook = pd.read_excel(
+            Path(self.resourcefilepath) / 'ResourceFile_EPI_WHO_estimates.xlsx', sheet_name=None
+        )
 
         p["baseline_coverage"] = workbook["WHO_estimates"]
         p["vaccine_schedule"] = workbook["vaccine_schedule"].set_index('vaccine')['date_administration_days']
@@ -70,7 +61,6 @@ class Epi(Module):
         self.sim.modules["HealthSystem"].register_disease_module(self)
 
     def initialise_population(self, population):
-
         df = population.props
         p = self.parameters
 
