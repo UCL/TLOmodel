@@ -424,12 +424,10 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 # ---------------------------------------------------------------------------------
-
-class HSI_BcgVaccine(HSI_Event, IndividualScopeEventMixin):
-    """
-    gives bcg vaccine 24 hours after birth or as soon as possible afterwards
-    """
-
+class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
+    """This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed
+    for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own
+    constructors (or inherit directly from HSI_Event)"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
@@ -439,10 +437,64 @@ class HSI_BcgVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_bcg"
+        self.TREATMENT_ID = self.treatment_id
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
+
+    @property
+    def treatment_id(self):
+        """subclasses should implement this method to return the TREATMENT_ID"""
+        raise NotImplementedError
+
+    def request_vax_consumables(self, *, items=None, packages=None):
+        """pull together the construction of consumables (items & packages) needed and returns the outcome after
+        requesting them from the health system module
+
+        The following must be passed as keyword arguments:
+        :param items - a list of tuples, where first element of tuple is item name and second element is number req.
+        :param packages - a list of tuples, where first element of tuple is package name and second element is number
+            required"""
+        health_system = self.sim.modules["HealthSystem"]
+        consumables = health_system.parameters["Consumables"]
+
+        # collect the consumable items needed
+        items_found = {}
+        if items is not None:
+            assert isinstance(items, list)
+            for item_name, item_count in items:
+                item_code = pd.unique(consumables.loc[consumables["Items"] == item_name,
+                                                      "Item_Code"])[0]
+                items_found[item_code] = item_count
+
+        # collect the consumable packages needed
+        packages_found = {}
+        if packages is not None:
+            assert isinstance(packages, list)
+            for package_name, package_count in packages:
+                package_code = pd.unique(consumables.loc[consumables["Intervention_Pkg"] == package_name,
+                                                         "Intervention_Pkg_Code"])[0]
+                packages_found[package_code] = package_count
+
+        # put together the items and packages need for this vax
+        consumables_needed = {"Intervention_Package_Code": packages_found,
+                              "Item_Code": items_found}
+
+        # make request to the health system for consumables
+        outcome_of_request_for_consumables = health_system.request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        return outcome_of_request_for_consumables
+
+    def did_not_run(self):
+        logger.debug(key="debug", data=f"{self.__class__.__name__}: did not run")
+
+
+class HSI_BcgVaccine(HsiBaseVaccine):
+    """gives bcg vaccine 24 hours after birth or as soon as possible afterwards"""
+    def treatment_id(self):
+        return "Epi_bcg"
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_bcg: giving bcg to {person_id}")
@@ -450,478 +502,159 @@ class HSI_BcgVaccine(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         if not df.at[person_id, "ep_bcg"]:
-
-            # Make request for some consumables
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-            item_code1 = pd.unique(
-                consumables.loc[consumables["Items"] == "BCG vaccine", "Item_Code"]
-            )[0]
-
-            item_code2 = pd.unique(
-                consumables.loc[
-                    consumables["Items"]
-                    == "Syringe, autodisposable, BCG, 0.1 ml, with needle",
-                    "Item_Code",
+            outcome = self.request_vax_consumables(
+                items=[
+                    ("BCG vaccine", 1),
+                    ("Syringe, autodisposable, BCG, 0.1 ml, with needle", 1),
+                    ("Safety box for used syringes/needles, 5 liter", 1)
                 ]
-            )[0]
-
-            item_code3 = pd.unique(
-                consumables.loc[
-                    consumables["Items"]
-                    == "Safety box for used syringes/needles, 5 liter",
-                    "Item_Code",
-                ]
-            )[0]
-
-            # assume 100 needles can be disposed of in each safety box
-            consumables_needed = {
-                "Intervention_Package_Code": {},
-                "Item_Code": {item_code1: 1, item_code2: 1, item_code3: 1},
-            }
-
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed
             )
 
-            if outcome_of_request_for_consumables:
+            if all(outcome["Item_Code"].values()):
                 df.at[person_id, "ep_bcg"] = True
 
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_bcg: did not run")
 
-
-class HSI_opv(HSI_Event, IndividualScopeEventMixin):
-    """
-    gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Epi)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_opv"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+class HSI_opv(HsiBaseVaccine):
+    """gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards"""
+    def treatment_id(self):
+        return "Epi_opv"
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_opv: giving opv to {person_id}")
 
-        df = self.sim.population.props
+        outcome = self.request_vax_consumables(items=[("Polio vaccine", 1)])
 
-        # Make request for some consumables
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        item_code1 = pd.unique(
-            consumables.loc[consumables["Items"] == "Polio vaccine", "Item_Code"]
-        )[0]
-
-        consumables_needed = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {item_code1: 1},
-        }
-
-        outcome_of_request_for_consumables = self.sim.modules[
-            "HealthSystem"
-        ].request_consumables(hsi_event=self, cons_req_as_footprint=consumables_needed)
-
-        if outcome_of_request_for_consumables:
+        if all(outcome["Item_Code"].values()):
+            df = self.sim.population.props
             df.at[person_id, "ep_opv"] += 1
 
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_opv: did not run")
 
-
-class HSI_DtpHibHepVaccine(HSI_Event, IndividualScopeEventMixin):
-    """
-    gives DTP-Hib_HepB vaccine
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Epi)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_DtpHibHep"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+class HSI_DtpHibHepVaccine(HsiBaseVaccine):
+    """ gives DTP-Hib_HepB vaccine """
+    def treatment_id(self):
+        return "Epi_DtpHibHep"
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_DtpHibHepVaccine: requesting vaccines for {person_id}")
 
-        df = self.sim.population.props
-
-        # Make request for some consumables
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        penta_vax = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Pentavalent vaccine (DPT, Hep B, Hib)",
-                "Item_Code",
+        outcome = self.request_vax_consumables(
+            items=[
+                ("Pentavalent vaccine (DPT, Hep B, Hib)", 1),
+                ("Syringe, needle + swab", 2),
+                ("Safety box for used syringes/needles, 5 liter", 1)
             ]
-        )[0]
-
-        syringe = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Syringe, needle + swab", "Item_Code",
-            ]
-        )[0]
-
-        disposal = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Safety box for used syringes/needles, 5 liter",
-                "Item_Code",
-            ]
-        )[0]
-
-        # assume 100 needles can be disposed of in each safety box
-        consumables_needed = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {
-                penta_vax: 1,
-                syringe: 2,
-                disposal: 1,
-            },
-        }
-
-        outcome_of_request_for_consumables = self.sim.modules[
-            "HealthSystem"
-        ].request_consumables(hsi_event=self, cons_req_as_footprint=consumables_needed)
+        )
 
         # check if Penta and syringes available
-        if (
-            outcome_of_request_for_consumables["Item_Code"][penta_vax]
-            & outcome_of_request_for_consumables["Item_Code"][syringe]
-        ):
-            logger.debug(key="debug", data=f"Penta vax is available, so administer to {person_id}")
+        penta_vax, syringe, safety_box = outcome["Item_Code"].keys()
 
+        if outcome["Item_Code"][penta_vax] & outcome["Item_Code"][syringe]:
+            logger.debug(key="debug", data=f"Penta vax is available, so administer to {person_id}")
+            df = self.sim.population.props
             df.at[person_id, "ep_dtp"] += 1
             df.at[person_id, "ep_hib"] += 1
             df.at[person_id, "ep_hep"] += 1
         else:
             logger.debug(key="debug", data=f"Penta vax is not available for person {person_id}")
 
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_DtpHibHepVaccine: did not run")
 
-
-class HSI_RotaVaccine(HSI_Event, IndividualScopeEventMixin):
-    """
-    gives Rotavirus vaccine 6 and 10 weeks after birth
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Epi)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_Rota"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+class HSI_RotaVaccine(HsiBaseVaccine):
+    """ gives Rotavirus vaccine 6 and 10 weeks after birth """
+    def treatment_id(self):
+        return "Epi_Rota"
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_RotaVaccine: requesting vaccines for {person_id}")
-
-        df = self.sim.population.props
-
         # rotavirus - oral vaccine
         # only 2 doses rotavirus given (week 6 and 10)
         # available from 2012 onwards
+        df = self.sim.population.props
+
         if df.at[person_id, "ep_rota"] < 2:
+            outcome = self.request_vax_consumables(items=[("Rotavirus vaccine", 1)])
 
-            # Make request for some consumables
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-            rotavirus_vax = pd.unique(
-                consumables.loc[
-                    consumables["Items"] == "Rotavirus vaccine", "Item_Code",
-                ]
-            )[0]
-
-            consumables_needed = {
-                "Intervention_Package_Code": {},
-                "Item_Code": {rotavirus_vax: 1},
-            }
-
-            # check if rotavirus vaccine available
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed
-            )
-
-            if outcome_of_request_for_consumables["Item_Code"][rotavirus_vax]:
+            if all(outcome["Item_Code"]):
                 logger.debug(key="debug", data=f"Rotavirus vaccine is available, so administer to {person_id}")
-
                 df.at[person_id, "ep_rota"] += 1
             else:
                 logger.debug(key="debug", data=f"Rotavirus vaccine is not available for person {person_id}")
 
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_RotaVaccine: did not run")
 
-
-class HSI_PneumoVaccine(HSI_Event, IndividualScopeEventMixin):
-    """
-    gives Pneumococcal vaccine 6, 10 and 14 weeks after birth
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Epi)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_Pneumo"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+class HSI_PneumoVaccine(HsiBaseVaccine):
+    """ gives Pneumococcal vaccine 6, 10 and 14 weeks after birth """
+    def treatment_id(self):
+        return "Epi_Pneumo"
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key="debug", data=f"HSI_PneumoVaccine: requesting vaccines for {person_id}")
-
         df = self.sim.population.props
-
-        # Make request for some consumables
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        # pneumococcal vaccine
-        pneumo_vax = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Pneumococcal vaccine", "Item_Code",
+        outcome = self.request_vax_consumables(
+            items=[
+                ("Pneumococcal vaccine", 1),
+                ("Syringe, needle + swab", 2),
+                ("Safety box for used syringes/needles, 5 liter", 1)
             ]
-        )[0]
-
-        syringe = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Syringe, needle + swab", "Item_Code",
-            ]
-        )[0]
-
-        disposal = pd.unique(
-            consumables.loc[
-                consumables["Items"] == "Safety box for used syringes/needles, 5 liter",
-                "Item_Code",
-            ]
-        )[0]
-
-        # assume 100 needles can be disposed of in each safety box
-        consumables_needed = {
-            "Intervention_Package_Code": {},
-            "Item_Code": {
-                pneumo_vax: 1,
-                syringe: 2,
-                disposal: 1,
-            },
-        }
-
-        outcome_of_request_for_consumables = self.sim.modules[
-            "HealthSystem"
-        ].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed
         )
 
         # check if pneumococcal vaccine available and current year 2012 onwards
-        if outcome_of_request_for_consumables:
+        if all(outcome["Item_Code"].values()):
             logger.debug(key="debug", data=f"Pneumococcal vaccine is available, so administer to {person_id}")
-
             df.at[person_id, "ep_pneumo"] += 1
+        else:
+            logger.debug(key="debug", data=f"Pneumococcal vaccine is NOT available for {person_id}")
 
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_PneumoVaccine: did not run")
 
-
-class HSI_MeaslesRubellaVaccine(HSI_Event, IndividualScopeEventMixin):
-    """
-    administers measles+rubella vaccine
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Epi)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_MeaslesRubella"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
+    """ administers measles+rubella vaccine """
+    def treatment_id(self):
+        return "Epi_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(key="debug",
-                     data=f"HSI_MeaslesRubellaVaccine: checking measles+rubella vaccine availability for {person_id}")
-
         df = self.sim.population.props
-
-        # Make request for some consumables
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Measles rubella vaccine",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-
-        consumables_needed = {
-            "Intervention_Package_Code": {pkg_code1: 1},
-            "Item_Code": {},
-        }
-
-        outcome_of_request_for_consumables = self.sim.modules[
-            "HealthSystem"
-        ].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed
+        outcome = self.request_vax_consumables(
+           packages=[("Measles rubella vaccine", 1)]
         )
 
-        if outcome_of_request_for_consumables:
+        if all(outcome["Intervention_Package_Code"].values()):
             logger.debug(key="debug",
                          data=f"HSI_MeaslesRubellaVaccine: measles+rubella vaccine is available for {person_id}")
-
             df.at[person_id, "ep_measles"] += 1
             df.at[person_id, "ep_rubella"] += 1
         else:
             logger.debug(key="debug",
                          data=f"HSI_MeaslesRubellaVaccine: measles+rubella vaccine is NOT available for {person_id}")
 
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_MeaslesRubellaVaccine: did not run")
 
-
-class HSI_HpvVaccine(HSI_Event, IndividualScopeEventMixin):
-    """
-    gives HPV vaccine to 9 year old girls
-    recommended 2 doses (WHO)
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Epi)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_hpv"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+class HSI_HpvVaccine(HsiBaseVaccine):
+    """ gives HPV vaccine to 9 year old girls; recommended 2 doses (WHO) """
+    def treatment_id(self):
+        return "Epi_hpv"
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_HpvVaccine: giving hpv vaccine to {person_id}")
-
         df = self.sim.population.props
-
         if df.at[person_id, "ep_hpv"] < 2:
-
-            # Make request for some consumables
-            consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-            pkg_code1 = pd.unique(
-                consumables.loc[
-                    consumables["Intervention_Pkg"] == "HPV vaccine",
-                    "Intervention_Pkg_Code",
-                ]
-            )[0]
-
-            # assume 100 needles can be disposed of in each safety box
-            consumables_needed = {
-                "Intervention_Package_Code": {pkg_code1: 1},
-                "Item_Code": {},
-            }
-
-            outcome_of_request_for_consumables = self.sim.modules[
-                "HealthSystem"
-            ].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed
-            )
-
-            if outcome_of_request_for_consumables:
+            outcome = self.request_vax_consumables(packages=[("HPV vaccine", 1)])
+            if all(outcome["Intervention_Package_Code"].values()):
                 df.at[person_id, "ep_hpv"] += 1
-
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_HpvVaccine: did not run")
 
 
 # TODO this will be called by the antenatal care module as part of routine care
 # currently not implemented
-class HSI_TdVaccine(HSI_Event, IndividualScopeEventMixin):
-    """
-    gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care
+class HSI_TdVaccine(HsiBaseVaccine):
+    """ gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care
     recommended 2+ doses (WHO)
     """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, Epi)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Epi_Td"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
-        self.ALERT_OTHER_DISEASES = []
+    def treatment_id(self):
+        return "Epi_Td"
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_TdVaccine: giving Td vaccine to {person_id}")
 
         df = self.sim.population.props
-
-        # Make request for some consumables
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-
-        # note this vaccine may not contain diphtheria - it should!
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Tetanus toxoid (pregnant women)",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
-
-        consumables_needed = {
-            "Intervention_Package_Code": {pkg_code1: 1},
-            "Item_Code": {},
-        }
-
-        outcome_of_request_for_consumables = self.sim.modules[
-            "HealthSystem"
-        ].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed
-        )
-
-        if outcome_of_request_for_consumables:
+        outcome = self.request_vax_consumables(packages=[("Tetanus toxoid (pregnant women)", 1)])
+        if all(outcome["Intervention_Package_Code"].values()):
             df.at[person_id, "ep_td"] += 1
 
-    def did_not_run(self):
-        logger.debug(key="debug", data="HSI_TdVaccine: did not run")
 
 # ---------------------------------------------------------------------------------
 # LOGGING
