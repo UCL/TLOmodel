@@ -36,8 +36,13 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2020, 12, 31)
 popsize = 500
 
+log_config = {
+    'filename': 'Epi_LogFile',
+    'custom_levels': {"*": logging.WARNING, "tlo.methods.epi": logging.INFO}
+}
+
 # Establish the simulation object
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -45,36 +50,26 @@ sim = Simulation(start_date=start_date)
 service_availability = ["*"]
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(
-    healthsystem.HealthSystem(
-        resourcefilepath=resourcefilepath,
-        service_availability=service_availability,
-        mode_appt_constraints=2,  # no constraints by officer type/time
-        ignore_cons_constraints=True,
-        ignore_priority=True,
-        capabilities_coefficient=0.0,
-        disable=True,
-    )
-)
-# disables the health system constraints so all HSI events run
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(epi.Epi(resourcefilepath=resourcefilepath))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(
+                 resourcefilepath=resourcefilepath,
+                 service_availability=service_availability,
+                 mode_appt_constraints=2,  # no constraints by officer type/time
+                 ignore_cons_constraints=True,
+                 ignore_priority=True,
+                 capabilities_coefficient=0.0,
+                 disable=True,
+             ),
+             # disables the health system constraints so all HSI events run
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             labour.Labour(resourcefilepath=resourcefilepath),
+             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+             antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             contraception.Contraception(resourcefilepath=resourcefilepath),
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+             epi.Epi(resourcefilepath=resourcefilepath))
 
-# Sets all modules to WARNING threshold, then alter epi to INFO
-custom_levels = {"*": logging.WARNING, "tlo.methods.epi": logging.INFO}
-
-# configure_logging automatically appends datetime
-logfile = sim.configure_logging(filename="Epi_LogFile", custom_levels=custom_levels)
-
-# Run the simulation and flush the logger
-sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
@@ -84,7 +79,7 @@ print("--- %s seconds ---" % (time.time() - start_time))
 
 # ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
 
-output = parse_log_file(logfile)
+output = parse_log_file(sim.log_filepath)
 model_vax_coverage = output["tlo.methods.epi"]["ep_vaccine_coverage"]
 model_date = pd.to_datetime(model_vax_coverage.date)
 model_date = model_date.apply(lambda x: x.year)
