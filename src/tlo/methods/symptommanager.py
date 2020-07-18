@@ -163,8 +163,8 @@ class SymptomManager(Module):
                        duration_in_days=None, date_of_onset=None):
         """
         This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.
-        The sy_ property contains a set of of the disease_module names that currenly cause the symptom.
-        Check if the set is empty or not to determine if the sympton is currently present.
+        The sy_ property contains a set of of the disease_module names that currently cause the symptom.
+        Check if the set is empty or not to determine if the symptom is currently present.
 
         :param date_of_onset: Date for the symptoms to start
         :param duration_in_days: If self-resolving, duration of symptoms
@@ -403,32 +403,41 @@ class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEvent
         children_idx = df.loc[df.is_alive & (df.age_years < 15)].index
         adults_idx = df.loc[df.is_alive & (df.age_years >= 15)].index
 
+        def random_date(start, end):
+            """Generate a random datetime between `start` and `end`"""
+            return start + DateOffset(
+                # Get a random amount of seconds between `start` and `end`
+                seconds=self.module.rng.randint(0, int((end - start).total_seconds())),
+            )
+
         # for each generic symptom, impose it on a random sample of persons
         for symp in params.index:
             # children:
             p_symp_children = params.at[symp, 'prob_spurious_occurrence_in_children_per_month']
             dur_symp_children = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_children']
 
-            self.sim.modules['SymptomManager'].change_symptom(
-                symptom_string=symp,
-                add_or_remove='+',
-                person_id=list(children_idx[self.module.rng.rand(len(children_idx)) < p_symp_children]),
-                date_of_onset=self.sim.date,
-                duration_in_days=dur_symp_children,
-                disease_module=self.module
-            )
+            children_to_onset_with_this_symptom = list(children_idx[self.module.rng.rand(len(children_idx)) < p_symp_children])
+            for child in children_to_onset_with_this_symptom:
+                self.sim.modules['SymptomManager'].change_symptom(
+                    symptom_string=symp,
+                    add_or_remove='+',
+                    person_id=child,
+                    date_of_onset=random_date(self.sim.date, self.sim.date+DateOffset(months=1)),
+                    duration_in_days=dur_symp_children,
+                    disease_module=self.module
+                )
 
             # adults:
             p_symp_adults = params.at[symp, 'prob_spurious_occurrence_in_adults_per_month']
             dur_symp_adults = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_adults']
 
-            self.sim.modules['SymptomManager'].change_symptom(
-                symptom_string=symp,
-                add_or_remove='+',
-                person_id=list(adults_idx[self.module.rng.rand(len(adults_idx)) < p_symp_adults]),
-                date_of_onset=self.sim.date,
-                duration_in_days=dur_symp_adults,
-                disease_module=self.module
-            )
-
-# todo - should the timing of the imposition of these symptoms be more random?
+            adults_to_onset_with_this_symptom = list(adults_idx[self.module.rng.rand(len(adults_idx)) < p_symp_adults])
+            for adult in adults_to_onset_with_this_symptom:
+                self.sim.modules['SymptomManager'].change_symptom(
+                    symptom_string=symp,
+                    add_or_remove='+',
+                    person_id=adult,
+                    date_of_onset=random_date(self.sim.date, self.sim.date+DateOffset(months=1)),
+                    duration_in_days=dur_symp_adults,
+                    disease_module=self.module
+                )
