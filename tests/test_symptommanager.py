@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from pandas import DateOffset
 from tlo import Date, Simulation
 from tlo.methods import (
     contraception,
@@ -51,10 +52,8 @@ def test_no_symptoms_if_no_diseases():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
-                                           capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                                           disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath)
@@ -71,7 +70,6 @@ def test_no_symptoms_if_no_diseases():
     for symp in generic_symptoms:
         # No one should have any symptom currently (as no disease modules registered)
         assert list() == sim.modules['SymptomManager'].who_has(symp)
-        # *** Errors: who_has return the list of all alive persons
 
 def test_adding_symptoms():
     sim = Simulation(start_date=start_date)
@@ -80,9 +78,7 @@ def test_adding_symptoms():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*'],
-                                           capabilities_coefficient=1.0,
-                                           mode_appt_constraints=2),
+                                           disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(),
                  dx_algorithm_child.DxAlgorithmChild(),
@@ -132,4 +128,32 @@ def test_adding_symptoms():
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
 def test_spurious_symptoms():
-    pass
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.seed_rngs(0)
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=2))
+
+    generic_symptoms = list(sim.modules['SymptomManager'].parameters['generic_symptoms'])
+
+    # Someone should have any symptom currently (because spurious_symptoms are being generated)
+    has_any_generic_symptom = []
+    for symp in generic_symptoms:
+        has_this_symptom = sim.modules['SymptomManager'].who_has(symp)
+        if has_this_symptom:
+            has_any_generic_symptom = has_any_generic_symptom + has_this_symptom
+
+    assert len(has_any_generic_symptom) > 0

@@ -22,8 +22,8 @@ class Symptom():
                  name: str = None,
                  emergency_in_adults: bool = False,
                  emergency_in_children: bool = False,
-                 odds_ratio_health_seeking_in_adults: float = 1.0,
-                 odds_ratio_health_seeking_in_children: float = 1.0
+                 odds_ratio_health_seeking_in_adults: float = 1.0,      # where adults are persons aged 15+ years
+                 odds_ratio_health_seeking_in_children: float = 1.0     # where children are persons aged less than 15 years
                  ):
 
         # Check that the types are correct and not nonsensical
@@ -61,7 +61,8 @@ class SymptomManager(Module):
     PROPERTIES = dict()  # give blank definition of parameters here. It's updated in 'pre_initialise_population'
 
     PARAMETERS = {
-        'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
+        'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms'),
+        'generic_symptoms_spurious_occurrence': Parameter(Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms')
     }
 
     def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=False):
@@ -84,8 +85,18 @@ class SymptomManager(Module):
 
         # Define the Generic Symptoms
         generic_symptoms = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+
+        # ensure types are correct:
+        generic_symptoms['duration_in_days_of_spurious_occurrence_in_children'] = generic_symptoms['duration_in_days_of_spurious_occurrence_in_children'].astype(int)
+        generic_symptoms['duration_in_days_of_spurious_occurrence_in_adults'] = generic_symptoms['duration_in_days_of_spurious_occurrence_in_adults'].astype(int)
+
         generic_symptoms.set_index('generic_symptom_name', drop=True, inplace=True)
         self.parameters['generic_symptoms'] = list(generic_symptoms.index)
+        self.parameters['generic_symptoms_spurious_occurrence'] = generic_symptoms[['prob_spurious_occurrence_in_children_per_month',
+                                                                                    'prob_spurious_occurrence_in_adults_per_month',
+                                                                                    'duration_in_days_of_spurious_occurrence_in_children',
+                                                                                    'duration_in_days_of_spurious_occurrence_in_adults'
+                                                                                    ]]
 
         # Register the Generic Symptoms
         for generic_symptom_name in generic_symptoms.index:
@@ -126,7 +137,7 @@ class SymptomManager(Module):
         """Schedule SpuriousSymptomsGenerator if parameter 'spurious_symptoms' is True"""
         if self.spurious_symptoms:
             sim.schedule_event(
-                SymptomManager_SpuriousSymptomGenerator(),
+                SymptomManager_SpuriousSymptomGenerator(self),
                 self.sim.date
             )
 
@@ -183,8 +194,9 @@ class SymptomManager(Module):
         if duration_in_days is not None:
             assert int(duration_in_days) > 0
 
-        # Check that the provided disease_module is a registered disease_module
-        assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
+        # Check that the provided disease_module is a registered disease_module or is the SymptomManager itself
+        if disease_module is not self:
+            assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (isinstance(date_of_onset, pd.Timestamp) and date_of_onset >= self.sim.date)
@@ -375,13 +387,48 @@ class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
                                    duration_in_days=self.duration_in_days)
 
 class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEventMixin):
-    """ This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model"""
+    """ This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model.
+    """
 
     def __init__(self, module):
-        """This event occures every month"""
+        """This event occurs every month"""
         super().__init__(module, frequency=DateOffset(months=1))
         assert isinstance(module, SymptomManager)
 
     def apply(self, population):
+        params = self.module.parameters['generic_symptoms_spurious_occurrence']
 
-        pass
+        # get indices of adults and children
+        df = population.props
+        children_idx = df.loc[df.is_alive & (df.age_years < 15)].index
+        adults_idx = df.loc[df.is_alive & (df.age_years >= 15)].index
+
+        # for each generic symptom, impose it on a random sample of persons
+        for symp in params.index:
+            # children:
+            p_symp_children = params.at[symp, 'prob_spurious_occurrence_in_children_per_month']
+            dur_symp_children = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_children']
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                symptom_string=symp,
+                add_or_remove='+',
+                person_id=list(children_idx[self.module.rng.rand(len(children_idx)) < p_symp_children]),
+                date_of_onset=self.sim.date,
+                duration_in_days=dur_symp_children,
+                disease_module=self.module
+            )
+
+            # adults:
+            p_symp_adults = params.at[symp, 'prob_spurious_occurrence_in_adults_per_month']
+            dur_symp_adults = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_adults']
+
+            self.sim.modules['SymptomManager'].change_symptom(
+                symptom_string=symp,
+                add_or_remove='+',
+                person_id=list(adults_idx[self.module.rng.rand(len(adults_idx)) < p_symp_adults]),
+                date_of_onset=self.sim.date,
+                duration_in_days=dur_symp_adults,
+                disease_module=self.module
+            )
+
+# todo - should the timing of the imposition of these symptoms be more random?
