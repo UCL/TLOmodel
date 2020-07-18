@@ -17,6 +17,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -179,20 +180,23 @@ class OesophagealCancer(Module):
         ),
     }
 
-    # Symptom that this module will use
-    SYMPTOMS = {'dysphagia'}
 
     def read_parameters(self, data_folder):
-        """Setup parameters used by the module, now including disability weights"""
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
+        """Setup parameters used by the module, register it with healthsystem and register symptoms"""
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Register Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(name='dysphagia')
+        )
+
 
     def initialise_population(self, population):
         """Set property values for the initial population."""

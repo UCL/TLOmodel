@@ -88,16 +88,15 @@ class ChronicSyndrome(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # Register this disease module with the symptom manager and declare the symptoms
+        # Register symptoms that this module will use:
         self.sim.modules['SymptomManager'].register_symptom(
                 Symptom(
                     name='inappropriate_jokes',
                     odds_ratio_health_seeking_in_adults=3.0
                 ),
                 Symptom(
-                    name='em_craving_sandwiches',
-                    odds_ratio_health_seeking_in_children=1.5,
-                    odds_ratio_health_seeking_in_adults=3.0
+                    name='craving_sandwiches',
+                    emergency_in_adults=True,
                 )
         )
 

@@ -224,12 +224,12 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  SUSPECTED DEPRESSION  -----
-        if 'em_Injuries_From_Self_Harm' in symptoms:
+        if 'Injuries_From_Self_Harm' in symptoms:
             self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # TODO: Trigger surgical care for injuries.
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
-        if 'em_craving_sandwiches' in symptoms:
+        if 'craving_sandwiches' in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
                 module=self.sim.modules['ChronicSyndrome'],
                 person_id=person_id
@@ -239,7 +239,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 topen=self.sim.date
                                                                 )
 
-        if 'em_extreme_pain_in_the_nose' in symptoms:
+        if 'extreme_pain_in_the_nose' in symptoms:
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
                 module=self.sim.modules['Mockitis'],
                 person_id=person_id

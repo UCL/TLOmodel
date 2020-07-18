@@ -13,6 +13,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -183,11 +184,9 @@ class Depression(Module):
                                                      'or had a last pregnancy less than one year ago')
     }
 
-    # Symptom that this module will use
-    # NB. The 'em_' prefix means that the onset of this symptom leads to an GenericEmergencyAppt
-    SYMPTOMS = {'em_Injuries_From_Self_Harm'}
 
     def read_parameters(self, data_folder):
+        "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
                           sheet_name='parameter_values')
@@ -297,6 +296,15 @@ class Depression(Module):
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='Injuries_From_Self_Harm',
+                emergency_in_adults=True
+            ),
+        )
+
 
     def apply_linear_model(self, lm, df):
         """
@@ -597,7 +605,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
 class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
     """
     This is a Self-Harm event. It has been scheduled to occur by the DepressionPollingEvent.
-    It imposes the em_Injuries_From_Self_Harm symptom, which will lead to emergency care being sought
+    It imposes the Injuries_From_Self_Harm symptom, which will lead to emergency care being sought
     """
 
     def __init__(self, module, person_id):
@@ -615,7 +623,7 @@ class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
             person_id=person_id,
             disease_module=self.module,
             add_or_remove='+',
-            symptom_string='em_Injuries_From_Self_Harm'
+            symptom_string='Injuries_From_Self_Harm'
         )
 
 
