@@ -388,6 +388,7 @@ class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
 
 class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEventMixin):
     """ This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model.
+    The symptoms occur at a randomly-selected time during the month.
     """
 
     def __init__(self, module):
@@ -416,6 +417,7 @@ class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEvent
             p_symp_children = params.at[symp, 'prob_spurious_occurrence_in_children_per_month']
             dur_symp_children = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_children']
 
+            # children:
             children_to_onset_with_this_symptom = list(children_idx[self.module.rng.rand(len(children_idx)) < p_symp_children])
             for child in children_to_onset_with_this_symptom:
                 self.sim.modules['SymptomManager'].change_symptom(
