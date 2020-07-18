@@ -130,3 +130,6 @@ def test_adding_symptoms():
         sim.modules['SymptomManager'].clear_symptoms(person, disease_module=sim.modules['Mockitis'])
 
     assert list() == sim.modules['SymptomManager'].who_has(symp)
+
+def test_spurious_symptoms():
+    pass

@@ -10,7 +10,8 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, PopulationScopeEventMixin
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -63,9 +64,10 @@ class SymptomManager(Module):
         'generic_symptoms': Parameter(Types.LIST, 'List of generic symptoms')
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.spurious_symptoms = spurious_symptoms
         self.persons_with_newly_onset_symptoms = set()
 
         self.all_registered_symptoms = set()
@@ -366,3 +368,14 @@ class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
                                    add_or_remove='+',
                                    disease_module=self.disease_module,
                                    duration_in_days=self.duration_in_days)
+
+class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEventMixin):
+    """ This event gives the occurenec of generic symptoms that are not caused by a disease module in the TLO model"""
+
+    def __init__(self, module):
+        """This event occures every month"""
+        super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, SymptomManager)
+
+    def apply(self, population):
+        pass
