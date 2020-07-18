@@ -31,22 +31,6 @@ except NameError:
     resourcefilepath = './resources'
 
 
-def test_make_a_symptom():
-    symp = Symptom(name='weird_sense_of_deja_vu')
-
-    assert isinstance(symp, Symptom)
-
-    # check contents and defaults
-    assert 'name' in dir(symp)
-    assert 'emergency_in_adults' in dir(symp)
-    assert 'emergency_in_children' in dir(symp)
-    assert 'odds_ratio_health_seeking_in_adults' in dir(symp)
-    assert 'odds_ratio_health_seeking_in_children' in dir(symp)
-
-    assert symp.emergency_in_adults is False
-    assert symp.emergency_in_children is False
-    assert symp.odds_ratio_health_seeking_in_adults == 1.0
-    assert symp.odds_ratio_health_seeking_in_children == 1.0
 
 
 
@@ -55,7 +39,8 @@ def test_disease_module_declare_the_effect_that_a_symptom_has_on_healthcaresekin
     sim = Simulation(start_date=start_date)
 
     # Register the core modules including Chronic Syndrome and Mockities
-    # Mockitis symptoms are not associated with any health care seeking, Chronic Syndrom symptoms are
+    # Mockitis symptoms are not associated with any health care seeking and are declare as strings,
+    # Chronic Syndrome symptoms are declare as instances of class Symptom and are associated with healthcare seeking
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -81,5 +66,8 @@ def test_disease_module_declare_the_effect_that_a_symptom_has_on_healthcaresekin
 
 
 
+# todo - modules will need to explicitly register symptoms directly because they need use read-in parameters
+# todo - make the symptom manager accept that a disease module can declare a string.
+# todo - let the symptom manager interpret an "em_"
+# todo - message Joe to get him to change his usage
 
-# Need to rule the use of

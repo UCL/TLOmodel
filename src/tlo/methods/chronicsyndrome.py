@@ -54,26 +54,6 @@ class ChronicSyndrome(Module):
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
 
-    """Old way:
-    # Declaration of the symptoms that this module will use
-    SYMPTOMS = {
-        'inappropriate_jokes',  # will not trigger any health seeking behaviour
-        'em_craving_sandwiches'  # symptom that will trigger emergency HSI
-    }
-    """
-    # Declaration of the symptoms that this module will use
-    SYMPTOMS = {
-        Symptom(
-            name='inappropriate_jokes',
-            odds_ratio_health_seeking_in_adults=3.0
-        ),
-        Symptom(
-            name='em_craving_sandwiches',
-            odds_ratio_health_seeking_in_children=1.5,
-            odds_ratio_health_seeking_in_adults=3.0
-        )
-    }
-
 
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -84,7 +64,8 @@ class ChronicSyndrome(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-        For now, we are going to hard code them explicity
+        For now, we are going to hard code them explicity.
+        Register the module with the health system and register the symptoms
         """
         self.parameters['p_acquisition_per_year'] = 0.10
         self.parameters['p_cure'] = 0.10
@@ -107,9 +88,19 @@ class ChronicSyndrome(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # # Register this disease module with the symptom manager and declare the symptoms
-        # self.sim.modules['SymptomManager'].register_disease_symptoms(module=self,
-        #                                                            list_of_symptoms=['coughing_and_irritable'])
+        # Register this disease module with the symptom manager and declare the symptoms
+        self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(
+                    name='inappropriate_jokes',
+                    odds_ratio_health_seeking_in_adults=3.0
+                ),
+                Symptom(
+                    name='em_craving_sandwiches',
+                    odds_ratio_health_seeking_in_children=1.5,
+                    odds_ratio_health_seeking_in_adults=3.0
+                )
+        )
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.

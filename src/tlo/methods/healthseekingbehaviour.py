@@ -16,6 +16,22 @@ from tlo.methods.hsi_generic_first_appts import (
 # ---------------------------------------------------------------------------------------------------------
 
 
+# todo [Or put this into the healthcareseeking]
+# # store information ready for use by healthcareseeking module
+# if symptom.emergency_in_adults:
+#     self.emergency_symptoms_for_adults = self.emergency_symptoms_for_adults.union({symptom.name})
+# else:
+#     self.odds_ratio_for_health_care_seeking_for_adults[
+#         symptom.name] = symptom.odds_ratio_health_seeking_in_adults
+#
+# if symptom.emergency_in_children:
+#     self.emergency_symptoms_for_children = self.emergency_symptoms_for_children.union({symptom.name})
+# else:
+#     self.odds_ratio_for_health_care_seeking_for_children[
+#         symptom.name] = symptom.odds_ratio_health_seeking_in_children
+
+
+
 class HealthSeekingBehaviour(Module):
     """
     This modules determines if the onset of generic symptoms will lead to that person presenting at the health
@@ -153,39 +169,39 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # - not encoded: awaiting suitable variable to include.
                 #   (effect size = 1.44 if pre-existing chronic_condition)
 
-                # Symptoms (testing for empty or non-empty set) - (can have more than one)
-                if person_profile['sy_fever']:
-                    f += np.log(1.86)
-
-                if person_profile['sy_vomiting']:
-                    f += np.log(1.28)
-
-                if (person_profile['sy_stomachache']) or (person_profile['sy_diarrhoea']):
-                    f += np.log(0.76)
-
-                if person_profile['sy_sore_throat']:
-                    f += np.log(0.89)
-
-                if person_profile['sy_respiratory_symptoms']:
-                    f += np.log(0.71)
-
-                if person_profile['sy_headache']:
-                    f += np.log(0.52)
-
-                if person_profile['sy_skin_complaint']:
-                    f += np.log(2.31)
-
-                if person_profile['sy_dental_complaint']:
-                    f += np.log(0.94)
-
-                if person_profile['sy_backache']:
-                    f += np.log(1.01)
-
-                if person_profile['sy_injury']:
-                    f += np.log(1.02)
-
-                if person_profile['sy_eye_complaint']:
-                    f += np.log(1.33)
+                # # Symptoms (testing for empty or non-empty set) - (can have more than one)
+                # if person_profile['sy_fever']:
+                #     f += np.log(1.86)
+                #
+                # if person_profile['sy_vomiting']:
+                #     f += np.log(1.28)
+                #
+                # if (person_profile['sy_stomachache']) or (person_profile['sy_diarrhoea']):
+                #     f += np.log(0.76)
+                #
+                # if person_profile['sy_sore_throat']:
+                #     f += np.log(0.89)
+                #
+                # if person_profile['sy_respiratory_symptoms']:
+                #     f += np.log(0.71)
+                #
+                # if person_profile['sy_headache']:
+                #     f += np.log(0.52)
+                #
+                # if person_profile['sy_skin_complaint']:
+                #     f += np.log(2.31)
+                #
+                # if person_profile['sy_dental_complaint']:
+                #     f += np.log(0.94)
+                #
+                # if person_profile['sy_backache']:
+                #     f += np.log(1.01)
+                #
+                # if person_profile['sy_injury']:
+                #     f += np.log(1.02)
+                #
+                # if person_profile['sy_eye_complaint']:
+                #     f += np.log(1.33)
 
                 # TODO - symptom that are specific to a disease module need to be registered, or otherwise safely
                 #  handled here

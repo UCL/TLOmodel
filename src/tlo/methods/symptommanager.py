@@ -1,6 +1,12 @@
 """
-The Symptom Manager
+The Symptom Manager:
+* Manages presence of symptoms for all disease modules
+* Manages a set of generic symptoms
+* Creates occurrences of generic symptom (representing that being caused by diseases not included in the TLO model)
 """
+
+from pathlib import Path
+
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
@@ -9,7 +15,8 @@ from tlo.events import Event, PopulationScopeEventMixin
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
-class Symptom(object):
+class Symptom():
+    """Data structure to hold the information about a symptom"""
     def __init__(self,
                  name: str = None,
                  emergency_in_adults: bool = False,
@@ -30,6 +37,13 @@ class Symptom(object):
 
         assert isinstance(odds_ratio_health_seeking_in_children, float)
         assert 0 < odds_ratio_health_seeking_in_children
+
+        # if the symptom is declared as an emrgency it cannot also have an odds ratio for health seeking, for that age of person
+        if emergency_in_adults:
+            assert 1.0 == odds_ratio_health_seeking_in_adults
+
+        if emergency_in_children:
+            assert 1.0 == odds_ratio_health_seeking_in_children
 
         self.name = name
         self.emergency_in_adults = emergency_in_adults
@@ -53,57 +67,55 @@ class SymptomManager(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.persons_with_newly_onset_symptoms = set()
+
+        self.all_registered_symptoms = set()
+        self.symptom_names = []
         self.symptom_column_names = []
-        self.all_registered_symptoms = None
+
+        self.emergency_symptoms_for_adults = set()
+        self.emergency_symptoms_for_children = set()
+        self.odds_ratio_for_health_care_seeking_for_adults = dict()
+        self.odds_ratio_for_health_care_seeking_for_children = dict()
 
     def read_parameters(self, data_folder):
-        # Generic Symptoms: pre-defined and used in health seeking behaviour
-        self.parameters['generic_symptoms'] = {
-            'fever',
-            'vomiting',
-            'stomachache',
-            'sore_throat',
-            'respiratory_symptoms',
-            'headache',
-            'skin_complaint',
-            'dental_complaint',
-            'backache',
-            'injury',
-            'eye_complaint',
-            'diarrhoea',
-        }
+        """Read in the generic symptoms and register them"""
+
+        # Define the Generic Symptoms
+        generic_symptoms = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+        generic_symptoms.set_index('generic_symptom_name', drop=True, inplace=True)
+        self.parameters['generic_symptoms'] = list(generic_symptoms.index)
+
+        # Register the Generic Symptoms
+        for generic_symptom_name in generic_symptoms.index:
+            self.register_symptom(
+                Symptom(
+                    name=generic_symptom_name,
+                    odds_ratio_health_seeking_in_adults=generic_symptoms.at[generic_symptom_name, 'odds_ratio_for_health_seeking_in_adults'],
+                    odds_ratio_health_seeking_in_children=generic_symptoms.at[generic_symptom_name, 'odds_ratio_for_health_seeking_in_children'],
+                    emergency_in_adults=False,
+                    emergency_in_children=False
+                )
+            )
 
     def pre_initialise_population(self):
         """
-        Collect up the SYMPTOMS that are declared by each disease module and use this to establish the properties
-        for this module. Skip over disease modules that do not have a declaration of symptoms.
-        This will make sure that each symptom is included in the list at most once (even if multiple disease modules
-        declare the same symptom).
+        Make the properties for each symptom.
+        :return:
         """
-        registered_symptoms = self.parameters['generic_symptoms']
-        for module in self.sim.modules['HealthSystem'].registered_disease_modules.values():
-            if hasattr(module, 'SYMPTOMS'):
-                registered_symptoms = registered_symptoms.union(module.SYMPTOMS)
-
-        self.all_registered_symptoms = registered_symptoms
-
         # Clear any existing properties (PROPERTIES is a class member, so may have been set elsewhere)
         SymptomManager.PROPERTIES = dict()
 
-        for symptom in sorted(self.all_registered_symptoms):
-            SymptomManager.PROPERTIES[f'sy_{symptom}'] = Property(Types.LIST, f'Presence of symptom {symptom}')
-            self.symptom_column_names.append(f'sy_{symptom}')
+        # Make property for each symptom
+        self.symptom_names = sorted(self.symptom_names)
+        for symptom_name in self.symptom_names:
+            symptom_column_name = f'sy_{symptom_name}'
+            self.symptom_column_names.append(symptom_column_name)
+            SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.LIST, f'Presence of symptom {symptom_name}')
 
     def initialise_population(self, population):
         """
         Give all individuals the no symptoms (ie. an empty set)
         """
-        # for symptom_var in self.symptom_column_names:
-        #     population.props[symptom_var].values[:] = set()
-
-        # ** Doing it this way, leads to correct behaviour (see test)
-        # (The way above leads to incorrect behaviour because it seems to be pointers to the *same* set object that
-        #  is copied to all the columns)
         for person_id in list(population.props.index):
             for symptom_var in self.symptom_column_names:
                 population.props.at[person_id, symptom_var] = set()
@@ -118,6 +130,16 @@ class SymptomManager(Module):
         df = self.sim.population.props
         for symptom_var in self.symptom_column_names:
             df.at[child_id, symptom_var] = set()
+
+    def register_symptom(self, *symptoms_to_register: Symptom):
+        """
+        Stores the symptom classes that are passed
+        :param symptoms_to_register: instance(s) of class Symptom
+        :return:
+        """
+        for symptom in symptoms_to_register:
+            self.all_registered_symptoms = self.all_registered_symptoms.union({symptom})
+            self.symptom_names.append(symptom.name)
 
     def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
                        duration_in_days=None, date_of_onset=None):
@@ -143,7 +165,7 @@ class SymptomManager(Module):
         person_id = list(df.index[df.is_alive & (df.index.isin(person_id))])
 
         # Check that the symptom_string is legitimate
-        assert symptom_string in self.all_registered_symptoms, 'Symptom is not recognised'
+        assert symptom_string in self.symptom_names, 'Symptom is not recognised'
         symptom_var_name = 'sy_' + symptom_string
         assert symptom_var_name in df.columns, 'Symptom has not been declared'
 
@@ -156,11 +178,6 @@ class SymptomManager(Module):
 
         # Check that the provided disease_module is a registered disease_module
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
-
-        # Check that the symptom is declared for use by the disease_module
-        if symptom_string not in self.parameters['generic_symptoms']:
-            assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not generic or declared for use by disease ' \
-                                                              'module '
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (isinstance(date_of_onset, pd.Timestamp) and date_of_onset >= self.sim.date)
@@ -215,7 +232,7 @@ class SymptomManager(Module):
         assert len(list_of_symptoms) > 0
 
         # Check that these are legitimate symptoms
-        assert all([symp in self.all_registered_symptoms for symp in list_of_symptoms])
+        assert all([symp in self.symptom_names for symp in list_of_symptoms]), 'Symptom not registered'
 
         # get the person_id for those who have each symptom
         df = self.sim.population.props
@@ -270,7 +287,7 @@ class SymptomManager(Module):
 
         assert not isinstance(person_id, list), "person_id should be for one person only"
         assert df.at[person_id, 'is_alive'], "The person is not alive"
-        assert symptom_string in self.all_registered_symptoms
+        assert symptom_string in self.symptom_names
 
         return list(df.at[person_id, 'sy_' + symptom_string])
 
@@ -327,7 +344,6 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
                                    symptom_string=self.symptom_string,
                                    add_or_remove='-',
                                    disease_module=self.disease_module)
-
 
 class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
     """

@@ -12,8 +12,9 @@ from tlo.methods import (
     labour,
     mockitis,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, chronicsyndrome,
 )
+from tlo.methods.symptommanager import Symptom
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -25,6 +26,23 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
 popsize = 200
 
+
+def test_make_a_symptom():
+    symp = Symptom(name='weird_sense_of_deja_vu')
+
+    assert isinstance(symp, Symptom)
+
+    # check contents and the values defaulted to.
+    assert hasattr(symp, 'name')
+    assert hasattr(symp, 'emergency_in_adults')
+    assert hasattr(symp, 'emergency_in_children')
+    assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
+    assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
+
+    assert symp.emergency_in_adults is False
+    assert symp.emergency_in_children is False
+    assert symp.odds_ratio_health_seeking_in_adults == 1.0
+    assert symp.odds_ratio_health_seeking_in_children == 1.0
 
 def test_no_symptoms_if_no_diseases():
     sim = Simulation(start_date=start_date)
@@ -55,7 +73,6 @@ def test_no_symptoms_if_no_diseases():
         assert list() == sim.modules['SymptomManager'].who_has(symp)
         # *** Errors: who_has return the list of all alive persons
 
-
 def test_adding_symptoms():
     sim = Simulation(start_date=start_date)
 
@@ -72,7 +89,8 @@ def test_adding_symptoms():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis())
+                 mockitis.Mockitis(),
+                 chronicsyndrome.ChronicSyndrome())
 
     sim.seed_rngs(0)
 

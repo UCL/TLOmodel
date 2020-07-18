@@ -51,16 +51,6 @@ class Mockitis(Module):
             Types.DATE, 'Date an infected individual was cured')
     }
 
-    # Declaration of the symptoms that this module will use
-    SYMPTOMS = {
-        Symptom(name='weird_sense_of_deja_vu'),                        # will not trigger any health seeking behaviour
-        Symptom(name='coughing_and_irritable'),                        # will not trigger any health seeking behaviour
-        Symptom(name='em_extreme_pain_in_the_nose',
-                emergency_in_adults=True,                              # symptom that will trigger emergency HSI
-                emergency_in_children=True                             # symptom that will trigger emergency HSI
-                )
-    }
-
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -68,6 +58,7 @@ class Mockitis(Module):
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
+        """Read in parameters and do the registration of this module and its symptoms"""
         p = self.parameters
 
         p['p_infection'] = 0.001
@@ -80,7 +71,7 @@ class Mockitis(Module):
                 'level_of_symptoms': ['none',
                                       'weird_sense_of_deja_vu',
                                       'coughing_and_irritable',
-                                      'em_extreme_pain_in_the_nose'],
+                                      'extreme_pain_in_the_nose'],
                 'probability': [0.25, 0.25, 0.25, 0.25]
             })
 
@@ -89,12 +80,25 @@ class Mockitis(Module):
             p['daly_wts'] = {
                 'weird_sense_of_deja_vu': self.sim.modules['HealthBurden'].get_daly_weight(48),
                 'coughing_and_irritable': self.sim.modules['HealthBurden'].get_daly_weight(49),
-                'em_extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
+                'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
+
 
         # ---- Register this module ----
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # ---- Register the Symptoms ----
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='weird_sense_of_deja_vu'),          # will not trigger any health seeking behaviour
+            Symptom(name='coughing_and_irritable'),          # will not trigger any health seeking behaviour
+            Symptom(name='extreme_pain_in_the_nose',
+                    emergency_in_adults=True,
+                    emergency_in_children=True
+                    )
+        )
+
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
