@@ -123,7 +123,12 @@ class SymptomManager(Module):
                 population.props.at[person_id, symptom_var] = set()
 
     def initialise_simulation(self, sim):
-        pass
+        """Schedule SpuriousSymptomsGenerator if parameter 'spurious_symptoms' is True"""
+        if self.spurious_symptoms:
+            sim.schedule_event(
+                SymptomManager_SpuriousSymptomGenerator(),
+                self.sim.date
+            )
 
     def on_birth(self, mother_id, child_id):
         """
@@ -370,7 +375,7 @@ class SymptomManager_AutoOnsetEvent(Event, PopulationScopeEventMixin):
                                    duration_in_days=self.duration_in_days)
 
 class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEventMixin):
-    """ This event gives the occurenec of generic symptoms that are not caused by a disease module in the TLO model"""
+    """ This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model"""
 
     def __init__(self, module):
         """This event occures every month"""
@@ -378,4 +383,5 @@ class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEvent
         assert isinstance(module, SymptomManager)
 
     def apply(self, population):
+
         pass

@@ -72,7 +72,7 @@ class ChronicSyndrome(Module):
         self.parameters['initial_prevalence'] = 0.30
         self.parameters['prob_of_symptoms'] = {
             'inappropriate_jokes': 0.95,
-            'em_craving_sandwiches': 0.5
+            'craving_sandwiches': 0.5
         }
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
@@ -81,7 +81,7 @@ class ChronicSyndrome(Module):
             # get the DALY weight that this module will use from the weight database (these codes are just random!)
             self.parameters['daly_wts'] = {
                 'inappropriate_jokes': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=86),
-                'em_craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
+                'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
             }
 
         # ---- Register this module ----
@@ -318,7 +318,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # 3) Handle progression to severe symptoms
         curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive])
                                                   - set(
-            self.sim.modules['SymptomManager'].who_has('em_craving_sandwiches')))
+            self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
 
         become_severe = (
             self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches))
@@ -328,7 +328,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=list(become_severe_idx),
-            symptom_string='em_craving_sandwiches',
+            symptom_string='craving_sandwiches',
             add_or_remove='+',
             disease_module=self.module
         )
