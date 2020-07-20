@@ -33,7 +33,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
+end_date = Date(2020, 12, 31)
 popsize = 500
 
 log_config = {
@@ -107,7 +107,7 @@ plt.style.use("ggplot")
 
 # BCG coverage
 plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.BCG)
+plt.plot(coverage_data2010_years, coverage_data2010.BCG*100)
 plt.plot(model_date, model_vax_coverage.epBcgCoverage)
 plt.title("BCG vaccine coverage")
 plt.xlabel("Year")
@@ -119,7 +119,7 @@ plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # DTP3 coverage
 plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.DTP3)
+plt.plot(coverage_data2010_years, coverage_data2010.DTP3*100)
 plt.plot(model_date, model_vax_coverage.epDtp3Coverage)
 plt.title("DTP3 vaccine coverage")
 plt.xlabel("Year")
@@ -131,7 +131,7 @@ plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # OPV3 coverage
 plt.subplot(223)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.Pol3)
+plt.plot(coverage_data2010_years, coverage_data2010.Pol3*100)
 plt.plot(model_date, model_vax_coverage.epOpv3Coverage)
 plt.title("OPV3 vaccine coverage")
 plt.xlabel("Year")
@@ -143,7 +143,7 @@ plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Hib3 coverage
 plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.Hib3)
+plt.plot(coverage_data2010_years, coverage_data2010.Hib3*100)
 plt.plot(model_date, model_vax_coverage.epHib3Coverage)
 plt.title("Hib3 vaccine coverage")
 plt.xlabel("Year")
@@ -156,7 +156,7 @@ plt.show()
 
 # Hep3 coverage
 plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.HepB3)
+plt.plot(coverage_data2010_years, coverage_data2010.HepB3*100)
 plt.plot(model_date, model_vax_coverage.epHep3Coverage)
 plt.title("Hep3 vaccine coverage")
 plt.xlabel("Year")
@@ -168,7 +168,7 @@ plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Pneumo3 coverage
 plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.PCV3)
+plt.plot(coverage_data2010_years, coverage_data2010.PCV3*100)
 plt.plot(model_date, model_vax_coverage.epPneumo3Coverage)
 plt.title("Pneumo3 vaccine coverage")
 plt.xlabel("Year")
@@ -180,7 +180,7 @@ plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Rotavirus2 coverage
 plt.subplot(223)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.Rota)
+plt.plot(coverage_data2010_years, coverage_data2010.Rota*100)
 plt.plot(model_date, model_vax_coverage.epRota2Coverage)
 plt.title("Rotavirus2 vaccine coverage")
 plt.xlabel("Year")
@@ -192,7 +192,7 @@ plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
 # Measles coverage (1 dose)
 plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(coverage_data2010_years, coverage_data2010.MCV1)
+plt.plot(coverage_data2010_years, coverage_data2010.MCV1*100)
 plt.plot(model_date, model_vax_coverage.epMeaslesCoverage)
 plt.title("Measles vaccine coverage")
 plt.xlabel("Year")
