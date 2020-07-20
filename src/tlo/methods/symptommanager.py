@@ -97,6 +97,9 @@ class Symptom:
         self.odds_ratio_health_seeking_in_adults = odds_ratio_health_seeking_in_adults
         self.odds_ratio_health_seeking_in_children = odds_ratio_health_seeking_in_children
 
+class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
+    print("A symptom with this name has been registered already but with different proprtie")
+    pass
 
 class SymptomManager(Module):
     """
@@ -117,7 +120,7 @@ class SymptomManager(Module):
         self.persons_with_newly_onset_symptoms = set()
 
         self.all_registered_symptoms = set()
-        self.symptom_names = []
+        self.symptom_names = set()
         self.symptom_column_names = []
 
         self.emergency_symptoms_for_adults = set()
@@ -200,9 +203,14 @@ class SymptomManager(Module):
         :param symptoms_to_register: instance(s) of class Symptom
         :return:
         """
+
         for symptom in symptoms_to_register:
-            self.all_registered_symptoms = self.all_registered_symptoms.union({symptom})
-            self.symptom_names.append(symptom.name)
+            if symptom.name not in self.symptom_names:
+                self.all_registered_symptoms = self.all_registered_symptoms.union({symptom})
+                self.symptom_names = self.symptom_names.union({symptom.name})
+            elif symptom not in self.all_registered_symptoms:
+                raise DuplicateSymptomWithNonIdenticalPropertiesError
+
 
     def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
                        duration_in_days=None, date_of_onset=None):

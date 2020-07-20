@@ -15,7 +15,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager, chronicsyndrome,
 )
-from tlo.methods.symptommanager import Symptom
+from tlo.methods.symptommanager import Symptom, DuplicateSymptomWithNonIdenticalPropertiesError
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -50,6 +50,40 @@ def test_make_a_symptom():
 
     assert symp.odds_ratio_health_seeking_in_children == 1.0
     assert symp.odds_ratio_health_seeking_in_adults == 1.0
+
+
+
+
+
+def test_register_duplicate_symptoms():
+    symp = Symptom(name='symptom')
+    symp_with_different_properties = Symptom(name='symptom', emergency_in_children=True)
+
+    sm = symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
+
+    # register original
+    sm.register_symptom(symp)
+    assert 1 == len(sm.all_registered_symptoms)
+    assert 1 == len(sm.symptom_names)
+
+    # register duplicate (same name and same properties): should give no error
+    sm.register_symptom(symp)
+    assert 1 == len(sm.all_registered_symptoms)
+    assert 1 == len(sm.symptom_names)
+
+    # register non-identical duplicate (same name but different properties): should error
+    created_error = False
+    try:
+        sm.register_symptom(symp_with_different_properties)
+    except DuplicateSymptomWithNonIdenticalPropertiesError:
+        created_error = True
+
+    assert created_error
+
+
+
+
+
 
 def test_no_symptoms_if_no_diseases():
     sim = Simulation(start_date=start_date)
