@@ -77,7 +77,7 @@ def test_no_symptoms_if_no_diseases():
         # No one should have any symptom currently (as no disease modules registered)
         assert list() == sim.modules['SymptomManager'].who_has(symp)
 
-def test_adding_symptoms():
+def test_adding_quering_and_removing_symptoms():
     sim = Simulation(start_date=start_date)
 
     # Register the core modules
@@ -92,7 +92,8 @@ def test_adding_symptoms():
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
-                 chronicsyndrome.ChronicSyndrome())
+                 chronicsyndrome.ChronicSyndrome()
+                 )
 
     sim.seed_rngs(0)
 
@@ -108,7 +109,7 @@ def test_adding_symptoms():
     # No one should have any symptom currently
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
-    # check adding symptoms
+    # Add the symptom
     ids = list(sim.rng.choice(list(df.index[df.is_alive]), 5))
 
     sim.modules['SymptomManager'].change_symptom(
@@ -118,10 +119,14 @@ def test_adding_symptoms():
         disease_module=sim.modules['Mockitis']
     )
 
+    # Check who_has() and has_what()
     has_symp = sim.modules['SymptomManager'].who_has(symp)
     assert set(has_symp) == set(ids)
 
-    # check causes of the symptoms:
+    for person_id in ids:
+        assert symp == sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Mockitis'])
+
+    # Check cause of the symptom:
     for person in ids:
         causes = sim.modules['SymptomManager'].causes_of(person, symp)
         assert 'Mockitis' in causes

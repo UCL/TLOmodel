@@ -16,7 +16,7 @@ from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
-class Symptom():
+class Symptom:
     """Data structure to hold the information about a symptom.
     Adult is peron aged 15+
     Child is someone aged <15
