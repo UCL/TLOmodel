@@ -86,7 +86,7 @@ def test_adding_quering_and_removing_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -109,7 +109,7 @@ def test_adding_quering_and_removing_symptoms():
     # No one should have any symptom currently
     assert list() == sim.modules['SymptomManager'].who_has(symp)
 
-    # Add the symptom
+    # Add the symptom to a random selection of people
     ids = list(sim.rng.choice(list(df.index[df.is_alive]), 5))
 
     sim.modules['SymptomManager'].change_symptom(
@@ -124,7 +124,7 @@ def test_adding_quering_and_removing_symptoms():
     assert set(has_symp) == set(ids)
 
     for person_id in ids:
-        assert symp == sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Mockitis'])
+        assert [symp] == sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Mockitis'])
 
     # Check cause of the symptom:
     for person in ids:
