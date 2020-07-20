@@ -4,6 +4,7 @@ A skeleton template for disease methods.
 """
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiseaseModule
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 
@@ -15,9 +16,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Skeleton(Module):
+class Skeleton(DiseaseModule):
     """
     One line summary goes here...
+
+    If it is a Disease Module use base class DiseaseModule
+    If it another kind of module use base class Module
 
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation

@@ -1,6 +1,7 @@
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiseaseModule
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Mockitis(Module):
+class Mockitis(DiseaseModule):
     """
     This is a dummy infectious disease.
     It demonstrates the following behaviours in respect of the healthsystem module:
@@ -83,7 +84,6 @@ class Mockitis(Module):
                 'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
 
-
         # ---- Register this module ----
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -97,8 +97,6 @@ class Mockitis(Module):
                     emergency_in_children=True
                     )
         )
-
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.

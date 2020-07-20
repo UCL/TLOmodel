@@ -53,8 +53,6 @@ def test_make_a_symptom():
 
 
 
-
-
 def test_register_duplicate_symptoms():
     symp = Symptom(name='symptom')
     symp_with_different_properties = Symptom(name='symptom', emergency_in_children=True)
@@ -79,10 +77,6 @@ def test_register_duplicate_symptoms():
         created_error = True
 
     assert created_error
-
-
-
-
 
 
 def test_no_symptoms_if_no_diseases():
@@ -111,6 +105,7 @@ def test_no_symptoms_if_no_diseases():
         # No one should have any symptom currently (as no disease modules registered)
         assert list() == sim.modules['SymptomManager'].who_has(symp)
 
+
 def test_adding_quering_and_removing_symptoms():
     sim = Simulation(start_date=start_date)
 
@@ -131,9 +126,8 @@ def test_adding_quering_and_removing_symptoms():
 
     sim.seed_rngs(0)
 
-    # Run the simulation
+    # Make the population:
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
 
     # Check that symptoms are add to checked and removed correctly
     df = sim.population.props
@@ -158,7 +152,7 @@ def test_adding_quering_and_removing_symptoms():
     assert set(has_symp) == set(ids)
 
     for person_id in ids:
-        assert [symp] == sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Mockitis'])
+        assert symp in sim.modules['SymptomManager'].has_what(person_id=person_id, disease_module=sim.modules['Mockitis'])
 
     # Check cause of the symptom:
     for person in ids:
@@ -202,3 +196,6 @@ def test_spurious_symptoms():
             has_any_generic_symptom = has_any_generic_symptom + has_this_symptom
 
     assert len(has_any_generic_symptom) > 0
+
+
+# todo - test that a baby is born and has no symptoms;

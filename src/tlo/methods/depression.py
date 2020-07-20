@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiseaseModule
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
@@ -23,7 +24,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-class Depression(Module):
+class Depression(DiseaseModule):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath

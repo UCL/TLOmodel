@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiseaseModule
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class ChronicSyndrome(Module):
+class ChronicSyndrome(DiseaseModule):
     """
     This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthsystem module:

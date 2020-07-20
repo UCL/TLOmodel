@@ -9,7 +9,8 @@ from typing import Dict, Union
 
 import numpy as np
 
-from tlo import Date, Population, logging
+from tlo import Date, Population, logging, Module
+from tlo.core import DiseaseModule
 from tlo.events import IndividualScopeEventMixin
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ class Simulation:
         # simulation
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
+        self.disease_modules_name = list()
         self.event_queue = EventQueue()
         self.end_date = None
         self.output_file = None
@@ -141,6 +143,9 @@ class Simulation:
             self.modules[module.name] = module
             module.sim = self
             module.read_parameters('')
+
+            if isinstance(module, DiseaseModule):
+                self.disease_modules_name.append(module.name)
 
     def seed_rngs(self, seed):
         """Seed the random number generator (RNG) for the Simulation instance and registered modules
