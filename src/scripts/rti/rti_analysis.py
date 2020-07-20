@@ -40,12 +40,12 @@ import numpy as np
 
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
-
+print(resourcefilepath)
 # Establish the simulation object
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 1000
+popsize = 10000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")
@@ -55,35 +55,34 @@ logfile = sim.configure_logging(filename="LogFile")
 service_availability = ['*']
 logging.getLogger('tlo.methods.RTI').setLevel(logging.DEBUG)
 
-# Register the appropriate 'core' modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+# Register the appropriate 'core' modules, can register y/n. Runs without issue? Y,N
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),  # y, Y
+             # contraception.Contraception(resourcefilepath=resourcefilepath),  # y, Y
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),  # y, Y
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=2,
                                        capabilities_coefficient=1.0,
                                        ignore_cons_constraints=False,
-                                       disable=False))
-# (NB. will run much faster with disable=True in the declaration of the HealthSystem)
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(epilepsy.Epilepsy(resourcefilepath=resourcefilepath))
-sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
-# sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-# sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-# sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-# sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
-# sim.register(hiv_behaviour_change.BehaviourChange)
-# sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
-# sim.register(tb.tb(resourcefilepath=resourcefilepath))
-# sim.register(tb_hs_engagement.health_system_tb)
-# sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-# Register disease modules of interest:
-sim.register(rti.RTI(resourcefilepath=resourcefilepath))
+                                       disable=False),  # y, Y
+             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),  # y, Y
+             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),  # y, Y
+             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),  # y, Y
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),  # y, Y
+             epilepsy.Epilepsy(resourcefilepath=resourcefilepath),  # y, Y
+             oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath),  # y, Y
+             # labour.Labour(resourcefilepath=resourcefilepath),  # y, Y
+             # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),  # y, N
+             # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),  # y, Y
+             # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),  # y, Y
+             # hiv.hiv(resourcefilepath=resourcefilepath),  # y, N (Issue with requesting consumables)
+             # hiv_behaviour_change.BehaviourChange,  # n
+             # male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),  # y, Y (Issue with requesting
+             # consumables)
+             # tb.tb(resourcefilepath=resourcefilepath),  # y, N (probably because of HIV not working without issue)
+             # tb_hs_engagement.health_system_tb,  # n
+             rti.RTI(resourcefilepath=resourcefilepath)  # y, Y
+             )
 
 # custom_levels = {
 #     # '*': logging.CRITICAL,  # disable logging for all modules
@@ -749,11 +748,18 @@ plt.ylabel('Percentage of those with RTIs')
 plt.title(f'{yearsrun} year model run, N={popsize}: Gender demographic distribution of RTIs')
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InRTIGenderDistribution.png')
 plt.clf()
-ageData = data['age_years']
-values, counts = np.unique(ageData, return_counts=True)
-fig, ax = plt.subplots()
 
-ax.bar(values, counts / sum(counts), color='lightsteelblue')
+childrenCounts = len(data.loc[data['age_years'].between(0, 17, inclusive=True)])
+youngAdultCounts = len(data.loc[data['age_years'].between(18, 29, inclusive=True)])
+thirtiesCounts = len(data.loc[data['age_years'].between(30, 39, inclusive=True)])
+fourtiesCounts = len(data.loc[data['age_years'].between(40, 49, inclusive=True)])
+fiftiesAndSixtiesCounts = len(data.loc[data['age_years'].between(50, 69, inclusive=True)])
+seventiesPlus = len(data.loc[data['age_years'] >= 70])
+counts = [childrenCounts, youngAdultCounts, thirtiesCounts, fourtiesCounts, fiftiesAndSixtiesCounts, seventiesPlus]
+percentages = np.divide(counts, sum(counts))
+labels = ['0-17', '18-29', '30-39', '40-49', '50-69', '70+']
+fig, ax = plt.subplots()
+ax.bar(labels, percentages, color='lightsteelblue')
 plt.xlabel('Age')
 plt.ylabel('Percentage of those with RTIs')
 plt.title(f'{yearsrun} year model run, N={popsize}: Age demographic distribution of RTIs')
