@@ -194,7 +194,8 @@ class OesophagealCancer(Module):
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(name='dysphagia')
+                Symptom(name='dysphagia',
+                        odds_ratio_health_seeking_in_adults=4.00)
         )
 
 

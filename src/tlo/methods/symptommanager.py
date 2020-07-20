@@ -17,36 +17,81 @@ from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 class Symptom():
-    """Data structure to hold the information about a symptom"""
+    """Data structure to hold the information about a symptom.
+    Adult is peron aged 15+
+    Child is someone aged <15
+
+    The assumption is that symptom tend to cause health-care seeking. This can be modified by specifying that the
+    healthcare seeking is an emergency, or is more/less likely than the 'average symptom', or that the symptom does not
+    cause healthcare seeking at all.
+    The default behaviour is that a symptom causes health care seeking in the same manner as does the 'average symptom'.
+
+    """
     def __init__(self,
                  name: str = None,
+                 no_healthcareseeking_in_adults: bool = False,
+                 no_healthcareseeking_in_children: bool = False,
                  emergency_in_adults: bool = False,
                  emergency_in_children: bool = False,
-                 odds_ratio_health_seeking_in_adults: float = 1.0,      # where adults are persons aged 15+ years
-                 odds_ratio_health_seeking_in_children: float = 1.0     # where children are persons aged less than 15 years
+                 odds_ratio_health_seeking_in_adults: float = None,
+                 odds_ratio_health_seeking_in_children: float = None
                  ):
 
         # Check that the types are correct and not nonsensical
         assert isinstance(name, str)
         assert name is not ''
 
+        assert isinstance(no_healthcareseeking_in_adults, bool)
+        assert isinstance(no_healthcareseeking_in_children, bool)
+
         assert isinstance(emergency_in_adults, bool)
         assert isinstance(emergency_in_children, bool)
 
-        assert isinstance(odds_ratio_health_seeking_in_adults, float)
-        assert 0 < odds_ratio_health_seeking_in_adults
 
-        assert isinstance(odds_ratio_health_seeking_in_children, float)
-        assert 0 < odds_ratio_health_seeking_in_children
+        # Check logic of the arguments that are provided:
+        # 1) if the symptom does not cause healthseeking behaviour, it should not be emergency or associated with an odds ratio
+        if no_healthcareseeking_in_children:
+            assert emergency_in_children is False
+            assert odds_ratio_health_seeking_in_children is None
 
-        # if the symptom is declared as an emrgency it cannot also have an odds ratio for health seeking, for that age of person
-        if emergency_in_adults:
-            assert 1.0 == odds_ratio_health_seeking_in_adults
+        if no_healthcareseeking_in_adults:
+            assert emergency_in_adults is False
+            assert odds_ratio_health_seeking_in_adults is None
 
+        # 2) if the symptom is declared as an emergency, it cannot also have an odds ratio for health seeking
         if emergency_in_children:
-            assert 1.0 == odds_ratio_health_seeking_in_children
+            assert no_healthcareseeking_in_children is False
+            assert odds_ratio_health_seeking_in_children is None
 
+        if emergency_in_adults:
+            assert no_healthcareseeking_in_adults is False
+            assert odds_ratio_health_seeking_in_adults is None
+
+        # 3) if an odds-ratio is specified, it cannot have the emergency or the no-seeking flags
+        if odds_ratio_health_seeking_in_children is not None:
+            assert emergency_in_children is False
+            assert no_healthcareseeking_in_children is False
+            assert isinstance(odds_ratio_health_seeking_in_children, float)
+            assert 0 < odds_ratio_health_seeking_in_children
+
+        if odds_ratio_health_seeking_in_adults is not None:
+            assert emergency_in_adults is False
+            assert no_healthcareseeking_in_adults is False
+            assert isinstance(odds_ratio_health_seeking_in_adults, float)
+            assert 0 < odds_ratio_health_seeking_in_adults
+
+        # If odds-ratios are not provided (and no other flags provided), default to values of 1.0
+        if (odds_ratio_health_seeking_in_children is None) & (emergency_in_children is False) & (no_healthcareseeking_in_children is False):
+            odds_ratio_health_seeking_in_children = 1.0
+
+        if (odds_ratio_health_seeking_in_adults is None) & (emergency_in_adults is False) & (no_healthcareseeking_in_adults is False):
+            odds_ratio_health_seeking_in_adults = 1.0
+
+
+        # Store properties:
         self.name = name
+        self.no_healthcareseeking_in_children = no_healthcareseeking_in_children
+        self.no_healthcareseeking_in_adults = no_healthcareseeking_in_adults
         self.emergency_in_adults = emergency_in_adults
         self.emergency_in_children = emergency_in_children
         self.odds_ratio_health_seeking_in_adults = odds_ratio_health_seeking_in_adults
@@ -416,8 +461,6 @@ class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEvent
             # children:
             p_symp_children = params.at[symp, 'prob_spurious_occurrence_in_children_per_month']
             dur_symp_children = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_children']
-
-            # children:
             children_to_onset_with_this_symptom = list(children_idx[self.module.rng.rand(len(children_idx)) < p_symp_children])
             for child in children_to_onset_with_this_symptom:
                 self.sim.modules['SymptomManager'].change_symptom(
@@ -432,7 +475,6 @@ class SymptomManager_SpuriousSymptomGenerator(RegularEvent, PopulationScopeEvent
             # adults:
             p_symp_adults = params.at[symp, 'prob_spurious_occurrence_in_adults_per_month']
             dur_symp_adults = params.at[symp, 'duration_in_days_of_spurious_occurrence_in_adults']
-
             adults_to_onset_with_this_symptom = list(adults_idx[self.module.rng.rand(len(adults_idx)) < p_symp_adults])
             for adult in adults_to_onset_with_this_symptom:
                 self.sim.modules['SymptomManager'].change_symptom(

@@ -22,7 +22,8 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager, chronicsyndrome,
 )
-from tlo.methods.symptommanager import Symptom
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1, \
+    HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -31,23 +32,79 @@ except NameError:
     resourcefilepath = './resources'
 
 
-
-
-
-def test_disease_module_declare_the_effect_that_a_symptom_has_on_healthcareseking():
+def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules():
+    """there should be no generic HSI if there are no spurious symptoms or disease module"""
     start_date = Date(2010, 1, 1)
     sim = Simulation(start_date=start_date)
 
-    # Register the core modules including Chronic Syndrome and Mockities
-    # Mockitis symptoms are not associated with any health care seeking and are declare as strings,
-    # Chronic Syndrome symptoms are declare as instances of class Symptom and are associated with healthcare seeking
+    # Register the core modules including Chronic Syndrome and Mockitis -
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 )
+
+    # Run the simulation for one day
+    end_date = start_date + DateOffset(days=1)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # Check that Generic HSI events are scheduled
+    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+    assert not any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
+
+def test_healthcareseeking_occurs_with_spurious_symptoms_only():
+    """spurious symptoms should generate non-emergency HSI"""
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules including Chronic Syndrome and Mockitis -
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 )
+
+    # Run the simulation for one day
+    end_date = start_date + DateOffset(days=1)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # Check that Generic Non-Emergency HSI events are scheduled but not Emergency HSI
+    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
+    assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+
+def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
+    """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules including Chronic Syndrome and Mockitis -
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
@@ -56,18 +113,17 @@ def test_disease_module_declare_the_effect_that_a_symptom_has_on_healthcaresekin
                  )
 
     # Run the simulation for one day
-
     end_date = start_date + DateOffset(days=1)
     popsize = 200
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that the healthcareseeking LinearModel is as expected.
+    # Check that Non-Emergency Generic HSI and Emergency Generic HSI events are scheduled
+    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+    assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
+    assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
 
 
 
-# todo - modules will need to explicitly register symptoms directly because they need use read-in parameters
-# todo - make the symptom manager accept that a disease module can declare a string.
-# todo - let the symptom manager interpret an "em_"
-# todo - message Joe to get him to change his usage
+
 

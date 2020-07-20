@@ -35,15 +35,21 @@ def test_make_a_symptom():
 
     # check contents and the values defaulted to.
     assert hasattr(symp, 'name')
-    assert hasattr(symp, 'emergency_in_adults')
+    assert hasattr(symp, 'no_healthcareseeking_in_children')
+    assert hasattr(symp, 'no_healthcareseeking_in_adults')
     assert hasattr(symp, 'emergency_in_children')
-    assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
+    assert hasattr(symp, 'emergency_in_adults')
     assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
+    assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
 
-    assert symp.emergency_in_adults is False
+    assert symp.no_healthcareseeking_in_children is False
+    assert symp.no_healthcareseeking_in_adults is False
+
     assert symp.emergency_in_children is False
-    assert symp.odds_ratio_health_seeking_in_adults == 1.0
+    assert symp.emergency_in_adults is False
+
     assert symp.odds_ratio_health_seeking_in_children == 1.0
+    assert symp.odds_ratio_health_seeking_in_adults == 1.0
 
 def test_no_symptoms_if_no_diseases():
     sim = Simulation(start_date=start_date)
