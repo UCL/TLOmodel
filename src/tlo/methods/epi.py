@@ -368,12 +368,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # scatter vaccination days across the year
         # todo: HPV vaccine may be offered on scheduled clinic days / weeks - check
-        random_day = self.module.rng.choice(
-            range(0, 365),
-            size=len(hpv_vax),
-            replace=True,
-            p=[(1 / 365)] * 365,
-        )
+        random_day = self.module.rng.randint(365, size=len(hpv_vax))
 
         scheduled_vax_dates = now + pd.to_timedelta(random_day, unit="d")
 
