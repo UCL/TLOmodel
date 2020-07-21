@@ -70,13 +70,14 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             logger.debug('Run the ICMI algorithm for this child')
 
             # Get the diagnosis from the algorithm
-            diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
+            if 'DxAlgorithmChild' in self.sim.modules:
+                diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
-            # Do something based on this diagnosis...
-            if diagnosis == 'measles':
-                logger.debug('Start treatment for measles')
-            else:
-                logger.debug('No treatment. HSI ends.')
+                # Do something based on this diagnosis...
+                if diagnosis == 'measles':
+                    logger.debug('Start treatment for measles')
+                else:
+                    logger.debug('No treatment. HSI ends.')
 
         else:
             # It's an adult
@@ -194,28 +195,28 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
         df = self.sim.population.props
-        mni = self.sim.modules['Labour'].mother_and_newborn_info
-        labour_list = self.sim.modules['Labour'].women_in_labour
-
-        # simple diagnosis to work out which HSI event to trigger
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
-        # -----  COMPLICATION DURING BIRTH  -----
-        if person_id in labour_list:
-            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
-                event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
-                    module=self.sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+        if 'Labour' in self.sim.modules:
+            mni = self.sim.modules['Labour'].mother_and_newborn_info
+            labour_list = self.sim.modules['Labour'].women_in_labour
 
-        # -----  COMPLICATION AFTER BIRTH  -----
-            if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
-                event = HSI_Labour_ReceivesCareForPostpartumPeriod(
-                    module=self.sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+            # -----  COMPLICATION DURING BIRTH  -----
+            if person_id in labour_list:
+                if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                    event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+                        module=self.sim.modules['Labour'], person_id=person_id,
+                        facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+            # -----  COMPLICATION AFTER BIRTH  -----
+                if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
+                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                    event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+                        module=self.sim.modules['Labour'], person_id=person_id,
+                        facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  SUSPECTED DEPRESSION  -----
         if 'Injuries_From_Self_Harm' in symptoms:

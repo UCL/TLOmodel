@@ -58,7 +58,8 @@ class HealthSystem(Module):
         ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-        disable=False  # disables the healthsystem (no constraints and no logging).
+        disable=False,  # disables the healthsystem (no constraints and no logging)
+        store_hsi_events_that_have_run=False  # convenience function for debugging
     ):
 
         super().__init__(name)
@@ -100,6 +101,13 @@ class HealthSystem(Module):
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
+
+        # Check 'store_hsi_events_that_have_run': will store a running list of HSI events that have run
+        # (for debugging)
+        assert isinstance(store_hsi_events_that_have_run, bool)
+        self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
+        if self.store_hsi_events_that_have_run:
+            self.store_of_hsi_events_that_have_run = list()
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availability:")
@@ -780,7 +788,6 @@ class HealthSystem(Module):
         :param cons_footprint:
         :return:
         """
-
         # Format is as follows:
         #     * dict with two keys; Intervention_Package_Code and Item_Code
         #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
@@ -900,6 +907,9 @@ class HealthSystem(Module):
         log_info['did_run'] = did_run
 
         logger.info('%s|HSI_Event|%s', self.sim.date, log_info)
+
+        if self.store_hsi_events_that_have_run:
+            self.store_of_hsi_events_that_have_run.append(log_info)
 
     def log_current_capabilities(self, current_capabilities, all_calls_today):
         """

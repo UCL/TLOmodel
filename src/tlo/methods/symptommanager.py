@@ -355,7 +355,7 @@ class SymptomManager(Module):
                 "Disease Module Name is not recognised"
             disease_modules_of_interest = [disease_module.name]
         else:
-            disease_modules_of_interest = self.sim.disease_modules_name
+            disease_modules_of_interest = [self.name] + self.sim.disease_modules_name
 
         symptoms_for_this_person = list()
         for symptom in self.symptom_names:
@@ -393,7 +393,8 @@ class SymptomManager(Module):
 
         assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
         assert df.at[person_id, 'is_alive'], "The person is not alive"
-        assert disease_module.name in ([self.name] + self.sim.disease_modules_name), "Disease Module Name is not recognised"
+        assert disease_module.name in ([self.name] + self.sim.disease_modules_name), \
+            "Disease Module Name is not recognised"
 
         symptoms_caused_by_this_disease_module = self.has_what(person_id, disease_module)
 

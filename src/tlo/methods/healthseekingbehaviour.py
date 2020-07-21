@@ -173,20 +173,20 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                                                                 tclose=None)
 
         def get_joint_odds_ratio_of_all_symptoms(symptoms_list, is_child):
-            """For a given symptoms list, get the associated odds ratio for health seeking behaviour.
-            This is the product of the odds ratio associated with each symptom.
-            Has to remove the emergency or non-health-care seeking symptoms
-            """
+            """For a given symptoms list (of symptoms that do causes care seeking), get the associated odds ratio for
+            health seeking behaviour: this is the product of the odds ratio associated with each symptom."""
             odds_ratio_list = []
             for s in symptoms_list:
                 if is_child:
-                    if (s not in m.emergency_in_children) and (s not in m.no_healthcareseeking_in_children):
-                        assert s in m.odds_ratio_health_seeking_in_children, 'Error in definition of symptom'
-                        odds_ratio_list.append(m.odds_ratio_health_seeking_in_children[s])
+                    assert s not in m.emergency_in_children
+                    assert s not in m.no_healthcareseeking_in_children
+                    assert s in m.odds_ratio_health_seeking_in_children
+                    odds_ratio_list.append(m.odds_ratio_health_seeking_in_children[s])
                 else:
-                    if (s not in m.emergency_in_adults) and (s not in m.no_healthcareseeking_in_adults):
-                        assert s in m.odds_ratio_health_seeking_in_adults, 'Error in definition of symptom'
-                        odds_ratio_list.append(m.odds_ratio_health_seeking_in_adults[s])
+                    assert s not in m.emergency_in_adults
+                    assert s not in m.no_healthcareseeking_in_adults
+                    assert s in m.odds_ratio_health_seeking_in_adults
+                    odds_ratio_list.append(m.odds_ratio_health_seeking_in_adults[s])
 
             return np.array(odds_ratio_list).prod()
 
@@ -201,32 +201,44 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # will seek care.
             # This is run looking at all symptoms even if only one is newly onset.
 
-            # todo - want emergency symptoms not to also trigger generic HSI:
-
             symptoms = m.sim.modules['SymptomManager'].has_what(person_id)
             is_child = population.props.at[person_id, 'age_years'] < 15
 
+            # sort the symptoms into the different categories:
+            emergency_care_seeking_symptoms = []
+            non_care_seeking_symptoms = []
+            care_seeking_symptoms = []
 
+            for symptom in symptoms:
+                if is_child:
+                    if symptom in m.emergency_in_children:
+                        emergency_care_seeking_symptoms.append(symptom)
+                    elif symptom in m.no_healthcareseeking_in_children:
+                        non_care_seeking_symptoms.append(symptom)
+                    else:
+                        care_seeking_symptoms.append(symptom)
 
-            # if any of the symptom is an emergency - generate an emergency HSI
-            if is_child:
-                if any([(s in m.emergency_in_children) for s in symptoms]):
-                    make_generic_emergency_first_appt(person_id)
-            else:
-                if any([(s in m.emergency_in_adults) for s in symptoms]):
-                    make_generic_emergency_first_appt(person_id)
+                if not is_child:
+                    if symptom in m.emergency_in_adults:
+                        emergency_care_seeking_symptoms.append(symptom)
+                    elif symptom in m.no_healthcareseeking_in_adults:
+                        non_care_seeking_symptoms.append(symptom)
+                    else:
+                        care_seeking_symptoms.append(symptom)
 
-            # If the only symptoms are ones that do not cause health-care seeking, do nothing else
-            if is_child:
-                if all([(s in m.no_healthcareseeking_in_children) for s in symptoms]):
-                    break
-                else:
-                    if all([(s in m.no_healthcareseeking_in_adults) for s in symptoms]):
-                        break
+            assert len(symptoms) == (
+                len(emergency_care_seeking_symptoms) + len(non_care_seeking_symptoms) + len(care_seeking_symptoms)
+            )
 
-            # Look at joint effect on health-care seeking of all symptoms
-            baseline_prob = m.hsb.predict(population.props.loc[[person_id]]).values[0]
-            odds_ratio = get_joint_odds_ratio_of_all_symptoms(symptoms, is_child)
-            prob_hsb = compute_prob_from_baseline_prob_and_odds_ratio(baseline_prob, odds_ratio)
-            if m.rng.rand() < prob_hsb:
-                make_generic_non_emergency_first_appt_at_facility_level1(person_id)
+            # if any of the symptom is an emergency - generate an emergency HSI:
+            if len(emergency_care_seeking_symptoms) > 0:
+                make_generic_emergency_first_appt(person_id)
+
+            # if any non-emergency symptoms - consider making a generic non-emergency HSI:
+            if len(care_seeking_symptoms) > 0:
+                # Look at joint effect on health-care seeking of all symptoms
+                baseline_prob = m.hsb.predict(population.props.loc[[person_id]]).values[0]
+                odds_ratio = get_joint_odds_ratio_of_all_symptoms(care_seeking_symptoms, is_child)
+                prob_hsb = compute_prob_from_baseline_prob_and_odds_ratio(baseline_prob, odds_ratio)
+                if m.rng.rand() < prob_hsb:
+                    make_generic_non_emergency_first_appt_at_facility_level1(person_id)
