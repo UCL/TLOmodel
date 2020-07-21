@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -14,6 +13,7 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel1,
 )
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -28,7 +28,9 @@ class HealthSeekingBehaviour(Module):
 
     # No parameters to declare
     PARAMETERS = {
-        'baseline_odds_of_healthcareseeking': Parameter(Types.REAL, 'baseline odds of seeking care for the "average symptom" for a Northern, rural, male, <5 years old'),
+        'baseline_odds_of_healthcareseeking': Parameter(Types.REAL,
+                                                        'baseline odds of seeking care for the "average symptom" for a '
+                                                        'Northern, rural, male, <5 years old'),
         'odds_ratio_region_Central': Parameter(Types.REAL, 'odds ratio for healthcare seeking if region is Central'),
         'odds_ratio_region_Southern': Parameter(Types.REAL, 'odds ratio for healthcare seeking if region is Southern'),
         'odds_ratio_setting_urban': Parameter(Types.REAL, 'odds ratio for healthcare seeking if setting is urban'),
@@ -38,7 +40,6 @@ class HealthSeekingBehaviour(Module):
         'odds_ratio_age_under35-59': Parameter(Types.REAL, 'odds ratio for healthcare seeking if age is 35-59 years'),
         'odds_ratio_age_under60plus': Parameter(Types.REAL, 'odds ratio for healthcare seeking if age is 60plus years')
     }
-
 
     # No properties to declare
     PROPERTIES = {}
@@ -65,14 +66,13 @@ class HealthSeekingBehaviour(Module):
             Predictor('region_of_residence').when('Central', p['odds_ratio_region_Central'])
                                             .when('Southern', p['odds_ratio_region_Southern']),
             Predictor('li_urban').when(True, p['odds_ratio_setting_urban']),
-            Predictor('sex').when('F', p['odds_ratio_sex_Female'] ),
+            Predictor('sex').when('F', p['odds_ratio_sex_Female']),
             Predictor('age_years').when('<5', 1.00)
                                   .when('<15', p['odds_ratio_age_under5-14'])
                                   .when('<35', p['odds_ratio_age_under15-34'])
                                   .when('<60', p['odds_ratio_age_under35-59'])
                                   .otherwise(p['odds_ratio_age_under60plus'])
         )
-
 
     def initialise_population(self, population):
         """Nothing to initialise in the population
@@ -103,7 +103,6 @@ class HealthSeekingBehaviour(Module):
 
             elif symptom.emergency_in_children:
                 self.emergency_in_children = self.emergency_in_children.union({symptom.name})
-
             else:
                 self.odds_ratio_health_seeking_in_children[symptom.name] = symptom.odds_ratio_health_seeking_in_children
 
@@ -113,7 +112,6 @@ class HealthSeekingBehaviour(Module):
 
             elif symptom.emergency_in_adults:
                 self.emergency_in_adults = self.emergency_in_adults.union({symptom.name})
-
             else:
                 self.odds_ratio_health_seeking_in_adults[symptom.name] = symptom.odds_ratio_health_seeking_in_adults
 
@@ -149,8 +147,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         #    that have died (since the onset of symptoms)
         alive_person_ids = list(self.sim.population.props.index[self.sim.population.props.is_alive])
         person_ids_with_new_symptoms = list(
-            m.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms.
-            intersection(alive_person_ids)
+            m.sim.modules['SymptomManager'].persons_with_newly_onset_symptoms.intersection(alive_person_ids)
         )
 
         # clear the list of person_ids with newly onset symptoms
@@ -228,5 +225,3 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             prob_hsb = compute_prob_from_baseline_prob_and_odds_ratio(baseline_prob, odds_ratio)
             if m.rng.rand() < prob_hsb:
                 make_generic_non_emergency_first_appt_at_facility_level1(person_id)
-
-

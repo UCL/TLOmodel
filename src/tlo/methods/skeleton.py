@@ -3,7 +3,7 @@ A skeleton template for disease methods.
 
 """
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.core import DiseaseModule
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event

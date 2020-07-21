@@ -9,7 +9,7 @@ from typing import Dict, Union
 
 import numpy as np
 
-from tlo import Date, Population, logging, Module
+from tlo import Date, Population, logging
 from tlo.core import DiseaseModule
 from tlo.events import IndividualScopeEventMixin
 

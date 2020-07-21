@@ -13,7 +13,6 @@ from tlo import Date, Simulation
 from tlo.methods import (
     contraception,
     demography,
-    dx_algorithm_child,
     enhanced_lifestyle,
     healthseekingbehaviour,
     healthsystem,
@@ -61,6 +60,7 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules()
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     assert not any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
 
+
 def test_healthcareseeking_occurs_with_spurious_symptoms_only():
     """spurious symptoms should generate non-emergency HSI"""
     start_date = Date(2010, 1, 1)
@@ -90,6 +90,7 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_only():
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
     assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+
 
 def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
     """Mockitis and Chronic Syndrome should lead to there being emergency and non-emergency generic HSI"""
@@ -122,8 +123,3 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
     assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
-
-
-
-
-

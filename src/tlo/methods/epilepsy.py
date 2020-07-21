@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Parameter, Property, Types
 from tlo.core import DiseaseModule
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
@@ -435,20 +434,20 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|epilepsy_logging|%s',
                     self.sim.date,
                     {
-                        'prop_seiz_stat_0':  prop_seiz_stat_0,
-                        'prop_seiz_stat_1':  prop_seiz_stat_1,
+                        'prop_seiz_stat_0': prop_seiz_stat_0,
+                        'prop_seiz_stat_1': prop_seiz_stat_1,
                         'prop_seiz_stat_2': prop_seiz_stat_2,
                         'prop_seiz_stat_3': prop_seiz_stat_3,
-                        'prop_antiepilep_seiz_stat_0':  prop_antiepilep_seiz_stat_0,
+                        'prop_antiepilep_seiz_stat_0': prop_antiepilep_seiz_stat_0,
                         'prop_antiepilep_seiz_stat_1': prop_antiepilep_seiz_stat_1,
                         'prop_antiepilep_seiz_stat_2': prop_antiepilep_seiz_stat_2,
-                        'prop_antiepilep_seiz_stat_3':  prop_antiepilep_seiz_stat_3,
-                        'n_epi_death':  n_epi_death,
-                        'cum_deaths':  cum_deaths,
+                        'prop_antiepilep_seiz_stat_3': prop_antiepilep_seiz_stat_3,
+                        'n_epi_death': n_epi_death,
+                        'cum_deaths': cum_deaths,
                         'epi_death_rate': epi_death_rate,
                         'n_seiz_stat_1_3': n_seiz_stat_1_3,
-                        'n_seiz_stat_2_3':  n_seiz_stat_2_3,
-                        'n_antiep':  n_antiep,
+                        'n_seiz_stat_2_3': n_seiz_stat_2_3,
+                        'n_antiep': n_antiep,
                     })
 
 
@@ -475,7 +474,6 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-
         df = self.sim.population.props
 
         df.at[person_id, 'ep_antiep'] = True

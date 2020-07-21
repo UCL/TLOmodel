@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.core import DiseaseModule
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
@@ -55,8 +55,6 @@ class ChronicSyndrome(DiseaseModule):
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
 
-
-
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -91,16 +89,15 @@ class ChronicSyndrome(DiseaseModule):
 
         # Register symptoms that this module will use:
         self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(
-                    name='inappropriate_jokes',
-                    odds_ratio_health_seeking_in_adults=3.0
-                ),
-                Symptom(
-                    name='craving_sandwiches',
-                    emergency_in_adults=True,
-                )
+            Symptom(
+                name='inappropriate_jokes',
+                odds_ratio_health_seeking_in_adults=3.0
+            ),
+            Symptom(
+                name='craving_sandwiches',
+                emergency_in_adults=True,
+            )
         )
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.

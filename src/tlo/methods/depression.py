@@ -6,8 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.core import DiseaseModule
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -185,7 +184,6 @@ class Depression(DiseaseModule):
                                                      'or had a last pregnancy less than one year ago')
     }
 
-
     def read_parameters(self, data_folder):
         "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
@@ -204,9 +202,9 @@ class Depression(DiseaseModule):
             Predictor().when('(sex=="F") & de_recently_pregnant', p['init_rp_depr_f_rec_preg']),
             Predictor().when('(sex=="F") & ~de_recently_pregnant', p['init_rp_depr_f_not_rec_preg']),
             Predictor('age_years').when('.between(0, 14)', 0)
-                                  .when('.between(15, 19)', 1.0)
-                                  .when('.between(20, 59)', p['init_rp_depr_age2059'])
-                                  .otherwise(p['init_rp_depr_agege60'])
+                .when('.between(15, 19)', 1.0)
+                .when('.between(20, 59)', p['init_rp_depr_age2059'])
+                .otherwise(p['init_rp_depr_agege60'])
         )
 
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
@@ -306,7 +304,6 @@ class Depression(DiseaseModule):
             ),
         )
 
-
     def apply_linear_model(self, lm, df):
         """
         Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event
@@ -371,14 +368,14 @@ class Depression(DiseaseModule):
 
         # Assign initial 'de_ever_talk_ther' status
         df.loc[df['is_alive'], 'de_ever_talk_ther'] = self.apply_linear_model(
-             self.linearModels['Ever_Talking_Therapy_Initialisation'],
-             df.loc[df['is_alive']]
+            self.linearModels['Ever_Talking_Therapy_Initialisation'],
+            df.loc[df['is_alive']]
         )
 
         # Assign initial 'de_ever_non_fatal_self_harm_event' status
         df.loc[df['is_alive'], 'de_ever_non_fatal_self_harm_event'] = self.apply_linear_model(
-             self.linearModels['Ever_Self_Harmed_Initialisation'],
-             df.loc[df['is_alive']]
+            self.linearModels['Ever_Self_Harmed_Initialisation'],
+            df.loc[df['is_alive']]
         )
 
         # Assign initial 'using anti-depressants' status to those who are currently depressed and diagnosed
@@ -386,7 +383,7 @@ class Depression(DiseaseModule):
             self.apply_linear_model(
                 self.linearModels['Using_AntiDepressants_Initialisation'],
                 df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
-        )
+            )
 
     def initialise_simulation(self, sim):
         """
@@ -466,9 +463,9 @@ class Depression(DiseaseModule):
         any_depr_in_the_last_month = (df['is_alive']) & (
             ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
         ) & (
-            pd.isnull(df['de_date_depr_resolved']) |
-            (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-            )
+                                         pd.isnull(df['de_date_depr_resolved']) |
+                                         (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+                                     )
 
         start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
                                  self.sim.date - DateOffset(months=1))
@@ -915,8 +912,13 @@ def compute_key_outputs_for_last_3_years(parsed_output):
         cols_for_15plus = [int(x[0]) >= 15 for x in df.columns.str.strip('+').str.split('-')]
         return df[df.columns[cols_for_15plus]].sum(axis=1)
 
-    tot_pop = get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_m']) + \
-        get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_f'])
+    tot_pop = \
+        get_15plus_pop_by_year(
+            parsed_output['tlo.methods.demography']['age_range_m']
+        ) + \
+        get_15plus_pop_by_year(
+            parsed_output['tlo.methods.demography']['age_range_f']
+        )
 
     depr_event_rate = depr_events.div(tot_pop, axis=0)
 

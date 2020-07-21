@@ -1,6 +1,6 @@
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.core import DiseaseModule
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
@@ -90,8 +90,8 @@ class Mockitis(DiseaseModule):
 
         # ---- Register the Symptoms ----
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='weird_sense_of_deja_vu'),          # will not trigger any health seeking behaviour
-            Symptom(name='coughing_and_irritable'),          # will not trigger any health seeking behaviour
+            Symptom(name='weird_sense_of_deja_vu'),  # will not trigger any health seeking behaviour
+            Symptom(name='coughing_and_irritable'),  # will not trigger any health seeking behaviour
             Symptom(name='extreme_pain_in_the_nose',
                     emergency_in_adults=True,
                     emergency_in_children=True

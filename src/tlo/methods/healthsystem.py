@@ -281,7 +281,8 @@ class HealthSystem(Module):
 
         # 2) Check that topen, tclose and priority are valid
 
-        # If there is no specified tclose time then set this to the later of (i) the day after the end of the simulation, (ii) the day after topen
+        # If there is no specified tclose time then set this to the later of (i) the day after the end of the
+        # simulation, (ii) the day after topen
         if tclose is None:
             tclose = max(self.sim.end_date + DateOffset(days=1), topen + DateOffset(days=1))
 

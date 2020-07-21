@@ -10,8 +10,7 @@ Limitations to note:
 from pathlib import Path
 
 import pandas as pd
-
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Parameter, Property, Types, logging
 from tlo.core import DiseaseModule
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -181,7 +180,6 @@ class OesophagealCancer(DiseaseModule):
         ),
     }
 
-
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, register it with healthsystem and register symptoms"""
         # Update parameters from the resourcefile
@@ -195,10 +193,9 @@ class OesophagealCancer(DiseaseModule):
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
-                Symptom(name='dysphagia',
-                        odds_ratio_health_seeking_in_adults=4.00)
+            Symptom(name='dysphagia',
+                    odds_ratio_health_seeking_in_adults=4.00)
         )
-
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -232,7 +229,7 @@ class OesophagealCancer(DiseaseModule):
         if oc_status_any_dysplasia_or_cancer.sum():
             sum_probs = sum(p['init_prop_oes_cancer_stage'])
             if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_oes_cancer_stage']]
+                prob_by_stage_of_cancer_if_cancer = [i / sum_probs for i in p['init_prop_oes_cancer_stage']]
                 assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
                 df.loc[oc_status_any_dysplasia_or_cancer, "oc_status"] = self.rng.choice(
                     [val for val in df.oc_status.cat.categories if val != 'none'],
@@ -243,19 +240,13 @@ class OesophagealCancer(DiseaseModule):
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of dysphagia:
         lm_init_disphagia = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][1])
-                                    .when("stage1",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][2])
-                                    .when("stage2",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][3])
-                                    .when("stage3",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][4])
-                                    .when("stage4",
-                                          p['init_prop_dysphagia_oes_cancer_by_stage'][5])
+            Predictor('oc_status').when("none", 0.0)
+                                  .when("low_grade_dysplasia", p['init_prop_dysphagia_oes_cancer_by_stage'][0])
+                                  .when("high_grade_dysplasia", p['init_prop_dysphagia_oes_cancer_by_stage'][1])
+                                  .when("stage1", p['init_prop_dysphagia_oes_cancer_by_stage'][2])
+                                  .when("stage2", p['init_prop_dysphagia_oes_cancer_by_stage'][3])
+                                  .when("stage3", p['init_prop_dysphagia_oes_cancer_by_stage'][4])
+                                  .when("stage4", p['init_prop_dysphagia_oes_cancer_by_stage'][5])
         )
         has_dysphagia_at_init = lm_init_disphagia.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -267,19 +258,15 @@ class OesophagealCancer(DiseaseModule):
 
         # -------------------- oc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][1])
-                                    .when("stage1",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][2])
-                                    .when("stage2",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][3])
-                                    .when("stage3",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][4])
-                                    .when("stage4",
-                                          p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][5])
+            Predictor('oc_status').when("none", 0.0)
+                                  .when("low_grade_dysplasia",
+                                        p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][0])
+                                  .when("high_grade_dysplasia",
+                                        p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][1])
+                                  .when("stage1", p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][2])
+                                  .when("stage2", p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][3])
+                                  .when("stage3", p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][4])
+                                  .when("stage4", p['init_prop_with_dysphagia_diagnosed_oes_cancer_by_stage'][5])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -291,19 +278,13 @@ class OesophagealCancer(DiseaseModule):
 
         # -------------------- oc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('oc_status')  .when("none", 0.0)
-                                    .when("low_grade_dysplasia",
-                                          p['init_prop_treatment_status_oes_cancer'][0])
-                                    .when("high_grade_dysplasia",
-                                          p['init_prop_treatment_status_oes_cancer'][1])
-                                    .when("stage1",
-                                          p['init_prop_treatment_status_oes_cancer'][2])
-                                    .when("stage2",
-                                          p['init_prop_treatment_status_oes_cancer'][3])
-                                    .when("stage3",
-                                          p['init_prop_treatment_status_oes_cancer'][4])
-                                    .when("stage4",
-                                          p['init_prop_treatment_status_oes_cancer'][5])
+            Predictor('oc_status').when("none", 0.0)
+                                  .when("low_grade_dysplasia", p['init_prop_treatment_status_oes_cancer'][0])
+                                  .when("high_grade_dysplasia", p['init_prop_treatment_status_oes_cancer'][1])
+                                  .when("stage1", p['init_prop_treatment_status_oes_cancer'][2])
+                                  .when("stage2", p['init_prop_treatment_status_oes_cancer'][3])
+                                  .when("stage3", p['init_prop_treatment_status_oes_cancer'][4])
+                                  .when("stage4", p['init_prop_treatment_status_oes_cancer'][5])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -513,12 +494,11 @@ class OesophagealCancer(DiseaseModule):
         # Assign daly_wt to those with cancer stages before stage4 and who have been treated and who are still in the
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
-            (
-                ~pd.isnull(df.oc_date_treatment) & (
-                    (df.oc_status == "stage1") |
-                    (df.oc_status == "stage2") |
-                    (df.oc_status == "stage3")
-                ) & (df.oc_status == df.oc_stage_at_which_treatment_applied)
+            (~pd.isnull(df.oc_date_treatment) & (
+                (df.oc_status == "stage1") |
+                (df.oc_status == "stage2") |
+                (df.oc_status == "stage3")
+            ) & (df.oc_status == df.oc_stage_at_which_treatment_applied)
             )
         ] = self.daly_wts['stage_1_3_treated']
 
@@ -607,6 +587,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
     treatment or palliative care.
     It is for people with the symptom dysphagia.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
