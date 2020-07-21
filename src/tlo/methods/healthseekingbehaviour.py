@@ -201,8 +201,12 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # will seek care.
             # This is run looking at all symptoms even if only one is newly onset.
 
+            # todo - want emergency symptoms not to also trigger generic HSI:
+
             symptoms = m.sim.modules['SymptomManager'].has_what(person_id)
             is_child = population.props.at[person_id, 'age_years'] < 15
+
+
 
             # if any of the symptom is an emergency - generate an emergency HSI
             if is_child:

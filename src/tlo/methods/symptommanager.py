@@ -351,7 +351,7 @@ class SymptomManager(Module):
         assert df.at[person_id, 'is_alive'], "The person is not alive"
 
         if disease_module:
-            assert disease_module.name in self.sim.disease_modules_name, \
+            assert disease_module.name in ([self.name] + self.sim.disease_modules_name), \
                 "Disease Module Name is not recognised"
             disease_modules_of_interest = [disease_module.name]
         else:
@@ -360,7 +360,6 @@ class SymptomManager(Module):
         symptoms_for_this_person = list()
         for symptom in self.symptom_names:
             if self.bsh[symptom].uncompress([person_id]).loc[person_id, disease_modules_of_interest].any():
-                # todo: use has_any built-in function?
                 symptoms_for_this_person.append(symptom)
 
         return symptoms_for_this_person
@@ -394,7 +393,7 @@ class SymptomManager(Module):
 
         assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
         assert df.at[person_id, 'is_alive'], "The person is not alive"
-        assert disease_module.name in self.sim.disease_modules_name, "Disease Module Name is not recognised"
+        assert disease_module.name in ([self.name] + self.sim.disease_modules_name), "Disease Module Name is not recognised"
 
         symptoms_caused_by_this_disease_module = self.has_what(person_id, disease_module)
 
