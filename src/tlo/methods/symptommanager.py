@@ -369,7 +369,7 @@ class SymptomManager(Module):
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert symptom_string in self.symptom_names
 
-        return list(self.bsh[symptom_string].get(person_id)[person_id].values[0])
+        return list(self.bsh[symptom_string].get([person_id])[person_id])
 
     def clear_symptoms(self, person_id, disease_module):
         """
