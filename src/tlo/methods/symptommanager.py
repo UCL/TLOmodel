@@ -227,7 +227,12 @@ class SymptomManager(Module):
             )
 
     def on_birth(self, mother_id, child_id):
-        pass
+        """Give a value of 0 for each symptom.
+        NB. This will over-write any symptom that has already been set on the child, so is only safe is SymptomManager
+        is registered before any Disease Module."""
+        df = self.sim.population.props
+        for property in self.PROPERTIES:
+            df.at[child_id, property] = 0
 
     def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
                        duration_in_days=None, date_of_onset=None):
