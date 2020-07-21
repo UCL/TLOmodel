@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 import pandas as pd
+
 from tlo import DateOffset, Parameter, Property, Types
 from tlo.core import DiseaseModule
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent

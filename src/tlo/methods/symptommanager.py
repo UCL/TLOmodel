@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 # ---------------------------------------------------------------------------------------------------------
@@ -41,7 +42,7 @@ class Symptom:
 
         # Check that the types are correct and not nonsensical
         assert isinstance(name, str)
-        assert not name
+        assert name, 'name of symptom cannot be blank'
 
         assert isinstance(no_healthcareseeking_in_adults, bool)
         assert isinstance(no_healthcareseeking_in_children, bool)
@@ -324,7 +325,7 @@ class SymptomManager(Module):
         # get the person_id for those who have each symptom
         has_this_symptom = dict()
         for symptom in list_of_symptoms:
-            # u = self.bsh[symptom].has_any(df.is_alive)  todo - has_any() doens't seem to work as expected
+            # u = self.bsh[symptom].has_any(df.is_alive)  todo - has_any() doesn't seem to work as expected
             u = self.bsh[symptom].uncompress().any(axis=1)
             has_this_symptom[symptom] = set(u[u].index)
 

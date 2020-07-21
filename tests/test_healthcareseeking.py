@@ -9,8 +9,11 @@ import os
 from pathlib import Path
 
 from pandas import DateOffset
+
 from tlo import Date, Simulation
+from tlo.core import DiseaseModule
 from tlo.methods import (
+    chronicsyndrome,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -19,10 +22,13 @@ from tlo.methods import (
     labour,
     mockitis,
     pregnancy_supervisor,
-    symptommanager, chronicsyndrome,
+    symptommanager,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1, \
-    HSI_GenericEmergencyFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import (
+    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+    HSI_GenericFirstApptAtFacilityLevel1, HSI_GenericFirstApptAtFacilityLevel0,
+)
+from tlo.methods.symptommanager import Symptom
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -123,3 +129,74 @@ def test_healthcareseeking_occurs_with_spurious_symptoms_and_disease_modules():
     q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
     assert any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
     assert any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])
+
+
+def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthseeking_behaviour():
+    """test that a symptom that should not give healthseeeking does not give heaslth seeking."""
+
+    class DummyDisease(DiseaseModule):
+        """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(
+                    name='Symptom_that_does_not_cause_healthcare_seeking',
+                    no_healthcareseeking_in_adults=True,
+                    no_healthcareseeking_in_children=True,
+                ),
+            )
+
+        def initialise_population(self, population):
+            """Give everyone the symptom"""
+            df = population.props
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=list(df.loc[df.is_alive].index),
+                disease_module=self,
+                symptom_string='Symptom_that_does_not_cause_healthcare_seeking',
+                add_or_remove='+'
+            )
+
+        def initialise_simulation(self, sim):
+            pass
+
+        def on_birth(self, mother, child):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules including Chronic Syndrome and Mockitis -
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*'],
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 DummyDisease()
+                 )
+
+    # Run the simulation for zero days
+    end_date = start_date + DateOffset(days=0)
+    popsize = 200
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    # Check that the symptom has been registered and is flagged as not causing healthcare seeking
+    assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
+           sim.modules['SymptomManager'].symptom_names
+    assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
+           sim.modules['HealthSeekingBehaviour'].no_healthcareseeking_in_children
+    assert 'Symptom_that_does_not_cause_healthcare_seeking' in \
+           sim.modules['HealthSeekingBehaviour'].no_healthcareseeking_in_adults
+
+    # Check that everyone has the symptom
+    df = sim.population.props
+    assert set(df.loc[df.is_alive].index) == set(
+        sim.modules['SymptomManager'].who_has('Symptom_that_does_not_cause_healthcare_seeking'))
+
+    # Check that no Non-Emergency Generic HSI and no Emergency Generic HSI events are scheduled
+    q = sim.modules['HealthSystem'].HSI_EVENT_QUEUE
+    assert not any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel0) for e in q])
+    assert not any([isinstance(e[4], HSI_GenericFirstApptAtFacilityLevel1) for e in q])
+    assert not any([isinstance(e[4], HSI_GenericEmergencyFirstApptAtFacilityLevel1) for e in q])

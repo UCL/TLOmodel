@@ -2,8 +2,10 @@ import os
 from pathlib import Path
 
 from pandas import DateOffset
+
 from tlo import Date, Simulation
 from tlo.methods import (
+    chronicsyndrome,
     contraception,
     demography,
     dx_algorithm_child,
@@ -13,9 +15,9 @@ from tlo.methods import (
     labour,
     mockitis,
     pregnancy_supervisor,
-    symptommanager, chronicsyndrome,
+    symptommanager,
 )
-from tlo.methods.symptommanager import Symptom, DuplicateSymptomWithNonIdenticalPropertiesError
+from tlo.methods.symptommanager import DuplicateSymptomWithNonIdenticalPropertiesError, Symptom
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -198,4 +200,31 @@ def test_spurious_symptoms():
 
     assert len(has_any_generic_symptom) > 0
 
-# todo - test that a baby is born and has no symptoms;
+
+def test_baby_born_has_no_symptoms():
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.seed_rngs(0)
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=1))
+
+    # do a birth
+    df = sim.population.props
+    mother_id = df.loc[df.sex == 'F'].index[0]
+    person_id = sim.do_birth(mother_id)
+
+    # check that the new person does not have symptoms:
+    assert [] == sim.modules['SymptomManager'].has_what(person_id)

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -14,10 +15,10 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericFirstApptAtFacilityLevel1,
 )
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HealthSeekingBehaviour(Module):
     """
