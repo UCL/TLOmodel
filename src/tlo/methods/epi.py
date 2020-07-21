@@ -35,9 +35,6 @@ class Epi(Module):
         "va_td": Property(Types.INT, "number of doses of tetanus/diphtheria vaccine received by pregnant women"),
     }
 
-    # Declaration of the symptoms that this module will use
-    SYMPTOMS = {}
-
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
         super().__init__(name)
@@ -91,9 +88,6 @@ class Epi(Module):
             how="left"
         ).set_index('person')
 
-        # what happens with the nan values in the df for vaccine coverage (age >30)??
-        # seems fine!!
-        # will have a susceptible older population though
         # use same random draw value for all vaccines - will induce correlations (good)
         # there are individuals who have high probability of getting all vaccines
         # some individuals will have consistently poor coverage
@@ -412,6 +406,11 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 # ---------------------------------------------------------------------------------
+# TODO: note syringe disposal units will accommodate ~100 syringes
+# request a box with each vaccine but don't need to condition HSI on availability
+# likely always safety boxes available
+# could request 1/100 of a box with each vaccine
+
 class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
     """This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed
     for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own
@@ -502,7 +501,11 @@ class HSI_BcgVaccine(HsiBaseVaccine):
                 ]
             )
 
-            if all(outcome["Item_Code"].values()):
+            # check if BCG and syringes available
+            bcg_vax, syringe, safety_box = outcome["Item_Code"].keys()
+
+            if outcome["Item_Code"][bcg_vax] & outcome["Item_Code"][syringe]:
+
                 df.at[person_id, "va_bcg"] = True
 
 
@@ -587,8 +590,11 @@ class HSI_PneumoVaccine(HsiBaseVaccine):
             ]
         )
 
+        # check if pneumo vax and syringes available
+        pneumo_vax, syringe, safety_box = outcome["Item_Code"].keys()
+
         # check if pneumococcal vaccine available and current year 2012 onwards
-        if all(outcome["Item_Code"].values()):
+        if outcome["Item_Code"][pneumo_vax] & outcome["Item_Code"][syringe]:
             logger.debug(key="debug", data=f"Pneumococcal vaccine is available, so administer to {person_id}")
             df.at[person_id, "va_pneumo"] += 1
         else:
@@ -606,6 +612,7 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
            packages=[("Measles rubella vaccine", 1)]
         )
 
+        # this package includes a syringe disposal box
         if all(outcome["Intervention_Package_Code"].values()):
             logger.debug(key="debug",
                          data=f"HSI_MeaslesRubellaVaccine: measles+rubella vaccine is available for {person_id}")
@@ -624,8 +631,11 @@ class HSI_HpvVaccine(HsiBaseVaccine):
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="debug", data=f"HSI_HpvVaccine: giving hpv vaccine to {person_id}")
         df = self.sim.population.props
+
         if df.at[person_id, "va_hpv"] < 2:
+            # this package includes syringe disposal box
             outcome = self.request_vax_consumables(packages=[("HPV vaccine", 1)])
+
             if all(outcome["Intervention_Package_Code"].values()):
                 df.at[person_id, "va_hpv"] += 1
 
@@ -643,6 +653,8 @@ class HSI_TdVaccine(HsiBaseVaccine):
         logger.debug(key="debug", data=f"HSI_TdVaccine: giving Td vaccine to {person_id}")
 
         df = self.sim.population.props
+
+        # this package DOES NOT include syringe disposal box
         outcome = self.request_vax_consumables(packages=[("Tetanus toxoid (pregnant women)", 1)])
         if all(outcome["Intervention_Package_Code"].values()):
             df.at[person_id, "va_td"] += 1
