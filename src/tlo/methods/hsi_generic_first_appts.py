@@ -4,14 +4,15 @@ the health system following the onset of acute generic symptoms.
 """
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
-from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
+# from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.labour import (
     HSI_Labour_PresentsForSkilledBirthAttendanceInLabour,
     HSI_Labour_ReceivesCareForPostpartumPeriod,
 )
-from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
-from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
+# from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+# from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
+from tlo.methods.measles import HSI_Measles_Treatment
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -64,34 +65,25 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
+        logger.debug(key="IMCI",
+                     data=f"This is HSI_GenericFirstApptAtFacilityLevel1 for {person_id}")
 
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
             # It's a child:
-            logger.debug('Run the ICMI algorithm for this child')
+            logger.debug(key="IMCI",
+                         data="Run the ICMI algorithm for this child")
 
             # Get the diagnosis from the algorithm
             diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
             # Do something based on this diagnosis...
             if diagnosis == 'measles':
-                logger.debug('Start treatment for measles')
-            else:
-                logger.debug('No treatment. HSI ends.')
+                logger.debug(key="IMCI",
+                             data=f"Start treatment for measles for person {person_id}")
 
-        else:
-            # It's an adult
-            logger.debug('To fill in ... what to with an adult')
-
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
-
-            # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
-            if 'dysphagia' in symptoms:
-                hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
-                    module=self.sim.modules['OesophagealCancer'],
-                    person_id=person_id,
-                )
+                hsi_event = HSI_Measles_Treatment(module=self.sim.modules['Measles'],
+                                                  person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event,
                     priority=0,
@@ -99,12 +91,48 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     tclose=None
                 )
 
+            else:
+                logger.debug(key="IMCI", data="No treatment. HSI ends")
+
+        else:
+            # It's an adult
+            # Get the diagnosis from the algorithm
+            diagnosis = self.sim.modules['DxAlgorithmAdult'].diagnose(person_id=person_id, hsi_event=self)
+
+            if diagnosis == 'measles':
+                logger.debug(key="IMCI",
+                             data=f'Start treatment for measles for person {person_id}')
+
+                hsi_event = HSI_Measles_Treatment(module=self.sim.modules['Measles'],
+                                                  person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+
+            # # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
+            # if 'dysphagia' in symptoms:
+            #     hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+            #         module=self.sim.modules['OesophagealCancer'],
+            #         person_id=person_id,
+            #     )
+            #     self.sim.modules['HealthSystem'].schedule_hsi_event(
+            #         hsi_event,
+            #         priority=0,
+            #         topen=self.sim.date,
+            #         tclose=None
+            #     )
+
             # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
-            if 'Depression' in self.sim.modules:
-                depr = self.sim.modules['Depression']
-                if (squeeze_factor == 0.0) and (self.module.rng.random() <
-                                                depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
-                    depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
+            # if 'Depression' in self.sim.modules:
+            #     depr = self.sim.modules['Depression']
+            #     if (squeeze_factor == 0.0) and (self.module.rng.random() <
+            #                                     depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
+            #         depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # -------------------------------
 
     def did_not_run(self):
@@ -145,10 +173,12 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel0 for person %d', person_id)
+        logger.debug(key="",
+                     data=f"This is HSI_GenericFirstApptAtFacilityLevel0 for {person_id}")
 
     def did_not_run(self):
-        logger.debug('HSI_GenericFirstApptAtFacilityLevel0: did not run')
+        logger.debug(key="HSI_GenericFirstApptAtFacilityLevel0",
+                     data="HSI_GenericFirstApptAtFacilityLevel0: did not run")
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -224,33 +254,35 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  SUSPECTED DEPRESSION  -----
-        if 'em_Injuries_From_Self_Harm' in symptoms:
-            self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
-            # TODO: Trigger surgical care for injuries.
+        # if 'em_Injuries_From_Self_Harm' in symptoms:
+        #     self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+        #     # TODO: Trigger surgical care for injuries.
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
-        if 'em_craving_sandwiches' in symptoms:
-            event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-                module=self.sim.modules['ChronicSyndrome'],
-                person_id=person_id
-            )
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=1,
-                                                                topen=self.sim.date
-                                                                )
-
-        if 'em_extreme_pain_in_the_nose' in symptoms:
-            event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
-                module=self.sim.modules['Mockitis'],
-                person_id=person_id
-            )
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=1,
-                                                                topen=self.sim.date
-                                                                )
+        # if 'em_craving_sandwiches' in symptoms:
+        #     event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+        #         module=self.sim.modules['ChronicSyndrome'],
+        #         person_id=person_id
+        #     )
+        #     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+        #                                                         priority=1,
+        #                                                         topen=self.sim.date
+        #                                                         )
+        #
+        # if 'em_extreme_pain_in_the_nose' in symptoms:
+        #     event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
+        #         module=self.sim.modules['Mockitis'],
+        #         person_id=person_id
+        #     )
+        #     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+        #                                                         priority=1,
+        #                                                         topen=self.sim.date
+        #                                                         )
 
     def did_not_run(self):
-        logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
+        logger.debug(key="HSI_GenericFirstApptAtFacilityLevel1",
+                     data="HSI_GenericFirstApptAtFacilityLevel1: did not run")
+
         return False  # Labour debugging
         # pass
 

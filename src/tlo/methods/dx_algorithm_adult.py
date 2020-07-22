@@ -8,12 +8,13 @@ from tlo import Module, logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
 
-class DxAlgorithmChild(Module):
+class DxAlgorithmAdult(Module):
     """
     This is an example/placeholder to show how a diagnostic algorithm can be used.
     The module contains parameters and a function 'diagnose(...)' which is called by a HSI (usually a Generic HSI)
@@ -60,9 +61,12 @@ class DxAlgorithmChild(Module):
 
         diagnosis_str = "unknown"
 
+        # get the symptoms of the person:
+        # num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
+        # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
+
         # TODO: commented out as malaria not running in development version of measles
         # if "fever" in self.sim.modules["SymptomManager"].has_what(person_id):
-        #
         #     # Make request for some malaria rdt consumables
         #     consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         #     # this package contains treatment too
@@ -95,7 +99,7 @@ class DxAlgorithmChild(Module):
         #             diagnosis_str = "severe_malaria"
         #
         #             logger.debug(
-        #                 "DxAlgorithmChild diagnosing severe malaria for person %d on date %s",
+        #                 "DxAlgorithmAdult diagnosing severe malaria for person %d on date %s",
         #                 person_id,
         #                 self.sim.date,
         #             )
@@ -117,7 +121,7 @@ class DxAlgorithmChild(Module):
         #                 diagnosis_str = "clinical_malaria"
         #
         #                 logger.debug(
-        #                     "DxAlgorithmChild diagnosing clinical malaria for person %d on date %s",
+        #                     "DxAlgorithmAdult diagnosing clinical malaria for person %d on date %s",
         #                     person_id,
         #                     self.sim.date,
         #                 )
@@ -130,7 +134,7 @@ class DxAlgorithmChild(Module):
         if "rash" in self.sim.modules["SymptomManager"].has_what(person_id):
             diagnosis_str = "measles"
 
-        logger.debug(key="DxAlgorithmChild",
+        logger.debug(key="DxAlgorithmAdult",
                      data=f"{person_id} diagnosis is {diagnosis_str}")
 
         # return the diagnosis as a string
