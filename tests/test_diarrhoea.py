@@ -367,10 +367,13 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
 
 # TODO Run with intervention but no health-care-seeking: check that no cures happen etc, some deaths hapen;
 
-
 # NB. With increased frequency, there can be 'interference' between successive episodes:
 # e.g. one episode is scheduled for a recovery, but is cured (although the reocvery event is still in the queue), then a
 # subsequent episodes has a different natural history, which don't make sense when the orignal recovery event is run.
 
-
 # TODO - add 'end of episode' (the date after which nothing else is scheduled), to prevent new episodes being started.
+
+
+# TODO - 1) check these mechanics working
+    #    2) HSI
+

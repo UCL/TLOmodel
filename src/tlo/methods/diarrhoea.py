@@ -1,13 +1,12 @@
 """
 Childhood Diarrhoea Module
 Documentation: '04 - Methods Repository/Childhood Disease Methods.docx'
-Reading parameters from TLOmodel/resources/ResourceFile_Diarrhoea.xlsx
 
 Outstanding issues:
 * Onset of severe dehydration has no relationship to the risk of death (only the treatment that is provided)
-* Risk of death is linked to duration of episode - but this is also a random variable, so is not neccessary.
-
+* Risk of death is linked to duration of episode - but this is also a random variable, so is not necessary.
 """
+
 import copy
 from pathlib import Path
 
