@@ -228,4 +228,3 @@ def test_baby_born_has_no_symptoms():
 
     # check that the new person does not have symptoms:
     assert [] == sim.modules['SymptomManager'].has_what(person_id)
-
