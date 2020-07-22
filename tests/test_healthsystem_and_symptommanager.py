@@ -51,7 +51,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
@@ -85,7 +85,7 @@ def test_run_no_interventions_allowed(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -112,7 +112,7 @@ def test_run_no_interventions_allowed(tmpdir):
     # Do the checks for the symptom manager: some symptoms should be registered
     assert sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] \
         .apply(lambda x: x != set()).any().any()
-    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'object').all()
+    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'int').all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
     # Check that no one was cured of mockitis:
@@ -137,7 +137,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -190,7 +190,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -237,7 +237,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -284,7 +284,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -333,7 +333,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -381,7 +381,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -432,7 +432,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                                            mode_appt_constraints=0,
                                            ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -526,7 +526,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),

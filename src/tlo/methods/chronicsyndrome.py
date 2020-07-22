@@ -247,17 +247,15 @@ class ChronicSyndrome(DiseaseModule):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values_df = pd.DataFrame(index=df.index[df.is_alive])
-
+        health_values = pd.Series(index=df.index[df.is_alive], data=0)
         for symptom, daly_wt in self.parameters['daly_wts'].items():
-            health_values_df.loc[
-                self.sim.modules['SymptomManager'].who_has(symptom),
-                symptom
-            ] = daly_wt
+            health_values.loc[
+                health_values.index.isin(self.sim.modules['SymptomManager'].who_has(symptom))
+            ] += daly_wt
 
-        health_values_df.fillna(0, inplace=True)
+        health_values.fillna(0, inplace=True)
 
-        return health_values_df
+        return health_values
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):

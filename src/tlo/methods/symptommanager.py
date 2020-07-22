@@ -314,7 +314,7 @@ class SymptomManager(Module):
         It returns a list of indicies for person that have all of the symptoms specified
 
         :param: list_of_symptoms : string or list of strings for the symptoms of interest
-        :return: list of person_ids for those with all of the symptoms in list_of_symptoms
+        :return: list of person_ids for those with all of the symptoms in list_of_symptoms who are alive
         """
 
         # Check formatting of list_of_symptoms is right (must be a list of strings)
@@ -331,7 +331,7 @@ class SymptomManager(Module):
         has_this_symptom = dict()
         for symptom in list_of_symptoms:
             # u = self.bsh[symptom].has_any(df.is_alive)  todo - has_any() doesn't seem to work as expected
-            u = self.bsh[symptom].uncompress().any(axis=1)
+            u = self.bsh[symptom].uncompress(self.sim.population.props.is_alive).any(axis=1)  # nb. limiting to alive
             has_this_symptom[symptom] = set(u[u].index)
 
         # find the people who have each of the symptoms listed

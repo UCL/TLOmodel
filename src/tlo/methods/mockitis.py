@@ -259,7 +259,8 @@ class Mockitis(DiseaseModule):
         health_values = pd.Series(index=df.index[df.is_alive], data=0)
         for symptom, daly_wt in self.parameters['daly_wts'].items():
             health_values.loc[
-                self.sim.modules['SymptomManager'].who_has(symptom)] += daly_wt
+                health_values.index.isin(self.sim.modules['SymptomManager'].who_has(symptom))
+            ] += daly_wt
 
         return health_values  # returns the series
 

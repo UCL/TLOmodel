@@ -173,8 +173,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Confirm that this appointment has been created by the HealthSeekingBehaviour module
-        assert module is self.sim.modules['HealthSeekingBehaviour']
+        # Confirm that this appointment has been created by the HealthSeekingBehaviour module or Labour module
+        assert module.name in ['HealthSeekingBehaviour', 'Labour']
 
         # Work out if this is for a child or an adult
         is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
