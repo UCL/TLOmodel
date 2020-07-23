@@ -36,14 +36,13 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.measles": logging.DEBUG,
-        "tlo.method.dx_algorithm_child": logging.DEBUG,
-        "tlo.methods.dx_algorithm_adult": logging.DEBUG,
+        # "tlo.methods.measles": logging.DEBUG,
+        "tlo.methods.epi": logging.DEBUG,
     }
 }
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
+start_date = Date(2017, 1, 1)
+end_date = Date(2020, 12, 31)
 pop_size = 500
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -54,7 +53,7 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 resources = "./resources"
 
 # Used to configure health system behaviour
-service_availability = ["*"]
+service_availability = [""]
 
 # We register all modules in a single call to the register method, calling once with multiple
 # objects. This is preferred to registering each module in multiple calls because we will be
@@ -67,8 +66,8 @@ sim.register(
         mode_appt_constraints=0,
         ignore_cons_constraints=True,
         ignore_priority=True,
-        capabilities_coefficient=1.0,
-        disable=True,
+        capabilities_coefficient=0.0,
+        disable=False,
     ),
     # disables the health system constraints so all HSI events run
     symptommanager.SymptomManager(resourcefilepath=resources),
@@ -94,20 +93,20 @@ sim.simulate(end_date=end_date)
 log_df = parse_log_file(sim.log_filepath)
 
 # ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
-
-model_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
-model_date = log_df["tlo.methods.measles"]["incidence"]["date"]
-# ------------------------------------- PLOTS  ------------------------------------- #
-
-plt.style.use("ggplot")
-
-# Measles incidence
-plt.subplot(111)  # numrows, numcols, fignum
-plt.plot(model_date, model_measles)
-plt.title("Measles incidence")
-plt.xlabel("Date")
-plt.ylabel("Incidence per 1000py")
-plt.xticks(rotation=90)
-plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-
-plt.show()
+#
+# model_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
+# model_date = log_df["tlo.methods.measles"]["incidence"]["date"]
+# # ------------------------------------- PLOTS  ------------------------------------- #
+#
+# plt.style.use("ggplot")
+#
+# # Measles incidence
+# plt.subplot(111)  # numrows, numcols, fignum
+# plt.plot(model_date, model_measles)
+# plt.title("Measles incidence")
+# plt.xlabel("Date")
+# plt.ylabel("Incidence per 1000py")
+# plt.xticks(rotation=90)
+# plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+#
+# plt.show()
