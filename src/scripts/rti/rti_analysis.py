@@ -40,12 +40,11 @@ import numpy as np
 
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
-print(resourcefilepath)
 # Establish the simulation object
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 1000
+popsize = 10000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")

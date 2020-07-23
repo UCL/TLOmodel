@@ -1277,6 +1277,7 @@ class RTI(Module):
         df = self.sim.population.props
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
+        df = df.loc[[person_id], columns]
         injury_numbers = range(1, 9)
         for code in codes:
             for injury_number in injury_numbers:
@@ -2600,6 +2601,8 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         self.prob_death_with_med_severe = p['prob_death_with_med_severe']
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.prob_perm_disability_with_treatment_sci = p['prob_perm_disability_with_treatment_sci']
+        self.prob_dislocation_requires_surgery = 0.01
+
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' foot
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -2680,7 +2683,13 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             self.major_surgery_counts += 1
 
         # --------------------------------- Dislocations --------------------------------------------------------------
-        # Requires pain relief, otherwise should be take care of in general appointment
+        # Requires pain relief, some will require surgery but otherwise they can be taken care of in the RTI med app
+        codes = ['322', '323', '722', '822']
+        idx, counts = find_and_count_injuries(person_injuries, codes)
+        require_surgery = self.module.rng.random_sample(size=1)
+        if len(idx) > 0:
+            if require_surgery < self.prob_dislocation_requires_surgery:
+                self.minor_surgery_counts += 1
 
         # --------------------------------- Soft tissue injury in neck -------------------------------------------------
         codes = ['342', '343']
@@ -2783,8 +2792,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             for count in range(1, self.minor_surgery_counts):
                 road_traffic_injuries.rti_do_for_minor_surgeries(person_id=person_id, hsi_event=self, count=count)
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
         # --------------------------- Lacerations will get stitches here -----------------------------------------------
         codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
         idx, lacerationcounts = find_and_count_injuries(person_injuries, codes)
@@ -2877,21 +2884,27 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         codes = ['712', '811', '812']
         idx, fracturecounts = find_and_count_injuries(person_injuries, codes)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        assert fracturecounts > 0
 
-        plaster_of_paris_code = pd.unique(
-            consumables.loc[consumables['Items'] ==
-                            'Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST', 'Item_Code'])[0]
-        consumables_fractures = {'Intervention_Package_Code': dict(),
-                                 'Item_Code': {plaster_of_paris_code: fracturecounts}}
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_fractures,
-            to_log=False)
-        if is_cons_available:
-            logger.debug(f"Fracture casts available for person %d's {fracturecounts} fractures", person_id)
-            treated_injuries(df, person_id, codes)
+        if len(idx) > 0:
+            plaster_of_paris_code = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                'Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST', 'Item_Code'])[0]
+            consumables_fractures = {'Intervention_Package_Code': dict(),
+                                     'Item_Code': {plaster_of_paris_code: fracturecounts}}
+            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_fractures,
+                to_log=False)
+            if is_cons_available:
+                logger.debug(f"Fracture casts available for person %d's {fracturecounts} fractures", person_id)
+                treated_injuries(df, person_id, codes)
+            else:
+                logger.debug(f"Person %d's has {fracturecounts} fractures without treatment", person_id)
         else:
-            logger.debug(f"Person %d's has {fracturecounts} fractures without treatment", person_id)
+            logger.debug("Did event run????")
+            logger.debug(person_id)
+            pass
 
     def did_not_run(self, person_id):
         logger.debug('Fracture casts unavailable for person %d', person_id)
@@ -2921,37 +2934,45 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         person_injuries = df.loc[[person_id], cols]
         codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101']
         idx, lacerationcounts = find_and_count_injuries(person_injuries, codes)
-        item_code_suture_kit = pd.unique(
-            consumables.loc[consumables['Items'] == 'Suture pack', 'Item_Code'])[0]
-        item_code_cetrimide_chlorhexidine = pd.unique(
-            consumables.loc[consumables['Items'] ==
-                            'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-        consumables_open_wound_1 = {
-            'Intervention_Package_Code': dict(),
-            'Item_Code': {item_code_suture_kit: lacerationcounts,
-                          item_code_cetrimide_chlorhexidine: lacerationcounts}
-        }
+        assert lacerationcounts > 0
+        if len(idx) > 0:
+            item_code_suture_kit = pd.unique(
+                consumables.loc[consumables['Items'] == 'Suture pack', 'Item_Code'])[0]
+            item_code_cetrimide_chlorhexidine = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
+            consumables_open_wound_1 = {
+                'Intervention_Package_Code': dict(),
+                'Item_Code': {item_code_suture_kit: lacerationcounts,
+                              item_code_cetrimide_chlorhexidine: lacerationcounts}
+            }
 
-        is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_open_wound_1,
-            to_log=False)['Item_Code']
+            is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_open_wound_1,
+                to_log=False)['Item_Code']
 
-        cond = is_cons_available_1
+            cond = is_cons_available_1
 
-        # Availability of consumables determines if the intervention is delivered...
-        if cond[item_code_suture_kit]:
-            logger.debug('This facility has open wound treatment available which has been used for person %d.',
-                         person_id)
-            treated_injuries(df, person_id, codes)
-            logger.debug(f'This facility treated their {lacerationcounts} open wounds')
-            if cond[item_code_cetrimide_chlorhexidine]:
-                logger.debug('This laceration was cleaned before stitching')
-            else:
-                logger.debug("This laceration wasn't cleaned before stitching, person %d is at risk of infection",
+            # Availability of consumables determines if the intervention is delivered...
+            if cond[item_code_suture_kit]:
+                logger.debug('This facility has open wound treatment available which has been used for person %d.',
                              person_id)
+                treated_injuries(df, person_id, codes)
+                logger.debug(f'This facility treated their {lacerationcounts} open wounds')
+                if cond[item_code_cetrimide_chlorhexidine]:
+                    logger.debug('This laceration was cleaned before stitching')
+                else:
+                    logger.debug("This laceration wasn't cleaned before stitching, person %d is at risk of infection",
+                                 person_id)
+            else:
+                logger.debug('This facility has no treatment for open wounds available.')
+
         else:
-            logger.debug('This facility has no treatment for open wounds available.')
+            logger.debug("Did event run????")
+            logger.debug(person_id)
+
+            pass
 
     def did_not_run(self, person_id):
         logger.debug('Suture kits unavailable for person %d', person_id)
@@ -2972,7 +2993,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
-
+        self.prob_mild_burns = 0.56
     def apply(self, person_id, squeeze_factor):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
@@ -2981,47 +3002,54 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         person_injuries = df.loc[[person_id], cols]
         codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         idx, burncounts = find_and_count_injuries(person_injuries, codes)
-        possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
-        idx2, bigburncounts = find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
-        item_code_cetrimide_chlorhexidine = pd.unique(
-            consumables.loc[consumables['Items'] ==
-                            'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
-        item_code_gauze = pd.unique(
-            consumables.loc[
-                consumables['Items'] == "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_packof 36_CMST",
-                'Item_Code'])[0]
-
-        random_for_severe_burn = self.module.rng.random_sample(size=1)
-        # ======================== If burns severe enough then give IV fluid replacement ===========================
-        if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
-            # Note that the wording for the above condition is awful but it's doing what I want it to
-
-            item_code_fluid_replacement = pd.unique(
+        assert burncounts > 0
+        if len(idx) > 0:
+            possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
+            idx2, bigburncounts = find_and_count_injuries(person_injuries, possible_large_TBSA_burn_codes)
+            item_code_cetrimide_chlorhexidine = pd.unique(
                 consumables.loc[consumables['Items'] ==
-                                "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
-            consumables_burns = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
-                              item_code_fluid_replacement: 1, item_code_gauze: burncounts}}
+                                'Cetrimide 15% + chlorhexidine 1.5% solution.for dilution _5_CMST', 'Item_Code'])[0]
+            item_code_gauze = pd.unique(
+                consumables.loc[
+                    consumables['Items'] == "Dressing, paraffin gauze 9.5cm x 9.5cm (square)_packof 36_CMST",
+                    'Item_Code'])[0]
+
+            random_for_severe_burn = self.module.rng.random_sample(size=1)
+            # ======================== If burns severe enough then give IV fluid replacement ===========================
+            if (burncounts > 1) or ((len(idx2) > 0) & (random_for_severe_burn > self.prob_mild_burns)):
+                # Note that the wording for the above condition is awful but it's doing what I want it to
+
+                item_code_fluid_replacement = pd.unique(
+                    consumables.loc[consumables['Items'] ==
+                                    "ringer's lactate (Hartmann's solution), 500 ml_20_IDA", 'Item_Code'])[0]
+                consumables_burns = {
+                    'Intervention_Package_Code': dict(),
+                    'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
+                                  item_code_fluid_replacement: 1, item_code_gauze: burncounts}}
+
+            else:
+                consumables_burns = {
+                    'Intervention_Package_Code': dict(),
+                    'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
+                                  item_code_gauze: burncounts}}
+            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_burns,
+                to_log=False)
+            logger.debug(is_cons_available)
+            cond = is_cons_available
+            if all(value == 1 for value in cond.values()):
+                logger.debug('This facility has burn treatment available which has been used for person %d.',
+                             person_id)
+                logger.debug(f'This facility treated their {burncounts} burns')
+                treated_injuries(df, person_id, codes)
+            else:
+                logger.debug('This facility has no treatment for open wounds available.')
 
         else:
-            consumables_burns = {
-                'Intervention_Package_Code': dict(),
-                'Item_Code': {item_code_cetrimide_chlorhexidine: burncounts,
-                              item_code_gauze: burncounts}}
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self,
-            cons_req_as_footprint=consumables_burns,
-            to_log=False)
-        logger.debug(is_cons_available)
-        cond = is_cons_available
-        if all(value == 1 for value in cond.values()):
-            logger.debug('This facility has burn treatment available which has been used for person %d.',
-                         person_id)
-            logger.debug(f'This facility treated their {burncounts} burns')
-            treated_injuries(df, person_id, codes)
-        else:
-            logger.debug('This facility has no treatment for open wounds available.')
+            logger.debug("Did event run????")
+            logger.debug(person_id)
+            pass
 
     def did_not_run(self, person_id):
         logger.debug('Burn treatment unavailable for person %d', person_id)
@@ -3112,7 +3140,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         # Injuries causing moderate pain include: Fractures, dislocations, soft tissue and neck trauma
         Moderate_Pain_Codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813',  # fractures
                                '322', '323', '722', '822'  # dislocations
-                                                    '342', '343', '361', '363'  # neck trauma
+                               '342', '343', '361', '363'  # neck trauma
                                ]
         moderate_idx, moderate_counts = find_and_count_injuries(person_injuries, Moderate_Pain_Codes)
         # Injuries causing severe pain include: All burns, amputations, spinal cord injuries, abdominal trauma see
