@@ -60,8 +60,10 @@ def check_configuration_of_properties(sim):
     assert not pd.isnull(df.loc[df.gi_ever_had_diarrhoea, 'gi_last_diarrhoea_duration']).any()
 
     # Those that have had diarrhoea and no treatment, should have either a recovery date or a death_date (but not both)
-    has_recovery_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date), 'gi_last_diarrhoea_recovered_date'])
-    has_death_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date), 'gi_last_diarrhoea_death_date'])
+    has_recovery_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date),
+                                          'gi_last_diarrhoea_recovered_date'])
+    has_death_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date),
+                                       'gi_last_diarrhoea_death_date'])
     has_recovery_date_or_death_date = has_recovery_date | has_death_date
     has_both_recovery_date_and_death_date = has_recovery_date & has_death_date
     assert has_recovery_date_or_death_date.all()
@@ -372,4 +374,3 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     assert (got_treatment | recovered_naturally).all()
 
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
-
