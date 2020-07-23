@@ -40,8 +40,14 @@ def check_configuration_of_properties(sim):
 
     df = sim.population.props
 
-    # Those that have never had diarrhoea, should have null values:
-    assert pd.isnull(df.loc[df['gi_last_diarrhoea_pathogen'] == 'none', [
+    # Those that have never had diarrhoea, should have not_applicable/null values for all the other properties:
+    assert (df.loc[~df['gi_ever_had_diarrhoea'], [
+        'gi_last_diarrhoea_pathogen',
+        'gi_last_diarrhoea_type',
+        'gi_last_diarrhoea_dehydration']
+    ] == 'not_applicable').all().all()
+
+    assert pd.isnull(df.loc[~df['gi_ever_had_diarrhoea'], [
         'gi_last_diarrhoea_date_of_onset',
         'gi_last_diarrhoea_duration',
         'gi_last_diarrhoea_recovered_date',
@@ -49,51 +55,54 @@ def check_configuration_of_properties(sim):
         'gi_last_diarrhoea_treatment_date']
     ]).all().all()
 
-    # those that have have never had diarrhoea should have 'none' for type and pathogen of last episode
-    assert (df.loc[df['gi_last_diarrhoea_pathogen'] == 'none'].index == df.loc[
-        df['gi_last_diarrhoea_type'] == 'none'].index).all()
-    assert (df.loc[df['gi_last_diarrhoea_pathogen'] == 'none'].index == df.loc[
-        df['gi_last_diarrhoea_dehydration'] == 'none'].index).all()
-
     # Those that have had diarrhoea, should have a pathogen and a number of days duration
-    assert (df.loc[
-        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
-        'gi_last_diarrhoea_pathogen'] != 'none').all()
+    assert (df.loc[df.gi_ever_had_diarrhoea, 'gi_last_diarrhoea_pathogen'] != 'none').all()
+    assert not pd.isnull(df.loc[df.gi_ever_had_diarrhoea, 'gi_last_diarrhoea_duration']).any()
 
-    assert not pd.isnull(df.loc[
-        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
-        'gi_last_diarrhoea_duration']).any()
-
-    # Those that have had diarrhoea, should have either a recovery date or a death_date (but not bith)
-    has_recovery_date = ~pd.isnull(df.loc[
-        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
-        'gi_last_diarrhoea_recovered_date'])
-
-    has_death_date = ~pd.isnull(df.loc[
-        ~pd.isnull(df['gi_last_diarrhoea_date_of_onset']),
-        'gi_last_diarrhoea_death_date'])
-
+    # Those that have had diarrhoea and no treatment, should have either a recovery date or a death_date (but not both)
+    has_recovery_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date), 'gi_last_diarrhoea_recovered_date'])
+    has_death_date = ~pd.isnull(df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df.gi_last_diarrhoea_treatment_date), 'gi_last_diarrhoea_death_date'])
     has_recovery_date_or_death_date = has_recovery_date | has_death_date
     has_both_recovery_date_and_death_date = has_recovery_date & has_death_date
     assert has_recovery_date_or_death_date.all()
     assert not has_both_recovery_date_and_death_date.any()
 
     # Those for whom the death date has past should be dead
-    assert not df.loc[
-        ~pd.isnull(df['gi_last_diarrhoea_death_date']) &
-        (df['gi_last_diarrhoea_death_date'] < sim.date),
-        'is_alive'].any()
+    assert not df.loc[df.gi_ever_had_diarrhoea & (df['gi_last_diarrhoea_death_date'] < sim.date), 'is_alive'].any()
 
-    # TODO Those currently in an episode of diarrhoea should have symptoms and no-one else should.
-    date_of_outcome = df['gi_last_diarrhoea_recovered_date'].fillna(df['gi_last_diarrhoea_death_date'])
+    # Check that those in a current episode have symptoms but not others
+    has_symptoms = set(sim.modules['SymptomManager'].who_has('diarrhoea'))
+    in_current_episode_before_recovery = df.gi_ever_had_diarrhoea & \
+        (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
+        (sim.date <= df.gi_last_diarrhoea_recovered_date)
+    set_of_person_id_in_current_episode_before_recovery = set(
+        in_current_episode_before_recovery[in_current_episode_before_recovery].index
+    )
 
-    in_current_episode = (~pd.isnull(df.gi_last_diarrhoea_date_of_onset) &
-                          (df.gi_last_diarrhoea_date_of_onset <= sim.date) &
-                          ~pd.isnull(date_of_outcome) &
-                          (date_of_outcome > sim.date))
+    in_current_episode_before_death = df.gi_ever_had_diarrhoea & \
+        (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
+        (sim.date <= df.gi_last_diarrhoea_death_date)
+    set_of_person_id_in_current_episode_before_death = set(
+        in_current_episode_before_death[in_current_episode_before_death].index
+    )
 
-    assert list(in_current_episode[in_current_episode].index.values) ==\
-           sim.modules['SymptomManager'].who_has('diarrhoea')
+    in_current_episode_before_cure = df.gi_ever_had_diarrhoea & \
+        (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
+        (df.gi_last_diarrhoea_treatment_date <= sim.date) & \
+        pd.isnull(df.gi_last_diarrhoea_recovered_date) & \
+        pd.isnull(df.gi_last_diarrhoea_death_date)
+    set_of_person_id_in_current_episode_before_cure = set(
+        in_current_episode_before_cure[in_current_episode_before_cure].index
+    )
+
+    assert set() == set_of_person_id_in_current_episode_before_recovery.intersection(
+        set_of_person_id_in_current_episode_before_death
+    )
+
+    set_of_person_id_in_current_episode = set_of_person_id_in_current_episode_before_recovery.union(
+        set_of_person_id_in_current_episode_before_death, set_of_person_id_in_current_episode_before_cure
+    )
+    assert set_of_person_id_in_current_episode == has_symptoms
 
 
 def test_basic_run_of_diarrhoea_module_with_default_params():
@@ -102,7 +111,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
     end_date = Date(2010, 12, 31)
     popsize = 1000
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -118,7 +127,6 @@ def test_basic_run_of_diarrhoea_module_with_default_params():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)
     check_configuration_of_properties(sim)
 
@@ -134,7 +142,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     end_date = Date(2015, 12, 31)
     popsize = 1000
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -170,7 +178,6 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.5
     sim.modules['Diarrhoea'].parameters['case_fatality_rate_dysentery'] = 0.5
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)
     check_configuration_of_properties(sim)
 
@@ -182,9 +189,10 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     df = sim.population.props
 
     # Check for zero-level of diarrhoea
-    assert (df['gi_last_diarrhoea_pathogen'] == 'none').all()
-    assert (df['gi_last_diarrhoea_type'] == 'none').all()
-    assert (df['gi_last_diarrhoea_dehydration'] == 'none').all()
+    assert 0 == df.gi_ever_had_diarrhoea.sum()
+    assert (df['gi_last_diarrhoea_pathogen'] == 'not_applicable').all()
+    assert (df['gi_last_diarrhoea_type'] == 'not_applicable').all()
+    assert (df['gi_last_diarrhoea_dehydration'] == 'not_applicable').all()
 
     # Check for zero level of recovery
     assert pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
@@ -197,9 +205,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     # Check that there are incident cases, treatments and deaths occurring correctly
     start_date = Date(2010, 1, 1)
     end_date = Date(2015, 12, 31)
-    popsize = 1000
+    popsize = 2000
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -235,7 +243,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.5
     sim.modules['Diarrhoea'].parameters['case_fatality_rate_dysentery'] = 0.5
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)
     check_configuration_of_properties(sim)
 
@@ -247,6 +254,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     df = sim.population.props
 
     # Check for non-zero-level of diarrhoea
+    assert 0 < df.gi_ever_had_diarrhoea.sum()
     assert (df['gi_last_diarrhoea_pathogen'] != 'none').any()
     assert (df['gi_last_diarrhoea_type'] != 'none').any()
     assert (df['gi_last_diarrhoea_dehydration'] != 'none').any()
@@ -264,13 +272,13 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
 
 
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment():
-    # Run with everyone gets symptoms and seeks care and perfect treatment efficacy:
-    # check that everyone is cured and no deaths;
+    # Run with everyone getting symptoms and seeking care and perfect treatment efficacy:
+    # Check that everyone is cured and no deaths;
     start_date = Date(2010, 1, 1)
     end_date = Date(2015, 12, 31)
-    popsize = 1000
+    popsize = 2000
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -334,7 +342,6 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     sim.modules['Diarrhoea'].parameters['mean_days_duration_with_astrovirus'] = 12
     sim.modules['Diarrhoea'].parameters['mean_days_duration_with_tEPEC'] = 12
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)
     check_configuration_of_properties(sim)
 
@@ -346,6 +353,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     df = sim.population.props
 
     # Check for non-zero-level of diarrhoea
+    assert 0 < df.gi_ever_had_diarrhoea.sum()
     assert (df['gi_last_diarrhoea_pathogen'] != 'none').any()
     assert (df['gi_last_diarrhoea_type'] != 'none').any()
     assert (df['gi_last_diarrhoea_dehydration'] != 'none').any()
@@ -353,27 +361,15 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     # Check for non-zero level of recovery
     assert not pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
 
-    # Check that all of those who got diarrhoea got treatment
-    got_diarrhoea = ~pd.isnull(df.gi_last_diarrhoea_date_of_onset)
-    assert not pd.isnull(df.loc[got_diarrhoea, 'gi_last_diarrhoea_treatment_date']).any()
+    # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided
+    got_treatment = ~pd.isnull(
+        df.loc[df.gi_ever_had_diarrhoea, 'gi_last_diarrhoea_treatment_date']
+    )
+    recovered_naturally = ~pd.isnull(
+        df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
+               'gi_last_diarrhoea_recovered_date']
+    )
+    assert (got_treatment | recovered_naturally).all()
 
-    # ******* todo: this is failing because one person (67) is not getting treatment -- maybe because they are
-    # recovered before they are treated
-    # **** could be to do with short duration episode!?!!?!?
-
-    # Check for zero level of death
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
-
-
-# TODO Run with intervention but no health-care-seeking: check that no cures happen etc, some deaths hapen;
-
-# NB. With increased frequency, there can be 'interference' between successive episodes:
-# e.g. one episode is scheduled for a recovery, but is cured (although the reocvery event is still in the queue), then a
-# subsequent episodes has a different natural history, which don't make sense when the orignal recovery event is run.
-
-# TODO - add 'end of episode' (the date after which nothing else is scheduled), to prevent new episodes being started.
-
-
-# TODO - 1) check these mechanics working
-    #    2) HSI
 
