@@ -57,7 +57,7 @@ service_availability = [""]
 
 # We register all modules in a single call to the register method, calling once with multiple
 # objects. This is preferred to registering each module in multiple calls because we will be
-# able to handle dependencies if modules are registered together
+# able to handle dependencies if modules are registered toganalether
 sim.register(
     demography.Demography(resourcefilepath=resources),
     healthsystem.HealthSystem(
