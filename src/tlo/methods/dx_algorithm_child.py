@@ -46,13 +46,14 @@ class DxAlgorithmChild(Module):
         """
 
         # Test for the visual inspection of 'Danger signs' for a child who is dehydrated
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            danger_signs_visual_inspection=DxTest(
-                property='gi_last_diarrhoea_dehydration',
-                sensitivity=0.90,
-                specificity=0.80
+        if 'Diarrhoea' in self.sim.modules:
+            self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+                danger_signs_visual_inspection=DxTest(
+                    property='gi_last_diarrhoea_dehydration',
+                    sensitivity=0.90,
+                    specificity=0.80
+                )
             )
-        )
 
     def on_birth(self, mother_id, child_id):
         pass
