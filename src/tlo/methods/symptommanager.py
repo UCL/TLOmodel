@@ -3,6 +3,9 @@ The Symptom Manager:
 * Manages presence of symptoms for all disease modules
 * Manages a set of generic symptoms
 * Creates occurrences of generic symptom (representing that being caused by diseases not included in the TLO model)
+
+The write-up for the origin of the estimates for the effect of each symptom is:
+ Health-seeking behaviour estimates for adults and children.docx
 """
 
 from pathlib import Path

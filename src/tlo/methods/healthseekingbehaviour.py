@@ -1,6 +1,9 @@
 """
 Health Seeking Behaviour Module
 This module determines if care is sought once a symptom is developed.
+
+The write-up of these estimates is: Health-seeking behaviour estimates for adults and children.docx
+
 """
 from pathlib import Path
 
@@ -29,17 +32,41 @@ class HealthSeekingBehaviour(Module):
 
     # No parameters to declare
     PARAMETERS = {
-        'baseline_odds_of_healthcareseeking': Parameter(Types.REAL,
-                                                        'baseline odds of seeking care for the "average symptom" for a '
-                                                        'Northern, rural, male, <5 years old'),
-        'odds_ratio_region_Central': Parameter(Types.REAL, 'odds ratio for healthcare seeking if region is Central'),
-        'odds_ratio_region_Southern': Parameter(Types.REAL, 'odds ratio for healthcare seeking if region is Southern'),
-        'odds_ratio_setting_urban': Parameter(Types.REAL, 'odds ratio for healthcare seeking if setting is urban'),
-        'odds_ratio_sex_Female': Parameter(Types.REAL, 'odds ratio for healthcare seeking if sex if Female'),
-        'odds_ratio_age_under5-14': Parameter(Types.REAL, 'odds ratio for healthcare seeking if age is 5-14 years'),
-        'odds_ratio_age_under15-34': Parameter(Types.REAL, 'odds ratio for healthcare seeking if age is 15-34 years'),
-        'odds_ratio_age_under35-59': Parameter(Types.REAL, 'odds ratio for healthcare seeking if age is 35-59 years'),
-        'odds_ratio_age_under60plus': Parameter(Types.REAL, 'odds ratio for healthcare seeking if age is 60plus years')
+        'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
+                                                                             ' 0-14) if male, 0-5 years-old, living in'
+                                                                             ' a rural setting in the Northern region,'
+                                                                             ' and not in the wealth categories 4 or '
+                                                                             '5'),
+        'odds_ratio_children_sex_Female': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if sex'
+                                                                ' is Female'),
+        'odds_ratio_children_age_5to14': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if aged'
+                                                               ' 5-14'),
+        'odds_ratio_children_setting_urban': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if'
+                                                                   ' setting is Urban'),
+        'odds_ratio_children_region_Central': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if'
+                                                                    ' region is Central'),
+        'odds_ratio_children_region_Southern': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if'
+                                                                     ' region is Southern'),
+        'odds_ratio_children_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if'
+                                                                    ' wealth is in categories 4 or 5'),
+        'baseline_odds_of_healthcareseeking_adults': Parameter(Types.REAL, 'odds of health-care seeking (adults: 15+) '
+                                                                           'if male, 15-34 year-olds, living in a rural'
+                                                                           ' setting in the Northern region, and not in'
+                                                                           ' the wealth categories 4 or 5.'),
+        'odds_ratio_adults_sex_Female': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if sex is'
+                                                              ' Female'),
+        'odds_ratio_adults_age_35to59': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if aged'
+                                                              ' 35-59'),
+        'odds_ratio_adults_age_60plus': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if aged'
+                                                              ' 60+'),
+        'odds_ratio_adults_setting_urban': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if '
+                                                                 'setting is Urban'),
+        'odds_ratio_adults_region_Central': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if '
+                                                                  'region is Central'),
+        'odds_ratio_adults_region_Southern': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if '
+                                                                   'region is Southern'),
+        'odds_ratio_adults_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if wealth'
+                                                                 ' is in categories 4 or 5')
     }
 
     # No properties to declare
@@ -61,18 +88,30 @@ class HealthSeekingBehaviour(Module):
 
         # Define the LinearModel for health seeking behaviour for the 'average symptom'
         p = self.parameters
-        self.hsb = LinearModel(
+        self.hsb = dict()
+        self.hsb['children'] = LinearModel(
             LinearModelType.LOGISTIC,
-            p['baseline_odds_of_healthcareseeking'],
-            Predictor('region_of_residence').when('Central', p['odds_ratio_region_Central'])
-                                            .when('Southern', p['odds_ratio_region_Southern']),
-            Predictor('li_urban').when(True, p['odds_ratio_setting_urban']),
-            Predictor('sex').when('F', p['odds_ratio_sex_Female']),
-            Predictor('age_years').when('<5', 1.00)
-                                  .when('<15', p['odds_ratio_age_under5-14'])
-                                  .when('<35', p['odds_ratio_age_under15-34'])
-                                  .when('<60', p['odds_ratio_age_under35-59'])
-                                  .otherwise(p['odds_ratio_age_under60plus'])
+            p['baseline_odds_of_healthcareseeking_children'],
+            Predictor('li_urban').when(True, p['odds_ratio_children_setting_urban']),
+            Predictor('sex').when('F', p['odds_ratio_children_sex_Female']),
+            Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
+            Predictor('region_of_residence').when('Central', p['odds_ratio_children_region_Central'])
+                                            .when('Southern', p['odds_ratio_children_region_Southern']),
+            Predictor('li_wealth').when(4, p['odds_ratio_children_wealth_higher'])
+                                  .when(5, p['odds_ratio_children_wealth_higher'])
+        )
+
+        self.hsb['adults'] = LinearModel(
+            LinearModelType.LOGISTIC,
+            p['baseline_odds_of_healthcareseeking_adults'],
+            Predictor('li_urban').when(True, p['odds_ratio_adults_setting_urban']),
+            Predictor('sex').when('F', p['odds_ratio_adults_sex_Female']),
+            Predictor('age_years').when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
+                                  .when('>=60', p['odds_ratio_adults_age_60plus']),
+            Predictor('region_of_residence').when('Central', p['odds_ratio_adults_region_Central'])
+                                            .when('Southern', p['odds_ratio_adults_region_Southern']),
+            Predictor('li_wealth').when(4, p['odds_ratio_adults_wealth_higher'])
+                                  .when(5, p['odds_ratio_adults_wealth_higher'])
         )
 
     def initialise_population(self, population):
@@ -237,7 +276,10 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # if any non-emergency symptoms - consider making a generic non-emergency HSI:
             if len(care_seeking_symptoms) > 0:
                 # Look at joint effect on health-care seeking of all symptoms
-                baseline_prob = m.hsb.predict(population.props.loc[[person_id]]).values[0]
+                if is_child:
+                    baseline_prob = m.hsb['children'].predict(population.props.loc[[person_id]]).values[0]
+                else:
+                    baseline_prob = m.hsb['adults'].predict(population.props.loc[[person_id]]).values[0]
                 odds_ratio = get_joint_odds_ratio_of_all_symptoms(care_seeking_symptoms, is_child)
                 prob_hsb = compute_prob_from_baseline_prob_and_odds_ratio(baseline_prob, odds_ratio)
                 if m.rng.rand() < prob_hsb:
