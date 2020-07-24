@@ -6,6 +6,10 @@ The Symptom Manager:
 
 The write-up for the origin of the estimates for the effect of each symptom is:
  Health-seeking behaviour estimates for adults and children.docx
+
+Outstanding issues
+* The probability of spurious symptoms is not informed by data.
+
 """
 
 from pathlib import Path

@@ -25,8 +25,11 @@ from tlo.methods.hsi_generic_first_appts import (
 
 class HealthSeekingBehaviour(Module):
     """
-    This modules determines if the onset of generic symptoms will lead to that person presenting at the health
+    This modules determines if the onset of symptoms will lead to that person presenting at the health
     facility for a HSI_GenericFirstAppointment.
+
+    An equation gives the probability of seeking care in response to the "average" symptom. This is modified according
+    to if the symptom is associated with a particular effect.
 
     """
 
