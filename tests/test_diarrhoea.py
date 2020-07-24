@@ -21,7 +21,15 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-from tlo.methods.diarrhoea import HSI_Diarrhoea_Treatment_PlanC, HSI_Diarrhoea_Dysentery
+from tlo.methods.diarrhoea import (
+    HSI_Diarrhoea_Treatment_PlanA,
+    HSI_Diarrhoea_Treatment_PlanB,
+    HSI_Diarrhoea_Treatment_PlanC,
+    HSI_Diarrhoea_Severe_Persistent_Diarrhoea,
+    HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
+    HSI_Diarrhoea_Dysentery
+)
+
 from tlo.methods.healthsystem import HSI_Event
 
 try:
@@ -467,3 +475,53 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanC)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Dysentery)
 
+def test_run_each_of_the_HSI():
+    start_date = Date(2010, 1, 1)
+    popsize = 200  # smallest population size that works
+
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to health-care seeking
+                 ),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    # update the availability of consumables, such that all are available:
+    sim.modules['HealthSystem'].cons_item_code_availability_today = \
+        sim.modules['HealthSystem'].prob_unique_item_codes_available > 0.0
+
+    list_of_hsi = [
+        'HSI_Diarrhoea_Treatment_PlanA',
+        'HSI_Diarrhoea_Treatment_PlanB',
+        'HSI_Diarrhoea_Treatment_PlanC',
+        'HSI_Diarrhoea_Severe_Persistent_Diarrhoea',
+        'HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea',
+        'HSI_Diarrhoea_Dysentery'
+    ]
+
+    for name_of_hsi in list_of_hsi:
+        hsi_event = eval(name_of_hsi +
+                         "(person_id=0, "
+                         "module=sim.modules['Diarrhoea'],"
+                         ""
+                         ")"
+                         )
+        hsi_event.run(squeeze_factor=0)
