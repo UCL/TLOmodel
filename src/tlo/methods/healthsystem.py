@@ -1253,6 +1253,10 @@ class HSI_Event:
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
 
+    def get_all_consumables(self, packages: dict, items: dict):
+        """utility function to check if all of the requested consumbales are available"""
+        print('test')
+
 
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.

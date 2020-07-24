@@ -16,6 +16,8 @@ Outstanding issues:
 ==================
 * Onset of severe dehydration has no relationship to the risk of death (only the treatment that is provided)
 * Risk of death is linked to duration of episode - but this is assigned randomly, so stricly  is not necessary.
+* Follow-up appointments for initial HSI events.
+
 """
 
 import copy
@@ -1796,7 +1798,7 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
 
         # <6 mo - 250mg 1/2 tab x2 daily for 3 days
         # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
-        # follow up in 3 days
+        # follow up in 3 days # todo - there are not follow-up events currently
 
         the_cons_footprint = {
             'Intervention_Package_Code': {pkg_code1: 1},
@@ -1806,6 +1808,7 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
         # Request the treatment
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=the_cons_footprint)
+
         logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
         if is_cons_available:

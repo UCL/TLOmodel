@@ -50,6 +50,7 @@ class DxAlgorithmChild(Module):
             self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
                 danger_signs_visual_inspection=DxTest(
                     property='gi_last_diarrhoea_dehydration',
+                    target_categories=['severe'],
                     sensitivity=0.90,
                     specificity=0.80
                 )
@@ -77,7 +78,7 @@ class DxAlgorithmChild(Module):
         df = self.sim.population.props
 
         def run_dx_test(test):
-            self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=test, hsi_event=hsi_event)
+            return self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=test, hsi_event=hsi_event)
 
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
@@ -97,7 +98,24 @@ class DxAlgorithmChild(Module):
 
         # Apply the algorithms:
         # --------   Classify Extent of Dehydration   ---------
-        if dehydration and danger_signs:
+        if (not dehydration) and (not danger_signs):
+            # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
+            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanA(person_id=person_id,
+                                                                 module=self.sim.modules['Diarrhoea']),
+                         priority=0,
+                         topen=self.sim.date,
+                         tclose=None
+                         )
+        elif dehydration and (not danger_signs):
+            # TODO: add - "...and not other severe classification from other disease modules (measles, pneumonia, etc)"
+            # Treatment Plan B for some dehydration diarrhoea but not danger signs
+            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id,
+                                                                 module=self.sim.modules['Diarrhoea']),
+                         priority=0,
+                         topen=self.sim.date,
+                         tclose=None
+                         )
+        elif dehydration and danger_signs:
             # 'Severe_Dehydration'
             schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanC(person_id=person_id,
                                                                  module=self.sim.modules['Diarrhoea']),
@@ -105,26 +123,7 @@ class DxAlgorithmChild(Module):
                          topen=self.sim.date,
                          tclose=None
                          )
-        elif not dehydration and not danger_signs:
-            # Treatment Plan A for uncomplicated diarrhoea
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanA(person_id=person_id,
-                                                                 module=self.sim.modules['Diarrhoea']),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        elif dehydration and not danger_signs:
-            # TODO: add - "...and not other severe classification from other disease modules (measles, pneumonia, etc)"
-            # Treatment Plan B for some dehydration diarrhoea
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id,
-                                                                 module=self.sim.modules['Diarrhoea']),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        else:
-            # There is no treatment for this person
-            pass
+
 
         # ----------------------------------------------------
 
