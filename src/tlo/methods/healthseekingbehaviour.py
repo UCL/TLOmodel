@@ -50,8 +50,8 @@ class HealthSeekingBehaviour(Module):
                                                                     ' region is Central'),
         'odds_ratio_children_region_Southern': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if'
                                                                      ' region is Southern'),
-        'odds_ratio_children_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if'
-                                                                    ' wealth is in categories 4 or 5'),
+        'odds_ratio_children_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (children) if '
+                                                                   'wealth is in categories 4 or 5'),
         'baseline_odds_of_healthcareseeking_adults': Parameter(Types.REAL, 'odds of health-care seeking (adults: 15+) '
                                                                            'if male, 15-34 year-olds, living in a rural'
                                                                            ' setting in the Northern region, and not in'
