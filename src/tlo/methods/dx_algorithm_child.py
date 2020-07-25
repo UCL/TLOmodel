@@ -85,6 +85,7 @@ class DxAlgorithmChild(Module):
         # Gather information that can be reported:
         # 1) Get duration of diarrhoea to date
         duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
+        assert duration_in_days >= 0
 
         # 2) Get type of diarrhoea
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
@@ -98,7 +99,9 @@ class DxAlgorithmChild(Module):
 
         # Apply the algorithms:
         # --------   Classify Extent of Dehydration   ---------
-        if (not dehydration) and (not danger_signs):
+        if not dehydration:
+            # Those who do NOT have DEHYDRATION
+
             # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
             schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanA(person_id=person_id,
                                                                  module=self.sim.modules['Diarrhoea']),
@@ -106,45 +109,47 @@ class DxAlgorithmChild(Module):
                          topen=self.sim.date,
                          tclose=None
                          )
-        elif dehydration and (not danger_signs):
-            # TODO: add - "...and not other severe classification from other disease modules (measles, pneumonia, etc)"
-            # Treatment Plan B for some dehydration diarrhoea but not danger signs
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id,
-                                                                 module=self.sim.modules['Diarrhoea']),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        elif dehydration and danger_signs:
-            # 'Severe_Dehydration'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanC(person_id=person_id,
-                                                                 module=self.sim.modules['Diarrhoea']),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
 
+            if duration_in_days >= 14:
+                # 'Non_Severe_Persistent_Diarrhoea'
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(person_id=person_id,
+                                                                                     module=self.sim.modules[
+                                                                                         'Diarrhoea']),
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
 
-        # ----------------------------------------------------
+        else:
+            # Those who do have DEHYDRATION
 
-        # --------   Classify Type of Diarrhoea   -----------
-        if (duration_in_days >= 14) and dehydration:
-            # 'Severe_Persistent_Diarrhoea'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Persistent_Diarrhoea(person_id=person_id,
-                                                                             module=self.sim.modules['Diarrhoea']),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        elif (duration_in_days >= 14) and not dehydration:
-            # 'Non_Severe_Persistent_Diarrhoea'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(person_id=person_id,
+            # Given that there is dehydration - schedule an HSI if the duration of diarrhoea has been long
+            if duration_in_days >= 14:
+                # 'Severe_Persistent_Diarrhoea'
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Persistent_Diarrhoea(person_id=person_id,
                                                                                  module=self.sim.modules['Diarrhoea']),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        # -----------------------------------------------------
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
+
+            if not danger_signs:
+                # Treatment Plan B for some dehydration diarrhoea but not danger signs
+                # TODO:add "...and not other severe classification from other disease modules (measles, pneumonia, etc)"
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id,
+                                                                     module=self.sim.modules['Diarrhoea']),
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
+            else:
+                # Danger sign for 'Severe_Dehydration'
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanC(person_id=person_id,
+                                                                     module=self.sim.modules['Diarrhoea']),
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
 
         # --------  Classify Whether Dysentery or Not  --------
         if blood_in_stool:

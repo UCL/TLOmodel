@@ -436,23 +436,24 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
 
         return sim, hsi_event
 
-    # ---- PERSON WITH NO DEHYRATION AND NON-BLOODY DIARRHOEA ----
+    # ---- PERSON WITH NO DEHYDRATION AND NON-BLOODY DIARRHOEA: ---> PLAN A ----
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
     # Set up the person - severe dehydration:
     df = sim.population.props
+    duration = 5
     df.at[0, 'gi_ever_had_diarrhoea'] = True
     df.at[0, 'gi_last_diarrhoea_pathogen'] = 'shigella'
     df.at[0, 'gi_last_diarrhoea_type'] = 'watery'
     df.at[0, 'gi_last_diarrhoea_dehydration'] = 'none'
-    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date
-    df.at[0, 'gi_last_diarrhoea_duration'] = 10
+    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date - pd.DateOffset(days=duration)
+    df.at[0, 'gi_last_diarrhoea_duration'] = duration
 
-    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(day=10)
+    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(days=1)
     df.at[0, 'gi_last_diarrhoea_death_date'] = pd.NaT
     df.at[0, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
-    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(day=10)
+    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(days=1)
 
     sim.modules['SymptomManager'].change_symptom(
         person_id=0,
@@ -469,24 +470,24 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
 
-
-    # ---- PERSON WITH NON-SEVERE DEHYRATION AND NON-BLOODY DIARRHOEA ----
+    # ---- PERSON WITH NON-SEVERE DEHYRATION AND NON-BLOODY DIARRHOEA: ---> PLAN B ----
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
     # Set up the person - severe dehydration:
     df = sim.population.props
+    duration = 5
     df.at[0, 'gi_ever_had_diarrhoea'] = True
     df.at[0, 'gi_last_diarrhoea_pathogen'] = 'shigella'
     df.at[0, 'gi_last_diarrhoea_type'] = 'watery'
     df.at[0, 'gi_last_diarrhoea_dehydration'] = 'some'
-    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date
-    df.at[0, 'gi_last_diarrhoea_duration'] = 10
+    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date - pd.DateOffset(days=duration)
+    df.at[0, 'gi_last_diarrhoea_duration'] = duration
 
-    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(day=10)
+    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(days=1)
     df.at[0, 'gi_last_diarrhoea_death_date'] = pd.NaT
     df.at[0, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
-    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(day=10)
+    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(days=1)
 
     sim.modules['SymptomManager'].change_symptom(
         person_id=0,
@@ -509,26 +510,25 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
     assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanB)
 
-
-    # %% ---- PERSON WITH SEVERE DEHYRATION and BLOODY DIARRHOEA ----
+    # %% ---- PERSON WITH SEVERE DEHYRATION and BLOODY DIARRHOEA: --> PLAN C PLUS DYSSENTRY HSI ----
 
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
     # Set up the person - severe dehydration:
-    # Define the characteristics of the person: Dirarrhoea - Blood in stool - Severe Dehydration --> Plan C + HSI_Diarrhoea_Dysentery
     df = sim.population.props
+    duration = 5
     df.at[0, 'gi_ever_had_diarrhoea'] = True
     df.at[0, 'gi_last_diarrhoea_pathogen'] = 'shigella'
     df.at[0, 'gi_last_diarrhoea_type'] = 'bloody'
     df.at[0, 'gi_last_diarrhoea_dehydration'] = 'severe'
-    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date
-    df.at[0, 'gi_last_diarrhoea_duration'] = 10
+    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date - pd.DateOffset(days=duration)
+    df.at[0, 'gi_last_diarrhoea_duration'] = duration
 
-    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(day=10)
+    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(days=1)
     df.at[0, 'gi_last_diarrhoea_death_date'] = pd.NaT
     df.at[0, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
-    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(day=10)
+    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(days=1)
 
     sim.modules['SymptomManager'].change_symptom(
         person_id=0,
@@ -554,9 +554,93 @@ def test_dx_algorithm_for_diarrhoea_outcomes():
         hsi_event=hsi_event
     )
 
+    assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanC)
     assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Dysentery)
 
+    # %% ---- PERSON WITH NO DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN A PLUS NON-SEVERE ----
+
+    # Set up the simulation:
+    sim, hsi_event = make_blank_simulation()
+
+    # Set up the person - severe dehydration:
+    df = sim.population.props
+    duration = 20
+    df.at[0, 'gi_ever_had_diarrhoea'] = True
+    df.at[0, 'gi_last_diarrhoea_pathogen'] = 'shigella'
+    df.at[0, 'gi_last_diarrhoea_type'] = 'watery'
+    df.at[0, 'gi_last_diarrhoea_dehydration'] = 'none'
+    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date - pd.DateOffset(days=duration)
+    df.at[0, 'gi_last_diarrhoea_duration'] = duration
+
+    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(days=1)
+    df.at[0, 'gi_last_diarrhoea_death_date'] = pd.NaT
+    df.at[0, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
+    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(days=1)
+
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        symptom_string='diarrhoea',
+        disease_module=sim.modules['Diarrhoea'],
+        add_or_remove='+'
+    )
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        symptom_string='bloody_stool',
+        disease_module=sim.modules['Diarrhoea'],
+        add_or_remove='+'
+    )
+    # Run the diagnostic algorithm:
+    sim.modules['DxAlgorithmChild'].do_when_diarrhoea(
+        person_id=0,
+        hsi_event=hsi_event
+    )
+
+    assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Treatment_PlanA)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea)
+
+    # %% ---- PERSON WITH SOME DEHYDRATION and NON-BLOODY DIARRHOEA BUT LONG-LASTING : --> PLAN B PLUS SEVERE ----
+
+    # Set up the simulation:
+    sim, hsi_event = make_blank_simulation()
+
+    # Set up the person - severe dehydration:
+    df = sim.population.props
+    duration = 20
+    df.at[0, 'gi_ever_had_diarrhoea'] = True
+    df.at[0, 'gi_last_diarrhoea_pathogen'] = 'shigella'
+    df.at[0, 'gi_last_diarrhoea_type'] = 'watery'
+    df.at[0, 'gi_last_diarrhoea_dehydration'] = 'some'
+    df.at[0, 'gi_last_diarrhoea_date_of_onset'] = sim.date - pd.DateOffset(days=duration)
+    df.at[0, 'gi_last_diarrhoea_duration'] = duration
+
+    df.at[0, 'gi_last_diarrhoea_recovered_date'] = sim.date + pd.DateOffset(days=1)
+    df.at[0, 'gi_last_diarrhoea_death_date'] = pd.NaT
+    df.at[0, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
+    df.at[0, 'gi_end_of_last_episode'] = sim.date + pd.DateOffset(days=1)
+
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        symptom_string='diarrhoea',
+        disease_module=sim.modules['Diarrhoea'],
+        add_or_remove='+'
+    )
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        symptom_string='dehydration',
+        disease_module=sim.modules['Diarrhoea'],
+        add_or_remove='+'
+    )
+    # Run the diagnostic algorithm:
+    sim.modules['DxAlgorithmChild'].do_when_diarrhoea(
+        person_id=0,
+        hsi_event=hsi_event
+    )
+
+    assert 2 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Diarrhoea_Severe_Persistent_Diarrhoea)
+    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[1][4], HSI_Diarrhoea_Treatment_PlanB)
 
 
 def test_run_each_of_the_HSI():

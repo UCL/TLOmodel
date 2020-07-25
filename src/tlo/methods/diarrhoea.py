@@ -1680,8 +1680,9 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
             hsi_event=self, cons_req_as_footprint=the_cons_footprint)
 
         if is_cons_available['Intervention_Package_Code'][pkg_code]:
-            if (self.module.rng.rand() <
-                 self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea']
+            if (
+                self.module.rng.rand() < self.module.parameters[
+                    'prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea']
             ):
                 self.module.cancel_death_date(person_id)
                 df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
@@ -1720,7 +1721,7 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
         # Get consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        if (df.at[person_id, 'age_exact_years'] <= 0.5):
+        if df.at[person_id, 'age_exact_years'] <= 0.5:
             pkg_code = pd.unique(
                 consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 0-6 months',
                                 'Intervention_Pkg_Code'])[0]
@@ -1734,19 +1735,19 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
             is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=the_consumables_needed)
             if is_cons_available['Intervention_Package_Code'][pkg_code]:
-                if (self.module.rng.rand() < self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
+                if (
+                    self.module.rng.rand() < self.module.parameters[
+                        'prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
                 ):
                     self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
                                             self.sim.date + DateOffset(
                                                 days=self.module.parameters['days_between_treatment_and_cure']))
 
-
-        elif (df.at[person_id, 'age_exact_years'] <= 5.0):
+        elif df.at[person_id, 'age_exact_years'] <= 5.0:
             pkg_code = pd.unique(
                 consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 6-59 months',
                                 'Intervention_Pkg_Code'])[0]
-            item_code= pd.unique(
-                consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg', 'Item_Code'])[0]
+            item_code = pd.unique(consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg', 'Item_Code'])[0]
             the_consumables = {
                 'Intervention_Package_Code': {pkg_code: 1},
                 'Item_Code': {item_code: 5}
@@ -1755,8 +1756,9 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
             is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=self, cons_req_as_footprint=the_consumables)
             if is_cons_available['Intervention_Package_Code'][pkg_code]:
-                if (self.module.rng.rand() <
-                     self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
+                if (
+                    self.module.rng.rand() < self.module.parameters[
+                        'prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
                 ):
                     self.module.cancel_death_date(person_id)
                     df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
