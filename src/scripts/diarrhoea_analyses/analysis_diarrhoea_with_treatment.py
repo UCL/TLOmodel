@@ -250,19 +250,15 @@ deaths = deaths.pivot(values='count', columns='age_grp', index='year')
 # Death Rate = death count (by year, by age-group) / person-years
 death_rate = deaths.div(py)
 
-# produce plot:
-death_rate.plot()
-plt.title('Death Rate by Age Group')
-plt.show()
+# produce plot comparison in 2010 (<5s):
+death_rate_comparison = pd.Series(
+    data={
+        'data': calibration_death_rate_per_year_under_5s['2010'],
+        'model': death_rate.loc[2010].sum()
+    }
+)
 
-
-# Summary incidence rate 1 year-old
-inc_mean.plot.bar(y=['1y_model_output', '1y_calibrating_data'])
-plt.title('Incidence Rate: 1 year-olds')
-plt.xlabel('Pathogen')
-plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.xlabel('Pathogen')
-plt.ylabel('Risk of pathogen causing diarrhoea per year')
-plt.savefig(outputpath / ("Diarrhoea_inc_rate_calibration_1_year_olds" + datestamp + ".pdf"), format='pdf')
-plt.tight_layout()
+death_rate_comparison.plot.bar()
+plt.title('Death Rate to Diarrhoea in Under 5s')
+plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
