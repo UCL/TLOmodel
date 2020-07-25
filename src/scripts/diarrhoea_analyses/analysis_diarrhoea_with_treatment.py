@@ -40,7 +40,7 @@ end_date = Date(2016, 1, 1)
 popsize = 20000
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=0)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -64,7 +64,7 @@ logfile = sim.configure_logging(
         'tlo.methods.diarrhoea': logging.INFO
     }
 )
-sim.seed_rngs(0)
+
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 

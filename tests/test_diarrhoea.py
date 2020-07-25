@@ -22,14 +22,13 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.diarrhoea import (
+    HSI_Diarrhoea_Dysentery,
+    HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
+    HSI_Diarrhoea_Severe_Persistent_Diarrhoea,
     HSI_Diarrhoea_Treatment_PlanA,
     HSI_Diarrhoea_Treatment_PlanB,
     HSI_Diarrhoea_Treatment_PlanC,
-    HSI_Diarrhoea_Severe_Persistent_Diarrhoea,
-    HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
-    HSI_Diarrhoea_Dysentery
 )
-
 from tlo.methods.healthsystem import HSI_Event
 
 try:
