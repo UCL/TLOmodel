@@ -93,7 +93,7 @@ for year in years:
         (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
         (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
     ).transpose()
-
+    tot_py.index = tot_py.index.astype(int)
     py.loc[year, '0y'] = tot_py.loc[0].values[0]
     py.loc[year, '1y'] = tot_py.loc[1].values[0]
     py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]
@@ -106,6 +106,7 @@ pop.set_index(
     drop=True,
     inplace=True
 )
+pop.columns = pop.columns.astype(int)
 pop['0y'] = pop[0]
 pop['1y'] = pop[1]
 pop['2-4y'] = pop[2] + pop[3] + pop[4]
@@ -255,8 +256,7 @@ plt.title('Death Rate by Age Group')
 plt.show()
 
 
-# # TODO: do a TOTAL FOR ALL AGES:
-
+# Summary incidence rate 1 year-old
 inc_mean.plot.bar(y=['1y_model_output', '1y_calibrating_data'])
 plt.title('Incidence Rate: 1 year-olds')
 plt.xlabel('Pathogen')

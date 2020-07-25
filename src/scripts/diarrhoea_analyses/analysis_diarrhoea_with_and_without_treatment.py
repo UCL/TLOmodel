@@ -96,7 +96,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
             (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
         ).transpose()
-
+        tot_py.index = tot_py.index.astype(int)
         py.loc[year, '0y'] = tot_py.loc[0].values[0]
         py.loc[year, '1y'] = tot_py.loc[1].values[0]
         py.loc[year, '2-4y'] = tot_py.loc[2:4].sum().values[0]

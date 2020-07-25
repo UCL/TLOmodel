@@ -82,23 +82,29 @@ def check_configuration_of_properties(sim):
     # Those for whom the death date has past should be dead
     assert not df.loc[df.gi_ever_had_diarrhoea & (df['gi_last_diarrhoea_death_date'] < sim.date), 'is_alive'].any()
 
-    # Check that those in a current episode have symptoms but not others
+    # Check that those in a current episode have symptoms but not others (among those who are alive)
     has_symptoms = set(sim.modules['SymptomManager'].who_has('diarrhoea'))
-    in_current_episode_before_recovery = df.gi_ever_had_diarrhoea & \
+    in_current_episode_before_recovery = \
+        df.is_alive & \
+        df.gi_ever_had_diarrhoea & \
         (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
         (sim.date <= df.gi_last_diarrhoea_recovered_date)
     set_of_person_id_in_current_episode_before_recovery = set(
         in_current_episode_before_recovery[in_current_episode_before_recovery].index
     )
 
-    in_current_episode_before_death = df.gi_ever_had_diarrhoea & \
+    in_current_episode_before_death = \
+        df.is_alive & \
+        df.gi_ever_had_diarrhoea & \
         (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
         (sim.date <= df.gi_last_diarrhoea_death_date)
     set_of_person_id_in_current_episode_before_death = set(
         in_current_episode_before_death[in_current_episode_before_death].index
     )
 
-    in_current_episode_before_cure = df.gi_ever_had_diarrhoea & \
+    in_current_episode_before_cure = \
+        df.is_alive & \
+        df.gi_ever_had_diarrhoea & \
         (df.gi_last_diarrhoea_date_of_onset <= sim.date) & \
         (df.gi_last_diarrhoea_treatment_date <= sim.date) & \
         pd.isnull(df.gi_last_diarrhoea_recovered_date) & \
@@ -383,6 +389,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     )
     assert (got_treatment | recovered_naturally).all()
 
+    # check that there have not been any deaths
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
 
