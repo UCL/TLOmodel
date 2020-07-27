@@ -304,6 +304,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 )
 
         if 'RTI' in self.sim.modules:
+            df.at[person_id, 'rt_med_int'].append('HSI_GenericEmergencyFirstApptAtFacilityLevel1')
             if 'em_severe_trauma' in symptoms:
                 df = self.sim.population.props
                 consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -327,24 +328,21 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
                 fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
                 idx, counts = find_and_count_injuries(persons_injuries, fracture_codes)
-                if counts > 1:
-                    pkg_code_x_ray = pd.unique(
-                        consumables.loc[consumables['Intervention_Pkg'] ==
-                                        'Treatment of injuries (Fracture and dislocation)',
-                                        'Intervention_Pkg_Code'])[0]
+                if counts >= 1:
+
                     item_code_x_ray_film = pd.unique(
                         consumables.loc[consumables['Items'] ==
                                         "Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm",
                                         'Item_Code'])[0]
                     consumables_x_ray = {
-                        'Intervention_Package_Code': {pkg_code_x_ray: 1},
-                        'Item_Code': {item_code_x_ray_film: counts}}
+                        'Intervention_Package_Code': dict(),
+                        'Item_Code': {item_code_x_ray_film: counts, item_code_x_ray_film: counts}}
                     is_cons_available_1 = self.sim.modules['HealthSystem'].request_consumables(
                         hsi_event=self,
                         cons_req_as_footprint=consumables_x_ray,
                         to_log=False)
-                    cond = is_cons_available_1['Intervention_Package_Code'][pkg_code_x_ray]
-                    if cond:
+
+                    if is_cons_available_1:
                         logger.debug(
                             'This facility has x-ray capability which has been used to diagnose person %d.',
                             person_id)

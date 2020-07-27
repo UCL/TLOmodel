@@ -40,29 +40,49 @@ from matplotlib import pyplot as plt
 #     print("Everything is available")
 #
 # consumabledict1 = {dict(), {'item1': 1}}
-df = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/population_props.csv')
+# df = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/population_props.csv')
+#
+#
+# # found = df[df['Column'].str.contains('Text_to_search')]
+# def rti_make_injuries_permanent(df, codes):
+#     # df = self.sim.population.props
+#     columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+#                'rt_injury_7', 'rt_injury_8']
+#     persons_injuries = df.loc[[91], columns]
+#     injury_numbers = range(1, 9)
+#     for code in codes:
+#         new_code = "P" + code
+#         for injury_number in injury_numbers:
+#             found = df[df[f"rt_injury_{injury_number}"].str.contains(code)]
+#             if len(found) > 0:
+#                 df.loc[[91], f"rt_injury_{injury_number}"] = new_code
+#
+#
+# print(rti_make_injuries_permanent(df, ['813', '456']))
+# columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+#                'rt_injury_7', 'rt_injury_8']
+# persons_injuries = df.loc[[91], columns]
+# print(persons_injuries)
+# a = range(1,9)
+# for num in a:
+#     print(num)
 
+df = pd.DataFrame({'rt_injury_1': ['8101', '712'],
+                   'rt_injury_2': ['8111', '552'],
+                   'rt_med_int': [["HSI_RTI_Major_Surgeries", "HSI_RTI_MedicalIntervention"],
+                                  ["HSI_RTI_Fracture_Cast", "HSI_R TI_Suture"]]}, index=[1, 2])
+injuries = df[['rt_injury_1', 'rt_injury_2']]
+treatments = df['rt_med_int']
 
-# found = df[df['Column'].str.contains('Text_to_search')]
-def rti_make_injuries_permanent(df, codes):
-    # df = self.sim.population.props
-    columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-               'rt_injury_7', 'rt_injury_8']
-    persons_injuries = df.loc[[91], columns]
-    injury_numbers = range(1, 9)
-    for code in codes:
-        new_code = "P" + code
-        for injury_number in injury_numbers:
-            found = df[df[f"rt_injury_{injury_number}"].str.contains(code)]
-            if len(found) > 0:
-                df.loc[[91], f"rt_injury_{injury_number}"] = new_code
+# .apply(lambda row: row.astype(str).str.contains('HSI_RTI_Suture').any(), axis=1)
+# print("Injuries")
+# print(injuries)
+print("Treatments")
+print(df.rt_med_int)
+mask = df.rt_med_int.apply(lambda x: 'HSI_RTI_Suture' in x)
+print(sum(mask))
 
-
-print(rti_make_injuries_permanent(df, ['813', '456']))
-columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-               'rt_injury_7', 'rt_injury_8']
-persons_injuries = df.loc[[91], columns]
-print(persons_injuries)
-a = range(1,9)
-for num in a:
-    print(num)
+# treatmentOccurs = treatments.apply(lambda row: row.astype(list).str.contains('HSI_RTI_Suture').any(), axis=1)
+# injuryOccurred = injuries.apply(lambda row: row.astype(str).str.contains('8111').any(), axis=1)
+# print(treatmentOccurs)
+# print(injuryOccurred)
