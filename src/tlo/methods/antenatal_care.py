@@ -402,6 +402,10 @@ class CareOfWomenDuringPregnancy(Module):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=7))
 
+    def albendazole_administration(self, hsi_event):
+        # TODO: code with no effect on an outcome- want to capture economics
+        pass
+
     def hep_b_testing(self, hsi_event):
         pass
 
@@ -409,9 +413,6 @@ class CareOfWomenDuringPregnancy(Module):
         pass
 
     def hiv_testing(self, hsi_event):
-        pass
-
-    def albendazole_administration(self, hsi_event):
         pass
 
     def iptp_administration(self, hsi_event):

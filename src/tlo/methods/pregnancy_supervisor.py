@@ -59,7 +59,7 @@ class PregnancySupervisor(Module):
         'prob_gest_diab_per_month': Parameter(
             Types.REAL, 'underlying risk of gestational diabetes per month without the impact of risk factors'),
         'prob_of_symptoms_gest_diab': Parameter(
-            Types.REAL, 'probability that a woman with gestational diabetes will develop the symptoms of polyurea '
+            Types.REAL, 'probability that a woman with gestational diabetes will develop the symptoms of polyuria '
                         'and/or polyphagia and/or polydipsia'),
         'prob_still_birth_per_month': Parameter(
             Types.REAL, 'underlying risk of stillbirth per month without the impact of risk factors'),
@@ -73,6 +73,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'probabilities that the type of abortion a woman has will be 1.) Surgical or 2.) Medical'),
         'prob_any_complication_induced_abortion': Parameter(
             Types.REAL, 'probability of a woman that undergoes an induced abortion experiencing any complications'),
+        'prob_any_complication_spontaneous_abortion': Parameter(
+            Types.REAL, 'probability of a woman that experiences a late miscarriage experiencing any complications'),
         'prob_haemorrhage_spontaneous_abortion': Parameter(
             Types.REAL, 'probability that a woman who has undergone a spontaneous abortion will experience haemorrhage '
                         'as a complication'),
@@ -132,12 +134,12 @@ class PregnancySupervisor(Module):
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
                                                                   'premature rupture of membranes'),
-        'dummy_anc_counter' :Property(Types.INT,'dummy tester')
+        'dummy_anc_counter':Property(Types.INT, 'dummy tester')
     }
 
     # Symptoms that are associated with conditions of pregnancy are defined here
     SYMPTOMS = {'preg_abdo_pain', 'preg_pv_bleeding', 'em_collapse', 'preg_head_ache', 'preg_blurred_vision',
-                'preg_epigastric_pain', 'preg_polydipsia', 'preg_polyurea', 'preg_polyphagia'}
+                'preg_epigastric_pain', 'preg_polydipsia', 'preg_polyuria', 'preg_polyphagia'}
 
     # TODO: Will we need to consider our own care seeking equation for women who are symptomatic and pregnant
     #  (outside of routine ANC)?
@@ -166,7 +168,7 @@ class PregnancySupervisor(Module):
 
         params['prob_of_symptoms_gest_diab'] = {
             'preg_polydipsia': 0.2,
-            'preg_polyurea': 0.2,
+            'preg_polyuria': 0.2,
             'preg_polyphagia': 0.2}
         # TODO: confirm the neatest way to read this parameters in from the resource file
 
@@ -266,7 +268,6 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
         df.loc[df.is_alive, 'dummy_anc_counter'] = 0
-
 
     def initialise_simulation(self, sim):
 
@@ -446,7 +447,6 @@ class PregnancySupervisor(Module):
             # Women who have an abortion have key pregnancy variables reset
             df.loc[positive_index, 'is_pregnant'] = False
             df.loc[positive_index, 'la_due_date_current_pregnancy'] = pd.NaT
-            df.loc[positive_index, 'ps_gestational_age_in_weeks'] = 0
             # todo: reset total ANC visits?
 
             # And are scheduled to the AbortionEvent where they may develop complications, symptoms and seek care
@@ -580,6 +580,10 @@ class PregnancySupervisor(Module):
         prob_matrix['mild_pre_eclamp'] = [0.0, 0.8, 0.1, 0.1]
         prob_matrix['severe_pre_eclamp'] = [0.0, 0.1, 0.6, 0.3]
         prob_matrix['eclampsia'] = [0.0, 0.0, 0.1, 0.9]
+
+        # todo: I think eventutally these values would need to be manipulated by treatment effects? (or will things
+        #  like calcium only effect onset of pre-eclampsia not progression)
+        # TODO: also should this just be linear, no progression backward or more than one step?
 
         current_status = df.loc[selected, "ps_htn_disorders"]
         new_status = util.transition_states(current_status, prob_matrix, self.rng)
@@ -1047,21 +1051,33 @@ class AbortionEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
 
         if df.at[individual_id, 'is_alive']:
-            # We record this womans induced/spontaneous abortion
+            # We store the type of abortion for analysis
             self.module.PregnancyDiseaseTracker[f'{self.cause}'] += 1
 
-            # Determine if she will experience any complications of this pregnancy loss and set those complication
-            # accordingly
-            if params['prob_any_complication_induced_abortion'] < self.module.rng.random_sample():
-                self.module.set_abortion_complications(individual_id, f'{self.cause}')
+            # We apply a probability of complications to women who miscarry later than 13 weeks
+            if self.cause == 'spontaneous_abortion' and df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 13:
+                    if params['prob_any_complication_spontaneous_abortion'] < self.module.rng.random_sample():
 
-            # TODO: symptoms - in the above function?
-            # TODO: care seeking
+                        # Set any complications through this function and schedule possible death
+                        self.module.set_abortion_complications(individual_id, f'{self.cause}')
+                        self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id,
+                                                                             cause=f'{self.cause}'),
+                                                self.sim.date + DateOffset(days=3))
 
-                # Again the death event is scheduled in 3 days time to allow for treatment effects
-                self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id, cause=f'{self.cause}'),
-                                        self.sim.date + DateOffset(days=3))
-                # todo: only women experiencing complications should go through the death event
+            # We apply a probability of complications to any women who have an induced abortion
+            if self.cause == 'induced_abortion':
+                if params['prob_any_complication_induced_abortion'] < self.module.rng.random_sample():
+                    self.module.set_abortion_complications(individual_id, f'{self.cause}')
+
+                    # Again the death event is scheduled in 3 days time to allow for treatment effects
+                    self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id,
+                                                                         cause=f'{self.cause}'),
+                                            self.sim.date + DateOffset(days=3))
+
+            # We reset gestational age
+            df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
+
+            # TODO: symptoms and care seeking
 
 
 class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
