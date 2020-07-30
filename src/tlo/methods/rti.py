@@ -101,6 +101,22 @@ class RTI(Module):
             Types.REAL,
             'probability that someone with a fracture injury will die without treatment'
         ),
+        'prob_depressed_skull_fracture': Parameter(
+            Types.REAL,
+            'Probability that a skull fracture will be depressed and therefore require surgery'
+        ),
+        'prob_mild_burns': Parameter(
+            Types.REAL,
+            'Probability that a burn within a region will result in < 10% total body surface area'
+        ),
+        'prob_dislocation_requires_surgery': Parameter(
+            Types.REAL,
+            'Probability that a dislocation will require surgery to relocate the joint.'
+        ),
+        'rr_injrti_mortality_polytrauma': Parameter(
+            Types.REAL,
+            'Relative risk of mortality for those with polytrauma'
+        ),
         'head_prob_skin_wound': Parameter(
             Types.REAL,
             'Proportion of head wounds that result in a skin wound'
@@ -677,6 +693,47 @@ class RTI(Module):
             Types.REAL,
             'daly_wt_bilateral_lower_limb_amputation_without_treatment - code 1735'
         ),
+        # Find me
+        'mean_los_ISS_less_than_4': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score < 4'
+        ),
+        'sd_los_ISS_less_than_4': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score < 4'
+        ),
+        'mean_los_ISS_4_to_8': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 4 and 8'
+        ),
+        'sd_los_ISS_4_to_8': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 4 and 8'
+        ),
+        'mean_los_ISS_9_to_15': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 9 and 15'
+        ),
+        'sd_los_ISS_9_to_15': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 9 and 15'
+        ),
+        'mean_los_ISS_16_to_24': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 16 and 24'
+        ),
+        'sd_los_ISS_16_to_24': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 16 and 24'
+        ),
+        'mean_los_ISS_more_than_25': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 16 and 24'
+        ),
+        'sd_los_ISS_more_that_25': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 16 and 24'
+        ),
     }
 
     PROPERTIES = {
@@ -812,7 +869,81 @@ class RTI(Module):
     }
 
     # generic symptom for severely traumatic injuries, mild injuries accounted for in generic symptoms under 'injury'
-    SYMPTOMS = {'em_severe_trauma'}
+    SYMPTOMS = {'em_severe_trauma',
+                #             'Fracture'
+                #             'bleeding from wound',
+                #             'bruising around trauma site',
+                #             'severe pain at trauma site',
+                #             'swelling around trauma site',
+                #             'redness or warmth around trauma site',
+                #             'visual disturbances',
+                #             'restlessness',
+                #             'irritability',
+                #             'loss of balance',
+                #             'stiffness',
+                #             'abnormal pupil behaviour/reflexes',
+                #             'confusion',
+                #             'fatigue',
+                #             'fainting',
+                #             'excessive salivation',
+                #             'difficulty swallowing',
+                #             'nosebleed',
+                #             'breathing difficulty',
+                #             'audible signs of injury',
+                #             'uneven chest rise',
+                #             'seat belt marks',
+                #             'visual deformity of body part',
+                #             'limitation of movement',
+                #             'inability to walk',
+                #             # TBI
+                #             'periorbital ecchymosis',
+                #             'shock',
+                #             'hyperbilirubinemia',
+                #             'abnormal posturing',
+                #             'nausea',
+                #             'loss of consciousness',
+                #             'coma',
+                #             'seizures',
+                #             'tinnitus',
+                #             'sensitive to light',
+                #             'slurred speech',
+                #             'personality change',
+                #             'paralysis',
+                #             'weakness in one half of body',
+                #             # Dislocation
+                #             'numbness in lower back and lower limbs',
+                #             'muscle spasms',
+                #             'hypermobile patella'
+                #             # Soft tissue injury
+                #             'ataxia',
+                #             'coughing up blood',
+                #             'stridor',
+                #             'subcutaneous air',
+                #             'blue discoloration of skin or lips',
+                #             'pressure in chest',
+                #             'rapid breathing',
+                #             # Internal organ injury
+                #             'low blood pressure',
+                #             'Bluish discoloration of the belly',
+                #             'Right-sided abdominal pain and right shoulder pain',
+                #             'Blood in the urine',
+                #             'Left arm and shoulder pain',
+                #             'rigid abdomen',
+                #             'cyanosis',
+                #             'heart palpitations',
+                #             'pain in the left shoulder or left side of the chest',
+                #             'difficulty urinating',
+                #             'urine leakage',
+                #             'abdominal distension',
+                #             'rectal bleeding',
+                #             # Internal bleeding
+                #             'sweaty skin',
+                #             # Spinal cord injury
+                #             'inability to control bladder',
+                #             'inability to control bowel',
+                #             'unnatural positioning of the head',
+                #             # Amputation - limb's bloody gone
+                }
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
@@ -1085,86 +1216,6 @@ class RTI(Module):
                 sequlae_code=1738
             )
             self.sim.modules["HealthSystem"].register_disease_module(self)
-
-    # Declare the non-generic symptoms that this module will use.
-    # It will not be able to use any that are not declared here. They do not need to be unique to this module.
-    # You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)
-
-    # SYMPTOMS = {'em_severe_trauma',  # Generic for severe injuries.
-    #             # Fracture
-    #             'bleeding from wound',
-    #             'bruising around trauma site',
-    #             'severe pain at trauma site',
-    #             'swelling around trauma site',
-    #             'redness or warmth around trauma site',
-    #             'visual disturbances',
-    #             'restlessness',
-    #             'irritability',
-    #             'loss of balance',
-    #             'stiffness',
-    #             'abnormal pupil behaviour/reflexes',
-    #             'confusion',
-    #             'fatigue',
-    #             'fainting',
-    #             'excessive salivation',
-    #             'difficulty swallowing',
-    #             'nosebleed',
-    #             'breathing difficulty',
-    #             'audible signs of injury',
-    #             'uneven chest rise',
-    #             'seat belt marks',
-    #             'visual deformity of body part',
-    #             'limitation of movement',
-    #             'inability to walk',
-    #             # TBI
-    #             'periorbital ecchymosis',
-    #             'shock',
-    #             'hyperbilirubinemia',
-    #             'abnormal posturing',
-    #             'nausea',
-    #             'loss of consciousness',
-    #             'coma',
-    #             'seizures',
-    #             'tinnitus',
-    #             'sensitive to light',
-    #             'slurred speech',
-    #             'personality change',
-    #             'paralysis',
-    #             'weakness in one half of body',
-    #             # Dislocation
-    #             'numbness in lower back and lower limbs',
-    #             'muscle spasms',
-    #             'hypermobile patella'
-    #             # Soft tissue injury
-    #             'ataxia',
-    #             'coughing up blood',
-    #             'stridor',
-    #             'subcutaneous air',
-    #             'blue discoloration of skin or lips',
-    #             'pressure in chest',
-    #             'rapid breathing',
-    #             # Internal organ injury
-    #             'low blood pressure',
-    #             'Bluish discoloration of the belly',
-    #             'Right-sided abdominal pain and right shoulder pain',
-    #             'Blood in the urine',
-    #             'Left arm and shoulder pain',
-    #             'rigid abdomen',
-    #             'cyanosis',
-    #             'heart palpitations',
-    #             'pain in the left shoulder or left side of the chest',
-    #             'difficulty urinating',
-    #             'urine leakage',
-    #             'abdominal distension',
-    #             'rectal bleeding',
-    #             # Internal bleeding
-    #             'sweaty skin',
-    #             # Spinal cord injury
-    #             'inability to control bladder',
-    #             'inability to control bowel',
-    #             'unnatural positioning of the head',
-    #             # Amputation - limb's bloody gone
-    #             }
 
     def initialise_population(self, population):
         df = population.props
@@ -1786,6 +1837,27 @@ class RTI(Module):
                    'rt_injury_7', 'rt_injury_8']
         persons_injuries = person.loc[columns]
         treatments = person['rt_med_int']
+        # ==================================== heal with time injuries =================================================
+        if 'HSI_RTI_MedicalIntervention' in treatments:
+            for code in codes:
+                if 'HSI_RTI_Minor_Surgeries' not in treatments:
+                    if code == '322' or code == '323':
+                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_neck_dislocation
+                    if code == '722':
+                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_shoulder
+                    if code == '822a':
+                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_hip
+                    if code == '822b':
+                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_knee
+                if 'HSI_RTI_Major_Surgeries' not in treatments:
+                    if code == '112':
+                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_unspecified_skull_fracture
+                    if code == '113':
+                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_basilar_skull_fracture
+                    if code == '552' or code == '553' or code == '554':
+                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_abd_internal_organ_injury
+            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_MedicalIntervention')
+            RTI.treated_injuries(df, person_id, codes)
         # =============================== Codes 'treated' with stitches  ===============================================
         if 'HSI_RTI_Suture' in treatments:
             logger.debug("This person has had their lacerations treated")
@@ -1816,7 +1888,7 @@ class RTI(Module):
             df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Fracture_Cast')
             RTI.treated_injuries(df, person_id, codes)
         # ============================== Codes 'treated' with minor surgery ============================================
-        if ('HSI_RTI_Minor_Surgeries' in treatments) and ('HSI_RTI_MedicalIntervention' in treatments):
+        if 'HSI_RTI_Minor_Surgeries' in treatments:
             code = codes
             if code == '322' or code == '323':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_neck_dislocation
@@ -1826,36 +1898,39 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_hip
             if code == '822b':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_knee
-            if 'HSI_RTI_Burn_Management' in treatments:
-                if code == '1114':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_burns_greater_than_20_percent_body_area
-                if code == '2114':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_burns_greater_than_20_percent_body_area
-                if code == '3113':
-                    df.loc[person_id, 'rt_disability'] += \
-                        - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
-                        self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-                if code == '4113':
-                    df.loc[person_id, 'rt_disability'] += \
-                        - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
-                        self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-                if code == '5113':
-                    df.loc[person_id, 'rt_disability'] += \
-                        - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
-                        self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-                if code == '7113':
-                    df.loc[person_id, 'rt_disability'] += \
-                        - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
-                        self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-                if code == '8113':
-                    df.loc[person_id, 'rt_disability'] += \
-                        - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
-                        self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
             if code == '291':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_eye_injury
             if code == '241':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_facial_soft_tissue_injury
             df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Minor_Surgeries')
+            RTI.treated_injuries(df, person_id, codes)
+        # ============================== Codes 'treated' with burn management ==========================================
+        if 'HSI_RTI_Burn_Management' in treatments:
+            if code == '1114':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_burns_greater_than_20_percent_body_area
+            if code == '2114':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_burns_greater_than_20_percent_body_area
+            if code == '3113':
+                df.loc[person_id, 'rt_disability'] += \
+                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
+                    self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
+            if code == '4113':
+                df.loc[person_id, 'rt_disability'] += \
+                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
+                    self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
+            if code == '5113':
+                df.loc[person_id, 'rt_disability'] += \
+                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
+                    self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
+            if code == '7113':
+                df.loc[person_id, 'rt_disability'] += \
+                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
+                    self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
+            if code == '8113':
+                df.loc[person_id, 'rt_disability'] += \
+                    - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
+                    self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
+            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Burn_Management')
             RTI.treated_injuries(df, person_id, codes)
         # ============================== Codes 'treated' with major surgery ============================================
         if 'HSI_RTI_Major_Surgeries' in treatments:
@@ -1937,25 +2012,6 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_bilateral_lower_limb_amputation_without_treatment \
                                                       + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
             df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Major_Surgeries')
-            RTI.treated_injuries(df, person_id, codes)
-        # ==================================== heal with time injuries =================================================
-        if 'HSI_RTI_MedicalIntervention' in treatments:
-            for code in codes:
-                if code == '322' or code == '323':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_neck_dislocation
-                if code == '722':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_shoulder
-                if code == '822a':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_hip
-                if code == '822b':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_knee
-                if code == '112':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_unspecified_skull_fracture
-                if code == '113':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_basilar_skull_fracture
-                if code == '552' or code == '553' or code == '554':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_abd_internal_organ_injury
-            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_MedicalIntervention')
             RTI.treated_injuries(df, person_id, codes)
         if 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in df.loc[person_id, 'rt_med_int']:
             df.loc[person_id, 'rt_med_int'].remove('HSI_GenericEmergencyFirstApptAtFacilityLevel1')
@@ -2862,6 +2918,9 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         for person_id in selected_for_rti_inj.index:
             df.loc[person_id, 'rt_ISS_score'] = mortality.loc[person_id, 'ISS']
         # Apply the injuries to the dataframe
+
+        # I've left this in its current form, basically in this section I create two dataframes and copy entries from
+        # one into the other, this may be faster than the alternative.
         for ninjuries in range(0, len(description.columns)):
             for person_id in selected_for_rti_inj.index:
 
@@ -2943,7 +3002,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
     # todo: Find out the proportions of needing surgery for the various injuries
     # todo: Include injury specific mortality for not having treatment
     # todo: when find out recovery times for the injuries so we can find out when to remove the daly weights
-    # todo: only send the treated code to the dalyweight changer.
     """This is a Health System Interaction Event.
     An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through A&E
     and now needs treatment.
@@ -2965,10 +3023,9 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         p = module.parameters
-        # todo: remove hard coding of these probabilities
-        self.prob_depressed_skull_fracture = 0.14  # proportion of depressed skull fractures in
-        # https://doi.org/10.1016/j.wneu.2017.09.084
-        self.prob_mild_burns = 0.56  # proportion of burns accross SSA with TBSA < 10
+        self.prob_depressed_skull_fracture = p['prob_depressed_skull_fracture']  # proportion of depressed skull
+        # fractures in https://doi.org/10.1016/j.wneu.2017.09.084
+        self.prob_mild_burns = p['prob_mild_burns']  # proportion of burns accross SSA with TBSA < 10
         # https://doi.org/10.1016/j.burns.2015.04.006
         self.prob_TBI_require_craniotomy = p['prob_TBI_require_craniotomy']
         self.prob_exploratory_laparotomy = p['prob_exploratory_laparotomy']
@@ -2976,7 +3033,17 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         self.prob_death_with_med_severe = p['prob_death_with_med_severe']
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.prob_perm_disability_with_treatment_sci = p['prob_perm_disability_with_treatment_sci']
-        self.prob_dislocation_requires_surgery = 0.01
+        self.prob_dislocation_requires_surgery = p['prob_dislocation_requires_surgery']
+        self.mean_los_ISS_less_than_4 = p['mean_los_ISS_less_than_4']
+        self.sd_los_ISS_less_than_4 = p['sd_los_ISS_less_than_4']
+        self.mean_los_ISS_4_to_8 = p['mean_los_ISS_4_to_8']
+        self.sd_los_ISS_4_to_8 = p['sd_los_ISS_4_to_8']
+        self.mean_los_ISS_9_to_15 = p['mean_los_ISS_9_to_15']
+        self.sd_los_ISS_9_to_15 = p['sd_los_ISS_9_to_15']
+        self.mean_los_ISS_16_to_24 = p['mean_los_ISS_16_to_24']
+        self.sd_los_ISS_16_to_24 = p['sd_los_ISS_16_to_24']
+        self.mean_los_ISS_more_than_25 = p['mean_los_ISS_more_than_25']
+        self.sd_los_ISS_more_that_25 = p['sd_los_ISS_more_that_25']
         self.heal_with_time_injuries = []
 
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
@@ -3014,27 +3081,11 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
                 actual_injury = np.intersect1d(codes, person_injuries.values)
                 self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
         # -------------------------------- Facial fractures -----------------------------------------------------------
+        # todo: do we have a treatment plan for facial fractures
         # codes = ['211', '212']
         # idx, counts = find_and_count_injuries(person_injuries, codes)
         # if len(idx) > 0:
         # consumables required: closed reduction. In some cases surgery
-        # --------------------------------- Thorax fractures ----------------------------------------------------------
-        # codes = ['412', '414']
-        # idx, counts = find_and_count_injuries(person_injuries, codes)
-        # if len(idx) > 0:
-        # consumables required: closed reduction. In some cases surgery
-
-        # --------------------------------- Vertebrae fractures -------------------------------------------------------
-        # codes = ['612']
-        # idx, counts = find_and_count_injuries(person_injuries, codes)
-        # if len(idx) > 0:
-        # consumables required: in some cases surgery.
-
-        # --------------------------------- Upper extremity fractures --------------------------------------------------
-        # codes = ['712']
-        # idx, counts = find_and_count_injuries(person_injuries, codes)
-        # if len(idx) > 0:
-        # consumables required: casts and closed reduction and in some cases surgery.
         # --------------------------------- Lower extremity fractures --------------------------------------------------
         FracturedFemurOrHipCodes = ['813', '813a', '813b', '813c']
         idx1, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, FracturedFemurOrHipCodes)
@@ -3077,7 +3128,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             else:
                 actual_injury = np.intersect1d(codes, person_injuries.values)
                 self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
-                df
 
         # --------------------------------- Soft tissue injury in neck -------------------------------------------------
         codes = ['342', '343']
@@ -3103,16 +3153,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         idx, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
         if len(idx) > 0:
             self.major_surgery_counts += 1
-        # ---------------------------------------- Burns ---------------------------------------------------------------
-        codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
-        idx, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
-        burns_needing_referral = ['1114', '2114', '3113']
-        idx2, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, burns_needing_referral)
-        if len(idx) > 0:
-            self.minor_surgery_counts += 1
-            if is_child or (len(idx2) > 0) or (counts > 1):
-                logger.debug('This is HSI_RTI_MedicalIntervention, person %d needs referral for burn treatment',
-                             person_id)
         # --------------------------------------- Eye injury -----------------------------------------------------------
         codes = ['291']
         idx, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
@@ -3133,19 +3173,25 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
         # ================ Determine how long the person will be in hospital based on their ISS score ==================
-        inpatient_days_ISS_less_than_4 = int(self.module.rng.normal(4.97, 4.86, 1))
+        # Find me
+        inpatient_days_ISS_less_than_4 = int(self.module.rng.normal(self.mean_los_ISS_less_than_4,
+                                                                    self.sd_los_ISS_less_than_4, 1))
         if inpatient_days_ISS_less_than_4 < 0:
             inpatient_days_ISS_less_than_4 = 0
-        inpatient_days_ISS_4_to_8 = int(self.module.rng.normal(8.91, 5.93, 1))
+        inpatient_days_ISS_4_to_8 = int(self.module.rng.normal(self.mean_los_ISS_4_to_8,
+                                                               self.sd_los_ISS_4_to_8, 1))
         if inpatient_days_ISS_4_to_8 < 0:
             inpatient_days_ISS_4_to_8 = 0
-        inpatient_days_ISS_9_to_15 = int(self.module.rng.normal(15.46, 11.16, 1))
+        inpatient_days_ISS_9_to_15 = int(self.module.rng.normal(self.mean_los_ISS_9_to_15,
+                                                                self.sd_los_ISS_9_to_15, 1))
         if inpatient_days_ISS_9_to_15 < 0:
             inpatient_days_ISS_9_to_15 = 0
-        inpatient_days_ISS_16_to_24 = int(self.module.rng.normal(24.73, 17.03, 1))
+        inpatient_days_ISS_16_to_24 = int(self.module.rng.normal(self.mean_los_ISS_16_to_24,
+                                                                 self.sd_los_ISS_16_to_24, 1))
         if inpatient_days_ISS_16_to_24 < 0:
             inpatient_days_ISS_16_to_24 = 0
-        inpatient_days_ISS_more_than_25 = int(self.module.rng.normal(30.86, 34.03, 1))
+        inpatient_days_ISS_more_than_25 = int(self.module.rng.normal(self.mean_los_ISS_more_than_25,
+                                                                     self.sd_los_ISS_more_that_25, 1))
         if inpatient_days_ISS_more_than_25 < 0:
             inpatient_days_ISS_more_than_25 = 0
 
@@ -3305,7 +3351,12 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
             if is_cons_available:
                 logger.debug(f"Fracture casts available for person %d's {fracturecounts} fractures", person_id)
                 df.at[person_id, 'rt_med_int'].append('HSI_RTI_Fracture_Cast')
-                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, codes, hsi_event=self)
+
+                # Fractured arms/wrists take around 6-8 weeks to heal
+                non_empty_injuries = person_injuries[person_injuries != "none"]
+                non_empty_injuries = non_empty_injuries.dropna(axis=1)
+                relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
+                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
 
             else:
                 logger.debug(f"Person %d's has {fracturecounts} fractures without treatment", person_id)
@@ -3372,13 +3423,19 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                 if cond[item_code_cetrimide_chlorhexidine]:
                     logger.debug('This laceration was cleaned before stitching')
                     df.at[person_id, 'rt_med_int'].append('HSI_RTI_Suture')
-                    road_traffic_injuries.rti_alter_daly_post_treatment(person_id, codes, hsi_event=self)
+                    non_empty_injuries = person_injuries[person_injuries != "none"]
+                    non_empty_injuries = non_empty_injuries.dropna(axis=1)
+                    relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
+                    road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
 
                 else:
                     logger.debug("This laceration wasn't cleaned before stitching, person %d is at risk of infection",
                                  person_id)
                     df.at[person_id, 'rt_med_int'].append('HSI_RTI_Suture')
-                    road_traffic_injuries.rti_alter_daly_post_treatment(person_id, codes, hsi_event=self)
+                    non_empty_injuries = person_injuries[person_injuries != "none"]
+                    non_empty_injuries = non_empty_injuries.dropna(axis=1)
+                    relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
+                    road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
 
             else:
                 logger.debug('This facility has no treatment for open wounds available.')
@@ -3402,13 +3459,14 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, RTI)
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Placeholder requirement
+        the_appt_footprint['MinorSurg'] = 1
         the_accepted_facility_level = 1
         self.TREATMENT_ID = 'RTI_Burn_Management'  # This must begin with the module name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
-        self.prob_mild_burns = 0.56
+        p = self.module.parameters
+        self.prob_mild_burns = p['prob_mild_burns']
 
     def apply(self, person_id, squeeze_factor):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -3461,8 +3519,11 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug('This facility has burn treatment available which has been used for person %d.',
                              person_id)
                 logger.debug(f'This facility treated their {burncounts} burns')
-                road_traffic_injuries.treated_injuries(df, person_id, codes)
                 df.at[person_id, 'rt_med_int'].append('HSI_RTI_Burn_Management')
+                non_empty_injuries = person_injuries[person_injuries != "none"]
+                non_empty_injuries = non_empty_injuries.dropna(axis=1)
+                relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
+                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
             else:
                 logger.debug('This facility has no treatment for burns available.')
 
@@ -3515,7 +3576,10 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
     """ This HSI event handles all requests for pain management here, the idea being that the treatment event should
     occur even when pain medicine is not available as they are often life threatening, but pain medicine is ideally
      supplied.
-     TODO: Does access to pain medicine do anything with DALYs?
+
+     "There is a mismatch between the burden of musculoskeletal pain conditions and appropriate health policy response
+     and planning internationally that can be addressed with an integrated research and policy agenda."
+     SEE https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6301413/
     """
 
     def __init__(self, module, person_id):
@@ -3555,6 +3619,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         Mild_Pain_Codes = ['1101', '2101', '3101', '4101', '5101', '7101', '8101',  # lacerations
                            '241',  # Minor soft tissue injuries
                            '133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135',  # TBI
+                           'P133', 'P133a', 'P133b', 'P133c', 'P133d', 'P134', 'P134a', 'P134b', 'P135',  # Perm TBI
                            '291',  # Eye injury
                            ]
         mild_idx, mild_counts = road_traffic_injuries.find_and_count_injuries(person_injuries, Mild_Pain_Codes)
@@ -3569,8 +3634,8 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         # Injuries causing severe pain include: All burns, amputations, spinal cord injuries, abdominal trauma see
         # (https://bestbets.org/bets/bet.php?id=1247), severe chest trauma
         Severe_Pain_Codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113',  # burns
-                             '782', '782a', '782b', '782c', '783', '882', '883', '884',  # amputations
-                             '673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676',  # SCI
+                             'P782', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884',  # amputations
+                             'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676',  #SCI
                              '552', '553', '554',  # abdominal trauma
                              '461', '463', '453', '453a', '453b', '441', '442', '443'  # severe chest trauma
                              ]
@@ -3910,8 +3975,7 @@ class RTI_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         p = self.module.parameters
         self.prob_death_with_med_mild = p['prob_death_with_med_mild']
         self.prob_death_with_med_severe = p['prob_death_with_med_severe']
-        # todo remove hard coding of parameter
-        self.rr_injrti_mortality_polytrauma = 2.2
+        self.rr_injrti_mortality_polytrauma = p['rr_injrti_mortality_polytrauma']
 
     def apply(self, person_id):
         df = self.sim.population.props
