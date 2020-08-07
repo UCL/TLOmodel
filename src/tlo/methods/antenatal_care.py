@@ -41,6 +41,8 @@ class CareOfWomenDuringPregnancy(Module):
             Types.REAL, 'probability a woman will receive a blood test during antenatal care'),
         'prob_start_calcium_supp': Parameter(
             Types.REAL, 'probability a woman will receive a course of calcium supplements during antenatal care'),
+        'prob_albendazole': Parameter(
+            Types.REAL, 'probability a woman will receive a dose of albendazole for deworming in pregnancy'),
         'sensitivity_bp_monitoring': Parameter(
             Types.REAL, 'sensitivity of blood pressure monitoring to detect hypertension'),
         'specificity_bp_monitoring': Parameter(
@@ -255,9 +257,9 @@ class CareOfWomenDuringPregnancy(Module):
             # If so, the dx_test determines if this test will correctly identify proteinurea
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
               dx_tests_to_run='urine_dipstick_protein', hsi_event=hsi_event):
-                protein_urea_diagnosed = True
+                proteinuria_diagnosed = True
             else:
-                protein_urea_diagnosed = False
+                proteinuria_diagnosed = False
 
             # Urine - sugar...
             # Similarly the dx_test determines if the test identified glucosuria
@@ -273,23 +275,17 @@ class CareOfWomenDuringPregnancy(Module):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=7))
         else:
-            protein_urea_diagnosed = False
+            proteinuria_diagnosed = False
 
-        # If hypertension is diagnosed without protein urea being detected the woman is scheduled for additional care
-        # using a cause parameter to dictated actions at the next HSI
-        if hypertension_diagnosed and ~protein_urea_diagnosed:
+        # If hypertension is diagnosed a woman is referred for  additional treatment. The presumed diagnosis is passed
+        # to the HSI event via the parameter 'cause' dependent on proteinuria status
+        if hypertension_diagnosed:
+            if ~proteinuria_diagnosed:
+                cause = 'gest_htn'
+            elif proteinuria_diagnosed:
+                cause = 'pre_eclamp'
             additional_care = HSI_CareOfWomenDuringPregnancy_ManagementOfHypertensiveDisorder(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id, cause='gest_htn')
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=7))
-
-        # Similarly, it is assumed that hypertension in the presence of proteinuria is due to pre-eclampsia and
-        # scheduling occurs
-        elif hypertension_diagnosed and protein_urea_diagnosed:
-            additional_care = HSI_CareOfWomenDuringPregnancy_ManagementOfHypertensiveDisorder(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id, cause='pre_eclamp')
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id, cause=cause)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
                                                                 topen=self.sim.date,
@@ -302,7 +298,7 @@ class CareOfWomenDuringPregnancy(Module):
         item_code_diet_supps = pd.unique(
             consumables.loc[consumables['Items'] == 'Dietary supplements (country-specific)', 'Item_Code'])[0]
 
-        # todo: this is a hacky quick fix for bug that i cant work out- sort properly
+        # todo: lines 300-301 fix a bug i cant work out why its happening
         if self.determine_gestational_age_for_next_contact(person_id) is None and df.at[person_id,
                                                                                         'ps_gestational_age_in_weeks'] \
                                                                                    == 39:
@@ -403,8 +399,26 @@ class CareOfWomenDuringPregnancy(Module):
                                                                     tclose=self.sim.date + DateOffset(days=7))
 
     def albendazole_administration(self, hsi_event):
-        # TODO: code with no effect on an outcome- want to capture economics
-        pass
+        person_id = hsi_event.target
+        params = self.parameters
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # TODO: i'm not 100% sure this is the right way just to capture the consumables
+        if self.rng.random_sample() < params['prob_albendazole']:
+            item_code_albendazole = pd.unique(
+                consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
+
+            consumables_albendazole = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_albendazole: 2}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_albendazole,
+                to_log=True)
+
+            if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole]:
+                    logger.debug('albendazole given')
 
     def hep_b_testing(self, hsi_event):
         pass
@@ -574,16 +588,17 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                      'presented for the first antenatal care visit of their pregnancy on date %s at '
                      'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
 
-        # We condition this event on the woman being alive, pregnant and not currently in labour
-        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+        # We condition this event on the woman being alive, pregnant, not currently in labour and not previously
+        # attending an ANC visit
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
+            ~df.at[person_id, 'la_currently_in_labour'] and df.at[person_id,
+                                                                  'ac_total_anc_visits_current_pregnancy'] == 0:
 
             # We add a visit to a rolling total of ANC visits in this pregnancy
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             # And ensure only women whose first contact with ANC services are attending this event
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1
-
             assert df.at[person_id, 'ps_gestational_age_in_weeks'] is not None
             assert df.at[person_id, 'ps_gestational_age_in_weeks'] is not pd.NaT
 
@@ -595,7 +610,6 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             # First, interventions that should be delivered at every ANC visit are administered
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-            print(gest_age_next_contact)
 
             # TODO: may be better to save this as a property is we keep using it
 
@@ -615,45 +629,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            # If she presents after the suggested gestation for ANC2, she receives the interventions for ANC1 and ANC2
-            elif 20 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 26:
-                self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
-
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact)
-
-            # This pattern continues so that any woman presenting late for ANC will receive all the interventions they
-            # have missed from previous visits
-            elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 30:
-                self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
-
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact)
-
-            elif 30 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 34:
-                self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
-
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact)
-
-            elif 34 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
-                self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
-
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact)
-
-            elif 36 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
-                self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
-
-                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
-                                                     recommended_gestation_next_anc=gest_age_next_contact)
-
-            elif 38 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif 20 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
                 self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
 
@@ -663,7 +639,6 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
                 self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
-
                 # todo: for now, these women just wont have another visit
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
@@ -700,8 +675,10 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                      'presented for the second antenatal care visit of their pregnancy on date %s at '
                      'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
 
-        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
+            ~df.at[person_id, 'la_currently_in_labour'] and \
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1:
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2
 
@@ -788,7 +765,9 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+                                                                                       'la_currently_in_labour'] and \
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2:
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3
 
@@ -867,8 +846,10 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
+            ~df.at[person_id, 'la_currently_in_labour'] and \
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3:
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4
 
@@ -938,8 +919,10 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
+            ~df.at[person_id, 'la_currently_in_labour'] and \
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 5
 
@@ -1002,8 +985,10 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
+            ~df.at[person_id, 'la_currently_in_labour'] and \
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 5:
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 6
 
@@ -1056,8 +1041,10 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
+            ~df.at[person_id, 'la_currently_in_labour'] and \
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 6:
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 7
 
@@ -1104,8 +1091,10 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
-                                                                                       'la_currently_in_labour']:
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
+            ~df.at[person_id, 'la_currently_in_labour'] and \
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 7:
+
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 8
 

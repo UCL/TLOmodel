@@ -170,7 +170,6 @@ class PregnancySupervisor(Module):
             'preg_polydipsia': 0.2,
             'preg_polyuria': 0.2,
             'preg_polyphagia': 0.2}
-        # TODO: confirm the neatest way to read this parameters in from the resource file
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
@@ -180,7 +179,6 @@ class PregnancySupervisor(Module):
     # ==================================== LINEAR MODEL EQUATIONS =====================================================
         # All linear equations used in this module are stored within the ps_linear_equations parameter below
         # (predictors not yet included)
-        # TODO: predictors
 
         params['ps_linear_equations'] = {
                 'ectopic': LinearModel(
@@ -203,7 +201,7 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_anaemia_per_month'],
                     Predictor('ac_receiving_iron_folic_acid').when(True, params['rr_anaemia_iron_folic_acid'])),
-                    #Predictor('ac_date_ifa_runs_out').when(True, params['rr_anaemia_iron_folic_acid'])),
+                #   Predictor('ac_date_ifa_runs_out').when(True, params['rr_anaemia_iron_folic_acid'])),
 
                 'pre_eclampsia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -227,7 +225,6 @@ class PregnancySupervisor(Module):
                 'antenatal_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_antenatal_death_per_month']),
-                # todo: antenatal disease will act as predictors here
 
                 'ectopic_pregnancy_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -307,7 +304,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
         df.at[child_id, 'dummy_anc_counter'] = 0
 
-        # We reset all womens gestational age when they deliver
+        # We reset all womans gestational age when they deliver
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
 
         # And we remove all the symptoms they may have had antenatally
@@ -332,71 +329,6 @@ class PregnancySupervisor(Module):
 
         health_values_df = health_values_1
         return health_values_df
-
-    # PLEASE SEE DRAFT PR COMMENTS
-    def new_comps_dummy(self, index, month):
-        """This is a dummy function that I would like to replace the set_pregnancy_complications function as explained
-        in the draft PR comments"""
-        df = self.sim.population.props
-        params = self.parameters
-
-        # We would pass  a group of women of a certain gestational age in months to this function
-        # Then we would create a dataframe with these women, and all their individual risk of complications associated
-        # with that stage of pregnancy, derived from linear model equations.
-        # Use random draws to determine which complication they would develop, bearing in mind that some complications
-        # cant happen to a woman at the same time (i.e. she can not develop both gestational hypertension and
-        # pre-eclampsia at the same time, only one)
-
-        # I feel like this could be done with a list parameter of complications and a for loop but I wasn't sure how
-        result = params['ps_linear_equations']['maternal_anaemia'].predict(index)
-        result2 = params['ps_linear_equations']['gest_htn'].predict(index)
-        result3 = params['ps_linear_equations']['pre_eclampsia'].predict(index)
-        result4 = params['ps_linear_equations']['gest_diab'].predict(index)
-        result5 = params['ps_linear_equations']['antenatal_death'].predict(index)
-        result6 = params['ps_linear_equations']['antenatal_stillbirth'].predict(index)
-
-        temp_df = pd.concat([result, result2, result3, result4, result5, result6], axis=1)
-        temp_df.columns = ['risk_ma', 'risk_gest_htn', 'risk_pe', 'risk_gd', 'risk_ad', 'risk_sb']
-
-        # Depending on a womans month of pregnancy we would then use random draws to determine if she
-        # develops a complication/dies/has a stillbirth.
-
-        if month == 1:
-            pass
-
-        if month == 2 or month == 3 or month == 4:
-            pass
-
-        if month == 5:
-            pass
-
-        # this shouldnt loop through each woman individually because itll be too slow?
-        if month == 6 or month == 7 or month == 8 or month == 9:
-            for person in temp_df.index:
-                if ~df.at[person, 'ps_anaemia_in_pregnancy'] and \
-                                                               temp_df.at[person, 'risk_ma'] < self.rng.random_sample():
-                    df.at[person, 'ps_anaemia_in_pregnancy'] = True
-
-                if df.at[person, 'ps_htn_disorders'] == 'none' and \
-                                                        temp_df.at[person, 'risk_pe'] < self.rng.random_sample():
-                    df.at[person, 'ps_htn_disorders'] = 'mild_pre_eclamp'
-
-                else:
-                    if df.at[person, 'ps_htn_disorders'] == 'none' and \
-                                                             temp_df.at[person, 'risk_gest_htn'] < \
-                                                             self.rng.random_sample():
-                        df.at[person, 'ps_htn_disorders'] = 'gest_htn'
-
-                if ~df.at[person, 'ps_gest_diab'] and temp_df.at[person, 'risk_gd'] < self.rng.random_sample():
-                    df.at[person, 'ps_gest_diab'] = True
-
-                if temp_df.at[person, 'risk_sb'] < self.rng.random_sample():
-                    df.at[person, 'ps_antepartum_still_birth'] = True
-
-                if temp_df.at[person, 'risk_ad'] < self.rng.random_sample():
-                    death = demography.InstantaneousDeath(self.sim.modules['Demography'], person,
-                                                          cause='antenatal death')
-                    self.sim.schedule_event(death, self.sim.date)
 
     def set_pregnancy_complications(self, index, complication):
         """This function is called from within the PregnancySupervisorEvent. It calculates risk of a number of pregnancy
@@ -440,18 +372,12 @@ class PregnancySupervisor(Module):
 
         if complication == 'multiples':
             df.loc[positive_index, 'ps_multiple_pregnancy'] = True
-            # TODO: are we keeping multiples in the model
 
         if complication == 'spontaneous_abortion' or complication == 'induced_abortion':
 
-            # Women who have an abortion have key pregnancy variables reset
-            df.loc[positive_index, 'is_pregnant'] = False
-            df.loc[positive_index, 'la_due_date_current_pregnancy'] = pd.NaT
-            # todo: reset total ANC visits?
-
-            # And are scheduled to the AbortionEvent where they may develop complications, symptoms and seek care
+            # Women who experience pregnancy loss pass through the abortion function
             for person in positive_index:
-                self.sim.schedule_event(AbortionEvent(self, person, cause=f'{complication}'), self.sim.date)
+                self.abortion(person, complication)
             if not positive_index.empty:
                 logger.debug(f'The following women have experienced an abortion,{positive_index}')
 
@@ -516,8 +442,6 @@ class PregnancySupervisor(Module):
             df.loc[positive_index, 'la_due_date_current_pregnancy'] = pd.NaT
             df.loc[positive_index, 'ps_gestational_age_in_weeks'] = 0
 
-            # TODO: care seeking for suspected antenatal stillbirth
-
             if not positive_index.empty:
                 logger.debug(f'The following women have have experienced an antepartum stillbirth,{positive_index}')
 
@@ -538,34 +462,45 @@ class PregnancySupervisor(Module):
 
         # todo: set duration of length of symptoms until end of pregnancy?
 
-    def set_abortion_complications(self, individual_id, abortion_type):
-        """This function applies a probability of complication to women who have undergone an induced or
-        spontaneous abortion. It is currently unfinished"""
+    def abortion(self, individual_id, cause):
         df = self.sim.population.props
         params = self.parameters
 
-        # TODO: this can be handled by Asif's BitsetHandler - awaiting PR
+        if df.at[individual_id, 'is_alive']:
+            # Women who have an abortion have key pregnancy variables reset
+            df.at[individual_id, 'is_pregnant'] = False
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
+            df.at[individual_id, 'ac_total_anc_visits_current_pregnancy'] = 0
 
-        # TODO: for IA - we apply a risk of any complication in the abortion event. Then here we just do a random
-        #  choice of the complications (or mix) and apply (as opposed to individual risk)
+            # We store the type of abortion for analysis
+            self.PregnancyDiseaseTracker[f'{cause}'] += 1
 
-        if abortion_type == 'induced_abortion':
-            types_of_abortion = ['surgical', 'medical']
-            this_womans_abortion = self.rng.choice(types_of_abortion, p=params['prob_induced_abortion_type'])
+            # We apply a probability of complications to women who miscarry later than 13 weeks
+            if cause == 'spontaneous_abortion' and df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 13:
+                if params['prob_any_complication_spontaneous_abortion'] < self.rng.random_sample():
+                    # Set any complications through this function and schedule possible death
 
-            if this_womans_abortion == 'surgical':
-                pass
-                # apply probabilities of complications from a surgical induced abortion
-                # apply symptoms of these complications
-            else:
-                pass
-                # apply probabilities of complications from a medical induced abortion
-                # apply symptoms of these complications
-        else:
-            pass
-            # apply probabilities of complications from a spontaneous abortion
+                    # TODO: set complications & symptoms
 
-        # TODO: reset these complications after a certain time period
+                    self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id,
+                                                                         cause=f'{cause}'),
+                                            self.sim.date + DateOffset(days=3))
+
+            # We apply a probability of complications to any women who have an induced abortion
+            if cause == 'induced_abortion':
+                if params['prob_any_complication_induced_abortion'] < self.rng.random_sample():
+
+                    # TODO: set complications & symptoms
+
+                    # Again the death event is scheduled in 3 days time to allow for treatment effects
+                    self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id,
+                                                                         cause=f'{cause}'),
+                                            self.sim.date + DateOffset(days=3))
+
+            # We reset gestational age
+            df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
+
+            # TODO:  care seeking
 
     def disease_progression(self, selected):
         """This function uses util.transition_states to apply a probability of transitioning from one state of

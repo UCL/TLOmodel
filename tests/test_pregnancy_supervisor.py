@@ -32,7 +32,7 @@ except NameError:
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-popsize = 1000
+popsize = 10000
 
 
 def check_dtypes(simulation):
@@ -89,4 +89,4 @@ def test_run_no_healthsystem():
     check_dtypes(sim)
 
 test_run()
-# test_run_no_healthsystem()
+test_run_no_healthsystem()
