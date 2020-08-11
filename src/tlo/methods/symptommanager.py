@@ -30,7 +30,7 @@ class SymptomManager(Module):
         self.all_registered_symptoms = None
 
     def read_parameters(self, data_folder):
-        # Generic Symptoms: pre-defined and used in health seeking behaviour
+        # Generic Symptoms: pre-defined set and used in health seeking behaviour
         self.parameters['generic_symptoms'] = {
             'fever',
             'vomiting',
@@ -135,7 +135,8 @@ class SymptomManager(Module):
             assert symptom_string in disease_module.SYMPTOMS, 'Symptom is not generic or declared for use by disease ' \
                                                               'module '
 
-        # Check that a sensible or no date_of_onset is provided
+        # Check that a sensible or no date_of_onset of the symptom is provided
+        # i.e. you have a disease, but maybe not this symptom.
         assert (date_of_onset is None) or (isinstance(date_of_onset, pd.Timestamp) and date_of_onset >= self.sim.date)
 
         # If the date of onset if not equal to today's date, then schedule the auto_onset event
@@ -151,6 +152,7 @@ class SymptomManager(Module):
         if add_or_remove == '+':
             # Add this disease module as a cause of this symptom
 
+            # person_id is a list of people, and x is the set of a person's symptoms
             _ = df.loc[person_id, symptom_var_name].apply(lambda x: x.add(disease_module.name))
 
             self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
@@ -174,7 +176,7 @@ class SymptomManager(Module):
     def who_has(self, list_of_symptoms):
         """
         This is a helper function to look up who has a particular symptom or set of symptoms.
-        It returns a list of indicies for person that have all of the symptoms specified
+        It returns a list of indices for person that have all of the symptoms specified
 
         :param: list_of_symptoms : string or list of strings for the symptoms of interest
         :return: list of person_ids for those with all of the symptoms in list_of_symptoms
