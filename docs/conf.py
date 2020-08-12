@@ -15,7 +15,12 @@ from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS, Documenter, Module
 from sphinx.util.inspect import object_description
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
-from tlo.core import Specifiable, Parameter, Types   #, nullstr
+from tlo.core import Specifiable, Parameter, Types, Module   #, nullstr
+
+class_being_tracked = None
+class_object_being_tracked = None
+myclasses = ['CareOfWomenDuringPregnancy', 'AntenatalCareSeeking']
+mymethods = ['on_birth', 'initialise_simulation', 'apply']
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -103,13 +108,14 @@ autodoc_default_options = {
     'member-order': 'bysource',
 
     # List below what you don't want to see documented:
-    'exclude-members': '__dict__, name, rng, sim',
+    'exclude-members': '__dict__, name, rng, sim'  ##, read_parameters',
 }
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
 
 from sphinx.util import inspect
+
 
 # We keep track of how many times a particular PARAMETERS
 # or PROPERTIES dictionary is encountered; we suppress
@@ -241,8 +247,8 @@ def before_process_signature(app, obj, bound_method):
     bound_method: a boolean indicates if an object is bound method or not
     '''
     #if not bound_method:
-    if 'PARAMETERS' in obj.__name__:
-        import pdb; pdb.set_trace()
+    #if 'PARAMETERS' in obj.__name__:
+    #    import pdb; pdb.set_trace()
     pass
 
 #from sphinx.ext.autodoc import cut_lines
@@ -324,12 +330,12 @@ def source_read_handler(app, docname, source):
 
 
 def doctree_resolved_handler(app, doctree, docname):
-    if docname == 'reference/tlo.methods':
-        import pdb; pdb.set_trace()
+    #if docname == 'reference/tlo.methods':
+     #   import pdb; pdb.set_trace()
     pass
 
 def doctree_read_handler(app, doctree):
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
     # doctree.nameids ['tlo.methods.chronicsyndrome module']
     #    = 'tlo-methods-chronicsyndrome-module'
@@ -400,35 +406,96 @@ def setup(app):
 
 
 def skip(app, what, name, obj, skip, options):
+    """
+    From the docs:
+    what – the type of the object which the docstring belongs to
+    (one of "module", "class", "exception", "function", "method", "attribute")
+
+    In practice, 'what' seems to be 'class', or sometimes 'module',
+    even if obj is a function object.
+    So 'what' doesn't seem that useful, unfortunately.
+
+    A function can have a nice short string rep, e.g. <function HSI_Tb_Ipt.apply at 0x105fbf400>
+    But can be a monster
+
+    e.g. what is a class 'str', name is PARAMETERS,
+    obj is a dict, skip is False
+    options is the dictionary autodoc_default_options, except for
+    some reason the 'undoc-members' has been changed to True
+    e.g. obj = <function Module.on_birth at 0x107a45488>
+    # or <function CareOfWomenDuringPregnancy.initialise_simulation at 0x1089709d8>
+    """
+
+
+    '''tlo.methods.* - most class members should not be displayed.
+    Have a means to control this. e.g. classes that inherit tlo.Module
+    we wouldn't display, say, apply() or name, on_birth(), initialise_simulation()'''
+
+    # Is this a class object?
+    # e.g. obj = <class 'tlo.methods.antenatal_care.CareOfWomenDuringPregnancy'>
 
     if name in ('PARAMETERS', 'PROPERTIES'):
-        #options['undoc-members'] = False
         #
         # Don't bother displaying PARAMETERS or
         # PROPERTIES dictionaries if they have no data.
         if not obj:
             return True
-        #
-        #if len(app.mydict.keys()) > 43:
-            #import pdb; pdb.set_trace()
-        #    return False
 
-        mykey = ".".join(obj.keys())  # mykey is a dot-separated string of keys from obj
-        #import pdb; pdb.set_trace()
-        if mykey in app.mydict:  #.values():
-            #import pdb; pdb.set_trace()
-            app.mydict[mykey] += 1
-            #return False
-        else:  # New key, so a new dict; skip it.
-            app.mydict[mykey] = 1
-            #return True
+    global class_being_tracked
+    global class_object_being_tracked
+
+    if "class" in str(obj):
+        class_being_tracked = name  # e.g. 'Date', 'Module', 'Parameter', 'Simulation', '__builtins__'
+        print (f"Now tracking {class_being_tracked} - rep is " + str(obj))
+        if class_being_tracked in ['__builtins__', '__doc__',
+                                   'PANDAS_TYPE_MAP', 'PYTHON_TYPE_MAP',
+                                   'Module', '__module__', '__dict__']:
+        #    class_object_being_tracked = None
+            return False
+        #else:
+        class_object_being_tracked = obj  # e.g. instance of tlo.x.x.CareOfWomenDuringPregnancy
+        # do we even need to track it?
+
+    else:
+        #if "function" in str(obj):
+        if (str(obj)).startswith("<function "):
+            # e.g. str(obj) = "<function hiv.initialise_simulation at 0x105fbff28>"
+            # sometimes no class present e.g. str(obj) = "<function create_age_range_lookup at 0x105442ae8>"
+            func = str(obj)
+            # Update which class this belongs to, if necessary:
+            items = func.split()
+            class_and_func = []
+            if len(items) > 0:
+                class_and_func = items[1]
+            parts = class_and_func.split('.')
+            if len(parts) > 1:
+                class_being_tracked = parts[0]
+                this_function = parts[1]
+            else:  # No class specified
+                this_function = parts[0]
+            print(f"Got function {func}; {what}; {this_function}; currently tracking {class_being_tracked}")
+
+            # Filter out certain methods in subclasses of tlo.core.Module:
+            try:
+                if class_object_being_tracked is not None:
+                    if issubclass(class_object_being_tracked, Module):  # NB This is also True when obj == Module
+                        global mymethods
+                        # print "hello"
+                        for m in mymethods:
+                            if m == this_function:
+                                return True
+                        return False
+                    else:  # Should be a subclass of tlo.core.Module
+                        return False
+            except Exception:
+                print (f"Exception raised - {name}, {what}, {class_object_being_tracked}")
+                exit()
 
     # From Sphinx docs:
     # "Handlers should return None to fall back
     # to the skipping behavior of autodoc and
     # other enabled extensions."
     return None
-
 
 
 #  Emitted when autodoc has read and processed a docstring
@@ -446,7 +513,6 @@ def anotherfunc(app, what, name, obj, options, lines):
             #lines[-1] = '***Goodbye***'
         #obj['something'] = Parameter(Types.REAL, "write something here")
         #count += 1
-
 
 def add_dicts_to_docstring(app, what, name, obj, options, lines):
     '''
