@@ -18,9 +18,9 @@ sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 from tlo.core import Specifiable, Parameter, Types, Module   #, nullstr
 
 class_being_tracked = None
-class_object_being_tracked = None
-myclasses = ['CareOfWomenDuringPregnancy', 'AntenatalCareSeeking']
-mymethods = ['on_birth', 'initialise_simulation', 'apply']
+#class_object_being_tracked = None
+subclasses_of_Module = ['hiv', 'Mockitis', 'Epilepsy']
+common_methods_to_skip = ['on_birth', 'initialise_simulation', 'apply']
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -442,18 +442,18 @@ def skip(app, what, name, obj, skip, options):
             return True
 
     global class_being_tracked
-    global class_object_being_tracked
+    #global class_object_being_tracked  # Unreliable :-(
 
     if "class" in str(obj):
         class_being_tracked = name  # e.g. 'Date', 'Module', 'Parameter', 'Simulation', '__builtins__'
-        print (f"Now tracking {class_being_tracked} - rep is " + str(obj))
+        print (f"Now tracking {class_being_tracked}")  #- rep is " + str(obj))
         if class_being_tracked in ['__builtins__', '__doc__',
                                    'PANDAS_TYPE_MAP', 'PYTHON_TYPE_MAP',
-                                   'Module', '__module__', '__dict__']:
-        #    class_object_being_tracked = None
-            return False
+                                   '__module__', '__dict__']:
+            #class_object_being_tracked = None
+            return True
         #else:
-        class_object_being_tracked = obj  # e.g. instance of tlo.x.x.CareOfWomenDuringPregnancy
+        #class_object_being_tracked = obj  # e.g. instance of tlo.x.x.CareOfWomenDuringPregnancy
         # do we even need to track it?
 
     else:
@@ -473,23 +473,20 @@ def skip(app, what, name, obj, skip, options):
                 this_function = parts[1]
             else:  # No class specified
                 this_function = parts[0]
-            print(f"Got function {func}; {what}; {this_function}; currently tracking {class_being_tracked}")
+            #if "Epilepsy" == class_being_tracked:
+            #    print(f"Got function {func}; {what}; {this_function}; currently tracking {class_being_tracked}")
 
             # Filter out certain methods in subclasses of tlo.core.Module:
-            try:
-                if class_object_being_tracked is not None:
-                    if issubclass(class_object_being_tracked, Module):  # NB This is also True when obj == Module
-                        global mymethods
-                        # print "hello"
-                        for m in mymethods:
-                            if m == this_function:
-                                return True
-                        return False
-                    else:  # Should be a subclass of tlo.core.Module
-                        return False
-            except Exception:
-                print (f"Exception raised - {name}, {what}, {class_object_being_tracked}")
-                exit()
+            # Doing this programmatically would be better than this,
+            # but unfortunately we can't rely on class_object_being_tracked
+            # being up-to-date
+            global subclasses_of_Module
+            if class_being_tracked in subclasses_of_Module:
+                global common_methods_to_skip
+                if this_function in common_methods_to_skip:
+                    return True
+
+
 
     # From Sphinx docs:
     # "Handlers should return None to fall back
