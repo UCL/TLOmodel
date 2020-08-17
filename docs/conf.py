@@ -446,7 +446,7 @@ def skip(app, what, name, obj, skip, options):
 
     if "class" in str(obj):
         class_being_tracked = name  # e.g. 'Date', 'Module', 'Parameter', 'Simulation', '__builtins__'
-        print (f"Now tracking {class_being_tracked}")  #- rep is " + str(obj))
+        # print (f"Now tracking {class_being_tracked}")  #- rep is " + str(obj))
         if class_being_tracked in ['__builtins__', '__doc__',
                                    'PANDAS_TYPE_MAP', 'PYTHON_TYPE_MAP',
                                    '__module__', '__dict__']:
