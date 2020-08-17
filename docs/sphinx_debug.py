@@ -15,7 +15,7 @@ def run_sphinx_apidoc(input_dir, output_dir):
     :param input_dir: module path
     :param output_dir: output sources
     """
-    apidoc.main(["-f", "-o", output_dir, input_dir])
+    apidoc.main(["-e", "-f", "-o", output_dir, input_dir])
 
 
 def run_sphinx_build(goal, input_dir, output_dir, args: List[str] = None):
