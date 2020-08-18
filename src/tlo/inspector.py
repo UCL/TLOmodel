@@ -52,10 +52,12 @@ def generate_module_list(dir_string):
 def get_classes_in_module(fqn, module_obj):
     '''
     Generate a list of lists of the classes *defined* in
-    the required module. Note that this excludes
+    the required module, in the order in which they
+    appear in the module file. Note that this excludes
     any other classes in the module.
-    Each entry in list returned is itself a list of:
-    class name, class object, line number
+
+    Each entry in the list returned is itself a list of:
+    [class name, class object, line number]
 
     :param fqn: Fully-qualified name of the module,
     e.g. "tlo.methods.mockitis"
@@ -77,7 +79,7 @@ def get_classes_in_module(fqn, module_obj):
             #print(morestuff)  # e.g. functions, PARAMETERS dict,...
     print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
-    # Answer by Andrew
+    # Based on answer by Andrew
     classes.sort(key = lambda x: x[2])
     print(f"after sorting, {classes}")
     return classes
@@ -102,7 +104,13 @@ def extract_required_members(module, exclusions):
     '''Which class members do we wish to include in
     the .rst file we will write?
 
-    Skip over the ones we don't want.'''
+    Skip over the ones we don't want.
+
+    Don't want to display most class members in tlo.methods.*
+    For classes which inherit tlo.Module, the PROPERTIES & PARAMETERS
+    class dictionary attributes should be displayed only as tables.
+    And also not display e.g. apply() or name, on_birth()
+   '''
     pass
 
 
@@ -113,31 +121,9 @@ def write_rst_file(filename):
 
 if __name__ == '__main__':
 
-    # This will print out all classes in mockitis.py
-    # including those imported by mockitis.py
-    # stuff = inspect.getmembers(mockitis)
-    #for name, obj in stuff:
-    #    if inspect.isclass(obj):
-    #        print(name)
-    #        print (obj)
-
-    # Just obtain mockitis.py's classes:
-    # Is this robust enough?
-    #print ("Classes defined in mockitis.py only:")
-    #leader = LEADER + "mockitis"
-    #fqdn = get_fully_qualified_name("mockitis.py")
-    #stuff = inspect.getmembers(tlo.methods.mockitis)
-    #for name, obj in stuff:
-    #    if fqdn in str(obj) and inspect.isclass(obj):
-    #        print(name)  # e.g. MockitisEvent
-    #        print (obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
-            #print(issubclass(obj, Module))
-            #classes.append(obj)
-
     modules = generate_module_list(MODULE_DIR)  # List of .py files
     print (modules)
     for m in modules:  # e.g. mockitis.py
-        #classes_in_module = []
         if m != "mockitis.py":
             continue
         fqn = get_fully_qualified_name(m)  # e.g. "tlo.methods.mockitis"
@@ -145,14 +131,5 @@ if __name__ == '__main__':
         print (f"module_obj is {module_obj}")
         classes_in_this_module = get_classes_in_module(fqn, module_obj)
 
-        # Get the classes defined in this module
-        #stuff = inspect.getmembers(module_obj)
-        #for name, obj in stuff:
-        #   if fqn in str(obj) and inspect.isclass(obj):
-        #       print(name)  # e.g. MockitisEvent
-        #       print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
-        #       #classes_in_module.append(obj)
-        #       print(f"\n\nIn module {name} we find the following:")
-        #       morestuff = inspect.getmembers(obj)
-        #       print(morestuff)  # e.g. functions, PARAMETERS dict,...
+
 
