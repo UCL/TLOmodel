@@ -10,7 +10,7 @@ import tlo
 from tlo import Module
 
 MODULE_DIR = "./src/tlo/methods"
-LEADER = "tlo.methods."
+LEADER = "tlo.methods"
 
 # Use this so we can dynamically import, and not need to hard-code it.
 exec("from tlo.methods import mockitis")
@@ -48,8 +48,39 @@ def generate_module_list(dir_string):
 
     return sorted(filenames)
 
-def get_classes_in_module(module):
-    pass
+
+def get_classes_in_module(fqn, module_obj):
+    '''
+    Generate a list of lists of the classes *defined* in
+    the required module. Note that this excludes
+    any other classes in the module.
+    Each entry in list returned is itself a list of:
+    class name, class object, line number
+
+    :param fqn: Fully-qualified name of the module,
+    e.g. "tlo.methods.mockitis"
+
+    :param module_obj: an object representing this module
+    '''
+    classes = []
+    module_info = inspect.getmembers(module_obj)  # Gets everything
+    for name, obj in module_info:
+        # Pick out only classes, defined in this module:
+        if inspect.isclass(obj) and fqn in str(obj):
+            #print(name)  # e.g. MockitisEvent
+            #print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
+            source, start_line = inspect.getsourcelines(obj)
+            classes.append([name, obj, start_line])
+            #classes_in_module.append(obj)
+            #print(f"\n\nIn module {name} we find the following:")
+            #morestuff = inspect.getmembers(obj)
+            #print(morestuff)  # e.g. functions, PARAMETERS dict,...
+    print(f"before sorting, {classes}")
+    # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
+    # Answer by Andrew
+    classes.sort(key = lambda x: x[2])
+    print(f"after sorting, {classes}")
+    return classes
 
 
 def get_fully_qualified_name(filename):
@@ -62,8 +93,8 @@ def get_fully_qualified_name(filename):
     :param filename:
     :return:
     '''
-    parts = filename.split('.')
-    fqname = LEADER + parts[0]
+    parts = filename.split(".")
+    fqname = LEADER + "." + parts[0]
     return fqname
 
 
@@ -92,7 +123,7 @@ if __name__ == '__main__':
 
     # Just obtain mockitis.py's classes:
     # Is this robust enough?
-    print ("Classes defined in mockitis.py only:")
+    #print ("Classes defined in mockitis.py only:")
     #leader = LEADER + "mockitis"
     #fqdn = get_fully_qualified_name("mockitis.py")
     #stuff = inspect.getmembers(tlo.methods.mockitis)
@@ -102,19 +133,26 @@ if __name__ == '__main__':
     #        print (obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
             #print(issubclass(obj, Module))
             #classes.append(obj)
-    print("\n\n new")
+
     modules = generate_module_list(MODULE_DIR)  # List of .py files
     print (modules)
     for m in modules:  # e.g. mockitis.py
-        classes_in_module = []
-        if m == "mockitis.py":
-            fqdn = get_fully_qualified_name(m)  # e.g. "tlo.methods.mockitis"
-            module_obj = importlib.import_module(fqdn)
-            print (f"module_obj is {module_obj}")
-            stuff = inspect.getmembers(module_obj)
-            for name, obj in stuff:
-                if fqdn in str(obj) and inspect.isclass(obj):
-                    print(name)  # e.g. MockitisEvent
-                    print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
+        #classes_in_module = []
+        if m != "mockitis.py":
+            continue
+        fqn = get_fully_qualified_name(m)  # e.g. "tlo.methods.mockitis"
+        module_obj = importlib.import_module(fqn)  # Object creation from string.
+        print (f"module_obj is {module_obj}")
+        classes_in_this_module = get_classes_in_module(fqn, module_obj)
 
+        # Get the classes defined in this module
+        #stuff = inspect.getmembers(module_obj)
+        #for name, obj in stuff:
+        #   if fqn in str(obj) and inspect.isclass(obj):
+        #       print(name)  # e.g. MockitisEvent
+        #       print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
+        #       #classes_in_module.append(obj)
+        #       print(f"\n\nIn module {name} we find the following:")
+        #       morestuff = inspect.getmembers(obj)
+        #       print(morestuff)  # e.g. functions, PARAMETERS dict,...
 
