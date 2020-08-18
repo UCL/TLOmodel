@@ -20,8 +20,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 20000
+end_date = Date(2013, 1, 1)
+popsize = 10000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -77,3 +77,5 @@ plt.show()
 stats.plot.bar(y='anaemia_rate', stacked=True)
 plt.title("Yearly anaemia_rate Rate")
 plt.show()
+
+stats = output['tlo.methods.pregnancy_supervisor']['summary_stats']

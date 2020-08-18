@@ -61,6 +61,8 @@ class PregnancySupervisor(Module):
         'prob_of_symptoms_gest_diab': Parameter(
             Types.REAL, 'probability that a woman with gestational diabetes will develop the symptoms of polyuria '
                         'and/or polyphagia and/or polydipsia'),
+        'prob_antepartum_haem_per_month': Parameter(
+            Types.REAL, 'monthly probability that a woman will develop antepartum bleeding during pregnancy'),
         'prob_still_birth_per_month': Parameter(
             Types.REAL, 'underlying risk of stillbirth per month without the impact of risk factors'),
         'rr_still_birth_food_supps': Parameter(
@@ -102,6 +104,10 @@ class PregnancySupervisor(Module):
             Types.REAL, 'underlying risk of death following an induced abortion'),
         'prob_spontaneous_abortion_death': Parameter(
             Types.REAL, 'underlying risk of death following an spontaneous abortion'),
+        'prob_antepartum_haem_stillbirth': Parameter(
+            Types.REAL, 'probability of stillbirth for a woman suffering acute antepartum haemorrhage'),
+        'prob_antepartum_haem_death': Parameter(
+            Types.REAL, 'probability of death for a woman suffering acute antepartum haemorrhage'),
         'prob_first_anc_visit_gestational_age': Parameter(
             Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
@@ -226,6 +232,10 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_gest_diab_per_month']),
 
+                'antepartum_haem': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_antepartum_haem_per_month']),
+
                 'antenatal_stillbirth': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_still_birth_per_month'],
@@ -254,6 +264,16 @@ class PregnancySupervisor(Module):
                 'spontaneous_abortion_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_spontaneous_abortion_death']),
+
+                'antepartum_haemorrhage_stillbirth': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_antepartum_haem_stillbirth']),
+
+                'antepartum_haemorrhage_death': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_antepartum_haem_death']),
+
+                # TODO: severity of bleed should be a predictor for both of the 2 equations
 
                 'four_or_more_anc_visits': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -297,7 +317,7 @@ class PregnancySupervisor(Module):
                                         'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
                                         'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
                                         'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0,
-                                        'new_onset_gest_htn': 0}
+                                        'new_onset_gest_htn': 0, 'antepartum_haem':0, 'antepartum_haem_death':0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -445,13 +465,13 @@ class PregnancySupervisor(Module):
 
         if complication == 'antepartum_haem':
             df.loc[positive_index, 'ps_antepartum_haemorrhage'] = True
+            self.PregnancyDiseaseTracker['antepartum_haem'] += len(positive_index)
 
             # TODO: Source (praevia/abruption), severity, care seeking
 
             for person in positive_index:
                 self.sim.schedule_event(AntepartumHaemorrhageDeathEvent(self, person),
                                         (self.sim.date + pd.Timedelta(days=3)))
-
 
         if complication == 'antenatal_death':
             self.PregnancyDiseaseTracker['antenatal_death'] += len(positive_index)
@@ -1068,8 +1088,11 @@ class AntepartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='antepartum_haemorrhage'), self.sim.date)
                 self.module.PregnancyDiseaseTracker['antenatal_death'] += 1
+                self.module.PregnancyDiseaseTracker['antepartum_haem_death'] += 1
 
             elif self.module.rng.random_sample() < risk_of_stillbirth:
+                logger.debug(f'person %d has experience an antepartum stillbirth on date %s', individual_id,
+                             self.sim.date)
                 self.module.PregnancyDiseaseTracker['antenatal_stillbirth'] += 1
 
                 df.at[individual_id, 'ps_antepartum_still_birth'] = True
@@ -1078,6 +1101,10 @@ class AntepartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
                 df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
 
+                df.at[individual_id, 'ps_antepartum_haemorrhage'] = False
+
+            else:
+                df.at[individual_id, 'ps_antepartum_haemorrhage'] = False
 
 
 
@@ -1124,6 +1151,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_sa_deaths = self.module.PregnancyDiseaseTracker['spontaneous_abortion_death']
         crude_new_onset_pe = self.module.PregnancyDiseaseTracker['new_onset_pre_eclampsia']
         crude_new_gh = self.module.PregnancyDiseaseTracker['new_onset_gest_htn']
+        crude_aph =  self.module.PregnancyDiseaseTracker['antepartum_haem']
+        crude_aph_death= self.module.PregnancyDiseaseTracker['antepartum_haem_death']
 
         dict_for_output = {'repro_women': total_women_reproductive_age,
                            'antenatal_mmr': (antenatal_maternal_deaths/total_births_last_year) * 100000,
@@ -1141,11 +1170,14 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'crude_anaemia': total_anaemia_cases,
                            'anaemia_rate': (total_anaemia_cases/total_women_reproductive_age) * 1000,
                            'crude_pe': crude_new_onset_pe,
-                           'crude_gest_htn': crude_new_gh}
+                           'crude_gest_htn': crude_new_gh,
+                           'crude_aph':crude_aph,
+                           'crude_aph_death':crude_aph_death}
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
-        self.module.PregnancyDiseaseTracker = \
-            {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0, 'ectopic_pregnancy_death': 0,
-             'induced_abortion_death': 0, 'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
-             'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0, 'new_onset_gest_htn': 0}
+        self.module.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
+                                        'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
+                                        'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
+                                        'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0,
+                                        'new_onset_gest_htn': 0, 'antepartum_haem':0, 'antepartum_haem_death':0}
