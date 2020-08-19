@@ -1,12 +1,12 @@
 """Test for HealthCareSeeking Module"""
-
 import os
 from pathlib import Path
 
 from pandas import DateOffset
 
-from tlo import Date, Simulation, Module
+from tlo import Date, Module, Simulation
 from tlo.methods import (
+    Metadata,
     chronicsyndrome,
     contraception,
     demography,
@@ -16,7 +16,7 @@ from tlo.methods import (
     labour,
     mockitis,
     pregnancy_supervisor,
-    symptommanager, Metadata,
+    symptommanager,
 )
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
