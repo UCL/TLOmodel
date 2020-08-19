@@ -19,7 +19,7 @@ LEADER = "tlo.methods"
 RST_DIR = f"{root_dir}/docs/reference"
 
 # Use this so we can dynamically import, and not need to hard-code it.
-exec("from tlo.methods import mockitis")
+#exec("from tlo.methods import mockitis")
 
 
 def generate_module_list(dir_string):
@@ -132,19 +132,22 @@ def write_rst_file(rst_dir, fqn, mobj):
     '''
     filename = f"{rst_dir}/{fqn}.rst"
     with open(filename, 'w') as out:
+
+        # Header
         title = f"{fqn} module"
         out.write(f"{title}\n")
         for i in range(len(title)):
             out.write("=")
         out.write("\n")
 
-        # This gets the classes, but not any docstring e.g. at the top
-        # of the module, outside any classes.
+        # TODO: This gets the classes, but not any docstring e.g. at the top
+        # of the module, outside any classes. It also doesn't include
+        # any module-level functions.
         classes_in_module = get_classes_in_module(fqn, mobj)
         for c in classes_in_module:
             # c is [class name, class object, line number]
-            s = get_class_output_string(c)
-            out.write(f"{s}\n")
+            str = get_class_output_string(c)
+            out.write(f"{str}\n")
         #out.write(".. class:: Noodle\n\n")
         #out.write("   Noodle's docstring.\n")
 
@@ -154,9 +157,34 @@ def get_class_output_string(classinfo):
 
     :param classinfo: a list with [class name, class object, line number]
     :return: the string to output
+
+    TODO: stop unwanted output, e.g. certain methods in children of Module.
+
     '''
-    name, obj, _ = classinfo
-    str = f".. class:: {name}\n\n"
+    class_name, class_obj, _ = classinfo
+    str = f".. class:: {class_name}\n\n"
+
+    # Now we want to add base classes, class members, comments and methods
+    # Presumably in source file order.
+    classdat = inspect.getmembers(class_obj)  # Gets everything
+
+    bases = inspect.getmro(class_obj)  # Includes "object" class and the class_name class
+    print(f"bases for {class_name}: {bases}")
+    #classtree = inspect.getclasstree(bases)
+    #print(f"classtree = {classtree}")
+
+    if len(bases) > 0:
+        str += f"Bases: {bases}"
+        # TODO: Remove object class and the class itself
+        # and we will want links to be generated - is that automatic?
+
+    excluded = []
+    for name, obj in classdat:
+        # Pick out only classes, defined in this module:
+        #if inspect.isclass(obj) and fqn in str(obj):
+        # getdoc, getcomments,
+        pass
+    str += "\n\n\n"
 
     return str
 
