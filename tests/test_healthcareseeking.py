@@ -5,8 +5,7 @@ from pathlib import Path
 
 from pandas import DateOffset
 
-from tlo import Date, Simulation
-from tlo.core import DiseaseModule
+from tlo import Date, Simulation, Module
 from tlo.methods import (
     chronicsyndrome,
     contraception,
@@ -17,7 +16,7 @@ from tlo.methods import (
     labour,
     mockitis,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, Metadata,
 )
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
@@ -36,7 +35,8 @@ except NameError:
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseeking_behaviour():
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled."""
 
-    class DummyDisease(DiseaseModule):
+    class DummyDisease(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
@@ -101,7 +101,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
 def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthcareseeking_behaviour():
     """test that a symptom that should not give healthseeeking does not give heaslth seeking."""
 
-    class DummyDisease(DiseaseModule):
+    class DummyDisease(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
@@ -169,7 +170,8 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour():
     """test that a symptom that give emergency healthcare seeking results in emergency HSI scheduled."""
 
-    class DummyDisease(DiseaseModule):
+    class DummyDisease(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(

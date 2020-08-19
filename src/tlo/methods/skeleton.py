@@ -19,7 +19,6 @@ class Skeleton(Module):
     """
     One line summary goes here...
 
-    If it is a Disease Module use base class DiseaseModule
     If it another kind of module use base class Module
 
     All disease modules need to be implemented as a class inheriting from Module.
