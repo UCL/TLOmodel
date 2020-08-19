@@ -2,10 +2,9 @@
 A skeleton template for disease methods.
 
 """
-
-from tlo import DateOffset, Parameter, Property, Types, logging
-from tlo.core import DiseaseModule
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 
 # ---------------------------------------------------------------------------------------------------------
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Skeleton(DiseaseModule):
+class Skeleton(Module):
     """
     One line summary goes here...
 
@@ -34,6 +33,7 @@ class Skeleton(DiseaseModule):
     *  `report_daly_values()` [If this is disease module]
 
     """
+    METADATA = {Metadata.DISEASE_MODULE}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.

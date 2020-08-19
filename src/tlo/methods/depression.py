@@ -7,11 +7,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Parameter, Property, Types, logging
-from tlo.core import DiseaseModule
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata
+from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -24,10 +24,12 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-class Depression(DiseaseModule):
+class Depression(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     # Module parameters
     PARAMETERS = {
@@ -640,7 +642,7 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
             return
 
         self.module.eventsTracker['SuicideEvents'] += 1
-        self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
+        self.sim.schedule_event(InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
 
 
 # ---------------------------------------------------------------------------------------------------------

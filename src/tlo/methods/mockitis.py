@@ -1,8 +1,8 @@
 import pandas as pd
 
-from tlo import DateOffset, Parameter, Property, Types, logging
-from tlo.core import DiseaseModule
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Mockitis(DiseaseModule):
+class Mockitis(Module):
     """
     This is a dummy infectious disease.
     It demonstrates the following behaviours in respect of the healthsystem module:
@@ -22,6 +22,7 @@ class Mockitis(DiseaseModule):
         - Restrictive requirements on the facility_level for the HSI_event
         - Use of the SymptomManager
     """
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         'p_infection': Parameter(

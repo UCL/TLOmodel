@@ -11,11 +11,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import DateOffset, Parameter, Property, Types, logging
-from tlo.core import DiseaseModule
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata
+from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class OesophagealCancer(DiseaseModule):
+class OesophagealCancer(Module):
     """Oesophageal Cancer Disease Module"""
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -33,6 +33,8 @@ class OesophagealCancer(DiseaseModule):
         self.linear_models_for_progession_of_oc_status = dict()
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         "init_prop_oes_cancer_stage": Parameter(
@@ -572,7 +574,7 @@ class OesCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
             )
 
 

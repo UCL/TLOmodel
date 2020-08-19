@@ -104,8 +104,7 @@ class Specifiable:
         item = mytype.split(sub)[1]  # e.g. "REAL"
 
         if self.type_ == Types.CATEGORICAL:
-            return f'{item}' + Specifiable.delimiter + f'{self.description}' \
-                   + f'  (Possible values are: {self.categories})'
+            return f'{item}{Specifiable.delimiter}{self.description} (Possible values are: {self.categories})'
         else:
             return f'{item}' + Specifiable.delimiter + f'{self.description}'
         # Types.CATEGORICAL might need special treatment
@@ -183,6 +182,9 @@ class Module:
     `sim`
         The simulation this module is part of, once registered.
     """
+    # Subclasses can override this set to add metadata tags to their class
+    # See tlo.methods.Metadata class
+    METADATA = {}
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
@@ -347,9 +349,3 @@ class Module:
                 self.parameters[name] = value
             else:
                 raise
-
-
-class DiseaseModule(Module):
-    """Base class to signal that this module is for a specific disease.
-    This is used by simulation to create the list disease modules."""
-    pass
