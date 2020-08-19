@@ -235,6 +235,19 @@ class BitsetHandler():
             collect[element] = self.has_all(where, element)
         return pd.DataFrame(collect)
 
+    def not_empty(self, where, first=False) -> Union[pd.Series, bool]:
+        """Returns Series of bool indicating whether the BitSet entry is not empty. True is set is not empty, False
+        otherwise"""
+        return ~self.is_empty(where, first=first)
+
+    def is_empty(self, where, first=False) -> Union[pd.Series, bool]:
+        """Returns Series of bool indicating whether the BitSet entry is empty. True if the set is empty,
+        False otherwise"""
+        empty = self.df.loc[where, self._column] == 0
+        if first:
+            return empty.iloc[0]
+        return empty
+
     def clear(self, where) -> None:
         """Clears all the bits for the specified rows"""
         self.df.loc[where, self._column] = 0
