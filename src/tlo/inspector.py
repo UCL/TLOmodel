@@ -9,8 +9,14 @@ from os import walk
 import tlo
 from tlo import Module
 
-MODULE_DIR = "./src/tlo/methods"
+from pathlib import Path
+
+
+# Ideally make these defaults but have command-line options.
+root_dir = Path(__file__).resolve().parents[2]
+MODULE_DIR = f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
 LEADER = "tlo.methods"
+RST_DIR = f"{root_dir}/docs/reference"
 
 # Use this so we can dynamically import, and not need to hard-code it.
 exec("from tlo.methods import mockitis")
@@ -23,7 +29,7 @@ def generate_module_list(dir_string):
 
     :param dir_string: string containing path to directory to process.
 
-    For each directory in the tree, walk yields a 3-tuple
+    For each directory in the tree, walk() yields a 3-tuple
     (dirpath, dirnames, filenames)
     Use break to prevent recursive search.
 
@@ -80,23 +86,25 @@ def get_classes_in_module(fqn, module_obj):
     print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
     # Based on answer by Andrew
-    classes.sort(key = lambda x: x[2])
+    classes.sort(key=lambda x: x[2])
     print(f"after sorting, {classes}")
     return classes
 
 
-def get_fully_qualified_name(filename):
+def get_fully_qualified_name(filename, context):
     '''
-    Given a file name (e.g. mockitis.py)
+    Given a file name and a context
     return the fully-qualified name of the module
+
     e.g. tlo.methods.mockitis
     This gets used in doc page title.
 
-    :param filename:
-    :return:
+    :param filename: name of file, e.g. "mockitis.py"
+    :param context: "location" of module, e.g. "tlo.methods"
+    :return: a string, e.g. "tlo.methods.mockitis"
     '''
     parts = filename.split(".")
-    fqname = LEADER + "." + parts[0]
+    fqname = context + "." + parts[0]
     return fqname
 
 
@@ -114,22 +122,74 @@ def extract_required_members(module, exclusions):
     pass
 
 
-def write_rst_file(filename):
-    '''We want to write one .rst file per module in ./src/tlo/methods'''
-    pass
+def write_rst_file(rst_dir, fqn, mobj):
+    '''
+    We want to write one .rst file per module in ./src/tlo/methods
+
+    :param rst_dir: directory in which to write the new .rst file
+    :param fqn: fully-qualified module name, e.g. "tlo.methods.mockitis"
+    :param mobj: the module object
+    '''
+    filename = f"{rst_dir}/{fqn}.rst"
+    with open(filename, 'w') as out:
+        title = f"{fqn} module"
+        out.write(f"{title}\n")
+        for i in range(len(title)):
+            out.write("=")
+        out.write("\n")
+
+        # This gets the classes, but not any docstring e.g. at the top
+        # of the module, outside any classes.
+        classes_in_module = get_classes_in_module(fqn, mobj)
+        for c in classes_in_module:
+            # c is [class name, class object, line number]
+            s = get_class_output_string(c)
+            out.write(f"{s}\n")
+        #out.write(".. class:: Noodle\n\n")
+        #out.write("   Noodle's docstring.\n")
+
+
+def get_class_output_string(classinfo):
+    '''Generate output string for a class to be written to an rst file
+
+    :param classinfo: a list with [class name, class object, line number]
+    :return: the string to output
+    '''
+    name, obj, _ = classinfo
+    str = f".. class:: {name}\n\n"
+
+    return str
+
+
 
 
 if __name__ == '__main__':
 
-    modules = generate_module_list(MODULE_DIR)  # List of .py files
+    # Add command-line processing here
+    context = LEADER
+    module_directory = MODULE_DIR
+    rst_directory = RST_DIR
+
+    modules = generate_module_list(module_directory)  # List of .py files
     print (modules)
     for m in modules:  # e.g. mockitis.py
         if m != "mockitis.py":
             continue
-        fqn = get_fully_qualified_name(m)  # e.g. "tlo.methods.mockitis"
+        fqn = get_fully_qualified_name(m, context)  # e.g. "tlo.methods.mockitis"
         module_obj = importlib.import_module(fqn)  # Object creation from string.
         print (f"module_obj is {module_obj}")
-        classes_in_this_module = get_classes_in_module(fqn, module_obj)
+        write_rst_file(rst_directory, fqn, module_obj)
 
 
 
+    # From Stef's sphinx_debug.py
+    #root_dir = Path(__file__).resolve().parents[2]
+    #print(f"root-dir is {root_dir}")
+
+  # inspect.getcomments(): Return in a single string any lines of
+    # comments immediately preceding the object’s source code
+    # (for a class, function, or method), or at the top of
+    # the Python source file (if the object is a module).
+    #comments = inspect.getcomments(module_obj)
+    #print(f"comments in module = {comments}")
+    # This doesn't seem to work
