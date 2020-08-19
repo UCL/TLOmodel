@@ -81,7 +81,7 @@ def test_register_duplicate_symptoms():
 
 
 def test_no_symptoms_if_no_diseases():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -93,8 +93,6 @@ def test_no_symptoms_if_no_diseases():
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath)
                  )
-
-    sim.seed_rngs(0)
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -108,7 +106,7 @@ def test_no_symptoms_if_no_diseases():
 
 
 def test_adding_quering_and_removing_symptoms():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -124,8 +122,6 @@ def test_adding_quering_and_removing_symptoms():
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
-
-    sim.seed_rngs(0)
 
     # Make the population:
     sim.make_initial_population(n=popsize)
@@ -170,7 +166,7 @@ def test_adding_quering_and_removing_symptoms():
 
 
 def test_spurious_symptoms():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -182,8 +178,6 @@ def test_spurious_symptoms():
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath)
                  )
-
-    sim.seed_rngs(0)
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -202,7 +196,7 @@ def test_spurious_symptoms():
 
 
 def test_baby_born_has_no_symptoms():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -214,8 +208,6 @@ def test_baby_born_has_no_symptoms():
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath)
                  )
-
-    sim.seed_rngs(0)
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
