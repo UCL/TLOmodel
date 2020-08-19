@@ -3,10 +3,10 @@ The is the Diagnostic Tests Manager (DxManager). It simplifies the process of co
 See https://github.com/UCL/TLOmodel/wiki/Diagnostic-Tests-(DxTest)-and-the-Diagnostic-Tests-Manager-(DxManager)
 """
 import json
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
-import numpy as np
 import pandas as pd
+from pandas.api.types import is_bool_dtype, is_categorical_dtype, is_float_dtype
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
@@ -43,6 +43,19 @@ class DxManager:
 
             # Check that the objects given are each a DxTest object
             assert all([isinstance(d, DxTest) for d in dx_test]), 'One of the passed objects is not a DxTest object.'
+
+            # Checks on each DxTest
+            df = self.hs_module.sim.population.props
+            for d in dx_test:
+                assert isinstance(d, DxTest), 'One of the passed objects is not a DxTest object'
+                assert d.property in df.columns, f'Column {d.property} does exist in population dataframe'
+                # if property is category, check target categories have been provided
+                if d.target_categories is not None:
+                    assert is_categorical_dtype(df[d.property]), f'{d.property} is not categorical'
+                    assert isinstance(d.target_categories, list), 'target_categories must be list of categories'
+                    property_categories = df[d.property].cat.categories
+                    assert all(elem in property_categories
+                               for elem in d.target_categories), 'not all target_categories are valid categories'
 
             # Check if this tuple of DxTests is a duplicate of something already registered.
             if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
@@ -149,10 +162,9 @@ class DxTest:
             :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
                                         the observation of a continuous property
             :param threshold: the observed value of a continuous property above which the result of the test is True.
-            :param target_category: the category value (as string) to correspond with a positive result if property
-            is categorical.
+            :param target_categories: if property is categorical, a list of categories corresponding
+                                      to a positive result.
     """
-
     def __init__(self,
                  property: str,
                  cons_req_as_footprint=None,
@@ -161,7 +173,7 @@ class DxTest:
                  specificity: float = None,
                  measure_error_stdev: float = None,
                  threshold: float = None,
-                 target_category: str = None
+                 target_categories: List[str] = None
                  ):
 
         # Store the property on which it acts (This is the only required parameter)
@@ -190,7 +202,7 @@ class DxTest:
         self.specificity = _default_if_none(specificity, 1.0)
         self.measure_error_stdev = _default_if_none(measure_error_stdev, 0.0)
         self.threshold = threshold
-        self.target_category = target_category
+        self.target_categories = target_categories
 
     def __hash_key(self):
         return (
@@ -241,7 +253,7 @@ class DxTest:
                 return None
 
         # Apply the test:
-        if df[self.property].dtype == np.dtype('bool'):
+        if is_bool_dtype(df[self.property]):
             if true_value:
                 # Apply the sensitivity:
                 test_value = hs_module.rng.rand() < self.sensitivity
@@ -249,7 +261,7 @@ class DxTest:
                 # Apply the specificity:
                 test_value = not (hs_module.rng.rand() < self.specificity)
 
-        elif df[self.property].dtype == np.dtype('float'):
+        elif is_float_dtype(df[self.property]):
             # Apply the normally distributed zero-mean error
             reading = true_value + hs_module.rng.normal(0.0, self.measure_error_stdev)
 
@@ -259,9 +271,9 @@ class DxTest:
             else:
                 test_value = bool(reading >= self.threshold)
 
-        elif (df[self.property].dtype == "category") and (self.target_category is not None):
-            # Categorical property: compare the value to the 'target_category' if its specified
-            is_match_to_cat = (true_value == self.target_category)
+        elif self.target_categories is not None:
+            # Categorical property: compare the value to the 'target_categories' if its specified
+            is_match_to_cat = (true_value in self.target_categories)
 
             if is_match_to_cat:
                 # Apply the sensitivity:

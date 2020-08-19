@@ -11,6 +11,7 @@ from tlo.methods.labour import (
     HSI_Labour_ReceivesCareForPostpartumPeriod,
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
+from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -84,7 +85,22 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             # It's an adult
             logger.debug('To fill in ... what to with an adult')
 
-            # ---- ASSESS FOR DEPRESSION ----
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+
+            # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
+            if 'dysphagia' in symptoms:
+                hsi_event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+                    module=self.sim.modules['OesophagealCancer'],
+                    person_id=person_id,
+                )
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                )
+
+            # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:
                 depr = self.sim.modules['Depression']
                 if (squeeze_factor == 0.0) and (self.module.rng.random() <

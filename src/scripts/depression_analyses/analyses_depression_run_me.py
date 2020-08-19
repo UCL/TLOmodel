@@ -1,7 +1,5 @@
-import datetime
-from pathlib import Path
-
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
@@ -10,41 +8,64 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    labour,
+    pregnancy_supervisor,
     symptommanager,
 )
 
-# Where will outputs go
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
-# date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+def run():
+    # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
+    # will seed the random number generators for each module when they are registered.
+    # If a seed argument is not given, one is generated. It is output in the log and can be
+    # used to reproduce results of a run
+    seed = 0
 
-# The resource files
-resourcefilepath = Path("./resources")
+    # By default, all output is recorded at the "INFO" level (and up) to standard out. You can
+    # configure the behaviour by passing options to the `log_config` argument of
+    # Simulation.
+    log_config = {
+        "filename": "depression_analyses",  # The prefix for the output file. A timestamp will be added to this.
+    }
+    # For default configuration, uncomment the next line
+    # log_config = dict()
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2014, 7, 1)
-popsize = 10000
+    # Basic arguments required for the simulation
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2014, 7, 1)
+    pop_size = 10000
 
-sim = Simulation(start_date=start_date)
-sim.seed_rngs(0)
+    # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
+    # `log_config` arguments, these will override the default behaviour.
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
-# Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(
-    resourcefilepath=resourcefilepath,
-    disable=True
-))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(depression.Depression(resourcefilepath=resourcefilepath))
+    # Path to the resource files used by the disease and intervention methods
+    resources = "./resources"
 
-# Establish the logger
-logfile = sim.configure_logging(filename="LogFile")
+    # We register all modules in a single call to the register method, calling once with multiple
+    # objects. This is preferred to registering each module in multiple calls because we will be
+    # able to handle dependencies if modules are registered together
+    # Register the appropriate modules
+
+    sim.register(
+        demography.Demography(resourcefilepath=resources),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resources),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+        healthburden.HealthBurden(resourcefilepath=resources),
+        contraception.Contraception(resourcefilepath=resources),
+        labour.Labour(resourcefilepath=resources),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        depression.Depression(resourcefilepath=resources),
+    )
+
+    sim.make_initial_population(n=pop_size)
+    sim.simulate(end_date=end_date)
+    return sim
+
 
 # Run the simulation
-sim.make_initial_population(n=popsize)
-sim.simulate(end_date=end_date)
+sim = run()
+
+output = parse_log_file(sim.log_filepath)
