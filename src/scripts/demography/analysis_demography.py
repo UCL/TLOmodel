@@ -1,6 +1,5 @@
 # %% Import Statements
 import datetime
-import logging
 import os
 from pathlib import Path
 
@@ -11,10 +10,11 @@ from matplotlib import pyplot as plt
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import contraception, demography
-from tlo.methods.demography import make_age_range_lookup
+from tlo.util import create_age_range_lookup
 
 # Where will output go - by default, wherever this script is run
-outputpath = ""
+
+outputpath = "."
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -30,32 +30,22 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2031, 1, 1)  # so last full year of simulation will be 2030
 popsize = 10000
 
+logfile = "LogFile"
+log_config = {'filename': logfile,
+              'directory': outputpath}
+
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
-
-# this block of code is to capture the output to file
-logfile = outputpath + "LogFile" + datestamp + ".log"
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
+sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 
 # run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             contraception.Contraception(resourcefilepath=resourcefilepath))
 
-sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# this will make sure that the logging file is complete
-fh.flush()
-
 # %% read the results
-output = parse_log_file(logfile)
+output = parse_log_file(sim.log_filepath)
 
 # %% Plot Population Size Over time:
 
@@ -150,7 +140,11 @@ Data = pd.read_excel(
 df = Data[(Data["year"] == 2015) | (Data["year"] == 2030)].copy()
 
 # get look-up to group ages by same groups
-(__tmp__, age_grp_lookup) = make_age_range_lookup()
+(__tmp__, age_grp_lookup) = create_age_range_lookup(
+    min_age=demography.Demography.MIN_AGE_FOR_RANGE,
+    max_age=demography.Demography.MAX_AGE_FOR_RANGE,
+    range_size=demography.Demography.AGE_RANGE_SIZE
+)
 df["agegrp"] = df["age_from"].map(age_grp_lookup)
 df = df.rename(columns={"gender": "sex", "value": "pop"})
 df["sex"] = df["sex"].map({"female": "F", "male": "M"})

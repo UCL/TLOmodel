@@ -39,8 +39,17 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2016, 1, 1)
 popsize = 20000
 
+log_config = {
+    'filename': 'LogFile',
+    'custom_levels': {
+        '*': logging.WARNING,
+        'tlo.methods.demography': logging.INFO,
+        'tlo.methods.diarrhoea': logging.INFO
+    }
+}
+
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date, seed=0)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -56,20 +65,11 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
              )
 
-logfile = sim.configure_logging(
-    filename="LogFile",
-    custom_levels={
-        '*': logging.WARNING,
-        'tlo.methods.demography': logging.INFO,
-        'tlo.methods.diarrhoea': logging.INFO
-    }
-)
-
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 # Get the output from the logfile
-output = parse_log_file(logfile)
+output = parse_log_file(sim.log_filepath)
 
 
 # %% ----------------------------  INCIDENCE RATE OF DIARRHOEA BY PATHOGEN  ----------------------------

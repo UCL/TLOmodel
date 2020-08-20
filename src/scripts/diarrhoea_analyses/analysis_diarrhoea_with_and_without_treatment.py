@@ -48,8 +48,9 @@ end_date = Date(2015, 1, 2)
 popsize = 5000
 
 for label, service_avail in scenarios.items():
+    log_config = {'filename': 'LogFile'}
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # run the simulation
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -65,12 +66,11 @@ for label, service_avail in scenarios.items():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
 
-    logfile = sim.configure_logging(filename="LogFile")
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
     # Save the full set of results:
-    output_files[label] = logfile
+    output_files[label] = sim.log_filepath
 
 
 # %% Extract the relevant outputs and make a graph:
