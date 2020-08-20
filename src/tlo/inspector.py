@@ -174,16 +174,43 @@ def get_class_output_string(classinfo):
     #print(f"classtree = {classtree}")
 
     if len(bases) > 0:
-        str += f"Bases: {bases}"
-        # TODO: Remove object class and the class itself
+        str += f"Bases: {bases}\n\n"
+        # TODO: Remove object class and the class itself, and tidy up format
         # and we will want links to be generated - is that automatic?
 
-    excluded = []
+    general_exclusions = ["__class__", "__dict__", "__init__", "__module__",
+                          "__slots__", "__weakref__",]
+    inherited_exclusions = ["initialise_population", "initialise_simulation", "on_birth",
+                            "read_parameters", "apply", "post_apply_hook",
+                            "on_hsi_alert", "report_daly_values", "run", "SYMPTOMS",]
+
     for name, obj in classdat:
-        # Pick out only classes, defined in this module:
-        #if inspect.isclass(obj) and fqn in str(obj):
+        # We only want to document things defined in this class itself,
+        # rather than anything inherited from parent classes (including
+        # the basic "object" class).
+        # e.g. we don't want:
+        # __delattr__ = <slot wrapper '__delattr__' of 'object' objects>
+        # Skip over things inherited from object class or Module class
+        object_description = f"{obj}"
+        if ("of 'object' objects" in object_description
+            or "built-in method" in object_description
+            or "function Module." in object_description
+            or "of 'Module' objects" in object_description
+            or name in general_exclusions
+            or name in inherited_exclusions):
+            continue
+
+        if name == "__doc__" and obj is not None:
+            str += f"Description:\n{obj}"
+            continue
+        #print(f"next object in class {class_name} is {name} = {obj}")
+        # We want nice tables for PARAMETERS and PROPERTIES
+        # SYMPTOMS?
+
+        str += f"{name} : {obj}\n\n"
+
         # getdoc, getcomments,
-        pass
+        #pass
     str += "\n\n\n"
 
     return str
