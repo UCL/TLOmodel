@@ -166,23 +166,18 @@ def get_class_output_string(classinfo):
 
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
-    classdat = inspect.getmembers(class_obj)  # Gets everything
 
-    bases = inspect.getmro(class_obj)  # Includes "object" class and the class_name class
-    print(f"bases for {class_name}: {bases}")
-    #classtree = inspect.getclasstree(bases)
-    #print(f"classtree = {classtree}")
-
-    if len(bases) > 0:
-        str += f"Bases: {bases}\n\n"
-        # TODO: Remove object class and the class itself, and tidy up format
-        # and we will want links to be generated - is that automatic?
+    str += extract_bases(class_name, class_obj)
+    str += "\n\n"
 
     general_exclusions = ["__class__", "__dict__", "__init__", "__module__",
                           "__slots__", "__weakref__",]
     inherited_exclusions = ["initialise_population", "initialise_simulation", "on_birth",
                             "read_parameters", "apply", "post_apply_hook",
-                            "on_hsi_alert", "report_daly_values", "run", "SYMPTOMS",]
+                            "on_hsi_alert", "report_daly_values", "run", "did_not_run",
+                            "SYMPTOMS",]
+
+    classdat = inspect.getmembers(class_obj)  # Gets everything
 
     for name, obj in classdat:
         # We only want to document things defined in this class itself,
@@ -223,6 +218,73 @@ def get_class_output_string(classinfo):
     str += "\n\n\n"
 
     return str
+
+
+def extract_bases(class_name, class_obj):
+    '''
+    Document which classes this class inherits from,
+    except for the object class or this class itself.
+    TODO: we want links to those other classes.
+    this page is http://0.0.0.0:8000/reference/tlo.methods.mockitis.html
+    here is a link `newborn_outcomes <./tlo.methods.newborn_outcomes.html>`_
+    http://0.0.0.0:8000/reference/tlo.core.html#tlo.core.Module
+    :param class_name:
+    :param class_obj:  object with information about this class
+    :return: string of base(s) for this class (if any), with links to their docs.
+    '''
+    bases = inspect.getmro(class_obj)  # Includes "object" class and the class_name class
+    # Typical example of "bases":
+    # (<class 'tlo.methods.mockitis.Mockitis'>, <class 'tlo.core.Module'>, <class 'object'>)
+    #print(f"bases for {class_name}: {bases}")
+    # classtree = inspect.getclasstree(bases)
+    # print(f"classtree = {classtree}")
+
+    parents = []
+
+    for b in bases:
+        this_base_string = get_base_string(class_name, b)
+        if this_base_string is not (None or ""):
+            parents.append(this_base_string)
+
+    if len(parents) > 0:
+        str = f"Bases: {parents[0]}"
+        for p in parents[1:]:
+            str += f", {p}"
+        #str += "\n\n"
+    else:
+        str = ""
+
+    return str
+
+
+def get_base_string (class_name, obj):
+    '''
+    For this object, representing a base class,
+    extract its name and add a hyperlink to it.
+    Unless it is the root 'object' class, or the name of the base
+
+    :param class_name: the name of the class for which obj is a base,
+    e.g. "Mockitis"
+    :param obj: the object representation of the base class,
+    e.g. <class 'tlo.core.Module'> or <class 'object'>
+    or <class 'tlo.methods.mockitis.Mockitis'>
+    :return: string with hyperlink
+    '''
+    print (f"DEBUG: before = {class_name}, {obj}")
+    fqn = (str(obj)).replace("<class '", "").replace("'>", "")
+    print(f"DEBUG: after = {class_name}, {fqn}")
+
+    # fqn will be something like "tlo.methods.mockitis.Mockitis"
+    if "." in fqn:
+        parts = fqn.split(".")
+        name = parts[-1]
+    else:
+        name = fqn
+
+    if name in [class_name, "object"]:
+        name = ""
+
+    return name
 
 
 def create_table(mydict):
