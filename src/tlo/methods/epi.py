@@ -419,12 +419,11 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = self.treatment_id
+        self.TREATMENT_ID = self.treatment_id()
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
-    @property
     def treatment_id(self):
         """subclasses should implement this method to return the TREATMENT_ID"""
         raise NotImplementedError
