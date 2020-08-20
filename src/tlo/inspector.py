@@ -197,16 +197,25 @@ def get_class_output_string(classinfo):
             or "function Module." in object_description
             or "of 'Module' objects" in object_description
             or name in general_exclusions
-            or name in inherited_exclusions):
+            or name in inherited_exclusions
+            or object_description == 'None'):
             continue
 
         if name == "__doc__" and obj is not None:
-            str += f"Description:\n{obj}"
+            str += f"**Description:**\n{obj}"
             continue
         #print(f"next object in class {class_name} is {name} = {obj}")
-        # We want nice tables for PARAMETERS and PROPERTIES
-        # SYMPTOMS?
 
+        # We want nice tables for PARAMETERS and PROPERTIES
+        if name in ("PARAMETERS", "PROPERTIES"):
+            str += f"**{name}:**\n"
+            table_list = create_table(obj)
+            for t in table_list:
+                str += f"{t}\n"
+            str += "\n\n"
+            continue
+
+        # Anything else?
         str += f"{name} : {obj}\n\n"
 
         # getdoc, getcomments,
@@ -215,6 +224,59 @@ def get_class_output_string(classinfo):
 
     return str
 
+
+def create_table(mydict):
+    '''
+    Dynamically create a table of arbitrary length
+    from PROPERTIES and PARAMETERS dictionaries.
+    `mydict` is the dictionary object.
+
+    NB Do not change the positioning of items in the
+    f-strings below, or things will break!
+
+    Lifted from conf.py
+    '''
+
+    examplestr = f'''
+.. list-table::
+   :widths: 25 25 50
+   :header-rows: 1
+
+   * - Item
+     - Type
+     - Description
+'''
+    if len(mydict) == 0:
+        row = f'''   * - NO
+     - DATA
+     - DEFINED
+'''
+        examplestr += row
+    else:
+        for key in mydict:
+            #import pdb; pdb.set_trace()
+            item = mydict[key]
+            #temp = nullstr(key)
+            #k = str(temp.sigh())
+            description = item.description
+            mytype = item.type_  # e.g. <Types.REAL: 4>
+            the_type = mytype.name  # e.g. 'REAL'
+
+            if the_type == 'CATEGORICAL':
+                description += ".  Possible values are: ["
+                mylist = item.categories
+                for mything in mylist:
+                    description += f'{mything}, '
+                description += "]"
+
+            #the_value = mytype.value  # e.g. 4
+            row = f'''   * - {key}
+     - {the_type}
+     - {description}
+'''
+            examplestr += row
+    mylist = examplestr.splitlines()
+    return mylist
 
 
 
