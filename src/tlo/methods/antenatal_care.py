@@ -84,7 +84,15 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_date_cal_runs_out': Property(
             Types.DATE,
             'Date on which this woman is no longer taking her calcium tablets'),
-
+        'ac_doses_of_iptp_received': Property(
+            Types.INT,
+            'Number of doses of intermittent preventative treatment in pregnancy received during this pregnancy'),
+        'ac_itn_provided': Property(
+            Types.BOOL,
+            'Whether this woman is provided with an insecticide treated bed net during the appropriate ANC visit'),
+        'ac_ttd_received': Property(
+            Types.INT,
+            'Number of doses of tetanus toxoid administered during this pregnancy'),
     }
 
     def read_parameters(self, data_folder):
@@ -109,6 +117,9 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_date_ds_runs_out'] = pd.NaT
         df.loc[df.is_alive, 'ac_receiving_calcium_supplements'] = False
         df.loc[df.is_alive, 'ac_date_cal_runs_out'] = pd.NaT
+        df.loc[df.is_alive, 'ac_doses_of_iptp_received'] = 0
+        df.loc[df.is_alive, 'ac_itn_provided'] = False
+        df.loc[df.is_alive, 'ac_ttd_received'] = 0
 
     def initialise_simulation(self, sim):
         sim.schedule_event(AntenatalCareLoggingEvent(self),
@@ -160,6 +171,9 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_date_ds_runs_out'] = pd.NaT
         df.at[child_id, 'ac_receiving_calcium_supplements'] = False
         df.at[child_id, 'ac_date_cal_runs_out'] = pd.NaT
+        df.at[child_id, 'ac_doses_of_iptp_received'] = 0
+        df.at[child_id, 'ac_itn_provided'] = False
+        df.at[child_id, 'ac_ttd_received'] = 0
 
         # Run a check at birth to make sure no women exceed 8 visits, which shouldn't occur through this logic
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
@@ -178,6 +192,9 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[mother_id, 'ac_date_ds_runs_out'] = pd.NaT
         df.at[mother_id, 'ac_receiving_calcium_supplements'] = False
         df.at[mother_id, 'ac_date_cal_runs_out'] = pd.NaT
+        df.at[mother_id, 'ac_doses_of_iptp_received'] = 0  # todo: check this is fine with tara
+        df.at[mother_id, 'ac_itn_provided'] = False
+        df.at[mother_id, 'ac_ttd_received'] = 0  # todo: should this be reset?
 
         # TODO : ensure we're not using the variable postnatally, if so will need to be reset later
 
@@ -319,7 +336,7 @@ class CareOfWomenDuringPregnancy(Module):
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_anc_1,
-            to_log=True)
+            to_log=False)
 
         # Both availability of consumables and likelihood of practitioner deciding to initiate treatment determines if
         # the intervention is delivered...
@@ -331,10 +348,26 @@ class CareOfWomenDuringPregnancy(Module):
             # benefits of this treatment
             df.at[person_id, 'ac_date_ifa_runs_out'] = self.sim.date + DateOffset(days=days_until_next_contact)
 
+            consumables_used_ifa = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_iron_folic_acid: days_until_next_contact}}
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_used_ifa,
+                to_log=True)
+
         if outcome_of_request_for_consumables['Item_Code'][item_code_diet_supps] and \
           self.rng.random_sample() < params['prob_start_diet_supps_acid']:
             df.at[person_id, 'ac_receiving_diet_supplements'] = True
             df.at[person_id, 'ac_date_ds_runs_out'] = self.sim.date + DateOffset(days=days_until_next_contact)
+
+            consumables_used_ds = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_diet_supps: days_until_next_contact}}
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_used_ds,
+                to_log=True)
 
     def interventions_delivered_only_at_first_contact(self, hsi_event):
         """ This function houses the additional interventions that should be delivered at a womans first ANC contact not
@@ -344,9 +377,50 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
 
-        # TODO: Discuss the following interventions with Tara...
-        # LLITN
+        # LLITN provision
+        # todo: quality probability?
+        pkg_code_obstructed_llitn= pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
+                            'Intervention_Pkg_Code'])[0]
+
+        consumables_llitn = {
+            'Intervention_Package_Code': {pkg_code_obstructed_llitn: 1},
+            'Item_Code': {}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_llitn,
+            to_log=False)
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_obstructed_llitn]:
+            df.at[person_id, 'ac_itn_provided'] = True
+
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_llitn,
+                to_log=True)
+
         # Tetanus
+        # TODO: quality probability
+        # TODO: this should be conditioned on a womans current vaccination status
+        # TODO: this should be delivered twice during pregnancy (not just at ANC 1!!!)
+
+        pkg_code1 = pd.unique(
+            consumables.loc[consumables["Intervention_Pkg"] == "Tetanus toxoid (pregnant women)",
+                            "Intervention_Pkg_Code"])[0]
+
+        consumables_needed = {
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {}}
+
+        outcome_of_request_for_consumables = self.sim.modules["HealthSystem"].request_consumables(
+            hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=False)
+
+        if outcome_of_request_for_consumables:
+            df.at[person_id, 'ac_ttd_received'] += 1
+
+            self.sim.modules["HealthSystem"].request_consumables(
+                hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=True)
 
     def calcium_supplementation(self, hsi_event):
         """This function manages the intervention calcium supplementation"""
@@ -376,12 +450,17 @@ class CareOfWomenDuringPregnancy(Module):
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_anc_2,
-            to_log=True)
+            to_log=False)
 
         if outcome_of_request_for_consumables['Item_Code'][item_code_calcium_supp] and \
             self.rng.random_sample() < params['prob_start_calcium_supp']:
             df.at[person_id, 'ac_receiving_calcium_supplements'] = True
             df.at[person_id, 'ac_date_cal_runs_out'] = self.sim.date + DateOffset(days=converted_days)
+
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_anc_2,
+                to_log=True)
 
     def hb_testing(self, hsi_event):
         person_id = hsi_event.target
@@ -399,11 +478,11 @@ class CareOfWomenDuringPregnancy(Module):
                                                                     tclose=self.sim.date + DateOffset(days=7))
 
     def albendazole_administration(self, hsi_event):
-        person_id = hsi_event.target
         params = self.parameters
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # TODO: i'm not 100% sure this is the right way just to capture the consumables
+        # TODO: should i have a quality probability here?
+
         if self.rng.random_sample() < params['prob_albendazole']:
             item_code_albendazole = pd.unique(
                 consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
@@ -415,22 +494,109 @@ class CareOfWomenDuringPregnancy(Module):
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_albendazole,
-                to_log=True)
+                to_log=False)
 
             if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole]:
                     logger.debug('albendazole given')
+                    self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=hsi_event,
+                        cons_req_as_footprint=consumables_albendazole,
+                        to_log=True)
 
     def hep_b_testing(self, hsi_event):
-        pass
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        item_code_hep_test = pd.unique(
+            consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
+        # todo: is the cost of this item 100 tests? unclear
+        # todo: replace with dx_test and add scheduling when Hep B coded
+
+        consumables_hep_b_test = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_hep_test: 1}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_hep_b_test,
+            to_log=False)
+
+        if outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]:
+            logger.debug('hepatitis B test administered given')
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_hep_b_test,
+                to_log=True)
 
     def syphilis_testing(self, hsi_event):
-        pass
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # TODO: this is just documenting consumable use
+        # TODO: There are additional consumables associate with treatment that wont be counted if we dont model the
+        #  disease
+
+        item_code_syphilis_test = pd.unique(
+            consumables.loc[consumables['Items'] == 'Test, Rapid plasma reagin (RPR)', 'Item_Code'])[0]
+        item_code_blood_tube = pd.unique(
+            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code_gloves = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+        consumables_syphilis = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_syphilis_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
+                          item_code_gloves: 1}}
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_syphilis,
+            to_log=False)
+
+        if outcome_of_request_for_consumables:
+            logger.debug('syphilis')
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_syphilis,
+                to_log=True)
 
     def hiv_testing(self, hsi_event):
         pass
 
     def iptp_administration(self, hsi_event):
-        pass
+        df = self.sim.population.props
+        person_id = hsi_event.target
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        # TODO: quality indicator with probability of treatment admistration?
+        # todo: ensure conditioning on ma_tx when malaria code is available
+
+        # if (not df.at[person_id, "ma_tx"]
+        #    and not df.at[person_id, "ma_tx"]
+        #    and df.at[person_id, "is_alive"]):
+
+        assert df.at[person_id, 'ac_doses_of_iptp_received'] < 6
+
+        pkg_code1 = pd.unique(
+            consumables.loc[consumables["Intervention_Pkg"] == "IPT (pregnant women)", "Intervention_Pkg_Code"])[0]
+
+        the_cons_footprint = {
+            "Intervention_Package_Code": {pkg_code1: 1},
+            "Item_Code": {}}
+
+        outcome_of_request_for_consumables = self.sim.modules["HealthSystem"].request_consumables(
+                hsi_event=hsi_event, cons_req_as_footprint=the_cons_footprint, to_log=False)
+
+        if outcome_of_request_for_consumables:
+            logger.debug("giving IPTp for person %d", person_id)
+
+            df.at[person_id, 'ac_doses_of_iptp_received'] += 1
+
+            self.sim.modules["HealthSystem"].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=the_cons_footprint,
+                to_log=True,
+                )
 
     def anc_interventions_contacts_2_to_8(self, hsi_event):
         """This function actions all the interventions a woman presenting to ANC1 at >20 will need administering."""
