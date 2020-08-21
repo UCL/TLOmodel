@@ -7,8 +7,8 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
-from tlo.methods import hiv
 from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
+from tlo.methods.tb import HSI_TbScreening
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -402,6 +402,17 @@ class CareOfWomenDuringPregnancy(Module):
                 cons_req_as_footprint=consumables_llitn,
                 to_log=True)
 
+        # TB screen
+        # todo: should the code for the screening process just live in this function or ok to schedule as additional
+        #  HSI?
+        # todo: not clear from guidlines the frequency of screening so currently just initiated in first vist
+
+        tb_screen = HSI_TbScreening(
+            module=self.sim.modules['tb'], person_id=person_id)
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
         # Tetanus
         # TODO: quality probability
         # TODO: this should be conditioned on a womans current vaccination status
@@ -565,15 +576,15 @@ class CareOfWomenDuringPregnancy(Module):
     def hiv_testing(self, hsi_event):
         person_id = hsi_event.target
 
+        # todo: should the code for the screening process just live in this function or ok to schedule as additional
+        #  HSI?
+
         hiv_testing = HSI_Hiv_PresentsForCareWithSymptoms(
             module=self.sim.modules['hiv'], person_id=person_id)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(hiv_testing, priority=0,
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(days=1))
-
-    def tb_screening(self, hsi_event):
-        pass
 
     def iptp_administration(self, hsi_event):
         df = self.sim.population.props

@@ -1062,8 +1062,8 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1343,8 +1343,8 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1418,8 +1418,8 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1487,8 +1487,8 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1556,8 +1556,8 @@ class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1626,8 +1626,8 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1695,8 +1695,8 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1839,8 +1839,8 @@ class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1889,8 +1889,8 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,

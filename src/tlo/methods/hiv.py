@@ -1251,8 +1251,8 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1349,8 +1349,8 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
         item_code3 = pd.unique(consumables.loc[consumables['Items'] == 'HIV EIA Elisa test', 'Item_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [{item_code1: 1}, {item_code2: 1}, {item_code3: 1}]
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code1: 1, item_code2: 1, item_code3: 1}
         }
 
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -1449,8 +1449,8 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1523,8 +1523,8 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': [{item_code1: 1}]
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {item_code1: 1}
         }
 
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -1579,8 +1579,8 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
                                               'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1700,8 +1700,8 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
                                       'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}, {pkg_code2: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1, pkg_code2: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1831,8 +1831,8 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             pd.unique(consumables.loc[consumables['Items'] == 'Adult First line 1A d4T-based', 'Item_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [{item_code1: 1}]
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code1: 1}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1860,7 +1860,7 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = 2
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1876,8 +1876,8 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
             0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1: 1}],
-            'Item_Code': []
+            'Intervention_Package_Code': {pkg_code1: 1},
+            'Item_Code': {}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
@@ -1932,8 +1932,8 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
             pd.unique(consumables.loc[consumables['Items'] == 'Adult First line 1A d4T-based', 'Item_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [{item_code1: 1}]
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code1: 1}
         }
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
