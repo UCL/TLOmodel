@@ -7,6 +7,8 @@ from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, Reg
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
+from tlo.methods import hiv
+from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -561,6 +563,16 @@ class CareOfWomenDuringPregnancy(Module):
                 to_log=True)
 
     def hiv_testing(self, hsi_event):
+        person_id = hsi_event.target
+
+        hiv_testing = HSI_Hiv_PresentsForCareWithSymptoms(
+            module=self.sim.modules['hiv'], person_id=person_id)
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(hiv_testing, priority=0,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(days=1))
+
+    def tb_screening(self, hsi_event):
         pass
 
     def iptp_administration(self, hsi_event):
