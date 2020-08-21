@@ -199,99 +199,56 @@ class Demography(Module):
                   'mother_age': df.at[mother_id, 'age_years']}
         )
 
-    def calc_py_lived_in_last_year(self):
+    def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1)):
         """
         This is a helper method to compute the person-years that were lived in the previous year by age.
         It outputs a pd.DataFrame with the index being single year of age, 0 to 99.
         """
-        # Making a working data-frame that is limited to those who have lived in the last year:
-        df_calc = self.sim.population.props.loc[
-            (self.sim.population.props['date_of_birth'] <= (self.sim.date))
-            & ~(self.sim.population.props['date_of_death'] < (self.sim.date - DateOffset(years=1))),
-            ['sex', 'date_of_birth', 'date_of_death', 'age_years', 'age_exact_years', 'is_alive']]
+        df = self.sim.population.props
 
-        # Define the time-window that is of interest (the year-long period immediately preceding)
-        df_calc['year_start'] = self.sim.date - DateOffset(years=1)
-        df_calc['year_end'] = self.sim.date
-        duration_of_window_in_days = (self.sim.date - (self.sim.date - DateOffset(years=1))).days
+        # get everyone who was alive during the previous year
+        one_year_ago = self.sim.date - delta
+        condition = df.is_alive | (df.date_of_death > one_year_ago)
+        df_py = df.loc[condition, ['sex', 'age_exact_years', 'age_years', 'date_of_birth']]
 
-        # Define each person's entry and exit to the time-window
-        df_calc['entry_to_window'] = df_calc[['date_of_birth', 'year_start']].max(axis=1)
-        df_calc['exit_from_window'] = df_calc[['date_of_death', 'year_end']].min(axis=1)
-        df_calc['days_in_window'] = (df_calc['exit_from_window'] - df_calc['entry_to_window']).dt.days
+        # renaming columns for clarity
+        df_py = df_py.rename({'age_exact_years': 'age_exact_end', 'age_years': 'age_years_end'}, axis=1)
 
-        def find_first_day_month_between_two_dates(day, month, start_date, end_date):
-            # Find the first time that birthday (specified by day and month) occurs between two dates.
-            # NB. If the date is 29th February, then for these purposes, it is interpreted as being 28th February
-            # (... as this date cannot be guaranteed to occur even if the span in the dates is a year or more.)
-            if (day == 29) and (month == 2):
-                day = 28
+        df_py['age_exact_start'] = (one_year_ago - df_py.date_of_birth) / pd.Timedelta(1, 'Y')  # exact age at the start
+        df_py['age_years_start'] = np.floor(df_py.age_exact_start).astype(np.int64)  # int age at start of the period
+        df_py['years_in_age_start'] = df_py.age_years_end - df_py.age_exact_start  # time spent in age at start
+        df_py['years_in_age_end'] = df_py.age_exact_end - df_py.age_years_end  # time spent in age at end
 
-            date_range = pd.date_range(
-                start=start_date,
-                end=end_date,
-                freq='D')
-            x = date_range[np.logical_and(
-                np.array(date_range.day == day),
-                np.array(date_range.month == month)
-            )]
-            if len(x) > 0:
-                return x[0]
+        # correction for those individuals who started the year and then died at the same age
+        condition = df_py.age_years_end == df_py.age_years_start
+        df_py.loc[condition, 'years_in_age_start'] = df_py.age_exact_end - df_py.age_exact_start
+        df_py.loc[condition, 'years_in_age_end'] = 0
 
-        # Define the time spent at each age during the window
-        df_calc[
-            'birthday_during_window'] = self.sim.date  # Putting a datetime object there to initialise in the right way
-        for i in df_calc.index:
-            df_calc.at[i, 'birthday_during_window'] = find_first_day_month_between_two_dates(
-                day=df_calc.at[i, 'date_of_birth'].day,
-                month=df_calc.at[i, 'date_of_birth'].month,
-                start_date=df_calc.at[i, 'year_start'],
-                end_date=df_calc.at[i, 'year_end']
-            )
-        # Persons less than a year-old did not have a birthday in the last year,so remove their 'birthday_during_window'
-        df_calc.loc[df_calc['age_exact_years'] < 1.0, 'birthday_during_window'] = pd.NaT
+        # zero out entries for those born in the year passed (no time spend in age at start of year)
+        condition = df_py.age_exact_start < 0
+        df_py.loc[condition, 'years_in_age_start'] = 0
+        df_py.loc[condition, 'age_years_start'] = 0
+        df_py.loc[condition, 'age_exact_start'] = 0
 
-        df_calc['days_at_younger_age_in_window'] = 0
-        df_calc.loc[df_calc['days_in_window'] > 0, 'days_at_younger_age_in_window'] = (
-            df_calc[['exit_from_window', 'birthday_during_window']].min(axis=1) - df_calc['entry_to_window']).dt.days
-        df_calc['days_at_older_age_in_window'] = df_calc['days_in_window'] - df_calc['days_at_younger_age_in_window']
-        df_calc['older_age'] = df_calc['age_years']
-        df_calc['younger_age'] = (df_calc['older_age'] - 1).clip(lower=0.0)
+        # collected all time spent in age at start of period
+        df1 = df_py[['sex', 'years_in_age_start', 'age_years_start']].groupby(by=['sex', 'age_years_start']).sum()
+        df1 = df1.unstack('sex')
+        df1.columns = df1.columns.droplevel(0)
+        df1.index.rename('age_years', inplace=True)
 
-        # Check that results are sensible:
-        assert all(df_calc['days_in_window'] <= duration_of_window_in_days)
-        assert all(df_calc['days_at_younger_age_in_window'] >= 0)
-        assert all(df_calc['days_at_older_age_in_window'] >= 0)
-        assert all((df_calc['days_at_older_age_in_window'] + df_calc['days_at_younger_age_in_window']) == df_calc[
-            'days_in_window'])
-        assert all(df_calc.index >= 0)
+        # collect all time spent in age at end of period
+        df2 = df_py[['sex', 'years_in_age_end', 'age_years_end']].groupby(by=['sex', 'age_years_end']).sum()
+        df2 = df2.unstack('sex')
+        df2.columns = df2.columns.droplevel(0)
+        df2.index.rename('age_years', inplace=True)
 
-        # Perform groupby on the person-days spent at younger_age and on older_age and sum.
+        # add the two time spents together
         py = pd.DataFrame(
             index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name='age_years'),
             columns=['M', 'F'],
             data=0.0
         )
-        py['M'] = df_calc.loc[df_calc['sex'] == 'M'].groupby(by='younger_age')[
-            'days_at_younger_age_in_window'].sum().add(
-            df_calc.loc[df_calc['sex'] == 'M'].groupby(by='older_age')['days_at_older_age_in_window'].sum(),
-            fill_value=0.0)
-        py['F'] = df_calc.loc[df_calc['sex'] == 'F'].groupby(by='younger_age')[
-            'days_at_younger_age_in_window'].sum().add(
-            df_calc.loc[df_calc['sex'] == 'F'].groupby(by='older_age')['days_at_older_age_in_window'].sum(),
-            fill_value=0.0)
-        py = py.fillna(0)
-        assert py.sum().sum() == df_calc['days_in_window'].sum()
-
-        # Convert to fractions of a year
-        py = py / duration_of_window_in_days
-
-        # trim the index so that py spent at ages [0,.., 99]
-        py = py.loc[py.index < 100]
-
-        # check that output is right shape
-        assert (py.columns == ['M', 'F']).all()
-        assert 100 == len(py.index)
+        py = py.add(df1, fill_value=0).add(df2, fill_value=0)
 
         return py
 
