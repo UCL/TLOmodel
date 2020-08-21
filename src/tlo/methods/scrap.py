@@ -1,8 +1,10 @@
 import pandas as pd
 import matplotlib
+
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import numpy as np
+
 
 # df = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/poppropsdf.csv')
 #
@@ -17,7 +19,6 @@ import numpy as np
 # broken_leg = multiple_injured.apply(lambda row: row.astype(str).str.contains('812').any(), axis=1)
 # injury_columns = multiple_injured.columns[(multiple_injured.values == '812').any(0)].tolist()
 # injury_rows = multiple_injured.apply(lambda row: row.astype(str).str.contains('812').any(), axis=1)
-
 
 
 # for col in injured.columns:

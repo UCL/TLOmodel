@@ -320,7 +320,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 )
 
         if 'RTI' in self.sim.modules:
-            df.at[person_id, 'rt_med_int'].append('HSI_GenericEmergencyFirstApptAtFacilityLevel1')
             if 'em_severe_trauma' in symptoms:
                 df = self.sim.population.props
                 consumables = self.sim.modules['HealthSystem'].parameters['Consumables']

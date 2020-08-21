@@ -860,12 +860,14 @@ class RTI(Module):
         'rt_polytrauma': Property(Types.BOOL, 'polytrauma from RTI'),
         'rt_imm_death': Property(Types.BOOL, 'death at scene True/False'),
         'rt_diagnosed': Property(Types.BOOL, 'Person has had their injuries diagnosed'),
-        'rt_med_int': Property(Types.LIST, 'List of medical treatment received in the last month'),
+        'rt_date_to_remove_daly': Property(Types.LIST, 'List of dates to remove the daly weight associated with each '
+                                                       'injury'),
         'rt_post_med_death': Property(Types.BOOL, 'death in following month despite medical intervention True/False'),
         'rt_no_med_death': Property(Types.BOOL, 'death in following month without medical intervention True/False'),
         'rt_recovery_no_med': Property(Types.BOOL, 'recovery without medical intervention True/False'),
         'rt_disability': Property(Types.REAL, 'disability weight for current month'),
-        'rt_date_inj': Property(Types.DATE, 'date of latest injury')
+        'rt_date_inj': Property(Types.DATE, 'date of latest injury'),
+        'rt_med_int': Property(Types.BOOL, 'whether this person is currently undergoing medical treatment')
     }
 
     # generic symptom for severely traumatic injuries, mild injuries accounted for in generic symptoms under 'injury'
@@ -1235,14 +1237,14 @@ class RTI(Module):
         df.loc[df.is_alive, 'rt_perm_disability'] = False
         df.loc[df.is_alive, 'rt_imm_death'] = False  # default: no one is dead on scene of crash
         df.loc[df.is_alive, 'rt_diagnosed'] = False
-        # df.loc[df.is_alive, 'rt_med_int'] =
         df.loc[df.is_alive, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
         df.loc[df.is_alive, 'rt_post_med_death'] = False  # default: no death after medical intervention
         df.loc[df.is_alive, 'rt_no_med_death'] = False
         df.loc[df.is_alive, 'rt_disability'] = 0  # default: no DALY
         df.loc[df.is_alive, 'rt_date_inj'] = pd.NaT
+        df.loc[df.is_alive, 'rt_med_int'] = False
         for index, row in df.iterrows():
-            df.at[index, 'rt_med_int'] = []  # default: no one has had a medical intervention
+            df.at[index, 'rt_date_to_remove_daly'] = [pd.NaT] * 8  # no one has any injuries to remove dalys for
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to this simulation
@@ -1253,6 +1255,7 @@ class RTI(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         event = RTILoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
+        sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
         # Register this disease module with the health system
 
     def rti_do_when_injured(self, person_id, hsi_event):
@@ -1357,6 +1360,8 @@ class RTI(Module):
                    'rt_injury_7', 'rt_injury_8']
         df = df.loc[[person_id], columns]
         injury_numbers = range(1, 9)
+        injury_column = ''
+        injury_code = ''
         for code in codes:
             for injury_number in injury_numbers:
                 found = df[df[f"rt_injury_{injury_number}"].str.contains(code)]
@@ -1365,6 +1370,23 @@ class RTI(Module):
                     injury_code = code
                     break
         return injury_column, injury_code
+
+    def find_all_columns_of_treated_injuries(self, person_id, codes):
+        df = self.sim.population.props
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        df = df.loc[[person_id], columns]
+        columns_to_return = []
+        codes_to_return = []
+        injury_numbers = range(1, 9)
+        for code in codes:
+            for injury_number in injury_numbers:
+                found = df[df[f"rt_injury_{injury_number}"].str.contains(code)]
+                if len(found) > 0:
+                    columns_to_return.append(f"rt_injury_{injury_number}")
+                    codes_to_return.append(code)
+
+        return columns_to_return, codes_to_return
 
     def rti_assign_daly_weights(self, injured_index):
         rng = self.rng
@@ -1830,72 +1852,55 @@ class RTI(Module):
         DALYweightoverlimit = df.index[df['rt_disability'] > 1]
         df.loc[DALYweightoverlimit, 'rt_disability'] = 1
 
-    def rti_alter_daly_post_treatment(self, person_id, codes, hsi_event):
+    def rti_alter_daly_post_treatment(self, person_id, codes):
+
         df = self.sim.population.props
         person = df.iloc[person_id]
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
         persons_injuries = person.loc[columns]
-        treatments = person['rt_med_int']
         # ==================================== heal with time injuries =================================================
-        if 'HSI_RTI_MedicalIntervention' in treatments:
-            for code in codes:
-                if 'HSI_RTI_Minor_Surgeries' not in treatments:
-                    if code == '322' or code == '323':
-                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_neck_dislocation
-                    if code == '722':
-                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_shoulder
-                    if code == '822a':
-                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_hip
-                    if code == '822b':
-                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_knee
-                if 'HSI_RTI_Major_Surgeries' not in treatments:
-                    if code == '112':
-                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_unspecified_skull_fracture
-                    if code == '113':
-                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_basilar_skull_fracture
-                    if code == '552' or code == '553' or code == '554':
-                        df.loc[person_id, 'rt_disability'] -= self.daly_wt_abd_internal_organ_injury
-                if code == '412':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_rib_fracture
-                if code == '442':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_surgical_emphysema
-                if code == '461':
-                    df.loc[person_id, 'rt_disability'] -= self.daly_wt_chest_wall_bruises_hematoma
-            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_MedicalIntervention')
-            RTI.treated_injuries(df, person_id, codes)
-        # =============================== Codes 'treated' with stitches  ===============================================
-        if 'HSI_RTI_Suture' in treatments:
-            logger.debug("This person has had their lacerations treated")
-            df.loc[person_id, 'rt_disability'] -= self.daly_wt_facial_soft_tissue_injury
-            RTI.treated_injuries(df, person_id, codes)
-            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Suture')
-        # ============================== Codes 'treated' with fracture casts ===========================================
-        if 'HSI_RTI_Fracture_Cast' in treatments:
-            logger.debug("This person has had their fractures treated non-surgically")
-            brokenUpperXIdxA, counts = RTI.find_and_count_injuries(persons_injuries.to_frame(), ['712a'])
-            brokenUpperXIdxB, counts = RTI.find_and_count_injuries(persons_injuries.to_frame(), ['712b'])
-            brokenUpperXIdxC, counts = RTI.find_and_count_injuries(persons_injuries.to_frame(), ['712c'])
-            brokenLowerXIdx1, counts = RTI.find_and_count_injuries(persons_injuries.to_frame(), ['811'])
-            brokenLowerXIdx2, counts = RTI.find_and_count_injuries(persons_injuries.to_frame(), ['812'])
-            if len(brokenUpperXIdxA) > 0:
+        for code in codes:
+            if code == '322' or code == '323':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_neck_dislocation
+            if code == '722':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_shoulder
+            if code == '822a':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_hip
+            if code == '822b':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_dislocated_knee
+            if code == '112':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_unspecified_skull_fracture
+            if code == '113':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_basilar_skull_fracture
+            if code == '552' or code == '553' or code == '554':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_abd_internal_organ_injury
+            if code == '412':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_rib_fracture
+            if code == '442':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_surgical_emphysema
+            if code == '461':
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_chest_wall_bruises_hematoma
+            # ========================== Codes 'treated' with stitches  ==============================================
+            laceration_codes = ['1101', '2101', '3101', '4101', '5101', '6101', '7101', '8101']
+            if code in laceration_codes:
+                logger.debug("This person has had their lacerations treated")
+                df.loc[person_id, 'rt_disability'] -= self.daly_wt_facial_soft_tissue_injury
+            # ============================== Codes 'treated' with fracture casts ======================================
+            if code == '712a':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_clavicle_scapula_humerus_fracture
-            if len(brokenUpperXIdxB) > 0:
+            if code == '712b':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_hand_wrist_fracture_without_treatment
-            if len(brokenUpperXIdxC) > 0:
+            if code == '712c':
                 df.loc[person_id, 'rt_disability'] -= \
                     self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment
-            if len(brokenLowerXIdx1) > 0:
+            if code == '811':
                 df.loc[person_id, 'rt_disability'] -= \
                     self.daly_wt_foot_fracture_short_term_with_without_treatment
-            if len(brokenLowerXIdx2) > 0:
+            if code == '812':
                 df.loc[person_id, 'rt_disability'] -= \
                     self.daly_wt_patella_tibia_fibula_fracture_with_treatment
-            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Fracture_Cast')
-            RTI.treated_injuries(df, person_id, codes)
-        # ============================== Codes 'treated' with minor surgery ============================================
-        if 'HSI_RTI_Minor_Surgeries' in treatments:
-            code = codes
+            # ============================== Codes 'treated' with minor surgery =======================================
             if code == '322' or code == '323':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_neck_dislocation
             if code == '722':
@@ -1910,10 +1915,7 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_facial_soft_tissue_injury
             if code == '211' or code == '212':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_facial_fracture
-            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Minor_Surgeries')
-            RTI.treated_injuries(df, person_id, codes)
-        # ============================== Codes 'treated' with burn management ==========================================
-        if 'HSI_RTI_Burn_Management' in treatments:
+            # ============================== Codes 'treated' with burn management ======================================
             if code == '1114':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_burns_greater_than_20_percent_body_area
             if code == '2114':
@@ -1938,12 +1940,7 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] += \
                     - self.daly_wt_burns_less_than_20_percent_body_area_without_treatment + \
                     self.daly_wt_burns_less_than_20_percent_body_area_with_treatment
-            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Burn_Management')
-            RTI.treated_injuries(df, person_id, codes)
-        # ============================== Codes 'treated' with major surgery ============================================
-        if 'HSI_RTI_Major_Surgeries' in treatments:
-            code = codes
-
+            # ============================== Codes 'treated' with major surgery ========================================
             if code == '112':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_unspecified_skull_fracture
             if code == '113':
@@ -1953,7 +1950,7 @@ class RTI(Module):
                                                         self.daly_wt_hip_fracture_long_term_with_treatment
             if code == '813b':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_pelvis_fracture_short_term + \
-                                                      self.daly_wt_pelvis_fracture_long_term
+                                                          self.daly_wt_pelvis_fracture_long_term
             if code == '813c':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_femur_fracture_short_term
             if code == '133a':
@@ -1974,25 +1971,25 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_abd_internal_organ_injury
             if code == 'P673a':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                                        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P673b':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                                        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P674a':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                                        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P674b':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                                        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P675a':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                                        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P675b':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_spinal_cord_lesion_below_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                                        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == 'P676':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_spinal_cord_lesion_neck_without_treatment + \
-                                                      self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
+                                                        self.daly_wt_spinal_cord_lesion_below_neck_with_treatment
             if code == '342' or code == '343' or code == '361' or code == '363':
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_neck_internal_bleeding
             if code == '414':
@@ -2009,23 +2006,67 @@ class RTI(Module):
                 df.loc[person_id, 'rt_disability'] -= self.daly_wt_hemothorax
             if code == 'P782b':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_unilateral_arm_amputation_without_treatment + \
-                                                      self.daly_wt_unilateral_arm_amputation_with_treatment
+                                                        self.daly_wt_unilateral_arm_amputation_with_treatment
             if code == 'P783':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_bilateral_arm_amputation_without_treatment + \
-                                                      self.daly_wt_bilateral_arm_amputation_with_treatment
+                                                        self.daly_wt_bilateral_arm_amputation_with_treatment
             if code == 'P883':
-                df.loc[person_id, 'rt_disability'] += - self.daly_wt_unilateral_lower_limb_amputation_without_treatment\
-                                                      + self.daly_wt_unilateral_lower_limb_amputation_with_treatment
+                df.loc[person_id, 'rt_disability'] += - self.daly_wt_unilateral_lower_limb_amputation_without_treatment \
+                                                        + self.daly_wt_unilateral_lower_limb_amputation_with_treatment
             if code == 'P884':
                 df.loc[person_id, 'rt_disability'] += - self.daly_wt_bilateral_lower_limb_amputation_without_treatment \
-                                                      + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
-            df.loc[person_id, 'rt_med_int'].remove('HSI_RTI_Major_Surgeries')
-            RTI.treated_injuries(df, person_id, codes)
-        if 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in df.loc[person_id, 'rt_med_int']:
-            df.loc[person_id, 'rt_med_int'].remove('HSI_GenericEmergencyFirstApptAtFacilityLevel1')
-        assert len(df.loc[person_id, 'rt_med_int']) == 0
+                                                        + self.daly_wt_bilateral_lower_limb_amputation_with_treatment
+            RTI.treated_injuries(df, person_id, code)
+
         DALYweightoverlimit = df.index[df['rt_disability'] < 0]
         df.loc[DALYweightoverlimit, 'rt_disability'] = 0
+
+    def determine_LOS(self, df, person_id):
+        p = self.parameters
+        mean_los_ISS_less_than_4 = p['mean_los_ISS_less_than_4']
+        sd_los_ISS_less_than_4 = p['sd_los_ISS_less_than_4']
+        mean_los_ISS_4_to_8 = p['mean_los_ISS_4_to_8']
+        sd_los_ISS_4_to_8 = p['sd_los_ISS_4_to_8']
+        mean_los_ISS_9_to_15 = p['mean_los_ISS_9_to_15']
+        sd_los_ISS_9_to_15 = p['sd_los_ISS_9_to_15']
+        mean_los_ISS_16_to_24 = p['mean_los_ISS_16_to_24']
+        sd_los_ISS_16_to_24 = p['sd_los_ISS_16_to_24']
+        mean_los_ISS_more_than_25 = p['mean_los_ISS_more_than_25']
+        sd_los_ISS_more_that_25 = p['sd_los_ISS_more_that_25']
+
+        inpatient_days_ISS_less_than_4 = int(self.rng.normal(mean_los_ISS_less_than_4,
+                                                             sd_los_ISS_less_than_4, 1))
+        if inpatient_days_ISS_less_than_4 < 0:
+            inpatient_days_ISS_less_than_4 = 0
+
+        inpatient_days_ISS_4_to_8 = int(self.rng.normal(mean_los_ISS_4_to_8,
+                                                        sd_los_ISS_4_to_8, 1))
+        if inpatient_days_ISS_4_to_8 < 0:
+            inpatient_days_ISS_4_to_8 = 0
+        inpatient_days_ISS_9_to_15 = int(self.rng.normal(mean_los_ISS_9_to_15,
+                                                         sd_los_ISS_9_to_15, 1))
+        if inpatient_days_ISS_9_to_15 < 0:
+            inpatient_days_ISS_9_to_15 = 0
+        inpatient_days_ISS_16_to_24 = int(self.rng.normal(mean_los_ISS_16_to_24,
+                                                          sd_los_ISS_16_to_24, 1))
+        if inpatient_days_ISS_16_to_24 < 0:
+            inpatient_days_ISS_16_to_24 = 0
+        inpatient_days_ISS_more_than_25 = int(self.rng.normal(mean_los_ISS_more_than_25,
+                                                              sd_los_ISS_more_that_25, 1))
+        if inpatient_days_ISS_more_than_25 < 0:
+            inpatient_days_ISS_more_than_25 = 0
+
+        if df.iloc[person_id]['rt_ISS_score'] < 4:
+            self.days_until_treatment_end = inpatient_days_ISS_less_than_4
+        if 4 <= df.iloc[person_id]['rt_ISS_score'] < 9:
+            self.days_until_treatment_end = inpatient_days_ISS_4_to_8
+        if 9 <= df.iloc[person_id]['rt_ISS_score'] < 16:
+            self.days_until_treatment_end = inpatient_days_ISS_9_to_15
+        if 16 <= df.iloc[person_id]['rt_ISS_score'] < 25:
+            self.days_until_treatment_end = inpatient_days_ISS_16_to_24
+        if 25 <= df.iloc[person_id]['rt_ISS_score']:
+            self.days_until_treatment_end = inpatient_days_ISS_more_than_25
+        return self.days_until_treatment_end
 
     @staticmethod
     def find_and_count_injuries(dataframe, tloinjcodes):
@@ -2070,7 +2111,8 @@ class RTI(Module):
         df.at[child_id, 'rt_ISS_score'] = 0
         df.at[child_id, 'rt_imm_death'] = False
         df.at[child_id, 'rt_perm_disability'] = False
-        df.at[child_id, 'rt_med_int'] = []  # default: no one has a had medical intervention
+        df.at[child_id, 'rt_med_int'] = False  # default: no one has a had medical intervention
+        df.at[child_id, 'rt_date_to_remove_daly'] = [pd.NaT] * 8
         df.at[child_id, 'rt_diagnosed'] = False
         df.at[child_id, 'rt_recovery_no_med'] = False  # default: no recovery without medical intervention
         df.at[child_id, 'rt_post_med_death'] = False  # default: no death after medical intervention
@@ -2232,7 +2274,8 @@ class RTI(Module):
                                 if severity <= self.head_prob_TBI_AIS3:
                                     # Mild TBI
                                     injais.append(3)
-                                elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + self.head_prob_TBI_AIS4:
+                                elif self.head_prob_TBI_AIS3 < severity <= self.head_prob_TBI_AIS3 + \
+                                    self.head_prob_TBI_AIS4:
                                     # Moderate TBI
                                     injais.append(4)
                                 elif self.head_prob_TBI_AIS3 + self.head_prob_TBI_AIS4 < severity:
@@ -2850,7 +2893,8 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, "rt_post_med_death"] = False
         df.loc[diedfromrtiidx, "rt_no_med_death"] = False
         df.loc[diedfromrtiidx, "rt_disability"] = 0
-        df.loc[diedfromrtiidx, "rt_med_int"] = []
+        df.loc[diedfromrtiidx, "rt_med_int"] = False
+        df.loc[diedfromrtiidx, "rt_date_to_remove_daly"] = []
         df.loc[diedfromrtiidx, "rt_diagnosed"] = False
         df.loc[diedfromrtiidx, "rt_polytrauma"] = False
         df.loc[diedfromrtiidx, "rt_injseverity"] = "none"
@@ -2863,7 +2907,6 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diedfromrtiidx, "rt_injury_6"] = "none"
         df.loc[diedfromrtiidx, "rt_injury_7"] = "none"
         df.loc[diedfromrtiidx, "rt_injury_8"] = "none"
-        df.loc[diedfromrtiidx, "rt_date_inj"] = pd.NaT
         # reset whether they have been selected for an injury this month
         df['rt_road_traffic_inc'] = False
         # reset whether they have sought care this month
@@ -2871,8 +2914,7 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         df['rt_diagnosed'] = False
         df.loc[df.is_alive, 'rt_post_med_death'] = False
         df.loc[df.is_alive, 'rt_no_med_death'] = False
-        for index, row in df.iterrows():
-            df.at[index, 'rt_med_int'] = []  # default: no one has had a medical intervention
+
 
         # --------------------------------- UPDATING OF RTI OVER TIME -------------------------------------------------
         rt_current_non_ind = df.index[df.is_alive & ~df.rt_road_traffic_inc & ~df.rt_imm_death]
@@ -3000,6 +3042,35 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
                     tclose=self.sim.date + DateOffset(days=5))
 
 
+class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
+    """
+    A regular event which checks the recovery date determined by each injury in columns rt_injury_1 through
+    rt_injury_8, which is being stored in rt_date_to_remove_daly, a list property with 8 entries. This event
+    checks the dates stored in rt_date_to_remove_daly property, when the date matches one of the entries,
+    the daly weight is removed and the injury is fully healed.
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(days=1))
+        assert isinstance(module, RTI)
+
+    def apply(self, population):
+        road_traffic_injuries = self.module
+        df = population.props
+        now = self.sim.date
+        treated_persons = df.loc[df.is_alive & df.rt_med_int]
+        recovery_dates = treated_persons['rt_date_to_remove_daly']
+        default_recovery = [pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT, pd.NaT]
+        for person in recovery_dates.index:
+            for date in treated_persons.loc[person, 'rt_date_to_remove_daly']:
+                if date == now:
+                    dateindex = treated_persons.loc[person, 'rt_date_to_remove_daly'].index(date)
+                    code_to_remove = [df.loc[person, f'rt_injury_{dateindex + 1}']]
+                    df.loc[person, 'rt_date_to_remove_daly'][dateindex] = pd.NaT
+                    road_traffic_injuries.rti_alter_daly_post_treatment(person, code_to_remove)
+                    if df.loc[person, 'rt_date_to_remove_daly'] == default_recovery:
+                        df.loc[person, 'rt_med_int'] = False
+
 # ---------------------------------------------------------------------------------------------------------
 #   RTI SPECIFIC HEALTH SYSTEM INTERACTION EVENTS
 #
@@ -3077,7 +3148,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
         # ------------------------------- Skull fractures -------------------------------------------------------------
-        codes = ['112', '113']
+        codes = ['112']
         idx, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
         require_surgery = self.module.rng.random_sample(size=1)
         # Find probability that skull fractures will require surgery
@@ -3088,6 +3159,10 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             else:
                 actual_injury = np.intersect1d(codes, person_injuries.values)
                 self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
+        codes = ['113']
+        idx, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
+        if len(idx) > 0:
+            self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, '113')
         # -------------------------------- Facial fractures -----------------------------------------------------------
         codes = ['211', '212']
         idx, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
@@ -3174,7 +3249,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             actual_injury = np.intersect1d(codes, person_injuries.values)
             self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
         # ------------------------------------- Amputations ------------------------------------------------------------
-        # Define the facilities at which this event can occur (only one is allowed)
         codes = ['782', '782a', '782b', '782c', '783', '882', '883', '884']
         idx, counts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
         if len(idx) > 0:
@@ -3198,68 +3272,37 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
-        # ================ Determine how long the person will be in hospital based on their ISS score ==================
-        # Find me
-        inpatient_days_ISS_less_than_4 = int(self.module.rng.normal(self.mean_los_ISS_less_than_4,
-                                                                    self.sd_los_ISS_less_than_4, 1))
-        if inpatient_days_ISS_less_than_4 < 0:
-            inpatient_days_ISS_less_than_4 = 0
-        inpatient_days_ISS_4_to_8 = int(self.module.rng.normal(self.mean_los_ISS_4_to_8,
-                                                               self.sd_los_ISS_4_to_8, 1))
-        if inpatient_days_ISS_4_to_8 < 0:
-            inpatient_days_ISS_4_to_8 = 0
-        inpatient_days_ISS_9_to_15 = int(self.module.rng.normal(self.mean_los_ISS_9_to_15,
-                                                                self.sd_los_ISS_9_to_15, 1))
-        if inpatient_days_ISS_9_to_15 < 0:
-            inpatient_days_ISS_9_to_15 = 0
-        inpatient_days_ISS_16_to_24 = int(self.module.rng.normal(self.mean_los_ISS_16_to_24,
-                                                                 self.sd_los_ISS_16_to_24, 1))
-        if inpatient_days_ISS_16_to_24 < 0:
-            inpatient_days_ISS_16_to_24 = 0
-        inpatient_days_ISS_more_than_25 = int(self.module.rng.normal(self.mean_los_ISS_more_than_25,
-                                                                     self.sd_los_ISS_more_that_25, 1))
-        if inpatient_days_ISS_more_than_25 < 0:
-            inpatient_days_ISS_more_than_25 = 0
 
-        if df.iloc[person_id]['rt_ISS_score'] < 4:
-            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days_ISS_less_than_4})
-            self.days_until_treatment_end = inpatient_days_ISS_less_than_4
-        if 4 <= df.iloc[person_id]['rt_ISS_score'] < 9:
-            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days_ISS_4_to_8})
-            self.days_until_treatment_end = inpatient_days_ISS_4_to_8
-        if 9 <= df.iloc[person_id]['rt_ISS_score'] < 16:
-            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days_ISS_9_to_15})
-            self.days_until_treatment_end = inpatient_days_ISS_9_to_15
-        if 16 <= df.iloc[person_id]['rt_ISS_score'] < 25:
-            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days_ISS_16_to_24})
-            self.days_until_treatment_end = inpatient_days_ISS_16_to_24
-        if 25 <= df.iloc[person_id]['rt_ISS_score']:
-            self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': inpatient_days_ISS_more_than_25})
-            self.days_until_treatment_end = inpatient_days_ISS_more_than_25
+        # ================ Determine how long the person will be in hospital based on their ISS score ==================
+        self.inpatient_days = road_traffic_injuries.determine_LOS(df, person_id)
+        self.EXPECTED_APPT_FOOTPRINT.update({'InpatientDays': self.inpatient_days})
 
     def apply(self, person_id, squeeze_factor):
         road_traffic_injuries = self.sim.modules['RTI']
         df = self.sim.population.props
-        # Make sure they have come here from A&E
-        assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in df.loc[person_id, 'rt_med_int']
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
-        df.at[person_id, 'rt_med_int'].append('HSI_RTI_MedicalIntervention')
+        df.at[person_id, 'rt_med_int'] = True
         # =============================== Make 'healed with time' injuries disappear ===================================
-        if len(self.heal_with_time_injuries) > 0:
-            dislocations = ['322', '323', '722', '822', '822a', '822b']
-            dislocations_injury = np.intersect1d(dislocations, person_injuries.values)
-            fractures = ['112', '113']
-            fractures_injury = np.intersect1d(fractures, person_injuries.values)
-            abdominal = ['552', '553', '554']
-            abdominal_injury = np.intersect1d(abdominal, person_injuries.values)
-            if len(dislocations_injury) > 0:
-                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, dislocations_injury, hsi_event=self)
-            if len(fractures_injury) > 0:
-                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, fractures_injury, hsi_event=self)
-            if len(abdominal_injury) > 0:
-                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, abdominal_injury, hsi_event=self)
+        # if len(self.heal_with_time_injuries) > 0:
+            # dislocations = ['322', '323', '722', '822', '822a', '822b']
+            # dislocations_injury = np.intersect1d(dislocations, person_injuries.values)
+            # fractures = ['112', '113']
+            # fractures_injury = np.intersect1d(fractures, person_injuries.values)
+            # abdominal = ['552', '553', '554']
+            # abdominal_injury = np.intersect1d(abdominal, person_injuries.values)
+            # non_empty_injuries = person_injuries[person_injuries != "none"]
+            # injury_columns = non_empty_injuries.columns
+            # columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, dislocations,
+            #                                                                               hsi_event=self)[0])
+            # df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(days=7)
+            # if len(dislocations_injury) > 0:
+                # road_traffic_injuries.rti_alter_daly_post_treatment(person_id, dislocations_injury, hsi_event=self)
+            # if len(fractures_injury) > 0:
+                # road_traffic_injuries.rti_alter_daly_post_treatment(person_id, fractures_injury, hsi_event=self)
+            # if len(abdominal_injury) > 0:
+                # road_traffic_injuries.rti_alter_daly_post_treatment(person_id, abdominal_injury, hsi_event=self)
 
         # ======================================= Schedule surgeries ==================================================
         if self.major_surgery_counts > 0:
@@ -3312,9 +3355,9 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             road_traffic_injuries.rti_ask_for_tetanus(person_id=person_id, hsi_event=self)
         # ============================== Ask if they die even with treatment ===========================================
         self.sim.schedule_event(RTI_Medical_Intervention_Death_Event(self.module, person_id), self.sim.date +
-                                DateOffset(days=self.days_until_treatment_end))
+                                DateOffset(days=self.inpatient_days))
         logger.debug('This is RTIMedicalInterventionEvent scheduling a potential death on date %s (end of treatment)'
-                     ' for person %d', self.sim.date + DateOffset(days=self.days_until_treatment_end), person_id)
+                     ' for person %d', self.sim.date + DateOffset(days=self.inpatient_days), person_id)
 
     def did_not_run(self):
         person_id = self.target
@@ -3342,6 +3385,13 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
 class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     """
     This HSI event handles fracture casts
+
+    The codes dealt with in this HSI event are:
+    '712a' - broken clavicle, scapula, humerus todo: review whether these are even cast, or just treated with sling
+    '712b' - broken hand/wrist todo: review whether these are treated with the strappy thing or are cast
+    '712c' - broken radius/ulna
+    '811' - Fractured food todo: review whether these are even cast, or just treated with the big boot thing
+    '812' - broken tibia/fibula
     """
 
     def __init__(self, module, person_id):
@@ -3362,7 +3412,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
-        codes = ['712', '712a', '712b', '712c', '811', '812']
+        codes = ['712a', '712b', '712c', '811', '812']
         idx, fracturecounts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         assert fracturecounts > 0
@@ -3379,13 +3429,22 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                 to_log=False)
             if is_cons_available:
                 logger.debug(f"Fracture casts available for person %d's {fracturecounts} fractures", person_id)
-                df.at[person_id, 'rt_med_int'].append('HSI_RTI_Fracture_Cast')
+                df.at[person_id, 'rt_med_int'] = True
+                columns, codes = road_traffic_injuries.find_all_columns_of_treated_injuries(person_id, codes)
+                for col in columns:
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
+                                                                                    DateOffset(weeks=7)
+
 
                 # Fractured arms/wrists take around 6-8 weeks to heal
                 non_empty_injuries = person_injuries[person_injuries != "none"]
+                injury_columns = non_empty_injuries.columns
+                # columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, codes,
+                #                                                                               hsi_event=self)[0])
+                # df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(days=7)
                 non_empty_injuries = non_empty_injuries.dropna(axis=1)
                 relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
-                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
+                # road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
 
             else:
                 logger.debug(f"Person %d's has {fracturecounts} fractures without treatment", person_id)
@@ -3401,6 +3460,15 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
 class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
     """
     This HSI event handles stitches for lacerations
+
+    The codes dealt with are:
+    '1101' - Laceration to the head
+    '2101' - Laceration to the face
+    '3101' - Laceration to the neck
+    '4101' - Laceration to the thorax
+    '5101' - Laceration to the abdomen
+    '7101' - Laceration to the upper extremity
+    '8101' - Laceration to the lower extremity
     """
 
     def __init__(self, module, person_id):
@@ -3451,20 +3519,23 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
                 logger.debug(f'This facility treated their {lacerationcounts} open wounds')
                 if cond[item_code_cetrimide_chlorhexidine]:
                     logger.debug('This laceration was cleaned before stitching')
-                    df.at[person_id, 'rt_med_int'].append('HSI_RTI_Suture')
-                    non_empty_injuries = person_injuries[person_injuries != "none"]
-                    non_empty_injuries = non_empty_injuries.dropna(axis=1)
-                    relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
-                    road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
-
+                    df.at[person_id, 'rt_med_int'] = True
+                    columns, codes = road_traffic_injuries.find_all_columns_of_treated_injuries(person_id, codes)
+                    for col in columns:
+                        # heal time for lacerations is roughly two weeks according to:
+                        # https://www.facs.org/~/media/files/education/patient%20ed/wound_lacerations.ashx#:~:text=of%20
+                        # wound%20and%20your%20general,have%20a%20weakened%20immune%20system.
+                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1])-1] = self.sim.date + \
+                                                                                      DateOffset(days=14)
+                    # todo: make this new function work for all other medical intervention events
                 else:
                     logger.debug("This laceration wasn't cleaned before stitching, person %d is at risk of infection",
                                  person_id)
-                    df.at[person_id, 'rt_med_int'].append('HSI_RTI_Suture')
-                    non_empty_injuries = person_injuries[person_injuries != "none"]
-                    non_empty_injuries = non_empty_injuries.dropna(axis=1)
-                    relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
-                    road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
+                    df.at[person_id, 'rt_med_int'] = True
+                    columns, codes = road_traffic_injuries.find_all_columns_of_treated_injuries(person_id, codes)
+                    for col in columns:
+                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
+                                                                                        DateOffset(days=14)
 
             else:
                 logger.debug('This facility has no treatment for open wounds available.')
@@ -3481,7 +3552,16 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
     """
-    This HSI event handles stitches for lacerations
+    This HSI event handles all burn treatments for all areas of the body.
+
+    The codes dealt with in this HSI event are:
+    '1114' - Burns to the head
+    '2114' - Burns to the face
+    '3113' - Burns to the neck
+    '4113' - Burns to the thorax
+    '5113' - Burns to the abdomen
+    '7113' - Burns to the upper extremities
+    '8113' - Burns to the lower extremities
     """
 
     def __init__(self, module, person_id):
@@ -3507,6 +3587,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
         person_injuries = df.loc[[person_id], cols]
         codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113']
         idx, burncounts = road_traffic_injuries.find_and_count_injuries(person_injuries, codes)
+
         assert burncounts > 0
         if len(idx) > 0:
             possible_large_TBSA_burn_codes = ['7113', '8113', '4113', '5113']
@@ -3548,11 +3629,15 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
                 logger.debug('This facility has burn treatment available which has been used for person %d.',
                              person_id)
                 logger.debug(f'This facility treated their {burncounts} burns')
-                df.at[person_id, 'rt_med_int'].append('HSI_RTI_Burn_Management')
-                non_empty_injuries = person_injuries[person_injuries != "none"]
-                non_empty_injuries = non_empty_injuries.dropna(axis=1)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
-                road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
+                df.at[person_id, 'rt_med_int'] = True
+                # non_empty_injuries = person_injuries[person_injuries != "none"]
+                # injury_columns = non_empty_injuries.columns
+                # columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id, codes,
+                #                                                                               hsi_event=self)[0])
+                # df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(days=7)
+                # non_empty_injuries = non_empty_injuries.dropna(axis=1)
+                # relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
+                # road_traffic_injuries.rti_alter_daly_post_treatment(person_id, relevant_codes, hsi_event=self)
             else:
                 logger.debug('This facility has no treatment for burns available.')
 
@@ -3665,7 +3750,8 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         # (https://bestbets.org/bets/bet.php?id=1247), severe chest trauma
         Severe_Pain_Codes = ['1114', '2114', '3113', '4113', '5113', '7113', '8113',  # burns
                              'P782', 'P782a', 'P782b', 'P782c', 'P783', 'P882', 'P883', 'P884',  # amputations
-                             'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676',  #SCI
+                             'P673', 'P673a', 'P673b', 'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676',
+                             # SCI
                              '552', '553', '554',  # abdominal trauma
                              '463', '453', '453a', '453b', '441', '443'  # severe chest trauma
                              ]
@@ -3842,7 +3928,68 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
 class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event.
         An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through
-        A and E and requires multiple surgeries
+        A and E and requires major surgery.
+
+        Major surgeries are defined here as surgeries that include extensive work such as entering a body cavity,
+        removing an organ or altering the body’s anatomy
+
+        The injuries treated in this module are as follows:
+
+        FRACTURES:
+        '112' - Depressed skull fracture
+        '813a' - Fractured hip
+        '813b' - Fractured pelvis
+        '813c' - Fractured femur
+        '414' - Flail chest
+
+        SOFT TISSUE INJURIES:
+        '342' - Soft tissue injury of the neck
+        '343' - Soft tissue injury of the neck
+        '441' - Closed pneumothorax
+        '443' - Open pneumothorax
+
+        INTERNAL BLEEDING:
+        '361' - Internal bleeding in neck
+        '363' - Internal bleeding in neck
+        '463' - Haemothorax
+
+        TRAUMATIC BRAIN INJURIES THAT REQUIRE A CRANIOTOMOY
+
+        '133a' - Subarachnoid hematoma
+        '133b' - Brain contusion
+        '133c' - Intraventricular haemorrhage
+        '133d' - Subgaleal hematoma
+        '134a' - Epidural hematoma
+        '134b' - Subdural hematoma
+        '135' - diffuse axonal injury
+
+        INTERNAL ORGAN INJURIES
+
+        '453a' - Diaphragm rupture
+        '453b' - Lung contusion
+        '552' - Injury to Intestine, stomach and colon
+        '553' - Injury to Spleen, Urinary bladder, Liver, Urethra, Diaphragm
+        '554' - Injury to kidney
+
+
+        SPINAL CORD LESIONS, REQUIRING LAMINOTOMY/FORAMINOTOMY/INTERSPINOUS PROCESS SPACER
+
+        '673a' - Spinal cord lesion at neck level
+        '673b' - Spinal cord lesion below neck level
+        '674a' - Spinal cord lesion at neck level
+        '674b' - Spinal cord lesion below neck level
+        '675a' - Spinal cord lesion at neck level
+        '675b' - Spinal cord lesion below neck level
+        '676' - Spinal cord lesion at neck level
+
+        AMPUTATIONS
+        '782a' - Amputated finger
+        '782b' - Unilateral arm amputation
+        '782c' - Amputated thumb
+        '783' - Bilateral arm amputation
+        '882' - Amputated toe
+        '883' - Unilateral lower limb amputation
+        '884' - Bilateral lower limb amputation
         """
 
     def __init__(self, module, person_id):
@@ -3861,16 +4008,16 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.prob_perm_disability_with_treatment_sci = p['prob_perm_disability_with_treatment_sci']
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         rng = self.module.rng
         road_traffic_injuries = self.sim.modules['RTI']
-        person = df.loc[person_id]
-
-        person['rt_med_int'].append('HSI_RTI_Major_Surgeries')
+        df.loc[person_id, 'rt_med_int'] = True
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
         persons_injuries = df.loc[[person_id], columns]
+
         # ------------------------ Track permanent disabilities with treatment ----------------------------------------
         # --------------------------------- Perm disability from TBI --------------------------------------------------
         codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
@@ -3903,30 +4050,35 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         idx, ampcount = road_traffic_injuries.find_and_count_injuries(persons_injuries, codes)
         if len(idx) > 0:
             df.at[person_id, 'rt_perm_disability'] = True
-
             column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=codes,
                                                                         hsi_event=self)
             logger.debug('@@@@@@@@@@ Person %d had intervention for an amputation on %s but still disabled!!!!!!',
                          person_id, self.sim.date)
             df.loc[person_id, column] = "P" + code
-
-        persons_injuries = df.loc[[person_id], columns]
-        non_empty_injuries = persons_injuries[persons_injuries != "none"]
-        non_empty_injuries = non_empty_injuries.dropna(axis=1)
-        surgically_treated_codes = ['112', '113', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
+        surgically_treated_codes = ['112', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
                                     '134b', '135', '552', '553', '554', '673a', '673b', '674a', '674b', '675a',
                                     '675b', '676', '342', '343', '414', '441', '443', '453a', '453b', '361', '363',
-                                    '461', '463', '782', '782a', '782b', '782c', '783', '882', '883', '884',
+                                    '463', '782', '782a', '782b', '782c', '783', '882', '883', '884',
                                     'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P673a', 'P673b',
                                     'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676', 'P782a', 'P782b',
                                     'P782c', 'P783', 'P882', 'P883', 'P884'
                                     ]
+        # todo: include recovery times here
+        persons_injuries = df.loc[[person_id], columns]
+        non_empty_injuries = persons_injuries[persons_injuries != "none"]
+        injury_columns = non_empty_injuries.columns
+        # columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+        #                                                                               surgically_treated_codes,
+        #                                                                               hsi_event=self)[0])
+        # df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(days=7)
+        # non_empty_injuries = non_empty_injuries.dropna(axis=1)
+        # road_traffic_injuries.rti_find_injury_column(person_id, surgically_treated_codes, hsi_event=self)
 
-        relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-        code = rng.choice(relevant_codes)
-        road_traffic_injuries.rti_alter_daly_post_treatment(person_id, [code], hsi_event=self)
+        # relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
+        # code = rng.choice(relevant_codes)
+        # road_traffic_injuries.rti_alter_daly_post_treatment(person_id, [code], hsi_event=self)
         logger.debug('This is RTI_Major_Surgeries supplying surgery for person %d on date %s!!!!!!, removing code %s',
-                     person_id, self.sim.date, code)
+                     person_id, self.sim.date)
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -3945,7 +4097,24 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event.
         An appointment of a person who has experienced a road traffic injury, had their injuries diagnosed through
-        A and E, treatment plan organised by RTI_MedInt and requires minor surgery
+        A and E, treatment plan organised by RTI_MedInt and requires minor surgery.
+
+        Minor surgeries are defined here as surgeries are generally superficial and do not require penetration of a
+        body cavity. They do not involve assisted breathing or anesthesia and are usually performed by a single doctor.
+
+        The injuries treated in this module are as follows:
+
+        '211' - Facial fractures
+        '212' - Facial fractures
+        '291' - Injury to the eye
+        '241' - Soft tissue injury of the face
+
+        '322' - Dislocation in the neck
+        '323' - Dislocation in the neck
+
+        '722' - Dislocated shoulder
+        '822a' - Dislocated hip
+        '822b' - Dislocated knee
         """
 
     def __init__(self, module, person_id):
@@ -3973,12 +4142,19 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         surgically_treated_codes = ['322', '211', '212', '323', '722', '822a', '822b', '1114', '2114', '3113', '4113',
                                     '5113', '7113', '8113', '291', '241']
-        relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
-        code = rng.choice(relevant_codes)
+        # todo: fix this section of code
+        # injury_columns = non_empty_injuries.columns
+        # columns = injury_columns.get_loc(road_traffic_injuries.rti_find_injury_column(person_id,
+        #                                                                               surgically_treated_codes,
+        #                                                                               hsi_event=self)[0])
+        # df.loc[person_id, 'rt_date_to_remove_daly'][columns] = self.sim.date + DateOffset(days=7)
+        # relevant_codes = np.intersect1d(non_empty_injuries.values, surgically_treated_codes)
+        # code = rng.choice(relevant_codes)
         logger.debug('This is RTI_Minor_Surgeries supplying minor surgeries for person %d on date %s!!!!!!',
                      person_id, self.sim.date)
-        df.at[person_id, 'rt_med_int'].append('HSI_RTI_Minor_Surgeries')
-        road_traffic_injuries.rti_alter_daly_post_treatment(person_id, [code], hsi_event=self)
+        df.at[person_id, 'rt_med_int'] = True
+
+        # road_traffic_injuries.rti_alter_daly_post_treatment(person_id, [code], hsi_event=self)
 
     def did_not_run(self, person_id):
         df = self.sim.population.props
@@ -4107,24 +4283,6 @@ class RTI_No_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
                 # Log the death
                 logger.debug('This is RTINoMedicalInterventionDeathEvent scheduling a death for person %d on date %s',
                              person_id, self.sim.date)
-
-
-
-class RTI_Remove_DALY_Weight(Event, IndividualScopeEventMixin):
-    """
-    This event removes the DALY weight associated with various conditions if called on
-    """
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, person_id):
-        road_traffic_injuries = self.sim.modules['RTI']
-        df = self.sim.population.props
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                   'rt_injury_7', 'rt_injury_8']
-        persons_injuries = df.loc[[person_id], columns]
-
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
