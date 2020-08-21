@@ -246,7 +246,8 @@ class CareOfWomenDuringPregnancy(Module):
 
     def interventions_delivered_at_every_contact(self, hsi_event):
         """This function houses all the interventions that should be delivered at every ANC contact regardless of
-        gestational age"""
+        gestational age including blood pressure measurement, urine dipstick, administration of iron and folic acid
+        and dietary supplementation"""
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
@@ -372,16 +373,17 @@ class CareOfWomenDuringPregnancy(Module):
                 to_log=True)
 
     def interventions_delivered_only_at_first_contact(self, hsi_event):
-        """ This function houses the additional interventions that should be delivered at a womans first ANC contact not
-        included in the above function"""
+        """ This function houses the additional interventions that should be delivered only at woman's first ANC contact
+         which are not included in the above function. This includes the distribution of insecticide treated bed nets
+         and tetanus toxoid vaccination"""
+
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
-        params = self.parameters
 
         # LLITN provision
-        # todo: quality probability?
-        pkg_code_obstructed_llitn= pd.unique(
+        # TODO: should we use a quality indicator here, or simply rely on consumables?
+        pkg_code_obstructed_llitn = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
                             'Intervention_Pkg_Code'])[0]
 
@@ -394,6 +396,8 @@ class CareOfWomenDuringPregnancy(Module):
             cons_req_as_footprint=consumables_llitn,
             to_log=False)
 
+        # If available, women are provided with a bed net at ANC1. The effect and usage of these nets is determined
+        # through the malaria module
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_obstructed_llitn]:
             df.at[person_id, 'ac_itn_provided'] = True
 
@@ -402,17 +406,17 @@ class CareOfWomenDuringPregnancy(Module):
                 cons_req_as_footprint=consumables_llitn,
                 to_log=True)
 
-        # TB screen
+        # TB screening
         # todo: should the code for the screening process just live in this function or ok to schedule as additional
         #  HSI?
-        # todo: not clear from guidlines the frequency of screening so currently just initiated in first vist
+        # todo: not clear from guidlines the frequency of screening so currently just initiated in first vist (one off)
 
         tb_screen = HSI_TbScreening(
             module=self.sim.modules['tb'], person_id=person_id)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(days=1))
         # Tetanus
         # TODO: quality probability
         # TODO: this should be conditioned on a womans current vaccination status
