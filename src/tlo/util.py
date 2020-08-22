@@ -239,17 +239,3 @@ class BitsetHandler:
     def clear(self, where) -> None:
         """Clears all the bits for the specified rows"""
         self.df.loc[where, self._column] = 0
-
-
-def choose_outcome_from_a_dict(dict_of_probs: dict, rng: np.random.RandomState) -> str:
-    """
-    This is a helper function that will chose an outcome from a dict that is organsised as {outcome : p_outcome}
-
-    :param dict_of_probs:
-    :param rng:
-    :return:
-    """
-    outcomes = np.array(list(dict_of_probs.keys()))
-    probs = np.array(list(dict_of_probs.values()))
-
-    return str(rng.choice(outcomes, p=probs))
