@@ -49,10 +49,14 @@ class CareOfWomenDuringPregnancy(Module):
             Types.REAL, 'sensitivity of blood pressure monitoring to detect hypertension'),
         'specificity_bp_monitoring': Parameter(
             Types.REAL, 'specificity of blood pressure monitoring to detect hypertension'),
-        'sensitivity_urine_protein': Parameter(
-            Types.REAL, 'sensitivity of a urine dipstick test to detect proteinuria'),
-        'specificity_urine_protein': Parameter(
-            Types.REAL, 'specificity of a urine dipstick test to detect proteinuia'),
+        'sensitivity_urine_protein_1_plus': Parameter(
+            Types.REAL, 'sensitivity of a urine dipstick test to detect proteinuria at 1+'),
+        'specificity_urine_protein_1_plus': Parameter(
+            Types.REAL, 'specificity of a urine dipstick test to detect proteinuia at 1+'),
+        'sensitivity_urine_protein_3_plus': Parameter(
+            Types.REAL, 'sensitivity of a urine dipstick test to detect proteinuria at 3+'),
+        'specificity_urine_protein_3_plus': Parameter(
+            Types.REAL, 'specificity of a urine dipstick test to detect proteinuia at 3+'),
         'sensitivity_urine_glucose': Parameter(
             Types.REAL, 'sensitivity of a urine dipstick test to detect glycosuria'),
         'specificity_urine_glucose': Parameter(
@@ -61,6 +65,10 @@ class CareOfWomenDuringPregnancy(Module):
             Types.REAL, 'sensitivity of a blood test to detect low haemoglobin'),
         'specificity_blood_test_hb': Parameter(
             Types.REAL, 'specificity of a blood test to detect low haemoglobin'),
+        'sensitivity_blood_test_glucose': Parameter(
+            Types.REAL, 'sensitivity of a blood test to detect raised blood glucose'),
+        'specificity_blood_test_glucose': Parameter(
+            Types.REAL, 'specificity of a blood test to detect raised blood glucose'),
 
     }
 
@@ -95,6 +103,9 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_ttd_received': Property(
             Types.INT,
             'Number of doses of tetanus toxoid administered during this pregnancy'),
+        'ac_gest_htn_on_treatment': Property(
+            Types.BOOL,
+            'Whether this woman has been initiated on treatment for gestational hypertention'),
     }
 
     def read_parameters(self, data_folder):
@@ -122,6 +133,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_doses_of_iptp_received'] = 0
         df.loc[df.is_alive, 'ac_itn_provided'] = False
         df.loc[df.is_alive, 'ac_ttd_received'] = 0
+        df.loc[df.is_alive, 'ac_gest_htn_on_treatment'] = False
 
     def initialise_simulation(self, sim):
         sim.schedule_event(AntenatalCareLoggingEvent(self),
@@ -140,17 +152,23 @@ class CareOfWomenDuringPregnancy(Module):
                 sensitivity=params['sensitivity_bp_monitoring'],
                 specificity=params['specificity_bp_monitoring']),
 
-            urine_dipstick_protein=DxTest(
+            urine_dipstick_protein_1_plus=DxTest(
                 property='ps_mild_pre_eclamp',
-                sensitivity=params['sensitivity_urine_protein'],
-                specificity=params['specificity_urine_protein']),
+                sensitivity=params['sensitivity_urine_protein_1_plus'],
+                specificity=params['specificity_urine_protein_1_plus']),
+
+            urine_dipstick_protein_3_plus=DxTest(
+                property='ps_severe_pre_eclamp',
+                sensitivity=params['sensitivity_urine_protein_3_plus'],
+                specificity=params['specificity_urine_protein_3_plus']),
+
             # TODO: Categorical function of dx_test doesnt allow for multiple categories to be selected from a list
             #  (here it would be both mild and severe pre-eclampsia)
 
-            urine_dipstick_sugars=DxTest(
-                property='ps_gest_diab',
-                sensitivity=params['sensitivity_urine_glucose'],
-                specificity=params['specificity_urine_glucose']),
+            #    urine_dipstick_sugars=DxTest(
+            #        property='ps_gest_diab',
+            #        sensitivity=params['sensitivity_urine_glucose'],
+            #        specificity=params['specificity_urine_glucose']),
 
             #    urine_dipstick_infection=DxTest(
             #        property='???',
@@ -161,7 +179,12 @@ class CareOfWomenDuringPregnancy(Module):
                 property='ps_anaemia_in_pregnancy',
                 sensitivity=params['sensitivity_blood_test_hb'],
                 specificity=params['specificity_blood_test_hb']),
-        )
+
+            blood_test_glucose=DxTest(
+                property='ps_gest_diab',
+                sensitivity=params['sensitivity_blood_test_glucose'],
+                specificity=params['specificity_blood_test_glucose'])
+            )
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -176,6 +199,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_doses_of_iptp_received'] = 0
         df.at[child_id, 'ac_itn_provided'] = False
         df.at[child_id, 'ac_ttd_received'] = 0
+        df.at[child_id, 'ac_gest_htn_on_treatment'] = False
 
         # Run a check at birth to make sure no women exceed 8 visits, which shouldn't occur through this logic
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
@@ -194,11 +218,12 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[mother_id, 'ac_date_ds_runs_out'] = pd.NaT
         df.at[mother_id, 'ac_receiving_calcium_supplements'] = False
         df.at[mother_id, 'ac_date_cal_runs_out'] = pd.NaT
-        df.at[mother_id, 'ac_doses_of_iptp_received'] = 0  # todo: check this is fine with tara
+        df.at[mother_id, 'ac_doses_of_iptp_received'] = 0  # TODO: check this is fine with tara
         df.at[mother_id, 'ac_itn_provided'] = False
-        df.at[mother_id, 'ac_ttd_received'] = 0  # todo: should this be reset?
+        df.at[mother_id, 'ac_ttd_received'] = 0  # TODO: not sure this variable should be reset to 0
+        df.at[mother_id, 'ac_gest_htn_on_treatment'] = False  # todo: THIS WILL BE USED POSTNATALLY
 
-        # TODO : ensure we're not using the variable postnatally, if so will need to be reset later
+        # TODO : ensure we're not using any of these variables postnatally, if so will need to be reset later
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug('This is CareOfWomenDuringPregnancy, being alerted about a health system interaction '
@@ -261,55 +286,75 @@ class CareOfWomenDuringPregnancy(Module):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
               dx_tests_to_run='blood_pressure_measurement', hsi_event=hsi_event):
 
-                # We store this as a variable and determine action after urine dipstick is carried out
-                hypertension_diagnosed = True
+                # As severe hypertension is part of the diagnostic criteria for severe pre-eclampsia, we assume all
+                # women having a BP test who have severe pre-eclampsia will be severely hypertensive
+                if df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
+                    hypertension_diagnosed = 'severe'
+                else:
+                    # Otherwise we assume here hypertension is mild. N.b. severity of gestational hypertension is not
+                    # yet modelled
+                    # We store this as a temporary variable and determine action after urine dipstick is carried out
+                    hypertension_diagnosed = 'mild'
             else:
-                # False here means either the woman is normatensive or she has hypertension which was missed
-                hypertension_diagnosed = False
+                # 'none' here means either the woman is normatensive or she has hypertension which was missed by the BP
+                # monitoring
+                hypertension_diagnosed = 'none'
         else:
-            # as above
-            hypertension_diagnosed = False
+            # Here this woman has not had a BP test and therefore any hypertension she has is undiagnosed
+            hypertension_diagnosed = 'none'
 
-        # Urine dipstick- protein...
+        # Urine dipstick for protein...
         # Next we apply a probability that the HCW will perform a urine dipstick
         if self.rng.random_sample() < params['prob_urine_dipstick']:
 
             # If so, the dx_test determines if this test will correctly identify proteinurea
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-              dx_tests_to_run='urine_dipstick_protein', hsi_event=hsi_event):
-                proteinuria_diagnosed = True
+              dx_tests_to_run='urine_dipstick_protein_1_plus', hsi_event=hsi_event):
+                proteinuria_diagnosed = 'mild'
+            elif self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+              dx_tests_to_run='urine_dipstick_protein_3_plus', hsi_event=hsi_event):
+                proteinuria_diagnosed = 'severe'
             else:
-                proteinuria_diagnosed = False
-
-            # Urine - sugar...
-            # Similarly the dx_test determines if the test identified glucosuria
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-              dx_tests_to_run='urine_dipstick_sugars', hsi_event=hsi_event):
-
-                # If the HCW detects glucose in the woman's urine, they are scheduled to undergo additional
-                # investigation/treatment in an additional HSI
-                additional_care = HSI_CareOfWomenDuringPregnancy_ManagementOfGestationalDiabetes(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=7))
+                proteinuria_diagnosed = 'none'
         else:
-            proteinuria_diagnosed = False
+            proteinuria_diagnosed = 'none'
+
+        # TODO: urine test for sugars and infection markers not currently included, awaiting clinical input
 
         # If hypertension is diagnosed a woman is referred for  additional treatment. The presumed diagnosis is passed
         # to the HSI event via the parameter 'cause' dependent on proteinuria status
-        if hypertension_diagnosed:
-            if ~proteinuria_diagnosed:
-                cause = 'gest_htn'
-            elif proteinuria_diagnosed:
-                cause = 'pre_eclamp'
-            additional_care = HSI_CareOfWomenDuringPregnancy_ManagementOfHypertensiveDisorder(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id, cause=cause)
+        if hypertension_diagnosed == 'mild' and proteinuria_diagnosed == 'none':
+            logger.debug('Mother %d has been diagnosed with gestational hypertension and has been referred on to '
+                         'additional care from ANC on date %s', person_id, self.sim.date)
+
+            additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=7))
+
+        elif hypertension_diagnosed == 'mild' and proteinuria_diagnosed == 'mild':
+            logger.debug('Mother %d has been diagnosed with mild pre-eclampsia and has been referred on to '
+                         'additional care from ANC on date %s', person_id, self.sim.date)
+
+            additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=2))
+
+        elif hypertension_diagnosed == 'severe' and proteinuria_diagnosed == 'severe':
+            logger.debug('Mother %d has been diagnosed with severe pre-eclampsia and has been referred on to '
+                         'additional care from ANC on date %s', person_id, self.sim.date)
+
+            additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=2))
 
         # Iron & folic acid / food supplementation...
         # Here we document the required consumables for drugs administered in this visit
@@ -625,6 +670,21 @@ class CareOfWomenDuringPregnancy(Module):
                 to_log=True,
                 )
 
+    def gdm_screening(self, hsi_event):
+        """This intervention screens women with risk factors for gestational diabetes and schedules the appropriate
+        testing"""
+        df = self.sim.population.props
+        person_id = hsi_event.target
+
+        # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
+        if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab']:
+            gdm_testing = HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(gdm_testing, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=3))
+
     def anc_interventions_contacts_2_to_8(self, hsi_event):
         """This function actions all the interventions a woman presenting to ANC1 at >20 will need administering."""
         self.hiv_testing(hsi_event=hsi_event)
@@ -822,9 +882,17 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 20 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif 20 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 26:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
                 self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
+
+                self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
+                                                     recommended_gestation_next_anc=gest_age_next_contact)
+
+            elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+                self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
+                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
+                self.module.gdm_screening(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
@@ -972,6 +1040,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ps_gestational_age_in_weeks'] < 30:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
+                self.module.gdm_screening(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
@@ -1304,34 +1373,10 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         logger.debug('HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact: cannot not run with this configuration')
 
 
-class HSI_CareOfWomenDuringPregnancy_ManagementOfHypertensiveDisorder(HSI_Event, IndividualScopeEventMixin):
-    """"""
-
-    def __init__(self, module, person_id, cause):
-        super().__init__(module, person_id=person_id)
-        self.cause = cause
-
-        assert isinstance(module, CareOfWomenDuringPregnancy)
-
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_ManagementOfHypertensiveDisorder'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        if self.cause == 'gest_htn':
-            pass
-        elif self.cause == 'pre_eclamp':
-            pass
-
-class HSI_CareOfWomenDuringPregnancy_ManagementOfGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
-    """"""
+class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
+    """This is HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes. This HSI is scheduled for women who screen
+    positive for being at risk of gestational diabetes in pregnancy. At risk women are tested for hyperglycaemia and
+    referred for treatment if tests are positive"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1340,6 +1385,92 @@ class HSI_CareOfWomenDuringPregnancy_ManagementOfGestationalDiabetes(HSI_Event, 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_ManagementOfGestationalDiabetes'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 0.5  # ????
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        if df.at[person_id, 'is_alive']:
+
+            # We define the required consumables for testing
+            item_code_glucose_test = pd.unique(
+                consumables.loc[consumables['Items'] == 'Blood glucose level test', 'Item_Code'])[0]
+            item_code_blood_tube = pd.unique(
+                consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+            item_code_needle = pd.unique(
+                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+            item_code_gloves = pd.unique(
+                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+            consumables_gdm_testing = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_glucose_test: 1, item_code_blood_tube: 1, item_code_needle: 1,
+                              item_code_gloves: 1}}
+
+            # Then query if these consumables are available during this HSI
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_gdm_testing,
+                to_log=False)
+
+            # If they are available, the test is conducted
+            if outcome_of_request_for_consumables:
+
+                # If the test accurately detects a woman has gestational diabetes the consumables are recorded and she
+                # is referred for treatment
+                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_glucose',
+                                                                           hsi_event=self):
+
+                    self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=self,
+                        cons_req_as_footprint=consumables_gdm_testing,
+                        to_log=True)
+
+                    gdm_treatment = HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(
+                        self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(gdm_treatment, priority=0,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(days=7))
+
+
+class HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+
+class HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(HSI_Event, IndividualScopeEventMixin):
+    """This is HSI_ManagementOfHypertensiveDisorder. It is scheduled during ANC for women who are hypertensive during
+    pregnancy. """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['ANCSubsequent'] = 1
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
@@ -1348,6 +1479,91 @@ class HSI_CareOfWomenDuringPregnancy_ManagementOfGestationalDiabetes(HSI_Event, 
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        if df.at[person_id, 'is_alive']:
+
+            # We check the availability of consumables, hydralazine for immediate stabilisation of BP followed by a
+            # course of daily methyldopa for the remainder of pregnancy
+            item_code_hydralazine = pd.unique(
+                consumables.loc[consumables['Items'] == 'Hydralazine, powder for injection, 20 mg ampoule',
+                                            'Item_Code'])[0]
+            item_code_wfi = pd.unique(
+                consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+            item_code_needle = pd.unique(
+                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+            item_code_gloves = pd.unique(
+                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+            item_code_methyldopa = pd.unique(
+                consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMST', 'Item_Code'])[0]
+
+            consumables_gest_htn_treatment = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_hydralazine: 1, item_code_wfi: 1, item_code_needle: 1,
+                              item_code_gloves: 1, item_code_methyldopa:4}}
+
+            # todo: this is one dose of methyldopa but should be enough for whole pregnancy?
+
+            # Then query if these consumables are available during this HSI
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self,
+                cons_req_as_footprint=consumables_gest_htn_treatment,
+                to_log=False)
+
+            # If they are available then the woman is started on treatment
+            if outcome_of_request_for_consumables:
+                df.at[person_id, 'ac_gest_htn_on_treatment'] = True
+
+                self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self,
+                    cons_req_as_footprint=consumables_gest_htn_treatment,
+                    to_log=True)
+
+    def did_not_run(self):
+        pass
+
+
+class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia(HSI_Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_InitialManagementOfPreEclampsia'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ANCSubsequent'] = 1
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(HSI_Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ANCSubsequent'] = 1
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+
 
 class HSI_CareOfWomenDuringPregnancy_ManagementOfAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
     """"""
