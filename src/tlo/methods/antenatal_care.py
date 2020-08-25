@@ -597,7 +597,7 @@ class CareOfWomenDuringPregnancy(Module):
             # Check consumables
             if outcome_of_request_for_consumables:
 
-                # Log if availble
+                # Log if available
                 self.sim.modules['HealthSystem'].request_consumables(
                     hsi_event=hsi_event,
                     cons_req_as_footprint=consumables_hb_test,
@@ -608,7 +608,7 @@ class CareOfWomenDuringPregnancy(Module):
                                                                            hsi_event=hsi_event):
 
                     # Schedule additional care in the instance of diagnosed anaemia
-                    additional_care = HSI_CareOfWomenDuringPregnancy_ManagementOfAnaemiaInPregnancy(
+                    additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfAnaemiaInPregnancy(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
@@ -769,7 +769,8 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
 
         # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
-        if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab']:
+        if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
+                                                                                             'ps_previous_stillbirth']:
             gdm_testing = HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
@@ -1660,7 +1661,7 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(HSI_E
 
 
 
-class HSI_CareOfWomenDuringPregnancy_ManagementOfAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
+class HSI_CareOfWomenDuringPregnancy_InitialManagementOfAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
     """"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
