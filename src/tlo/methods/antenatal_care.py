@@ -278,6 +278,41 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         params = self.parameters
 
+        # First we define the consumables that are required for these interventions to be delivered
+
+        # This section of code calculates the estimated number of days between this visit and the next, to determine the
+        # required number of doses of daily drugs administered to women during this contact
+
+        #  TODO: following 4 lines fix a bug i cant work out why its happening
+        if self.determine_gestational_age_for_next_contact(person_id) is None \
+          and df.at[person_id, 'ps_gestational_age_in_weeks'] == 39:
+            next_visit = 40
+            days_until_next_contact = int(next_visit - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+
+        else:
+            days_until_next_contact = int(self.determine_gestational_age_for_next_contact(person_id) -
+                                          df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
+
+        # Define the required items
+        item_code_urine_dipstick = pd.unique(
+            consumables.loc[consumables['Items'] == 'Test strips, urine analysis', 'Item_Code'])[0]
+        item_code_iron_folic_acid = pd.unique(
+            consumables.loc[consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+        item_code_diet_supps = pd.unique(
+            consumables.loc[consumables['Items'] == 'Dietary supplements (country-specific)', 'Item_Code'])[0]
+
+        consumables_anc1 = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_iron_folic_acid: days_until_next_contact,
+                          item_code_diet_supps: days_until_next_contact,
+                          item_code_urine_dipstick: 1}}
+
+        # Check there availability
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_anc1,
+            to_log=False)
+
         # Blood pressure measurement...
         # We apply a probability that the HCW will perform a blood pressure check during this visit
         if self.rng.random_sample() < params['prob_bp_check']:
@@ -305,24 +340,43 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Urine dipstick for protein...
         # Next we apply a probability that the HCW will perform a urine dipstick
-        if self.rng.random_sample() < params['prob_urine_dipstick']:
+        if self.rng.random_sample() < params['prob_urine_dipstick'] and \
+            outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick]:
 
-            # If so, the dx_test determines if this test will correctly identify proteinurea
+            # Severity of proteinuria as determined by the result of the dipstick (i.e. protein +, protein ++,
+            # protein +++) is part of the diagnositc criteria for pre-eclampsia
+
+            # We use 2 dx_test functions to replicate this test detecting underlying severity of pre-eclampsia
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
               dx_tests_to_run='urine_dipstick_protein_1_plus', hsi_event=hsi_event):
+
+                # This dx_test evaluates the property 'mild_pre_eclampsia', the severity of proteinuria is stored
+                # accordingly
                 proteinuria_diagnosed = 'mild'
             elif self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
               dx_tests_to_run='urine_dipstick_protein_3_plus', hsi_event=hsi_event):
+
+                # This dx_test evaluates the property 'severe_pre_eclampsia', the severity of proteinuria is stored
+                # accordingly
                 proteinuria_diagnosed = 'severe'
             else:
                 proteinuria_diagnosed = 'none'
+
+            # Store the used consumables to the log
+            consumables_used_dipstick = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_urine_dipstick: 1}}
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_used_dipstick,
+                to_log=True)
         else:
             proteinuria_diagnosed = 'none'
 
         # TODO: urine test for sugars and infection markers not currently included, awaiting clinical input
 
-        # If hypertension is diagnosed a woman is referred for  additional treatment. The presumed diagnosis is passed
-        # to the HSI event via the parameter 'cause' dependent on proteinuria status
+        # If hypertension is diagnosed a woman is referred for  additional treatment. The type of treatment is
+        # determined by the presence and severity of proteinuria
         if hypertension_diagnosed == 'mild' and proteinuria_diagnosed == 'none':
             logger.debug('Mother %d has been diagnosed with gestational hypertension and has been referred on to '
                          'additional care from ANC on date %s', person_id, self.sim.date)
@@ -357,34 +411,6 @@ class CareOfWomenDuringPregnancy(Module):
                                                                 tclose=self.sim.date + DateOffset(days=2))
 
         # Iron & folic acid / food supplementation...
-        # Here we document the required consumables for drugs administered in this visit
-        item_code_iron_folic_acid = pd.unique(
-            consumables.loc[consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
-        item_code_diet_supps = pd.unique(
-            consumables.loc[consumables['Items'] == 'Dietary supplements (country-specific)', 'Item_Code'])[0]
-
-        # todo: lines 300-301 fix a bug i cant work out why its happening
-        if self.determine_gestational_age_for_next_contact(person_id) is None and df.at[person_id,
-                                                                                        'ps_gestational_age_in_weeks'] \
-                                                                                   == 39:
-            next_visit = 40
-
-            days_until_next_contact = int(next_visit - df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
-
-        else:
-            days_until_next_contact = int(self.determine_gestational_age_for_next_contact(person_id) -
-                                          df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
-
-        # And provide women with enough medication until the next visit
-        consumables_anc_1 = {
-            'Intervention_Package_Code': {},
-            'Item_Code': {item_code_iron_folic_acid: days_until_next_contact,
-                          item_code_diet_supps: days_until_next_contact}}
-
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=hsi_event,
-            cons_req_as_footprint=consumables_anc_1,
-            to_log=False)
 
         # Both availability of consumables and likelihood of practitioner deciding to initiate treatment determines if
         # the intervention is delivered...
@@ -420,14 +446,15 @@ class CareOfWomenDuringPregnancy(Module):
     def interventions_delivered_only_at_first_contact(self, hsi_event):
         """ This function houses the additional interventions that should be delivered only at woman's first ANC contact
          which are not included in the above function. This includes the distribution of insecticide treated bed nets
-         and tetanus toxoid vaccination"""
+         and TB screening"""
 
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
 
-        # LLITN provision
+        # LLITN provision...
         # TODO: should we use a quality indicator here, or simply rely on consumables?
+        # We define the required consumables
         pkg_code_obstructed_llitn = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
                             'Intervention_Pkg_Code'])[0]
@@ -451,10 +478,9 @@ class CareOfWomenDuringPregnancy(Module):
                 cons_req_as_footprint=consumables_llitn,
                 to_log=True)
 
-        # TB screening
-        # todo: should the code for the screening process just live in this function or ok to schedule as additional
-        #  HSI?
-        # todo: not clear from guidlines the frequency of screening so currently just initiated in first vist (one off)
+        # TB screening...
+        # Currently we schedule women to the TB screening HSI in the TB module, however this may over-use resources so
+        # possible the TB screening should also just live in this code
 
         tb_screen = HSI_TbScreening(
             module=self.sim.modules['tb'], person_id=person_id)
@@ -462,11 +488,20 @@ class CareOfWomenDuringPregnancy(Module):
         self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(days=1))
-        # Tetanus
-        # TODO: quality probability
-        # TODO: this should be conditioned on a womans current vaccination status
+        # TODO: not clear from guidelines the frequency of screening so currently just initiated in first vist (one off)
+
+    def tetanus_vaccination(self, hsi_event):
+        """This function manages the administration of tetanus vaccination"""
+        person_id = hsi_event.target
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        df = self.sim.population.props
+
+        # Tetanus vaccination/booster...
+        # TODO: quality probability?
+        # TODO: this should be conditioned on a woman's current vaccination status
         # TODO: this should be delivered twice during pregnancy (not just at ANC 1!!!)
 
+        # Define required consumables
         pkg_code1 = pd.unique(
             consumables.loc[consumables["Intervention_Pkg"] == "Tetanus toxoid (pregnant women)",
                             "Intervention_Pkg_Code"])[0]
@@ -475,12 +510,16 @@ class CareOfWomenDuringPregnancy(Module):
             "Intervention_Package_Code": {pkg_code1: 1},
             "Item_Code": {}}
 
+        # Check their availability
         outcome_of_request_for_consumables = self.sim.modules["HealthSystem"].request_consumables(
             hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=False)
 
+        # And if available, deliver the vaccination. This is stored as an integer as 2 doses are required during
+        # pregnancy
         if outcome_of_request_for_consumables:
             df.at[person_id, 'ac_ttd_received'] += 1
 
+            # Save consumables to the log
             self.sim.modules["HealthSystem"].request_consumables(
                 hsi_event=hsi_event, cons_req_as_footprint=consumables_needed, to_log=True)
 
@@ -491,11 +530,13 @@ class CareOfWomenDuringPregnancy(Module):
         person_id = hsi_event.target
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # TODO: Add in assessment of high risk women?
+        # TODO: Confirm risk factors that define 'high risk of pre-eclampsia' and condition appropriately
 
+        # Define consumables
         item_code_calcium_supp = pd.unique(
             consumables.loc[consumables['Items'] == 'Calcium, tablet, 600 mg', 'Item_Code'])[0]
 
+        # And required dose
         days_until_next_contact = (self.determine_gestational_age_for_next_contact(person_id) -
                                    df.at[person_id, 'ps_gestational_age_in_weeks']) * 7
 
@@ -525,74 +566,118 @@ class CareOfWomenDuringPregnancy(Module):
                 to_log=True)
 
     def hb_testing(self, hsi_event):
+        """This function manages the intervention haemoglobin testing"""
         person_id = hsi_event.target
         params = self.parameters
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # Blood- Hb
+        # Define the required consumables
+        item_code_hb_test = pd.unique(
+            consumables.loc[consumables['Items'] == 'Haemoglobin test (HB)', 'Item_Code'])[0]
+        item_code_blood_tube = pd.unique(
+            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code_gloves = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+        consumables_hb_test = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_hb_test: 1, item_code_blood_tube: 1, item_code_needle: 1, item_code_gloves: 1}}
+
+        # Confirm their availability
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_hb_test,
+            to_log=False)
+
+        # Determine if the HCW will deliver this intervention
         if self.rng.random_sample() < params['prob_blood_test']:
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_haemoglobin',
-                                                                       hsi_event=hsi_event):
-                additional_care = HSI_CareOfWomenDuringPregnancy_ManagementOfAnaemiaInPregnancy(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=7))
+            # Check consumables
+            if outcome_of_request_for_consumables:
+
+                # Log if availble
+                self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event,
+                    cons_req_as_footprint=consumables_hb_test,
+                    to_log=True)
+
+                # Run dx_test for anaemia
+                if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_haemoglobin',
+                                                                           hsi_event=hsi_event):
+
+                    # Schedule additional care in the instance of diagnosed anaemia
+                    additional_care = HSI_CareOfWomenDuringPregnancy_ManagementOfAnaemiaInPregnancy(
+                        self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(days=7))
 
     def albendazole_administration(self, hsi_event):
-        params = self.parameters
+        """This function manages the administration of albendazole. Albendazole does not have an affect on outcomes in
+        the model"""
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # TODO: should i have a quality probability here?
+        # We run this function to store the associated consumables with albendazole administration. This intervention
+        # has no effect in the model due to limited evidence
+        item_code_albendazole = pd.unique(
+            consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
 
-        if self.rng.random_sample() < params['prob_albendazole']:
-            item_code_albendazole = pd.unique(
-                consumables.loc[consumables['Items'] == 'Albendazole 200mg_1000_CMST', 'Item_Code'])[0]
+        consumables_albendazole = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_albendazole: 2}}
 
-            consumables_albendazole = {
-                'Intervention_Package_Code': {},
-                'Item_Code': {item_code_albendazole: 2}}
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_albendazole,
+            to_log=False)
 
-            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=hsi_event,
-                cons_req_as_footprint=consumables_albendazole,
-                to_log=False)
-
-            if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole]:
-                    logger.debug('albendazole given')
-                    self.sim.modules['HealthSystem'].request_consumables(
-                        hsi_event=hsi_event,
-                        cons_req_as_footprint=consumables_albendazole,
-                        to_log=True)
+        if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole]:
+                logger.debug('albendazole given')
+                self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event,
+                    cons_req_as_footprint=consumables_albendazole,
+                    to_log=True)
 
     def hep_b_testing(self, hsi_event):
+        """ This function manages testing for Hepatitis B"""
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
+        # This intervention is a place holder prior to the Hepatitis B module being coded
         item_code_hep_test = pd.unique(
             consumables.loc[consumables['Items'] == 'Hepatitis B test kit-Dertemine_100 tests_CMST', 'Item_Code'])[0]
+        item_code_blood_tube = pd.unique(
+            consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code_gloves = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
         # todo: is the cost of this item 100 tests? unclear
         # todo: replace with dx_test and add scheduling when Hep B coded
 
         consumables_hep_b_test = {
                 'Intervention_Package_Code': {},
-                'Item_Code': {item_code_hep_test: 1}}
+                'Item_Code': {item_code_hep_test: 1, item_code_blood_tube: 1, item_code_needle:1, item_code_gloves: 1}}
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=hsi_event,
             cons_req_as_footprint=consumables_hep_b_test,
             to_log=False)
 
-        if outcome_of_request_for_consumables['Item_Code'][item_code_hep_test]:
-            logger.debug('hepatitis B test administered given')
+        if outcome_of_request_for_consumables:
+            logger.debug('hepatitis B test given')
             self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_hep_b_test,
                 to_log=True)
 
     def syphilis_testing(self, hsi_event):
+        """This function manages Syphilis testing. Syphilis is not explicitly modelled and therefore this function
+        merely records consumable use"""
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        # TODO: this is just documenting consumable use
         # TODO: There are additional consumables associate with treatment that wont be counted if we dont model the
         #  disease
 
@@ -623,6 +708,7 @@ class CareOfWomenDuringPregnancy(Module):
                 to_log=True)
 
     def hiv_testing(self, hsi_event):
+        """This function schedules HIV testing for women during ANC"""
         person_id = hsi_event.target
 
         # todo: should the code for the screening process just live in this function or ok to schedule as additional
@@ -636,19 +722,23 @@ class CareOfWomenDuringPregnancy(Module):
                                                             tclose=self.sim.date + DateOffset(days=1))
 
     def iptp_administration(self, hsi_event):
+        """ This functions manages the administration of Intermittent preventative treatment for the prevention of
+        malaria"""
         df = self.sim.population.props
         person_id = hsi_event.target
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
 
         # TODO: quality indicator with probability of treatment admistration?
-        # todo: ensure conditioning on ma_tx when malaria code is available
+        # todo: ensure conditioning on ma_tx when malaria code is available (as below)
 
         # if (not df.at[person_id, "ma_tx"]
         #    and not df.at[person_id, "ma_tx"]
         #    and df.at[person_id, "is_alive"]):
 
+        # Test to ensure only 5 doses are able to be administered
         assert df.at[person_id, 'ac_doses_of_iptp_received'] < 6
 
+        # Define and check the availability of consumables
         pkg_code1 = pd.unique(
             consumables.loc[consumables["Intervention_Pkg"] == "IPT (pregnant women)", "Intervention_Pkg_Code"])[0]
 
@@ -662,6 +752,8 @@ class CareOfWomenDuringPregnancy(Module):
         if outcome_of_request_for_consumables:
             logger.debug("giving IPTp for person %d", person_id)
 
+            # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the number of
+            # doses received during this pregnancy are stored as an integer
             df.at[person_id, 'ac_doses_of_iptp_received'] += 1
 
             self.sim.modules["HealthSystem"].request_consumables(
@@ -685,12 +777,13 @@ class CareOfWomenDuringPregnancy(Module):
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=3))
 
-    def anc_interventions_contacts_2_to_8(self, hsi_event):
+    def anc_catch_up_interventions(self, hsi_event):
         """This function actions all the interventions a woman presenting to ANC1 at >20 will need administering."""
         self.hiv_testing(hsi_event=hsi_event)
         self.hep_b_testing(hsi_event=hsi_event)
         self.syphilis_testing(hsi_event=hsi_event)
         self.hb_testing(hsi_event=hsi_event)
+        self.tetanus_vaccination(hsi_event=hsi_event)
 
         self.albendazole_administration(hsi_event=hsi_event)
         self.iptp_administration(hsi_event=hsi_event)
@@ -877,6 +970,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 self.module.hep_b_testing(hsi_event=self)
                 self.module.syphilis_testing(hsi_event=self)
                 self.module.hb_testing(hsi_event=self)
+                self.module.tetanus_vaccination(hsi_event=self)
 
                 # She is then assessed to see if she will attend the next ANC contact in the schedule
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
@@ -884,14 +978,14 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             elif 20 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 26:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
+                self.module.anc_catch_up_interventions(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
             elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
+                self.module.anc_catch_up_interventions(hsi_event=self)
                 self.module.gdm_screening(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
@@ -899,7 +993,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
-                self.module.anc_interventions_contacts_2_to_8(hsi_event=self)
+                self.module.anc_catch_up_interventions(hsi_event=self)
                 # todo: for now, these women just wont have another visit
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
@@ -945,6 +1039,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_at_every_contact(hsi_event=self)
+            self.module.tetanus_vaccination(hsi_event=self)
 
             # ========================================== Schedule next visit =======================================
             if df.at[person_id, 'ps_gestational_age_in_weeks'] < 26:
