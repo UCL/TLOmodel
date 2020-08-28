@@ -43,7 +43,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 10000
+popsize = 2000
 
 sim = Simulation(start_date=start_date)
 logfile = sim.configure_logging(filename="LogFile")
@@ -482,32 +482,32 @@ def main():
                         f"population size = {popsize}", font=titlefnt, fill='black')
         d.text((120, 80), "Head:"
                           "\n"
-                          f"{round(data[0] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                          f"{round((data[0] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 90, 200, 90], fill='black', width=1)
         d.text((300, 100), "Face:"
                            "\n"
-                           f"{round(data[1] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[1] / sum(data))*100, 2)} %", font=fnt, fill='black')
         d.line(xy=[230, 110, 270, 110], fill='black', width=1)
 
         d.text((120, 120), "Neck:"
                            "\n"
-                           f"{round(data[2] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[2] / sum(data)) * 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 140, 210, 150], fill='black', width=1)
 
         d.text((200, 180), "Thorax:"
                            "\n"
-                           f"{round(data[3] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[3] / sum(data)) * 100, 2)} %", font=fnt, fill='black')
         d.text((205, 250), "Spine:"
                            "\n"
-                           f"{round(data[5] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[5] / sum(data)) * 100, 2)} %", font=fnt, fill='black')
         d.text((205, 300), "Abdomen"
                            "\n"
-                           f"{round(data[4] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[4] / sum(data)) * 100, 2)} %", font=fnt, fill='black')
         d.text((350, 220), "Upper"
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[6] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[6] / sum(data)) * 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[340, 240, 160, 220], fill='black', width=1)
         d.line(xy=[340, 240, 300, 260], fill='black', width=1)
 
@@ -515,7 +515,7 @@ def main():
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[7] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[7] / sum(data)) * 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[290, 440, 200, 440], fill='black', width=1)
         d.line(xy=[290, 440, 260, 540], fill='black', width=1)
         img.save('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/ModelInjuryLocationOnBody.jpg')
@@ -550,32 +550,32 @@ def main():
                         f"population size = {popsize}", font=titlefnt, fill='black')
         d.text((120, 80), "Head:"
                           "\n"
-                          f"{round(data[0] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                          f"{round((data[0] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 90, 200, 90], fill='black', width=1)
         d.text((300, 100), "Face:"
                            "\n"
-                           f"{round(data[1] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[1] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[230, 110, 270, 110], fill='black', width=1)
 
         d.text((120, 120), "Neck:"
                            "\n"
-                           f"{round(data[2] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[2] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 140, 210, 150], fill='black', width=1)
 
         d.text((200, 180), "Thorax:"
                            "\n"
-                           f"{round(data[3] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[3] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((205, 250), "Spine:"
                            "\n"
-                           f"{round(data[5] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[5] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((205, 300), "Abdomen"
                            "\n"
-                           f"{round(data[4] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[4] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((350, 220), "Upper"
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[6] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[6] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[340, 240, 160, 220], fill='black', width=1)
         d.line(xy=[340, 240, 300, 260], fill='black', width=1)
 
@@ -583,7 +583,7 @@ def main():
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[7] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[7] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[290, 440, 200, 440], fill='black', width=1)
         d.line(xy=[290, 440, 260, 540], fill='black', width=1)
         img.save('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/OpenWoundLocationOnBody.jpg')
@@ -618,32 +618,32 @@ def main():
                         f"population size = {popsize}", font=titlefnt, fill='black')
         d.text((120, 80), "Head:"
                           "\n"
-                          f"{round(data[0] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                          f"{round((data[0] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 90, 200, 90], fill='black', width=1)
         d.text((300, 100), "Face:"
                            "\n"
-                           f"{round(data[1] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[1] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[230, 110, 270, 110], fill='black', width=1)
 
         d.text((120, 120), "Neck:"
                            "\n"
-                           f"{round(data[2] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[2] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 140, 210, 150], fill='black', width=1)
 
         d.text((200, 180), "Thorax:"
                            "\n"
-                           f"{round(data[3] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[3] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((205, 250), "Spine:"
                            "\n"
-                           f"{round(data[5] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[5] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((205, 300), "Abdomen"
                            "\n"
-                           f"{round(data[4] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[4] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((350, 220), "Upper"
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[6] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[6] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[340, 240, 160, 220], fill='black', width=1)
         d.line(xy=[340, 240, 300, 260], fill='black', width=1)
 
@@ -651,7 +651,7 @@ def main():
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[7] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[7] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[290, 440, 200, 440], fill='black', width=1)
         d.line(xy=[290, 440, 260, 540], fill='black', width=1)
 
@@ -687,32 +687,32 @@ def main():
                         f"population size = {popsize}", font=titlefnt, fill='black')
         d.text((120, 80), "Head:"
                           "\n"
-                          f"{round(data[0] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                          f"{round((data[0] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 90, 200, 90], fill='black', width=1)
         d.text((300, 100), "Face:"
                            "\n"
-                           f"{round(data[1] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[1] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[230, 110, 270, 110], fill='black', width=1)
 
         d.text((120, 120), "Neck:"
                            "\n"
-                           f"{round(data[2] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[2] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[170, 140, 210, 150], fill='black', width=1)
 
         d.text((200, 180), "Thorax:"
                            "\n"
-                           f"{round(data[3] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[3] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((205, 250), "Spine:"
                            "\n"
-                           f"{round(data[5] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[5] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((205, 300), "Abdomen"
                            "\n"
-                           f"{round(data[4] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[4] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.text((350, 220), "Upper"
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[6] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[6] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[340, 240, 160, 220], fill='black', width=1)
         d.line(xy=[340, 240, 300, 260], fill='black', width=1)
 
@@ -720,7 +720,7 @@ def main():
                            "\n"
                            "extremity:"
                            "\n"
-                           f"{round(data[7] / sum(data), 2) * 100} %", font=fnt, fill='black')
+                           f"{round((data[7] / sum(data))* 100, 2)} %", font=fnt, fill='black')
         d.line(xy=[290, 440, 200, 440], fill='black', width=1)
         d.line(xy=[290, 440, 260, 540], fill='black', width=1)
 
@@ -737,12 +737,18 @@ if __name__ == "__main__":
 data = pd.read_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIInjuryDemographics.csv')
 genderData = data['sex']
 values, counts = np.unique(genderData, return_counts=True)
-
 fig, ax = plt.subplots()
-
-ax.bar(values, counts / sum(counts), color='lightsteelblue')
-plt.xlabel('Gender')
-plt.ylabel('Percentage of those with RTIs')
+theme = plt.get_cmap('Pastel2')
+ax.set_prop_cycle("color", [theme(1. * i / len(counts))
+                            for i in range(len(counts))])
+labels = ['Female', 'Male']
+explode = [0, 0]
+ax.pie(counts / sum(counts), explode=explode, labels=labels, autopct='%1.1f%%',
+       shadow=True, startangle=90)
+ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+# ax.bar(values, counts / sum(counts), color='lightsteelblue')
+# plt.xlabel('Gender')
+# plt.ylabel('Percentage of those with RTIs')
 plt.title(f'{yearsrun} year model run, N={popsize}: Gender demographic distribution of RTIs')
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InRTIGenderDistribution.png')
 plt.clf()
@@ -763,3 +769,23 @@ plt.ylabel('Percentage of those with RTIs')
 plt.title(f'{yearsrun} year model run, N={popsize}: Age demographic distribution of RTIs')
 plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/InRTIAgeDistribution.png')
 plt.clf()
+death_profile = output['tlo.methods.rti']['RTI_Death_Injury_Profile']
+# death_profile.to_csv("C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIDeathData.csv")
+# data = pd.read_csv("C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIDeathData.csv")
+death_profile = death_profile.drop('date', axis=1)
+death_profile = death_profile.drop(data.columns[0], axis=1)
+inj1 = death_profile['First injury'].value_counts()
+inj2 = death_profile['Second injury'].value_counts()
+inj3 = death_profile['Third injury'].value_counts()
+inj4 = death_profile['Fourth injury'].value_counts()
+inj5 = death_profile['Fifth injury'].value_counts()
+inj6 = death_profile['Sixth injury'].value_counts()
+inj7 = death_profile['Seventh injury'].value_counts()
+inj8 = death_profile['Eigth injury'].value_counts()
+injuries = inj1.append([inj2, inj3, inj4, inj5, inj6, inj7, inj8])
+injdict = injuries.to_dict()
+injdict.pop('none')
+plt.bar(range(len(injdict)), list(injdict.values()), align='center')
+plt.xticks(range(len(injdict)), list(injdict.keys()))
+plt.xticks(rotation=45)
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/FatalInjuryDistribution.png')
