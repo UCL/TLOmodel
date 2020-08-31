@@ -26,8 +26,8 @@ end_date = Date(2015, 1, 2)
 popsize = 5000
 
 # add file handler for the purpose of logging
-# sim = Simulation(start_date=start_date)
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+sim = Simulation(start_date=start_date)
+# sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
