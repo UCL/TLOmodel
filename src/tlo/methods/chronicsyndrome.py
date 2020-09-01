@@ -3,8 +3,10 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,6 +29,7 @@ class ChronicSyndrome(Module):
         - Receiving a 'squeeze factor'
         - Use of the SymptomManager
     """
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
@@ -53,12 +56,6 @@ class ChronicSyndrome(Module):
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
 
-    # Declaration of the symptoms that this module will use
-    SYMPTOMS = {
-        'inappropriate_jokes',  # will not trigger any health seeking behaviour
-        'em_craving_sandwiches'  # symptom that will trigger emergency HSI
-    }
-
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -67,14 +64,15 @@ class ChronicSyndrome(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-        For now, we are going to hard code them explicity
+        For now, we are going to hard code them explicity.
+        Register the module with the health system and register the symptoms
         """
         self.parameters['p_acquisition_per_year'] = 0.10
         self.parameters['p_cure'] = 0.10
         self.parameters['initial_prevalence'] = 0.30
         self.parameters['prob_of_symptoms'] = {
             'inappropriate_jokes': 0.95,
-            'em_craving_sandwiches': 0.5
+            'craving_sandwiches': 0.5
         }
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
@@ -83,16 +81,24 @@ class ChronicSyndrome(Module):
             # get the DALY weight that this module will use from the weight database (these codes are just random!)
             self.parameters['daly_wts'] = {
                 'inappropriate_jokes': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=86),
-                'em_craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
+                'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
             }
 
         # ---- Register this module ----
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # # Register this disease module with the symptom manager and declare the symptoms
-        # self.sim.modules['SymptomManager'].register_disease_symptoms(module=self,
-        #                                                            list_of_symptoms=['coughing_and_irritable'])
+        # Register symptoms that this module will use:
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='inappropriate_jokes',
+                odds_ratio_health_seeking_in_adults=3.0
+            ),
+            Symptom(
+                name='craving_sandwiches',
+                emergency_in_adults=True,
+            )
+        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -242,17 +248,13 @@ class ChronicSyndrome(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values_df = pd.DataFrame(index=df.index[df.is_alive])
-
+        health_values = pd.Series(index=df.index[df.is_alive], data=0)
         for symptom, daly_wt in self.parameters['daly_wts'].items():
-            health_values_df.loc[
-                self.sim.modules['SymptomManager'].who_has(symptom),
-                symptom
-            ] = daly_wt
+            health_values.loc[
+                health_values.index.isin(self.sim.modules['SymptomManager'].who_has(symptom))
+            ] += daly_wt
 
-        health_values_df.fillna(0, inplace=True)
-
-        return health_values_df
+        return health_values
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
@@ -311,7 +313,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # 3) Handle progression to severe symptoms
         curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive])
                                                   - set(
-            self.sim.modules['SymptomManager'].who_has('em_craving_sandwiches')))
+            self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
 
         become_severe = (
             self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches))
@@ -321,7 +323,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=list(become_severe_idx),
-            symptom_string='em_craving_sandwiches',
+            symptom_string='craving_sandwiches',
             add_or_remove='+',
             disease_module=self.module
         )
