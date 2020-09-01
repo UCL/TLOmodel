@@ -223,10 +223,10 @@ class SymptomManager(Module):
                                                    symptom_column_name,
                                                    modules_that_can_impose_symptoms)
 
-            # Check that all individuals do not have this symptom currently:
-            u = self.bsh[symptom_name].uncompress()
-            assert set(u.columns) == set(modules_that_can_impose_symptoms)
-            assert not u.any().any()
+            # NB. Bit Set Handler will establish such that everyone has no symptoms. i.e. check below:
+            # u = self.bsh[symptom_name].uncompress()
+            # assert set(u.columns) == set(modules_that_can_impose_symptoms)
+            # assert not u.any().any()
 
     def initialise_simulation(self, sim):
         """Schedule SpuriousSymptomsGenerator if parameter 'spurious_symptoms' is True"""
@@ -352,7 +352,7 @@ class SymptomManager(Module):
         Optionally can specify disease_module_name to limit to the symptoms caused by that disease module
 
         :param person_id: the person_of of interest
-        :param disease_module: (optional) disease module of interest.
+        :param disease_module: (optional) disease module of interest
         :return: list of strings for the symptoms that are currently being experienced
         """
 
@@ -364,14 +364,14 @@ class SymptomManager(Module):
         if disease_module:
             assert disease_module.name in ([self.name] + self.disease_module_names), \
                 "Disease Module Name is not recognised"
-            disease_modules_of_interest = [disease_module.name]
+            disease_modules_of_interest = {disease_module.name}
         else:
-            disease_modules_of_interest = [self.name] + self.disease_module_names
+            disease_modules_of_interest = {[self.name] + self.disease_module_names}
 
-        symptoms_for_this_person = list()
-        for symptom in self.symptom_names:
-            if self.bsh[symptom].uncompress([person_id]).loc[person_id, disease_modules_of_interest].any():
-                symptoms_for_this_person.append(symptom)
+        symptoms_for_this_person = [
+            s for s in self.symptom_names if
+                disease_modules_of_interest.intersection(self.bsh[s].get([person_id], first=True))
+        ]
 
         return symptoms_for_this_person
 
