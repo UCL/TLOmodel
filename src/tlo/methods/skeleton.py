@@ -32,7 +32,7 @@ class Skeleton(Module):
     *  `report_daly_values()` [If this is disease module]
 
     """
-    METADATA = {Metadata.DISEASE_MODULE}
+    METADATA = {Metadata.DISEASE_MODULE}  # declare that this is a disease module (leave as empty set otherwise)
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
