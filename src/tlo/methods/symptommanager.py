@@ -337,17 +337,13 @@ class SymptomManager(Module):
         # Check that these are legitimate symptoms
         assert all([symp in self.symptom_names for symp in list_of_symptoms]), 'Symptom not registered'
 
-        # get the person_id for those who have each symptom
-        has_this_symptom = dict()
-        for symptom in list_of_symptoms:
-            # u = self.bsh[symptom].has_any(df.is_alive)  todo - has_any() doesn't seem to work as expected
-            u = self.bsh[symptom].uncompress(self.sim.population.props.is_alive).any(axis=1)  # nb. limiting to alive
-            has_this_symptom[symptom] = set(u[u].index)
+        # Find who has all the symptoms
+        df = self.sim.population.props
+        has_all_symptoms = pd.Series(index=df.index[df.is_alive], data=True)
+        for s in list_of_symptoms:
+            has_all_symptoms = has_all_symptoms & self.bsh[s].not_empty(df.is_alive)
 
-        # find the people who have each of the symptoms listed
-        has_all_symptoms = list(set.intersection(*[has_this_symptom[symptom] for symptom in has_this_symptom]))
-
-        return has_all_symptoms
+        return has_all_symptoms[has_all_symptoms].index.tolist()
 
     def has_what(self, person_id, disease_module=None):
         """
@@ -394,7 +390,7 @@ class SymptomManager(Module):
         assert df.at[person_id, 'is_alive'], "The person is not alive"
         assert symptom_string in self.symptom_names
 
-        return list(self.bsh[symptom_string].get([person_id])[person_id])
+        return list(self.bsh[symptom_string].get([person_id], first=True))
 
     def clear_symptoms(self, person_id, disease_module):
         """

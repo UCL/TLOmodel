@@ -254,8 +254,6 @@ class ChronicSyndrome(Module):
                 health_values.index.isin(self.sim.modules['SymptomManager'].who_has(symptom))
             ] += daly_wt
 
-        health_values.fillna(0, inplace=True)
-
         return health_values
 
 
