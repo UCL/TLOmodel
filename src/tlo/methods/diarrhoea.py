@@ -576,13 +576,11 @@ class Diarrhoea(Module):
         sim.schedule_event(DiarrhoeaLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # Get DALY weights
+        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
         if 'HealthBurden' in self.sim.modules.keys():
-            self.daly_wts['mild_diarrhoea'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=32)
-            self.daly_wts['moderate_diarrhoea'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=35)
-            self.daly_wts['severe_diarrhoea'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=34)
+            self.daly_wts['mild_diarrhoea'] = get_daly_weight(sequlae_code=32)
+            self.daly_wts['moderate_diarrhoea'] = get_daly_weight(sequlae_code=35)
+            self.daly_wts['severe_diarrhoea'] = get_daly_weight(sequlae_code=34)
 
         # --------------------------------------------------------------------------------------------
         # Make a dict to hold the equations that govern the probability that a person acquires diarrhoea
@@ -600,9 +598,9 @@ class Diarrhoea(Module):
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
                     Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
-                        .when('.between(1,1)', p[base_inc_rate][1])
-                        .when('.between(2,4)', p[base_inc_rate][2])
-                        .otherwise(0.0),
+                                          .when('.between(1,1)', p[base_inc_rate][1])
+                                          .when('.between(2,4)', p[base_inc_rate][2])
+                                          .otherwise(0.0),
                     Predictor('li_no_access_handwashing').when(False, p['rr_diarrhoea_HHhandwashing']),
                     Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
                     Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
@@ -739,19 +737,14 @@ class Diarrhoea(Module):
         dehyrdration.
         """
         df = self.sim.population.props
+        who_has_symptoms = self.sim.modules['SymptomManager'].who_has
 
-        total_daly_values = pd.Series(data=0.0, index=df.loc[df['is_alive']].index)
+        total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
 
+        total_daly_values.loc[who_has_symptoms('diarrhoea')] = self.daly_wts['mild_diarrhoea']
+        total_daly_values.loc[who_has_symptoms(['diarrhoea', 'dehydration'])] = self.daly_wts['moderate_diarrhoea']
         total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has('diarrhoea')
-        ] = self.daly_wts['mild_diarrhoea']
-
-        total_daly_values.loc[
-            self.sim.modules['SymptomManager'].who_has(['diarrhoea', 'dehydration'])
-        ] = self.daly_wts['moderate_diarrhoea']
-
-        total_daly_values.loc[
-            self.sim.population.props['gi_last_diarrhoea_dehydration'] == 'severe'
+            df.is_alive & (df.gi_last_diarrhoea_dehydration == 'severe')
         ] = self.daly_wts['severe_diarrhoea']
 
         # Split out by pathogen that causes the diarrhoea
@@ -802,10 +795,8 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Those susceptible are children that do not currently have an episode (never had an episode or last episode
         # resolved)
         mask_could_get_new_diarrhoea_episode = (
-            df['is_alive'] &
-            (df['age_years'] < 5) &
-            (
-                (df['gi_end_of_last_episode'] < self.sim.date) | pd.isnull(df['gi_end_of_last_episode'])
+            df.is_alive & (df.age_years < 5) & (
+                (df.gi_end_of_last_episode < self.sim.date) | pd.isnull(df.gi_end_of_last_episode)
             )
         )
 
