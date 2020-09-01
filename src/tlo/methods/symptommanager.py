@@ -366,11 +366,11 @@ class SymptomManager(Module):
                 "Disease Module Name is not recognised"
             disease_modules_of_interest = {disease_module.name}
         else:
-            disease_modules_of_interest = {[self.name] + self.disease_module_names}
+            disease_modules_of_interest = set([self.name] + self.disease_module_names)
 
         symptoms_for_this_person = [
             s for s in self.symptom_names if
-                disease_modules_of_interest.intersection(self.bsh[s].get([person_id], first=True))
+            disease_modules_of_interest.intersection(self.bsh[s].get([person_id], first=True))
         ]
 
         return symptoms_for_this_person
