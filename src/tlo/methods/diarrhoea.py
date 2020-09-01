@@ -589,33 +589,40 @@ class Diarrhoea(Module):
         # that is caused (primarily) by a pathogen
         p = self.parameters
 
-        def make_linear_model(patho):
-            base_inc_rate = f'base_inc_rate_diarrhoea_by_{patho}'
-            return LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                1.0,
-                Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
-                                      .when('.between(1,1)', p[base_inc_rate][1])
-                                      .when('.between(2,4)', p[base_inc_rate][2])
-                                      .otherwise(0.0),
-                Predictor('li_no_access_handwashing').when(False, p['rr_diarrhoea_HHhandwashing']),
-                Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
-                Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
-                Predictor('tmp_hv_inf').when(True, p['rr_diarrhoea_HIV']),
-                Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM']),
-                Predictor('tmp_exclusive_breastfeeding').when(False, p['rr_diarrhoea_excl_breast'])
-            )
+        def make_scaled_linear_model(patho):
+            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
+            matches the specified value in the model when averaged across the population
+            """
+            def make_linear_model(patho, intercept=1.0):
+                base_inc_rate = f'base_inc_rate_diarrhoea_by_{patho}'
+                return LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    intercept,
+                    Predictor('age_years').when('.between(0,0)', p[base_inc_rate][0])
+                        .when('.between(1,1)', p[base_inc_rate][1])
+                        .when('.between(2,4)', p[base_inc_rate][2])
+                        .otherwise(0.0),
+                    Predictor('li_no_access_handwashing').when(False, p['rr_diarrhoea_HHhandwashing']),
+                    Predictor('li_no_clean_drinking_water').when(False, p['rr_diarrhoea_clean_water']),
+                    Predictor('li_unimproved_sanitation').when(False, p['rr_diarrhoea_improved_sanitation']),
+                    Predictor('tmp_hv_inf').when(True, p['rr_diarrhoea_HIV']),
+                    Predictor('tmp_malnutrition').when(True, p['rr_diarrhoea_SAM']),
+                    Predictor('tmp_exclusive_breastfeeding').when(False, p['rr_diarrhoea_excl_breast'])
+                )
+
+            df = self.sim.population.props
+            unscaled_lm = make_linear_model(patho)
+            target_mean = p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
+            # check by applying the model to mean incidence of 0-year-olds
+            assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+            return scaled_lm
 
         for pathogen in Diarrhoea.pathogens:
-            self.incidence_equations_by_pathogen[pathogen] = make_linear_model(pathogen)
-
-        # Check that equations have been declared for each of the pathogens
-        assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
-
-        # Scale the models of risk of acquiring pathogens so that they give the desired means (has to be done at
-        # run-time because it will depend on frequency of other properties.
-        for k, v in self.incidence_equations_by_pathogen.items():
-            self.incidence_equations_by_pathogen[k] = self.rescale_equ(v)
+            self.incidence_equations_by_pathogen[pathogen] = make_scaled_linear_model(pathogen)
 
         # --------------------------------------------------------------------------------------------
         # Make a dict containing the probability of symptoms onset given acquisition of diarrhoea caused
@@ -718,31 +725,6 @@ class Diarrhoea(Module):
         df.at[child_id, 'tmp_malnutrition'] = False
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
         df.at[child_id, 'tmp_continued_breastfeeding'] = False
-
-    def rescale_equ(self, lm):
-        """
-        Accepts a linear model, and adjust its intercept value such that the mean incidence rate of 0 year-olds matches
-        the specified value for 0 year-olds in the model when averaged across the population.
-        """
-        # mean when lm is applied
-        df = self.sim.population.props
-        actual_mean = lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
-
-        # target mean value as specified in the lm for a 0 year-old with no other conditions
-        assert lm.predictors[0].property_name == 'age_years'
-
-        # check that the first conditions is for 0 year-olds
-        assert lm.predictors[0].conditions[0][0] == '(age_years.between(0,0))'
-
-        target_mean = lm.predictors[0].conditions[0][1]
-
-        # adjust value of intercept
-        lm.intercept *= target_mean / actual_mean
-
-        # check by applying the model to the under 5 population
-        assert (target_mean - lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
-
-        return lm
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
