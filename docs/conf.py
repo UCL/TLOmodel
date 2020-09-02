@@ -7,19 +7,11 @@
 # https://medium.com/@eikonomega/getting-started-with-sphinx-autodoc-part-1-2cebbbca5365
 #
 
-import docutils
+#import docutils
 import os
 import sys
 
-#from sphinx.ext.autodoc import AttributeDocumenter, SUPPRESS, Documenter, ModuleDocumenter
-#from sphinx.util.inspect import object_description
-
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
-#from tlo.core import Specifiable, Parameter, Types, Module   #, nullstr
-
-#class_being_tracked = None
-#subclasses_of_Module = ['hiv', 'Mockitis', 'Epilepsy']
-#common_methods_to_skip = ['on_birth', 'initialise_simulation', 'apply']
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -95,12 +87,8 @@ napoleon_use_param = False
 # 'show-inheritance', 'ignore-module-all', 'imported-members'
 # and 'exclude-members'.
 autodoc_default_options = {
-    #'members': None,  ##'on_birth',
-    #'private-members': None,
+
     'undoc-members': False,
-    #'special-members': None,
-    #'show-inheritance': False, ####True,
-    #'inherited_members': 'PARAMETERS',
 
     # Keep HTML output order the same as in the
     # source code, rather than alphabetically:
@@ -112,28 +100,3 @@ autodoc_default_options = {
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
-
-
-def setup(app):
-    '''
-    Tell Sphinx which functions to run when it emits certain events.
-    '''
-    #import pdb; pdb.set_trace()
-    #myitems = dir(app)
-    if not hasattr(app, 'mydict'):
-        app.mydict = dict()
-
-    # Not impl in Documenter base class:
-    ####AttributeDocumenter.can_document_member = can_document_member
-
-    # We want to define our own version of Documenter.can_document_member()
-    # and put our functionality in there, rather than having our own versions
-    # of add_content() and add_directive_header()
-
-    ####app.connect('autodoc-skip-member', skip)
-
-    # When the autodoc-process-docstring event is emitted, handle it with
-    # add_dict_to_docstring():
-    ####app.connect("autodoc-process-docstring", add_dicts_to_docstring)
-
-
