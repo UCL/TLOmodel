@@ -979,7 +979,8 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendance'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1}) # TODO: confirm best appt footprint to use
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
+        # TODO: confirm best appt footprint to use
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 

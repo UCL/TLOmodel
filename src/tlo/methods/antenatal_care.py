@@ -293,7 +293,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, Indi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForPostAbortionCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-                # TODO: determine most accurate appt time for this HSI
+        # TODO: determine most accurate appt time for this HSI (here and all HSI in this file)
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = []
 

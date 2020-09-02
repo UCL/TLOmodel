@@ -180,7 +180,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         else:
             the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
 
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
