@@ -7,6 +7,7 @@ from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
+    Metadata,
     chronicsyndrome,
     contraception,
     demography,
@@ -18,7 +19,6 @@ from tlo.methods import (
     mockitis,
     pregnancy_supervisor,
     symptommanager,
-    Metadata
 )
 from tlo.methods.healthsystem import HSI_Event
 
