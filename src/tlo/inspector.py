@@ -47,7 +47,7 @@ def generate_module_list(dir_string):
             filenames.remove('__init__.py')
         break  # TODO: In this version we don't traverse any subdirectories
                # We will want to change this later so we can handle the
-               # case when tlo.methods has submodules (i.e. subdirectory),
+               # case when tlo.methods has submodules (i.e. subdirectories),
                # within which the individual disease modules are located
                # e.g. we might have sub-level tlo.methods.rmnch for modules
                # dealing with reproduction, birth, child health, etc.
@@ -58,16 +58,15 @@ def generate_module_list(dir_string):
 def get_classes_in_module(fqn, module_obj):
     '''
     Generate a list of lists of the classes *defined* in
-    the required module, in the order in which they
+    the required module (file), in the order in which they
     appear in the module file. Note that this excludes
-    any other classes in the module.
+    any other classes in the module, such as those brought
+    in by inheritance, or imported..
 
     Each entry in the list returned is itself a list of:
     [class name, class object, line number]
 
-    :param fqn: Fully-qualified name of the module,
-    e.g. "tlo.methods.mockitis"
-
+    :param fqn: Fully-qualified name of the module, e.g. "tlo.methods.mockitis"
     :param module_obj: an object representing this module
     '''
     classes = []
@@ -85,7 +84,8 @@ def get_classes_in_module(fqn, module_obj):
             #print(morestuff)  # e.g. functions, PARAMETERS dict,...
     print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
-    # Based on answer by Andrew
+    # Based on answer by Andrew - sort them into order in which they are
+    # defined in the module file.
     classes.sort(key=lambda x: x[2])
     print(f"after sorting, {classes}")
     return classes
@@ -158,8 +158,6 @@ def get_class_output_string(classinfo):
     :param classinfo: a list with [class name, class object, line number]
     :return: the string to output
 
-    TODO: stop unwanted output, e.g. certain methods in children of Module.
-
     '''
     class_name, class_obj, _ = classinfo
     str = f".. class:: {class_name}\n\n"
@@ -225,25 +223,26 @@ def extract_bases(class_name, class_obj):
     Document which classes this class inherits from,
     except for the object class or this class itself.
     TODO: we want links to those other classes.
-    this page is http://0.0.0.0:8000/reference/tlo.methods.mockitis.html
+    e.g. if this page is http://0.0.0.0:8000/reference/tlo.methods.mockitis.html
     here is a link `newborn_outcomes <./tlo.methods.newborn_outcomes.html>`_
     http://0.0.0.0:8000/reference/tlo.core.html#tlo.core.Module
-    :param class_name:
-    :param class_obj:  object with information about this class
+    :param class_name: name of the class (e.g. Mockitis) for which we want the bases
+    :param class_obj: object with information about this class
     :return: string of base(s) for this class (if any), with links to their docs.
     '''
     bases = inspect.getmro(class_obj)  # Includes "object" class and the class_name class
     # Typical example of "bases":
     # (<class 'tlo.methods.mockitis.Mockitis'>, <class 'tlo.core.Module'>, <class 'object'>)
-    #print(f"bases for {class_name}: {bases}")
+    # print(f"bases for {class_name}: {bases}")
     # classtree = inspect.getclasstree(bases)
     # print(f"classtree = {classtree}")
 
     parents = []
 
     for b in bases:
-        this_base_string = get_base_string(class_name, b)
+        this_base_string = get_base_string(class_name, class_obj, b)  # e.g. "tlo.core.Module"
         if this_base_string is not (None or ""):
+            #link = get_link(class_name, class_obj, this_base_string)
             parents.append(this_base_string)
 
     if len(parents) > 0:
@@ -257,34 +256,84 @@ def extract_bases(class_name, class_obj):
     return str
 
 
-def get_base_string (class_name, obj):
+def get_base_string (class_name, class_obj, base_obj):
     '''
     For this object, representing a base class,
     extract its name and add a hyperlink to it.
-    Unless it is the root 'object' class, or the name of the base
+    Unless it is the root 'object' class, or the name of the class itself.
 
-    :param class_name: the name of the class for which obj is a base,
-    e.g. "Mockitis"
-    :param obj: the object representation of the base class,
+    :param class_name: the name of the class (e.g. "Mockitis") for which obj is a base,
+    :param class_obj: object representing the class
+    :param base_obj: the object representation of the *base* class,
     e.g. <class 'tlo.core.Module'> or <class 'object'>
     or <class 'tlo.methods.mockitis.Mockitis'>
     :return: string with hyperlink
     '''
-    print (f"DEBUG: before = {class_name}, {obj}")
-    fqn = (str(obj)).replace("<class '", "").replace("'>", "")
+    # Extract fully-qualified name of base (e.g. "tlo.core.Module")
+    # from its object representation (e.g. "<class 'tlo.core.Module'>")
+    print (f"DEBUG: before = {class_name}, {base_obj}")
+    fqn = (str(base_obj)).replace("<class '", "").replace("'>", "")
     print(f"DEBUG: after = {class_name}, {fqn}")
+    # The next line's getsourcefile() call will raise a TypeError
+    # if the object is a built-in module, class, or function:
+    # print(f"and filename: {inspect.getsourcefile(base_obj)}, module: {inspect.getmodule(base_obj)}")
+    # module like: <module 'tlo.methods.mockitis' from ...
 
-    # fqn will be something like "tlo.methods.mockitis.Mockitis"
+    # fqn will now be something like "tlo.methods.mockitis.Mockitis"
+    # or "tlo.core.Module"
     if "." in fqn:
         parts = fqn.split(".")
-        name = parts[-1]
+        name = parts[-1]   # e.g. Mockitis or Module
     else:
         name = fqn
 
     if name in [class_name, "object"]:
-        name = ""
+        return ""
 
-    return name
+    link = get_link(fqn, base_obj)
+
+    # We want the final HTML to be like:
+    # Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module"
+    #     title="tlo.core.Module">
+    #     <code class="xref py py-class docutils literal notranslate">
+    #     <span class="pre">tlo.core.Module</span></code></a></p>
+    # So we need to write the right stuff to the .rst file.
+    # We want to return a string with the name of the base class, plus the link
+    # to its documentation.
+    # e.g. the string might be "tlo.core.Module <./tlo.core.html#tlo.core.Module>"
+    mystr = "`" + fqn + " " + link + "`"
+    return mystr
+
+
+def get_link(base_fqn, base_obj):
+    '''Given a name like Mockitis and a base_string like
+    tlo.core.Module, create a link to the latter's doc page.
+    :param base_fqn: fully-qualified name of the base class, e.g. tlo.core.Module
+    :param base_obj: the object representing the base class
+    :return: a string with the link to the base class's place in the generated documentation.
+    '''
+    #file_defining_class = inspect.getsourcefile(base_obj)  # Path to file e.g. /Users/....src/tlo/methods/mockitis.py
+    module_defining_class = str(inspect.getmodule(base_obj))  # <module 'tlo.core' from '/Users/...
+    module_pieces = module_defining_class.split(" ")
+    if len(module_pieces) > 1:
+        module_name = module_pieces[1]  # e.g. 'tlo.core'
+    else:
+        module_name = module_defining_class
+    module_name = module_name.replace("'", "")  # Remove single speech marks
+    print(f"My lovely module is {module_name}")  # e.g. tlo.core
+
+    # Need name of base's file + fqn of base
+    # We want a link string like: <./tlo.core.html#tlo.core.Module>
+    # i.e. <base's file name#base's fqn>
+
+    # e.g. if this page is http://0.0.0.0:8000/reference/tlo.methods.mockitis.html
+    # here is a link to another class: `newborn_outcomes <./tlo.methods.newborn_outcomes.html>`_
+    # http://0.0.0.0:8000/reference/tlo.methods.newborn_outcomes.html
+    # or e.g. pointing to http://0.0.0.0:8000/reference/tlo.core.html#tlo.core.Module
+    # the link would be <./tlo.core.html#tlo.core.Module>
+    link_to_base = "<./" + module_name + ".html" + "#" + base_fqn + ">"
+    print(f"link_to_base = {link_to_base}")
+    return link_to_base
 
 
 def create_table(mydict):
@@ -372,3 +421,10 @@ if __name__ == '__main__':
     #comments = inspect.getcomments(module_obj)
     #print(f"comments in module = {comments}")
     # This doesn't seem to work
+
+
+
+    # Ok, so now we have:
+    # 1. a name for the current module, e.g. tlo.methods.mockitis
+    # 2. the name of the class we are linking *from* (to its bases), e.g. Mockitis
+    # 3. the string of the base class we wish to link to, e.g. tlo.core.Module
