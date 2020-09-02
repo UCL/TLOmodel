@@ -545,7 +545,7 @@ def test_use_of_helper_function_get_all_consumables():
         def initialie_simulation(self, sim):
             pass
 
-    # Create simulation with the healthsystem and mockitis
+    # Create simulation with the healthsystem and DummyModule
     sim = Simulation(start_date=start_date, seed=0)
     sim.register(
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
