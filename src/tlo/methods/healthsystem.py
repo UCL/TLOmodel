@@ -1296,6 +1296,24 @@ class HSI_Event:
 
         return all_available
 
+    def make_appt_footprint(self, dict_of_appts):
+        """Helper function to make an appt_footprint. Create the full appt_footprint that is expected from a dictionary
+        only giving the types of appointments needed."""
+
+        # get blank footprint
+        footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+
+        # do checks
+        assert isinstance(dict_of_appts, dict)
+        assert all([(k in footprint.keys()) for k in dict_of_appts.keys()])
+        assert all([isinstance(v, (float, int)) for v in dict_of_appts.values()])
+
+        # make footprint (defaulting to zero where a type of appointment is not specified)
+        for k, v in dict_of_appts.items():
+            footprint[k] = v
+
+        return footprint
+
 
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.

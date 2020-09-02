@@ -384,14 +384,9 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         super().__init__(module, person_id=person_id)
         assert isinstance(module, ChronicSyndrome)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        # the_appt_footprint['AccidentsandEmerg'] = 0  # Plus, an amount of resources similar to an A&E
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
@@ -458,8 +453,10 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # APPP_FOOTPRINT: outreach event takes small amount of time for DCSA
         appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         appt_footprint['ConWithDCSA'] = 0.5
-        self.EXPECTED_APPT_FOOTPRINT = appt_footprint
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'ConWithDCSA': 0.5})
 
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 0.5})
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
@@ -517,7 +514,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         )
 
         # Demonstrate equivalence
-        assert all_available is all_available_using_helper_function
+        assert all_available == all_available_using_helper_function
 
         # Return the actual appt footprints
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
