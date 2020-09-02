@@ -116,7 +116,7 @@ class Symptom:
 
 
 class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
-    print("A symptom with this name has been registered already but with different proprtie")
+    print("A symptom with this name has been registered already but with different properties")
     pass
 
 
