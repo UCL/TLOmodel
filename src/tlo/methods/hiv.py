@@ -598,7 +598,7 @@ class hiv(Module):
         now = self.sim.date
         # params = self.parameters
 
-        # ----------------------------------- ADULT SYMPTOMS -----------------------------------
+        # ----------------------------------- ADULT symptoms -----------------------------------
 
         adults = df[df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (df.age_years >= 15)].index
 
@@ -616,7 +616,7 @@ class hiv(Module):
         df.loc[idx, 'hv_specific_symptoms'] = 'aids'
         df.loc[idx, 'hv_unified_symptom_code'] = 3
 
-        # ----------------------------------- CHILD SYMPTOMS -----------------------------------
+        # ----------------------------------- CHILD symptoms -----------------------------------
 
         # baseline pop - infants, all assumed slow progressors
 

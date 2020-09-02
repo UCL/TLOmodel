@@ -240,7 +240,7 @@ class OesophagealCancer(Module):
                     p=prob_by_stage_of_cancer_if_cancer
                 )
 
-        # -------------------- SYMPTOMS -----------
+        # -------------------- symptoms -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of dysphagia:
         lm_init_disphagia = LinearModel.multiplicative(
             Predictor('oc_status').when("none", 0.0)

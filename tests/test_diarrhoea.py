@@ -379,17 +379,22 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
     # Check for non-zero level of recovery
     assert not pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
 
-    # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided
+    # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided and
+    # no one died of the Diarrhoea. (Limited to those whose last onset diarrhoea was one month ago to give time for
+    # outcomes to have occurred).
+    had_diarrhoea_a_month_ago = df.gi_ever_had_diarrhoea & (
+        df.gi_last_diarrhoea_date_of_onset < (sim.date - pd.DateOffset(months=1))
+    )
     got_treatment = ~pd.isnull(
-        df.loc[df.gi_ever_had_diarrhoea, 'gi_last_diarrhoea_treatment_date']
+        df.loc[had_diarrhoea_a_month_ago, 'gi_last_diarrhoea_treatment_date']
     )
     recovered_naturally = ~pd.isnull(
-        df.loc[df.gi_ever_had_diarrhoea & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
+        df.loc[had_diarrhoea_a_month_ago & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
                'gi_last_diarrhoea_recovered_date']
     )
     assert (got_treatment | recovered_naturally).all()
 
-    # check that there have not been any deaths
+    # check that there have not been any deaths caused by Diarrhoea
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
 

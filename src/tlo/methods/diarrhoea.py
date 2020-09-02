@@ -30,8 +30,10 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import Metadata
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -55,6 +57,8 @@ class Diarrhoea(Module):
         'astrovirus',
         'tEPEC'
     }
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         'base_inc_rate_diarrhoea_by_rotavirus':
@@ -471,15 +475,6 @@ class Diarrhoea(Module):
         'tmp_hv_inf': Property(Types.BOOL, 'Temporary property - current HIV infection')
     }
 
-    # Declare symptoms that this module will cause:
-    SYMPTOMS = {
-        'diarrhoea',
-        'bloody_stool',
-        'fever',
-        'vomiting',
-        'dehydration'  # NB. This is non-severe dehydration
-    }
-
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -516,6 +511,15 @@ class Diarrhoea(Module):
         self.mean_duration_in_days_of_diarrhoea = None
         self.prob_diarrhoea_is_watery = None
 
+        # Store the symptoms that this module will use:
+        self.symptoms = {
+            'diarrhoea',
+            'bloody_stool',
+            'fever',
+            'vomiting',
+            'dehydration'  # NB. This is non-severe dehydration
+        }
+
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module """
         p = self.parameters
@@ -536,6 +540,14 @@ class Diarrhoea(Module):
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        for symptom_name in self.symptoms:
+            if symptom_name not in generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+                )
 
     def initialise_population(self, population):
         """
@@ -643,7 +655,7 @@ class Diarrhoea(Module):
 
         assert all(
             [
-                self.SYMPTOMS == set(list(self.prob_symptoms[pathogen].keys()))
+                self.symptoms == set(list(self.prob_symptoms[pathogen].keys()))
                 for pathogen in self.prob_symptoms.keys()
             ]
         )
@@ -935,7 +947,7 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(DiarrhoeaNaturalRecoveryEvent(self.module, person_id),
                                     date_of_outcome)
 
-        # Record 'episode end' data. Tis the date when this episode ends. It is the last possible data that any HSI
+        # Record 'episode end' data. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
         df.at[person_id, 'gi_end_of_last_episode'] = date_of_outcome + DateOffset(
             days=self.module.parameters['days_between_treatment_and_cure']
