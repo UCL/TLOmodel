@@ -206,8 +206,10 @@ def get_class_output_string(classinfo):
 
         # We want nice tables for PARAMETERS and PROPERTIES
         if name in ("PARAMETERS", "PROPERTIES"):
-            str += f"**{name}:**\n"
             table_list = create_table(obj)
+            if table_list == []:
+                continue
+            str += f"**{name}:**\n"
             for t in table_list:
                 str += f"{t}\n"
             str += "\n\n"
@@ -359,7 +361,8 @@ def create_table(mydict):
     NB Do not change the positioning of items in the
     f-strings below, or things will break!
 
-    Lifted from conf.py
+    The table is returned as a list of strings.
+    If there is no data, an empty list is returned.
     '''
 
     examplestr = f'''
@@ -372,11 +375,7 @@ def create_table(mydict):
      - Description
 '''
     if len(mydict) == 0:
-        row = f'''   * - NO
-     - DATA
-     - DEFINED
-'''
-        examplestr += row
+        return []
     else:
         for key in mydict:
             #import pdb; pdb.set_trace()
@@ -415,8 +414,8 @@ if __name__ == '__main__':
     modules = generate_module_list(module_directory)  # List of .py files
     print (modules)
     for m in modules:  # e.g. mockitis.py
-        if m != "mockitis.py":
-            continue
+        #if m != "mockitis.py":
+        #    continue
         fqn = get_fully_qualified_name(m, context)  # e.g. "tlo.methods.mockitis"
         module_obj = importlib.import_module(fqn)  # Object creation from string.
         print (f"module_obj is {module_obj}")
