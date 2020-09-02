@@ -490,8 +490,8 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': {pkg_code1: 1, pkg_code2: 4},
-            'Item_Code': {item_code1: 1, item_code2: 10},
+            'Intervention_Package_Code': {pkg_code1: 1, pkg_code2: 1},
+            'Item_Code': {item_code1: 1, item_code2: 1},
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -503,6 +503,21 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
         else:
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code1]) and \
+                        (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code2]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code2])
+
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2],
+            pkg_codes=[pkg_code1, pkg_code2]
+        )
+
+        # Demonstrate equivalence
+        assert all_available is all_available_using_helper_function
 
         # Return the actual appt footprints
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
