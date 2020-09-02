@@ -94,7 +94,7 @@ def get_classes_in_module(fqn, module_obj):
 def get_fully_qualified_name(filename, context):
     '''
     Given a file name and a context
-    return the fully-qualified name of the module
+    return the fully-qualified name of the *module*
 
     e.g. tlo.methods.mockitis
     This gets used in doc page title.
@@ -167,6 +167,11 @@ def get_class_output_string(classinfo):
 
     str += extract_bases(class_name, class_obj)
     str += "\n\n"
+
+    #str += "External hyperlinks, like `Python <http://www.python.org/>`_.\n\n"
+    #str += "something `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_\n\n"
+    #str += "Multiple: `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_, " \
+    #       "baa `tlo.methods.contraception.Contraception <./tlo.methods.contraception.html#tlo.methods.contraception.Contraception>`_\n\n"
 
     general_exclusions = ["__class__", "__dict__", "__init__", "__module__",
                           "__slots__", "__weakref__",]
@@ -243,12 +248,19 @@ def extract_bases(class_name, class_obj):
         this_base_string = get_base_string(class_name, class_obj, b)  # e.g. "tlo.core.Module"
         if this_base_string is not (None or ""):
             #link = get_link(class_name, class_obj, this_base_string)
+            # str += "something `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_\n\n"
+            #mystr =
             parents.append(this_base_string)
 
     if len(parents) > 0:
-        str = f"Bases: {parents[0]}"
+        str = "**Bases:**\n\n"
+        #str = f"Bases: {parents[0]}"
+        numbase = 1
+        str += f"Base {numbase}: {parents[0]}\n"
         for p in parents[1:]:
-            str += f", {p}"
+            numbase += 1
+            #str += f", {p}"
+            str += f"Base {numbase}: {p}\n"
         #str += "\n\n"
     else:
         str = ""
@@ -267,7 +279,7 @@ def get_base_string (class_name, class_obj, base_obj):
     :param base_obj: the object representation of the *base* class,
     e.g. <class 'tlo.core.Module'> or <class 'object'>
     or <class 'tlo.methods.mockitis.Mockitis'>
-    :return: string with hyperlink
+    :return: string with hyperlink, e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
     '''
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
@@ -301,7 +313,9 @@ def get_base_string (class_name, class_obj, base_obj):
     # We want to return a string with the name of the base class, plus the link
     # to its documentation.
     # e.g. the string might be "tlo.core.Module <./tlo.core.html#tlo.core.Module>"
-    mystr = "`" + fqn + " " + link + "`"
+    mystr = "`" + fqn + " " + link + "`_"
+    # print(f"MYSTR = {mystr}")
+    # e.g. MYSTR = `tlo.core.Module <./tlo.core.html#tlo.core.Module>_`
     return mystr
 
 
@@ -421,10 +435,3 @@ if __name__ == '__main__':
     #comments = inspect.getcomments(module_obj)
     #print(f"comments in module = {comments}")
     # This doesn't seem to work
-
-
-
-    # Ok, so now we have:
-    # 1. a name for the current module, e.g. tlo.methods.mockitis
-    # 2. the name of the class we are linking *from* (to its bases), e.g. Mockitis
-    # 3. the string of the base class we wish to link to, e.g. tlo.core.Module
