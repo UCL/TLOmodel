@@ -1255,6 +1255,11 @@ class HSI_Event:
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
 
+    def get_all_consumables(self, item_code):
+        """Helper function to allow for getting and checking of entire set of consumables.
+        It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
+         are available"""
+        pass
 
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
