@@ -229,10 +229,6 @@ def extract_bases(class_name, class_obj):
     '''
     Document which classes this class inherits from,
     except for the object class or this class itself.
-    TODO: we want links to those other classes.
-    e.g. if this page is http://0.0.0.0:8000/reference/tlo.methods.mockitis.html
-    here is a link `newborn_outcomes <./tlo.methods.newborn_outcomes.html>`_
-    http://0.0.0.0:8000/reference/tlo.core.html#tlo.core.Module
     :param class_name: name of the class (e.g. Mockitis) for which we want the bases
     :param class_obj: object with information about this class
     :return: string of base(s) for this class (if any), with links to their docs.
@@ -258,11 +254,11 @@ def extract_bases(class_name, class_obj):
         str = "**Bases:**\n\n"
         #str = f"Bases: {parents[0]}"
         numbase = 1
-        str += f"Base {numbase}: {parents[0]}\n"
+        str += f"Base #{numbase}: {parents[0]}\n\n"
         for p in parents[1:]:
             numbase += 1
             #str += f", {p}"
-            str += f"Base {numbase}: {p}\n"
+            str += f"Base #{numbase}: {p}\n\n"
         #str += "\n\n"
     else:
         str = ""
@@ -406,6 +402,12 @@ def create_table(mydict):
 
 if __name__ == '__main__':
 
+    # From above:
+    # root_dir = Path(__file__).resolve().parents[2]
+    # MODULE_DIR = f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
+    # LEADER = "tlo.methods"
+    # RST_DIR = f"{root_dir}/docs/reference"
+
     # Add command-line processing here
     context = LEADER
     module_directory = MODULE_DIR
@@ -426,11 +428,3 @@ if __name__ == '__main__':
     # From Stef's sphinx_debug.py
     #root_dir = Path(__file__).resolve().parents[2]
     #print(f"root-dir is {root_dir}")
-
-  # inspect.getcomments(): Return in a single string any lines of
-    # comments immediately preceding the object’s source code
-    # (for a class, function, or method), or at the top of
-    # the Python source file (if the object is a module).
-    #comments = inspect.getcomments(module_obj)
-    #print(f"comments in module = {comments}")
-    # This doesn't seem to work
