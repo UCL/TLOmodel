@@ -1,29 +1,29 @@
 """
 this file runs the malaria module and outputs graphs with data for comparison
 """
-
 import time
-from tlo.analysis.utils import parse_log_file
-import matplotlib.pyplot as plt
-import pandas as pd
 from pathlib import Path
 
+import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    demography,
-    contraception,
-    healthburden,
-    healthsystem,
-    enhanced_lifestyle,
-    malaria,
-    dx_algorithm_child,
-    dx_algorithm_adult,
-    healthseekingbehaviour,
-    symptommanager,
     antenatal_care,
+    contraception,
+    demography,
+    dx_algorithm_adult,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
     labour,
+    malaria,
     newborn_outcomes,
-    pregnancy_supervisor
+    pregnancy_supervisor,
+    symptommanager,
 )
 
 t0 = time.time()

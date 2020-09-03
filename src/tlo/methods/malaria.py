@@ -6,7 +6,6 @@ including the malaria RDT using DxTest
 write-up
 https://www.dropbox.com/scl/fi/p696ddbwlpn2yug2xuuuk/Method_malaria-Sept2019.docx?dl=0
 """
-
 import os
 from pathlib import Path
 
@@ -14,9 +13,9 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, Metadata
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods import Metadata, demography
 from tlo.methods.dxmanager import DxTest
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
@@ -186,8 +185,8 @@ class Malaria(Module):
 
         # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom("jaundice"),            #  nb. will cause care seeking as much as a typical symptom
-            Symptom("severe_anaemia"),      #  nb. will cause care seeking as much as a typical symptom
+            Symptom("jaundice"),            # nb. will cause care seeking as much as a typical symptom
+            Symptom("severe_anaemia"),      # nb. will cause care seeking as much as a typical symptom
             Symptom("acidosis", emergency_in_children=True, emergency_in_adults=True),
             Symptom("coma_convulsions", emergency_in_children=True, emergency_in_adults=True),
             Symptom("renal_failure", emergency_in_children=True, emergency_in_adults=True)
@@ -1272,11 +1271,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                         )
 
                     # diagnosis / treatment for children 5-15
-                    if (
-                        diagnosed
-                        & (df.at[person_id, "age_years"] >= 5) &
-                           (df.at[person_id, "age_years"] < 15)
-                           ):
+                    if diagnosed & (df.at[person_id, "age_years"] >= 5) & (df.at[person_id, "age_years"] < 15):
                         logger.debug(
                             "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
                             person_id,
