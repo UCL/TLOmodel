@@ -14,7 +14,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography
+from tlo.methods import demography, Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
 
@@ -33,6 +33,8 @@ class Malaria(Module):
         self.itn = itn  # projected ITN values from 2020
 
         logger.info(f"Malaria infection event running with projected ITN {self.itn}")
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         "mal_inc": Parameter(Types.REAL, "monthly incidence of malaria in all ages"),

@@ -4,13 +4,9 @@ this file runs the malaria module and outputs graphs with data for comparison
 
 import time
 from tlo.analysis.utils import parse_log_file
-import datetime
-# import os
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
-
-# import xlsxwriter
 
 from tlo import Date, Simulation, logging
 from tlo.methods import (
@@ -32,12 +28,6 @@ from tlo.methods import (
 
 t0 = time.time()
 
-# Where will outputs go - by default, wherever this script is run
-outputpath = Path("./outputs")
-
-# date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
 # The resource files
 resourcefilepath = Path("./resources")
 
@@ -46,9 +36,13 @@ end_date = Date(2020, 12, 31)
 popsize = 5000
 
 # Establish the simulation object
-sim = Simulation(start_date=start_date)
+log_config = {
+    'filename': 'Malaria_LogFile',
+    'directory': './outputs',
+    'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
+}
 
-sim.seed_rngs(25)
+sim = Simulation(start_date=start_date, seed=25, log_config=log_config)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
@@ -57,8 +51,8 @@ service_availability = ["*"]
 malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(
         resourcefilepath=resourcefilepath,
         service_availability=service_availability,
@@ -67,31 +61,24 @@ sim.register(
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=True,
-    )
-)  # disables the health system constraints so all HSI events run
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
-sim.register(dx_algorithm_child.DxAlgorithmChild())
-sim.register(dx_algorithm_adult.DxAlgorithmAdult())
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-sim.register(
+    ),  # disables the health system constraints so all HSI events run
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    dx_algorithm_child.DxAlgorithmChild(),
+    dx_algorithm_adult.DxAlgorithmAdult(),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    contraception.Contraception(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    labour.Labour(resourcefilepath=resourcefilepath),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
     malaria.Malaria(
         resourcefilepath=resourcefilepath,
         testing=malaria_testing,
         itn=None,
     )
 )
-
-# Sets all modules to WARNING threshold, then alters malaria to INFO
-custom_levels = {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
-# configure_logging automatically appends datetime
-logfile = sim.configure_logging(filename="Malaria_LogFile", custom_levels=custom_levels)
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -102,8 +89,7 @@ print("Time taken", t1 - t0)
 
 # %% read the results
 # model outputs
-output = parse_log_file(logfile)
-resourcefilepath = Path("./resources")
+output = parse_log_file(sim.log_filepath)
 
 inc = output["tlo.methods.malaria"]["incidence"]
 pfpr = output["tlo.methods.malaria"]["prevalence"]
