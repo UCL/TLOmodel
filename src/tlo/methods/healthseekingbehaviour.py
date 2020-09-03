@@ -69,15 +69,24 @@ class HealthSeekingBehaviour(Module):
         'odds_ratio_adults_region_Southern': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if '
                                                                    'region is Southern'),
         'odds_ratio_adults_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if wealth'
-                                                                 ' is in categories 4 or 5')
+                                                                 ' is in categories 4 or 5'),
+        'max_days_delay_to_generic_HSI_after_symptoms': Parameter(Types.INT,
+                                                                  'Maximum days delay between symptom onset and first'
+                                                                  'generic HSI. Actual delay is sample between 0 and '
+                                                                  'this value.')
     }
 
     # No properties to declare
     PROPERTIES = {}
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, force_any_symptom_to_lead_to_healthcareseeking=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        # "force_any_symptom_to_lead_to_healthcareseeking"=True will mean that probability of health care seeking is 1.0
+        # for anyone with newly onset symptoms
+        assert isinstance(force_any_symptom_to_lead_to_healthcareseeking, bool)
+        self.force_any_symptom_to_lead_to_healthcareseeking = force_any_symptom_to_lead_to_healthcareseeking
 
     def read_parameters(self, data_folder):
         """Construct the LinearModel for healthcare seeking of the 'average symptom'.
@@ -206,8 +215,15 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                                                                 tclose=None)
 
         def make_generic_non_emergency_first_appt_at_facility_level1(person_id):
-            """Schedule a generic non-emergency appointment for a delay of 0-4 days."""
-            date_of_seeking_care = self.sim.date + DateOffset(days=m.rng.randint(0, 4))
+            """Schedule a generic non-emergency appointment.
+            Occurs after a delay of 0-4 days, or immediately if using 'force_any_symptom_to_lead_to_healthcareseeking'.
+            """
+            if self.module.force_any_symptom_to_lead_to_healthcareseeking:
+                date_of_seeking_care = self.sim.date
+            else:
+                max_days_delay = self.module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
+                date_of_seeking_care = self.sim.date + DateOffset(days=m.rng.randint(0, max_days_delay))
+
             hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(m, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericfirstappt,
                                                                 priority=0,
@@ -285,5 +301,5 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                     baseline_prob = m.hsb['adults'].predict(population.props.loc[[person_id]]).values[0]
                 odds_ratio = get_joint_odds_ratio_of_all_symptoms(care_seeking_symptoms, is_child)
                 prob_hsb = compute_prob_from_baseline_prob_and_odds_ratio(baseline_prob, odds_ratio)
-                if m.rng.rand() < prob_hsb:
+                if (m.rng.rand() < prob_hsb) or self.module.force_any_symptom_to_lead_to_healthcareseeking:
                     make_generic_non_emergency_first_appt_at_facility_level1(person_id)

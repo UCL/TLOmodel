@@ -58,7 +58,8 @@ class HealthSystem(Module):
         ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-        disable=False,  # disables the healthsystem (no constraints and no logging)
+        disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+        disable_and_reject_all=False,  # disable healthsystem and no HSI runs
         store_hsi_events_that_have_run=False  # convenience function for debugging
     ):
 
@@ -69,7 +70,10 @@ class HealthSystem(Module):
         self.ignore_cons_constraints = ignore_cons_constraints
 
         assert type(disable) is bool
-        self.disabled = disable
+        assert type(disable_and_reject_all) is bool
+        assert not (disable and disable_and_reject_all), 'Cannot have both disable and disable_and_reject_all selected'
+        self.disable = disable
+        self.disable_and_reject_all = disable_and_reject_all
 
         assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
         # 0: no constraints -- all HSI Events run with no squeeze factor
@@ -195,7 +199,7 @@ class HealthSystem(Module):
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
-        if not self.disabled:
+        if not (self.disable or self.disable_and_reject_all):
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
@@ -238,11 +242,16 @@ class HealthSystem(Module):
 
         assert isinstance(hsi_event, HSI_Event)
 
-        # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
-        if self.disabled:
+        # 0) Check if healthsystem is disabled
+        if self.disable and (not self.disable_and_reject_all):
+            # If healthsystem is disabled (but HSI can still run), ...
+            #   ... put this event straight into the normal simulation scheduler.
             wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
             self.sim.schedule_event(wrapped_hsi_event, topen)
-            return  # Terrminate this functional call
+            return  # Terminate this functional call
+        elif self.disable_and_reject_all:
+            # If healthsystem is disabled and HSI should not run, do nothing.
+            return
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
@@ -694,7 +703,7 @@ class HealthSystem(Module):
         self.check_consumables_footprint_format(cons_req_as_footprint)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if self.disabled:
+        if self.disable:
             # If the healthsystem module is disabled, return True for all consuambles
             # without checking or logging.
             packages_availability = dict()

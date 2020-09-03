@@ -65,18 +65,12 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
-            # It's a child:
-            logger.debug('Run the ICMI algorithm for this child')
+            # It's a child and we are in FacilityLevel1, so run the the child management routine:
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
-            # Get the diagnosis from the algorithm
-            if 'DxAlgorithmChild' in self.sim.modules:
-                diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
-
-                # Do something based on this diagnosis...
-                if diagnosis == 'measles':
-                    logger.debug('Start treatment for measles')
-                else:
-                    logger.debug('No treatment. HSI ends.')
+            # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
+            if 'diarrhoea' in symptoms:
+                self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
 
         else:
             # It's an adult

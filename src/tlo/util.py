@@ -116,7 +116,7 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     return final_states
 
 
-class BitsetHandler():
+class BitsetHandler:
     def __init__(self, population: Population, column: str, elements: List[str]):
         """Provides functions to operate on an int column in the population dataframe as a bitset
 
@@ -206,6 +206,7 @@ class BitsetHandler():
         The elements are one of more valid items from the list of elements for this bitset
 
         :param where: condition to filter rows that will returned
+        :param first: return the first entry of the resulting series
         """
         def int_to_set(integer):
             bin_repr = format(integer, 'b')
