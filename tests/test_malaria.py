@@ -97,9 +97,6 @@ def test_sims(tmpdir):
     assert not any((df.sex == "M") & (df.ma_clinical_preg_counter > 0))
 
     # check symptoms are being assigned - fever assigned to all clinical cases
-    clin = df.index[df.is_alive & (df.ma_inf_type == "clinical")]
-
-    for person in clin:
-        tmp = df.loc[person, "sy_fever"]
-        assert ("fever" in sim.modules["SymptomManager"].has_what(person)) & (
-        "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever"))
+    for person in df.index[df.is_alive & (df.ma_inf_type == "clinical")]:
+        assert "fever" in sim.modules["SymptomManager"].has_what(person)
+        assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")
