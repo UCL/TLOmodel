@@ -8,7 +8,7 @@ Pandas' Timestamp is used as our main date type (even though it has nanosecond r
 from pandas import Timestamp as Date  # noqa
 from pandas.tseries.offsets import DateOffset  # noqa
 
-from .core import Module, Parameter, Property, Types   #, mattdict, nullstr  # noqa
+from .core import Module, Parameter, Property, Types
 from .population import Population  # noqa
 from .simulation import Simulation  # noqa
 
