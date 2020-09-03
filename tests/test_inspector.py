@@ -1,27 +1,12 @@
-import os
-import time
-import inspect  # not sure if required.
-from pathlib import Path
+#import os
+#import time
+#from pathlib import Path
 
 import pytest
+import inspect
+import importlib
 
-from tlo import Date, Simulation
 import tlo.inspector as inspector
-from tlo.methods import (
-    antenatal_care,
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthsystem,
-    labour,
-    newborn_outcomes,
-    pregnancy_supervisor,
-)
-
-def test_something():
-    assert (1 == 1)
-
 
 @pytest.mark.parametrize(
     "path, result",
@@ -37,7 +22,7 @@ def test_something():
 )
 def test_generate_module_list(path, result):
     # Expect result sorted in ASCII order
-    assert (result == inspector.generate_module_list(path))
+    assert result == inspector.generate_module_list(path)
 
 
 @pytest.mark.parametrize(
@@ -51,4 +36,17 @@ def test_generate_module_list(path, result):
 )
 def test_get_fully_qualified_name(filename, context, result):
     # Get the fully-qualified name of the module (file).
-    assert (result == inspector.get_fully_qualified_name(filename, context))
+    assert result == inspector.get_fully_qualified_name(filename, context)
+
+
+def test_get_classes_in_module():
+    fqn = "for_inspector.a"
+    module_obj = importlib.import_module(fqn)
+    classes = inspector.get_classes_in_module(fqn, module_obj)
+    # Each entry in the list returned is itself a list of:
+    # [class name, class object, line number]
+    c1, c2 = classes
+    assert c1[0] == "Person"
+    assert c2[0] == "Employee"
+    assert str(c1[1]) == "<class 'for_inspector.a.Person'>"
+    assert str(c2[1]) == "<class 'for_inspector.a.Employee'>"
