@@ -233,7 +233,8 @@ def extract_bases(class_name, class_obj):
     parents = []
 
     for b in bases:
-        this_base_string = get_base_string(class_name, class_obj, b)  # e.g. "tlo.core.Module"
+        # Example of this_base_string: `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
+        this_base_string = get_base_string(class_name, class_obj, b)
         if this_base_string is not (None or ""):
             #link = get_link(class_name, class_obj, this_base_string)
             # str += "something `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_\n\n"
