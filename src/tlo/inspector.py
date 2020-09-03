@@ -105,22 +105,11 @@ def get_fully_qualified_name(filename, context):
     :return: a string, e.g. "tlo.methods.mockitis"
     '''
     parts = filename.split(".")
-    fqname = context + "." + parts[0]
-    return fqname
-
-
-def extract_required_members(module, exclusions):
-    '''Which class members do we wish to include in
-    the .rst file we will write?
-
-    Skip over the ones we don't want.
-
-    Don't want to display most class members in tlo.methods.*
-    For classes which inherit tlo.Module, the PROPERTIES & PARAMETERS
-    class dictionary attributes should be displayed only as tables.
-    And also not display e.g. apply() or name, on_birth()
-   '''
-    pass
+    if context == "":
+        return parts[0]
+    else:
+        fqname = context + "." + parts[0]
+        return fqname
 
 
 def write_rst_file(rst_dir, fqn, mobj):

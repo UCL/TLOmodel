@@ -32,22 +32,23 @@ def test_something():
                          "example_log.txt",
                          ]),
         # ("another_path", [sorted file list]),
-        # etc.
+        ("./for_inspector", ["a.py"]),
     ],
 )
-
-
 def test_generate_module_list(path, result):
     # Expect result sorted in ASCII order
     assert (result == inspector.generate_module_list(path))
 
 
-#if __name__ == '__main__':
-#    t0 = time.time()
-    #simulation = simulation()
-    #simulation.make_initial_population(n=popsize)
-    #simulation.simulate(end_date=end_date)
-#    t1 = time.time()
-#    print('Time taken', t1 - t0)
-    #test_dypes(simulation)
-
+@pytest.mark.parametrize(
+    "filename, context, result",
+    [
+        ("fred.py", "some.place.or.other", "some.place.or.other.fred"),
+        ("daniel", "somewhere.else", "somewhere.else.daniel"),
+        ("roberta", "", "roberta"),
+        ("", "", ""),
+    ]
+)
+def test_get_fully_qualified_name(filename, context, result):
+    # Get the fully-qualified name of the module (file).
+    assert (result == inspector.get_fully_qualified_name(filename, context))
