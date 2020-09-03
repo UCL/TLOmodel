@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Iterable
 
-from .core import _FORMATTER, DEBUG, getLogger
+from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
 
 
 def set_output_file(log_path: Path) -> _logging.FileHandler:
@@ -37,11 +37,21 @@ def set_logging_levels(custom_levels: Dict[str, int], modules: Iterable[str]):
 
 def init_logging():
     """Initialise default logging with stdout stream"""
+    for logger_name, logger in _LOGGERS.items():
+        logger.reset_attributes()
+
     handler = _logging.StreamHandler(sys.stdout)
     handler.setLevel(DEBUG)
     handler.setFormatter(_FORMATTER)
-    logger = getLogger('tlo')
-    logger.handlers.clear()
-    logger.filters.clear()
-    logger.addHandler(handler)
+    getLogger('tlo').addHandler(handler)
     _logging.basicConfig(level=_logging.WARNING)
+
+
+def set_simulation(simulation):
+    """
+    Inject simulation into logger for structured logging, called by the simulation
+    :param simulation:
+    :return:
+    """
+    logger = getLogger('tlo')
+    logger.simulation = simulation

@@ -58,7 +58,9 @@ class HealthSystem(Module):
         ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
-        disable=False  # disables the healthsystem (no constraints and no logging).
+        disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+        disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+        store_hsi_events_that_have_run=False  # convenience function for debugging
     ):
 
         super().__init__(name)
@@ -68,7 +70,10 @@ class HealthSystem(Module):
         self.ignore_cons_constraints = ignore_cons_constraints
 
         assert type(disable) is bool
+        assert type(disable_and_reject_all) is bool
+        assert not (disable and disable_and_reject_all), 'Cannot have both disable and disable_and_reject_all selected'
         self.disable = disable
+        self.disable_and_reject_all = disable_and_reject_all
 
         assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
         # 0: no constraints -- all HSI Events run with no squeeze factor
@@ -100,6 +105,13 @@ class HealthSystem(Module):
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
+
+        # Check 'store_hsi_events_that_have_run': will store a running list of HSI events that have run
+        # (for debugging)
+        assert isinstance(store_hsi_events_that_have_run, bool)
+        self.store_hsi_events_that_have_run = store_hsi_events_that_have_run
+        if self.store_hsi_events_that_have_run:
+            self.store_of_hsi_events_that_have_run = list()
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availability:")
@@ -187,7 +199,7 @@ class HealthSystem(Module):
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
-        if not self.disable:
+        if not (self.disable or self.disable_and_reject_all):
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
@@ -230,11 +242,16 @@ class HealthSystem(Module):
 
         assert isinstance(hsi_event, HSI_Event)
 
-        # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
-        if self.disable:
+        # 0) Check if healthsystem is disabled
+        if self.disable and (not self.disable_and_reject_all):
+            # If healthsystem is disabled (but HSI can still run), ...
+            #   ... put this event straight into the normal simulation scheduler.
             wrapped_hsi_event = HSIEventWrapper(hsi_event=hsi_event)
             self.sim.schedule_event(wrapped_hsi_event, topen)
-            return  # Terrminate this functional call
+            return  # Terminate this functional call
+        elif self.disable_and_reject_all:
+            # If healthsystem is disabled and HSI should not run, do nothing.
+            return
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
@@ -281,15 +298,16 @@ class HealthSystem(Module):
 
         # 2) Check that topen, tclose and priority are valid
 
-        # If there is no specified tclose time then set this is after the end of the simulation
+        # If there is no specified tclose time then set this to the later of (i) the day after the end of the
+        # simulation, (ii) the day after topen
         if tclose is None:
-            tclose = self.sim.end_date + DateOffset(days=1)
+            tclose = max(self.sim.end_date + DateOffset(days=1), topen + DateOffset(days=1))
 
         # Check topen is not in the past
         assert topen >= self.sim.date
 
-        # Check that topen and tclose are not the same date
-        assert not topen == tclose
+        # Check that topen is before tclose are not the same date
+        assert topen < tclose
 
         # Check that priority is either 0, 1 or 2
         assert priority in {0, 1, 2}
@@ -373,6 +391,15 @@ class HealthSystem(Module):
             )
 
         else:
+            # HSI is not available under the services_available parameter: call the hsi's not_available() method if it
+            # exists:
+            try:
+                hsi_event.not_available()
+                # TODO: should the healthsystem call this at the time that the HSI was intended to be run (i.e topen)?
+
+            except AttributeError:
+                pass
+
             logger.debug(
                 '%s| A request was made for a service but it was not included in the service_availability list: %s',
                 self.sim.date,
@@ -770,7 +797,6 @@ class HealthSystem(Module):
         :param cons_footprint:
         :return:
         """
-
         # Format is as follows:
         #     * dict with two keys; Intervention_Package_Code and Item_Code
         #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
@@ -891,6 +917,9 @@ class HealthSystem(Module):
 
         logger.info('%s|HSI_Event|%s', self.sim.date, log_info)
 
+        if self.store_hsi_events_that_have_run:
+            self.store_of_hsi_events_that_have_run.append(log_info)
+
     def log_current_capabilities(self, current_capabilities, all_calls_today):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type
@@ -936,6 +965,24 @@ class HealthSystem(Module):
         log_capacity['Frac_Time_Used_By_Facility_ID'] = summary['Fraction_Time_Used'].to_dict()
 
         logger.info('%s|Capacity|%s', self.sim.date, log_capacity)
+
+    def find_events_for_person(self, person_id: int):
+        """Find the events in the HSI_EVENT_QUEUE for a particular person.
+        :param person_id: the person_id of interest
+        :returns list of tuples (date_of_event, event) for that person_id in the HSI_EVENT_QUEUE.
+
+        NB. This is for debugging and testing only - not for use in real simulations as it is slow
+        """
+        list_of_events = list()
+
+        for ev_tuple in self.HSI_EVENT_QUEUE:
+            date = ev_tuple[1]   # this is the 'topen' value
+            event = ev_tuple[4]
+            if isinstance(event.target, int):
+                if event.target == person_id:
+                    list_of_events.append((date, event))
+
+        return list_of_events
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -1202,6 +1249,12 @@ class HSI_Event:
         """
         raise NotImplementedError
 
+    def not_available(self):
+        """Called when this event is passed to schedule_hsi_event when the TREATMENT_ID is not permitted by the
+         parameter service_availability.
+        """
+        pass
+
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""
         pass
@@ -1222,6 +1275,7 @@ class HSIEventWrapper(Event):
     def __init__(self, hsi_event, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
+        self.target = hsi_event.target
 
     def run(self):
         # check that the person is still alive

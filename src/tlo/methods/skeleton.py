@@ -2,9 +2,9 @@
 A skeleton template for disease methods.
 
 """
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 
 # ---------------------------------------------------------------------------------------------------------
@@ -19,6 +19,8 @@ class Skeleton(Module):
     """
     One line summary goes here...
 
+    If it another kind of module use base class Module
+
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation
     framework:
@@ -30,6 +32,7 @@ class Skeleton(Module):
     *  `report_daly_values()` [If this is disease module]
 
     """
+    METADATA = {Metadata.DISEASE_MODULE}  # declare that this is a disease module (leave as empty set otherwise)
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -58,6 +61,7 @@ class Skeleton(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.store = {'Proportion_infected': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -181,7 +185,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'Metric_Two': 2.0
         }
 
-        logger.info('%s|summary_12m|%s', self.sim.date, dict_to_output)
+        logger.info(key='summary_12m', data=dict_to_output)
 
 
 # ---------------------------------------------------------------------------------------------------------

@@ -3,17 +3,16 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import datetime
-import logging
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 # todo: Note: bmi category at turning age 15 needs to be made dependent on malnutrition in childhood when that
@@ -1125,21 +1124,39 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
         )
 
-        bmi_proportions = {
-            'prop_bmi_1': prop_bmi_1,
-            'prop_bmi_2': prop_bmi_2,
-            'prop_bmi_3': prop_bmi_3,
-            'prop_bmi_4': prop_bmi_4,
-            'prop_bmi_5': prop_bmi_5,
-            'prop_bmi_45_f': prop_bmi_45_f,
-            # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
-            'prop_bmi_45_m': prop_bmi_45_m,
-            'prop_bmi_45_urban': prop_bmi_45_urban,
-            'prop_bmi_45_rural': prop_bmi_45_rural,
-            'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
-            'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
-            'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
+        if prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 > 0:
+            bmi_proportions = {
+                'prop_bmi_1': prop_bmi_1,
+                'prop_bmi_2': prop_bmi_2,
+                'prop_bmi_3': prop_bmi_3,
+                'prop_bmi_4': prop_bmi_4,
+                'prop_bmi_5': prop_bmi_5,
+                'prop_bmi_45_f': prop_bmi_45_f,
+                # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
+                'prop_bmi_45_m': prop_bmi_45_m,
+                'prop_bmi_45_urban': prop_bmi_45_urban,
+                'prop_bmi_45_rural': prop_bmi_45_rural,
+                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
+                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
+                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
                 prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
+            }
+        else:
+            bmi_proportions = {
+                'prop_bmi_1': prop_bmi_1,
+                'prop_bmi_2': prop_bmi_2,
+                'prop_bmi_3': prop_bmi_3,
+                'prop_bmi_4': prop_bmi_4,
+                'prop_bmi_5': prop_bmi_5,
+                'prop_bmi_45_f': prop_bmi_45_f,
+                # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
+                'prop_bmi_45_m': prop_bmi_45_m,
+                'prop_bmi_45_urban': prop_bmi_45_urban,
+                'prop_bmi_45_rural': prop_bmi_45_rural,
+                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
+                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
+                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
+                    0
             }
 
         # Screen for null values before placing in the logger
@@ -1147,29 +1164,14 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             if np.isnan(v):
                 bmi_proportions[k] = 0.0
 
-        logger.info(
-            '%s|bmi_proportions|%s',
-            self.sim.date,
-            bmi_proportions
-        )
+        logger.info(key='bmi_proportions', data=bmi_proportions)
 
         """
-        logger.info('%s|li_urban|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('li_urban').size().to_dict())
-        logger.info('%s|li_wealth|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('li_wealth').size().to_dict())
-        logger.info('%s|li_overwt|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
-        logger.info('%s|li_low_ex|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
-        logger.info('%s|li_tob|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
-        logger.info('%s|li_ed_lev_by_age|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
+        logger.info(key='li_urban', data=df[df.is_alive].groupby('li_urban').size().to_dict())
+        logger.info(key='li_wealth', data=df[df.is_alive].groupby('li_wealth').size().to_dict())
+        logger.info(key='li_overwt', data=df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
+        logger.info(key='li_low_ex', data=df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
+        logger.info(key='li_tob', data=df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
+        logger.info(key='li_ed_lev_by_age',
+                    data=df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
         """
