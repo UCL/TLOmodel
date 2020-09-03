@@ -25,7 +25,8 @@ RST_DIR = f"{root_dir}/docs/reference"
 def generate_module_list(dir_string):
     '''Obtain all Python module files in this directory
     e.g. mockitis.py, hiv.py, healthsystem.py...
-    in an alphabetically-sorted list.
+    in an ASCII-sorted list.
+    Actually, it returns all files - need to change?
 
     :param dir_string: string containing path to directory to process.
 
