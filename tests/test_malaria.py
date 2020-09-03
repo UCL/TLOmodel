@@ -60,7 +60,7 @@ def test_sims(tmpdir):
         )
     )  # disables the health system constraints so all HSI events run
     sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
     sim.register(dx_algorithm_child.DxAlgorithmChild())
     sim.register(dx_algorithm_adult.DxAlgorithmAdult())
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))

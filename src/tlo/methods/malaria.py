@@ -17,6 +17,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import demography, Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -141,16 +142,6 @@ class Malaria(Module):
 
     # TODO reset ma_iptp after delivery
 
-    # not generic symptoms here, only specific ones
-    SYMPTOMS = {
-        "em_acidosis",
-        "em_coma_convulsions",
-        "em_renal_failure",
-        "em_shock",
-        "jaundice",
-        "severe_anaemia",
-    }
-
     def read_parameters(self, data_folder):
 
         workbook = pd.read_excel(
@@ -192,6 +183,15 @@ class Malaria(Module):
         # ----------------------------------- REGISTER WITH HEALTH SYSTEM -----------------------------------
         # need to register before any health system, stuff / symptom manager happens
         self.sim.modules["HealthSystem"].register_disease_module(self)
+
+        # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom("jaundice"),            #  nb. will cause care seeking as much as a typical symptom
+            Symptom("severe_anaemia"),      #  nb. will cause care seeking as much as a typical symptom
+            Symptom("acidosis", emergency_in_children=True, emergency_in_adults=True),
+            Symptom("coma_convulsions", emergency_in_children=True, emergency_in_adults=True),
+            Symptom("renal_failure", emergency_in_children=True, emergency_in_adults=True)
+        )
 
     def initialise_population(self, population):
         df = population.props
