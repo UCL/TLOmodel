@@ -1,7 +1,5 @@
 # %% Import Statements
 import datetime
-import logging
-import os
 from pathlib import Path
 
 import numpy as np
@@ -30,34 +28,20 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2070, 1, 2)
 popsize = 1000
 
-# add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
-
-# this block of code is to capture the outputs to file
-logfile = outputpath / ('LogFile' + datestamp + '.log')
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
+sim = Simulation(start_date=start_date, seed=1, log_config={'filename': 'LogFile', 'directory': outputpath})
 
 # run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.seed_rngs(1)
+sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
+    contraception.Contraception(resourcefilepath=resourcefilepath),
+)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# this will make sure that the logging file is complete
-fh.flush()
-
 # %% read the results
-output = parse_log_file(logfile)
+output = parse_log_file(sim.log_filepath)
 
 # %% Plot Contraception Use Over time:
-
 years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
 years_fmt = mdates.DateFormatter('%Y')

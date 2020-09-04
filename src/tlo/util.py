@@ -1,9 +1,11 @@
 """This file contains helpful utility functions."""
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
+
+from tlo import Population
 
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
@@ -112,3 +114,141 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
             new_states = rng.choice(all_states, len(state_index), p=prob_matrix[state])
             final_states[state_index] = new_states
     return final_states
+
+
+class BitsetHandler:
+    def __init__(self, population: Population, column: str, elements: List[str]):
+        """Provides functions to operate on an int column in the population dataframe as a bitset
+
+        :param population: The TLO Population object (not the props dataframe)
+        :param column: The integer property column that will be used as a bitset
+        :param elements: A list of strings specifying the elements of the bitset
+        :returns: instance of BitsetHandler for supplied arguments
+        """
+        assert isinstance(population, Population), 'First argument is the population object (not the `props` dataframe)'
+        assert column in population.props.columns, 'Column not found in population dataframe'
+        self._population = population
+        self._column: str = column
+        self._elements: List[str] = elements
+        self._lookup = {k: 2 ** i for i, k in enumerate(elements)}
+        self._lookup.update(dict((v, k) for k, v in self._lookup.items()))
+
+    @property
+    def df(self) -> pd.DataFrame:
+        return self._population.props
+
+    def element_repr(self, element: str) -> str:
+        """Returns integer representation of the specified element"""
+        return self._lookup[element]
+
+    def set(self, where, *elements: str) -> None:
+        """For individuals matching `where` argument, set the bit (i.e. set to True) the given elements
+
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
+        items, a boolean logical condition, or list of row indices e.g. "[0]"
+
+        The elements are one of more valid items from the list of elements for this bitset
+
+        :param where: condition to filter rows that will be set
+        :param elements: one or more elements to set to True"""
+        value = sum([self._lookup[x] for x in elements])
+        self.df.loc[where, self._column] = np.bitwise_or(self.df.loc[where, self._column], value)
+
+    def unset(self, where, *elements: str) -> None:
+        """For individuals matching `where` argument, unset the bit (i.e. set to False) the given elements
+
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
+        items, a boolean logical condition, or list of row indices e.g. "[0]"
+
+        The elements are one of more valid items from the list of elements for this bitset
+
+        :param where: condition to filter rows that will be unset
+        :param elements: one or more elements to set to False"""
+        value = sum([self._lookup[x] for x in elements])
+        value = np.invert(np.array(value, np.int64))
+        self.df.loc[where, self._column] = np.bitwise_and(self.df.loc[where, self._column], value)
+
+    def has_all(self, where, *elements: str, first=False) -> Union[pd.Series, bool]:
+        """Check whether individual(s) have all the elements given set to True
+
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
+        items, a boolean logical condition, or list of row indices e.g. "[0]"
+
+        The elements are one of more valid items from the list of elements for this bitset
+
+        If a single individual is supplied as the where clause, returns a bool, otherwise a Series of bool
+
+        :param where: condition to filter rows that will checked
+        :param elements: one or more elements to set to True
+        :param first: a keyword argument to return first item in Series instead of Series"""
+        value = sum([self._lookup[x] for x in elements])
+        matched = np.bitwise_and(self.df.loc[where, self._column], value) == value
+        if first:
+            return matched.iloc[0]
+        return matched
+
+    def has_any(self, where, *elements: str, first=False):
+        """Sister method to `has_all` but instead checks whether matching rows have any of the elements
+        set to True"""
+        matched = pd.Series(False, index=self.df.index[where])
+        for element in elements:
+            matched = matched.where(matched, self.has_all(where, element))
+        if first:
+            return matched.iloc[0]
+        return matched
+
+    def get(self, where, first=False):
+        """Returns a Series with set of string of elements where bit is True
+
+        The where argument is used verbatim as the first item in a `df.loc[x, y]` call. It can be index
+        items, a boolean logical condition, or list of row indices e.g. "[0]"
+
+        The elements are one of more valid items from the list of elements for this bitset
+
+        :param where: condition to filter rows that will returned
+        :param first: return the first entry of the resulting series
+        """
+        def int_to_set(integer):
+            bin_repr = format(integer, 'b')
+            return {self._lookup[2 ** k] for k, v in enumerate(reversed(list(bin_repr))) if v == '1'}
+        sets = self.df.loc[where, self._column].apply(int_to_set)
+        if first:
+            return sets.iloc[0]
+        return sets
+
+    def compress(self, uncompressed: pd.DataFrame) -> None:
+        def convert(column):
+            value_of_column = self._lookup[column.name]
+            return column.replace({True: value_of_column, False: 0})
+        collapsed = uncompressed.apply(convert).sum(axis=1).astype('int64')
+        self.df.loc[uncompressed.index, self._column] = collapsed
+
+    def uncompress(self, where=None) -> pd.DataFrame:
+        """Returns an exploded representation of the bitset
+
+        Each element bit becomes a column and each column is a bool indicating whether the bit is
+        set for the element
+        """
+        if where is None:
+            where = self.df.index
+        collect = dict()
+        for element in self._elements:
+            collect[element] = self.has_all(where, element)
+        return pd.DataFrame(collect)
+
+    def not_empty(self, where, first=False) -> Union[pd.Series, bool]:
+        """Returns Series of bool indicating whether the BitSet entry is not empty. True is set is not empty, False
+        otherwise"""
+        return ~self.is_empty(where, first=first)
+
+    def is_empty(self, where, first=False) -> Union[pd.Series, bool]:
+        """Returns Series of bool indicating whether the BitSet entry is empty. True if the set is empty,
+        False otherwise"""
+        empty = self.df.loc[where, self._column] == 0
+        if first:
+            return empty.iloc[0]
+        return empty
+
+    def clear(self, where) -> None:
+        """Clears all the bits for the specified rows"""
+        self.df.loc[where, self._column] = 0

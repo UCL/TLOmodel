@@ -1,13 +1,11 @@
 """
 TB infections
 """
-
-import logging
 import os
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
@@ -117,7 +115,6 @@ class tb(Module):
         'tb_on_ipt': Property(Types.BOOL, 'if currently on ipt'),
         'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
         'tb_date_death': Property(Types.DATE, 'date of death from tb')
-
     }
 
     def read_parameters(self, data_folder):

@@ -1,7 +1,6 @@
 from io import StringIO
 
 import pandas as pd
-import pytest
 from pytest import fixture
 
 from tlo import Date, Simulation, logging
@@ -113,45 +112,40 @@ def test_log_df(log_path):
     return parse_log_file(log_path)['tlo.test']
 
 
-@pytest.mark.usefixtures('test_log_df', 'log_input')
 class TestWriteAndReadLog:
-    def __init__(self):
-        self.test_log_df = test_log_df
-        self.log_input = log_input
-
-    def test_rows_as_dicts(self):
+    def test_rows_as_dicts(self, test_log_df, log_input):
         # get table to compare
-        log_output = self.test_log_df['rows_as_dicts'].drop(['date'], axis=1)
+        log_output = test_log_df['rows_as_dicts'].drop(['date'], axis=1)
 
         # categories need to be set manually
         log_output.col4_cat = log_output.col4_cat.astype('category')
 
-        assert self.log_input.equals(log_output)
+        assert log_input.equals(log_output)
 
-    def test_rows_as_individuals(self):
+    def test_rows_as_individuals(self, test_log_df, log_input):
         # get table to compare
-        log_output = self.test_log_df['rows_as_individuals'].drop(['date'], axis=1)
+        log_output = test_log_df['rows_as_individuals'].drop(['date'], axis=1)
 
         # categories need to be set manually
         log_output.col4_cat = log_output.col4_cat.astype('category')
-        assert self.log_input.equals(log_output)
+        assert log_input.equals(log_output)
 
-    def test_log_entire_df(self):
+    def test_log_entire_df(self, test_log_df, log_input):
         # get table to compare
-        log_output = self.test_log_df['multi_row_df'].drop(['date'], axis=1)
+        log_output = test_log_df['multi_row_df'].drop(['date'], axis=1)
 
         # within nested dicts/entire df, need manual setting of special types
         log_output.col4_cat = log_output.col4_cat.astype('category')
-        self.log_input.col5_set = self.log_input.col5_set.apply(list)
+        log_input.col5_set = log_input.col5_set.apply(list)
         log_output.col7_date = log_output.col7_date.astype('datetime64')
         # deal with index matching by resetting index
         log_output.reset_index(inplace=True, drop=True)
-        expected_output = self.log_input.append(self.log_input, ignore_index=True)
+        expected_output = log_input.append(log_input, ignore_index=True)
 
         assert expected_output.equals(log_output)
 
-    def test_fixed_length_list(self):
-        log_df = self.test_log_df['a_fixed_length_list'].drop(['date'], axis=1)
+    def test_fixed_length_list(self, test_log_df):
+        log_df = test_log_df['a_fixed_length_list'].drop(['date'], axis=1)
 
         expected_output = pd.DataFrame(
             {'item_1': ['one', 'two', None, 'three', 'four', 'five'],
@@ -160,19 +154,19 @@ class TestWriteAndReadLog:
 
         assert expected_output.equals(log_df)
 
-    def test_variable_length_list(self):
-        log_df = self.test_log_df['a_variable_length_list']
+    def test_variable_length_list(self, test_log_df, log_input):
+        log_df = test_log_df['a_variable_length_list']
 
-        assert self.log_input.col6_list.equals(log_df.list_header)
+        assert log_input.col6_list.equals(log_df.list_header)
 
-    def test_string(self):
-        log_df = self.test_log_df['string_value']
+    def test_string(self, test_log_df):
+        log_df = test_log_df['string_value']
 
         assert pd.Series('I am a message.').equals(log_df.message)
 
-    def test_categorical(self):
-        log_df = self.test_log_df['categorical']
-        assert self.log_input.col4_cat.equals(log_df.cat)
+    def test_categorical(self, test_log_df, log_input):
+        log_df = test_log_df['categorical']
+        assert log_input.col4_cat.equals(log_df.cat)
 
 
 class TestParseLogAtLoggingLevel:

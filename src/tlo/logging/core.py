@@ -80,6 +80,7 @@ class Logger:
         # boolean attributes used for now, can be removed after transition to structured logging
         self.logged_stdlib = False
         self.logged_structured = False
+        self.setLevel(INFO)
 
     def setLevel(self, level):
         self._std_logger.setLevel(level)
