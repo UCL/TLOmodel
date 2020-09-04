@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+
 class RTI(Module):
     """
     RTI module for the TLO model
@@ -445,6 +446,50 @@ class RTI(Module):
             Types.REAL,
             'Proportion of lower extremity injuries that result in amputation with AIS 4'
         ),
+        'allowed_interventions': Parameter(
+            Types.LIST, 'list of interventions allowed to run, used in analysis'),
+        # Length of stay
+        'mean_los_ISS_less_than_4': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score < 4'
+        ),
+        'sd_los_ISS_less_than_4': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score < 4'
+        ),
+        'mean_los_ISS_4_to_8': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 4 and 8'
+        ),
+        'sd_los_ISS_4_to_8': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 4 and 8'
+        ),
+        'mean_los_ISS_9_to_15': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 9 and 15'
+        ),
+        'sd_los_ISS_9_to_15': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 9 and 15'
+        ),
+        'mean_los_ISS_16_to_24': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 16 and 24'
+        ),
+        'sd_los_ISS_16_to_24': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 16 and 24'
+        ),
+        'mean_los_ISS_more_than_25': Parameter(
+            Types.REAL,
+            'Mean length of stay for someone with an ISS score between 16 and 24'
+        ),
+        'sd_los_ISS_more_that_25': Parameter(
+            Types.REAL,
+            'Standard deviation in length of stay for someone with an ISS score between 16 and 24'
+        ),
+        # DALY weights
         'daly_wt_unspecified_skull_fracture': Parameter(
             Types.REAL,
             'daly_wt_unspecified_skull_fracture - code 1674'
@@ -692,47 +737,6 @@ class RTI(Module):
         'daly_wt_bilateral_lower_limb_amputation_without_treatment': Parameter(
             Types.REAL,
             'daly_wt_bilateral_lower_limb_amputation_without_treatment - code 1735'
-        ),
-        # Find me
-        'mean_los_ISS_less_than_4': Parameter(
-            Types.REAL,
-            'Mean length of stay for someone with an ISS score < 4'
-        ),
-        'sd_los_ISS_less_than_4': Parameter(
-            Types.REAL,
-            'Standard deviation in length of stay for someone with an ISS score < 4'
-        ),
-        'mean_los_ISS_4_to_8': Parameter(
-            Types.REAL,
-            'Mean length of stay for someone with an ISS score between 4 and 8'
-        ),
-        'sd_los_ISS_4_to_8': Parameter(
-            Types.REAL,
-            'Standard deviation in length of stay for someone with an ISS score between 4 and 8'
-        ),
-        'mean_los_ISS_9_to_15': Parameter(
-            Types.REAL,
-            'Mean length of stay for someone with an ISS score between 9 and 15'
-        ),
-        'sd_los_ISS_9_to_15': Parameter(
-            Types.REAL,
-            'Standard deviation in length of stay for someone with an ISS score between 9 and 15'
-        ),
-        'mean_los_ISS_16_to_24': Parameter(
-            Types.REAL,
-            'Mean length of stay for someone with an ISS score between 16 and 24'
-        ),
-        'sd_los_ISS_16_to_24': Parameter(
-            Types.REAL,
-            'Standard deviation in length of stay for someone with an ISS score between 16 and 24'
-        ),
-        'mean_los_ISS_more_than_25': Parameter(
-            Types.REAL,
-            'Mean length of stay for someone with an ISS score between 16 and 24'
-        ),
-        'sd_los_ISS_more_that_25': Parameter(
-            Types.REAL,
-            'Standard deviation in length of stay for someone with an ISS score between 16 and 24'
         ),
     }
 
@@ -2699,7 +2703,9 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
         p = module.parameters
         # Parameters which transition the model between states
-        self.base_1m_prob_rti = p['base_rate_injrti'] / 12
+        self.base_1m_prob_rti = (p['base_rate_injrti'] / 12)
+        if 'reduce_incidence' in p['allowed_interventions']:
+            self.base_1m_prob_rti = self.base_1m_prob_rti * 0.335
         self.rr_injrti_age1829 = p['rr_injrti_age1829']
         self.rr_injrti_age3039 = p['rr_injrti_age3039']
         self.rr_injrti_age4049 = p['rr_injrti_age4049']
@@ -3123,7 +3129,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         self.prob_death_with_med_mild = p['prob_death_with_med_mild']
         self.prob_death_with_med_severe = p['prob_death_with_med_severe']
         self.prob_dislocation_requires_surgery = p['prob_dislocation_requires_surgery']
-
+        self.allowed_interventions = p['allowed_interventions']
         self.heal_with_time_injuries = []
 
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
@@ -3207,7 +3213,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         # -------------------------------- Spinal cord injury requirements --------------------------------------------
         codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        if len(idx) > 0:
+        if (len(idx) > 0) & ('include_spine_surgery' in self.allowed_interventions):
             self.major_surgery_counts += 1
 
         # --------------------------------- Dislocations --------------------------------------------------------------
@@ -3231,7 +3237,7 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
         # --------------------------------- Soft tissue injury in thorax/ lung injury ----------------------------------
         codes = ['441', '443', '453', '453a', '453b']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
-        if len(idx) > 0:
+        if (len(idx) > 0) & ('include_thoroscopy' in self.allowed_interventions):
             self.major_surgery_counts += 1
         codes = ['442']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
@@ -3239,9 +3245,13 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
             actual_injury = np.intersect1d(codes, person_injuries.values)
             self.heal_with_time_injuries = np.append(self.heal_with_time_injuries, actual_injury)
         # -------------------------------- Internal bleeding -----------------------------------------------------------
-        codes = ['361', '363', '463']
+        codes = ['361', '363']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         if len(idx) > 0:
+            self.major_surgery_counts += 1
+            codes = ['463']
+        idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        if (len(idx) > 0) & ('include_thoroscopy' in self.allowed_interventions):
             self.major_surgery_counts += 1
         codes = ['461']
         idx, counts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
@@ -3415,7 +3425,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     '712a' - broken clavicle, scapula, humerus
     '712b' - broken hand/wrist
     '712c' - broken radius/ulna
-    '811' - Fractured food
+    '811' - Fractured foot
     '812' - broken tibia/fibula
     """
 
@@ -3437,42 +3447,48 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         cols = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                 'rt_injury_7', 'rt_injury_8']
         person_injuries = df.loc[[person_id], cols]
-        codes = ['712a', '712b', '712c', '811', '812']
-        idx, fracturecounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        codes = ['712b', '712c', '811', '812']
+        idx, fracturecastcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        assert fracturecounts > 0
 
+        codes = ['712a']
+        idx1, slingcounts = road_traffic_injuries.rti_find_and_count_injuries(person_injuries, codes)
+        consumables_fractures = {'Intervention_Package_Code': dict(), 'Item_Code': dict()}
+        assert fracturecastcounts + slingcounts > 0
         if len(idx) > 0:
             plaster_of_paris_code = pd.unique(
                 consumables.loc[consumables['Items'] ==
                                 'Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST', 'Item_Code'])[0]
-            consumables_fractures = {'Intervention_Package_Code': dict(),
-                                     'Item_Code': {plaster_of_paris_code: fracturecounts}}
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self,
-                cons_req_as_footprint=consumables_fractures,
-                to_log=False)
-            if is_cons_available:
-                logger.debug(f"Fracture casts available for person %d's {fracturecounts} fractures", person_id)
-                # Fractured arms/wrists take around 6-8 weeks to heal
-                df.at[person_id, 'rt_med_int'] = True
-                columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                           'rt_injury_7', 'rt_injury_8']
-                persons_injuries = df.loc[[person_id], columns]
-                non_empty_injuries = persons_injuries[persons_injuries != "none"]
-                non_empty_injuries = non_empty_injuries.dropna(axis=1)
-                relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
-                road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
-                columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
-                for col in columns:
-                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
-                                                                                    DateOffset(weeks=7)
+            consumables_fractures['Item_Code'].update({plaster_of_paris_code: fracturecastcounts})
+        if len(idx1) > 0:
+            sling_code = pd.unique(
+                consumables.loc[consumables['Items'] ==
+                                'Bandage, crepe 7.5cm x 1.4m long , when stretched', 'Item_Code'])[0]
+            consumables_fractures['Item_Code'].update({sling_code: slingcounts})
+
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_fractures,
+            to_log=False)
+        if is_cons_available:
+            logger.debug(f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures",
+                         person_id)
+            # Fractured arms/wrists take around 6-8 weeks to heal
+            df.at[person_id, 'rt_med_int'] = True
+            columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                       'rt_injury_7', 'rt_injury_8']
+            persons_injuries = df.loc[[person_id], columns]
+            non_empty_injuries = persons_injuries[persons_injuries != "none"]
+            non_empty_injuries = non_empty_injuries.dropna(axis=1)
+            relevant_codes = np.intersect1d(non_empty_injuries.values, codes)
+            road_traffic_injuries.rti_swap_injury_daly_upon_treatment(person_id, relevant_codes)
+            columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, codes)
+            for col in columns:
+                df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.date + \
+                                                                                DateOffset(weeks=7)
             else:
-                logger.debug(f"Person %d's has {fracturecounts} fractures without treatment", person_id)
-        else:
-            logger.debug("Did event run????")
-            logger.debug(person_id)
-            pass
+                logger.debug(f"Person %d's has {fracturecastcounts + slingcounts} fractures without treatment",
+                             person_id)
 
     def did_not_run(self, person_id):
         logger.debug('Fracture casts unavailable for person %d', person_id)
@@ -3962,6 +3978,10 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         The injuries treated in this module are as follows:
 
         FRACTURES:
+        While district hospitals can provide some
+        emergency trauma care and surgeries, only central hospitals
+        are equipped to provide advanced orthopaedic surgery. - Lavy et al. 2007
+
         '112' - Depressed skull fracture - reported use of surgery in Eaton et al. 2017
         '813a' - Fractured hip - reported use of surgery and Lavy et al. 2007
         '813b' - Fractured pelvis - reported use of surgery and Lavy et al. 2007
@@ -3971,13 +3991,20 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         SOFT TISSUE INJURIES:
         '342' - Soft tissue injury of the neck
         '343' - Soft tissue injury of the neck
+
+        Thoroscopy treated injuries:
+        https://www.unthsc.edu/texas-college-of-osteopathic-medicine/wp-content/uploads/sites/9/
+        Pediatric_Handbook_for_Malawi.pdf
         '441' - Closed pneumothorax
         '443' - Open pneumothorax
+        '463' - Haemothorax
+        '453a' - Diaphragm rupture
+        '453b' - Lung contusion
 
         INTERNAL BLEEDING:
         '361' - Internal bleeding in neck
         '363' - Internal bleeding in neck
-        '463' - Haemothorax
+
 
         TRAUMATIC BRAIN INJURIES THAT REQUIRE A CRANIOTOMOY - reported use of surgery in Eaton et al 2017 and Lavy et
         al. 2007
@@ -3989,11 +4016,6 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         '134a' - Epidural hematoma
         '134b' - Subdural hematoma
         '135' - diffuse axonal injury
-
-        INTERNAL ORGAN INJURIES
-
-        '453a' - Diaphragm rupture
-        '453b' - Lung contusion
 
         Laparotomy - Recorded in Lavy et al. 2007 and here: https://www.ajol.info/index.php/mmj/article/view/174378
 
@@ -4042,6 +4064,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
         self.prob_perm_disability_with_treatment_sci = p['prob_perm_disability_with_treatment_sci']
+        self.allowed_interventions = p['allowed_interventions']
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4051,13 +4074,21 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
         surgically_treated_codes = ['112', '813a', '813b', '813c', '133a', '133b', '133c', '133d', '134a',
-                                    '134b', '135', '552', '553', '554', '673a', '673b', '674a', '674b', '675a',
-                                    '675b', '676', '342', '343', '414', '441', '443', '453a', '453b', '361', '363',
-                                    '463', '782', '782a', '782b', '782c', '783', '882', '883', '884',
-                                    'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P673a', 'P673b',
-                                    'P674', 'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676', 'P782a', 'P782b',
+                                    '134b', '135', '552', '553', '554', '342', '343', '414', '361', '363',
+                                    '782', '782a', '782b', '782c', '783', '882', '883', '884',
+                                    'P133a', 'P133b', 'P133c', 'P133d', 'P134a', 'P134b', 'P135', 'P782a', 'P782b',
                                     'P782c', 'P783', 'P882', 'P883', 'P884'
                                     ]
+        if 'include_spine_surgery' in self.allowed_interventions:
+            additional_codes = ['673a', '673b', '674a', '674b', '675a', '675b', '676', 'P673a', 'P673b', 'P674',
+                                'P674a', 'P674b', 'P675', 'P675a', 'P675b', 'P676']
+            for code in additional_codes:
+                surgically_treated_codes.append(code)
+        if 'include_thoroscopy' in self.allowed_interventions:
+            additional_codes = ['441', '443', '453', '453a', '453b', '463']
+            for code in additional_codes:
+                surgically_treated_codes.append(code)
+
         persons_injuries = df.loc[[person_id], columns]
         non_empty_injuries = persons_injuries[persons_injuries != "none"]
         non_empty_injuries = non_empty_injuries.dropna(axis=1)
@@ -4087,22 +4118,25 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                     columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
                                                                                                     [code])
                     for col in columns:
-                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date
+                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
+                                                                                        DateOffset(days=1)
 
         # ------------------------------------- Perm disability from SCI ----------------------------------------------
-        codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
-        if code in codes:
-            idx, scicounts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                df.at[person_id, 'rt_perm_disability'] = True
-                column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=codes)
-                logger.debug('@@@@@@@@@@ Person %d had intervention for SCI on %s but still disabled!!!!!!',
-                             person_id, self.sim.date)
-                df.loc[person_id, column] = "P" + code
-                code = df.loc[person_id, column]
-                columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
-                for col in columns:
-                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date
+        if 'include_spine_surgery' in self.allowed_interventions:
+            codes = ['673', '673a', '673b', '674', '674a', '674b', '675', '675a', '675b', '676']
+            if code in codes:
+                idx, scicounts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    df.at[person_id, 'rt_perm_disability'] = True
+                    column, code = road_traffic_injuries.rti_find_injury_column(person_id=person_id, codes=codes)
+                    logger.debug('@@@@@@@@@@ Person %d had intervention for SCI on %s but still disabled!!!!!!',
+                                 person_id, self.sim.date)
+                    df.loc[person_id, column] = "P" + code
+                    code = df.loc[person_id, column]
+                    columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id, [code])
+                    for col in columns:
+                        df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
+                                                                                        DateOffset(days=1)
 
         # ------------------------------------- Perm disability from amputation ----------------------------------------
         codes = ['782', '782a', '782b', '782c', '783', '882', '883', '884']
@@ -4118,7 +4152,8 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                 columns, codes = road_traffic_injuries.rti_find_all_columns_of_treated_injuries(person_id,
                                                                                                 [code])
                 for col in columns:
-                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date
+                    df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
+                                                                                        DateOffset(days=1)
 
         injury_columns = non_empty_injuries.columns
         if code == '112':
@@ -4224,6 +4259,8 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
         The injuries treated in this module are as follows:
 
+        Evidence for all from Mkandawire et al. 2008:
+        https://link.springer.com/content/pdf/10.1007/s11999-008-0366-5.pdf
         '211' - Facial fractures
         '212' - Facial fractures
         '291' - Injury to the eye

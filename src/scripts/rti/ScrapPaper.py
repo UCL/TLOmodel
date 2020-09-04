@@ -2,28 +2,33 @@ import pandas as pd
 import numpy as np
 
 import matplotlib
-
-matplotlib.use('TkAgg')
 from matplotlib.sankey import Sankey
 from matplotlib import pyplot as plt
-data = pd.read_csv("C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIDeathData.csv")
-data = data.drop('date', axis=1)
-data = data.drop(data.columns[0], axis=1)
-inj1 = data['First injury'].value_counts()
-inj2 = data['Second injury'].value_counts()
-inj3 = data['Third injury'].value_counts()
-inj4 = data['Fourth injury'].value_counts()
-inj5 = data['Fifth injury'].value_counts()
-inj6 = data['Sixth injury'].value_counts()
-inj7 = data['Seventh injury'].value_counts()
-inj8 = data['Eigth injury'].value_counts()
-injuries = inj1.append([inj2, inj3, inj4, inj5, inj6, inj7, inj8])
-injdict = injuries.to_dict()
-injdict.pop('none')
-plt.bar(range(len(injdict)), list(injdict.values()), align='center')
-plt.xticks(range(len(injdict)), list(injdict.keys()))
-plt.xticks(rotation=45)
-plt.show()
+matplotlib.use('TkAgg')
+data = pd.read_csv("C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Health_Burden.csv")
+for col in data.columns:
+    print(col)
+data
+from matplotlib.sankey import Sankey
+from matplotlib import pyplot as plt
+# data = pd.read_csv("C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIDeathData.csv")
+# data = data.drop('date', axis=1)
+# data = data.drop(data.columns[0], axis=1)
+# inj1 = data['First injury'].value_counts()
+# inj2 = data['Second injury'].value_counts()
+# inj3 = data['Third injury'].value_counts()
+# inj4 = data['Fourth injury'].value_counts()
+# inj5 = data['Fifth injury'].value_counts()
+# inj6 = data['Sixth injury'].value_counts()
+# inj7 = data['Seventh injury'].value_counts()
+# inj8 = data['Eigth injury'].value_counts()
+# injuries = inj1.append([inj2, inj3, inj4, inj5, inj6, inj7, inj8])
+# injdict = injuries.to_dict()
+# injdict.pop('none')
+# plt.bar(range(len(injdict)), list(injdict.values()), align='center')
+# plt.xticks(range(len(injdict)), list(injdict.keys()))
+# plt.xticks(rotation=45)
+# plt.show()
 #
 # # first flow into the diagram, the first value is the total quantity introduced into the
 # # flow, the remaining, the subsequent terms remove a certain quantity from the first flow.
