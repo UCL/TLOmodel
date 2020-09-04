@@ -29,7 +29,13 @@ class ChronicSyndrome(Module):
         - Receiving a 'squeeze factor'
         - Use of the SymptomManager
     """
-    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),

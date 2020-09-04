@@ -28,7 +28,12 @@ class hiv(Module):
         # self.beta_calib = par_est
 
     # Declare Metadata
-    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.

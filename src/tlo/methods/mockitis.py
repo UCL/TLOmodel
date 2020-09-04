@@ -23,7 +23,12 @@ class Mockitis(Module):
         - Use of the SymptomManager
     """
     # Declare Metadata
-    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'p_infection': Parameter(

@@ -35,8 +35,11 @@ class Labour (Module):
         self.possible_postpartum_complications = list()
 
     # Declare Metadata
-    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
-
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
     PARAMETERS = {
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================
         'intercept_parity_lr2010': Parameter(

@@ -57,7 +57,12 @@ class Diarrhoea(Module):
     }
 
     # Declare Metadata
-    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'base_inc_rate_diarrhoea_by_rotavirus':

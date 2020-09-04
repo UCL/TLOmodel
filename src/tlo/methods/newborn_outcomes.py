@@ -31,7 +31,11 @@ class NewbornOutcomes(Module):
         self.NewbornComplicationTracker = dict()
 
     # Declare Metadata
-    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'mean_birth_weights': Parameter(

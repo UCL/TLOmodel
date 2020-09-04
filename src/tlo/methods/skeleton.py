@@ -33,7 +33,12 @@ class Skeleton(Module):
 
     """
     # Declare Metadata (this is for a typical 'Disease Module')
-    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.

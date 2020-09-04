@@ -215,7 +215,9 @@ class SymptomManager(Module):
         """
         Establish the BitSetHandler for each of the symptoms:
         """
-        self.disease_module_names = [m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA]
+        self.disease_module_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_SYMPTOMMANAGER in m.METADATA
+        ]
         modules_that_can_impose_symptoms = [self.name] + self.disease_module_names
 
         # Establish the BitSetHandler for each symptoms
