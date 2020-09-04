@@ -3,9 +3,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
+    Metadata,
     chronicsyndrome,
     contraception,
     demography,
@@ -18,6 +20,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.healthsystem import HSI_Event
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -524,3 +527,91 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
 
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
+
+
+def test_use_of_helper_function_get_all_consumables():
+    """Test that the helper function 'get_all_consumables' in the base class of the HSI works as expected."""
+
+    # Create a dummy disease module (to be the parent of the dummy HSI)
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialie_simulation(self, sim):
+            pass
+
+    # Create simulation with the healthsystem and DummyModule
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+
+    # Set availability of consumables
+    # Define availability of items
+    item_code_is_available = [0, 1, 2, 3]
+    item_code_not_available = [4, 5, 6, 7]
+    pkg_code_is_available = [1, 2]
+    pkg_code_not_available = [3, 4, 5]
+
+    sim.modules['HealthSystem'].cons_item_code_availability_today = \
+        sim.modules['HealthSystem'].prob_unique_item_codes_available > 0.0
+    cons = sim.modules['HealthSystem'].cons_item_code_availability_today
+    cons.loc[item_code_is_available, cons.columns] = True
+    cons.loc[item_code_not_available, cons.columns] = False
+
+    # Edit the item-package lookup-table to create packages that will be available or not
+    lookup = sim.modules['HealthSystem'].parameters['Consumables']
+    lookup['Intervention_Pkg_Code'] = -99
+
+    lookup.loc[item_code_is_available[0], 'Intervention_Pkg_Code'] = pkg_code_is_available[0]
+    lookup.loc[item_code_is_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_is_available[1]
+    lookup.loc[item_code_not_available[0], 'Intervention_Pkg_Code'] = pkg_code_not_available[0]
+    lookup.loc[item_code_not_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_not_available[1]
+    lookup.loc[[item_code_is_available[3], item_code_not_available[3]], 'Intervention_Pkg_Code'] = \
+        pkg_code_not_available[2]
+
+    # Create a dummy HSI event:
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
+
+    # Test using item_codes:
+    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available[0])
+    assert True is hsi_event.get_all_consumables(item_codes=[item_code_is_available[0]])
+    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available)
+    assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available)
+    assert False is hsi_event.get_all_consumables(item_codes=[
+        item_code_is_available[0], item_code_not_available[0]])
+    assert False is hsi_event.get_all_consumables(item_codes=[
+        item_code_not_available[0], item_code_is_available[0]])
+
+    # Test using pkg_codes:
+    assert True is hsi_event.get_all_consumables(pkg_codes=pkg_code_is_available[0])
+    assert True is hsi_event.get_all_consumables(pkg_codes=[pkg_code_is_available[0]])
+    assert True is hsi_event.get_all_consumables(pkg_codes=pkg_code_is_available)
+    assert False is hsi_event.get_all_consumables(pkg_codes=pkg_code_not_available[2])
+    assert False is hsi_event.get_all_consumables(pkg_codes=pkg_code_not_available)
+    assert False is hsi_event.get_all_consumables(pkg_codes=[
+        pkg_code_is_available[0], pkg_code_not_available[0]])
+    assert False is hsi_event.get_all_consumables(pkg_codes=[
+        pkg_code_is_available[0], pkg_code_not_available[2]])
+
+    # Test using item_codes and pkg_codes:
+    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_is_available)
+    assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available, pkg_codes=pkg_code_is_available)
+    assert False is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_not_available)
