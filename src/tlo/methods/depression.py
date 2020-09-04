@@ -296,9 +296,6 @@ class Depression(Module):
                 + 0.66 * self.daly_wts['moderate_episode_major_depressive_disorder']
             )
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(

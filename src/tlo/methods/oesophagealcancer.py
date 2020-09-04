@@ -191,9 +191,6 @@ class OesophagealCancer(Module):
                           sheet_name="parameter_values")
         )
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='dysphagia',

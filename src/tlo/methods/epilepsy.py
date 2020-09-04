@@ -164,9 +164,6 @@ class Epilepsy(Module):
         allocate_antiepileptic('2', p['init_prop_antiepileptic_seiz_stat_2'])
         allocate_antiepileptic('3', p['init_prop_antiepileptic_seiz_stat_3'])
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 

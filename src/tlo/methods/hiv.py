@@ -679,9 +679,6 @@ class hiv(Module):
         """Get ready for simulation start.
         """
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivArtGoodToPoorAdherenceEvent(self), sim.date + DateOffset(months=12))

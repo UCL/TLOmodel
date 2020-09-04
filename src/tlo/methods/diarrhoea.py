@@ -536,9 +536,6 @@ class Diarrhoea(Module):
                               param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the ' \
                                                        f'resourcefile.'
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
         generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
         for symptom_name in self.symptoms:

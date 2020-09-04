@@ -197,8 +197,6 @@ class NewbornOutcomes(Module):
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['nb_daly_weights'] = {

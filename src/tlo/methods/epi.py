@@ -53,10 +53,6 @@ class Epi(Module):
             Path(self.resourcefilepath) / "ResourceFile_EPI_vaccine_coverage.csv"
         )
 
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
-
     def initialise_population(self, population):
         df = population.props
         p = self.parameters

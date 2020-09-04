@@ -291,10 +291,6 @@ class tb(Module):
         # Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ HEALTH SYSTEM ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.

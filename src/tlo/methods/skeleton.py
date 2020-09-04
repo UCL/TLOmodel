@@ -76,9 +76,6 @@ class Skeleton(Module):
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
-        If this is a disease module, register this disease module with the healthsystem:
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         :param population: the population of individuals
         """
         raise NotImplementedError

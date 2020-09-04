@@ -439,8 +439,6 @@ class Labour (Module):
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
 
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Here we will include DALY weights if applicable...
         if 'HealthBurden' in self.sim.modules:
             params['la_daly_wts'] = {

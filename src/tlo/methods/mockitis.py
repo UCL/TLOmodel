@@ -85,9 +85,6 @@ class Mockitis(Module):
                 'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
 
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # ---- Register the Symptoms ----
         self.sim.modules['SymptomManager'].register_symptom(

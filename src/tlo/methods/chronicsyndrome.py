@@ -84,10 +84,6 @@ class ChronicSyndrome(Module):
                 'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
             }
 
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Register symptoms that this module will use:
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(
