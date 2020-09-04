@@ -478,9 +478,9 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             # for each person determine whether they will seek care on symptom change
             # get_prob_seek_care will be the healthcare seeking function developed by Wingston
             seeks_care = pd.Series(data=False, index=df.loc[fast_progression].index)
-            for i in df.index[fast_progression]:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-                seeks_care[i] = self.module.rng.rand() < prob
+#            for i in df.index[fast_progression]:
+#                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+#                seeks_care[i] = self.module.rng.rand() < prob
 
             # if seeks_care.sum() > 0:
             #     for person_index in seeks_care.index[seeks_care]:
@@ -551,9 +551,9 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # for each person determine whether they will seek care on symptom change
         # get_prob_seek_care will be the healthcare seeking function developed by Wingston
         seeks_care = pd.Series(data=False, index=df.loc[new_active_case].index)
-        for i in df.index[new_active_case]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+#        for i in df.index[new_active_case]:
+#            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+#            seeks_care[i] = self.module.rng.rand() < prob
 
         # if seeks_care.sum() > 0:
         #     for person_index in seeks_care.index[seeks_care]:
@@ -604,9 +604,9 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # relapse after complete treatment course - refer for xpert testing
         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_complete].index)
-        for i in df.loc[relapse_tx_complete].index:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+#        for i in df.loc[relapse_tx_complete].index:
+#            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+#            seeks_care[i] = self.module.rng.rand() < prob
 
         # if seeks_care.sum() > 0:
         #     for person_index in seeks_care.index[seeks_care]:
@@ -777,9 +777,9 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
             # for each person determine whether they will seek care on symptom change
             # get_prob_seek_care will be the healthcare seeking function developed by Wingston
             seeks_care = pd.Series(data=False, index=df.loc[fast_progression].index)
-            for i in df.index[fast_progression]:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-                seeks_care[i] = self.module.rng.rand() < prob
+#            for i in df.index[fast_progression]:
+#                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+#                seeks_care[i] = self.module.rng.rand() < prob
 
             # if seeks_care.sum() > 0:
             #     for person_index in seeks_care.index[seeks_care]:
@@ -849,9 +849,9 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # for each person determine whether they will seek care on symptom change
         # get_prob_seek_care will be the healthcare seeking function developed by Wingston
         seeks_care = pd.Series(data=False, index=df.loc[new_active_case].index)
-        for i in df.index[new_active_case]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+#        for i in df.index[new_active_case]:
+#            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+#            seeks_care[i] = self.module.rng.rand() < prob
 
         # if seeks_care.sum() > 0:
         #     for person_index in seeks_care.index[seeks_care]:
@@ -902,9 +902,9 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # relapse after complete treatment course - refer for xpert testing
         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_complete].index)
-        for i in df.loc[relapse_tx_complete].index:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+ #       for i in df.loc[relapse_tx_complete].index:
+ #           prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+ #           seeks_care[i] = self.module.rng.rand() < prob
 
         # if seeks_care.sum() > 0:
         #     for person_index in seeks_care.index[seeks_care]:
@@ -1007,11 +1007,12 @@ class HSI_TbScreening(HSI_Event, IndividualScopeEventMixin):
 
             test = HSI_Tb_SputumTest(self.module, person_id=person_id)
 
+            # this wont run - jc
             # Request the health system to give xpert test
-            self.sim.modules['HealthSystem'].schedule_event(test,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+    #        self.sim.modules['HealthSystem'].schedule_event(test,
+    #                                                        priority=1,
+    #                                                        topen=self.sim.date,
+    #                                                        tclose=None)
 
         elif (df.at[person_id, 'tb_specific_symptoms'] == 'active') and (df.at[person_id, 'hv_inf']):
             logger.debug("This is HSI_Tb_SputumTest scheduling xpert test for person %d", person_id)
