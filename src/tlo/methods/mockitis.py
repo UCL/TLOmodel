@@ -86,7 +86,6 @@ class Mockitis(Module):
                 'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
 
-
         # ---- Register the Symptoms ----
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='weird_sense_of_deja_vu'),  # will not trigger any health seeking behaviour

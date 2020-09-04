@@ -8,7 +8,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, tb, Metadata
+from tlo.methods import Metadata, demography, tb
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
