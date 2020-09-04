@@ -784,6 +784,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Here we begin to apply the risk of developing complications which present later in pregnancy including
         # pre-eclampsia, gestational hypertension and gestational diabetes
 
+        # TODO: discuss with Tim H and Britta how hypertension should be handled in pregnancy, im using a
+        #  very binary variable indicating hypertension.
+
         # pre-eclampsia
         # Only women without pre-existing hypertensive disorders of pregnancy are can develop the disease now
         month_5_no_htn = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &

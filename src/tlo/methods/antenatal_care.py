@@ -16,9 +16,11 @@ logger.setLevel(logging.DEBUG)
 
 class CareOfWomenDuringPregnancy(Module):
     """This is the CareOfWomenDuringPregnancy module. This module houses all HSIs related to care during the antenatal
-    period. Currently the module houses all 8 antenatal care contacts and manages the scheduling of all additional
-    antenatal care contacts after visit 1 (which is scheduled in the pregnancy supervisor module. The majority of this
-    module remains hollow prior to completion for June 2020 deadline"""
+    period of pregnancy. Currently the module houses all 8 antenatal care contacts and manages the scheduling of all
+    additional antenatal care contacts after visit 1 (which is scheduled in the pregnancy supervisor module.
+    Additionally this module houses additional care HSIs for women whos pregnancy is complicated by hypertension,
+    anaemia and gestational diabetes. The module is incomplete as additional HSIs for post abortion care are not included.
+    """
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -165,8 +167,11 @@ class CareOfWomenDuringPregnancy(Module):
                 sensitivity=params['sensitivity_urine_protein_3_plus'],
                 specificity=params['specificity_urine_protein_3_plus']),
 
-            # TODO: Categorical function of dx_test doesnt allow for multiple categories to be selected from a list
-            #  (here it would be both mild and severe pre-eclampsia)
+            # TODO: in reality a urine dipstick is one test which would detect pre-eclampsia as either mild or severe
+            #  from the amount of protein detected in urine (mild +) severe (+++).
+
+            # TODO: Categorical function of dx_test doesnt allow one test to return positive for multiple catagories
+
 
             #    urine_dipstick_sugars=DxTest(
             #        property='ps_gest_diab',
@@ -221,18 +226,22 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[mother_id, 'ac_date_ds_runs_out'] = pd.NaT
         df.at[mother_id, 'ac_receiving_calcium_supplements'] = False
         df.at[mother_id, 'ac_date_cal_runs_out'] = pd.NaT
-        df.at[mother_id, 'ac_doses_of_iptp_received'] = 0  # TODO: check this is fine with tara
+        df.at[mother_id, 'ac_doses_of_iptp_received'] = 0
+        # TODO: check tara doesnt need this property to last beyond delivery
         df.at[mother_id, 'ac_itn_provided'] = False
-        df.at[mother_id, 'ac_ttd_received'] = 0  # TODO: not sure this variable should be reset to 0
-        df.at[mother_id, 'ac_gest_htn_on_treatment'] = False  # todo: THIS WILL BE USED POSTNATALLY
+        df.at[mother_id, 'ac_ttd_received'] = 0
+        # TODO: not sure this variable should be reset to 0 (check with tara)
+        df.at[mother_id, 'ac_gest_htn_on_treatment'] = False
+        # todo: this will be used postnatally so needs to stay
 
-        # TODO : ensure we're not using any of these variables postnatally, if so will need to be reset later
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug('This is CareOfWomenDuringPregnancy, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
     def determine_gestational_age_for_next_contact(self, person_id):
+        """This function determines when a woman should be scheduled to return to ANC based on her current gestation at
+        her most recent visit"""
         df = self.sim.population.props
 
         if df.at[person_id, 'ps_gestational_age_in_weeks'] < 20:
@@ -270,7 +279,7 @@ class CareOfWomenDuringPregnancy(Module):
             return recommended_gestation_next_anc
 
     # ================================= INTERVENTION FUNCTIONS =======================================================
-    # Following functions contain code for the delivery of interventions within ANC contacts
+    # Following functions contain code for the interventions which are called by each ANC contact
 
     def interventions_delivered_at_every_contact(self, hsi_event):
         """This function houses all the interventions that should be delivered at every ANC contact regardless of
@@ -286,7 +295,7 @@ class CareOfWomenDuringPregnancy(Module):
         # This section of code calculates the estimated number of days between this visit and the next, to determine the
         # required number of doses of daily drugs administered to women during this contact
 
-        #  TODO: following 4 lines fix a bug i cant work out why its happening
+        #  TODO: The following 4 lines fix a bug i cant work out why its happening
         if self.determine_gestational_age_for_next_contact(person_id) is None \
           and df.at[person_id, 'ps_gestational_age_in_weeks'] == 39:
             next_visit = 40
@@ -455,8 +464,11 @@ class CareOfWomenDuringPregnancy(Module):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         df = self.sim.population.props
 
+        # TODO: unsure if i should include a probability that the ITN will be given seperate from its availblity as
+        #  with the other interventions- this needs to be standardised
+        #  (quality)
+
         # LLITN provision...
-        # TODO: should we use a quality indicator here, or simply rely on consumables?
         # We define the required consumables
         pkg_code_obstructed_llitn = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'ITN distribution to pregnant women',
@@ -471,8 +483,9 @@ class CareOfWomenDuringPregnancy(Module):
             cons_req_as_footprint=consumables_llitn,
             to_log=False)
 
-        # If available, women are provided with a bed net at ANC1. The effect and usage of these nets is determined
-        # through the malaria module
+        # If available, women are provided with a bed net at ANC1. The effect of these nets is determined
+        # through the malaria module - not yet coded. n.b any interventions involving non-obstetric diseases have been
+        # discussed with Tara
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_obstructed_llitn]:
             df.at[person_id, 'ac_itn_provided'] = True
 
@@ -608,7 +621,9 @@ class CareOfWomenDuringPregnancy(Module):
                 # Run dx_test for anaemia
                 if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_test_haemoglobin',
                                                                            hsi_event=hsi_event):
+
                     # TODO: schedule care in the instance of severe anaemia (not yet modelled in preg sup)
+
                     # Schedule additional care in the instance of diagnosed anaemia
                     additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
@@ -644,7 +659,8 @@ class CareOfWomenDuringPregnancy(Module):
                     to_log=True)
 
     def hep_b_testing(self, hsi_event):
-        """ This function manages testing for Hepatitis B"""
+        """ This function manages testing for Hepatitis B. As hepatitis is not yet modelled, this intervention merely
+        captures consumables"""
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         # This intervention is a place holder prior to the Hepatitis B module being coded
@@ -796,8 +812,8 @@ class CareOfWomenDuringPregnancy(Module):
 
     def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc):
         """This function is responsible for scheduling a womans next antenatal care visit. The function is provided with
-        the number of the next visit a woman is required to attend along with the recommended gestational age a woman
-        should be to attend the next visit in the schedule"""
+        which contact is to be scheduled along with the recommended gestational age a woman should be to attend the next
+        visit in the schedule"""
         df = self.sim.population.props
         params = self.parameters
 
@@ -915,9 +931,10 @@ class CareOfWomenDuringPregnancy(Module):
 
 
 class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """ This is the HSI HSI_FirstAntenatalCareContact. It will be scheduled by the PregnancySupervisor Module.
-    It will be responsible for the management of monitoring and treatment interventions delivered in a woman's first
-    antenatal care visit. It will also go on the schedule the womans next ANC appointment. It is currently unfinished"""
+    """ This is the  HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact. It will be scheduled by the
+    PregnancySupervisor Module.It will be responsible for the management of monitoring and treatment interventions
+    delivered in a woman's first antenatal care visit. It will also go on the schedule the womans next ANC
+    appointment."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -955,12 +972,14 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ps_gestational_age_in_weeks'] < 14:
                 self.module.ANCTracker['total_anc1_first_trimester'] += 1
 
-            # First, interventions that should be delivered at every ANC visit are administered
+            # First, we use the follow function to determine at what gestational age this woman should be scheduled to
+            # return for her next ANC visit (based on gestational age at presentation to ANC1)
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-
-            # TODO: may be better to save this as a property is we keep using it
-
             self.module.interventions_delivered_at_every_contact(hsi_event=self)
+
+            # Then, the appropriate interventions are delivered according gestational age. It is assumed that women who
+            # present late to ANC1 are 'caught up' with the interventions they missed from previous visits
+            # (as per malawi guidelines)
 
             # If this woman is presenting prior to the suggested gestation for ANC2, she receives only the interventions
             # for ANC1
@@ -987,6 +1006,9 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
                 self.module.anc_catch_up_interventions(hsi_event=self)
+
+                # Women presenting at >26 are indicated to require screening for gestational diabetes
+                # (usually delivered in ANC 2)
                 self.module.gdm_screening(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
@@ -995,6 +1017,8 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
                 self.module.anc_catch_up_interventions(hsi_event=self)
+                self.module.gdm_screening(hsi_event=self)
+
                 # todo: for now, these women just wont have another visit
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
@@ -1009,7 +1033,10 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
 
 class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This is the  HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact. It will be scheduled by the
+    HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact.It will be responsible for the management of monitoring
+    and treatment interventions delivered in a woman's second antenatal care visit. It will also go on the schedule the
+    womans next ANC appointment"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
@@ -1054,6 +1081,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 30:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
+                self.module.gdm_screening(hsi_event=self)
 
                 self.module.schedule_next_anc(person_id, visit_to_be_scheduled=3,
                                               recommended_gestation_next_anc=gest_age_next_contact)
@@ -1103,8 +1131,10 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
 
 
 class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"""
-
+    """This is the  HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact. It will be scheduled by the
+    HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact.It will be responsible for the management of monitoring
+    and treatment interventions delivered in a woman's third antenatal care visit. It will also go on the schedule the
+    womans next ANC appointment"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
@@ -1186,7 +1216,10 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
 
 
 class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This is the  HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact. It will be scheduled by the
+    HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact.It will be responsible for the management of monitoring
+    and treatment interventions delivered in a woman's fourth antenatal care visit. It will also go on the schedule the
+    womans next ANC appointment"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1262,8 +1295,10 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
 
 class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"""
-
+    """This is the  HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact. It will be scheduled by the
+    HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact.It will be responsible for the management of monitoring
+    and treatment interventions delivered in a woman's fifth antenatal care visit. It will also go on the schedule the
+    womans next ANC appointment"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
@@ -1328,7 +1363,10 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
 
 
 class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This is the  HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact. It will be scheduled by the
+    HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact.It will be responsible for the management of monitoring
+    and treatment interventions delivered in a woman's sixth antenatal care visit. It will also go on the schedule the
+    womans next ANC appointment"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1388,7 +1426,10 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
 
 
 class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This is the  HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact. It will be scheduled by the
+    HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact.It will be responsible for the management of monitoring
+    and treatment interventions delivered in a woman's seventh antenatal care visit. It will also go on the schedule the
+    womans next ANC appointment"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1396,7 +1437,6 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForPostAbortionCare'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        # TODO: determine most accurate appt time for this HSI (here and all HSI in this file)
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = []
 
@@ -1439,8 +1479,9 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
 
 
 class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"""
-
+    """This is the  HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact. It will be scheduled by the
+        HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact.It will be responsible for the management of monitoring
+        and treatment interventions delivered in a woman's eighth antenatal care visit """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
@@ -1478,7 +1519,8 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact: cannot not run with this configuration')
+        logger.debug('HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact: cannot not run with this'
+                     ' configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
@@ -1546,9 +1588,12 @@ class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, In
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=7))
 
+    def not_available(self):
+        logger.debug('HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes: cannot not run with this'
+                     ' configuration')
 
 class HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This HSI is unfinished"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1570,10 +1615,16 @@ class HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(HS
                      'presented for treatment of gestational diabetes on date %s at gestation %d',
                      person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
 
+        # TODO: finish
+
+    def not_available(self):
+        logger.debug('HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes: cannot not run with this'
+                     ' configuration')
+
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(HSI_Event, IndividualScopeEventMixin):
     """This is HSI_ManagementOfHypertensiveDisorder. It is scheduled during ANC for women who are hypertensive during
-    pregnancy. """
+    pregnancy."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1640,7 +1691,7 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(
 
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This HSI is unfinished"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1664,8 +1715,9 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia(HSI_Eve
                      'presented for treatment of mild pre-eclampsia on date %s at gestation %d',
                      person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
 
+
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This HSI is unfinished"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1687,6 +1739,7 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(HSI_E
         logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia, person %d has '
                      'presented for treatment of severe pre-eclampsia on date %s at gestation %d',
                      person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
     """This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy. This HSI can be scheduled by
@@ -1718,13 +1771,12 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(H
         # TODO: are we happy to assume that most women will be treated with iron OR should we allow for testing for
         #  folate, b12 deficiancies (and specific treatments)
 
-        print(df.at[person_id, 'ps_anaemia_in_pregnancy'])
-        print(person_id)
-
         if df.at[person_id, 'is_alive']:
 
+            # Currently the effect of this intervention is limited to women not already receiving daily iron
             if ~df.at[person_id, 'ac_receiving_iron_folic_acid']:
 
+                # We check for consumables
                 item_code_iron_folic_acid = pd.unique(
                     consumables.loc[
                         consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
@@ -1756,7 +1808,7 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(H
                         logger.debug('mother %d has received initial iron and folic acid treatment for anaemia in '
                                      'pregnancy')
 
-
+                # All women who are seen are scheduled to return between 2-4 weeks for additional Hb testing
                 additional_care = HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
@@ -1770,8 +1822,13 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(H
                              'scheduling follow-up Hb testing for a mother recently diagnosed with anaemia during '
                              'pregnancy', person_id)
 
+
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy. This HSI can be scheduled by
+        any ANC appointment HSIs in which a woman is tested positive for severe anaemia. This HSI initiates treatment
+        and future preventative treatment for severe anaemia and schedules a future checkup HSI to determine
+        treatment success"""
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
@@ -1790,15 +1847,16 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.module.parameters
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy, person %d has '
-                     'presented for treatment of severe anaemia on date %s at gestation %d',
+        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy, person %d'
+                     ' has presented for treatment of severe anaemia on date %s at gestation %d',
                      person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
 
         if df.at[person_id, 'is_alive']:
 
+            # Check for consumables
             item_code_bt1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-            item_code_bt2 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
+            item_code_bt2 = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable',
+                                                      'Item_Code'])[0]
             item_code_bt3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
             item_code_bt4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
                                                       'Item_Code'])[0]
@@ -1809,9 +1867,16 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy
                 hsi_event=self, cons_req_as_footprint=consumables_needed_bt, to_log=False)
 
             if outcome_of_request_for_consumables:
+
+                # If availble, we apply a probability that a transfusion of 2 units RBCs will correct this womans severe
+                # anaemia
                 if params['treatment_effect_blood_transfusion_anaemia'] < self.module.rng.random_sample():
                         df.at[person_id, 'ps_anaemia_in_pregnancy'] = False
 
+            # TODO: in reality its unlikely that anyone who had a BT would be discharged without an immediate FBC to
+            #  check Hb, and if still anaemic would be transfused again?
+
+            # And schedule follow up
             additional_care = HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
@@ -1823,7 +1888,10 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy
 
 
 class HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
-    """"""
+    """This is HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy. This HSI can be scheduled by either
+    HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy or
+    HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy and rechecks a womans Hb to determine if
+    she remains anaemic"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
