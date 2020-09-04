@@ -98,7 +98,7 @@ class HealthSystem(Module):
         self.capabilities_coefficient = capabilities_coefficient
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
-        self.disease_modules_names = []
+        self.recognised_modules_names = []
 
         # Define the dataframe that determines the availability of consumables on a daily basis
         self.cons_item_code_availability_today = pd.DataFrame()
@@ -187,8 +187,8 @@ class HealthSystem(Module):
     def initialise_simulation(self, sim):
 
         # Capture list of disease modules:
-        self.disease_modules_names = [
-            m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
         ]
 
         # Check that each person is being associated with a facility of each type
@@ -287,7 +287,7 @@ class HealthSystem(Module):
             if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
                 if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
                     for d in hsi_event.ALERT_OTHER_DISEASES:
-                        assert d in self.sim.modules['HealthSystem'].disease_modules_names
+                        assert d in self.recognised_modules_names
 
             # Check that this can accept the squeeze argument
             assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.run).args
@@ -429,7 +429,7 @@ class HealthSystem(Module):
             # Alert some disease modules
 
             if hsi_event.ALERT_OTHER_DISEASES[0] == '*':
-                alert_modules = self.disease_modules_names
+                alert_modules = self.recognised_modules_names
             else:
                 alert_modules = hsi_event.ALERT_OTHER_DISEASES
 

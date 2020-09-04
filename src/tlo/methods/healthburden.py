@@ -65,10 +65,12 @@ class HealthBurden(Module):
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
         # Store the name of all disease modules
-        self.disease_module_names = [m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA]
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
+        ]
 
         # Check that all registered disease modules have the report_daly_values() function
-        for module_name in self.disease_module_names:
+        for module_name in self.recognised_modules_names:
             assert 'report_daly_values' in dir(self.sim.modules[module_name])
 
         # Launch the DALY Logger to run every month, starting with the end of month 1
@@ -208,7 +210,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # 1) Ask each disease module to log the DALYS for the previous month
 
-        for disease_module_name in self.module.disease_module_names:
+        for disease_module_name in self.module.recognised_modules_names:
 
             disease_module = self.sim.modules[disease_module_name]
 
