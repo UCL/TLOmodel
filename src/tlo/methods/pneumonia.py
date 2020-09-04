@@ -33,59 +33,27 @@ class ALRI(Module):
         'staphylococcus',
         'influenza',
         'jirovecii',
+        'adenovirus',
+        'coronavirus',
+        'bocavirus',
         'other_pathogens'
     }
 
-    complications = {'pneumothorax', 'pleural_effusion', 'empyema',
-                     'lung_abscess', 'sepsis', 'meningitis', 'respiratory_failure'}
+    complications = {'pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
+                     'sepsis', 'meningitis', 'respiratory_failure'}
 
     # Declare the severity levels of the disease:
     pathogen_type = {
-        'viral': 'RSV' 'rhinovirus' 'hMPV' 'parainfluenza' 'influenza',
+        'viral': 'RSV' 'rhinovirus' 'hMPV' 'parainfluenza' 'influenza' 'adenovirus' 'coronavirus' 'bocavirus',
         'bacterial': 'streptococcus' 'hib' 'TB' 'staphylococcus'
+    }
+
+    disease_type = {
+        'bacterial_pneumonia', 'viral_pneumonia', 'bronchiolitis'
     }
 
 
     PARAMETERS = {
-        'base_incidence_ALRI_by_agecat': Parameter
-        (Types.REAL, 'overall incidence of ALRI by age category'
-         ),
-        'pn_attributable_fraction_RSV': Parameter
-        (Types.REAL, 'attributable fraction of RSV causing ALRI'
-         ),
-        'pn_attributable_fraction_rhinovirus': Parameter
-        (Types.REAL, 'attributable fraction of rhinovirus causing ALRI'
-         ),
-        'pn_attributable_fraction_hmpv': Parameter
-        (Types.REAL, 'attributable fraction of hMPV causing ALRI'
-         ),
-        'pn_attributable_fraction_parainfluenza': Parameter
-        (Types.REAL, 'attributable fraction of parainfluenza causing ALRI'
-         ),
-        'pn_attributable_fraction_streptococcus': Parameter
-        (Types.REAL, 'attributable fraction of streptococcus causing ALRI'
-         ),
-        'pn_attributable_fraction_hib': Parameter
-        (Types.REAL, 'attributable fraction of hib causing ALRI'
-         ),
-        'pn_attributable_fraction_TB': Parameter
-        (Types.REAL, 'attributable fraction of TB causing ALRI'
-         ),
-        'pn_attributable_fraction_staph': Parameter
-        (Types.REAL, 'attributable fraction of staphylococcus causing ALRI'
-         ),
-        'pn_attributable_fraction_influenza': Parameter
-        (Types.REAL, 'attributable fraction of influenza causing ALRI'
-         ),
-        'pn_attributable_fraction_jirovecii': Parameter
-        (Types.REAL, 'attributable fraction of jirovecii causing ALRI'
-         ),
-        'pn_attributable_fraction_other_pathogens': Parameter
-        (Types.REAL, 'attributable fraction of jirovecii causing ALRI'
-         ),
-        'pn_attributable_fraction_other_cause': Parameter
-        (Types.REAL, 'attributable fraction of jirovecii causing ALRI'
-         ),
         'base_inc_rate_ALRI_by_RSV': Parameter
         (Types.LIST, 'incidence of ALRI caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
          ),
@@ -116,23 +84,29 @@ class ALRI(Module):
         'base_inc_rate_ALRI_by_jirovecii': Parameter
         (Types.LIST, 'incidence of ALRI caused by P. jirovecii in age groups 0-11, 12-59 months'
          ),
+        'base_inc_rate_ALRI_by_adenovirus': Parameter
+        (Types.LIST, 'incidence of ALRI caused by P. adenovirus in age groups 0-11, 12-59 months'
+         ),
+        'base_inc_rate_ALRI_by_coronavirus': Parameter
+        (Types.LIST, 'incidence of ALRI caused by P. coronavirus in age groups 0-11, 12-59 months'
+         ),
+        'base_inc_rate_ALRI_by_bocavirus': Parameter
+        (Types.LIST, 'incidence of ALRI caused by bocavirus in age groups 0-11, 12-59 months'
+         ),
         'base_inc_rate_ALRI_by_other_pathogens': Parameter
         (Types.LIST, 'incidence of ALRI caused by other pathogens in age groups 0-11, 12-59 months'
          ),
         'rr_ALRI_HHhandwashing': Parameter
         (Types.REAL, 'relative rate of ALRI with household handwashing with soap'
          ),
-        'rr_ALRI_HIV': Parameter
+        'rr_ALRI_HIV_untreated': Parameter
         (Types.REAL, 'relative rate of ALRI for HIV positive status'
          ),
-        'rr_ALRI_SAM': Parameter
-        (Types.REAL, 'relative rate of ALRI for severe malnutrition'
+        'rr_ALRI_underweight': Parameter
+        (Types.REAL, 'relative rate of ALRI for underweight'
          ),
-        'rr_ALRI_excl_breastfeeding': Parameter
-        (Types.REAL, 'relative rate of ALRI for exclusive breastfeeding upto 6 months'
-         ),
-        'rr_ALRI_cont_breast': Parameter
-        (Types.REAL, 'relative rate of ALRI for continued breastfeeding 6 months to 2 years'
+        'rr_ALRI_not_excl_breastfeeding': Parameter
+        (Types.REAL, 'relative rate of ALRI for not exclusive breastfeeding upto 6 months'
          ),
         'rr_ALRI_indoor_air_pollution': Parameter
         (Types.REAL, 'relative rate of ALRI for indoor air pollution'
@@ -151,20 +125,20 @@ class ALRI(Module):
          'probability of progressing from non-severe to severe ALRI by age category '
          'HIV negative, no SAM'
          ),
-        'prob_respiratory_failure_by_viral_ALRI': Parameter
+        'prob_respiratory_failure_by_viral_pneumonia': Parameter
         (Types.REAL, 'probability of respiratory failure caused by primary viral ALRI'
          ),
-        'prob_respiratory_failure_by_bacterial_ALRI': Parameter
-        (Types.REAL, 'probability of respiratory failure caused by primary or secondary bacterial ALRI'
+        'prob_respiratory_failure_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of respiratory failure caused by primary or secondary bacterial pneumonia'
          ),
         'prob_respiratory_failure_to_multiorgan_dysfunction': Parameter
         (Types.REAL, 'probability of respiratory failure causing multi-organ dysfunction'
          ),
-        'prob_sepsis_by_viral_ALRI': Parameter
-        (Types.REAL, 'probability of sepsis caused by primary viral ALRI'
+        'prob_sepsis_by_viral_pneumonia': Parameter
+        (Types.REAL, 'probability of sepsis caused by primary viral pneumonia'
          ),
-        'prob_sepsis_by_bacterial_ALRI': Parameter
-        (Types.REAL, 'probability of sepsis caused by primary or secondary bacterial ALRI'
+        'prob_sepsis_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of sepsis caused by primary or secondary bacterial pneumonia'
          ),
         'prob_sepsis_to_septic_shock': Parameter
         (Types.REAL, 'probability of sepsis causing septic shock'
@@ -172,14 +146,11 @@ class ALRI(Module):
         'prob_septic_shock_to_multiorgan_dysfunction': Parameter
         (Types.REAL, 'probability of septic shock causing multi-organ dysfunction'
          ),
-        'prob_meningitis_by_viral_ALRI': Parameter
-        (Types.REAL, 'probability of meningitis caused by primary viral ALRI'
-         ),
         'prob_meningitis_by_bacterial_ALRI': Parameter
-        (Types.REAL, 'probability of meningitis caused by primary or secondary bacterial ALRI'
+        (Types.REAL, 'probability of meningitis caused by primary or secondary bacterial pneumonia'
          ),
-        'prob_pleural_effusion_by_bacterial_ALRI': Parameter
-        (Types.REAL, 'probability of pleural effusion caused by primary or secondary bacterial ALRI'
+        'prob_pleural_effusion_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of pleural effusion caused by primary or secondary bacterial pneumonia'
          ),
         'prob_pleural_effusion_to_empyema': Parameter
         (Types.REAL, 'probability of pleural effusion developing into empyema'
@@ -187,11 +158,11 @@ class ALRI(Module):
         'prob_empyema_to_sepsis': Parameter
         (Types.REAL, 'probability of empyema causing sepsis'
          ),
-        'prob_lung_abscess_by_bacterial_ALRI': Parameter
-        (Types.REAL, 'probability of a lung abscess caused by primary or secondary bacterial ALRI'
+        'prob_lung_abscess_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of a lung abscess caused by primary or secondary bacterial pneumonia'
          ),
-        'prob_pneumothorax_by_bacterial_ALRI': Parameter
-        (Types.REAL, 'probability of pneumothorax caused by primary or secondary bacterial ALRI'
+        'prob_pneumothorax_by_bacterial_pneumonia': Parameter
+        (Types.REAL, 'probability of pneumothorax caused by primary or secondary bacterial pneumonia'
          ),
         'prob_pneumothorax_to_respiratory_failure': Parameter
         (Types.REAL, 'probability of pneumothorax causing respiratory failure'
@@ -214,44 +185,44 @@ class ALRI(Module):
         #  ),
         'rr_death_ALRI_age12to23mo': Parameter
         (Types.REAL,
-         'death rate of ALRI'
+         'death rate of ALRI for children aged 12 to 23 months'
          ),
         'rr_death_ALRI_age24to59mo': Parameter
         (Types.REAL,
-         'death rate of ALRI'
+         'death rate of ALRI for children aged 24 to 59 months'
          ),
         'rr_death_ALRI_HIV': Parameter
         (Types.REAL,
-         'death rate of ALRI'
+         'death rate of ALRI for children with HIV not on ART'
          ),
         'rr_death_ALRI_SAM': Parameter
         (Types.REAL,
-         'death rate of ALRI'
+         'death rate of ALRI for children with severe acute malnutrition'
          ),
         'rr_death_ALRI_low_birth_weight': Parameter
         (Types.REAL,
-         'death rate of ALRI'
+         'death rate of ALRI for children with low birth weight (applicable to infants)'
          ),
     }
 
     PROPERTIES = {
-        # ---- The underlying ALRI condition ----
-        'ri_current_ALRI_disease_type': Property(Types.CATEGORICAL, 'underlying ALRI condition',
-                                                 categories=['viral pneumonia', 'bacterial pneumonia', 'co-infection',
-                                                             'bronchiolitis']),
-
         # ---- The pathogen which is the attributed cause of ALRI ----
         'ri_primary_ALRI_pathogen': Property(Types.CATEGORICAL,
                                              'Attributable pathogen for the current ALRI event',
                                              categories=list(pathogens) + ['none']),
 
         # ---- The bacterial pathogen which is the attributed cause of ALRI ----
-        'ri_secondary_ALRI_pathogen': Property(Types.CATEGORICAL,
+        'ri_secondary_bacterial_pathogen': Property(Types.CATEGORICAL,
                                                'Secondary bacterial pathogen for the current ALRI event',
-                                               categories=list(pathogens) + ['none']),  # todo: only bacterial agents
+                                               categories=list(pathogen_type['bacterial']) + ['none']),
+
+        # ---- The underlying ALRI condition ----
+        'ri_ALRI_disease_type': Property(Types.CATEGORICAL, 'underlying ALRI condition',
+                                         categories=['viral pneumonia', 'bacterial pneumonia', 'co-infection',
+                                                     'bronchiolitis']),
 
         # ---- Complications associated with ALRI ----
-        'ri_current_ALRI_complications': Property(Types.LIST,
+        'ri_ALRI_complications': Property(Types.LIST,
                                                   'complications that arose from the current ALRI event',
                                                   categories=['pneumothorax', 'pleural_effusion', 'empyema',
                                                               'lung_abscess', 'sepsis', 'meningitis',
@@ -300,7 +271,7 @@ class ALRI(Module):
         self.incidence_equations_by_pathogen = dict()
 
         # equations for the proportions of ALRI diseases:
-        self.proportions_of_ALRI_diseases_caused_by_each_pathogen = dict()
+        self.proportions_of_ALRI_disease_types_by_pathogen = dict()
 
         # equations for the probabilities of secondary bacterial co-infection:
         self.prob_secondary_bacterial_infection = dict()
@@ -344,406 +315,168 @@ class ALRI(Module):
         p = self.parameters
         self.load_parameters_from_dataframe(
             pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_Childhood_Pneumonia.xlsx', sheet_name='Parameter_values'))
+                Path(self.resourcefilepath) / 'ResourceFile_ALRI.xlsx', sheet_name='Parameter_values'))
 
         p['prob_secondary_bacterial_infection_from_bronchiolitis'] = 0.03
         p['prob_secondary_bacterial_infection_from_viral_pneumonia'] = 0.3
 
         # Check that every value has been read-in successfully
-        for param_name, type in self.PARAMETERS.items():
+        for param_name, param_type in self.PARAMETERS.items():
             assert param_name in self.parameters, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
             assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
             assert isinstance(self.parameters[param_name],
                           type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
-        # DALY weights
-        # if 'HealthBurden' in self.sim.modules.keys():
-        #     p['daly_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
-        #     p['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
-        #     p['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
+        # # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
+        # generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        # for symptom_name in self.symptoms:
+        #     if symptom_name not in generic_symptoms:
+        #         self.sim.modules['SymptomManager'].register_symptom(
+        #             Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+        #         )
+
+    def initialise_population(self, population):
+        """Set our property values for the initial population.
+        This method is called by the simulation when creating the initial population, and is
+        responsible for assigning initial values, for every individual, of those properties
+        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
+        :param population: the population of individuals
+        """
+        df = population.props  # a shortcut to the data-frame storing data for individuals
+        m = self
+        rng = m.rng
+        now = self.sim.date
+
+        # ---- Key Current Status Classification Properties ----
+        df['ri_primary_ALRI_pathogen'].values[:] = 'none'
+
+        # ---- Internal values ----
+        df['ri_ALRI_event_date_of_onset'] = pd.NaT
+        df['ri_ALRI_event_recovered_date'] = pd.NaT
+        df['ri_ALRI_event_death_date'] = pd.NaT
+
+        df['ri_ALRI_treatment'] = False
+        df['ri_ALRI_tx_start_date'] = pd.NaT
+
+        # ---- Temporary values ----
+        df['tmp_malnutrition'] = False
+        df['tmp_hv_inf'] = False
+        df['tmp_low_birth_weight'] = False
+        df['tmp_exclusive_breastfeeding'] = False
+        df['tmp_continued_breastfeeding'] = False
+
+    def initialise_simulation(self, sim):
+        """
+        Get ready for simulation start.
+        This method is called just before the main simulation loop begins, and after all
+        modules have read their parameters and the initial population has been created.
+        It is a good place to add initial events to the event queue.
+        """
+
+        # Schedule the main polling event (to first occur immidiately)
+        sim.schedule_event(AcuteLowerRespiratoryInfectionPollingEvent(self), sim.date)
+
+        # Schedule the main logging event (to first occur in one year)
+        sim.schedule_event(AcuteLowerRespiratoryInfectionLoggingEvent(self), sim.date + DateOffset(years=1))
+
+        # Get DALY weights
+        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
+        if 'HealthBurden' in self.sim.modules.keys():
+            self.daly_wts['daly_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
+            self.daly_wts['daly_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
+            self.daly_wts['daly_very_severe_ALRI'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
+
+        # =====================================================================================================
+        # APPLY A LINEAR MODEL FOR THE ACQUISITION OF A PRIMARY PATHOGEN FOR ALRI
         # --------------------------------------------------------------------------------------------
         # Make a dict to hold the equations that govern the probability that a person acquires ALRI
         # that is caused (primarily) by a pathogen
+        p = self.parameters
 
-        self.incidence_equations_by_pathogen.update({
-            'RSV': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['base_inc_rate_ALRI_by_RSV'][0])
-                               .when('.between(1,1)', p['base_inc_rate_ALRI_by_RSV'][1])
-                               .when('.between(2,4)', p['base_inc_rate_ALRI_by_RSV'][2])
-                               .otherwise(0.0),
-                               Predictor('li_no_access_handwashing')
-                               .when(False, p['rr_ALRI_HHhandwashing']),
-                               Predictor('li_wood_burn_stove')
-                               .when(False, p['rr_ALRI_indoor_air_pollution']),
-                               Predictor('tmp_hv_inf')
-                               .when(True, p['rr_ALRI_HIV']),
-                               Predictor('tmp_malnutrition')
-                               .when(True, p['rr_ALRI_SAM']),
-                               Predictor('tmp_exclusive_breastfeeding')
-                               .when(False, p['rr_ALRI_excl_breastfeeding'])
-                               )
-        })
+        def make_scaled_linear_model(patho):
+            """Makes the unscaled linear model with default intercept of 1. Calculates the mean incidents rate for
+            0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
+            matches the specified value in the model when averaged across the population
+            """
+            def make_linear_model(patho, intercept=1.0):
+                base_inc_rate = f'base_inc_rate_ALRI_by_{patho}'
+                return LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    intercept,
+                    Predictor('age_years')
+                        .when('.between(0,0)', p[base_inc_rate][0])
+                        .when('.between(1,1)', p[base_inc_rate][1])
+                        .when('.between(2,4)', p[base_inc_rate][2])
+                        .otherwise(0.0),
+                    Predictor('li_no_access_handwashing').when(False, p['rr_ALRI_HHhandwashing']),
+                    Predictor('li_wood_burn_stove').when(False, p['rr_ALRI_indoor_air_pollution']),
+                    Predictor('tmp_hv_inf').when(True, p['rr_ALRI_HIV_untreated']),
+                    Predictor('tmp_malnutrition').when(True, p['rr_ALRI_underweight']),
+                    Predictor('tmp_exclusive_breastfeeding').when(False, p['rr_ALRI_excl_breastfeeding'])
+                )
 
-        self.incidence_equations_by_pathogen.update({
-            'rhinovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                      1.0,
-                                      Predictor('age_years')
-                                      .when('.between(0,0)', p['base_inc_rate_ALRI_by_rhinovirus'][0])
-                                      .when('.between(1,1)', p['base_inc_rate_ALRI_by_rhinovirus'][1])
-                                      .when('.between(2,4)', p['base_inc_rate_ALRI_by_rhinovirus'][2])
-                                      .otherwise(0.0),
-                                      Predictor('li_no_access_handwashing')
-                                      .when(False, p['rr_ALRI_HHhandwashing']),
-                                      Predictor('li_wood_burn_stove')
-                                      .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                      Predictor('tmp_hv_inf')
-                                      .when(True, p['rr_ALRI_HIV']),
-                                      Predictor('tmp_malnutrition')
-                                      .when(True, p['rr_ALRI_SAM']),
-                                      Predictor('tmp_exclusive_breastfeeding')
-                                      .when(False, p['rr_ALRI_excl_breastfeeding'])
-                                      )
-        })
+            df = self.sim.population.props
+            unscaled_lm = make_linear_model(patho)
+            target_mean = p[f'base_inc_rate_diarrhoea_by_{patho}'][0]
+            actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()
+            scaled_intercept = 1.0 * (target_mean / actual_mean)
+            scaled_lm = make_linear_model(patho, intercept=scaled_intercept)
+            # check by applying the model to mean incidence of 0-year-olds
+            assert (target_mean - scaled_lm.predict(df.loc[df.is_alive & (df.age_years == 0)]).mean()) < 1e-10
+            return scaled_lm
 
-        self.incidence_equations_by_pathogen.update({
-            'hMPV': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                1.0,
-                                Predictor('age_years')
-                                .when('.between(0,0)', p['base_inc_rate_ALRI_by_hMPV'][0])
-                                .when('.between(1,1)', p['base_inc_rate_ALRI_by_hMPV'][1])
-                                .when('.between(2,4)', p['base_inc_rate_ALRI_by_hMPV'][2])
-                                .otherwise(0.0),
-                                Predictor('li_no_access_handwashing')
-                                .when(False, p['rr_ALRI_HHhandwashing']),
-                                Predictor('li_wood_burn_stove')
-                                .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                Predictor('tmp_hv_inf')
-                                .when(True, p['rr_ALRI_HIV']),
-                                Predictor('tmp_malnutrition')
-                                .when(True, p['rr_ALRI_SAM']),
-                                Predictor('tmp_exclusive_breastfeeding')
-                                .when(False, p['rr_ALRI_excl_breastfeeding'])
-                                )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'parainfluenza': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                         1.0,
-                                         Predictor('age_years')
-                                         .when('.between(0,0)', p['base_inc_rate_ALRI_by_parainfluenza'][0])
-                                         .when('.between(1,1)', p['base_inc_rate_ALRI_by_parainfluenza'][1])
-                                         .when('.between(2,4)', p['base_inc_rate_ALRI_by_parainfluenza'][2])
-                                         .otherwise(0.0),
-                                         Predictor('li_no_access_handwashing')
-                                         .when(False, p['rr_ALRI_HHhandwashing']),
-                                         Predictor('li_wood_burn_stove')
-                                         .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                         Predictor('tmp_hv_inf')
-                                         .when(True, p['rr_ALRI_HIV']),
-                                         Predictor('tmp_malnutrition')
-                                         .when(True, p['rr_ALRI_SAM']),
-                                         Predictor('tmp_exclusive_breastfeeding')
-                                         .when(False, p['rr_ALRI_excl_breastfeeding'])
-                                         )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'streptococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                         1.0,
-                                         Predictor('age_years')
-                                         .when('.between(0,0)', p['base_inc_rate_ALRI_by_streptococcus'][0])
-                                         .when('.between(1,1)', p['base_inc_rate_ALRI_by_streptococcus'][1])
-                                         .when('.between(2,4)', p['base_inc_rate_ALRI_by_streptococcus'][2])
-                                         .otherwise(0.0),
-                                         Predictor('li_no_access_handwashing')
-                                         .when(False, p['rr_ALRI_HHhandwashing']),
-                                         Predictor('li_wood_burn_stove')
-                                         .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                         Predictor('tmp_hv_inf')
-                                         .when(True, p['rr_ALRI_HIV']),
-                                         Predictor('tmp_malnutrition')
-                                         .when(True, p['rr_ALRI_SAM']),
-                                         Predictor('tmp_exclusive_breastfeeding')
-                                         .when(False, p['rr_ALRI_excl_breastfeeding']),
-                                         Predictor('tmp_pneumococcal_vaccination')
-                                         .when(False, p['rr_ALRI_pneumococcal_vaccine'])
-                                         )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'hib': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['base_inc_rate_ALRI_by_hib'][0])
-                               .when('.between(1,1)', p['base_inc_rate_ALRI_by_hib'][1])
-                               .when('.between(2,4)', p['base_inc_rate_ALRI_by_hib'][2])
-                               .otherwise(0.0),
-                               Predictor('li_no_access_handwashing')
-                               .when(False, p['rr_ALRI_HHhandwashing']),
-                               Predictor('li_wood_burn_stove')
-                               .when(False, p['rr_ALRI_indoor_air_pollution']),
-                               Predictor('tmp_hv_inf')
-                               .when(True, p['rr_ALRI_HIV']),
-                               Predictor('tmp_malnutrition')
-                               .when(True, p['rr_ALRI_SAM']),
-                               Predictor('tmp_exclusive_breastfeeding')
-                               .when(False, p['rr_ALRI_excl_breastfeeding']),
-                               Predictor('tmp_hib_vaccination')
-                               .when(False, p['rr_ALRI_hib_vaccine'])
-                               )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'TB': LinearModel(LinearModelType.MULTIPLICATIVE,
-                              1.0,
-                              Predictor('age_years')
-                              .when('.between(0,0)', p['base_inc_rate_ALRI_by_TB'][0])
-                              .when('.between(1,1)', p['base_inc_rate_ALRI_by_TB'][1])
-                              .when('.between(2,4)', p['base_inc_rate_ALRI_by_TB'][2])
-                              .otherwise(0.0),
-                              Predictor('ri_primary_ALRI_pathogen')
-                              .when('is not TB', 0.0),
-                              Predictor('li_no_access_handwashing')
-                              .when(False, p['rr_ALRI_HHhandwashing']),
-                              Predictor('li_wood_burn_stove')
-                              .when(False, p['rr_ALRI_indoor_air_pollution']),
-                              Predictor('tmp_hv_inf')
-                              .when(True, p['rr_ALRI_HIV']),
-                              Predictor('tmp_malnutrition')
-                              .when(True, p['rr_ALRI_SAM']),
-                              Predictor('tmp_exclusive_breastfeeding')
-                              .when(False, p['rr_ALRI_excl_breastfeeding'])
-                              )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'staphylococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                          1.0,
-                                          Predictor('age_years')
-                                          .when('.between(0,0)', p['base_inc_rate_ALRI_by_staphylococcus'][0])
-                                          .when('.between(1,1)', p['base_inc_rate_ALRI_by_staphylococcus'][1])
-                                          .when('.between(2,4)', p['base_inc_rate_ALRI_by_staphylococcus'][2])
-                                          .otherwise(0.0),
-                                          Predictor('li_no_access_handwashing')
-                                          .when(False, p['rr_ALRI_HHhandwashing']),
-                                          Predictor('li_wood_burn_stove')
-                                          .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                          Predictor('tmp_hv_inf')
-                                          .when(True, p['rr_ALRI_HIV']),
-                                          Predictor('tmp_malnutrition')
-                                          .when(True, p['rr_ALRI_SAM']),
-                                          Predictor('tmp_exclusive_breastfeeding')
-                                          .when(False, p['rr_ALRI_excl_breastfeeding'])
-                                          )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'influenza': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                     1.0,
-                                     Predictor('age_years')
-                                     .when('.between(0,0)', p['base_inc_rate_ALRI_by_influenza'][0])
-                                     .when('.between(1,1)', p['base_inc_rate_ALRI_by_influenza'][1])
-                                     .when('.between(2,4)', p['base_inc_rate_ALRI_by_influenza'][2])
-                                     .otherwise(0.0),
-                                     Predictor('li_no_access_handwashing')
-                                     .when(False, p['rr_ALRI_HHhandwashing']),
-                                     Predictor('li_wood_burn_stove')
-                                     .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                     Predictor('tmp_hv_inf')
-                                     .when(True, p['rr_ALRI_HIV']),
-                                     Predictor('tmp_malnutrition')
-                                     .when(True, p['rr_ALRI_SAM']),
-                                     Predictor('tmp_exclusive_breastfeeding')
-                                     .when(False, p['rr_ALRI_excl_breastfeeding'])
-                                     )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'jirovecii': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                     1.0,
-                                     Predictor('age_years')
-                                     .when('.between(0,0)', p['base_inc_rate_ALRI_by_jirovecii'][0])
-                                     .when('.between(1,1)', p['base_inc_rate_ALRI_by_jirovecii'][1])
-                                     .when('.between(2,4)', p['base_inc_rate_ALRI_by_jirovecii'][2])
-                                     .otherwise(0.0),
-                                     Predictor('li_no_access_handwashing')
-                                     .when(False, p['rr_ALRI_HHhandwashing']),
-                                     Predictor('li_wood_burn_stove')
-                                     .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                     Predictor('tmp_hv_inf')
-                                     .when(True, p['rr_ALRI_HIV']),
-                                     Predictor('tmp_malnutrition')
-                                     .when(True, p['rr_ALRI_SAM']),
-                                     Predictor('tmp_exclusive_breastfeeding')
-                                     .when(False, p['rr_ALRI_excl_breastfeeding'])
-                                     )
-        })
-
-        self.incidence_equations_by_pathogen.update({
-            'other_pathogens': LinearModel(LinearModelType.MULTIPLICATIVE,
-                                           1.0,
-                                           Predictor('age_years')
-                                           .when('.between(0,0)', p['base_inc_rate_ALRI_by_other_pathogens'][0])
-                                           .when('.between(1,1)', p['base_inc_rate_ALRI_by_other_pathogens'][1])
-                                           .when('.between(2,4)', p['base_inc_rate_ALRI_by_other_pathogens'][2])
-                                           .otherwise(0.0),
-                                           Predictor('li_no_access_handwashing')
-                                           .when(False, p['rr_ALRI_HHhandwashing']),
-                                           Predictor('li_wood_burn_stove')
-                                           .when(False, p['rr_ALRI_indoor_air_pollution']),
-                                           Predictor('tmp_hv_inf')
-                                           .when(True, p['rr_ALRI_HIV']),
-                                           Predictor('tmp_malnutrition')
-                                           .when(True, p['rr_ALRI_SAM']),
-                                           Predictor('tmp_exclusive_breastfeeding')
-                                           .when(False, p['rr_ALRI_excl_breastfeeding'])
-                                           )
-        })
+        for pathogen in ALRI.pathogens:
+            self.incidence_equations_by_pathogen[pathogen] = make_scaled_linear_model(pathogen)
 
         # check that equations have been declared for each pathogens
         assert self.pathogens == set(list(self.incidence_equations_by_pathogen.keys()))
 
         # --------------------------------------------------------------------------------------------
-        # Linear models for determining the underlying condition as pneumonia caused by each pathogen
-        self.proportions_of_ALRI_diseases_caused_by_each_pathogen.update({
-            'RSV': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not RSV', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_RSV_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_RSV_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_RSV_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'rhinovirus': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not rhinovirus', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_rhinovirus_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_rhinovirus_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_rhinovirus_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'hMPV': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not hMPV', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_hMPV_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_hMPV_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_hMPV_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'parainfluenza': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not parainfluenza', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_parainfluenza_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_parainfluenza_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_parainfluenza_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'streptococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when(".isin(['RSV', 'rhinovirus', 'hMPV', 'parainfluenza', 'influenza'])",
-                                     p['prob_secondary_bacterial_infection'])
-                               .otherwise(0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_streptococcus_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_streptococcus_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_streptococcus_inf_causing_pneumonia'][2])
-                               .otherwise(0.0)
-                               ),
-            'hib': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not hib', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_hib_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_hib_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_hib_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'TB': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not TB', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_TB_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_TB_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_TB_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'staphylococcus': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not staphylococcus', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_staphylococcus_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_staphylococcus_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_staphylococcus_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'influenza': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not influenza', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_influenza_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_influenza_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_influenza_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'jirovecii': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not jirovecii', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_jirovecii_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_jirovecii_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_jirovecii_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-            'other_pathogens': LinearModel(LinearModelType.MULTIPLICATIVE,
-                               1.0,
-                               Predictor('ri_primary_ALRI_pathogen')
-                               .when('is not other_pathogens', 0.0),
-                               Predictor('age_years')
-                               .when('.between(0,0)', p['p_other_pathogens_inf_causing_pneumonia'][0])
-                               .when('.between(1,1)', p['p_other_pathogens_inf_causing_pneumonia'][1])
-                               .when('.between(2,4)', p['p_other_pathogens_inf_causing_pneumonia'][2])
-                               .otherwise(0.0),
-                               ),
-        })
+        # Linear models for determining the underlying condition as viral or bacterial pneumonia, and bronchiolitis
+        # caused by each primary pathogen
+        def determine_ALRI_type(patho):
+            return {
+                'viral_pneumonia': p[f'proportion_viral_pneumonia_caused_by_{patho}'],
+                'bronchiolitis': 1- p[f'proportion_viral_pneumonia_caused_by_{patho}'],
+                'bacterial_pneumonia': p[f'proportion_bacterial_pneumonia_caused_by_{patho}']
+            }
+        for pathogen in ALRI.pathogens:
+            self.proportions_of_ALRI_disease_types_by_pathogen[pathogen] = determine_ALRI_type(pathogen)
 
+        # check that equations have been declared for each pathogens
+        assert self.pathogens == set(list(self.proportions_of_ALRI_disease_types_by_pathogen.keys()))
+
+        # =====================================================================================================
+        # APPLY PROBABILITY OF SECONDARY BACTERIAL INFECTION
+        # -----------------------------------------------------------------------------------------------------
         # Create linear model equation for the probability of a secondary bacterial infection
-        self.prob_secondary_bacterial_infection = LinearModel(LinearModelType.MULTIPLICATIVE,
-                                         1.0,
-                                         Predictor()
-                                         .when("ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
-                                               "'parainfluenza', 'influenza']) & "
-                                               "ri_current_ALRI_disease_type == 'viral pneumonia'",
-                                               p['prob_secondary_bacterial_infection_from_viral_pneumonia'])
-                                         .otherwise(0.0),
-                                         Predictor()
-                                         .when("ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
-                                               "'parainfluenza', 'influenza']) & "
-                                               "ri_current_ALRI_disease_type == 'bronchiolitis'",
-                                               p['prob_secondary_bacterial_infection_from_bronchiolitis'])
-                                         .otherwise(0.0)
-                                         )
+        self.prob_secondary_bacterial_infection = \
+            LinearModel(LinearModelType.MULTIPLICATIVE,
+                        1.0,
+                        Predictor()
+                        .when(
+                            "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
+                            "'parainfluenza', 'influenza']) & "
+                            "ri_current_ALRI_disease_type == 'viral pneumonia'",
+                            p[
+                                'prob_secondary_bacterial_infection_from_viral_pneumonia'])
+                        .otherwise(0.0),
+                        Predictor()
+                        .when(
+                            "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
+                            "'parainfluenza', 'influenza']) & "
+                            "ri_current_ALRI_disease_type == 'bronchiolitis'",
+                            p[
+                                'prob_secondary_bacterial_infection_from_bronchiolitis'])
+                        .otherwise(0.0)
+                        )
 
-
-        # check that probability of symptoms have been declared for each severity level
-        # assert self.severity == set(list(self.prob_symptoms.keys()))
-        # --------------------------------------------------------------------------------------------
+        # =====================================================================================================
+        # APPLY LINEAR MODEL TO DETERMINE PROBABILITY OF COMPLICATIONS
+        # -----------------------------------------------------------------------------------------------------
         # Create linear models for the risk of acquiring complications from uncomplicated ALRI
         self.risk_of_developing_ALRI_complications.update({
             'pneumothorax':
@@ -825,76 +558,53 @@ class ALRI(Module):
                             ),
         }),
 
-        # --------------------------------------------------------------------------------------------
-        # Make a dict containing the probability of symptoms onset given acquisition of ALRI
-        self.prob_symptoms_uncomplicated_ALRI.update({
-            'viral_pneumonia': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 0
-            },
-            'bacterial_pneumonia': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 0
-            },
-            'bronchiolitis': {
-                'fever': 0.7,
-                'cough': 0.8,
-                'difficult_breathing': 1,
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 0
-            }
-        })
+        # check that equations have been declared for each complication
+        assert self.complications == set(list(self.risk_of_developing_ALRI_complications.keys()))
 
-        self.prob_extra_symptoms_complications.update({
-            'pneumothorax': {
-                'grunting': 0.9,
-                'severe_respiratory_distress': 0.5,
-                'cyanosis': 1
-            },
-            'pleural_effusion': {
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'empyema': {
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'lung_abscess': {
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'sepsis': {
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'meningitis': {
-                'fast_breathing': 0.9,
-                'chest_indrawing': 0.5,
-                'danger_signs': 1
-            },
-            'respiratory_failure': {
-                'hypoxia': 0.7,
-                'danger_signs': 1,
-                'stridor': 0.7
+        # =====================================================================================================
+        # APPLY PROBABILITY OF SYMPTOMS TO EACH ALRI DISEASE TYPE (UNCOMPLICATED AND WITH COMPLICATIONS)
+        # -----------------------------------------------------------------------------------------------------
+        # Make a dict containing the probability of symptoms given acquisition of (uncomplicated) ALRI,
+        # by disease type
+        def make_symptom_probs(disease_type):
+            return {
+                'fever':  p[f'prob_fever_uncomplicated_{disease_type}'],
+                'cough': p[f'prob_cough_uncomplicated_{disease_type}'],
+                'difficult_breathing': p[f'prob_difficult_breathing_uncomplicated_{disease_type}'],
+                'fast_breathing': p[f'prob_fast_breathing_uncomplicated_{disease_type}'],
+                'chest_indrawing': p[f'prob_chest_indrawing_uncomplicated_{disease_type}'],
+                'danger_signs': p[f'prob_danger_signs_uncomplicated_{disease_type}'],
             }
-        })
-        # TODO: add the probabilities of symptoms by severity - in parameters
 
-        # --------------------------------------------------------------------------------------------
-        # Create the linear model for the risk of dying due to ALRI
+        for disease in ALRI.disease_type:
+            self.prob_symptoms_uncomplicated_ALRI[disease] = make_symptom_probs(disease)
+
+        # Check that each ALRI type has a risk of developing each symptom
+        assert self.disease_type == set(list(self.prob_symptoms_uncomplicated_ALRI.keys()))
+
+        # -----------------------------------------------------------------------------------------------------
+        # Make a dict containing the probability of additional symptoms given acquisition of complications
+        # probability by complication
+        def add_complication_symptom_probs(complicat):
+            return {
+                'fast_breathing': p[f'prob_fast_breathing_adding_from_{complicat}'],
+                'chest_indrawing': p[f'prob_chest_indrawing_adding_from_{complicat}'],
+                'convulsions': p[f'prob_conculsions_adding_from_{complicat}'],
+                'severe_respiratory_distress': p[f'prob_severe_respiratory_distress_adding_from_{complicat}'],
+                'grunting': p[f'prob_grunting_adding_from_{complicat}'],
+                'hypoxia': p[f'prob_hypoxia_adding_from_{complicat}'],
+            }
+
+        for complication in ALRI.complications:
+            self.prob_extra_symptoms_complications[complication] = add_complication_symptom_probs(complication)
+
+        # Check that each complication has a risk of developing each symptom
+        assert self.complications == set(list(self.prob_extra_symptoms_complications.keys()))
+
+        # =====================================================================================================
+        # APPLY A LINEAR MODEL FOR THE RISK OF DEATH DUE TO ALRI (SEVERE COMPLICATIONS)
+        # -----------------------------------------------------------------------------------------------------
+        # Create a linear model for the risk of dying due to complications: sepsis, meningitis, respiratory failure
         def death_risk(complications_list):
             total = 0
             if 'sepsis' in complications_list:
@@ -916,55 +626,7 @@ class ALRI(Module):
                 .when('.between(1,1)', p['rr_death_ALRI_age12to23mo'])
                 .when('.between(2,4)', p['rr_death_ALRI_age24to59mo'])
         )
-
-        # TODO: duration of ilness - mean 3.0 days (2.0-5.0 days) from PERCH/hopsitalization days
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
-    def initialise_population(self, population):
-        """Set our property values for the initial population.
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-        :param population: the population of individuals
-        """
-        df = population.props  # a shortcut to the data-frame storing data for individuals
-        m = self
-        rng = m.rng
-        now = self.sim.date
-
-        # ---- Key Current Status Classification Properties ----
-        df['ri_primary_ALRI_pathogen'].values[:] = 'none'
-
-        # ---- Internal values ----
-        df['ri_ALRI_event_date_of_onset'] = pd.NaT
-        df['ri_ALRI_event_recovered_date'] = pd.NaT
-        df['ri_ALRI_event_death_date'] = pd.NaT
-
-        df['ri_ALRI_treatment'] = False
-        df['ri_ALRI_tx_start_date'] = pd.NaT
-
-        # ---- Temporary values ----
-        df['tmp_malnutrition'] = False
-        df['tmp_hv_inf'] = False
-        df['tmp_low_birth_weight'] = False
-        df['tmp_exclusive_breastfeeding'] = False
-        df['tmp_continued_breastfeeding'] = False
-
-    def initialise_simulation(self, sim):
-        """
-        Get ready for simulation start.
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-        """
-
-        # Schedule the main polling event (to first occur immidiately)
-        sim.schedule_event(AcuteLowerRespiratoryInfectionPollingEvent(self), sim.date + DateOffset(months=0))
-
-        # Schedule the main logging event (to first occur in one year)
-        sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(years=1))
+        # -----------------------------------------------------------------------------------------------------
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -1340,7 +1002,7 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class PneumoniaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This Event logs the number of incident cases that have occurred since the previous logging event.
     Analysis scripts expect that the frequency of this logging event is once per year.
