@@ -56,7 +56,8 @@ class Diarrhoea(Module):
         'tEPEC'
     }
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
 
     PARAMETERS = {
         'base_inc_rate_diarrhoea_by_rotavirus':

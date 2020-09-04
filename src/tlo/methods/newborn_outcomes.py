@@ -7,7 +7,7 @@ import scipy.stats
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import demography, Metadata
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -29,6 +29,9 @@ class NewbornOutcomes(Module):
 
         # This dictionary will track incidence of complications of following birth
         self.NewbornComplicationTracker = dict()
+
+    # Declare Metadata
+    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
 
     PARAMETERS = {
         'mean_birth_weights': Parameter(

@@ -17,6 +17,9 @@ class PregnancySupervisor(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    # Declare Metadata
+    METADATA = {}
+
     PARAMETERS = {}
 
     PROPERTIES = {

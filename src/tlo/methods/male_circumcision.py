@@ -22,6 +22,9 @@ class male_circumcision(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    # Declare Metadata
+    METADATA = {}
+
     PARAMETERS = {
         'initial_circumcision': Parameter(Types.REAL, 'Prevalence of circumcision in the population at baseline'),
         'prob_circumcision': Parameter(Types.REAL, 'probability of circumcision in the eligible population'),

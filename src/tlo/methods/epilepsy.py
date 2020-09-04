@@ -19,7 +19,8 @@ class Epilepsy(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
 
     # Module parameters
     PARAMETERS = {

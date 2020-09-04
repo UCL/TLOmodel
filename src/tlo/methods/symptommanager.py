@@ -125,6 +125,9 @@ class SymptomManager(Module):
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
     """
 
+    # Declare Metadata
+    METADATA = {}
+
     PROPERTIES = dict()  # updated as pre-initialise population once symptoms have been registered.
 
     PARAMETERS = {

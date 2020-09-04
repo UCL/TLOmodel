@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import demography, Metadata
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -33,6 +33,9 @@ class Labour (Module):
         # These lists will contain possible complications and are used as checks in assert functions
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
+
+    # Declare Metadata
+    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
 
     PARAMETERS = {
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================

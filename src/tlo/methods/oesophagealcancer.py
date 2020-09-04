@@ -34,7 +34,8 @@ class OesophagealCancer(Module):
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
 
     PARAMETERS = {
         "init_prop_oes_cancer_stage": Parameter(

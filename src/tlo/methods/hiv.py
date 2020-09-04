@@ -8,7 +8,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, tb
+from tlo.methods import demography, tb, Metadata
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,9 @@ class hiv(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         # self.beta_calib = par_est
+
+    # Declare Metadata
+    METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM, Metadata.USES_HEALTHBURDEN}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
