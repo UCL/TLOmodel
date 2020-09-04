@@ -45,7 +45,7 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 50
+popsize = 5000
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'LogFile'}
