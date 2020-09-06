@@ -11,7 +11,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, tb
+from tlo.methods import demography, tb   # todo- dependency on TB???
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -26,10 +26,9 @@ class Hiv(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        # self.beta_calib = par_est
 
-    # Here we declare parameters for this module. Each parameter has a name, data type,
-    # and longer description.
+    METADATA = {}
+
     PARAMETERS = {
         # baseline characteristics
         "hiv_prev_2010": Parameter(Types.REAL, "adult hiv prevalence in 2010"),
@@ -168,45 +167,36 @@ class Hiv(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        "hv_inf": Property(Types.BOOL, "hiv status"),
-        "hv_date_inf": Property(Types.DATE, "Date acquired hiv infection"),
-        "hv_date_symptoms": Property(Types.DATE, "Date of symptom start"),
-        "hv_proj_date_death": Property(
-            Types.DATE, "Projected time of AIDS death if untreated"
-        ),
+        # --- Core Properties
+        "hv_inf": Property(Types.BOOL, "hiv status, currently living with HIV or not"),
+        "hv_on_art": Property(Types.CATEGORICAL, "art status", categories=[0, 1, 2]), # todo - combine this with status and give categories names
         "hv_sexual_risk": Property(
             Types.CATEGORICAL, "Sexual risk groups", categories=["low", "sex_work"]
         ),
-        "hv_mother_inf_by_birth": Property(Types.BOOL, "hiv status of mother"),
-        "hv_mother_art": Property(
-            Types.CATEGORICAL, "art status", categories=[0, 1, 2]
-        ),
-        "hv_specific_symptoms": Property(
-            Types.CATEGORICAL,
-            "Level of symptoms for hiv",
-            categories=["none", "symp", "aids"],
-        ),
-        "hv_proj_date_symp": Property(Types.DATE, "Date becomes symptomatic"),
-        "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
+        "hv_behaviour_change": Property(Types.BOOL, "Exposed to hiv prevention counselling")
+
+        "hv_viral_load": Property(Types.DATE, "date last viral load test"),
+        "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
+        "hv_fast_progressor": Property(Types.BOOL, "infant fast progressor"),
+
+        # --- Dates on which things have happened
+        "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
+        "hv_date_symptoms": Property(Types.DATE, "Date of symptom start"),
         "hv_ever_tested": Property(Types.BOOL, "ever had a hiv test"),
         "hv_date_tested": Property(Types.DATE, "date of hiv test"),
         "hv_number_tests": Property(Types.INT, "number of hiv tests taken"),
         "hv_diagnosed": Property(Types.BOOL, "hiv+ and tested"),
-        "hv_on_art": Property(Types.CATEGORICAL, "art status", categories=[0, 1, 2]),
         "hv_date_art_start": Property(Types.DATE, "date art started"),
-        "hv_viral_load": Property(Types.DATE, "date last viral load test"),
-        "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
         "hv_date_cotrim": Property(Types.DATE, "date cotrimoxazole started"),
-        "hv_fast_progressor": Property(Types.BOOL, "infant fast progressor"),
-        "hv_behaviour_change": Property(
-            Types.BOOL, "Exposed to hiv prevention counselling"
+
+        # -- Stores of dates on which things are scheduled to occur in the future
+        "hv_proj_date_death": Property(
+            Types.DATE, "Projected time of AIDS death if untreated"
         ),
-        "hv_date_death_occurred": Property(
-            Types.DATE, "date death due to AIDS actually occurred"
-        ),
+        "hv_proj_date_symp": Property(Types.DATE, "Date becomes symptomatic"),
+        "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
     }
 
-    SYMPTOMS = {"hiv_symptoms", "aids_symptoms"}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -246,8 +236,12 @@ class Hiv(Module):
         p["vl_monitoring_times"] = workbook["VL_monitoring"]
         p["tb_high_risk_distr"] = workbook["IPTdistricts"]
 
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
+        # Declare Symptoms. # todo - do these symptoms cause health seeking behavioru?
+        # SYMPTOMS = {"hiv_symptoms", "aids_symptoms"}
+        self.sim.modules['SymptomManaged'].register_symptom(
+
+
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
