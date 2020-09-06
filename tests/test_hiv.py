@@ -15,7 +15,8 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     hiv,
-    malecircumcision,
+    malecircumcision,  # todo - remove dependency
+    tb, # todo - think about removing dependency
     labour,
     pregnancy_supervisor,
     symptommanager,
@@ -71,7 +72,8 @@ def test_basic_run_with_default_parameters():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath),
-                 malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath)
+                 malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath)
                  )
 
     sim.make_initial_population(n=popsize)
