@@ -35,6 +35,7 @@ def check_dtypes(simulation):
 
 
 def test_basic_run_with_default_parameters():
+    """Run the HIV module with check and check dtypes consistency"""
     start_date = Date(2010, 1, 1)
     end_date = Date(2010, 12, 31)
     popsize = 1000
@@ -51,7 +52,7 @@ def test_basic_run_with_default_parameters():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath)
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
     sim.make_initial_population(n=popsize)

@@ -32,9 +32,12 @@ class Hiv(Module):
     The HIV Disease Module
     """
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, run_with_checks=False):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        assert isinstance(run_with_checks, bool)
+        self.run_with_checks = run_with_checks
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -720,7 +723,9 @@ class Hiv(Module):
         """
 
         sim.schedule_event(HivRegularPollingEvent(self), sim.date)
-        sim.schedule_event(HivCheckPropertiesEvent(self), sim.date)
+
+        if self.run_with_checks:
+            sim.schedule_event(HivCheckPropertiesEvent(self), sim.date)
 
         # sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))
         # sim.schedule_event(
@@ -1307,10 +1312,7 @@ class HivCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))  # runs every month
 
     def apply(self, population):
-        print('@@@@@ running check')
         self.module.check_config_of_properties()
-
-
 
 
 
