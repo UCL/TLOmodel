@@ -10,6 +10,7 @@ served by the following disease modules:
 
 """
 from tlo import Module
+from tlo.methods import Metadata
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Dysentery,
     HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
@@ -26,6 +27,9 @@ class DxAlgorithmChild(Module):
     The module contains parameters and functions to 'diagnose(...)' children.
     These functions are called by an HSI (usually a Generic HSI)
     """
+
+    # Declare Metadata
+    METADATA = {Metadata.USES_HEALTHSYSTEM}
 
     PARAMETERS = {}
     PROPERTIES = {}

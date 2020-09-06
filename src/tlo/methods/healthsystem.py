@@ -8,6 +8,7 @@ import pandas as pd
 import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.dxmanager import DxManager
 
 logger = logging.getLogger(__name__)
@@ -96,8 +97,8 @@ class HealthSystem(Module):
         assert type(capabilities_coefficient) is float
         self.capabilities_coefficient = capabilities_coefficient
 
-        # Define empty set of registered disease modules
-        self.registered_disease_modules = {}
+        # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
+        self.recognised_modules_names = []
 
         # Define the dataframe that determines the availability of consumables on a daily basis
         self.cons_item_code_availability_today = pd.DataFrame()
@@ -185,6 +186,11 @@ class HealthSystem(Module):
 
     def initialise_simulation(self, sim):
 
+        # Capture list of disease modules:
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHSYSTEM in m.METADATA
+        ]
+
         # Check that each person is being associated with a facility of each type
         pop = self.sim.population.props
         fac_per_district = self.parameters['Facilities_For_Each_District']
@@ -210,19 +216,9 @@ class HealthSystem(Module):
 
     def register_disease_module(self, new_disease_module):
         """
-        Register Disease Module
-        In order for a disease module to use the functionality of the health system it must be registered
-        This list is also used to alert other disease modules when a health system interaction occurs
-
-        :param new_disease_module: The pointer to the disease module
+        This is now deprecated. Disease modules do not need to register with the health system.
         """
-        assert (
-            new_disease_module.name not in self.registered_disease_modules
-        ), 'A module named {} has already been registered'.format(new_disease_module.name)
-        assert 'on_hsi_alert' in dir(new_disease_module)
-
-        self.registered_disease_modules[new_disease_module.name] = new_disease_module
-        logger.info('Registering disease module %s', new_disease_module.name)
+        raise NotImplementedError
 
     def schedule_hsi_event(self, hsi_event, priority, topen, tclose=None):
         """
@@ -291,7 +287,7 @@ class HealthSystem(Module):
             if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
                 if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
                     for d in hsi_event.ALERT_OTHER_DISEASES:
-                        assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
+                        assert d in self.recognised_modules_names
 
             # Check that this can accept the squeeze argument
             assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.run).args
@@ -433,7 +429,7 @@ class HealthSystem(Module):
             # Alert some disease modules
 
             if hsi_event.ALERT_OTHER_DISEASES[0] == '*':
-                alert_modules = list(self.registered_disease_modules.keys())
+                alert_modules = self.recognised_modules_names
             else:
                 alert_modules = hsi_event.ALERT_OTHER_DISEASES
 
@@ -444,9 +440,11 @@ class HealthSystem(Module):
             if originating_disease_module_name in alert_modules:
                 alert_modules.remove(originating_disease_module_name)
 
+            # Do the alert:
             for module_name in alert_modules:
-                module = self.registered_disease_modules[module_name]
-                module.on_hsi_alert(person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID)
+                self.sim.modules[module_name].on_hsi_alert(
+                    person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID
+                )
 
     def reformat_daily_capabilities(self):
         """
