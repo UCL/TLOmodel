@@ -11,7 +11,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, tb   # todo- dependency on TB???
+from tlo.methods import demography, tb, Metadata  # todo- dependency on TB???
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 
 class Hiv(Module):
     """
-    The HIV Disease Classs
+    The HIV Disease Class
     """
 
     def __init__(self, name=None, resourcefilepath=None):
