@@ -49,6 +49,14 @@ def check_configuration_of_properties(sim):
     # hv_is_circ only for men?
     #
 
+    #check that tested, diagnosed, hiv infected and ART startus make sense
+
+
+    # ANALYSES: BASELINE HIV PREVALENCE, BASELINE ART COVERAGE,
+    # ANALYSES: INCIDENCE RATE AND
+
+
+
 
     # # assert ((df.sex == 'M') & (df.hv_sexual_risk == 'low')).all()  # no sex work
     # assert not any((df.sex == "M") & (df.hv_sexual_risk == "sex_work"))
@@ -62,6 +70,7 @@ def check_configuration_of_properties(sim):
     #
     # # only on cotrim if hiv is diagnosed [hv_date_cotrim = DATE and hv_diagnosed = True]
     # assert not any(df.hv_date_cotrim.notnull() & ~df.hv_diagnosed)
+
 
 
 

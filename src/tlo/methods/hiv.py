@@ -178,8 +178,8 @@ class Hiv(Module):
         # --- Core Properties
         "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV"),
         "hiv_art": Property(Types.CATEGORICAL,
-                            "ART status and adherence to ART of person",
-                            categories=["never", "current_good_adh", "current_bad_adh"]
+                            "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
+                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]
                             ),
         "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
         "hv_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
@@ -269,7 +269,7 @@ class Hiv(Module):
 
         # --- Current status
         df["hv_inf"] = False
-        df["hiv_art"].values[:] = "never"
+        df["hiv_art"].values[:] = "not"
         df["hv_on_cotrim"] = False
         df["hv_is_sexworker"] = False
         df["hv_is_circ"] = False
@@ -294,6 +294,7 @@ class Hiv(Module):
         # Launch sub-routines for allocating the right number of people into each category
         self.fsw(population)                        # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)        # allocate baseline prevalence
+
         self.baseline_tested(population)            # allocate baseline art coverage
         self.baseline_art(population)               # allocate baseline art coverage
         self.initial_pop_deaths_children(population)    # add death dates for children
@@ -329,7 +330,7 @@ class Hiv(Module):
 
     def baseline_prevalence(self, population):
         """
-        Assign baseline hiv prevalence, according to age, sex and key other variables (established in analysis of DHS
+        Assign baseline HIV prevalence, according to age, sex and key other variables (established in analysis of DHS
         data).
         """
         # todo - this now used the ResourceFile that gives the prevalence by sex and then distributes within those
@@ -339,12 +340,11 @@ class Hiv(Module):
         params = self.parameters
         df = population.props
 
-        # ----------------------------------- ADULT HIV -----------------------------------
-        # prob of infection based on age and sex:
+        # prob of infection based on age and sex in baseline year (2010:
         prevalence_db = params["hiv_prev"]
         prev_2010 = prevalence_db.loc[prevalence_db.year == 2010, ['age_from', 'sex', 'prev_prop']]
         prev_2010 = prev_2010.rename(columns={'age_from': 'age_years'})
-        prob_of_infec = df[['age_years', 'sex']].merge(prev_2010, on=['age_years', 'sex'], how='left')['prev_prop']
+        prob_of_infec = df.loc[df.is_alive, ['age_years', 'sex']].merge(prev_2010, on=['age_years', 'sex'], how='left')['prev_prop']
 
         # probability based on risk factors
         rel_prob_by_risk_factor = LinearModel.multiplicative(
@@ -387,45 +387,6 @@ class Hiv(Module):
         hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf, unit="y"))
         df.loc[infec, "hiv_date_inf"] = hv_date_inf.clip(lower=df.date_of_birth)
 
-
-        # ----------------------------------- CHILD HIV -----------------------------------
-
-        # baseline children's prevalence from spectrum outputs
-        prevalence = self.hiv_prev.loc[
-            self.hiv_prev.year == now.year, ["age_from", "sex", "prev_prop"]
-        ]
-
-        # merge all susceptible individuals with their hiv probability based on sex and age
-        df_hivprob = df.merge(
-            prevalence,
-            left_on=["age_years", "sex"],
-            right_on=["age_from", "sex"],
-            how="left",
-        )
-
-        # fill missing values with 0 (only relevant for age 80+)
-        df_hivprob["prev_prop"] = df_hivprob["prev_prop"].fillna(0)
-
-        assert (
-            df_hivprob.prev_prop.isna().sum() == 0
-        )  # check there is a probability for every individual
-
-        # get a list of random numbers between 0 and 1 for each infected individual
-        random_draw = self.rng.random_sample(size=len(df_hivprob))
-
-        # probability of hiv > random number, assign hiv_inf = True
-        # TODO: cluster this by mother's hiv status?? currently no linked mother pre-baseline year
-        hiv_index = df_hivprob.index[
-            df.is_alive
-            & (random_draw < df_hivprob.prev_prop)
-            & df_hivprob.age_years.between(0, 14)
-        ]
-
-        df.loc[hiv_index, "hv_inf"] = True
-        df.loc[hiv_index, "hv_date_inf"] = df.loc[hiv_index, "date_of_birth"]
-        df.loc[hiv_index, "hv_fast_progressor"] = False
-
-
     def baseline_tested(self, population):
         """ assign initial hiv testing levels, only for adults
         """
@@ -442,7 +403,6 @@ class Hiv(Module):
             & (df.sex == "M")
             & (df.age_years >= 15)
         ]
-        # print('art_index: ', art_index)
 
         test_index_female = df.index[
             (random_draw < self.parameters["testing_coverage_female"])
@@ -456,136 +416,69 @@ class Hiv(Module):
         df.loc[test_index_male | test_index_female, "hv_date_tested"] = now
         df.loc[test_index_male | test_index_female, "hv_number_tests"] = 1
 
-        # outcome of test
-        diagnosed_idx = df.index[df.hv_ever_tested & df.is_alive & df.hv_inf]
-        df.loc[diagnosed_idx, "hv_diagnosed"] = True
+        # person assumed to be diagnosed if they have had a test and are currently HIV positive:
+        df.loc[(df.hv_ever_tested & df.is_alive & df.hv_inf), "hv_diagnosed"] = True
 
     def baseline_art(self, population):
         """ assign initial art coverage levels
         """
-        now = self.sim.date
         df = population.props
 
+        # 1) Determine who is currently on ART
         worksheet = self.parameters["initial_art_coverage"]
-
-        coverage = worksheet.loc[
-            worksheet.year == now.year, ["year", "single_age", "sex", "prop_coverage"]
+        art_data = worksheet.loc[
+            worksheet.year == 2010, ["year", "single_age", "sex", "prop_coverage"]
         ]
-        # print('coverage: ', coverage.head(20))
 
         # merge all susceptible individuals with their coverage probability based on sex and age
-        df_art = df.merge(
-            coverage,
+        prob_art = df.loc[df.is_alive, ['age_years', 'sex']].merge(
+            art_data,
             left_on=["age_years", "sex"],
             right_on=["single_age", "sex"],
             how="left",
-        )
+        )['prop_coverage']
 
-        # no data for ages 100+ so fill missing values with 0
-        df_art["prop_coverage"] = df_art["prop_coverage"].fillna(0)
-        # print('df_with_age_art_prob: ', df_with_age_art_prob.head(20))
-
-        assert (
-            df_art.prop_coverage.isna().sum() == 0
-        )  # check there is a probability for every individual
-
-        # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.rng.random_sample(size=len(df_art))
-
-        # ----------------------------------- ART - CHILDREN -----------------------------------
+        prob_art = prob_art.fillna(0)
 
         # no testing rates for children so assign ever_tested=True if allocated treatment
-        art_idx_child = df_art.index[
-            (random_draw < df_art.prop_coverage)
-            & df_art.is_alive
-            & df_art.hv_inf
-            & df_art.age_years.between(0, 14)
+        art_idx = prob_art.index[
+            (self.rng.rand(len(prob_art)) < prob_art)
+            & df.is_alive
+            & df.hv_inf
         ]
 
-        df.loc[art_idx_child, "hv_on_art"] = 2  # assumes all are adherent at baseline
-        df.loc[art_idx_child, "hv_date_art_start"] = now
-        df.loc[art_idx_child, "hv_ever_tested"] = True
-        df.loc[art_idx_child, "hv_date_tested"] = now
-        df.loc[art_idx_child, "hv_number_tests"] = 1
-        df.loc[art_idx_child, "hv_diagnosed"] = True
+        # 2) Determine adherence levels for those currently on ART, for each of adult men, adult women and children
+        adult_f_art_idx = df.loc[(df.index.isin(art_idx) & (df.sex=='F') & (df.age_years >= 15))].index
+        adult_m_art_idx = df.loc[(df.index.isin(art_idx) & (df.sex=='M') & (df.age_years >= 15))].index
+        child_art_idx = df.loc[(df.index.isin(art_idx) & (df.age_years < 15))].index
 
-        # ----------------------------------- ART - ADULTS -----------------------------------
+        suppr = list()      # list of all indices for persons on ART and suppressed
+        notsuppr = list()   # list of all indices for persons on ART and not suppressed
+        def split_into_vl_and_notvl(all_idx, prob):
+            vl_suppr = self.rng.rand(len(all_idx)) < prob
+            suppr.extend(all_idx[vl_suppr])
+            notsuppr.extend(all_idx[~vl_suppr])
 
-        # probability of adult baseline population receiving art: requirement = hiv_diagnosed
-        art_idx_adult = df_art.index[
-            (random_draw < df_art.prop_coverage)
-            & df_art.is_alive
-            & df_art.hv_inf
-            & df_art.hv_diagnosed
-            & df_art.age_years.between(15, 64)
-        ]
+        split_into_vl_and_notvl(adult_f_art_idx, self.parameters['vls_f'])
+        split_into_vl_and_notvl(adult_m_art_idx, self.parameters['vls_m'])
+        split_into_vl_and_notvl(child_art_idx, self.parameters['vls_child'])
 
-        df.loc[
-            art_idx_adult, "hv_on_art"
-        ] = 2  # assumes all are adherent, then stratify into category 1/2
-        df.loc[art_idx_adult, "hv_date_art_start"] = now
+        # Set ART status:
+        df.loc[suppr, "hv_art"] = "on_VL_suppressed"
+        df.loc[notsuppr, "hv_art"] = "on_not_VL_suppressed"
 
-        del df_art
-        # ----------------------------------- ADHERENCE -----------------------------------
+        # check that everyone on ART is labelled as such
+        assert not (df.loc[art_idx, "hv_art"] == "not").any()
 
-        # allocate proportion to non-adherent category
-        # if condition not added, error with small numbers to sample
-        if (
-            len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years.between(0, 14))])
-            > 5
-        ):
-            idx_c = (
-                df[df.is_alive & (df.hv_on_art == 2) & (df.age_years.between(0, 14))]
-                .sample(frac=(1 - self.parameters["vls_child"]))
-                .index
-            )
-            df.loc[idx_c, "hv_on_art"] = 1  # change to non=adherent
+        # assume that all persons currently on ART started on thre current date
+        df.loc[art_idx, "hv_date_art_start"] = self.sim.date
 
-        if (
-            len(
-                df[
-                    df.is_alive
-                    & (df.hv_on_art == 2)
-                    & (df.sex == "M")
-                    & (df.age_years.between(15, 64))
-                ]
-            )
-            > 5
-        ):
-            idx_m = (
-                df[
-                    df.is_alive
-                    & (df.hv_on_art == 2)
-                    & (df.sex == "M")
-                    & (df.age_years.between(15, 64))
-                ]
-                .sample(frac=(1 - self.parameters["vls_m"]))
-                .index
-            )
-            df.loc[idx_m, "hv_on_art"] = 1  # change to non=adherent
+        # for logical consistency, ensure that all persons on ART have been tested and diagnosed
+        df.loc[art_idx, "hv_ever_tested"] = True
+        df.loc[art_idx, "hv_date_tested"] = self.sim.date
+        df.loc[art_idx, "hv_number_tests"] = 1
+        df.loc[art_idx, "hv_diagnosed"] = True
 
-        if (
-            len(
-                df[
-                    df.is_alive
-                    & (df.hv_on_art == 2)
-                    & (df.sex == "F")
-                    & (df.age_years.between(15, 64))
-                ]
-            )
-            > 5
-        ):
-            idx_f = (
-                df[
-                    df.is_alive
-                    & (df.hv_on_art == 2)
-                    & (df.sex == "F")
-                    & (df.age_years.between(15, 64))
-                ]
-                .sample(frac=(1 - self.parameters["vls_f"]))
-                .index
-            )
-            df.loc[idx_f, "hv_on_art"] = 1  # change to non=adherent
 
     def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population - INFANTS
