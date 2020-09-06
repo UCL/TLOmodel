@@ -1,5 +1,6 @@
 """
-HIV infection event
+The HIV Module
+September 2020, fully reconciled version.
 """
 import datetime
 import os
@@ -19,7 +20,7 @@ logger.setLevel(logging.INFO)
 
 class Hiv(Module):
     """
-    baseline hiv infection
+    The HIV Disease Classs
     """
 
     def __init__(self, name=None, resourcefilepath=None):
