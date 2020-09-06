@@ -58,6 +58,7 @@ def check_configuration_of_properties(sim):
 
 
 
+
     # # assert ((df.sex == 'M') & (df.hv_sexual_risk == 'low')).all()  # no sex work
     # assert not any((df.sex == "M") & (df.hv_sexual_risk == "sex_work"))
     #
@@ -70,8 +71,6 @@ def check_configuration_of_properties(sim):
     #
     # # only on cotrim if hiv is diagnosed [hv_date_cotrim = DATE and hv_diagnosed = True]
     # assert not any(df.hv_date_cotrim.notnull() & ~df.hv_diagnosed)
-
-
 
 
 def test_basic_run_with_default_parameters():
@@ -91,9 +90,7 @@ def test_basic_run_with_default_parameters():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath),
-                 malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath),
-                 tb.Tb(resourcefilepath=resourcefilepath)
+                 hiv.Hiv(resourcefilepath=resourcefilepath)
                  )
 
     sim.make_initial_population(n=popsize)
@@ -105,3 +102,6 @@ def test_basic_run_with_default_parameters():
     check_configuration_of_properties(sim)
 
 
+# -- OTHER TESTS PLANNED --
+
+# todo test that if everyone on ART --- no new infections

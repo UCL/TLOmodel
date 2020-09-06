@@ -109,8 +109,6 @@ class MaleCircumcision(Module):
             CircumcisionLoggingEvent(self), sim.date + DateOffset(months=1)
         )
 
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
