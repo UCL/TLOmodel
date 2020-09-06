@@ -40,6 +40,16 @@ def check_configuration_of_properties(sim):
     df = sim.population.props
 
     # # todo - check properties
+
+
+    #  check config of         "hv_status" and "hiv_art" and "hv_on_cotrim"
+    # check "hv_date_inf" is consistent with hv_status and consistent with data and date of birth
+
+    #hv_is_sexworker only for women and proportion is low.
+    # hv_is_circ only for men?
+    #
+
+
     # # assert ((df.sex == 'M') & (df.hv_sexual_risk == 'low')).all()  # no sex work
     # assert not any((df.sex == "M") & (df.hv_sexual_risk == "sex_work"))
     #
@@ -52,6 +62,7 @@ def check_configuration_of_properties(sim):
     #
     # # only on cotrim if hiv is diagnosed [hv_date_cotrim = DATE and hv_diagnosed = True]
     # assert not any(df.hv_date_cotrim.notnull() & ~df.hv_diagnosed)
+
 
 
 def test_basic_run_with_default_parameters():

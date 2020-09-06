@@ -11,8 +11,10 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography, tb, Metadata  # todo- dependency on TB???
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,7 +29,13 @@ class Hiv(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         # baseline characteristics
@@ -168,28 +176,28 @@ class Hiv(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         # --- Core Properties
-        "hv_inf": Property(Types.BOOL, "hiv status, currently living with HIV or not"),
-        "hv_on_art": Property(Types.CATEGORICAL, "art status", categories=[0, 1, 2]), # todo - combine this with status and give categories names
-        "hv_sexual_risk": Property(
-            Types.CATEGORICAL, "Sexual risk groups", categories=["low", "sex_work"]
-        ),
-        "hv_behaviour_change": Property(Types.BOOL, "Exposed to hiv prevention counselling")
-
-        "hv_viral_load": Property(Types.DATE, "date last viral load test"),
+        "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV"),
+        "hiv_art": Property(Types.CATEGORICAL,
+                            "ART status and adherence to ART of person",
+                            categories=["never", "current_good_adh", "current_bad_adh"]
+                            ),
         "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
-        "hv_fast_progressor": Property(Types.BOOL, "infant fast progressor"),
+        "hv_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
+        "hv_is_circ": Property(Types.BOOL, "Is the person circumcised"),
+        "hv_behaviour_change": Property(Types.BOOL, "Has this person been exposed to HIV prevention counselling"),
+        "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
 
         # --- Dates on which things have happened
         "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
         "hv_date_symptoms": Property(Types.DATE, "Date of symptom start"),
-        "hv_ever_tested": Property(Types.BOOL, "ever had a hiv test"),
-        "hv_date_tested": Property(Types.DATE, "date of hiv test"),
-        "hv_number_tests": Property(Types.INT, "number of hiv tests taken"),
         "hv_diagnosed": Property(Types.BOOL, "hiv+ and tested"),
+        "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
+        "hv_date_tested": Property(Types.DATE, "date of hiv last test"),
         "hv_date_art_start": Property(Types.DATE, "date art started"),
         "hv_date_cotrim": Property(Types.DATE, "date cotrimoxazole started"),
+        "hv_date_last_viral_load": Property(Types.DATE, "date last viral load test"),
 
-        # -- Stores of dates on which things are scheduled to occur in the future
+        # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
         "hv_proj_date_death": Property(
             Types.DATE, "Projected time of AIDS death if untreated"
         ),
@@ -202,6 +210,8 @@ class Hiv(Module):
         """Read parameter values from file, if required.
         :param data_folder: path of a folder supplied to the Simulation containing data files.
         """
+        # Short cut to parameters
+        p = self.parameters
 
         workbook = pd.read_excel(
             os.path.join(self.resourcefilepath, "ResourceFile_HIV.xlsx"),
@@ -209,82 +219,87 @@ class Hiv(Module):
         )
         self.load_parameters_from_dataframe(workbook["parameters"])
 
-        p = self.parameters
-
-        # baseline characteristics
+        # Load data on HIV prevalence
         p["hiv_prev"] = pd.read_csv(
             Path(self.resourcefilepath) / "ResourceFile_HIV_prevalence.csv"
         )
 
+        # Load assumed time since infected at baseline (year 2010)
         p["time_inf"] = workbook["timeSinceInf2010"]
 
+        # Load assumed ART coverage at baseline (year 2010)
         p["initial_art_coverage"] = pd.read_csv(
             Path(self.resourcefilepath) / "ResourceFile_HIV_coverage.csv"
         )
+        # todo- what is the file and why is there a nan
+
+        # health system interactions
+        p["vl_monitoring_times"] = workbook["VL_monitoring"]   #what is this doing - can it be removed????
+        p["tb_high_risk_distr"] = workbook["IPTdistricts"]   # todo - why is TB stuff here?
 
         # daly weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules.keys():
-            p["daly_wt_chronic"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                17
-            )  # Symptomatic HIV without anemia
-            p["daly_wt_aids"] = self.sim.modules["HealthBurden"].get_daly_weight(
-                19
-            )  # AIDS without antiretroviral treatment without anemia
+            # Chronic infection but not AIDS (including if on ART)
+            # (taken to be equal to "Symptomatic HIV without anaemia")
+            self.daly_wts = dict()
+            self.daly_wts['chronic_non_aids'] = self.sim.modules["HealthBurden"].get_daly_weight(17)
 
-        # health system interactions
-        p["vl_monitoring_times"] = workbook["VL_monitoring"]
-        p["tb_high_risk_distr"] = workbook["IPTdistricts"]
-
-        # Declare Symptoms. # todo - do these symptoms cause health seeking behavioru?
-        # SYMPTOMS = {"hiv_symptoms", "aids_symptoms"}
-        self.sim.modules['SymptomManaged'].register_symptom(
+            #  AIDS without anti-retroviral treatment without anemia
+            self.daly_wts['aids'] = self.sim.modules["HealthBurden"].get_daly_weight(19)
 
 
+        # Declare Symptoms.
+        # todo - check that these symptoms cause health seeking behaviour in the way assumed?
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name="hiv_symptoms",
+                    no_healthcareseeking_in_adults=True,
+                    no_healthcareseeking_in_children=True),
+            Symptom(name="aids_symptoms",
+                    odds_ratio_health_seeking_in_adults=3.0,    # High chance of seeking care when aids_symptoms onset
+                    odds_ratio_health_seeking_in_children=3.0)  # High chance of seeking care when aids_symptoms onset
+        )
 
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
+
         df = population.props
 
+        # --- Current status
         df["hv_inf"] = False
+        df["hiv_art"].values[:] = "never"
+        df["hv_on_cotrim"] = False
+        df["hv_is_sexworker"] = False
+        df["hv_is_circ"] = False
+        df["hv_behaviour_change"] = False
+        df["hv_fast_progressor"] = False
+
+        # --- Dates on which things have happened
         df["hv_date_inf"] = pd.NaT
         df["hv_date_symptoms"] = pd.NaT
+        df["hv_diagnosed"] = pd.NaT
+        df["hv_number_tests"] = pd.NaT
+        df["hv_date_tested"] = pd.NaT
+        df["hv_date_art_start"] = pd.NaT
+        df["hv_date_cotrim"] = pd.NaT
+        df["hv_date_last_viral_load"] = pd.NaT
+
+        # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
         df["hv_proj_date_death"] = pd.NaT
-        df["hv_sexual_risk"].values[:] = "low"
-        df["hv_mother_inf_by_birth"] = False
-        df["hv_mother_art"].values[:] = 0
-
-        df["hv_specific_symptoms"].values[:] = "none"
-
         df["hv_proj_date_symp"] = pd.NaT
         df["hv_proj_date_aids"] = pd.NaT
 
-        df["hv_ever_tested"] = False  # default: no individuals tested
-        df["hv_date_tested"] = pd.NaT
-        df["hv_number_tests"] = 0
-        df["hv_diagnosed"] = False
-        df["hv_on_art"].values[:] = 0
-        df["hv_date_art_start"] = pd.NaT
-        df["hv_on_cotrim"] = False
-        df["hv_date_cotrim"] = pd.NaT
-        df["hv_fast_progressor"] = False
-        df["hv_behaviour_change"] = False
-        df["hv_date_death_occurred"] = pd.NaT
-
-        self.fsw(
-            population
-        )  # allocate proportion of women with very high sexual risk (fsw)
-        self.baseline_prevalence(population)  # allocate baseline prevalence
-        self.baseline_tested(population)  # allocate baseline art coverage
-        self.baseline_art(population)  # allocate baseline art coverage
-        self.initial_pop_deaths_children(population)  # add death dates for children
-        self.initial_pop_deaths_adults(population)  # add death dates for adults
-        self.assign_symptom_level(population)  # assign symptom level for all infected
-        self.schedule_symptoms(
-            population
-        )  # schedule symptom level change for all infected
+        # Launch sub-routines for allocating the right number of people into each category
+        self.fsw(population)                        # allocate proportion of women with very high sexual risk (fsw)
+        self.baseline_prevalence(population)        # allocate baseline prevalence
+        self.baseline_tested(population)            # allocate baseline art coverage
+        self.baseline_art(population)               # allocate baseline art coverage
+        self.initial_pop_deaths_children(population)    # add death dates for children
+        self.initial_pop_deaths_adults(population)      # add death dates for adults
+        self.assign_symptom_level(population)       # assign symptom level for all infected
+        self.schedule_symptoms(population)          # schedule symptom level change for all infected
 
     def log_scale(self, a0):
         """ helper function for adult mortality rates"""
@@ -292,7 +307,8 @@ class Hiv(Module):
         return age_scale
 
     def fsw(self, population):
-        """ Assign female sex work to sample of women and change sexual risk
+        """ Assign female sex work to sample of women and change sexual risk.
+        Women must be unmarried and aged between 15 and 49.
         """
         df = population.props
 
@@ -304,77 +320,73 @@ class Hiv(Module):
                 & (df.li_mar_stat != 2)
             ]
             .sample(
-                frac=self.parameters["proportion_female_sex_workers"], replace=False
+                frac=self.parameters["proportion_female_sex_workers"], replace=False, random_state=self.rng
             )
             .index
         )
 
-        df.loc[fsw, "hv_sexual_risk"] = "sex_work"
+        df.loc[fsw, "hv_is_sexworker"] = True
 
     def baseline_prevalence(self, population):
         """
-        assign baseline hiv prevalence
+        Assign baseline hiv prevalence, according to age, sex and key other variables (established in analysis of DHS
+        data).
         """
+        # todo - this now used the ResourceFile that gives the prevalence by sex and then distributes within those
+        #  using the linear model
+        # todo-- looks to be an error for the 80 year olds.
 
-        # rr from Wingston's analysis dropbox Data-MDHS
-        now = self.sim.date
-        df = population.props
         params = self.parameters
+        df = population.props
 
         # ----------------------------------- ADULT HIV -----------------------------------
+        # prob of infection based on age and sex:
+        prevalence_db = params["hiv_prev"]
+        prev_2010 = prevalence_db.loc[prevalence_db.year == 2010, ['age_from', 'sex', 'prev_prop']]
+        prev_2010 = prev_2010.rename(columns={'age_from': 'age_years'})
+        prob_of_infec = df[['age_years', 'sex']].merge(prev_2010, on=['age_years', 'sex'], how='left')['prev_prop']
 
-        prevalence = params["hiv_prev_2010"]
+        # probability based on risk factors
+        rel_prob_by_risk_factor = LinearModel.multiplicative(
+            Predictor("hv_is_sexworker").when(True, params["rr_fsw"]),
+            Predictor("hv_is_circ").when(True, params["rr_circumcision"]),
+            Predictor("li_urban").when(False, params["rr_rural"]),
+            Predictor("li_wealth")  .when(2, params["rr_windex_poorer"])
+                                    .when(3, params["rr_windex_middle"])
+                                    .when(4, params["rr_windex_richer"])
+                                    .when(5, params["rr_windex_richest"]),
+            Predictor("li_ed_lev")  .when(2, params["rr_edlevel_primary"])
+                                    .when(3, params["rr_edlevel_secondary"])
+        ).predict(df.loc[df.is_alive])
 
-        # only for 15-54
-        risk_hiv = pd.Series(0, index=df.index)
-        risk_hiv.loc[
-            df.is_alive & df.age_years.between(15, 55)
-        ] = 1  # applied to all adults
-        risk_hiv.loc[(df.hv_sexual_risk == "sex_work")] *= params["rr_fsw"]
-        risk_hiv.loc[df.mc_is_circumcised] *= params["rr_circumcision"]
-        # risk_hiv.loc[(df.contraception == 'condom')] *= params['rr_condom']
-        risk_hiv.loc[~df.li_urban] *= params["rr_rural"]
-        risk_hiv.loc[(df.li_wealth == "2")] *= params["rr_windex_poorer"]
-        risk_hiv.loc[(df.li_wealth == "3")] *= params["rr_windex_middle"]
-        risk_hiv.loc[(df.li_wealth == "4")] *= params["rr_windex_richer"]
-        risk_hiv.loc[(df.li_wealth == "5")] *= params["rr_windex_richest"]
-        risk_hiv.loc[(df.sex == "F")] *= params["rr_sex_f"]
-        risk_hiv.loc[df.age_years.between(20, 24)] *= params["rr_age_gp20"]
-        risk_hiv.loc[df.age_years.between(25, 29)] *= params["rr_age_gp25"]
-        risk_hiv.loc[df.age_years.between(30, 34)] *= params["rr_age_gp30"]
-        risk_hiv.loc[df.age_years.between(35, 39)] *= params["rr_age_gp35"]
-        risk_hiv.loc[df.age_years.between(40, 44)] *= params["rr_age_gp40"]
-        risk_hiv.loc[df.age_years.between(45, 50)] *= params["rr_age_gp45"]
-        risk_hiv.loc[(df.age_years >= 50)] *= params["rr_age_gp50"]
-        risk_hiv.loc[(df.li_ed_lev == "2")] *= params["rr_edlevel_primary"]
-        risk_hiv.loc[(df.li_ed_lev == "3")] *= params[
-            "rr_edlevel_secondary"
-        ]  # li_ed_lev=3 secondary and higher
+        # Rescale relative probability of infection so that its average is 1.0 within each age/sex group
+        p = pd.DataFrame({
+            'age_years': df['age_years'],
+            'sex': df['sex'],
+            'prob_of_infec': prob_of_infec,
+            'rel_prob_by_risk_factor': rel_prob_by_risk_factor
+        })
 
-        # sample 10% prev, weight the likelihood of being sampled by the relative risk
-        eligible = df.index[df.is_alive & df.age_years.between(15, 80)]
-        norm_p = pd.Series(risk_hiv[eligible])
-        norm_p /= norm_p.sum()  # normalise
-        infected_idx = self.rng.choice(
-            eligible, size=int(prevalence * (len(eligible))), replace=False, p=norm_p
-        )
+        p['mean_of_rel_prob_within_age_sex_group'] = p.groupby(['age_years', 'sex'])['rel_prob_by_risk_factor'].transform('mean')
+        p['scaled_rel_prob_by_risk_factor'] = p['rel_prob_by_risk_factor'] / p['mean_of_rel_prob_within_age_sex_group']
+        p['overall_prob_of_infec'] = p['scaled_rel_prob_by_risk_factor'] * p['prob_of_infec']
+        infec = self.rng.rand(len(p['overall_prob_of_infec'])) < p['overall_prob_of_infec']
 
-        # print('infected_idx', infected_idx)
-        # test = infected_idx.isnull().sum()  # sum number of nan
-        # print("number of nan: ", test)
-        df.loc[infected_idx, "hv_inf"] = True
+        # Assign the designated person as infected in the population.props dataframe:
+        df.loc[infec, 'hv_inf'] = True
 
-        # for time since infection use prob of incident inf 2000-2010
-        inf_adult = df.index[df.is_alive & df.hv_inf & (df.age_years >= 15)]
-
-        year_inf = self.rng.choice(
+        # Assign date that persons were infected by drawing from assumed distribution (for adults)
+        # Clipped to prevent dates of infection before before the person was born.
+        years_ago_inf = self.rng.choice(
             self.time_inf["year"],
-            size=len(inf_adult),
+            size=len(infec),
             replace=True,
             p=self.time_inf["scaled_prob"],
         )
 
-        df.loc[inf_adult, "hv_date_inf"] = now - pd.to_timedelta(year_inf, unit="y")
+        hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf, unit="y"))
+        df.loc[infec, "hiv_date_inf"] = hv_date_inf.clip(lower=df.date_of_birth)
+
 
         # ----------------------------------- CHILD HIV -----------------------------------
 
@@ -408,11 +420,11 @@ class Hiv(Module):
             & (random_draw < df_hivprob.prev_prop)
             & df_hivprob.age_years.between(0, 14)
         ]
-        # print(hiv_index)
 
         df.loc[hiv_index, "hv_inf"] = True
         df.loc[hiv_index, "hv_date_inf"] = df.loc[hiv_index, "date_of_birth"]
         df.loc[hiv_index, "hv_fast_progressor"] = False
+
 
     def baseline_tested(self, population):
         """ assign initial hiv testing levels, only for adults

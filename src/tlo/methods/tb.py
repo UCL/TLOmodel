@@ -433,9 +433,6 @@ class Tb(Module):
                 11
             )  # Multidrug resistant Tuberculosis, HIV infected and anemia, mild
 
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
