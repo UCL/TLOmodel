@@ -27,7 +27,7 @@ class Hiv(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    METADATA = {}
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         # baseline characteristics
