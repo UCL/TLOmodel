@@ -15,6 +15,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     hiv,
+    malecircumcision,
     labour,
     pregnancy_supervisor,
     symptommanager,
@@ -69,7 +70,8 @@ def test_basic_run_with_default_parameters():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 hiv.Hiv(resourcefilepath=resourcefilepath)
+                 hiv.Hiv(resourcefilepath=resourcefilepath),
+                 malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath)
                  )
 
     sim.make_initial_population(n=popsize)
