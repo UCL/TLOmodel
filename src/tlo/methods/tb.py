@@ -1019,11 +1019,13 @@ class HSI_TbScreening(HSI_Event, IndividualScopeEventMixin):
 
             test = HSI_Tb_XpertTest(self.module, person_id=person_id)
 
+            # this wont run - jc
+
             # Request the health system to give xpert test
-            self.sim.modules['HealthSystem'].schedule_event(test,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+        #    self.sim.modules['HealthSystem'].schedule_event(test,
+        #                                                    priority=1,
+        #                                                    topen=self.sim.date,
+        #                                                    tclose=None)
 
     def did_not_run(self):
         pass
