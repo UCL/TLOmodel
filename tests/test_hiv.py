@@ -35,8 +35,8 @@ def check_dtypes(simulation):
 
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 12, 31)
-popsize = 1000
+end_date = Date(2020, 12, 31)
+popsize = 5000
 
 def get_sim():
 

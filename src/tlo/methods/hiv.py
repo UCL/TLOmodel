@@ -80,9 +80,26 @@ class Hiv(Module):
             Types.REAL,
             "Weibull shape parameter for mortality in infants slow progressors",
         ),
-        "weibull_shape_mort_adult": Parameter(
-            Types.REAL, "Weibull shape parameter for mortality in adults"
-        ),
+
+        "mean_months_between_aids_and_death": Parameter(Types.REAL, "Mean number of months (distributed exponentially) for the time between AIDS and AIDS Death"),
+
+        "infection_to_death_weibull_shape_1519": Parameter(Types.REAL, "Shape parameters for the weibill distribution describing time between infection and death for those aged 15-19 years"),
+        "infection_to_death_weibull_shape_2024": Parameter(Types.REAL, "Shape parameters for the weibill distribution describing time between infection and death for those aged 20-24 years"),
+        "infection_to_death_weibull_shape_2529": Parameter(Types.REAL, "Shape parameters for the weibill distribution describing time between infection and death for those aged 25-29 years"),
+        "infection_to_death_weibull_shape_3034": Parameter(Types.REAL, "Shape parameters for the weibill distribution describing time between infection and death for those aged 30-34 years"),
+        "infection_to_death_weibull_shape_3539": Parameter(Types.REAL, "Shape parameters for the weibill distribution describing time between infection and death for those aged 35-39 years"),
+        "infection_to_death_weibull_shape_4044": Parameter(Types.REAL, "Shape parameters for the weibill distribution describing time between infection and death for those aged 40-44 years"),
+        "infection_to_death_weibull_shape_4549": Parameter(Types.REAL, "Shape parameters for the weibill distribution describing time between infection and death for those aged 45-49 years"),
+        "infection_to_death_weibull_scale_1519": Parameter(Types.REAL, "Scale parameters for the weibill distribution describing time between infection and death for those aged 15-19 years"),
+        "infection_to_death_weibull_scale_2024": Parameter(Types.REAL, "Scale parameters for the weibill distribution describing time between infection and death for those aged 20-24 years"),
+        "infection_to_death_weibull_scale_2529": Parameter(Types.REAL, "Scale parameters for the weibill distribution describing time between infection and death for those aged 25-29 years"),
+        "infection_to_death_weibull_scale_3034": Parameter(Types.REAL, "Scale parameters for the weibill distribution describing time between infection and death for those aged 30-34 years"),
+        "infection_to_death_weibull_scale_3539": Parameter(Types.REAL, "Scale parameters for the weibill distribution describing time between infection and death for those aged 35-39 years"),
+        "infection_to_death_weibull_scale_4044": Parameter(Types.REAL, "Scale parameters for the weibill distribution describing time between infection and death for those aged 40-44 years"),
+        "infection_to_death_weibull_scale_4549": Parameter(Types.REAL, "Scale parameters for the weibill distribution describing time between infection and death for those aged 45-49 years"),
+
+        "fraction_of_those_infected_that_have_aids_at_initiation": Parameter(Types.REAL, "Fraction of persons living with HIV at baseline that have developed AIDS"),
+
         "prob_mtct_untreated": Parameter(
             Types.REAL, "probability of mother to child transmission"
         ),
@@ -205,7 +222,6 @@ class Hiv(Module):
         "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
     }
 
-
     def read_parameters(self, data_folder):
         """
         * 1) Reads the ResourceFiles
@@ -279,6 +295,29 @@ class Hiv(Module):
             Predictor('li_ed_lev')  .when(2, p["rr_edlevel_primary"])
                                     .when(3, p["rr_edlevel_secondary"]),
             Predictor('hv_behaviour_change').when(True,  p["rr_behaviour_change"])
+        )
+
+        # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
+        self.scale_parameter_for_infection_to_death = LinearModel.multiplicative(
+            Predictor('age_years') .when('<20', p["infection_to_death_weibull_scale_1519"])
+                                            .when('<25', p["infection_to_death_weibull_scale_2024"])
+                                            .when('<30', p["infection_to_death_weibull_scale_2529"])
+                                            .when('<35', p["infection_to_death_weibull_scale_3034"])
+                                            .when('<40', p["infection_to_death_weibull_scale_3539"])
+                                            .when('<45', p["infection_to_death_weibull_scale_4044"])
+                                            .when('<50', p["infection_to_death_weibull_scale_4549"])
+                                            .otherwise(p["infection_to_death_weibull_scale_4549"])
+        )
+
+        self.shape_parameter_for_infection_to_death = LinearModel.multiplicative(
+            Predictor('age_years') .when('<20', p["infection_to_death_weibull_shape_1519"])
+                                            .when('<25', p["infection_to_death_weibull_shape_2024"])
+                                            .when('<30', p["infection_to_death_weibull_shape_2529"])
+                                            .when('<35', p["infection_to_death_weibull_shape_3034"])
+                                            .when('<40', p["infection_to_death_weibull_shape_3539"])
+                                            .when('<45', p["infection_to_death_weibull_shape_4044"])
+                                            .when('<50', p["infection_to_death_weibull_shape_4549"])
+                                            .otherwise(p["infection_to_death_weibull_shape_4549"])
         )
 
         # 3) Declare the Symptoms.
@@ -407,6 +446,11 @@ class Hiv(Module):
         hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf, unit="y"))
         df.loc[infec, "hv_date_inf"] = hv_date_inf.clip(lower=df.date_of_birth)
 
+        # Assign a fraction of those who have lived more than ten years to having developed AIDS
+        aids_idx = infec.index[(self.rng.rand(len(infec)) < params['fraction_of_those_infected_that_have_aids_at_initiation'])]
+        df.loc[aids_idx, "hv_date_aids"] = self.sim.date
+
+
     def baseline_tested(self, population):
         """ assign initial hiv testing levels, only for adults
         """
@@ -497,226 +541,14 @@ class Hiv(Module):
         df.loc[art_idx, "hv_diagnosed"] = True
         df.loc[art_idx, "hv_date_diagnosed"] = self.sim.date
 
-
-    # ------
-    # todo - this section:
-    def initial_pop_deaths_children(self, population):
-        """ assign death dates to baseline hiv-infected population - INFANTS
-        assume all are slow progressors, otherwise time to death shorter than time infected
-        only assign death dates if not already on ART
-        """
-        return
-        df = population.props
-        now = self.sim.date
-        params = self.parameters
-
-        # PAEDIATRIC time of death - untreated
-        infants = df.index[
-            df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (df.age_years < 15)
-        ]
-
-        # need a two parameter Weibull with size parameter, multiply by scale instead
-        time_death_slow = (
-            self.rng.weibull(
-                a=params["weibull_shape_mort_infant_slow_progressor"], size=len(infants)
-            )
-            * params["weibull_scale_mort_infant_slow_progressor"]
-        )
-
-        time_death_slow = pd.Series(time_death_slow, index=infants)
-        time_infected = now - df.loc[infants, "hv_date_inf"]
-
-        # while time of death is shorter than time infected - redraw
-        while np.any(
-            time_infected > (pd.to_timedelta(time_death_slow * 365.25, unit="d"))
-        ):
-            redraw = time_infected.index[
-                time_infected > (pd.to_timedelta(time_death_slow * 365.25, unit="d"))
-            ]
-
-            new_time_death_slow = (
-                self.rng.weibull(
-                    a=params["weibull_shape_mort_infant_slow_progressor"],
-                    size=len(redraw),
-                )
-                * params["weibull_scale_mort_infant_slow_progressor"]
-            )
-
-            time_death_slow[redraw] = new_time_death_slow
-
-        time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit="d")
-
-        # remove microseconds
-        time_death_slow = pd.Series(time_death_slow).dt.floor("S")
-        df.loc[infants, "hv_proj_date_death"] = (
-            df.loc[infants, "hv_date_inf"] + time_death_slow
-        )
-
-    def initial_pop_deaths_adults(self, population):
-        """ assign death dates to baseline hiv-infected population - ADULTS
-        only assign if not on ART
-        """
-        df = population.props
-        now = self.sim.date
-        params = self.parameters
-        return
-        # adults are all those aged >=15
-        hiv_ad = df.index[
-            df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (df.age_years >= 15)
-        ]
-
-        time_of_death = self.rng.weibull(
-            a=params["weibull_shape_mort_adult"], size=len(hiv_ad)
-        ) * np.exp(self.log_scale(df.loc[hiv_ad, "age_years"]))
-
-        time_infected = now - df.loc[hiv_ad, "hv_date_inf"]
-
-        # while time of death is shorter than time infected - redraw
-        while np.any(
-            time_infected > (pd.to_timedelta(time_of_death * 365.25, unit="d"))
-        ):
-            redraw = time_infected.index[
-                time_infected > (pd.to_timedelta(time_of_death * 365.25, unit="d"))
-            ]
-
-            new_time_of_death = self.rng.weibull(
-                a=params["weibull_shape_mort_adult"], size=len(redraw)
-            ) * np.exp(self.log_scale(df.loc[redraw, "age_years"]))
-
-            time_of_death[redraw] = new_time_of_death
-
-        time_of_death = pd.to_timedelta(time_of_death * 365.25, unit="d")
-
-        # remove microseconds
-        time_of_death = pd.Series(time_of_death).dt.floor("S")
-
-        df.loc[hiv_ad, "hv_proj_date_death"] = (
-            df.loc[hiv_ad, "hv_date_inf"] + time_of_death
-        )
-
-    def assign_symptom_level(self, population):
-        """ assign level of symptoms to infected people: chronic or aids
-        only for untreated people
-        """
-        return
-        df = population.props
-        now = self.sim.date
-        # params = self.parameters
-
-        # ----------------------------------- ADULT SYMPTOMS -----------------------------------
-
-        adults = df[
-            df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (df.age_years >= 15)
-        ].index
-
-        # if <2 years from scheduled death = chronic
-        time_death = (
-            df.loc[adults, "hv_proj_date_death"] - now
-        ).dt.days  # returns days
-        chronic = time_death < (2 * 365.25)
-        idx = adults[chronic]
-        df.loc[idx, "hv_specific_symptoms"] = "symp"
-
-        # if <1 year from scheduled death = aids
-        time_death = (
-            df.loc[adults, "hv_proj_date_death"] - now
-        ).dt.days  # returns days
-        aids = time_death < 365.25
-        idx = adults[aids]
-        df.loc[idx, "hv_specific_symptoms"] = "aids"
-
-        # ----------------------------------- CHILD SYMPTOMS -----------------------------------
-
-        # baseline pop - infants, all assumed slow progressors
-
-        infants = df[
-            df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (df.age_years < 15)
-        ].index
-
-        # if <2 years from scheduled death = chronic
-        time_death = (
-            df.loc[infants, "hv_proj_date_death"] - now
-        ).dt.days  # returns days
-        chronic = time_death < (2 * 365.25)
-        idx = infants[chronic]
-        df.loc[idx, "hv_specific_symptoms"] = "symp"
-
-        # if <1 year from scheduled death = aids
-        time_death = (
-            df.loc[infants, "hv_proj_date_death"] - now
-        ).dt.days  # returns days
-        aids = time_death < 365.25
-        idx = infants[aids]
-        df.loc[idx, "hv_specific_symptoms"] = "aids"
-
-    def schedule_symptoms(self, population):
-        """ assign level of symptoms to infected people
-        """
-        return
-        df = population.props
-        # now = self.sim.date
-        # params = self.parameters
-
-        # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
-        # not needed if already chronic/aids, so symptoms = 'none' only
-        idx = df.index[
-            df.is_alive
-            & df.hv_inf
-            & (df.hv_specific_symptoms == "none")
-            & (df.hv_on_art != 2)
-        ]
-
-        df.loc[idx, "hv_proj_date_symp"] = df.loc[
-            idx, "hv_proj_date_death"
-        ] - DateOffset(days=732.5)
-
-        # schedule the symptom update event for each person
-        for person_index in idx:
-            symp_event = HivSymptomaticEvent(self, person_index)
-            if df.at[person_index, "hv_proj_date_symp"] < self.sim.date:
-                df.at[person_index, "hv_proj_date_symp"] = self.sim.date + DateOffset(
-                    days=1
-                )
-            self.sim.schedule_event(
-                symp_event, df.at[person_index, "hv_proj_date_symp"]
-            )
-
-        # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
-        # not needed if already aids, so symptoms = 'none' or 'chronic' only
-        idx = df.index[
-            df.is_alive
-            & df.hv_inf
-            & (df.hv_specific_symptoms != "aids")
-            & (df.hv_on_art != 2)
-        ]
-
-        df.loc[idx, "hv_proj_date_aids"] = df.loc[
-            idx, "hv_proj_date_death"
-        ] - DateOffset(days=365.25)
-
-        # schedule the symptom update event for each person
-        for person_index in idx:
-            aids_event = HivAidsEvent(self, person_index)
-            if df.at[person_index, "hv_proj_date_aids"] < self.sim.date:
-                df.at[person_index, "hv_proj_date_aids"] = self.sim.date + DateOffset(
-                    days=1
-                )
-            self.sim.schedule_event(
-                aids_event, df.at[person_index, "hv_proj_date_aids"]
-            )
-
-    # def log_scale(self, a0):
-    #     """ helper function for adult mortality rates"""
-    #     age_scale = 2.55 - 0.025 * (a0 - 30)
-    #     return age_scale
-    # ------
-
     def initialise_simulation(self, sim):
         """
-        * Schedule the Main HIV Regular Polling Event
-        * Schedule the Logging Event
-        *
-        * (Optionally) Schedule the
+        * 1) Schedule the Main HIV Regular Polling Event
+        * 2) Schedule the Logging Event
+        * 3) Schedule the AIDS onset events for those infected and not with AIDS
+        * 4) Schedule the AIDS death events for those who have got AIDS
+        * 5) Impose the Symptoms 'aids_symptoms' for those who have got AIDS
+        * (Optionally) Schedule the event to check the configuration of all properties
         """
 
         sim.schedule_event(HivRegularPollingEvent(self), sim.date)
@@ -919,21 +751,35 @@ class Hiv(Module):
         dalys.name = 'hiv'
         return dalys
 
-    def get_time_from_infection_to_aids(self, age_years):
+    def get_time_from_infection_to_aids(self, person_id):
         """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
         Assumes that this is a draw from a weibull distribution (with scale depending on age) less 18 months.
         The parameters for the draw from the weibull disribution give a time from infection to death, and it is assumed
          that the time from aids to death is 18 months."""
 
-        return pd.DateOffset(years=10)
+        #todo - this is for adults: need to do children
 
-    def get_time_from_aids_to_death(self, age_years):
+        # get the shape parameters (unit: years)
+        scale = self.scale_parameter_for_infection_to_death.predict(self.sim.population.props.loc[[person_id]]).values[0]
+
+        # get the scale parameter (unit: years)
+        shape = self.shape_parameter_for_infection_to_death.predict(self.sim.population.props.loc[[person_id]]).values[0]
+
+        # draw from Weibull and convert to months
+        months_to_death = self.rng.weibull(shape) * scale * 12
+
+        # compute months to aids, which is somewhat shorter than the months to death
+        months_to_aids = int(max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death'])))
+
+        return pd.DateOffset(months=months_to_aids)
+
+    def get_time_from_aids_to_death(self):
         """Gives time between onset of AIDS and death, returning a pd.DateOffset.
-        Assumes that the time between onset of AIDS symptoms and deaths is exponentially distributed with a mean of 18
-        months.
+        Assumes that the time between onset of AIDS symptoms and deaths is exponentially distributed.
         """
-
-        return pd.DateOffset(years=2)
+        mean = self.parameters['mean_months_between_aids_and_death']
+        draw_number_of_months = int(np.round(self.rng.exponential(mean)))
+        return pd.DateOffset(months=draw_number_of_months)
 
 
         # # ----------------------------------- TIME OF DEATH -----------------------------------
@@ -1223,7 +1069,7 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "hv_date_inf"] = self.sim.date
 
         # Schedule AIDS onset events for this person
-        date_onset_aids = self.sim.date + self.module.get_time_from_infection_to_aids(age_years=df.at[person_id, "age_years"])
+        date_onset_aids = self.sim.date + self.module.get_time_from_infection_to_aids(person_id=person_id)
         self.sim.schedule_event(event=HivAidsOnsetEvent(self.module, person_id), date=date_onset_aids)
 
 class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
@@ -1260,8 +1106,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "hv_date_aids"] = self.sim.date
 
         # Schedule AidsDeath
-        date_of_aids_death = self.sim.date + \
-                             self.module.get_time_from_aids_to_death(age_years=df.at[person_id, "age_years"])
+        date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
         self.sim.schedule_event(event=(HivAidsDeathEvent(self.module, person_id)), date=date_of_aids_death)
 
 class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
