@@ -1330,6 +1330,43 @@ class HivCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 
+# ---------------------------------------------------------------------------
+#   Helper functions for analysing outputs
+# ---------------------------------------------------------------------------
+
+def set_age_group(ser):
+    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+        min_age=demography.MIN_AGE_FOR_RANGE,
+        max_age=demography.MAX_AGE_FOR_RANGE,
+        range_size=demography.AGE_RANGE_SIZE
+    )
+    ser = ser.astype("category")
+    AGE_RANGE_CATEGORIES_filtered = [a for a in AGE_RANGE_CATEGORIES if a in ser.values]
+    return ser.cat.reorder_categories(AGE_RANGE_CATEGORIES_filtered)
+
+def map_to_age_group(ser):
+    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+        min_age=demography.MIN_AGE_FOR_RANGE,
+        max_age=demography.MAX_AGE_FOR_RANGE,
+        range_size=demography.AGE_RANGE_SIZE
+    )
+    ser = ser.map(AGE_RANGE_LOOKUP)
+    ser = set_age_group(ser)
+    return ser
+
+def unpack_raw_output_dict(raw_dict):
+    x = pd.DataFrame.from_dict(data=raw_dict, orient='index')
+    x = x.reset_index()
+    x.rename(columns={'index': 'age_group', 0: 'value'}, inplace=True)
+    x['age_group'] = set_age_group(x['age_group'])
+    return x
+
+
+
+# ---------------------------------------------------------------------------
+#  JUNK FROM EARLIER VERSION
+# ---------------------------------------------------------------------------
+
 
 
 class FswEvent(RegularEvent, PopulationScopeEventMixin):
@@ -2902,37 +2939,6 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
                             aids_event, df.at[person, "hv_proj_date_aids"]
                         )
 
-
-# ---------------------------------------------------------------------------
-#   Helper functions for analysing outputs
-# ---------------------------------------------------------------------------
-
-def set_age_group(ser):
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
-        min_age=demography.MIN_AGE_FOR_RANGE,
-        max_age=demography.MAX_AGE_FOR_RANGE,
-        range_size=demography.AGE_RANGE_SIZE
-    )
-    ser = ser.astype("category")
-    AGE_RANGE_CATEGORIES_filtered = [a for a in AGE_RANGE_CATEGORIES if a in ser.values]
-    return ser.cat.reorder_categories(AGE_RANGE_CATEGORIES_filtered)
-
-def map_to_age_group(ser):
-    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
-        min_age=demography.MIN_AGE_FOR_RANGE,
-        max_age=demography.MAX_AGE_FOR_RANGE,
-        range_size=demography.AGE_RANGE_SIZE
-    )
-    ser = ser.map(AGE_RANGE_LOOKUP)
-    ser = set_age_group(ser)
-    return ser
-
-def unpack_raw_output_dict(raw_dict):
-    x = pd.DataFrame.from_dict(data=raw_dict, orient='index')
-    x = x.reset_index()
-    x.rename(columns={'index': 'age_group', 0: 'value'}, inplace=True)
-    x['age_group'] = set_age_group(x['age_group'])
-    return x
 
 
 
