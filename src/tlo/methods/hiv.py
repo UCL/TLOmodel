@@ -5,7 +5,7 @@ September 2020, fully reconciled version.
 Overview:
 HIV infection ---> AIDS onset --> AIDS Death
 
-#todo - SORT OUT RESOURCEFILES, LABELLING OF PARAMETERS,
+#todo - SORT OUT RESOURCEFILES (lots of unused junk in the excel files), LABELLING OF PARAMETERS,
 
 """
 
@@ -158,11 +158,7 @@ class Hiv(Module):
         "treatment_prob": Parameter(
             Types.REAL, "probability of requesting ART following positive HIV test"
         ),
-        # daly weights
-        "daly_wt_chronic": Parameter(
-            Types.REAL, "DALY weights for chronic hiv infection"
-        ),
-        "daly_wt_aids": Parameter(Types.REAL, "DALY weights for aids"),
+
         # health system interactions
         "prob_high_to_low_art": Parameter(
             Types.REAL, "prob of transitioning from good adherence to poor adherence"
@@ -924,33 +920,22 @@ class Hiv(Module):
         return dalys
 
     def get_time_from_infection_to_aids(self, age_years):
-        """Gives time between onset of infection and AIDS, returning a pd.DateOffset"""
+        """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
+        Assumes that this is a draw from a weibull distribution (with scale depending on age) less 18 months.
+        The parameters for the draw from the weibull disribution give a time from infection to death, and it is assumed
+         that the time from aids to death is 18 months."""
+
         return pd.DateOffset(years=10)
 
     def get_time_from_aids_to_death(self, age_years):
-        """Gives time between onset of AIDS and death, returning a pd.DateOffset"""
+        """Gives time between onset of AIDS and death, returning a pd.DateOffset.
+        Assumes that the time between onset of AIDS symptoms and deaths is exponentially distributed with a mean of 18
+        months.
+        """
+
         return pd.DateOffset(years=2)
 
-        # # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
-        # # random draw of days 0-365
-        # random_day = rng.choice(
-        #     list(range(0, 365)),
-        #     size=len(newly_infected_index),
-        #     replace=True,
-        #     p=[(1 / 365)] * 365,
-        # )
-        # # convert days into years
-        # random_year = pd.to_timedelta(random_day, unit="d")
-        # # add to current date
-        # df.loc[newly_infected_index, "hv_date_inf"] = now + random_year
-        #
-        # # ----------------------------------- SCHEDULE INFECTION STATUS CHANGE ON INFECTION DATE ---
-        #
-        # # schedule the symptom update event for each person
-        # for person_index in newly_infected_index:
-        #     inf_event = HivInfectionEvent(self.module, person_index)
-        #     self.sim.schedule_event(inf_event, df.at[person_index, "hv_date_inf"])
-        #
+
         # # ----------------------------------- TIME OF DEATH -----------------------------------
         # death_date = rng.weibull(
         #     a=params["weibull_shape_mort_adult"], size=len(newly_infected_index)
@@ -1157,8 +1142,9 @@ class Hiv(Module):
         # Check that only men are circumcised
         assert (df.loc[df.hv_is_circ].sex == 'M').all()
 
+
 # ---------------------------------------------------------------------------
-#   HIV Natural History Events
+#   Main Polling Event
 # ---------------------------------------------------------------------------
 
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1211,6 +1197,10 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             for idx in new_inf_idx:
                 date_of_infection = self.sim.date + pd.DateOffset(days=self.module.rng.randint(0, 365))
                 self.sim.schedule_event(HivInfectionEvent(self.module, idx), date_of_infection)
+
+# ---------------------------------------------------------------------------
+#   Natural History Events
+# ---------------------------------------------------------------------------
 
 class HivInfectionEvent(Event, IndividualScopeEventMixin):
     """ This person has become infected.
@@ -1295,7 +1285,6 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
 
         # Cause the death - to happen immediately
         demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
-
 
 
 # ---------------------------------------------------------------------------
@@ -3037,7 +3026,6 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Helper functions for analysing outputs
 # ---------------------------------------------------------------------------
-
 
 def set_age_group(ser):
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
