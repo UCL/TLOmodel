@@ -73,7 +73,7 @@ output = parse_log_file(sim.log_filepath)
 
 # ANALYSES: BASELINE HIV PREVALENCE
 # adults:
-adult_prev_and_inc_over_time = output['tlo.methods.hiv']['summary_inc_and_prev_for_adults_and_children_and_fsw'][['date', 'hiv_prev_adult', 'hiv_adult_inc_percent']]
+adult_prev_and_inc_over_time = output['tlo.methods.hiv']['summary_inc_and_prev_for_adults_and_children_and_fsw'][['date', 'hiv_prev_adult', 'hiv_adult_inc']]
 adult_prev_and_inc_over_time = adult_prev_and_inc_over_time.set_index('date')
 adult_prev_and_inc_over_time.plot()
 plt.title('HIV Prevalence and Incidence in Adults (15+)')
@@ -81,7 +81,7 @@ plt.savefig(outputpath / ("HIV_adult_prev_and_inc_over_time" + datestamp + ".pdf
 plt.show()
 
 # children:
-child_prev_and_inc_over_time = output['tlo.methods.hiv']['summary_inc_and_prev_for_adults_and_children_and_fsw'][['date', 'hiv_prev_child', 'hiv_child_inc_percent']]
+child_prev_and_inc_over_time = output['tlo.methods.hiv']['summary_inc_and_prev_for_adults_and_children_and_fsw'][['date', 'hiv_prev_child', 'hiv_child_inc']]
 child_prev_and_inc_over_time = child_prev_and_inc_over_time.set_index('date')
 child_prev_and_inc_over_time.plot()
 plt.title('HIV Prevalence and Incidence in Children (0-14)')

@@ -21,7 +21,7 @@ from tlo.methods import (
 )
 
 import matplotlib.pyplot as plt
-from tlo.methods.hiv import unpack_raw_output_dict, map_to_age_group
+from tlo.methods.hiv import unpack_raw_output_dict, map_to_age_group, set_age_group
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -78,7 +78,9 @@ data2010 = data.loc[data.year == 2010].copy()
 data2010['age_group'] = map_to_age_group(data['age_from'])
 data2010 = pd.DataFrame(data2010.groupby(by=['sex', 'age_group'])['prev ', 'pop_size'].sum()).reset_index()
 data2010['prev_data'] = data2010['prev '] / data2010['pop_size']
+
 prev_by_age_and_sex = prev_by_age_and_sex.merge(data2010[['sex', 'age_group', 'prev_data']], left_on=['sex', 'age_group'], right_on=['sex', 'age_group'])
+prev_by_age_and_sex['age_group'] = set_age_group(prev_by_age_and_sex['age_group'])
 
 # Create multi-index (using groupby) for sex/age and plot:
 prev_by_age_and_sex = prev_by_age_and_sex.groupby(by=['sex', 'age_group'])['prev_data', 'prev_model'].sum()
