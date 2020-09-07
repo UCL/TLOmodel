@@ -47,6 +47,34 @@ class Hiv(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
+    PROPERTIES = {
+        # --- Core Properties
+        "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV"),
+        "hv_art": Property(Types.CATEGORICAL,
+                            "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
+                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]
+                            ),
+        "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
+        "hv_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
+        "hv_is_circ": Property(Types.BOOL, "Is the person circumcised"),
+        "hv_behaviour_change": Property(Types.BOOL, "Has this person been exposed to HIV prevention counselling"),
+        "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
+        "hv_diagnosed": Property(Types.BOOL, "hiv+ and tested"),
+        "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
+
+        # --- Dates on which things have happened: # todo; work out which of these actually needed
+        "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
+        "hv_date_aids": Property(Types.DATE, "Date of AIDS"),
+        "hv_date_diagnosed": Property(Types.DATE, "date on which HIV was diagnosed"),
+        "hv_date_art_start": Property(Types.DATE, "date ART started"),
+        "hv_date_cotrim": Property(Types.DATE, "date cotrimoxazole started"),
+        "hv_date_last_viral_load": Property(Types.DATE, "date last viral load test"),
+
+        # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
+        "hv_proj_date_death": Property(Types.DATE, "Projected time of AIDS death if untreated"),
+        "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
+    }
+
     PARAMETERS = {
         # baseline characteristics
         "hiv_prev_2010": Parameter(Types.REAL, "adult hiv prevalence in 2010"),
@@ -192,34 +220,6 @@ class Hiv(Module):
             Types.REAL, "proportion of hiv-positive cases on ART also on IPT"
         ),
         "tb_high_risk_distr": Parameter(Types.REAL, "high-risk districts giving IPT"),
-    }
-
-    PROPERTIES = {
-        # --- Core Properties
-        "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV"),
-        "hv_art": Property(Types.CATEGORICAL,
-                            "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
-                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]
-                            ),
-        "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
-        "hv_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
-        "hv_is_circ": Property(Types.BOOL, "Is the person circumcised"),
-        "hv_behaviour_change": Property(Types.BOOL, "Has this person been exposed to HIV prevention counselling"),
-        "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
-        "hv_diagnosed": Property(Types.BOOL, "hiv+ and tested"),
-        "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
-
-        # --- Dates on which things have happened: # todo; work out which of these actually needed
-        "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
-        "hv_date_aids": Property(Types.DATE, "Date of AIDS"),
-        "hv_date_diagnosed": Property(Types.DATE, "date on which HIV was diagnosed"),
-        "hv_date_art_start": Property(Types.DATE, "date ART started"),
-        "hv_date_cotrim": Property(Types.DATE, "date cotrimoxazole started"),
-        "hv_date_last_viral_load": Property(Types.DATE, "date last viral load test"),
-
-        # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
-        "hv_proj_date_death": Property(Types.DATE, "Projected time of AIDS death if untreated"),
-        "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
     }
 
     def read_parameters(self, data_folder):
@@ -972,7 +972,7 @@ class Hiv(Module):
 
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ The HIV Regular Polling Events
-    * Schedules persons becoming newly infected
+    * Schedules persons becoming newly infected through horizontal transmission
     *
     *
 
@@ -986,7 +986,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        # ----------------------------------- NEW INFECTIONS -----------------------------------
+        # ----------------------------------- HORIZONTAL TRANSMISSION -----------------------------------
         # Count current number of alive 15-80 year-olds at risk of transmission (those infected and not VL suppressed):
         n_infectious = len(df.loc[
                                df.is_alive &
@@ -1002,6 +1002,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Number of new infections:
         n_new_infections = int(np.round(params["beta"] * n_infectious * n_susceptible / (n_infectious + n_susceptible)))
         # TODO - make sure scaling is correct for time between successive polling events
+        # TODO - make sex-specific
 
         if n_new_infections > 0:
             # Distribute these new infections by persons with respect to risks of acquisition
@@ -1304,11 +1305,25 @@ def unpack_raw_output_dict(raw_dict):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ---------------------------------------------------------------------------
 #  JUNK FROM EARLIER VERSION
 # ---------------------------------------------------------------------------
 
 class FswEvent(RegularEvent, PopulationScopeEventMixin):
+    # todo -- *** put in lifestyle ***
     """ apply risk of fsw to female pop and transition back to non-fsw
     """
 
@@ -1365,46 +1380,8 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
             )
             df.loc[fsw_new, "hv_sexual_risk"] = "sex_work"
 
-
-class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
-    """ additional HIV testing happening outside the symptom-driven generic HSI event
-    to increase tx coverage up to reported levels
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
-
-    def apply(self, population):
-        df = population.props
-        now = self.sim.date
-        p = self.module.parameters
-
-        # TODO this fixes the current ART coverage for projections
-        # otherwise ART coverage reaches 95% in 2025
-        if self.sim.date.year <= 2018:
-
-            # select people to go for testing (and subsequent tx)
-            # random sample 0.4 to match clinical case tx coverage
-            test = df.index[
-                (self.module.rng.random_sample(size=len(df)) < p["testing_adj"])
-                & df.is_alive
-                & df.hv_inf
-            ]
-
-            for person_index in test:
-                logger.debug(
-                    f"HivScheduleTesting: scheduling HSI_Hiv_PresentsForCareWithSymptoms for person {person_index}"
-                )
-
-                event = HSI_Hiv_PresentsForCareWithSymptoms(
-                    self.module, person_id=person_index
-                )
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    event, priority=1, topen=now, tclose=None
-                )
-
-
 class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
+    # todo put all the logic for MTCT into the on_birth
     """ hiv infection event in infants during breastfeeding
     """
 
@@ -1504,6 +1481,44 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(
                     aids_event, df.at[person_index, "hv_proj_date_aids"]
                 )
+
+class HivScheduleTesting(RegularEvent, PopulationScopeEventMixin):
+    """ additional HIV testing happening outside the symptom-driven generic HSI event
+    to increase tx coverage up to reported levels
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+        p = self.module.parameters
+
+        # TODO this fixes the current ART coverage for projections
+        # otherwise ART coverage reaches 95% in 2025
+        if self.sim.date.year <= 2018:
+
+            # select people to go for testing (and subsequent tx)
+            # random sample 0.4 to match clinical case tx coverage
+            test = df.index[
+                (self.module.rng.random_sample(size=len(df)) < p["testing_adj"])
+                & df.is_alive
+                & df.hv_inf
+            ]
+
+            for person_index in test:
+                logger.debug(
+                    f"HivScheduleTesting: scheduling HSI_Hiv_PresentsForCareWithSymptoms for person {person_index}"
+                )
+
+                event = HSI_Hiv_PresentsForCareWithSymptoms(
+                    self.module, person_id=person_index
+                )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    event, priority=1, topen=now, tclose=None
+                )
+
 
 
 # ---------------------------------------------------------------------------
