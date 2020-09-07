@@ -1157,7 +1157,7 @@ class Hiv(Module):
         assert (df.loc[df.hv_is_circ].sex == 'M').all()
 
 # ---------------------------------------------------------------------------
-#   HIV Events
+#   HIV Natural History Events
 # ---------------------------------------------------------------------------
 
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1273,7 +1273,6 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                              self.module.get_time_from_aids_to_death(age_years=df.at[person_id, "age_years"])
         self.sim.schedule_event(event=(HivAidsDeathEvent(self.module, person_id)), date=date_of_aids_death)
 
-
 class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     """
     Causes someone to die of AIDS
@@ -1315,43 +1314,45 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        return
 
-
-        # ------------------------------------ INC / PREV ------------------------------------
-        # adult incidence
-        tmp = len(
+        # ------------------------------------ INC / PREV SUMMARY ------------------------------------
+        # incidence in the period since the last log for 15-49 year-olds
+        n_new_infections_adult = len(
             df.loc[
                 (df.age_years.between(15, 49))
                 & df.is_alive
                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
             ]
         )
-        pop = len(df[df.is_alive & (df.age_years.between(15, 49))])
-        adult_inc_percent = (tmp / pop) * 100
+        denom_adults = len(df[df.is_alive & ~df.hiv_inf & (df.age_years.between(15, 49))])
 
-        assert adult_inc_percent <= 100
+        logger.info(key='incidence_rate_15_to_49',
+                    data=(n_new_infections_adult / denom_adults),
+                    description='HIV incidence rate among 15-49 year olds: new infections divided by population uninfected')
+
 
         # child incidence
-        tmp2 = len(
+        n_new_infections_children = len(
             df.loc[
                 (df.age_years < 15)
                 & df.is_alive
                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
             ]
         )
-        child_pop = len(df[df.is_alive & (df.age_years < 15)])
-        child_inc_percent = (tmp2 / child_pop) * 100
+        denom_children = len(df[df.is_alive & ~df.hv_inf & (df.age_years < 15)])
+        child_inc_percent = (n_new_infections_children / denom_children)
 
-        assert child_inc_percent <= 100
+        logger.info(key='incidence_rate_0_to_14',
+                    data=(n_new_infections_children / denom_children),
+                    description='HIV incidence rate among 0-14 year olds: new infections divided by population uninfected')
+
 
         # adult prevalence
-        ad_prev = (
+        adult_prev = (
             len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 49))])
             / len(df[df.is_alive & (df.age_years.between(15, 49))])
-        ) * 100
+        )
 
-        assert ad_prev <= 100
 
         # child prevalence
         child_prev = (
@@ -1361,12 +1362,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         assert child_prev <= 100
 
-        # proportion exposed to behaviour change
-        prop_behav = len(
-            df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
-        ) / len(df[df.is_alive & (df.age_years >= 15)])
-
-        assert prop_behav <= 1
 
         logger.info(
             "%s|hiv_infected|%s",
@@ -1379,6 +1374,11 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "prop_behav_change": prop_behav,
             },
         )
+
+        logger.info(key='prevalence_15_to_49',
+                    data=adult_prev,
+                    description='HIV prevalence among 0-14 year olds')
+
 
         # ------------------------------------ PREVALENCE BY AGE ------------------------------------
         # if groupby both sex and age_range, you lose categories where size==0, get the counts separately
@@ -1434,6 +1434,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_prev_age = child_prev_age.fillna(0)
 
         logger.info("%s|hiv_child_prev_m|%s", self.sim.date, child_prev_age.to_dict())
+
+
 
         # ------------------------------------ TREATMENT ------------------------------------
         # prop on treatment, adults
@@ -1505,6 +1507,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.date,
             {"prop_fsw": prop_fsw, "hiv_prev_fsw": hiv_prev_fsw},
         )
+
+        # ------------------------------------ PROGRAMS ------------------------------------
+        # proportion exposed to behaviour change
+        prop_behav = len(
+            df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
+        ) / len(df[df.is_alive & (df.age_years >= 15)])
+
+        assert prop_behav <= 1
+
 
         # ------------------------------------ MORTALITY ------------------------------------
         # aids deaths (incl tb) reported in the last 12 months per 1000
