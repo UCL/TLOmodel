@@ -361,10 +361,6 @@ class Hiv(Module):
         self.baseline_prevalence(population)        # allocate baseline prevalence
         self.baseline_tested(population)            # allocate baseline art coverage
         self.baseline_art(population)               # allocate baseline art coverage
-        self.initial_pop_deaths_children(population)    # add death dates for children
-        self.initial_pop_deaths_adults(population)      # add death dates for adults
-        self.assign_symptom_level(population)       # assign symptom level for all infected
-        self.schedule_symptoms(population)          # schedule symptom level change for all infected
 
     def fsw(self, population):
         """ Assign female sex work to sample of women and change sexual risk.
@@ -447,9 +443,8 @@ class Hiv(Module):
         df.loc[infec, "hv_date_inf"] = hv_date_inf.clip(lower=df.date_of_birth)
 
         # Assign a fraction of those who have lived more than ten years to having developed AIDS
-        aids_idx = infec.index[(self.rng.rand(len(infec)) < params['fraction_of_those_infected_that_have_aids_at_initiation'])]
+        aids_idx = (infec.loc[infec]).index[(self.rng.rand(len(infec[infec])) < params['fraction_of_those_infected_that_have_aids_at_initiation'])]
         df.loc[aids_idx, "hv_date_aids"] = self.sim.date
-
 
     def baseline_tested(self, population):
         """ assign initial hiv testing levels, only for adults
@@ -548,14 +543,54 @@ class Hiv(Module):
         * 3) Schedule the AIDS onset events for those infected and not with AIDS
         * 4) Schedule the AIDS death events for those who have got AIDS
         * 5) Impose the Symptoms 'aids_symptoms' for those who have got AIDS
-        * (Optionally) Schedule the event to check the configuration of all properties
+        * 6) (Optionally) Schedule the event to check the configuration of all properties
         """
+        df = sim.population.props
 
+        # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(HivRegularPollingEvent(self), sim.date)
+
+        # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date)
 
+        # 3) Schedule the AIDS onset events for those infected and not with AIDS
+        before_aids_idx = df.loc[df.hv_inf & pd.isnull(df.hv_date_aids)].index.tolist()
+        for person_id in before_aids_idx:
+            # get days until develops aids, repeating sampling until a positive number is obtained.
+            days_until_aids = 0
+            while (days_until_aids <= 0):
+                days_since_infection = (self.sim.date - df.at[person_id, 'hv_date_inf']).days
+                days_infection_to_aids = np.round((self.get_time_from_infection_to_aids(person_id)).months * 30.5)
+                days_until_aids = days_infection_to_aids - days_since_infection
+
+            date_onset_aids = self.sim.date + pd.DateOffset(days=days_until_aids)
+            sim.schedule_event(
+                HivAidsOnsetEvent(person_id=person_id, module=self),
+                date=date_onset_aids
+            )
+
+        # 4) Schedule the AIDS death events for those who have got AIDS
+        has_aids_idx = df.loc[~pd.isnull(df.hv_date_aids)].index.tolist()
+        for person_id in has_aids_idx:
+            date_aids_death = self.sim.date + self.get_time_from_aids_to_death()
+            sim.schedule_event(
+                HivAidsDeathEvent(person_id=person_id, module=self),
+                date=date_aids_death
+            )
+
+        # 5) Impose the Symptoms 'aids_symptoms' for those who have got AIDS
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=has_aids_idx,
+            symptom_string='aids_symptoms',
+            add_or_remove='+',
+            disease_module=self
+        )
+
+        # 6) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
             sim.schedule_event(HivCheckPropertiesEvent(self), sim.date)
+
+
 
         # sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))
         # sim.schedule_event(
