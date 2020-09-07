@@ -22,6 +22,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography, tb, Metadata  # todo- remove dependency on TB
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1315,23 +1316,32 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
 
-        # ------------------------------------ INC / PREV SUMMARY ------------------------------------
-        # incidence in the period since the last log for 15-49 year-olds
+        # ------------------------------------ SUMMARIES ------------------------------------
+
+        # adult prevalence
+        adult_prev = (
+            len(df[df.hv_inf & df.is_alive & (df.age_years >= 15)])
+            / len(df[df.is_alive & (df.age_years >= 15)])
+        )
+
+        # child prevalence
+        child_prev = (
+            len(df[df.hv_inf & df.is_alive & (df.age_years < 15)])
+            / len(df[df.is_alive & (df.age_years < 15)])
+        )
+
+        # incidence in the period since the last log for 15-49 year-olds (denominator is approximate)
         n_new_infections_adult = len(
             df.loc[
-                (df.age_years.between(15, 49))
+                (df.age_years >= 15)
                 & df.is_alive
                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
             ]
         )
-        denom_adults = len(df[df.is_alive & ~df.hiv_inf & (df.age_years.between(15, 49))])
+        denom_adults = len(df[df.is_alive & ~df.hv_inf & (df.age_years >= 15)])
+        adult_inc = n_new_infections_adult / denom_adults
 
-        logger.info(key='incidence_rate_15_to_49',
-                    data=(n_new_infections_adult / denom_adults),
-                    description='HIV incidence rate among 15-49 year olds: new infections divided by population uninfected')
-
-
-        # child incidence
+        # incidence in the period since the last log for 0-14 year-olds (denominator is approximate)
         n_new_infections_children = len(
             df.loc[
                 (df.age_years < 15)
@@ -1340,226 +1350,102 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             ]
         )
         denom_children = len(df[df.is_alive & ~df.hv_inf & (df.age_years < 15)])
-        child_inc_percent = (n_new_infections_children / denom_children)
+        child_inc = (n_new_infections_children / denom_children)
 
-        logger.info(key='incidence_rate_0_to_14',
-                    data=(n_new_infections_children / denom_children),
-                    description='HIV incidence rate among 0-14 year olds: new infections divided by population uninfected')
-
-
-        # adult prevalence
-        adult_prev = (
-            len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 49))])
-            / len(df[df.is_alive & (df.age_years.between(15, 49))])
-        )
-
-
-        # child prevalence
-        child_prev = (
-            len(df[df.hv_inf & df.is_alive & (df.age_years.between(0, 14))])
-            / len(df[df.is_alive & (df.age_years.between(0, 14))])
-        ) * 100
-
-        assert child_prev <= 100
+        # proportion of women 15-49s that are sex-workers
+        prop_fsw = \
+            len(df.loc[df.is_alive &
+                       (df.hv_is_sexworker == True) &
+                       (df.sex == "F") &
+                       df.age_years.between(15, 49)
+                       ]) / \
+            len(df.loc[
+                    df.is_alive &
+                    (df.sex == "F") &
+                    df.age_years.between(15, 49)
+                    ])
 
 
-        logger.info(
-            "%s|hiv_infected|%s",
-            self.sim.date,
-            {
-                "hiv_adult_inc_percent": adult_inc_percent,
-                "hiv_child_inc_percent": child_inc_percent,
-                "hiv_prev_adult": ad_prev,
-                "hiv_prev_child": child_prev,
-                "prop_behav_change": prop_behav,
-            },
-        )
-
-        logger.info(key='prevalence_15_to_49',
-                    data=adult_prev,
-                    description='HIV prevalence among 0-14 year olds')
-
-
-        # ------------------------------------ PREVALENCE BY AGE ------------------------------------
-        # if groupby both sex and age_range, you lose categories where size==0, get the counts separately
-        m_adult_hiv = (
-            df[
-                df.is_alive
-                & (df.sex == "M")
-                & df.hv_inf
-                & (df.age_years.between(15, 65))
-            ]
-            .groupby("age_range")
-            .size()
-        )
-        m_adult_pop = (
-            df[df.is_alive & (df.sex == "M") & (df.age_years.between(15, 65))]
-            .groupby("age_range")
-            .size()
-        )
-        m_adult_prev = (m_adult_hiv / m_adult_pop) * 100
-        m_adult_prev_out = m_adult_prev.fillna(0)
-        # m_adult_prev_out = [x if x < 1 else 1 for x in m_adult_prev_out]
-
-        f_adult_hiv = (
-            df[
-                df.is_alive
-                & (df.sex == "F")
-                & df.hv_inf
-                & (df.age_years.between(15, 65))
-            ]
-            .groupby("age_range")
-            .size()
-        )
-        f_adult_pop = (
-            df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 65))]
-            .groupby("age_range")
-            .size()
-        )
-        f_adult_prev = (f_adult_hiv / f_adult_pop) * 100
-        f_adult_prev_out = f_adult_prev.fillna(0)
-        # f_adult_prev_out = [x if x < 1 else 1 for x in f_adult_prev_out]
-
-        logger.info("%s|hiv_adult_prev_m|%s", self.sim.date, m_adult_prev_out.to_dict())
-
-        logger.info("%s|hiv_adult_prev_f|%s", self.sim.date, f_adult_prev_out.to_dict())
-
-        child_hiv_age = (
-            df[df.is_alive & df.hv_inf & (df.age_years < 15)]
-            .groupby("age_range")
-            .size()
-        )
-        child_pop = df[df.is_alive & (df.age_years < 15)].groupby("age_range").size()
-        child_prev_age = child_hiv_age / child_pop
-        child_prev_age = child_prev_age.fillna(0)
-
-        logger.info("%s|hiv_child_prev_m|%s", self.sim.date, child_prev_age.to_dict())
+        # hiv prev among female sex workers (aged 15-49)
+        prev_hiv_fsw = len(df.loc[
+                            df.is_alive &
+                            df.hv_inf &
+                            (df.hv_is_sexworker == True) &
+                            (df.sex == "F") &
+                            df.age_years.between(15, 49)
+                            ]) / \
+                       len(df.loc[
+                               df.is_alive &
+                               (df.hv_is_sexworker == True) &
+                               (df.sex == "F") &
+                               df.age_years.between(15, 49)
+                           ])
 
 
+        logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
+                    description='Summary of HIV among adult (15+) and children (0-14s) and female sex workers (15-49)',
+                    data={
+                        "hiv_prev_adult": adult_prev,
+                        "hiv_prev_child": child_prev,
+                        "hiv_adult_inc": adult_inc,
+                        "hiv_child_inc": child_inc,
+                        "prop_fsw": prop_fsw,
+                        "hiv_prev_fsw": prev_hiv_fsw
+                    }
+                    )
+
+        # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
+
+        # Prevalence by Age/Sex (to make every category be output, do separately by 'sex')
+        prev_by_age_and_sex = {}
+        for sex in ['F', 'M']:
+            n_hiv = df.loc[df.sex == sex].groupby(by=['age_range'])['hv_inf'].sum()
+            n_pop = df.loc[df.sex == sex].groupby(by=['age_range'])['hv_inf'].count()
+            prev_by_age_and_sex[sex] = (n_hiv / n_pop).to_dict()
+
+        logger.info(key='prev_by_age_and_sex',
+                    data=prev_by_age_and_sex,
+                    description='Prevalence of HIV split by age and sex')
 
         # ------------------------------------ TREATMENT ------------------------------------
-        # prop on treatment, adults
-        art = len(
-            df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years >= 15)]
-        )
-        denom = len(df[df.is_alive & df.hv_inf & (df.age_years >= 15)])
-        adult_art = art / denom if denom else 0
 
-        assert adult_art <= 1
+        plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
+        plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
 
-        # on treatment, adults, virally suppressed
-        # art_vs = df.loc[(df.hv_on_art == 2) & (df.age_years >= 15), 'is_alive'].sum()
-        art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years >= 15)])
-        prop_vir_sup_adult = art_vs / art if art else 0
+        # proportions of adults (15+) living with HIV on treatment:
+        art_adult = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years >= 15)])
+        art_cov_adult = art_adult / plhiv_adult if plhiv_adult > 0 else 0
 
-        assert prop_vir_sup_adult <= 1
+        # proportion of adults (15+) living with HIV on treatment and with VL suppression
+        art_adult_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years >= 15)])
+        art_cov_vs_adult = art_adult_vs / plhiv_adult if plhiv_adult > 0 else 0
 
-        # prop on treatment, children
-        c_art = len(
-            df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years < 15)]
-        )
-        if len(df[df.is_alive & df.hv_inf & (df.age_years < 15)]) > 1:
-            child_art = c_art / len(df[df.is_alive & df.hv_inf & (df.age_years < 15)])
 
-            assert child_art <= 1
-        else:
-            child_art = 0
+        # proportions of children (0-14) living with HIV on treatment:
+        art_children = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years < 15)])
+        art_cov_children = art_children / plhiv_children if plhiv_adult > 0 else 0
 
-        # on treatment, children, virally suppressed
-        c_art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years < 15)])
-        prop_vir_sup_child = c_art_vs / c_art if c_art else 0
+        # proportion of children (0-14) living with HIV on treatment and with VL suppression
+        art_children_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years < 15)])
+        art_cov_vs_children = art_children_vs / plhiv_children if plhiv_adult > 0 else 0
 
-        assert prop_vir_sup_child <= 1
-
-        logger.info(
-            "%s|hiv_treatment|%s",
-            self.sim.date,
-            {
-                "hiv_coverage_adult_art": adult_art,
-                "hiv_coverage_child_art": child_art,
-                "hiv_viral_supp_adults": prop_vir_sup_adult,
-                "hiv_viral_supp_child": prop_vir_sup_child,
-            },
-        )
-
-        # ------------------------------------ FSW ------------------------------------
-        # prop fsw
-        fsw = len(df[df.is_alive & (df.hv_sexual_risk == "sex_work")])
-        prop_fsw = fsw / len(
-            df[df.is_alive & (df.sex == "F") & (df.age_years.between(15, 49))]
-        )
-
-        assert prop_fsw <= 1
-
-        # hiv prev in fsw
-        hiv_fsw = len(
-            df[
-                df.is_alive
-                & df.hv_inf
-                & (df.hv_sexual_risk == "sex_work")
-                & (df.age_years >= 15)
-            ]
-        )
-        hiv_prev_fsw = hiv_fsw / fsw if fsw else 0
-
-        logger.info(
-            "%s|hiv_fsw|%s",
-            self.sim.date,
-            {"prop_fsw": prop_fsw, "hiv_prev_fsw": hiv_prev_fsw},
-        )
-
-        # ------------------------------------ PROGRAMS ------------------------------------
-        # proportion exposed to behaviour change
-        prop_behav = len(
+        # proportion of adults (15+) exposed to behaviour change intervention
+        prop_adults_exposed_to_behav_intv = len(
             df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
         ) / len(df[df.is_alive & (df.age_years >= 15)])
 
-        assert prop_behav <= 1
+        logger.info(key='hiv_program_coverage',
+                    description='Coverage of interventions for HIV among adult (15+) and children (0-14s)',
+                    data={
+                        "art_coverage_adult": art_cov_adult,
+                        "art_coverage_adult_VL_suppression": art_cov_vs_adult,
+                        "art_coverage_child": art_cov_children,
+                        "art_coverage_child_VL_suppression": art_cov_vs_children,
+                        "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv
+                    }
+                    )
 
-
-        # ------------------------------------ MORTALITY ------------------------------------
-        # aids deaths (incl tb) reported in the last 12 months per 1000
-        deaths_hiv = len(
-            df.loc[(df.hv_date_death_occurred > (now - DateOffset(months=self.repeat)))]
-        )
-
-        deaths_tb_hiv = len(
-            df[df.hv_inf & (df.tb_date_death > (now - DateOffset(months=self.repeat)))]
-        )
-
-        pop_alive = len(df[df.is_alive])
-        mort_rate1000 = ((deaths_hiv + deaths_tb_hiv) / pop_alive) * 100000
-
-        # adults
-        deaths_hiv_adults = len(
-            df.loc[
-                (df.hv_date_death_occurred > (now - DateOffset(months=self.repeat)))
-                & (df.age_years >= 15)
-            ]
-        )
-
-        deaths_tb_hiv_adults = len(
-            df[
-                df.hv_inf
-                & (df.tb_date_death > (now - DateOffset(months=self.repeat)))
-                & (df.age_years >= 15)
-            ]
-        )
-
-        pop_alive_adults = len(df[df.is_alive & (df.age_years >= 15)])
-        mort_rate1000_adults = (
-            (deaths_hiv_adults + deaths_tb_hiv_adults) / pop_alive_adults
-        ) * 100000
-
-        logger.info(
-            "%s|hiv_mortality|%s",
-            now,
-            {
-                "hiv_MortRate100k": mort_rate1000,
-                "hiv_MortRate100k_adults": mort_rate1000_adults,
-            },
-        )
-
+        # todo - **** prep, vmmc
 
 
 # ---------------------------------------------------------------------------
@@ -2138,13 +2024,12 @@ class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin
 
         # If no "target_fn" is provided, then let this event pertain to everyone
         if target_fn is None:
-
             def target_fn(person_id):
                 return True
 
         self.target_fn = target_fn
 
-        # # Define the necessary information for an HSI (Population level)
+        # Define the necessary information for an HSI (Population level)
         self.TREATMENT_ID = "Hiv_PopLevel_BehavChange"
 
     def apply(self, population, squeeze_factor):
@@ -3148,6 +3033,38 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
                             aids_event, df.at[person, "hv_proj_date_aids"]
                         )
 
+
+# ---------------------------------------------------------------------------
+#   Helper functions for analysing outputs
+# ---------------------------------------------------------------------------
+
+
+def set_age_group(ser):
+    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+        min_age=demography.MIN_AGE_FOR_RANGE,
+        max_age=demography.MAX_AGE_FOR_RANGE,
+        range_size=demography.AGE_RANGE_SIZE
+    )
+    ser = ser.astype("category")
+    AGE_RANGE_CATEGORIES_filtered = [a for a in AGE_RANGE_CATEGORIES if a in ser.values]
+    return ser.cat.reorder_categories(AGE_RANGE_CATEGORIES_filtered)
+
+def map_to_age_group(ser):
+    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
+        min_age=demography.MIN_AGE_FOR_RANGE,
+        max_age=demography.MAX_AGE_FOR_RANGE,
+        range_size=demography.AGE_RANGE_SIZE
+    )
+    ser = ser.map(AGE_RANGE_LOOKUP)
+    ser = set_age_group(ser)
+    return ser
+
+def unpack_raw_output_dict(raw_dict):
+    x = pd.DataFrame.from_dict(data=raw_dict, orient='index')
+    x = x.reset_index()
+    x.rename(columns={'index': 'age_group', 0: 'value'}, inplace=True)
+    x['age_group'] = set_age_group(x['age_group'])
+    return x
 
 
 
