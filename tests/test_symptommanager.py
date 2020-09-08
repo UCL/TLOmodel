@@ -15,7 +15,7 @@ from tlo.methods import (
     labour,
     mockitis,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, antenatal_care, newborn_outcomes, hiv, tb, male_circumcision
 )
 from tlo.methods.symptommanager import DuplicateSymptomWithNonIdenticalPropertiesError, Symptom
 
@@ -89,10 +89,14 @@ def test_no_symptoms_if_no_diseases():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
-                 )
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),                 )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -116,10 +120,14 @@ def test_adding_quering_and_removing_symptoms():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
-                 mockitis.Mockitis(),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),                 mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome()
                  )
 
@@ -174,10 +182,14 @@ def test_spurious_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
-                 )
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),                 )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -204,10 +216,14 @@ def test_baby_born_has_no_symptoms():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath)
-                 )
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),                 )
 
     # Run the simulation
     sim.make_initial_population(n=popsize)

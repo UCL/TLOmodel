@@ -2259,7 +2259,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # prop on treatment, children
         c_art = len(df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years < 15)])
-        child_art = c_art / len(df[df.is_alive & df.hv_inf & (df.age_years < 15)])
+       # child_art = c_art / len(df[df.is_alive & df.hv_inf & (df.age_years < 15)])
 
         # on treatment, children, virally suppressed
         c_art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years < 15)])
@@ -2279,7 +2279,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'hiv_prev_child': child_prev,
                         'hiv_adult_inc': adult_inc,
                         'hiv_adult_art': adult_art,
-                        'hiv_child_art': child_art,
+                    #    'hiv_child_art': child_art,
                         'hiv_prop_fsw': prop_fsw,
                         'hiv_viral_supp_adults': prop_vir_sup_adult,
                         'hiv_viral_supp_child': prop_vir_sup_child,

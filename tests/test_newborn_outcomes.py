@@ -16,7 +16,7 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, hiv, tb, male_circumcision
 )
 
 start_date = Date(2010, 1, 1)
@@ -34,12 +34,15 @@ def simulation():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=[]),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(1)
     return sim

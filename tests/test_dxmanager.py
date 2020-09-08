@@ -19,7 +19,7 @@ from tlo.methods import (
     labour,
     mockitis,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, antenatal_care, newborn_outcomes, hiv, tb, male_circumcision
 )
 from tlo.methods.dxmanager import DxManager, DxTest
 from tlo.methods.healthsystem import HSI_Event
@@ -57,6 +57,11 @@ def bundle():
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome())

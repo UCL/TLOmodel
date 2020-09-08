@@ -14,7 +14,7 @@ from tlo.methods import (
     labour,
     oesophagealcancer,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, hiv, tb, male_circumcision, newborn_outcomes, antenatal_care
 )
 
 # %% Setup:
@@ -45,6 +45,11 @@ def make_simulation_healthsystemdisabled():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
@@ -67,6 +72,11 @@ def make_simulation_nohsi():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
                  )
