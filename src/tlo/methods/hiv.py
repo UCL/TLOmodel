@@ -145,13 +145,7 @@ class Hiv(Module):
             Types.REAL,
             "probability of mother to child transmission, mother infected during breastfeeding",
         ),
-        # behavioural parameters
-        "proportion_female_sex_workers": Parameter(
-            Types.REAL, "proportion of women who engage in transactional sex"
-        ),
-        "fsw_transition": Parameter(
-            Types.REAL, "annual rate at which women leave sex work"
-        ),
+
         # relative risk of HIV acquisition
         "rr_fsw": Parameter(Types.REAL, "relative risk of hiv with female sex work"),
         "rr_circumcision": Parameter(

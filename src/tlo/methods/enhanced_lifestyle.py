@@ -269,6 +269,12 @@ class Lifestyle(Module):
         'proportion_of_men_circumcised_at_initiation': Parameter(
             Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
                         'simulation.'
+        ),
+        "proportion_female_sex_workers": Parameter(
+            Types.REAL, "proportion of women aged 15-49 years who are sex workers"
+        ),
+        "fsw_transition": Parameter(
+            Types.REAL, "proportion of sex workers that stop being a sex worker each year"
         )
     }
 
@@ -676,7 +682,7 @@ class Lifestyle(Module):
 
         # -------------------- SEX WORKER ----------------------------------------------------------
         # determine which women will be sex worker
-        self.determine_who_will_be_sexworker()
+        self.determine_who_will_be_sexworker(months_since_last_poll=0)
 
         # -------------------- MALE CIRCUMCISION ----------------------------------------------------------
         # determine the proportion of men that are circumcised at initiation
@@ -734,58 +740,51 @@ class Lifestyle(Module):
             self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
         )
 
-    def determine_who_will_be_sexworker(self):
+    def determine_who_will_be_sexworker(self, months_since_last_poll):
         """Determine which women will be sex workers.
-        This is called by initialise_population and the LifestyleEvent"""
-        return
+        This is called by initialise_population and the LifestyleEvent.
+        Subject to the constraints:
+        (i) Women who are in sex work may stop and there is a proportion that stop during each year.
+        (ii) New women are 'recruited' to start sex work such that the overall proportion of women who are sex workers
+            does not fall below a given level.
+        """
+
         df = self.sim.population.props
-        params = self.module.parameters
+        params = self.parameters
+        rng = self.rng
 
-        # transition those already fsw back to low risk
-        if (
-            len(df[df.is_alive & (df.sex == "F") & (df.hv_sexual_risk == "sex_work")])
-            > 1
-        ):
-            remove = (
-                df[df.is_alive & (df.sex == "F") & (df.hv_sexual_risk == "sex_work")]
-                .sample(frac=params["fsw_transition"])
-                .index
-            )
+        # Select current sex workers to stop being a sex worker
+        sw_idx = df.loc[df.is_alive & df.li_is_sexworker].index
+        proportion_that_will_stop_being_sexworker = params['fsw_transition'] * months_since_last_poll / 12
+        will_stop = sw_idx[rng.rand(len(sw_idx)) < proportion_that_will_stop_being_sexworker]
+        df.loc[will_stop, 'li_is_sexworker'] = False
 
-            df.loc[remove, "hv_sexual_risk"] = "low"
+        # Select women to start sex worker (irrespective of any characteristic)
+        # eligible to become a sex worker
+        eligible_idx = df.loc[
+            df.is_alive &
+            ~df.li_is_sexworker &
+            df.age_years.between(15,49) &
+            (df.li_mar_stat != 2)
+            ].index
 
-        # recruit new fsw, higher weighting for previous sex work?
-        # TODO: should propensity for sex work be clustered by wealth / education / location?
-        # check if any data to inform this
-        # new fsw recruited to replace removed fsw -> constant proportion over time
+        n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
+        target_n_sw = int(np.round(len(df.loc[
+                                           df.is_alive &
+                                           df.age_years.between(15,49) &
+                                           (df.li_mar_stat != 2)
+                                           ].index) * params["proportion_female_sex_workers"]))
+        deficit = target_n_sw - n_sw
+        if deficit > 0:
+            if deficit > len(eligible_idx):
+                # randomly select women to start sex work:
+                will_start_sw_idx = rng.choice(eligible_idx, deficit, replace=False)
+            else:
+                # select all eligible women to start sex work:
+                will_start_sw_idx = eligible_idx
+            # make is_sexworker for selected women:
+            df.loc[will_start_sw_idx, 'li_is_sexworker'] = True
 
-        # current proportion of F 15-49 classified as fsw
-        fsw = len(df[df.is_alive & (df.hv_sexual_risk == "sex_work")])
-        eligible = len(
-            df[
-                df.is_alive
-                & (df.sex == "F")
-                & (df.age_years.between(15, 49))
-                & (df.li_mar_stat != 2)
-            ]
-        )
-
-        prop = fsw / eligible
-
-        if prop < params["proportion_female_sex_workers"]:
-            # number new fsw needed
-            recruit = int((params["proportion_female_sex_workers"] - prop) * eligible)
-            fsw_new = (
-                df[
-                    df.is_alive
-                    & (df.sex == "F")
-                    & (df.age_years.between(15, 49))
-                    & (df.li_mar_stat != 2)
-                ]
-                .sample(n=recruit)
-                .index
-            )
-            df.loc[fsw_new, "hv_sexual_risk"] = "sex_work"
 
     def compute_bmi_proportions_of_interest(self):
         """This is called by the logger and computes summary statistics about the bmi"""
@@ -901,7 +900,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         note: if change this offset from 3 months need to consider code conditioning on age.years_exact
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=3))
+        self.repeat_months = 3
+        super().__init__(module, frequency=DateOffset(months=self.repeat_months))
         assert isinstance(module, Lifestyle)
 
     def apply(self, population):
@@ -1235,6 +1235,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
         df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 
+        # --- FSW ---
+        self.module.determine_who_will_be_sexworker(self, months_since_last_poll=self.repeat_months)
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
