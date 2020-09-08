@@ -7,6 +7,7 @@ HIV infection ---> AIDS onset --> AIDS Death
 
 #todo - SORT OUT RESOURCEFILES (lots of unused junk in the excel files), LABELLING OF PARAMETERS,
 
+#NB. this module requires the lifestyle module.
 """
 
 import datetime
@@ -1162,20 +1163,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         denom_children = len(df[df.is_alive & ~df.hv_inf & (df.age_years < 15)])
         child_inc = (n_new_infections_children / denom_children)
 
-        # proportion of women 15-49s that are sex-workers
-        prop_fsw = \
-            len(df.loc[df.is_alive &
-                       (df.hv_is_sexworker == True) &
-                       (df.sex == "F") &
-                       df.age_years.between(15, 49)
-                       ]) / \
-            len(df.loc[
-                    df.is_alive &
-                    (df.sex == "F") &
-                    df.age_years.between(15, 49)
-                    ])
-
-
         # hiv prev among female sex workers (aged 15-49)
         prev_hiv_fsw = len(df.loc[
                             df.is_alive &
@@ -1198,7 +1185,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "hiv_prev_child": child_prev,
                         "hiv_adult_inc": adult_inc,
                         "hiv_child_inc": child_inc,
-                        "prop_fsw": prop_fsw,
                         "hiv_prev_fsw": prev_hiv_fsw
                     }
                     )

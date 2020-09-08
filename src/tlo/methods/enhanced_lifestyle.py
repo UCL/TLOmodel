@@ -1262,17 +1262,35 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='li_urban', data=df[df.is_alive].groupby('li_urban').size().to_dict())
         logger.info(key='li_wealth', data=df[df.is_alive].groupby('li_wealth').size().to_dict())
         logger.info(key='li_tob', data=flatten_tuples_in_keys(
-            df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict()))
+            df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
+                    )
         logger.info(key='li_ed_lev_by_age',
                     data=flatten_tuples_in_keys(
-                        df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict()))
+                        df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
+                    )
         logger.info(
             key='bmi_proportions',
             data=self.module.compute_bmi_proportions_of_interest()
         )
         logger.info(key='li_low_ex', data=flatten_tuples_in_keys(
-            df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict()))
+            df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
+                    )
         logger.info(
             key='prop_adult_men_circumcised',
             data=[df.loc[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)].li_is_circ.mean()]
+        )
+        logger.info(
+            key='proportion_1549_women_sexworker',
+            data=[(
+                     len(df.loc[df.is_alive &
+                       (df.li_is_sexworker == True) &
+                       (df.sex == "F") &
+                       df.age_years.between(15, 49)
+                       ]) /
+                     len(df.loc[
+                             df.is_alive &
+                             (df.sex == "F") &
+                             df.age_years.between(15, 49)
+                             ])
+            )]
         )
