@@ -55,8 +55,6 @@ class Hiv(Module):
                             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]
                             ),
         "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
-        "hv_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
-        "hv_is_circ": Property(Types.BOOL, "Is the person circumcised"),
         "hv_behaviour_change": Property(Types.BOOL, "Has this person been exposed to HIV prevention counselling"),
         "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
         "hv_diagnosed": Property(Types.BOOL, "hiv+ and tested"),
@@ -1193,7 +1191,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                df.age_years.between(15, 49)
                            ])
 
-
         logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
                     description='Summary of HIV among adult (15+) and children (0-14s) and female sex workers (15-49)',
                     data={
@@ -1220,7 +1217,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='Prevalence of HIV split by age and sex')
 
         # ------------------------------------ TREATMENT ------------------------------------
-
         plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
         plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
 

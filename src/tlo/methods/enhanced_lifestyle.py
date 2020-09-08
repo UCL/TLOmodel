@@ -262,6 +262,14 @@ class Lifestyle(Module):
         'start_date_campaign_alcohol_reduction': Parameter(
             Types.DATE, 'Date of campaign start for alcohol reduction'
         ),
+        'proportion_of_men_that_are_assumed_to_be_circumcised_at_birth': Parameter(
+            Types.REAL, 'Proportion of men that are assumed to be circumcised at birth.'
+                        'The men are assumed to be circumcised at birth.'
+        ),
+        'proportion_of_men_circumcised_at_initiation': Parameter(
+            Types.REAL, 'Proportion of men (of all ages) that are assumed to be circumcised at the initiation of the'
+                        'simulation.'
+        )
     }
 
     # Properties of individuals that this module provides.
@@ -315,6 +323,8 @@ class Lifestyle(Module):
         'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
+        "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
+        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
     }
 
     def read_parameters(self, data_folder):
@@ -324,7 +334,7 @@ class Lifestyle(Module):
         )
 
         self.load_parameters_from_dataframe(dfd)
-        # Manually set dates for campaign starts for now
+        # Manually set dates for campaign starts for now todo - fix this
         p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
         p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
         p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
@@ -367,6 +377,8 @@ class Lifestyle(Module):
         df['li_date_acquire_access_handwashing'] = pd.NaT
         df['li_date_acquire_clean_drinking_water'] = pd.NaT
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
+        df['li_is_sexworker'] = False
+        df['li_is_circ'] = False
         # todo: express all rates per year and divide by 4 inside program
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -662,6 +674,18 @@ class Lifestyle(Module):
 
         df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
 
+        # -------------------- SEX WORKER ----------------------------------------------------------
+        # determine which women will be sex worker
+        self.determine_who_will_be_sexworker()
+
+        # -------------------- MALE CIRCUMCISION ----------------------------------------------------------
+        # determine the proportion of men that are circumcised at initiation
+        # NB. this is determined with respect to any characteristics (eg. ethnicity or religion)
+        men = df.loc[df.is_alive & (df.sex == 'M')]
+        will_be_circ = self.rng.rand(len(men)) < self.parameters['proportion_of_men_circumcised_at_initiation']
+        df.loc[men[will_be_circ].index, 'li_is_circ'] = True
+
+
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
@@ -706,6 +730,63 @@ class Lifestyle(Module):
         df.at[child_id, 'li_date_acquire_access_handwashing'] = pd.NaT
         df.at[child_id, 'li_date_acquire_clean_drinking_water'] = pd.NaT
         df.at[child_id, 'li_date_acquire_non_wood_burn_stove'] = pd.NaT
+        df.at[child_id, 'li_is_sexworker'] = False
+        df.at[child_id, 'li_is_circ'] = (
+            self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
+        )
+
+    def determine_who_will_be_sexworker(self):
+        """Determine which women will be sex workers.
+        This is called by initialise_population and the LifestyleEvent"""
+        return
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        # transition those already fsw back to low risk
+        if (
+            len(df[df.is_alive & (df.sex == "F") & (df.hv_sexual_risk == "sex_work")])
+            > 1
+        ):
+            remove = (
+                df[df.is_alive & (df.sex == "F") & (df.hv_sexual_risk == "sex_work")]
+                .sample(frac=params["fsw_transition"])
+                .index
+            )
+
+            df.loc[remove, "hv_sexual_risk"] = "low"
+
+        # recruit new fsw, higher weighting for previous sex work?
+        # TODO: should propensity for sex work be clustered by wealth / education / location?
+        # check if any data to inform this
+        # new fsw recruited to replace removed fsw -> constant proportion over time
+
+        # current proportion of F 15-49 classified as fsw
+        fsw = len(df[df.is_alive & (df.hv_sexual_risk == "sex_work")])
+        eligible = len(
+            df[
+                df.is_alive
+                & (df.sex == "F")
+                & (df.age_years.between(15, 49))
+                & (df.li_mar_stat != 2)
+            ]
+        )
+
+        prop = fsw / eligible
+
+        if prop < params["proportion_female_sex_workers"]:
+            # number new fsw needed
+            recruit = int((params["proportion_female_sex_workers"] - prop) * eligible)
+            fsw_new = (
+                df[
+                    df.is_alive
+                    & (df.sex == "F")
+                    & (df.age_years.between(15, 49))
+                    & (df.li_mar_stat != 2)
+                ]
+                .sample(n=recruit)
+                .index
+            )
+            df.loc[fsw_new, "hv_sexual_risk"] = "sex_work"
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):

@@ -28,16 +28,15 @@ except NameError:
     resourcefilepath = 'resources'
 
 
+start_date = Date(2010, 1, 1)
+end_date = Date(2020, 12, 31)
+popsize = 5000
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
-
-start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
-popsize = 5000
 
 def get_sim():
     """get sim with the checks for configuration of properties running in the HIV module"""

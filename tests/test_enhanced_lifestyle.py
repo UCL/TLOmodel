@@ -39,10 +39,17 @@ def __check_properties(df):
     # education: no one over age 20 in education
     assert not ((df.age_years > 20) & df.li_in_ed).any()
 
+    # Check sex workers
+    # only women
+    # if parmater says non-zero, non-zero
+
+    # Check circumcision (no women circumcised, some men circumcised)
+    assert not df.loc[df.sex == 'F'].li_is_circ.any()
+    assert df.loc[df.sex == 'M'].li_is_circ.any()
+
 
 def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
-
 
 def test_initial_population(simulation):
     df = simulation.population.props
@@ -63,6 +70,12 @@ def test_dypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
