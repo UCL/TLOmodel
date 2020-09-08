@@ -760,9 +760,10 @@ class Lifestyle(Module):
         df.loc[will_stop, 'li_is_sexworker'] = False
 
         # Select women to start sex worker (irrespective of any characteristic)
-        # eligible to become a sex worker
+        # eligible to become a sex worker: alive, unmarried, women aged 15-49 who are not currently sex worker
         eligible_idx = df.loc[
             df.is_alive &
+            (df.sex == 'F') &
             ~df.li_is_sexworker &
             df.age_years.between(15,49) &
             (df.li_mar_stat != 2)
@@ -1236,7 +1237,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 
         # --- FSW ---
-        self.module.determine_who_will_be_sexworker(self, months_since_last_poll=self.repeat_months)
+        self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
