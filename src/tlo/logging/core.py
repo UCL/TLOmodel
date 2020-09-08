@@ -17,7 +17,7 @@ class Logger:
     TLO logging facade so that logging can be intercepted and customised
     """
     def __init__(self, name: str, level=_logging.NOTSET):
-        assert name.startswith('tlo'), 'Only logging of tlo modules is allowed'
+        assert name.startswith('tlo'), f'Only logging of tlo modules is allowed; name is {name}'
         self._std_logger = _logging.getLogger(name=name)
         self._std_logger.setLevel(level)
         if name == 'tlo':
