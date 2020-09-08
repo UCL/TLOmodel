@@ -90,6 +90,10 @@ class RTI(Module):
             Types.REAL,
             'probability that someone with a spinal cord injury will die without treatment'
         ),
+        'prop_death_burns_no_treatment': Parameter(
+            Types.REAL,
+            'probability that someone with a burn injury will die without treatment'
+        ),
         'prob_TBI_require_craniotomy': Parameter(
             Types.REAL,
             'probability that someone with a traumatic brain injury will require a craniotomy surgery'
@@ -117,6 +121,14 @@ class RTI(Module):
         'rr_injrti_mortality_polytrauma': Parameter(
             Types.REAL,
             'Relative risk of mortality for those with polytrauma'
+        ),
+        'number_of_injured_body_regions_distribution': Parameter(
+            Types.LIST,
+            'The distribution of number of injured AIS body regions, used to decide how many injuries a person has'
+        ),
+        'test_injury_location_distribution': Parameter(
+            Types.LIST,
+            'The distribution of where injuries are located in the body, based on the AIS body region definition'
         ),
         'head_prob_skin_wound': Parameter(
             Types.REAL,
@@ -738,6 +750,42 @@ class RTI(Module):
             Types.REAL,
             'daly_wt_bilateral_lower_limb_amputation_without_treatment - code 1735'
         ),
+        'daly_dist_code_133': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 133 to the various injuries associated with the code'
+        ),
+        'daly_dist_code_134': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 134 to the various injuries associated with the code'
+        ),
+        'daly_dist_code_453': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 453 to the various injuries associated with the code'
+        ),
+        'daly_dist_code_673': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 673 to the various injuries associated with the code'
+        ),
+        'daly_dist_codes_674_675': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 674/675 to the various injuries associated with the codes'
+        ),
+        'daly_dist_code_712': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 712 to the various injuries associated with the code'
+        ),
+        'daly_dist_code_782': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 782 to the various injuries associated with the code'
+        ),
+        'daly_dist_code_813': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 813 to the various injuries associated with the code'
+        ),
+        'daly_dist_code_822': Parameter(
+            Types.LIST,
+            'Mapping parameter of injury code 822 to the various injuries associated with the code'
+        ),
     }
 
     PROPERTIES = {
@@ -1255,7 +1303,6 @@ class RTI(Module):
 
         """
         df = self.sim.population.props
-        deathsdf = pd.DataFrame(columns=df.columns)
         event = RTIEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         event = RTILoggingEvent(self)
@@ -1401,6 +1448,7 @@ class RTI(Module):
         df = self.sim.population.props
         columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
                    'rt_injury_7', 'rt_injury_8']
+        p = self.parameters
         selected_for_rti_inj = df.loc[injured_index, columns]
         # =============================== AIS region 1: head ==========================================================
         # ------ Find those with skull fractures and update rt_fracture to match and call for treatment ---------------
@@ -1419,8 +1467,7 @@ class RTI(Module):
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('133').any(), axis=1)
         dalyweightsfor133 = [self.daly_wt_subarachnoid_hematoma, self.daly_wt_brain_contusion,
                              self.daly_wt_intraventricular_haemorrhage, self.daly_wt_subgaleal_hematoma]
-        # TODO: Remove hard coding of these probabilities
-        probabilities = [0.2, 0.66, 0.03, 0.11]
+        probabilities = p['daly_dist_code_133']
         idx_for_choose = [0, 1, 2, 3]
         if len(inj1) > 0:
             idx1 = inj1.index[inj1]
@@ -1445,7 +1492,7 @@ class RTI(Module):
 
         inj2 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('134').any(), axis=1)
         dalyweightsfor134 = [self.daly_wt_epidural_hematoma, self.daly_wt_subdural_hematoma]
-        probabilities = [0.52, 0.48]
+        probabilities = p['daly_dist_code_134']
         idx_for_choose = [0, 1]
         if len(inj2) > 0:
             idx2 = inj2.index[inj2]
@@ -1568,7 +1615,7 @@ class RTI(Module):
         # -------------------------------- Internal organ injury ------------------------------------------------------
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('453').any(), axis=1)
         dalyweightsfor453 = [self.daly_wt_diaphragm_rupture, self.daly_wt_lung_contusion]
-        probabilities = [0.77, 0.23]
+        probabilities = p['daly_dist_code_453']
         idx_for_choose = [0, 1]
         if len(inj1) > 0:
             idx = inj1.index[inj1]
@@ -1642,7 +1689,7 @@ class RTI(Module):
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('673').any(), axis=1)
         dalyweightsfor673 = [self.daly_wt_spinal_cord_lesion_neck_without_treatment,
                              self.daly_wt_spinal_cord_lesion_below_neck_without_treatment]
-        probabilities = [0.28, 0.72]
+        probabilities = p['daly_dist_code_673']
         idx_for_choose = [0, 1]
         if len(inj1) > 0:
             idx = inj1.index[inj1]
@@ -1662,7 +1709,7 @@ class RTI(Module):
 
         dalyweightsfor674675 = [self.daly_wt_spinal_cord_lesion_neck_without_treatment,
                                 self.daly_wt_spinal_cord_lesion_below_neck_without_treatment]
-        probabilities = [0.39, 0.61]
+        probabilities = p['daly_dist_codes_674_675']
         idx_for_choose = [0, 1]
         if len(inj1) + len(inj2) > 0:
             idx1 = inj1.index[inj1]
@@ -1691,7 +1738,7 @@ class RTI(Module):
         dalyweightsfor712 = [self.daly_wt_clavicle_scapula_humerus_fracture,
                              self.daly_wt_hand_wrist_fracture_without_treatment,
                              self.daly_wt_radius_ulna_fracture_short_term_with_without_treatment]
-        probabilities = [0.22, 0.59, 0.19]
+        probabilities = p['daly_dist_code_712']
         idx_for_choose = [0, 1, 2]
         if len(inj1) > 0:
             idx = inj1.index[inj1]
@@ -1720,7 +1767,7 @@ class RTI(Module):
         dalyweightsfor782 = [self.daly_wt_amputated_finger,
                              self.daly_wt_unilateral_arm_amputation_without_treatment,
                              self.daly_wt_amputated_thumb]
-        probabilities = [0.66, 0.09, 0.25]
+        probabilities = p['daly_dist_code_782']
         idx_for_choose = [0, 1, 2]
         if len(inj1) > 0:
             idx = inj1.index[inj1]
@@ -1769,7 +1816,7 @@ class RTI(Module):
         dalyweightsfor813 = [self.daly_wt_hip_fracture_short_term_with_without_treatment,
                              self.daly_wt_pelvis_fracture_short_term,
                              self.daly_wt_femur_fracture_short_term]
-        probabilities = [0.2, 0.2, 0.6]
+        probabilities = p['daly_dist_code_813']
         idx_for_choose = [0, 1, 2]
         if len(inj1) > 0:
             idx = inj1.index[inj1]
@@ -1793,7 +1840,7 @@ class RTI(Module):
         inj1 = selected_for_rti_inj.apply(lambda row: row.astype(str).str.contains('822').any(), axis=1)
         dalyweightsfor822 = [self.daly_wt_dislocated_hip,
                              self.daly_wt_dislocated_knee]
-        probabilities = [0.94, 0.06]
+        probabilities = p['daly_dist_code_822']
         idx_for_choose = [0, 1]
         if len(inj1) > 0:
             idx = inj1.index[inj1]
@@ -2156,14 +2203,14 @@ class RTI(Module):
         return disability_series_for_alive_persons
 
     def injrandomizer(self, number):
+        p = self.parameters
         # A function that can be called specifying the number of people affected by RTI injuries
         #  and provides outputs for the number of injuries each person experiences from a RTI event, the location of the
         #  injury, the TLO injury categories and the severity of the injuries. The severity of the injuries will then be
         #  used to calculate the injury severity score (ISS), which will then inform mortality and disability
 
         # Import the distribution of injured body regions from the VIBES study
-        totalinjdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/resources/'
-                                     'ResourceFile_RTI_NumberOfInjuredBodyLocations.csv')
+        number_of_injured_body_regions_distribution = p['number_of_injured_body_regions_distribution']
         # Import the predicted rate of mortality from the ISS score of injuries
         # ISSmort = np.genfromtxt('AssignInjuryTraits/data/ISSmortality.csv', delimiter=',')
         predinjlocs = []
@@ -2180,10 +2227,10 @@ class RTI(Module):
         for n in range(0, number):
 
             # Reset the distribution of body regions which can injured.
-            injlocdist = np.genfromtxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/resources/'
-                                       'ResourceFile_RTI_InjuredBodyRegionPercentage.csv', delimiter=',')
+            injlocdist = p['test_injury_location_distribution']
+            injlocdist = np.array(injlocdist)
 
-            ninjdecide = np.random.uniform(0, sum(totalinjdist))
+            ninjdecide = np.random.uniform(0, sum(number_of_injured_body_regions_distribution))
             # This generates a random number which will decide how many injuries the person will have,
             # the number of injuries is decided by where the randomly generated number falls on the number line,
             # with regions of the number line designated to the proportions of the nth injury
@@ -2193,11 +2240,11 @@ class RTI(Module):
             # to find the region of the number line which corresponds to the number of injuries that ninjdecide
             # 'lands' in, which will correspond to the number of injuries
 
-            for i in range(0, len(totalinjdist)):
+            for i in range(0, len(number_of_injured_body_regions_distribution)):
                 # This part of the for loop calculates the cumulative frequency of the proportion of total number of
                 # injury, stopping when it finds the region of the cumulative frequency where ninjdecide lies and then
                 # uses this to assign a number of injuries, ninj.
-                iprop = totalinjdist[i]
+                iprop = number_of_injured_body_regions_distribution[i]
                 cprop += iprop
                 if cprop > ninjdecide:
                     ninj = i + 1
@@ -2207,7 +2254,7 @@ class RTI(Module):
                 # injuries found in the sample if the number of injuries isn't otherwise classified.
                 ninj
             except UnboundLocalError:
-                ninj = len(totalinjdist)
+                ninj = len(number_of_injured_body_regions_distribution)
             # Create an empty vector which will store the injury locations (numberically coded using the
             # abbreviated injury scale coding system, where 1 corresponds to head, 2 to face, 3 to neck, 4 to
             # thorax, 5 to abdomen, 6 to spine, 7 to upper extremity and 8 to lower extremity
@@ -3417,8 +3464,6 @@ class HSI_RTI_MedicalIntervention(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
     """
-    TODO: These need a review as some injuries require different things to immobilize the injuries such as slings/
-    back braces
     This HSI event handles fracture casts
 
     The codes dealt with in this HSI event are:
@@ -4494,8 +4539,7 @@ class RTI_No_Medical_Intervention_Death_Event(Event, IndividualScopeEventMixin):
         p = self.module.parameters
         self.prob_death_TBI_SCI_no_treatment = p['prob_death_TBI_SCI_no_treatment']
         self.prob_death_fractures_no_treatment = p['prob_death_fractures_no_treatment']
-        # todo: remove hardcoding of this
-        self.prop_death_burns_no_treatment = 0.6
+        self.prop_death_burns_no_treatment = p['prop_death_burns_no_treatment']
         # self.scheduled_death = 0
 
     def apply(self, person_id):
