@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-
 class RTI(Module):
     """
     RTI module for the TLO model
@@ -290,47 +289,47 @@ class RTI(Module):
             Types.REAL,
             'Proportion of flail chest in thorax fractures'
         ),
-        'thorax_soft_tissue_injury': Parameter(
+        'thorax_prob_soft_tissue_injury': Parameter(
             Types.REAL,
             'Proportion of thorax injuries resulting in soft tissue injury'
         ),
-        'thorax_soft_tissue_injury_AIS1': Parameter(
+        'thorax_prob_soft_tissue_injury_AIS1': Parameter(
             Types.REAL,
             'Proportion of soft tissue injuries in the thorax with an AIS score of 1'
         ),
-        'thorax_soft_tissue_injury_AIS2': Parameter(
+        'thorax_prob_soft_tissue_injury_AIS2': Parameter(
             Types.REAL,
             'Proportion of soft tissue injuries in the thorax with an AIS score of 2'
         ),
-        'thorax_soft_tissue_injury_AIS3': Parameter(
+        'thorax_prob_soft_tissue_injury_AIS3': Parameter(
             Types.REAL,
             'Proportion of soft tissue injuries in the thorax with an AIS score of 3'
         ),
-        'abdomen_skin_wound': Parameter(
+        'abdomen_prob_skin_wound': Parameter(
             Types.REAL,
             'Proportion of abdomen injuries that are skin wounds'
         ),
-        'abdomen_skin_wound_open': Parameter(
+        'abdomen_prob_skin_wound_open': Parameter(
             Types.REAL,
             'Proportion skin wounds to the abdomen that are open wounds'
         ),
-        'abdomen_skin_wound_burn': Parameter(
+        'abdomen_prob_skin_wound_burn': Parameter(
             Types.REAL,
             'Proportion skin wounds to the abdomen that are burns'
         ),
-        'abdomen_internal_organ_injury': Parameter(
+        'abdomen_prob_internal_organ_injury': Parameter(
             Types.REAL,
             'Proportion of abdomen injuries that result in internal organ injury'
         ),
-        'abdomen_internal_organ_injury_AIS2': Parameter(
+        'abdomen_prob_internal_organ_injury_AIS2': Parameter(
             Types.REAL,
             'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
         ),
-        'abdomen_internal_organ_injury_AIS3': Parameter(
+        'abdomen_prob_internal_organ_injury_AIS3': Parameter(
             Types.REAL,
             'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
         ),
-        'abdomen_internal_organ_injury_AIS4': Parameter(
+        'abdomen_prob_internal_organ_injury_AIS4': Parameter(
             Types.REAL,
             'Proportion of abdomen injuries that result in internal organ injury with an AIS score of 2'
         ),
@@ -1302,12 +1301,32 @@ class RTI(Module):
         """Add lifestyle events to this simulation
 
         """
-        df = self.sim.population.props
         event = RTIEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         event = RTILoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         sim.schedule_event(RTI_Recovery_Event(self), sim.date + DateOffset(months=0))
+        p = self.parameters
+        # ================== Test the parameter distributions to see whether they sum to roughly one ===============
+        assert sum(p['number_of_injured_body_regions_distribution']) == 1, "The number of injured body region " \
+                                                                           "distribution doesn't sum to one"
+        assert sum(p['test_injury_location_distribution'][1]) == 1, "The injured body region distribution " \
+                                                                    "doesn't sum to one"
+        daly_weight_distributions = [val for key, val in p.items() if 'daly_dist_code_' in key]
+        for dist in daly_weight_distributions:
+            assert 0.9999 < sum(dist) < 1.0001, 'daly weight distribution does not sum to one'
+        body_part_strings = ['head_prob_', 'face_prob_', 'neck_prob_', 'thorax_prob_', 'abdomen_prob_',
+                             'spine_prob_', 'upper_ex_prob_', 'lower_ex_prob_']
+        for body_part in body_part_strings:
+            probabilities_to_assign_injuries = [val for key, val in p.items() if body_part in key]
+            sum_probabilities = sum(probabilities_to_assign_injuries)
+            assert (sum_probabilities % 1 < 0.0001) or (sum_probabilities % 1 > 0.9999), "The probabilities" \
+                                                                                         "chosen for assigning" \
+                                                                                         "injuries don't" \
+                                                                                         "sum to one"
+        probabilities = [val for key, val in p.items() if 'prob_' in key]
+        for probability in probabilities:
+            assert 0 < probability < 1, "Probability is not a feasible value"
         # Register this disease module with the health system
 
     def rti_do_when_injured(self, person_id):
@@ -2211,6 +2230,7 @@ class RTI(Module):
 
         # Import the distribution of injured body regions from the VIBES study
         number_of_injured_body_regions_distribution = p['number_of_injured_body_regions_distribution']
+
         # Import the predicted rate of mortality from the ISS score of injuries
         # ISSmort = np.genfromtxt('AssignInjuryTraits/data/ISSmortality.csv', delimiter=',')
         predinjlocs = []
@@ -2473,22 +2493,22 @@ class RTI(Module):
                                 self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture < cat <= \
                                 self.thorax_prob_skin_wound + self.thorax_prob_internal_bleeding + \
                                 self.thorax_prob_internal_organ_injury + self.thorax_prob_fracture + \
-                                self.thorax_soft_tissue_injury:
+                                self.thorax_prob_soft_tissue_injury:
                                 # Soft tissue injury
                                 injcat.append(int(4))
-                                if severity <= self.thorax_soft_tissue_injury_AIS1:
+                                if severity <= self.thorax_prob_soft_tissue_injury_AIS1:
                                     # Chest wall lacerations/avulsions
                                     injais.append(1)
-                                elif self.thorax_soft_tissue_injury_AIS1 < severity <= \
-                                    self.thorax_soft_tissue_injury_AIS1 + self.thorax_soft_tissue_injury_AIS2:
+                                elif self.thorax_prob_soft_tissue_injury_AIS1 < severity <= \
+                                    self.thorax_prob_soft_tissue_injury_AIS1 + self.thorax_prob_soft_tissue_injury_AIS2:
                                     # surgical emphysema
                                     injais.append(2)
                                 else:
                                     # Open/closed pneumothorax
                                     injais.append(3)
                         if injlocs == 5:
-                            if cat <= self.abdomen_skin_wound:
-                                if severity <= self.abdomen_skin_wound_open:
+                            if cat <= self.abdomen_prob_skin_wound:
+                                if severity <= self.abdomen_prob_skin_wound_open:
                                     # Open wound
                                     injcat.append(int(10))
                                     injais.append(1)
@@ -2498,15 +2518,16 @@ class RTI(Module):
                                     injais.append(3)
                                     logger.debug('gave a burn to abdomen')
                                     logger.debug(severity)
-                                    logger.debug(self.abdomen_skin_wound_open)
+                                    logger.debug(self.abdomen_prob_skin_wound_open)
                             else:
                                 # Internal organ injuries
                                 injcat.append(int(5))
-                                if severity <= self.abdomen_internal_organ_injury_AIS2:
+                                if severity <= self.abdomen_prob_internal_organ_injury_AIS2:
                                     # Intestines, Stomach and colon injury
                                     injais.append(2)
-                                elif self.abdomen_internal_organ_injury_AIS2 < severity <= \
-                                    self.abdomen_internal_organ_injury_AIS2 + self.abdomen_internal_organ_injury_AIS3:
+                                elif self.abdomen_prob_internal_organ_injury_AIS2 < severity <= \
+                                    self.abdomen_prob_internal_organ_injury_AIS2 + \
+                                    self.abdomen_prob_internal_organ_injury_AIS3:
                                     # Spleen, bladder, liver, urethra and diaphragm injury
                                     injais.append(3)
                                 else:
@@ -2807,18 +2828,18 @@ class RTIEvent(RegularEvent, PopulationScopeEventMixin):
         self.thorax_prob_fracture = p['thorax_prob_fracture']
         self.thorax_prob_fracture_ribs = p['thorax_prob_fracture_ribs']
         self.thorax_prob_fracture_flail_chest = p['thorax_prob_fracture_flail_chest']
-        self.thorax_soft_tissue_injury = p['thorax_soft_tissue_injury']
-        self.thorax_soft_tissue_injury_AIS1 = p['thorax_soft_tissue_injury_AIS1']
-        self.thorax_soft_tissue_injury_AIS2 = p['thorax_soft_tissue_injury_AIS2']
-        self.thorax_soft_tissue_injury_AIS3 = p['thorax_soft_tissue_injury_AIS3']
+        self.thorax_prob_soft_tissue_injury = p['thorax_prob_soft_tissue_injury']
+        self.thorax_prob_soft_tissue_injury_AIS1 = p['thorax_prob_soft_tissue_injury_AIS1']
+        self.thorax_prob_soft_tissue_injury_AIS2 = p['thorax_prob_soft_tissue_injury_AIS2']
+        self.thorax_prob_soft_tissue_injury_AIS3 = p['thorax_prob_soft_tissue_injury_AIS3']
         # Injuries to AIS region 5
-        self.abdomen_skin_wound = p['abdomen_skin_wound']
-        self.abdomen_skin_wound_open = p['abdomen_skin_wound_open']
-        self.abdomen_skin_wound_burn = p['abdomen_skin_wound_burn']
-        self.abdomen_internal_organ_injury = p['abdomen_internal_organ_injury']
-        self.abdomen_internal_organ_injury_AIS2 = p['abdomen_internal_organ_injury_AIS2']
-        self.abdomen_internal_organ_injury_AIS3 = p['abdomen_internal_organ_injury_AIS3']
-        self.abdomen_internal_organ_injury_AIS4 = p['abdomen_internal_organ_injury_AIS4']
+        self.abdomen_prob_skin_wound = p['abdomen_prob_skin_wound']
+        self.abdomen_prob_skin_wound_open = p['abdomen_prob_skin_wound_open']
+        self.abdomen_prob_skin_wound_burn = p['abdomen_prob_skin_wound_burn']
+        self.abdomen_prob_internal_organ_injury = p['abdomen_prob_internal_organ_injury']
+        self.abdomen_prob_internal_organ_injury_AIS2 = p['abdomen_prob_internal_organ_injury_AIS2']
+        self.abdomen_prob_internal_organ_injury_AIS3 = p['abdomen_prob_internal_organ_injury_AIS3']
+        self.abdomen_prob_internal_organ_injury_AIS4 = p['abdomen_prob_internal_organ_injury_AIS4']
         # Injuries to AIS region 6
         self.spine_prob_spinal_cord_lesion = p['spine_prob_spinal_cord_lesion']
         self.spine_prob_spinal_cord_lesion_neck_level = p['spine_prob_spinal_cord_lesion_neck_level']
@@ -4198,7 +4219,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
                                                                                                 [code])
                 for col in columns:
                     df.loc[person_id, 'rt_date_to_remove_daly'][int(col[-1]) - 1] = self.sim.end_date + \
-                                                                                        DateOffset(days=1)
+                                                                                    DateOffset(days=1)
 
         injury_columns = non_empty_injuries.columns
         if code == '112':
