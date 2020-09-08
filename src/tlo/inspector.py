@@ -15,8 +15,8 @@ from pathlib import Path
 
 # Ideally make these defaults but have command-line options.
 root_dir = Path(__file__).resolve().parents[2]
-MODULE_DIR = f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
-LEADER = "tlo.methods"
+MODULE_DIR = f"{root_dir}/src/tlo/"  # The trailing slash after tlo is required. # f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
+LEADER = "tlo."  # "tlo.methods"
 RST_DIR = f"{root_dir}/docs/reference"
 
 
@@ -47,9 +47,10 @@ def generate_module_dict(topdir):
     # Returns a dictionary with each key = path to a directory
     # (i.e. to topdir or one of its nested subdirectories), and
     # value = list of Python .py files in that directory.
+    # :param topdir: root directory to traverse downwards from, iteratively.
+    # :returns: dict with key = a directory, value = list of Python files in dir `key`.
     data = {}  # key = path to dir, value = list of .py files
 
-    #topdir = "./src/tlo"
     for (dirpath, dirnames, filenames) in walk(topdir):
         # print(f"***dirpath:{dirpath}, dirnames:{dirnames}, filenames:{filenames}\n")
         if "__pycache__" in dirpath:
@@ -63,51 +64,6 @@ def generate_module_dict(topdir):
             else:
                 (data[dirpath]).append(f)
     return data
-
-
-
-def generate_module_list(dir_string):
-    '''Obtain all Python module files in this directory
-    e.g. mockitis.py, hiv.py, healthsystem.py...
-    in an ASCII-sorted list.
-
-    :param dir_string: string containing path to directory to process.
-
-    For each directory in the tree, walk() yields a 3-tuple
-    (dirpath, dirnames, filenames)
-    Use break to prevent recursive search.
-
-    Reference:
-    https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
-    '''
-
-    myfiles = []
-
-    for (dirpath, dirnames, filenames) in walk(dir_string):
-        #if '__pycache__' in dirnames:
-        #    dirnames.remove('__pycache__')
-        # print(f"dirpath = {dirpath}")
-        # print(f"dirnames = {dirnames}")
-        # print(f"filenames = {filenames}")
-        if '__init__.py' in filenames:
-            filenames.remove('__init__.py')
-            for f in filenames:
-                if f[-4:] == ".pyc":
-                    filenames.remove(f)
-                if f[-3:] != ".py":
-                    filenames.remove(f)
-                else:
-                    myfiles.append(f)  #join(dirpath, f))
-        break  # TODO: In this version we don't traverse any subdirectories
-               # We will want to change this later so we can handle the
-               # case when tlo.methods has submodules (i.e. subdirectories),
-               # within which the individual disease modules are located
-               # e.g. we might have sub-level tlo.methods.rmnch for modules
-               # dealing with reproduction, birth, child health, etc.
-
-    #print (f"DEBUG: module list is {myfiles}")
-    #return sorted(myfiles)
-    return sorted(filenames)
 
 
 def get_classes_in_module(fqn, module_obj):
@@ -138,16 +94,13 @@ def get_classes_in_module(fqn, module_obj):
             #print(f"\n\nIn module {name} we find the following:")
             #morestuff = inspect.getmembers(obj)
             #print(morestuff)  # e.g. functions, PARAMETERS dict,...
-    print(f"before sorting, {classes}")
+    # print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
     # Based on answer by Andrew - sort them into order in which they are
     # defined in the module file.
     classes.sort(key=lambda x: x[2])
-    print(f"after sorting, {classes}")
+    # print(f"after sorting, {classes}")
     return classes
-
-
-
 
 
 def get_fully_qualified_name(filename, context):
@@ -268,7 +221,7 @@ def get_class_output_string(classinfo):
         str += f"{name} : {obj}\n\n"
 
         # getdoc, getcomments,
-        #pass
+
     str += "\n\n\n"
 
     return str
@@ -299,18 +252,16 @@ def extract_bases(class_name, class_obj):
 
     if len(parents) > 0:
         str = "**Bases:**\n\n"
-        #str = f"Bases: {parents[0]}"
         numbase = 1
         str += f"Base #{numbase}: {parents[0]}\n\n"
         for p in parents[1:]:
             numbase += 1
             #str += f", {p}"
             str += f"Base #{numbase}: {p}\n\n"
-        #str += "\n\n"
     else:
         str = ""
 
-    print(f"DEBUG: extract_bases: str = {str}")
+    # print(f"DEBUG: extract_bases: str = {str}")
 
     return str
 
@@ -361,8 +312,6 @@ def get_base_string (class_name, class_obj, base_obj):
     # to its documentation.
     # e.g. the string might be "tlo.core.Module <./tlo.core.html#tlo.core.Module>"
     mystr = "`" + fqn + " " + link + "`_"
-    # print(f"MYSTR = {mystr}")
-    # e.g. MYSTR = `tlo.core.Module <./tlo.core.html#tlo.core.Module>_`
     print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
 
@@ -374,7 +323,6 @@ def get_link(base_fqn, base_obj):
     :param base_obj: the object representing the base class
     :return: a string with the link to the base class's place in the generated documentation.
     '''
-    #file_defining_class = inspect.getsourcefile(base_obj)  # Path to file e.g. /Users/....src/tlo/methods/mockitis.py
     module_defining_class = str(inspect.getmodule(base_obj))  # <module 'tlo.core' from '/Users/...
     module_pieces = module_defining_class.split(" ")
     if len(module_pieces) > 1:
@@ -424,10 +372,7 @@ def create_table(mydict):
         return []
     else:
         for key in mydict:
-            #import pdb; pdb.set_trace()
             item = mydict[key]
-            #temp = nullstr(key)
-            #k = str(temp.sigh())
             description = item.description
             mytype = item.type_  # e.g. <Types.REAL: 4>
             the_type = mytype.name  # e.g. 'REAL'
@@ -439,7 +384,6 @@ def create_table(mydict):
                     description += f'{mything}, '
                 description += "]"
 
-            #the_value = mytype.value  # e.g. 4
             row = f'''   * - {key}
      - {the_type}
      - {description}
@@ -449,61 +393,26 @@ def create_table(mydict):
     return mylist
 
 
-
 if __name__ == '__main__':
-
-    # From above:
-    # root_dir = Path(__file__).resolve().parents[2]
-    MODULE_DIR = f"{root_dir}/src/tlo"   #./src/tlo/methods"
-    LEADER = "tlo."
-    # RST_DIR = f"{root_dir}/docs/reference"
 
     # Add command-line processing here
     context = LEADER
     module_directory = MODULE_DIR
     rst_directory = RST_DIR
 
-    #modules = generate_module_list(module_directory)  # List of files
-    #print (modules)
-    #exit(1)
-    #for m in modules:  # e.g. mockitis.py
-        #if ".py" not in m:  # We only want Python files.
-        #    continue
-        #if m != "mockitis.py":
-        #    continue
-    #    fqn = get_fully_qualified_name(m, context)  # e.g. "tlo.methods.mockitis"
-    #    module_obj = importlib.import_module(fqn)  # Object creation from string.
-    #    print (f"module_obj is {module_obj}")
-    #    write_rst_file(rst_directory, fqn, module_obj)
-
-    mydata = generate_module_dict("./src/tlo/")  # Need the trailing slash after tlo - it needs "/tlo/"
+    #mydata = generate_module_dict("./src/tlo/")  # Need the trailing slash after tlo - it needs "/tlo/"
+    mydata = generate_module_dict(MODULE_DIR)
     for dir in mydata:  # e.g. .../src/tlo/logging/sublog
-
-        #if "logging" in dir:
-        #    continue
-
         package = get_package_name(dir)  # e.g. "tlo.logging.sublog"
         files = mydata[dir]  # e.g. ["fileA.py", "fileB.py", ...]
         print(f"[{dir}]: {files}")
         for f in files:
-            fqn = get_fully_qualified_name(f, package)  # e.g. "tlo.methods.mockitis"
-            print(f"DEBUG: dir: {dir}, package:{package}, f:{f}, fqn:{fqn}")  # e.g. "tlo.logging.sublog.fileA"
-            #module_obj = importlib.import_module(fqn)  # Object creation from string.
-            #print (f"module_obj is {module_obj}")
+            fqn = get_fully_qualified_name(f, package)  # e.g. "tlo.logging.sublog.fileA"
+            print(f"DEBUG: dir: {dir}, package:{package}, f:{f}, fqn:{fqn}")
+            module_obj = importlib.import_module(fqn)  # Object creation from string.
+            print (f"module_obj is {module_obj}")
+            write_rst_file(rst_directory, fqn, module_obj)
     print(f"\n\nroot dir is {root_dir}")
-
-    # e.g. if dirpath = "./src/tlo/logging/sublog"
-    # we want "tlo.logging.sublog" returned
-
-    # In walker.py
-    # mydata = generate_module_dict("./src/tlo")
-    # get_package_name("./src/tlo/logging/sublog")
-    #
-    # #print(f"data is now: {data}")
-    # print("\n\nWhat we got?")
-    # for k in mydata:
-    #     files = mydata[k]
-    #     print(f"[{k}]: {files}")
 
 
     # From Stef's sphinx_debug.py
