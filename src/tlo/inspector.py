@@ -16,7 +16,7 @@ from pathlib import Path
 # Ideally make these defaults but have command-line options.
 root_dir = Path(__file__).resolve().parents[2]
 MODULE_DIR = f"{root_dir}/src/tlo/"  # The trailing slash after tlo is required. # f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
-LEADER = "tlo."  # "tlo.methods"
+#LEADER = "tlo."  # "tlo.methods"
 RST_DIR = f"{root_dir}/docs/reference"
 
 
@@ -33,12 +33,10 @@ def get_package_name(dirpath):
     runt = runt.replace("/", ".")  # e.g. logging.sublog
     # print(f"now runt is {runt}")
     if runt:
-        #print(f"now runt is {runt}")  # e.g. logging.sublog
         package_name = "tlo." + runt
     else:
         package_name = "tlo"
     return package_name
-
 
 
 def generate_module_dict(topdir):
@@ -66,6 +64,24 @@ def generate_module_dict(topdir):
     return data
 
 
+#def get_non_class_info(module_obj):
+#    '''Extract items from module (file) which are not part of a class
+#    e.g. a module-level doc string, an unbound function, etc
+#    :param module_obj: the object representing the module'''
+#    items = []  # list of (name, object, linenumber) tuples
+#    for name, obj in inspect.getmembers(module_obj):
+        # print(f"get_nci: name={name}, obj={obj}")
+        # e.g. name=getLogger, obj=<function getLogger at 0x10ca66048>
+        # name=__doc__, obj=None  (or it can be a long string!)
+        # name=__file__, obj=/Users/matthewgillman/PycharmProjects/TLOmodel/src/tlo/logging/helpers.py
+        # name=__name__, obj=tlo.logging.helpers
+        # name=__package__, obj=tlo.logging
+        # we want module __doc__ and functions __name__ and __doc__
+        # isfunction(obj), getfullargspec(func)
+        #if inspect.isfunction(obj)
+
+
+
 def get_classes_in_module(fqn, module_obj):
     '''
     Generate a list of lists of the classes *defined* in
@@ -84,7 +100,17 @@ def get_classes_in_module(fqn, module_obj):
     classes = []
     module_info = inspect.getmembers(module_obj)  # Gets everything
     for name, obj in module_info:
-        # Pick out only classes, defined in this module:
+        # print(f"get_cim: name={name}, obj={obj}")
+        # e.g. name=getLogger, obj=<function getLogger at 0x10ca66048>
+        # name=__doc__, obj=None  (or it can be a long string!)
+        # name=__file__, obj=/Users/matthewgillman/PycharmProjects/TLOmodel/src/tlo/logging/helpers.py
+        # name=__name__, obj=tlo.logging.helpers
+        # name=__package__, obj=tlo.logging
+        # we want module __doc__ and functions __name__ and __doc__
+        # isfunction(obj), getfullargspec(func)
+
+
+        # Pick out only the classes defined in this module:
         if inspect.isclass(obj) and fqn in str(obj):
             #print(name)  # e.g. MockitisEvent
             #print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
@@ -94,6 +120,7 @@ def get_classes_in_module(fqn, module_obj):
             #print(f"\n\nIn module {name} we find the following:")
             #morestuff = inspect.getmembers(obj)
             #print(morestuff)  # e.g. functions, PARAMETERS dict,...
+
     # print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
     # Based on answer by Andrew - sort them into order in which they are
@@ -142,10 +169,14 @@ def write_rst_file(rst_dir, fqn, mobj):
             out.write("=")
         out.write("\n")
 
+        # Extract non-class information, e.g. module-level doc strings,
+        # unbound functions, etc.
+        get_non_class_info(mobj)
+
         # TODO: This gets the classes, but not any docstring e.g. at the top
         # of the module, outside any classes. It also doesn't include
-        # any module-level functions.
-        classes_in_module = get_classes_in_module(fqn, mobj)
+        # any module-level functions.  *** NB not sure this is correct now **
+        classes_in_module = get_classes_in_module(fqn, mobj)  # may return empty.
         for c in classes_in_module:
             # c is [class name, class object, line number]
             str = get_class_output_string(c)
@@ -281,9 +312,9 @@ def get_base_string (class_name, class_obj, base_obj):
     '''
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
-    print (f"DEBUG: before = {class_name}, {base_obj}")
+    # print (f"DEBUG: before = {class_name}, {base_obj}")
     fqn = (str(base_obj)).replace("<class '", "").replace("'>", "")
-    print(f"DEBUG: after = {class_name}, {fqn}")
+    # print(f"DEBUG: after = {class_name}, {fqn}")
     # The next line's getsourcefile() call will raise a TypeError
     # if the object is a built-in module, class, or function:
     # print(f"and filename: {inspect.getsourcefile(base_obj)}, module: {inspect.getmodule(base_obj)}")
@@ -396,7 +427,7 @@ def create_table(mydict):
 if __name__ == '__main__':
 
     # Add command-line processing here
-    context = LEADER
+    #context = LEADER
     module_directory = MODULE_DIR
     rst_directory = RST_DIR
 
