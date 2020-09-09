@@ -772,12 +772,13 @@ class Lifestyle(Module):
         n_sw = len(df.loc[df.is_alive & df.li_is_sexworker].index)
         target_n_sw = int(np.round(len(df.loc[
                                            df.is_alive &
-                                           df.age_years.between(15,49) &
-                                           (df.li_mar_stat != 2)
-                                           ].index) * params["proportion_female_sex_workers"]))
+                                           (df.sex == 'F') &
+                                           df.age_years.between(15,49)
+                                           ].index) * params["proportion_female_sex_workers"]
+                                   ))
         deficit = target_n_sw - n_sw
         if deficit > 0:
-            if deficit > len(eligible_idx):
+            if deficit < len(eligible_idx):
                 # randomly select women to start sex work:
                 will_start_sw_idx = rng.choice(eligible_idx, deficit, replace=False)
             else:
@@ -1256,7 +1257,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # TODO *** THIS HAS TROUBLE BE PARESED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? NEED TO USE UNSTACK?!?!?
+        # TODO *** THIS HAS TROUBLE BE PARESED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? \
+        #  NEED TO USE UNSTACK?!?!?
         """
         def flatten_tuples_in_keys(d1):
             d2 = dict()
