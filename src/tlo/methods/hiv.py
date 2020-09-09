@@ -2,12 +2,16 @@
 The HIV Module
 September 2020, fully reconciled version.
 
+#NB. this module requires the lifestyle module.
+
 Overview:
 HIV infection ---> AIDS onset --> AIDS Death
 
-#todo - SORT OUT RESOURCEFILES (lots of unused junk in the excel files), LABELLING OF PARAMETERS,
-
-#NB. this module requires the lifestyle module.
+# TODO:
+* Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
+* Clean up properties - most are not used
+* Clean up paramerers and sort out/consolidate/remove junk in resourcefiles.
+* Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
 """
 
 import datetime
@@ -55,6 +59,8 @@ class Hiv(Module):
                             "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
                             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]
                             ),
+        'hv_is_on_prep': Property(Types.BOOL, 'Whether or not the person is currently taking and receiving a protective '
+                                              'effect from Pre-Exposure Prophylaxsis.'),
         "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
         "hv_behaviour_change": Property(Types.BOOL, "Has this person been exposed to HIV prevention counselling"),
         "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
@@ -209,6 +215,10 @@ class Hiv(Module):
             Types.INT, "times(months) viral load monitoring required after ART start"
         ),
         "fsw_prep": Parameter(Types.REAL, "prob of fsw receiving PrEP"),
+        "proportion_reduction_in_risk_of_hiv_aq_if_on_prep": Parameter(
+            Types.REAL, "proportion reduction in risk of HIV aquisition if on PrEP. 0 for no efficacy; "
+                        "1.0 for perfect efficacy."
+        ),
         "hiv_art_ipt": Parameter(
             Types.REAL, "proportion of hiv-positive cases on ART also on IPT"
         ),
@@ -218,8 +228,7 @@ class Hiv(Module):
     def read_parameters(self, data_folder):
         """
         * 1) Reads the ResourceFiles
-        * 2) Establishes the LinearModels
-        * 3) Declare the Symptoms
+        * 2) Declare the Symptoms
         """
 
         # 1) Read the ResourceFiles
@@ -245,7 +254,7 @@ class Hiv(Module):
         p["initial_art_coverage"] = pd.read_csv(
             Path(self.resourcefilepath) / "ResourceFile_HIV_coverage.csv"
         )
-        # todo- what is the file and why is there a nan
+        # todo- what is the file and why is there a nan??
 
         # health system interactions
         p["vl_monitoring_times"] = workbook["VL_monitoring"]   #what is this doing - can it be removed????
@@ -262,8 +271,16 @@ class Hiv(Module):
             #  AIDS without anti-retroviral treatment without anemia
             self.daly_wts['aids'] = self.sim.modules["HealthBurden"].get_daly_weight(19)
 
+        # 2)  Declare the Symptoms.
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name="aids_symptoms",
+                    odds_ratio_health_seeking_in_adults=3.0,    # High chance of seeking care when aids_symptoms onset
+                    odds_ratio_health_seeking_in_children=3.0)  # High chance of seeking care when aids_symptoms onset
+        )
 
-        # 2) Establish the Linear Models
+    def pre_initialise_population(self):
+        """Establish the Linear Models"""
+        p = self.parameters
 
         # LinearModel for the relative risk of becoming infected during the simulation
         self.rr_of_infection = LinearModel.multiplicative(
@@ -280,6 +297,7 @@ class Hiv(Module):
             Predictor('sex').when('F', p["rr_sex_f"]),
             Predictor('hv_is_sexworker').when(True, p["rr_fsw"]),
             Predictor('hv_is_circ').when(True, p["rr_circumcision"]),
+            Predictor('hv_is_on_prep').when(True, p['proportion_reduction_in_risk_of_hiv_aq_if_on_prep']),
             Predictor('li_urban').when(False, p["rr_rural"]),
             Predictor('li_wealth')  .when(2, p["rr_windex_poorer"])
                                     .when(3, p["rr_windex_middle"])
@@ -313,13 +331,6 @@ class Hiv(Module):
                                             .otherwise(p["infection_to_death_weibull_shape_4549"])
         )
 
-        # 3) Declare the Symptoms.
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name="aids_symptoms",
-                    odds_ratio_health_seeking_in_adults=3.0,    # High chance of seeking care when aids_symptoms onset
-                    odds_ratio_health_seeking_in_children=3.0)  # High chance of seeking care when aids_symptoms onset
-        )
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -329,6 +340,7 @@ class Hiv(Module):
         # --- Current status
         df["hv_inf"] = False
         df["hv_art"].values[:] = "not"
+        df["hv_is_on_prep"] = False
         df["hv_on_cotrim"] = False
         df["hv_is_sexworker"] = False
         df["hv_is_circ"] = False
@@ -350,31 +362,9 @@ class Hiv(Module):
         df["hv_proj_date_aids"] = pd.NaT
 
         # Launch sub-routines for allocating the right number of people into each category
-        self.initialise_baseline_fsw(population)                        # allocate proportion of women with very high sexual risk (fsw)
         self.initialise_baseline_prevalence(population)        # allocate baseline prevalence
         self.initialise_baseline_tested(population)            # allocate baseline art coverage
         self.initialise_baseline_art(population)               # allocate baseline art coverage
-
-    def initialise_baseline_fsw(self, population):
-        """ Assign female sex work to sample of women and change sexual risk.
-        Women must be unmarried and aged between 15 and 49.
-        """
-        df = population.props
-
-        fsw = (
-            df[
-                df.is_alive
-                & (df.sex == "F")
-                & (df.age_years.between(15, 49))
-                & (df.li_mar_stat != 2)
-            ]
-            .sample(
-                frac=self.parameters["proportion_female_sex_workers"], replace=False, random_state=self.rng
-            )
-            .index
-        )
-
-        df.loc[fsw, "hv_is_sexworker"] = True
 
     def initialise_baseline_prevalence(self, population):
         """
@@ -594,6 +584,7 @@ class Hiv(Module):
         # --- Current status
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
+        df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_on_cotrim"] = False
         df.at[child_id, "hv_is_sexworker"] = False
         df.at[child_id, "hv_is_circ"] = False
@@ -681,7 +672,6 @@ class Hiv(Module):
         #     )
 
     def on_hsi_alert(self, person_id, treatment_id):
-
         raise NotImplementedError
         # TODO - redo this
 

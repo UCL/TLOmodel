@@ -29,8 +29,8 @@ except NameError:
 
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
-popsize = 5000
+end_date = Date(2015, 12, 31)
+popsize = 1000
 
 def check_dtypes(simulation):
     # check types of columns
@@ -53,6 +53,11 @@ def get_sim():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
+
+    # Edit the efficacy of PrEP to be perfect (for the purpose of these tests)
+    sim.modules['Hiv'].parameters['proportion_reduction_in_risk_of_hiv_aq_if_on_prep'] = 1.0
+
+    # Make the population
     sim.make_initial_population(n=popsize)
     return sim
 
@@ -121,8 +126,15 @@ def test_generation_of_new_infection():
     pollevent.apply(sim.population)
     assert not any_hiv_infection_event_in_queue()
 
-    # If lots of people living with HIV, some new infections
+    # If lots of people living with HIV, but those uninfected are all on PrEP (efficacy of PrEP is assumed to be
+    # perfect), ... no new infections
     df.hv_art.values[:] = 'not'
+    df.hv_is_on_prep = True
+    pollevent.apply(sim.population)
+    assert not any_hiv_infection_event_in_queue()
+
+    # If lots of people living with HIV, and people are not on PrEP, some infection.
+    df.hv_is_on_prep = False
     pollevent.apply(sim.population)
     assert any_hiv_infection_event_in_queue()
 
