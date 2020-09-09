@@ -37,8 +37,8 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 1, 1)
-    pop_size = 1000
+    end_date = Date(2030, 1, 1)
+    pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
     # `log_config` arguments, these will override the default behaviour.
@@ -74,12 +74,14 @@ def extract_formatted_series(df):
 
 # Examine Proportion Men Circumcised:
 circ = extract_formatted_series(output['tlo.methods.enhanced_lifestyle']['prop_adult_men_circumcised'])
-pd.DataFrame(circ).plot()
+circ.plot()
 plt.title('Proportion of Adult Men Circumcised')
+plt.ylim(0, 0.30)
 plt.show()
 
 # Examine Proportion Women sex Worker:
 fsw = extract_formatted_series(output['tlo.methods.enhanced_lifestyle']['proportion_1549_women_sexworker'])
 fsw.plot()
 plt.title('Proportion of 15-49 Women Sex Workers')
+plt.ylim(0, 0.01)
 plt.show()
