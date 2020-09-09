@@ -31,8 +31,30 @@ def test_get_fully_qualified_name(filename, context, result):
     assert result == inspector.get_fully_qualified_name(filename, context)
 
 
-def test_get_package_name():
-    pass
+@pytest.mark.parametrize(
+    "dirpath, result",
+    [
+        ("some/path/or/other/tlo/", "tlo"),
+        ("./src/tlo/logging/sublog", "tlo.logging.sublog"),
+    ]
+)
+def test_get_package_name_no_exceptions(dirpath, result):
+    assert result == inspector.get_package_name(dirpath)
+
+
+@pytest.mark.parametrize(
+    "dirpath",
+    [
+        ("some/path/or/other/tlo"),
+        ("/a/b/c"),
+        ("/tlo"),
+        ("tlo"),
+    ]
+)
+def test_get_package_name_with_exceptions(dirpath):
+    with pytest.raises(ValueError) as e:
+        inspector.get_package_name(dirpath)
+    assert "Sorry, /tlo/ isn't in dirpath" in str(e.value)
 
 
 def get_classes_for_testing():
