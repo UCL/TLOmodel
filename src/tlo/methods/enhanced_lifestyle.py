@@ -1256,6 +1256,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+        # TODO *** THIS HAS TROUBLE BE PARESED ON LONG RUNS BY PARSE_OUTPUT: CHANGING KEYS DUE TO GROUPBY? NEED TO USE UNSTACK?!?!?
+        """
         def flatten_tuples_in_keys(d1):
             d2 = dict()
             for k in d1.keys():
@@ -1278,6 +1280,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='li_low_ex', data=flatten_tuples_in_keys(
             df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
                     )
+        """
+
         logger.info(
             key='prop_adult_men_circumcised',
             data=[df.loc[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)].li_is_circ.mean()]
