@@ -13,9 +13,11 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata
+from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,6 +33,8 @@ class BladderCancer(Module):
         self.lm_onset_blood_urine = None
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         "init_prop_bladder_cancer_stage": Parameter(
@@ -170,19 +174,27 @@ class BladderCancer(Module):
         )
     }
 
-    # Symptom that this module will use
-    SYMPTOMS = {'blood_urine', 'pelvic_pain'}
-
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Bladder_Cancer.xlsx",
                           sheet_name="parameter_values")
+        )
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Register Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='blood_urine',
+                    odds_ratio_health_seeking_in_adults=4.00)
+        )
+        # Register Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='pelvic_pain',
+                    odds_ratio_health_seeking_in_adults=4.00)
         )
 
     def initialise_population(self, population):
@@ -564,7 +576,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "BladderCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
             )
 
 

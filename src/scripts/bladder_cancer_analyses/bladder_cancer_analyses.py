@@ -27,8 +27,8 @@ from tlo.methods import (
     labour,
     bladder_cancer,
     pregnancy_supervisor,
-    symptommanager,
-    dx_algorithm_child)
+    symptommanager
+)
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -41,8 +41,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 200
+end_date = Date(2011, 1, 1)
+popsize = 10000
 
 
 def run_sim(service_availability):
@@ -60,7 +60,6 @@ def run_sim(service_availability):
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  )
 
