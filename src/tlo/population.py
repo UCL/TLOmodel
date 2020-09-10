@@ -60,7 +60,7 @@ class Population:
         :return: id of the new person
         """
         new_index = len(self.props)
-        logger.debug('do_birth:%s', new_index)
+        logger.debug(key='do_birth', data=str(new_index))
 
         self.props = self.props.append(self.new_row.copy(), ignore_index=True, sort=False)
         self.props.index.name = 'person'
