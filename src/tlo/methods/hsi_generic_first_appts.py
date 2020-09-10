@@ -366,7 +366,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                         logger.debug('Total amount of x-rays required for person %d unavailable', person_id)
                 df.loc[person_id, 'rt_diagnosed'] = True
                 road_traffic_injuries = self.sim.modules['RTI']
-                road_traffic_injuries.rti_do_when_injured(person_id=person_id)
+                road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
 
     def did_not_run(self):
         logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
