@@ -65,6 +65,7 @@ def test_basic_run_with_default_parameters():
     """Run the HIV module with check and check dtypes consistency"""
 
     sim = get_sim()
+    check_dtypes(sim)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
     # confirm configuration of properties at the end of the simulation:

@@ -5,13 +5,19 @@ September 2020, fully reconciled version.
 #NB. this module requires the lifestyle module.
 
 Overview:
-HIV infection ---> AIDS onset --> AIDS Death
+HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) --> AIDS Death Event
+
+
 
 # TODO:
+* MTCT -- (I) put it at birth; (II) regular polling event determine onward transmission if a new infection is given to a mother who is currently breastfeeding
+* Survival of children -- into the get_time_from_infection_to_aids helper function.
 * Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
+* Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent - currently either does)
+* Assume that any ART removes the aids_symptoms?
 * Clean up properties - most are not used
 * Clean up paramerers and sort out/consolidate/remove junk in resourcefiles.
-* Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
+* Finale -- Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
 """
 
 import datetime
@@ -31,7 +37,6 @@ from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
 
 class Hiv(Module):
     """
@@ -54,7 +59,8 @@ class Hiv(Module):
 
     PROPERTIES = {
         # --- Core Properties
-        "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV"),
+        "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV "
+                                       "(NB. AIDS status is determined by prescence of the AIDS Symptom."),
         "hv_art": Property(Types.CATEGORICAL,
                             "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
                             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]
@@ -69,7 +75,6 @@ class Hiv(Module):
 
         # --- Dates on which things have happened: # todo; work out which of these actually needed
         "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
-        "hv_date_aids": Property(Types.DATE, "Date of AIDS"),
         "hv_date_diagnosed": Property(Types.DATE, "date on which HIV was diagnosed"),
         "hv_date_art_start": Property(Types.DATE, "date ART started"),
         "hv_date_cotrim": Property(Types.DATE, "date cotrimoxazole started"),
@@ -295,8 +300,8 @@ class Hiv(Module):
                                     .when('<80', p["rr_age_gp50"])
                                     .otherwise(0.0),
             Predictor('sex').when('F', p["rr_sex_f"]),
-            Predictor('hv_is_sexworker').when(True, p["rr_fsw"]),
-            Predictor('hv_is_circ').when(True, p["rr_circumcision"]),
+            Predictor('li_is_sexworker').when(True, p["rr_fsw"]),
+            Predictor('li_is_circ').when(True, p["rr_circumcision"]),
             Predictor('hv_is_on_prep').when(True, p['proportion_reduction_in_risk_of_hiv_aq_if_on_prep']),
             Predictor('li_urban').when(False, p["rr_rural"]),
             Predictor('li_wealth')  .when(2, p["rr_windex_poorer"])
@@ -342,8 +347,6 @@ class Hiv(Module):
         df["hv_art"].values[:] = "not"
         df["hv_is_on_prep"] = False
         df["hv_on_cotrim"] = False
-        df["hv_is_sexworker"] = False
-        df["hv_is_circ"] = False
         df["hv_behaviour_change"] = False
         df["hv_fast_progressor"] = False
         df["hv_diagnosed"] = False
@@ -351,7 +354,6 @@ class Hiv(Module):
 
         # --- Dates on which things have happened
         df["hv_date_inf"] = pd.NaT
-        df["hv_date_aids"] = pd.NaT
         df["hv_date_diagnosed"] = pd.NaT
         df["hv_date_art_start"] = pd.NaT
         df["hv_date_cotrim"] = pd.NaT
@@ -386,8 +388,8 @@ class Hiv(Module):
 
         # probability based on risk factors
         rel_prob_by_risk_factor = LinearModel.multiplicative(
-            Predictor("hv_is_sexworker").when(True, params["rr_fsw"]),
-            Predictor("hv_is_circ").when(True, params["rr_circumcision"]),
+            Predictor("li_is_sexworker").when(True, params["rr_fsw"]),
+            Predictor("li_is_circ").when(True, params["rr_circumcision"]),
             Predictor("li_urban").when(False, params["rr_rural"]),
             Predictor("li_wealth")  .when(2, params["rr_windex_poorer"])
                                     .when(3, params["rr_windex_middle"])
@@ -424,10 +426,6 @@ class Hiv(Module):
 
         hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf, unit="y"))
         df.loc[infec, "hv_date_inf"] = hv_date_inf.clip(lower=df.date_of_birth)
-
-        # Assign a fraction of those who have lived more than ten years to having developed AIDS
-        aids_idx = (infec.loc[infec]).index[(self.rng.rand(len(infec[infec])) < params['fraction_of_those_infected_that_have_aids_at_initiation'])]
-        df.loc[aids_idx, "hv_date_aids"] = self.sim.date
 
     def initialise_baseline_tested(self, population):
         """ assign initial hiv testing levels, only for adults
@@ -523,10 +521,9 @@ class Hiv(Module):
         """
         * 1) Schedule the Main HIV Regular Polling Event
         * 2) Schedule the Logging Event
-        * 3) Schedule the AIDS onset events for those infected and not with AIDS
-        * 4) Schedule the AIDS death events for those who have got AIDS
-        * 5) Impose the Symptoms 'aids_symptoms' for those who have got AIDS
-        * 6) (Optionally) Schedule the event to check the configuration of all properties
+        * 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
+        * 4) Schedule the AIDS onset events and AIDS death event for those infected already
+        * 5) (Optionally) Schedule the event to check the configuration of all properties
         """
         df = sim.population.props
 
@@ -536,12 +533,45 @@ class Hiv(Module):
         # 2) Schedule the Logging Event
         sim.schedule_event(HivLoggingEvent(self), sim.date)
 
-        # 3) Schedule the AIDS onset events for those infected and not with AIDS
-        before_aids_idx = df.loc[df.hv_inf & pd.isnull(df.hv_date_aids)].index.tolist()
+        # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
+
+        # Those on ART currently (will not get any further events scheduled):
+        on_art_idx = df.loc[
+            df.is_alive &
+            df.hv_inf &
+            (df.hv_art != "not")
+            ].index
+
+        # Those that lived more than ten years and not currently on ART are assumed to currently have AIDS
+        #  (will have AIDS Death event scheduled)
+        has_aids_idx = df.loc[
+            df.is_alive &
+            df.hv_inf &
+            ((self.sim.date - df.hv_date_inf).dt.days > 10 * 365) &
+            (df.hv_art == "not")
+            ].index
+
+        # Those that are in neither category are "before AIDS" (will have AIDS Onset Event scheduled)
+        before_aids_idx = set(df.loc[df.is_alive & df.hv_inf].index) - set(has_aids_idx) - set(on_art_idx)
+
+        # Impose the symptom to those that have AIDS (the symptom is the definition of having AIDS)
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=has_aids_idx.tolist(),
+            symptom_string='aids_symptoms',
+            add_or_remove='+',
+            disease_module=self
+        )
+
+        # 4) Schedule the AIDS onset events and AIDS death event for those infected already
+        # AIDS Onset Event for those who are infected but not yet AIDS and have not ever started ART
+        # NB. This means that those on ART at the start of the simulation may not have an AIDS event --
+        # like it happened at some point in the past
+
         for person_id in before_aids_idx:
             # get days until develops aids, repeating sampling until a positive number is obtained.
             days_until_aids = 0
-            while (days_until_aids <= 0):
+            while days_until_aids <= 0:
+                print(f'sampling for {person_id}')
                 days_since_infection = (self.sim.date - df.at[person_id, 'hv_date_inf']).days
                 days_infection_to_aids = np.round((self.get_time_from_infection_to_aids(person_id)).months * 30.5)
                 days_until_aids = days_infection_to_aids - days_since_infection
@@ -552,26 +582,17 @@ class Hiv(Module):
                 date=date_onset_aids
             )
 
-        # 4) Schedule the AIDS death events for those who have got AIDS
-        has_aids_idx = df.loc[~pd.isnull(df.hv_date_aids)].index.tolist()
+        # Schedule the AIDS death events for those who have got AIDS already
         for person_id in has_aids_idx:
-            date_aids_death = self.sim.date + self.get_time_from_aids_to_death()
+            date_aids_death = self.sim.date + self.get_time_from_aids_to_death()  # (assumes AIDS onset on this day)
             sim.schedule_event(
                 HivAidsDeathEvent(person_id=person_id, module=self),
                 date=date_aids_death
             )
 
-        # 5) Impose the Symptoms 'aids_symptoms' for those who have got AIDS
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_aids_idx,
-            symptom_string='aids_symptoms',
-            add_or_remove='+',
-            disease_module=self
-        )
-
         # 6) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
-            sim.schedule_event(HivCheckPropertiesEvent(self), sim.date)
+            sim.schedule_event(HivCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -586,8 +607,6 @@ class Hiv(Module):
         df.at[child_id, "hv_art"] = "not"
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_on_cotrim"] = False
-        df.at[child_id, "hv_is_sexworker"] = False
-        df.at[child_id, "hv_is_circ"] = False
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_fast_progressor"] = False
         df.at[child_id, "hv_diagnosed"] = False
@@ -595,7 +614,6 @@ class Hiv(Module):
 
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
-        df.at[child_id, "hv_date_aids"] = pd.NaT
         df.at[child_id, "hv_date_diagnosed"] = pd.NaT
         df.at[child_id, "hv_date_art_start"] = pd.NaT
         df.at[child_id, "hv_date_cotrim"] = pd.NaT
@@ -901,7 +919,6 @@ class Hiv(Module):
         assert not df.hv_inf.isna().any()
         assert not df.hv_art.isna().any()
         assert not df.hv_on_cotrim.isna().any()
-        assert not df.hv_is_sexworker.isna().any()
         assert not df.hv_behaviour_change.isna().any()
         assert not df.hv_fast_progressor.isna().any()
         assert not df.hv_diagnosed.isna().any()
@@ -914,9 +931,12 @@ class Hiv(Module):
         assert is_subset(col_for_set=df.hv_diagnosed, col_for_subset=(df.hv_art != "not"))
         assert is_subset(col_for_set=df.hv_diagnosed, col_for_subset=df.hv_on_cotrim)
 
+        # Check that ART properties are as expected:
+        # todo - that those those with non-null date for ART are not in the "not" category
+
+
         # Check that if person is not infected, the dates of HIV events are None/NaN/NaT
         assert df.loc[~df.hv_inf, ["hv_date_inf",
-                                   "hv_date_aids",
                                    "hv_date_diagnosed",
                                    "hv_date_art_start",
                                    "hv_date_cotrim",
@@ -934,19 +954,9 @@ class Hiv(Module):
             df.hv_inf & (df.hv_art != "not")].hv_date_diagnosed).all()
         # assert (df.loc[df.hv_inf & (df.hv_art != "not")].hv_date_last_viral_load >= df.loc[df.hv_inf & (df.hv_art != "not")].hv_date_art_start).all()
 
-        # Check alignment between Symptoms and status and dates recorded
-        idx_with_aids = df.loc[
-            df.is_alive &
-            (df.hv_date_aids >= self.sim.date) &
-            pd.isnull(df.hv_date_art_start)
-            ].index.values
-        assert set(self.sim.modules['SymptomManager'].who_has('aids_symptoms')) == set(idx_with_aids)
+        # Check alignment between AIDS Symptoms and status and infection
+        assert set(self.sim.modules['SymptomManager'].who_has('aids_symptoms')).issubset(df.loc[df.is_alive & df.hv_inf].index)
 
-        # Check that sex workers are only women
-        assert (df.loc[df.hv_is_sexworker].sex == 'F').all()
-
-        # Check that only men are circumcised
-        assert (df.loc[df.hv_is_circ].sex == 'M').all()
 
 
 # ---------------------------------------------------------------------------
@@ -1063,9 +1073,6 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
             disease_module=self.module,
         )
 
-        # Record date on which AIDS onset
-        df.at[person_id, "hv_date_aids"] = self.sim.date
-
         # Schedule AidsDeath
         date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
         self.sim.schedule_event(event=(HivAidsDeathEvent(self.module, person_id)), date=date_of_aids_death)
@@ -1087,7 +1094,11 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
 
         # Do nothing if person is now on ART and VL suppressed
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
+            # todo - reconsider if the VL_suppression should block the death or if this should happen through VL suppression removing the AIDS symptoms
             return
+
+        # Confirm that the person has the symptoms of AIDS
+        assert 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # Cause the death - to happen immediately
         demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
@@ -1148,19 +1159,21 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_inc = (n_new_infections_children / denom_children)
 
         # hiv prev among female sex workers (aged 15-49)
-        prev_hiv_fsw = len(df.loc[
-                            df.is_alive &
-                            df.hv_inf &
-                            (df.hv_is_sexworker == True) &
-                            (df.sex == "F") &
-                            df.age_years.between(15, 49)
-                            ]) / \
-                       len(df.loc[
+        n_fsw = len(df.loc[
                                df.is_alive &
-                               (df.hv_is_sexworker == True) &
+                               (df.li_is_sexworker == True) &
                                (df.sex == "F") &
                                df.age_years.between(15, 49)
                            ])
+        prev_hiv_fsw = 0 if n_fsw > 0 else \
+            len(df.loc[
+                     df.is_alive &
+                     df.hv_inf &
+                     (df.li_is_sexworker == True) &
+                     (df.sex == "F") &
+                     df.age_years.between(15, 49)
+                     ]) / n_fsw
+
 
         logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
                     description='Summary of HIV among adult (15+) and children (0-14s) and female sex workers (15-49)',

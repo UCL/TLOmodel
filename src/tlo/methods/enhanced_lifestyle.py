@@ -19,6 +19,7 @@ logger.setLevel(logging.INFO)
 # todo: module is coded.
 
 
+
 class Lifestyle(Module):
     """
     Lifestyle module provides properties that are used by all disease modules if they are affected
