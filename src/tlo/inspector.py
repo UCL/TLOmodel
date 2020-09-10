@@ -15,7 +15,7 @@ from pathlib import Path
 
 # Ideally make these defaults but have command-line options.
 root_dir = Path(__file__).resolve().parents[2]
-MODULE_DIR = f"{root_dir}/src/tlo/"  # The trailing slash after tlo is required. # f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
+MODULE_DIR = f"{root_dir}/src/tlo/methods"  # The trailing slash after tlo is required. # f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
 #LEADER = "tlo."  # "tlo.methods"
 RST_DIR = f"{root_dir}/docs/reference"
 
@@ -171,7 +171,7 @@ def write_rst_file(rst_dir, fqn, mobj):
 
         # Extract non-class information, e.g. module-level doc strings,
         # unbound functions, etc.
-        get_non_class_info(mobj)
+        #get_non_class_info(mobj)
 
         # TODO: This gets the classes, but not any docstring e.g. at the top
         # of the module, outside any classes. It also doesn't include
@@ -193,7 +193,7 @@ def get_class_output_string(classinfo):
 
     '''
     class_name, class_obj, _ = classinfo
-    str = f".. class:: {class_name}\n\n"
+    str = f"\n\n\n.. class:: {class_name}\n\n"
 
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
@@ -248,8 +248,29 @@ def get_class_output_string(classinfo):
             str += "\n\n"
             continue
 
+        # Interrogate the object. It's something else, maybe a
+        # function which hasn't been filtered out.
+        #
+        if inspect.isfunction(obj):
+            print(f"DEBUG: got a function: {name}, {object}")
+            mystr = f"\n\n**Function {name}:**\n"
+            mydat = inspect.getmembers(obj)
+            this_func_str = ""
+            for the_name, the_object in mydat:
+                print(f"{the_name}: {the_object}")
+                #this_func_str = f"function {mydat.}"
+                #if the_name == "__name__":
+                #    this_func_str += f"function {the_object} \n"
+                if the_name == "__doc__":
+                    mystr += f"\n\n{the_object} \n\n"
+            str += mystr
+            continue
+        #    if "population" in class_name:
+        #        import pdb; pdb.set_trace()
+
         # Anything else?
         str += f"{name} : {obj}\n\n"
+        print(f"DEBUG: something else... {name}, {obj}")
 
         # getdoc, getcomments,
 
