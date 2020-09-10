@@ -8,8 +8,8 @@ Overview:
 HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) --> AIDS Death Event
 
 
-
 # TODO:
+* Horizontal transmisson logic! and tests!
 * MTCT -- (I) put it at birth; (II) regular polling event determine onward transmission if a new infection is given to a mother who is currently breastfeeding
 * Survival of children -- into the get_time_from_infection_to_aids helper function.
 * Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
@@ -302,7 +302,7 @@ class Hiv(Module):
             Predictor('sex').when('F', p["rr_sex_f"]),
             Predictor('li_is_sexworker').when(True, p["rr_fsw"]),
             Predictor('li_is_circ').when(True, p["rr_circumcision"]),
-            Predictor('hv_is_on_prep').when(True, p['proportion_reduction_in_risk_of_hiv_aq_if_on_prep']),
+            Predictor('hv_is_on_prep').when(True, 1.0 - p['proportion_reduction_in_risk_of_hiv_aq_if_on_prep']),
             Predictor('li_urban').when(False, p["rr_rural"]),
             Predictor('li_wealth')  .when(2, p["rr_windex_poorer"])
                                     .when(3, p["rr_windex_middle"])
@@ -571,7 +571,6 @@ class Hiv(Module):
             # get days until develops aids, repeating sampling until a positive number is obtained.
             days_until_aids = 0
             while days_until_aids <= 0:
-                print(f'sampling for {person_id}')
                 days_since_infection = (self.sim.date - df.at[person_id, 'hv_date_inf']).days
                 days_infection_to_aids = np.round((self.get_time_from_infection_to_aids(person_id)).months * 30.5)
                 days_until_aids = days_infection_to_aids - days_since_infection
@@ -995,7 +994,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # Number of new infections:
         n_new_infections = int(np.round(params["beta"] * n_infectious * n_susceptible / (n_infectious + n_susceptible)))
         # TODO - make sure scaling is correct for time between successive polling events
-        # TODO - make sex-specific
+        # TODO - make sex-specific (maybe??) (check logic overall --- the relative risk should determine number of new infections?)
 
         if n_new_infections > 0:
             # Distribute these new infections by persons with respect to risks of acquisition

@@ -79,8 +79,12 @@ def test_initialisation():
     sim.modules['Hiv'].initialise_simulation(sim)
     df = sim.population.props
 
-    # check that everyone who is infected but not AIDS, gets a future AIDS event (but no future AIDS death)
-    before_aids_idx = df.loc[df.hv_inf & pd.isnull(df.hv_date_aids)].index
+    # check that everyone who is infected but not AIDS or ART, gets a future AIDS event (but no future AIDS death)
+    inf = df.loc[df.is_alive & df.hv_inf].index.tolist()
+    art = df.loc[df.is_alive & (df.hv_art != "not")].index.tolist()
+    aids = sim.modules['SymptomManager'].who_has('aids_symptoms')
+    before_aids_idx = set(inf) - set(art) - set(aids)
+
     for idx in before_aids_idx:
         events_for_this_person = sim.find_events_for_person(idx)
         assert 1 == len(events_for_this_person)
@@ -89,8 +93,7 @@ def test_initialisation():
         assert next_event_date >= sim.date
 
     # check that everyone who is infected and has got AIDS event get a future AIDS death event but nothing else
-    has_aids_idx = df.loc[~pd.isnull(df.hv_date_aids)].index
-    for idx in has_aids_idx :
+    for idx in aids:
         events_for_this_person = sim.find_events_for_person(idx)
         assert 1 == len(events_for_this_person)
         next_event_date, next_event_obj = events_for_this_person[0]
