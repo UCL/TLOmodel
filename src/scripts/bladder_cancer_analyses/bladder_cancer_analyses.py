@@ -17,6 +17,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
+from tlo import logging
 from tlo.methods import (
     contraception,
     demography,
@@ -44,10 +45,20 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
 popsize = 10000
 
-
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date)
+
+    log_config = {
+        "filename": "labour_analysis",  # The name of the output file (a timestamp will be appended).
+        "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+        "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+            "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+            "tlo.methods.labour": logging.INFO,
+            "tlo.methods.newborn_outcomes": logging.DEBUG
+        }
+    }
+
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -64,10 +75,10 @@ def run_sim(service_availability):
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  )
 
-    sim.seed_rngs(0)
 
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
+
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
