@@ -97,7 +97,9 @@ class Predictor(object):
         if self.callback:
             # note that callback only works on single column
             output = df[self.property_name].apply(self.callback)
-            logger.debug('predictor: %s; function: %s; matched: %d', self.property_name, self.callback, len(df))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(key='debug', data=f'predictor: {self.property_name}; function: {self.callback}; '
+                                               f'matched: {len(df)}')
             return output
 
         # keep a record of all rows matched by this predictor's conditions
@@ -119,8 +121,9 @@ class Predictor(object):
             # update elements in the output series with the corresponding value for the condition
             output[mask] = value
 
-            logger.debug('predictor: %s; condition: %s; value: %s; matched rows: %d/%d',
-                         self.property_name, condition, value, mask.sum(), len(mask))
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(key='debug', data=f'predictor: {self.property_name}; condition: {condition}; '
+                                               f'value: {value}; matched rows: {mask.sum()}/{len(mask)}')
 
             # add this condition's matching rows to the list of matched rows
             matched = (matched | mask)

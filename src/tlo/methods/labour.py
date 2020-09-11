@@ -1918,7 +1918,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['sought_care_for_complication'] = True
                         mni[individual_id]['sought_care_labour_phase'] = 'intrapartum'
 
-                        from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+                        from tlo.methods.hsi_generic_first_appts import (
+                            HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+                        )
                         event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                                 module=self.module,
                                 person_id=individual_id
@@ -2073,7 +2075,9 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 mni[individual_id]['sought_care_for_complication'] = True
                 mni[individual_id]['sought_care_labour_phase'] = 'postpartum'
 
-                from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+                from tlo.methods.hsi_generic_first_appts import (
+                    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+                )
                 event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
                      module=self.module, person_id=individual_id)
 
@@ -2296,10 +2300,7 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabour'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['NormalDelivery'] = 1
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
@@ -2518,10 +2519,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'Labour_ReceivesCareForPostpartumPeriod'
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ALERT_OTHER_DISEASES = []
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
@@ -2633,11 +2631,7 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'Labour_CaesareanSection'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['MajorSurg'] = 1
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
@@ -2717,11 +2711,7 @@ class HSI_Labour_ReceivesBloodTransfusion(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'Labour_ReceivesBloodTransfusion'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
@@ -2778,11 +2768,7 @@ class HSI_Labour_SurgeryForLabourComplications(HSI_Event, IndividualScopeEventMi
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'Labour_SurgeryForLabourComplicationsFacilityLevel1'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['MajorSurg'] = 1
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
@@ -2797,7 +2783,7 @@ class HSI_Labour_SurgeryForLabourComplications(HSI_Event, IndividualScopeEventMi
         logger.info('This is HSI_Labour_SurgeryForLabourComplications: Person %d will now undergo surgery'
                     'for complications developed in labour', person_id)
 
-        # TODO: Consumable arent currently correct
+        # TODO: Consumable aren't currently correct
 
         # Consumables are defined
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
