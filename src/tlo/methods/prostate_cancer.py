@@ -12,13 +12,14 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata
+from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
 
 class ProstateCancer(Module):
     """Prostate Cancer Disease Module"""
@@ -27,8 +28,10 @@ class ProstateCancer(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.linear_models_for_progression_of_pc_status = dict()
-        self.lm_prostate_ca_onset_urunary_symptoms = None
+        self.lm_prostate_ca_onset_urinary_symptoms = None
         self.daly_wts = dict()
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         "init_prop_prostate_ca_stage": Parameter(
@@ -161,19 +164,28 @@ class ProstateCancer(Module):
         ),
     }
 
-    # Symptoms that this module will use
-    SYMPTOMS = {'urinary', 'pelvic_pain'}
-
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Prostate_Cancer.xlsx",
                           sheet_name="parameter_values")
+        )
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Register Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='urinary',
+                    odds_ratio_health_seeking_in_adults=4.00)
+        )
+
+        # Register Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='pelvic_pain',
+                    odds_ratio_health_seeking_in_adults=4.00)
         )
 
     def initialise_population(self, population):
@@ -218,6 +230,22 @@ class ProstateCancer(Module):
                 )
 
         # -------------------- SYMPTOMS -----------
+        # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
+        lm_init_pelvic_pain = LinearModel.multiplicative(
+        Predictor('pc_status').when("none", 0.0)
+                            .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
+                            .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
+                            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
+        )
+
+        has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
+            symptom_string='pelvic_pain',
+            add_or_remove='+',
+            disease_module=self
+        )
+
         # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
         lm_init_urinary = LinearModel.multiplicative(
             Predictor('pc_status')  .when("none", 0.0)
@@ -233,22 +261,6 @@ class ProstateCancer(Module):
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=has_urinary_symptoms_at_init.index[has_urinary_symptoms_at_init].tolist(),
             symptom_string='urinary',
-            add_or_remove='+',
-            disease_module=self
-        )
-
-        # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
-        lm_init_pelvic_pain = LinearModel.multiplicative(
-        Predictor('pc_status').when("none", 0.0)
-                            .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
-                            .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
-                            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
-        )
-
-        has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
-            symptom_string='pelvic_pain',
             add_or_remove='+',
             disease_module=self
         )
@@ -599,7 +611,7 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "ProstateCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
             )
 
 

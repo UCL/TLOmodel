@@ -200,6 +200,11 @@ plt.ylabel('Total Deaths During Simulation')
 plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
+deaths = pd.concat({
+    'No_HealthSystem': sum(results_no_healthsystem['oes_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['oes_cancer_deaths'])
+}, axis=1, sort=True)
+
 deaths = {
     'No_HealthSystem': sum(results_no_healthsystem['prostate_cancer_deaths']),
     'With_HealthSystem': sum(results_with_healthsystem['prostate_cancer_deaths'])
