@@ -1,13 +1,12 @@
 """
 HIV infection event
 """
-import logging
 import os
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, tb
 from tlo.methods.healthsystem import HSI_Event
@@ -599,7 +598,7 @@ class hiv(Module):
         now = self.sim.date
         # params = self.parameters
 
-        # ----------------------------------- ADULT SYMPTOMS -----------------------------------
+        # ----------------------------------- ADULT symptoms -----------------------------------
 
         adults = df[df.is_alive & df.hv_inf & (df.hv_on_art != 2) & (df.age_years >= 15)].index
 
@@ -617,7 +616,7 @@ class hiv(Module):
         df.loc[idx, 'hv_specific_symptoms'] = 'aids'
         df.loc[idx, 'hv_unified_symptom_code'] = 3
 
-        # ----------------------------------- CHILD SYMPTOMS -----------------------------------
+        # ----------------------------------- CHILD symptoms -----------------------------------
 
         # baseline pop - infants, all assumed slow progressors
 

@@ -7,13 +7,14 @@ import numpy as np
 import pandas as pd
 
 from tlo import logging, util
+from tlo.logging.reader import LogData
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def parse_line(line):
+def _parse_line(line):
     """
     Parses a single line of logged output. It has the format:
     INFO|<logger name>|<simulation date>|<log key>|<python object>
@@ -33,7 +34,7 @@ def parse_line(line):
     if len(parts) != 5:
         return None
 
-    logger.debug('%s', line)
+    logger.debug(key='debug', data=line)
 
     try:
         parsed = literal_eval(parts[4])
@@ -46,27 +47,58 @@ def parse_line(line):
         'key': parts[3],
         'object': parsed
     }
-    logger.debug('%s', info)
+    logger.debug(key='debug', data=str(info))
     return info
 
 
-def parse_log_file(filepath):
-    """
-    Parses logged output from a TLO run and create Pandas dataframes for analysis. See
-    parse_output() for details
+def parse_log_file(filepath, level: int = logging.INFO):
+    """Parses logged output from a TLO run and returns Pandas dataframes.
+
+    The format can be one of two style, old-style TLO logging like :
+        INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
+
+    or a JSON representation with the first instance from a log key being a header line, and all following
+    rows being data only rows (without column names or metadata).
+
+    The dictionary returned has the format:
+    {
+        <logger 1 name>: {
+                           <log key 1>: <pandas dataframe>,
+                           <log key 2>: <pandas dataframe>,
+                           <log key 3>: <pandas dataframe>
+                         },
+
+        <logger 2 name>: {
+                           <log key 4>: <pandas dataframe>,
+                           <log key 5>: <pandas dataframe>,
+                           <log key 6>: <pandas dataframe>
+                         },
+        ...
+    }
 
     :param filepath: file path to log file
+    :param level: logging level to be parsed for structured logging
     :return: dictionary of parsed log data
     """
+    oldstyle_loglines = []
+    log_data = LogData()
     with open(filepath) as log_file:
-        return parse_output(log_file.readlines())
+        for line in log_file:
+            # only parse json entities
+            if line.startswith('{'):
+                log_data.parse_log_line(line, level)
+            else:
+                oldstyle_loglines.append(line)
+
+    # convert dictionaries to dataframes
+    output_logs = {**log_data.get_log_dataframes(), **_oldstyle_parse_output(oldstyle_loglines)}
+    return output_logs
 
 
-def parse_output(list_of_log_lines):
-    """
-    Parses logged output from a TLO run and create Pandas dataframes for analysis.
+def _oldstyle_parse_output(list_of_log_lines):
+    """Parses logged output from a TLO run and create Pandas dataframes for analysis.
 
-    Use parse_log_file() wrapper if required
+    Used by parse_log_file() to handle old-style TLO logging
 
     Each input line follows the format:
     INFO|<logger name>|<simulation datestamp>|<log key>|<python list or dictionary>
@@ -105,7 +137,7 @@ def parse_output(list_of_log_lines):
     for line in list_of_log_lines:
         # we only parse 'INFO' lines that have 5 parts
         if line.startswith('INFO'):
-            i = parse_line(line.strip())
+            i = _parse_line(line.strip())
             # if this line isn't in the right format
             if not i:
                 continue
@@ -132,7 +164,7 @@ def parse_output(list_of_log_lines):
                 row['date'] = i['sim_date']
             elif isinstance(i['object'], list):
                 if len(df.columns) - 1 != len(i['object']):
-                    logger.warning('List to dataframe %s, number of columns do not match', i['key'])
+                    logger.warning(key='warning', data=f'List to dataframe {i["key"]} number of columns do not match')
                 # add list to columns (skip first column, which is date)
                 row = dict(zip(df.columns[1:], i['object']))
                 row['date'] = i['sim_date']
@@ -142,6 +174,30 @@ def parse_output(list_of_log_lines):
             # append the new row to the dataframe for this logger & log name
             o[i['logger']][i['key']] = df.append(row, ignore_index=True)
     return o
+
+
+def write_log_to_excel(filename, log_dataframes):
+    """Takes the output of parse_log_file() and creates an Excel file from dataframes"""
+    sheets = list()
+    sheet_count = 0
+    metadata = log_dataframes['_metadata']
+    for module, key_df in log_dataframes.items():
+        if module != '_metadata':
+            for key, df in key_df.items():
+                sheet_count += 1
+                sheets.append([module, key, sheet_count, metadata[module][key]['description']])
+
+    writer = pd.ExcelWriter(filename)
+    index = pd.DataFrame(data=sheets, columns=['module', 'key', 'sheet', 'description'])
+    index.to_excel(writer, sheet_name='Index')
+
+    sheet_count = 0
+    for module, key_df in log_dataframes.items():
+        if module != '_metadata':
+            for key, df in key_df.items():
+                sheet_count += 1
+                df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
+    writer.save()
 
 
 def make_calendar_period_lookup():
