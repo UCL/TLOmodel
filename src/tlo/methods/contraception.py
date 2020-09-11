@@ -4,12 +4,11 @@ Switching contraceptive methods, and discontiuation rates by age
 please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Pregnancy.pdf
 for conceptual diagram
 """
-import logging
 from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
 

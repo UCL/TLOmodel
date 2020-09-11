@@ -8,7 +8,7 @@ from tlo.test import random_birth, random_death
 
 def test_individual_death():
     # Create a new simulation to orchestrate matters
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1)
 
     # Register just a test module with random death
     # Note: this approach would allow us to give a different name if desired,
@@ -23,7 +23,6 @@ def test_individual_death():
     rd.death_probability = 0.2
 
     # Seed the random number generators (manually)
-    sim.seed_rngs(1)
     sim.modules['rd'].rng.seed(1)
 
     # Create a population of 2 individuals
@@ -62,11 +61,10 @@ def test_single_step_death():
     # This demonstrates how to test the implementation of a single event in isolation
 
     # Set up minimal simulation
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=1)
     rd = random_death.RandomDeath(name='rd')
     rd.parameters['death_probability'] = 0.1
     sim.register(rd)
-    sim.seed_rngs(1)
     sim.modules['rd'].rng.seed(1)
     sim.make_initial_population(n=10)
 
@@ -106,7 +104,7 @@ def test_birth_and_death():
     # This combines both population-scope and individual-scope events,
     # with more complex logic.
     # Create a new simulation to orchestrate matters
-    sim = Simulation(start_date=Date(1950, 1, 1))
+    sim = Simulation(start_date=Date(1950, 1, 1), seed=2)
 
     # Register modules
     rb = random_birth.RandomBirth(name='rb')
@@ -118,7 +116,6 @@ def test_birth_and_death():
     assert sim.modules['rd'] is rd
 
     # Seed the random number generators
-    sim.seed_rngs(2)
     sim.modules['rd'].rng.seed(2)
     sim.modules['rb'].rng.seed(2)
 
