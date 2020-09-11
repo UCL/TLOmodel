@@ -30,40 +30,6 @@ from tlo.methods import (
     symptommanager
 )
 
-
-
-
-
-
-
-seed = 567
-
-log_config = {
-    "filename": "labour_analysis",   # The name of the output file (a timestamp will be appended).
-    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
-    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
-        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.healthsystem": logging.WARNING,
-        "tlo.methods.bladder_cancer": logging.INFO
-    }
-}
-
-# Basic arguments required for the simulation
-start_date = Date(2010, 1, 1)
-end_date = Date(2010, 4, 1)
-popsize = 1000
-
-# This creates the Simulation instance for this run. Because we've passed the `seed` and
-# `log_config` arguments, these will override the default behaviour.
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-
-
-
-
-
-
-
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
@@ -74,9 +40,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
-# start_date = Date(2010, 1, 1)
-# end_date = Date(2011, 1, 1)
-# popsize = 10000
+start_date = Date(2010, 1, 1)
+end_date = Date(2020, 1, 1)
+popsize = 1000
 
 
 def run_sim(service_availability):
