@@ -12,9 +12,11 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata
+from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -29,6 +31,8 @@ class OtherAdultCancer(Module):
         self.linear_models_for_progession_of_oac_status = dict()
         self.lm_onset_early_other_adult_ca_symptom = None
         self.daly_wts = dict()
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         "init_prop_other_adult_cancer_stage": Parameter(
@@ -149,20 +153,24 @@ class OtherAdultCancer(Module):
         ),
     }
 
-    # Symptom that this module will use
-    SYMPTOMS = {'early_other_adult_ca_symptom'}
-
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Other_Adult_Cancers.xlsx",
                           sheet_name="parameter_values")
         )
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Register Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='early_other_adult_ca_symptom',
+                    odds_ratio_health_seeking_in_adults=4.00)
+        )
+
 
     def initialise_population(self, population):
         """Set property values for the initial population."""
@@ -186,8 +194,8 @@ class OtherAdultCancer(Module):
             sum(p['init_prop_other_adult_cancer_stage']),
             Predictor('age_years').when('.between(30,49)', p['rp_other_adult_cancer_age3049'])
                                   .when('.between(50,69)', p['rp_other_adult_cancer_age5069'])
-                                  .when('.between(70,120)', p['rp_other_adult_cancer_agege70']
-                                  .when('.between(0,14)', 0.0))
+                                  .when('.between(70,120)', p['rp_other_adult_cancer_agege70'])
+                                  .when('.between(0,14)', 0.0)
         )
 
         oac_status_ = \
@@ -506,8 +514,8 @@ class OtherAdultCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_other_adult_cancer']]
 
         for person_id in selected_to_die:
-            self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
+                self.sim.schedule_event(
+                    InstantaneousDeath(self.module, person_id, "OtherAdultCancer"), self.sim.date
             )
 
 
