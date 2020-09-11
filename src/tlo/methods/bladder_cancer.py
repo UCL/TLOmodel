@@ -576,7 +576,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                InstantaneousDeath(self.module, person_id, "OesophagealCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "BladderCancer"), self.sim.date
             )
 
 
