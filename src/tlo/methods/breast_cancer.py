@@ -159,9 +159,6 @@ class BreastCancer(Module):
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Breast_Cancer.xlsx",
