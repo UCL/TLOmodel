@@ -136,12 +136,12 @@ class BladderCancer(Module):
         "rp_bladder_cancer_schisto_h": Parameter(
             Types.REAL, "relative prevalence at baseline of bladder cancer if schisto_h"
         ),
-        "sensitivity_of_cytoscopy_for_tis_t1_bladder_cancer": Parameter(
-            Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer for those with tis_t1"
+        "sensitivity_of_cytoscopy_for_bladder_cancer_blood_urine": Parameter(
+            Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer given blood urine"
         ),
-        "sensitivity_of_cytoscopy_for_t2p_bladder_cancer": Parameter(
-            Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer for those with t2p"
-        ),
+        "sensitivity_of_cytoscopy_for_bladder_cancer_pelvic_pain": Parameter(
+            Types.REAL, "sensitivity of cytoscopy_for diagnosis of bladder cancer given pelvic pain"
+        )
     }
 
     PROPERTIES = {
@@ -171,7 +171,12 @@ class BladderCancer(Module):
         "bc_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
+        ),
+        "date_death_bladder_cancer": Property(
+            Types.DATE,
+            "date bc death"
         )
+
     }
 
     def read_parameters(self, data_folder):
@@ -208,6 +213,7 @@ class BladderCancer(Module):
         df.loc[df.is_alive, "bc_date_treatment"] = pd.NaT
         df.loc[df.is_alive, "bc_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "bc_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "date_death_bladder_cancer"] = pd.NaT
 
         # -------------------- bc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -395,23 +401,22 @@ class BladderCancer(Module):
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of a cytoscope to diagnose bladder cancer
         # This properties of conditional on the test being done only to persons with the Symptom, 'blood_urine'.
-        # todo: not this is dependent on underlying status rather than symptoms
+
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            cytoscopy_for_bladder_cancer_given_tis_t1=DxTest(
+            cytoscopy_for_bladder_cancer_given_blood_urine=DxTest(
                 property='bc_status',
-                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_tis_t1_bladder_cancer'],
+                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_bladder_cancer_blood_urine'],
                 target_categories=["tis_t1", "t2p", "metastatic"]
             )
         )
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            cytoscopy_for_bladder_cancer_given_t2p=DxTest(
+            cytoscopy_for_bladder_cancer_given_pelvic_pain=DxTest(
                 property='bc_status',
-                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_t2p_bladder_cancer'],
+                sensitivity=self.parameters['sensitivity_of_cytoscopy_for_bladder_cancer_pelvic_pain'],
                 target_categories=["tis_t1", "t2p", "metastatic"]
             )
         )
-
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
@@ -578,6 +583,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(
                 InstantaneousDeath(self.module, person_id, "BladderCancer"), self.sim.date
             )
+            df.loc[selected_to_die, 'date_death_bladder_cancer'] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -594,11 +600,10 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "BladderCancer_Investigation_Following_Blood_Urine"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "BladderCancer_Investigation_Following_blood_urine"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -669,11 +674,10 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
 
+        # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_Investigation_Following_pelvic_pain"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -750,7 +754,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint["Over5OPD"] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "bladderCancer_StartTreatment"
+        self.TREATMENT_ID = "BladderCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
@@ -861,12 +865,9 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "BladderCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
@@ -950,7 +951,9 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             'diagnosed_since_last_log': df.bc_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.bc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.bc_date_palliative_care.between(date_lastlog, date_now).sum()
+            'palliative_since_last_log': df.bc_date_palliative_care.between(date_lastlog, date_now).sum(),
+            'death_bladder_cancer_since_last_log': df.date_death_bladder_cancer.between(date_lastlog, date_now).sum()
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
+
