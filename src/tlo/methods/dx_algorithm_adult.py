@@ -14,7 +14,6 @@ logger.setLevel(logging.INFO)
 
 class DxAlgorithmAdult(Module):
     """
-    This is an example/placeholder to show how a diagnostic algorithm can be used.
     The module contains parameters and a function 'diagnose(...)' which is called by a HSI (usually a Generic HSI)
     and returns a 'diagnosis'.
     """

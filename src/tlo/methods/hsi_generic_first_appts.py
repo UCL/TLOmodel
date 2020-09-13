@@ -12,13 +12,10 @@ from tlo.methods.labour import (
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
-from tlo.methods.malaria import HSI_Malaria_tx_adult, HSI_Malaria_tx_5_15, HSI_Malaria_tx_compl_adult, HSI_Malaria_tx_0_5, HSI_Malaria_tx_compl_child
+from tlo.methods.malaria import HSI_Malaria_non_complicated_treatment_adult, HSI_Malaria_non_complicated_treatment_age5_15, HSI_Malaria_complicated_treatment_adult, HSI_Malaria_non_complicated_treatment_age0_5, HSI_Malaria_complicated_treatment_child
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-# TODO: @Tara -- can the name of the HSI be more obviosuly corresponding to the diagnosis code?
-
 
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -75,7 +72,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         # make sure query consumables has the generic hsi as the module requesting
 
-
         # diagnostic algorithm for child <5 yrs
         if age < 5.0:
             # ----------------------------------- CHILD <5 -----------------------------------
@@ -95,7 +91,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             if diagnosis == "severe_malaria":
 
                 # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_tx_compl_child(
+                treatment_hsi = HSI_Malaria_complicated_treatment_child(
                     self.sim.modules["Malaria"], person_id=person_id
                 )
 
@@ -107,7 +103,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             elif diagnosis == "clinical_malaria":
 
                 # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_tx_0_5(
+                treatment_hsi = HSI_Malaria_non_complicated_treatment_age0_5(
                     self.sim.modules["Malaria"], person_id=person_id
                 )
 
@@ -129,7 +125,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             if diagnosis == "severe_malaria":
 
                 # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_tx_compl_child(
+                treatment_hsi = HSI_Malaria_complicated_treatment_child(
                     self.sim.modules["Malaria"], person_id=person_id
                 )
 
@@ -141,7 +137,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             elif diagnosis == "clinical_malaria":
 
                 # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_tx_5_15(
+                treatment_hsi = HSI_Malaria_non_complicated_treatment_age5_15(
                     self.sim.modules["Malaria"], person_id=person_id
                 )
 
@@ -173,7 +169,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                                                 depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
 
-            # Run DxAlgorithmChild to get additional diagnoses:
+            # Run DxAlgorithmAdult to get additional diagnoses:
             diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
                 person_id=person_id, hsi_event=self
             )
@@ -181,7 +177,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             if diagnosis == "severe_malaria":
 
                 # Make relevant treatment HSI event
-                treatment_hsi = HSI_Malaria_tx_compl_adult(
+                treatment_hsi = HSI_Malaria_complicated_treatment_adult(
                     self.sim.modules["Malaria"], person_id=person_id
                 )
 
@@ -193,7 +189,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             elif diagnosis == "clinical_malaria":
 
                 # Make relevant treatment HSI event
-                treatment_hsi = HSI_Malaria_tx_adult(
+                treatment_hsi = HSI_Malaria_non_complicated_treatment_adult(
                     self.sim.modules["Malaria"], person_id=person_id
                 )
 
@@ -201,7 +197,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     treatment_hsi, priority=1, topen=self.sim.date, tclose=None
                 )
-
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -286,9 +281,12 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
 
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
+
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
         age = df.at[person_id, "age_years"]
+
+        hs = self.sim.modules["HealthSystem"]
 
         if 'Labour' in self.sim.modules:
             mni = self.sim.modules['Labour'].mother_and_newborn_info
@@ -329,13 +327,19 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # if person's symptoms are on severe malaria list then treat
         any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
 
+        # Run DxAlgorithmAdult to log consumable and confirm malaria parasitaemia:
+        diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
+            person_id=person_id, hsi_event=self
+        )
+
         # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-        if any_symptoms_indicative_of_severe_malaria:
+        if any_symptoms_indicative_of_severe_malaria & \
+            ((diagnosis == "severe_malaria") | (diagnosis == "clinical_malaria")):
 
             # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-            if df.at[person_id, "age_years"] < 5.0:
+            if age < 5.0:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Malaria_tx_compl_child(
+                    hsi_event=HSI_Malaria_complicated_treatment_child(
                         self.sim.modules["Malaria"], person_id=person_id
                     ),
                     priority=0,
@@ -343,14 +347,14 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 )
             else:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Malaria_tx_compl_adult(
+                    hsi_event=HSI_Malaria_complicated_treatment_adult(
                         self.sim.modules["Malaria"], person_id=person_id
                     ),
                     priority=0,
                     topen=self.sim.date,
                 )
-
-
+        # else:
+            # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
         # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
         if 'craving_sandwiches' in symptoms:

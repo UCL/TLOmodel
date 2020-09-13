@@ -1223,7 +1223,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             f"HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child {person_id} on {self.sim.date}"
                         )
 
-                        treat = HSI_Malaria_tx_compl_child(
+                        treat = HSI_Malaria_complicated_treatment_child(
                             self.sim.modules["Malaria"], person_id=person_id
                         )
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1238,7 +1238,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             (self.sim.date + DateOffset(days=1)),
                         )
 
-                        treat = HSI_Malaria_tx_compl_adult(
+                        treat = HSI_Malaria_complicated_treatment_adult(
                             self.module, person_id=person_id
                         )
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1265,7 +1265,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             (self.sim.date + DateOffset(days=1)),
                         )
 
-                        treat = HSI_Malaria_tx_0_5(self.module, person_id=person_id)
+                        treat = HSI_Malaria_non_complicated_treatment_age0_5(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             treat, priority=1, topen=self.sim.date, tclose=None
                         )
@@ -1278,7 +1278,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             (self.sim.date + DateOffset(days=1)),
                         )
 
-                        treat = HSI_Malaria_tx_5_15(self.module, person_id=person_id)
+                        treat = HSI_Malaria_non_complicated_treatment_age5_15(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             treat, priority=1, topen=self.sim.date, tclose=None
                         )
@@ -1291,7 +1291,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                             (self.sim.date + DateOffset(days=1)),
                         )
 
-                        treat = HSI_Malaria_tx_adult(self.module, person_id=person_id)
+                        treat = HSI_Malaria_non_complicated_treatment_adult(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
                             treat, priority=1, topen=self.sim.date, tclose=None
                         )
@@ -1301,7 +1301,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
+class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for children <15 kg. Includes treatment plus one rdt
     """
@@ -1374,7 +1374,7 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
+class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for children >15 kg. Includes treatment plus one rdt
     """
@@ -1447,7 +1447,7 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
+class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for adults. Includes treatment plus one rdt
     """
@@ -1519,7 +1519,7 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
+class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for complicated malaria in children
     """
@@ -1590,7 +1590,7 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
+class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for complicated malaria in adults
     """
