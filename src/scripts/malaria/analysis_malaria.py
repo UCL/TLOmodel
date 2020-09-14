@@ -32,14 +32,14 @@ t0 = time.time()
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
-popsize = 5000
+end_date = Date(2015, 12, 31)
+popsize = 500
 
 # Establish the simulation object
 log_config = {
     'filename': 'Malaria_LogFile',
     'directory': './outputs',
-    'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.INFO}
+    'custom_levels': {"*": logging.WARNING, "tlo.methods.malaria": logging.DEBUG}
 }
 
 sim = Simulation(start_date=start_date, seed=25, log_config=log_config)
@@ -60,8 +60,8 @@ sim.register(
         ignore_cons_constraints=True,
         ignore_priority=True,
         capabilities_coefficient=1.0,
-        disable=True,
-    ),  # disables the health system constraints so all HSI events run
+        disable=False,
+    ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     dx_algorithm_child.DxAlgorithmChild(),

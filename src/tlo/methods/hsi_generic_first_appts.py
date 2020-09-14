@@ -169,34 +169,36 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                                                 depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
 
-            # Run DxAlgorithmAdult to get additional diagnoses:
-            diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
-                person_id=person_id, hsi_event=self
-            )
-
-            if diagnosis == "severe_malaria":
-
-                # Make relevant treatment HSI event
-                treatment_hsi = HSI_Malaria_complicated_treatment_adult(
-                    self.sim.modules["Malaria"], person_id=person_id
+            # DxAlgorithmAdult only exists in the malaria branch currently
+            if "malaria" in self.sim.modules:
+                # Run DxAlgorithmAdult to get additional diagnoses:
+                diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
+                    person_id=person_id, hsi_event=self
                 )
 
-                # Schedule relevant treatment HSI event
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treatment_hsi, priority=1, topen=self.sim.date, tclose=None
-                )
+                if diagnosis == "severe_malaria":
 
-            elif diagnosis == "clinical_malaria":
+                    # Make relevant treatment HSI event
+                    treatment_hsi = HSI_Malaria_complicated_treatment_adult(
+                        self.sim.modules["Malaria"], person_id=person_id
+                    )
 
-                # Make relevant treatment HSI event
-                treatment_hsi = HSI_Malaria_non_complicated_treatment_adult(
-                    self.sim.modules["Malaria"], person_id=person_id
-                )
+                    # Schedule relevant treatment HSI event
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        treatment_hsi, priority=1, topen=self.sim.date, tclose=None
+                    )
 
-                # Schedule relevant treament HSI event
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treatment_hsi, priority=1, topen=self.sim.date, tclose=None
-                )
+                elif diagnosis == "clinical_malaria":
+
+                    # Make relevant treatment HSI event
+                    treatment_hsi = HSI_Malaria_non_complicated_treatment_adult(
+                        self.sim.modules["Malaria"], person_id=person_id
+                    )
+
+                    # Schedule relevant treament HSI event
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        treatment_hsi, priority=1, topen=self.sim.date, tclose=None
+                    )
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')

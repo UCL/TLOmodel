@@ -183,34 +183,39 @@ class DxAlgorithmChild(Module):
 
         if "fever" in self.sim.modules["SymptomManager"].has_what(person_id):
 
-            # call the DxTest RDT to diagnose malaria
-            dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run='malaria_rdt',
-                hsi_event=hsi_event
-            )
+            if "malaria" in self.sim.modules:
 
-            if dx_result:
+                # call the DxTest RDT to diagnose malaria
+                dx_result = hs.dx_manager.run_dx_test(
+                    dx_tests_to_run='malaria_rdt',
+                    hsi_event=hsi_event
+                )
 
-                # severe malaria
-                if df.at[person_id, "ma_inf_type"] == "severe":
-                    diagnosis_str = "severe_malaria"
+                if dx_result:
 
-                    logger.debug(
-                        f"dx_algorithm_child diagnosing severe malaria for person {person_id} on date {self.sim.date}")
+                    # severe malaria
+                    if df.at[person_id, "ma_inf_type"] == "severe":
+                        diagnosis_str = "severe_malaria"
 
-                # clinical malaria
-                elif df.at[person_id, "ma_inf_type"] == "clinical":
+                        logger.debug(
+                            f"dx_algorithm_child diagnosing severe malaria for person {person_id} on date {self.sim.date}")
 
-                    diagnosis_str = "clinical_malaria"
+                    # clinical malaria
+                    elif df.at[person_id, "ma_inf_type"] == "clinical":
 
-                    logger.debug(
-                        "dx_algorithm_child diagnosing clinical malaria for person %d on date %s",
-                        person_id,
-                        self.sim.date,
-                    )
+                        diagnosis_str = "clinical_malaria"
+
+                        logger.debug(
+                            "dx_algorithm_child diagnosing clinical malaria for person %d on date %s",
+                            person_id,
+                            self.sim.date,
+                        )
+
+                else:
+                    diagnosis_str = "negative_malaria_test"
 
             else:
-                diagnosis_str = "negative_malaria_test"
+                diagnosis_str = "non-malarial fever"
 
         logger.debug(f"{person_id} diagnosis is {diagnosis_str}")
 

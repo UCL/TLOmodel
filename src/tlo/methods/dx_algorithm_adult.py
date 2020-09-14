@@ -70,31 +70,36 @@ class DxAlgorithmAdult(Module):
                 hsi_event=hsi_event
             )
 
-            if dx_result:
+            if "malaria" in self.sim.modules:
 
-                # severe malaria
-                if df.at[person_id, "ma_inf_type"] == "severe":
-                    diagnosis_str = "severe_malaria"
+                if dx_result:
 
-                    logger.debug(
-                        "DxAlgorithmAdult diagnosing severe malaria for person %d on date %s",
-                        person_id,
-                        self.sim.date,
-                    )
+                    # severe malaria
+                    if df.at[person_id, "ma_inf_type"] == "severe":
+                        diagnosis_str = "severe_malaria"
 
-                # clinical malaria
-                elif df.at[person_id, "ma_inf_type"] == "clinical":
+                        logger.debug(
+                            "DxAlgorithmAdult diagnosing severe malaria for person %d on date %s",
+                            person_id,
+                            self.sim.date,
+                        )
 
-                    diagnosis_str = "clinical_malaria"
+                    # clinical malaria
+                    elif df.at[person_id, "ma_inf_type"] == "clinical":
 
-                    logger.debug(
-                        "DxAlgorithmAdult diagnosing clinical malaria for person %d on date %s",
-                        person_id,
-                        self.sim.date,
-                    )
+                        diagnosis_str = "clinical_malaria"
+
+                        logger.debug(
+                            "DxAlgorithmAdult diagnosing clinical malaria for person %d on date %s",
+                            person_id,
+                            self.sim.date,
+                        )
+
+                else:
+                    diagnosis_str = "negative_malaria_test"
 
             else:
-                diagnosis_str = "negative_malaria_test"
+                diagnosis_str = "non-malarial fever"
 
         logger.debug(f"{person_id} diagnosis is {diagnosis_str}")
 
