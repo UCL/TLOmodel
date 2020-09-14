@@ -317,44 +317,46 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # TODO: Trigger surgical care for injuries.
 
         # ------ MALARIA ------
-        # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
-        sev_set = {"acidosis",
-                   "coma_convulsions",
-                   "renal_failure",
-                   "shock",
-                   "jaundice",
-                   "anaemia"
-                   }
+        if "malaria" in self.sim.modules:
 
-        # if person's symptoms are on severe malaria list then treat
-        any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
+            # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
+            sev_set = {"acidosis",
+                       "coma_convulsions",
+                       "renal_failure",
+                       "shock",
+                       "jaundice",
+                       "anaemia"
+                       }
 
-        # Run DxAlgorithmAdult to log consumable and confirm malaria parasitaemia:
-        diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
-            person_id=person_id, hsi_event=self
-        )
+            # if person's symptoms are on severe malaria list then treat
+            any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
 
-        # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-        if any_symptoms_indicative_of_severe_malaria & \
-            ((diagnosis == "severe_malaria") | (diagnosis == "clinical_malaria")):
+            # Run DxAlgorithmAdult to log consumable and confirm malaria parasitaemia:
+            diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
+                person_id=person_id, hsi_event=self
+            )
 
-            # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-            if age < 5.0:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Malaria_complicated_treatment_child(
-                        self.sim.modules["Malaria"], person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                )
-            else:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Malaria_complicated_treatment_adult(
-                        self.sim.modules["Malaria"], person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                )
+            # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
+            if any_symptoms_indicative_of_severe_malaria & \
+                ((diagnosis == "severe_malaria") | (diagnosis == "clinical_malaria")):
+
+                # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
+                if age < 5.0:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Malaria_complicated_treatment_child(
+                            self.sim.modules["Malaria"], person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                    )
+                else:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Malaria_complicated_treatment_adult(
+                            self.sim.modules["Malaria"], person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                    )
         # else:
             # treat symptoms acidosis, coma_convulsions, renal_failure, shock, jaundice, anaemia
 
