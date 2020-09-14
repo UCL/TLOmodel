@@ -440,6 +440,9 @@ class Malaria(Module):
         self.clinical_symptoms(df, clin)
 
         for person in df.loc[clin].index:
+            # clinical symptoms resolve after 5 days
+            # parasitaemia clears after much longer
+
             # logger.debug(
             #     'Malaria Event: scheduling parasite clearance and symptom end for symptomatic person %d',
             #     person)
@@ -450,6 +453,10 @@ class Malaria(Module):
 
             cure = MalariaParasiteClearanceEvent(self, person)
             self.sim.schedule_event(cure, (self.sim.date + date_para_days))
+
+            # symptoms are resolved using the symptom manager but have to change ma_inf_type == "clinical" to "none"
+            change_clinical_status = MalariaCureEvent(self, person)
+            self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
 
         # SEVERE CASES
         severe = df.index[(df.ma_inf_type == "severe") & (df.ma_date_infected == now)]
@@ -997,6 +1004,10 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
                 cure = MalariaParasiteClearanceEvent(self, person)
                 self.sim.schedule_event(cure, (self.sim.date + date_para_days))
+
+                # symptoms are resolved using the symptom manager but have to change ma_inf_type == "clinical" to "none"
+                change_clinical_status = MalariaCureEvent(self, person)
+                self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
 
             # SEVERE
             severe = df.index[
