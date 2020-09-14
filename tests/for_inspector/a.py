@@ -1,7 +1,7 @@
 import inspect
 
 class Person:
-
+    '''The basic Person class'''
     def __init__(self, name):
         self._name = name
 
