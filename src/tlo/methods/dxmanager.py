@@ -157,7 +157,7 @@ class DxTest:
     Performance of test:
         Specify any of the following if the property's dtype is bool
             :param sensitivity: the sensitivity of the test (probability that a true value will be observed as true)
-            :param specificity: the specificity of the test (probability that a false value will be observed as false)
+            :param specificity: the specificity of the test (probabilit that a false value will be observed as false)
         Specify any of the following if the property's dtype is numeric
             :param measure_error_stdev: the standard deviation of the normally distributed (and zero-centered) error in
                                         the observation of a continuous property
