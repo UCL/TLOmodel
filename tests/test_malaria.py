@@ -83,7 +83,7 @@ def test_sims(tmpdir):
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
-    # check scheduled malaria deaths occurring only due to severe malaria (not clinical or asym)
+    # check malaria deaths only being scheduled due to severe malaria (not clinical or asym)
     df = sim.population.props
     assert not (
         df.ma_date_death & ((df.ma_inf_type == "clinical") | (df.ma_inf_type == "none"))
