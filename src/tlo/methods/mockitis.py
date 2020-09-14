@@ -64,6 +64,7 @@ class Mockitis(Module):
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
+        '''This is the docstring for read_parameters method.'''
         p = self.parameters
 
         p['p_infection'] = 0.001

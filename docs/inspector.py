@@ -7,18 +7,16 @@ import inspect
 import importlib
 from os import walk
 from os.path import join
+import os.path
+import sys
+
+sys.path.insert(0, '../src')  # Needed if calling this script from its directory
+sys.path.insert(0, './src')  # Needed if calling from directory above (e.g. in tox.ini)
+
 import tlo
 from tlo import Module
 
 from pathlib import Path
-
-
-# Ideally make these defaults but have command-line options.
-root_dir = Path(__file__).resolve().parents[2]
-MODULE_DIR = f"{root_dir}/src/tlo/methods"  # The trailing slash after tlo is required. # f"{root_dir}/src/tlo/methods"   #./src/tlo/methods"
-#LEADER = "tlo."  # "tlo.methods"
-RST_DIR = f"{root_dir}/docs/reference"
-
 
 def get_package_name(dirpath):
     # e.g. if dirpath = "./src/tlo/logging/sublog"
@@ -253,7 +251,7 @@ def get_class_output_string(classinfo):
         #
         if inspect.isfunction(obj):
             print(f"DEBUG: got a function: {name}, {object}")
-            mystr = f"\n\n**Function {name}:**\n"
+            mystr = f"\n\n**Function {name}():**\n"
             mydat = inspect.getmembers(obj)
             this_func_str = ""
             for the_name, the_object in mydat:
@@ -364,7 +362,7 @@ def get_base_string (class_name, class_obj, base_obj):
     # to its documentation.
     # e.g. the string might be "tlo.core.Module <./tlo.core.html#tlo.core.Module>"
     mystr = "`" + fqn + " " + link + "`_"
-    print(f"DEBUG: get_base_string(): {mystr}")
+    # print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
 
 
@@ -382,7 +380,7 @@ def get_link(base_fqn, base_obj):
     else:
         module_name = module_defining_class
     module_name = module_name.replace("'", "")  # Remove single speech marks
-    print(f"My lovely module is {module_name}")  # e.g. tlo.core
+    # print(f"My lovely module is {module_name}")  # e.g. tlo.core
 
     # Need name of base's file + fqn of base
     # We want a link string like: <./tlo.core.html#tlo.core.Module>
@@ -394,7 +392,7 @@ def get_link(base_fqn, base_obj):
     # or e.g. pointing to http://0.0.0.0:8000/reference/tlo.core.html#tlo.core.Module
     # the link would be <./tlo.core.html#tlo.core.Module>
     link_to_base = "<./" + module_name + ".html" + "#" + base_fqn + ">"
-    print(f"link_to_base = {link_to_base}")
+    # print(f"link_to_base = {link_to_base}")
     return link_to_base
 
 
@@ -448,6 +446,11 @@ def create_table(mydict):
 if __name__ == '__main__':
 
     # Add command-line processing here
+    # Ideally make these defaults but have command-line options.
+    root_dir = Path(__file__).resolve().parents[1]  # Ideally the TLOmodel directory.
+    MODULE_DIR = f"{root_dir}/src/tlo/methods"  # The trailing slash after tlo is required, if using .../src/tlo/ as root.
+    # LEADER = "tlo."  # "tlo.methods"
+    RST_DIR = f"{root_dir}/docs/reference"
     #context = LEADER
     module_directory = MODULE_DIR
     rst_directory = RST_DIR
