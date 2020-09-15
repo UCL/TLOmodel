@@ -54,8 +54,8 @@ def test_get_package_name_no_exceptions(dirpath, result):
 def test_get_package_name_with_exceptions(dirpath):
     with pytest.raises(ValueError) as e:
         inspector.get_package_name(dirpath)
-    #assert "Sorry, /tlo/ isn't in dirpath" in str(e.value)
     assert f"Sorry, /tlo/ isn't in dirpath ({dirpath})" == str(e.value)
+
 
 def get_classes_for_testing():
     fqn = "for_inspector.a"
@@ -76,26 +76,24 @@ def test_get_classes_in_module():
 
 
 def test_extract_bases():
-    # TODO: this is a bit broken at the moment.
     classes = get_classes_for_testing()
     # Each entry in the list returned is itself a list of:
     # [class name, class object, line number]
-    c5 = classes[-1]
-    name, obj = c5[0:2]
+    offspring = classes[-1]
+    name, obj = offspring[0:2]
     expected = "**Bases:**\n\n"
-    #expected += f"Base #1: Father {fqn}\n\n"
-    expected += "Base #2: Mother\n\n"
-    ##assert expected == inspector.extract_bases(name, obj)
-    #base_string_1 = inspector.get_base_string(name, obj)
-    # Typical example of bases:
-    # (<class 'tlo.methods.mockitis.Mockitis'>, <class 'tlo.core.Module'>, <class 'object'>)
-    #assert
+    expected += f"Base #1: `for_inspector.a.Father <./for_inspector.a.html#for_inspector.a.Father>`_\n\n"
+    expected += f"Base #2: `for_inspector.a.Mother <./for_inspector.a.html#for_inspector.a.Mother>`_\n\n"
+    assert expected == inspector.extract_bases(name, obj)
+
 
 def test_write_rst_file():
     pass
 
+
 def test_get_class_output_string():
     pass
+
 
 def test_get_base_string():
     #modules = generate_module_list("./for_inspector")  # List of .py files
@@ -110,8 +108,10 @@ def test_get_base_string():
         #write_rst_file(rst_directory, fqn, module_obj)
     pass
 
+
 def test_get_link():
     pass
+
 
 def test_create_table():
     pass

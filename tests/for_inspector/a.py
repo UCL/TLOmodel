@@ -32,12 +32,14 @@ class Father:
     def get_age(self):
         return self._age
 
+
 class Mother:
     def __init__(self, job):
         self._job = job
 
     def get_job(self):
         return self._job
+
 
 class Offspring (Father, Mother):
     def __init__(self, age, job, name):
@@ -56,10 +58,10 @@ class Offspring (Father, Mother):
 
 
 if __name__ == '__main__':
-    p = Person("john")
+    p = Person("John")
     #import pdb;pdb.set_trace()
     print(f"The name of this person is {p.get_name()}")
-    e = Employee("peter")
+    e = Employee("Peter")
     e.pay(30000)
     print(f"Employee details: {e.get_details()}")
 
