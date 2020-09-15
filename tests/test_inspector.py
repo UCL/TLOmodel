@@ -96,17 +96,19 @@ def test_get_class_output_string():
 
 
 def test_get_base_string():
-    #modules = generate_module_list("./for_inspector")  # List of .py files
-    #assert len(modules) = 1
-    #m = modules[0]
-    #fqn = "for_inspector/a"
-    #assert m == m[]
-    #for m in modules:  # e.g. mockitis.py
-        #fqn = get_fully_qualified_name(m, context)  # e.g. "tlo.methods.mockitis"
-        #module_obj = importlib.import_module(fqn)  # Object creation from string.
-        #print(f"module_obj is {module_obj}")
-        #write_rst_file(rst_directory, fqn, module_obj)
-    pass
+    classes = get_classes_for_testing()
+    # Each item in classes list has format: [class name, class object, line number]
+    # In this test case, Person is the base class of Employee.
+    person_info = classes[0]
+    person_name = person_info[0]
+    person_object = person_info[1]
+    employee_info = classes[1]
+    employee_name = employee_info[0]
+    employee_object = employee_info[1]
+    result = inspector.get_base_string(employee_name, employee_object, person_object)
+    # `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
+    expected = "`for_inspector.a.Person <./for_inspector.a.html#for_inspector.a.Person>`_"
+    assert result == expected
 
 
 def test_get_link():
