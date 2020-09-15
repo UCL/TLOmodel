@@ -1,7 +1,5 @@
 import os
-from datetime import datetime
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -41,6 +39,7 @@ def check_dtypes(simulation):
 
 
 def test_measles_cases_and_hsi_occurring(tmpdir):
+
     log_config = {
         "filename": "measles_test",  # The name of the output file (a timestamp will be appended).
         "directory": tmpdir,  # The default output path is `./outputs`. Change it here, if necessary
@@ -56,7 +55,7 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
         demography.Demography(resourcefilepath=resources),
         healthsystem.HealthSystem(
             resourcefilepath=resources,
-            service_availability=["*"],  # no treatment IDs allowed
+            service_availability=["*"],  # all treatment IDs allowed
             mode_appt_constraints=0,
             ignore_cons_constraints=True,
             ignore_priority=True,
@@ -89,13 +88,15 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
     # check people getting measles
     # assert df["me_has_measles"].sum > 0  # current cases of measles
     total_inc = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
-    assert total_inc.sum > 0
+    assert total_inc.sum() > 0
 
     # check people die of measles
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
 
+
+#########################################################################################################
     # check symptoms assigned - all those with measles should have rash
-    has_symptoms = set(sim.modules['SymptomManager'].who_has('rash'))
+    has_symptoms = sim.modules['SymptomManager'].who_has('rash')
     current_measles = df.index[df.is_alive & df.me_has_measles]
     assert set(current_measles) < set(has_symptoms)
 
@@ -120,7 +121,7 @@ def test_measles_high_death_rate(tmpdir):
         demography.Demography(resourcefilepath=resources),
         healthsystem.HealthSystem(
             resourcefilepath=resources,
-            service_availability=["*"],  # no treatment IDs allowed
+            service_availability=["*"],  # all treatment IDs allowed
             mode_appt_constraints=0,
             ignore_cons_constraints=True,
             ignore_priority=True,
@@ -159,6 +160,7 @@ def test_measles_high_death_rate(tmpdir):
 
 
 def test_measles_zero_death_rate(tmpdir):
+
     log_config = {
         "filename": "measles_test",  # The name of the output file (a timestamp will be appended).
         "directory": tmpdir,  # The default output path is `./outputs`. Change it here, if necessary
@@ -174,7 +176,7 @@ def test_measles_zero_death_rate(tmpdir):
         demography.Demography(resourcefilepath=resources),
         healthsystem.HealthSystem(
             resourcefilepath=resources,
-            service_availability=["*"],  # no treatment IDs allowed
+            service_availability=["*"],  # all treatment IDs allowed
             mode_appt_constraints=0,
             ignore_cons_constraints=True,
             ignore_priority=True,
@@ -239,7 +241,6 @@ def test_no_vaccine_measles_rebound(tmpdir):
         symptommanager.SymptomManager(resourcefilepath=resources),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         dx_algorithm_child.DxAlgorithmChild(),
-        # dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resources),
         contraception.Contraception(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
