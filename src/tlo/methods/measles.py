@@ -364,7 +364,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving ORS and vitamin A to person {person_id}")
 
-            # schedule symptom resolution following treatment
+            # schedule symptom resolution following treatment: assume perfect treatment
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
                                     self.sim.date + DateOffset(days=7))
 
