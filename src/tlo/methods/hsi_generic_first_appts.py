@@ -12,6 +12,7 @@ from tlo.methods.labour import (
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
+from tlo.methods.measles import HSI_Measles_Treatment
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -63,14 +64,36 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
+
+        #--------------------------- measles diagnosis ---------------------------
+
+        # measles diagnosis and treatment referral (independent of age)
+        if "rash" in symptoms:
+            logger.debug(key="measles",
+                         data=f"Start treatment for measles for person {person_id}")
+
+            hsi_event = HSI_Measles_Treatment(module=self.sim.modules['Measles'],
+                                              person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event,
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+        #--------------------------- IMCI ---------------------------
+
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
+
             # It's a child and we are in FacilityLevel1, so run the the child management routine:
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
             # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
             if 'diarrhoea' in symptoms:
                 self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
+
+        #--------------------------- ADULT DIAGNOSIS ---------------------------
 
         else:
             # It's an adult

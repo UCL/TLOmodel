@@ -5,11 +5,10 @@ are put here rather than the individual disease modules.
 
 There should be a method here to respond to every symptom that a child could present with. Currently this module is
 served by the following disease modules:
-* Diarrhoea
-
-
+* Diarrhoea, measles
 """
-from tlo import Module
+
+from tlo import Module, logging
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Dysentery,
     HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
@@ -19,6 +18,9 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanC,
 )
 from tlo.methods.dxmanager import DxTest
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class DxAlgorithmChild(Module):
@@ -160,3 +162,5 @@ class DxAlgorithmChild(Module):
                          tclose=None
                          )
         # -----------------------------------------------------
+
+
