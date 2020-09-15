@@ -256,6 +256,10 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
                     duration_in_days=14,  # same duration for all symptoms
                 )
 
+        # schedule symptom resolution without treatment - this only occurs if death doesn't happen first
+        self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
+                                self.sim.date + DateOffset(days=14))
+
         # probability of death
         if rng.random_sample(size=1) < symptom_prob.loc[symptom_prob.symptom == "death", "probability"].values[0]:
             logger.debug(key="MeaslesOnsetEvent",
