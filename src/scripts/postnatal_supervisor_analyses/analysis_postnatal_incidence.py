@@ -1,55 +1,34 @@
 import datetime
-import os
 from pathlib import Path
+import matplotlib.pyplot as plt
 
+import pandas as pd
 from tlo import Date, Simulation
-from tlo.methods import (
-    antenatal_care,
-    contraception,
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthseekingbehaviour,
-    healthsystem,
-    labour,
-    newborn_outcomes,
-    pregnancy_supervisor,
-    postnatal_supervisor,
-    symptommanager,
-    hiv,
-    male_circumcision,
-    tb
+from tlo.analysis.utils import (
+    parse_log_file,
 )
+from tlo.methods import demography, contraception, labour, enhanced_lifestyle, newborn_outcomes, healthsystem, \
+    pregnancy_supervisor, antenatal_care, symptommanager, healthseekingbehaviour, male_circumcision, hiv, tb, \
+    postnatal_supervisor
 
-# Where will outputs go
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+# %%
+outputpath = Path("./outputs")
+resourcefilepath = Path("./resources")
 
-# date-stamp to label log files and any other outputs
+# Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# The resource files
-try:
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-except NameError:
-    # running interactively
-    resourcefilepath = 'resources'
+# %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 10000
+popsize = 500
 
+# add file handler for the purpose of logging
+sim = Simulation(start_date=start_date)
 
-def check_dtypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
-
-def test_run():
-    sim = Simulation(start_date=start_date)
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+# run the simulation
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -66,11 +45,15 @@ def test_run():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
+logfile = sim.configure_logging(filename="LogFile")
+sim.seed_rngs(1)
+sim.make_initial_population(n=popsize)
+sim.simulate(end_date=end_date)
 
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+# Get the output from the logfile
+output = parse_log_file(logfile)
 
-    check_dtypes(sim)
-
-test_run()
+stats = output['tlo.methods.postnatal_supervisor']['summary_stats']
+stats['date'] = pd.to_datetime(stats['date'])
+stats['year'] = stats['date'].dt.year
+x='y'
