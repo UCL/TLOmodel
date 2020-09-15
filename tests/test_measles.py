@@ -44,7 +44,7 @@ def check_dtypes(simulation):
 # only hpv should stay at zero, other vaccines start as individual events (year=2010-2018)
 # coverage should gradually decline for all after 2018
 # hard constraints (mode=2) and zero capabilities
-def test_no_vaccine(tmpdir):
+def test_no_vaccine_measles_rebound(tmpdir):
     log_config = {
         "filename": "measles_test",  # The name of the output file (a timestamp will be appended).
         "directory": tmpdir,  # The default output path is `./outputs`. Change it here, if necessary
@@ -69,7 +69,7 @@ def test_no_vaccine(tmpdir):
         ),
         # disables the health system constraints so all HSI events run
         symptommanager.SymptomManager(resourcefilepath=resources),
-        healthseekingbehaviour.HealthSeekingBehaviour(),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
         dx_algorithm_child.DxAlgorithmChild(),
         # dx_algorithm_adult.DxAlgorithmAdult(),
         healthburden.HealthBurden(resourcefilepath=resources),
@@ -110,21 +110,7 @@ def test_no_vaccine(tmpdir):
     assert unvaccinated == 100
 
     # check measles incidence (in the unvaccinated cohort) is at pre-EPI levels
-    # plot should show rebound after 2019
     output = log_df["tlo.methods.measles"]["incidence"]
     model_inc = output["inc_1000py"]
-    model_date = output["date"]
 
-    # ----------------------------------- PLOT -----------------------------------#
-    plt.style.use("ggplot")
-
-    # Measles incidence
-    plt.subplot(111)  # numrows, numcols, fignum
-    plt.plot(model_date, model_inc)
-    plt.title("Measles incidence")
-    plt.xlabel("Date")
-    plt.ylabel("Incidence per 1000py")
-    plt.xticks(rotation=90)
-    plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-
-    plt.show()
+    assert model_inc.loc[len(model_inc)-1] > 2  # baseline incidence per 1000py

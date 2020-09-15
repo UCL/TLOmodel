@@ -142,3 +142,4 @@ def test_epi_scheduling_hsi_events(tmpdir):
     # check only 3 doses max of dtp/pneumo
     assert (df.va_dtp <= 3).all()
     assert (df.va_pneumo <= 3).all()
+

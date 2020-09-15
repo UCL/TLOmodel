@@ -91,20 +91,20 @@ sim.simulate(end_date=end_date)
 log_df = parse_log_file(sim.log_filepath)
 
 # ------------------------------------- MODEL OUTPUTS  ------------------------------------- #
-#
-# model_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
-# model_date = log_df["tlo.methods.measles"]["incidence"]["date"]
-# # ------------------------------------- PLOTS  ------------------------------------- #
-#
-# plt.style.use("ggplot")
-#
-# # Measles incidence
-# plt.subplot(111)  # numrows, numcols, fignum
-# plt.plot(model_date, model_measles)
-# plt.title("Measles incidence")
-# plt.xlabel("Date")
-# plt.ylabel("Incidence per 1000py")
-# plt.xticks(rotation=90)
-# plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-#
-# plt.show()
+
+model_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
+model_date = log_df["tlo.methods.measles"]["incidence"]["date"]
+# ------------------------------------- PLOTS  ------------------------------------- #
+
+plt.style.use("ggplot")
+
+# Measles incidence
+plt.subplot(111)  # numrows, numcols, fignum
+plt.plot(model_date, model_measles)
+plt.title("Measles incidence")
+plt.xlabel("Date")
+plt.ylabel("Incidence per 1000py")
+plt.xticks(rotation=90)
+plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+
+plt.show()
