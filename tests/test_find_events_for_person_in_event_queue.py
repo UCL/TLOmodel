@@ -31,12 +31,12 @@ except NameError:
 
 
 def test_can_look_at_future_events():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
@@ -47,7 +47,6 @@ def test_can_look_at_future_events():
                  chronicsyndrome.ChronicSyndrome()
                  )
 
-    sim.seed_rngs(0)
     sim.make_initial_population(n=10)
 
     # check can look at future events in the sim.event_queue and HSI_EVENT_QUEUE:

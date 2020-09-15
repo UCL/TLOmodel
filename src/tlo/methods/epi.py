@@ -61,9 +61,6 @@ class Epi(Module):
         df = population.props
         p = self.parameters
 
-        logger.debug(key="initialise pop",
-                     data="This is epi initialising the population")
-
         # Set default for properties
         df.loc[df.is_alive, "va_bcg"] = False
         df.loc[df.is_alive, "va_opv"] = 0
@@ -151,9 +148,6 @@ class Epi(Module):
         df = self.sim.population.props  # shortcut to the population props dataframe
         p = self.parameters
         year = self.sim.date.year
-
-        logger.debug(key="on_birth",
-                     data="This is on_birth scheduling vaccinations")
 
         # look up coverage of every vaccine
         # anything delivered after 12months needs the estimate from the following year
@@ -288,8 +282,6 @@ class Epi(Module):
 class BcgVaccineEvent(Event, IndividualScopeEventMixin):
     """ give BCG vaccine at birth """
     def apply(self, person_id):
-        logger.debug(key="BcgVaccineEvent", data=f"BcgVaccineEvent scheduled for {person_id}")
-
         df = self.sim.population.props
         df.at[person_id, "va_bcg"] = True
 
@@ -366,7 +358,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=12))
 
     def apply(self, population):
-        logger.debug(key="HpvScheduleEvent", data="HpvScheduleEvent selecting eligible 9-yr olds for HPV vaccine")
+        logger.debug(key="debug", data="HpvScheduleEvent selecting eligible 9-yr olds for HPV vaccine")
 
         df = population.props
         now = self.sim.date
@@ -381,7 +373,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
         scheduled_vax_dates = now + pd.to_timedelta(random_day, unit="d")
 
         for index, person_id in enumerate(hpv_vax):
-            logger.debug(key="HpvScheduleEvent", data=f"HpvScheduleEvent scheduling HPV vaccine for {person_id}")
+            logger.debug(key="debug", data=f"HpvScheduleEvent scheduling HPV vaccine for {person_id}")
 
             # find the index in hpv_vax
             # then select that value from the scheduled_vax_date
@@ -422,13 +414,9 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = self.treatment_id()
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 

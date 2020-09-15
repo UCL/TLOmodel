@@ -4,7 +4,8 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography
+from tlo.methods import Metadata
+from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 
 # todo: code specific clinic visits
@@ -17,6 +18,8 @@ class Epilepsy(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     # Module parameters
     PARAMETERS = {
@@ -384,7 +387,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         for individual_id in alive_seiz_stat_2_or_3_idx[chosen]:
             self.sim.schedule_event(
-                demography.InstantaneousDeath(self.module, individual_id, 'Epilepsy'), self.sim.date
+                InstantaneousDeath(self.module, individual_id, 'Epilepsy'), self.sim.date
             )
 
 
@@ -433,20 +436,20 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|epilepsy_logging|%s',
                     self.sim.date,
                     {
-                        'prop_seiz_stat_0':  prop_seiz_stat_0,
-                        'prop_seiz_stat_1':  prop_seiz_stat_1,
+                        'prop_seiz_stat_0': prop_seiz_stat_0,
+                        'prop_seiz_stat_1': prop_seiz_stat_1,
                         'prop_seiz_stat_2': prop_seiz_stat_2,
                         'prop_seiz_stat_3': prop_seiz_stat_3,
-                        'prop_antiepilep_seiz_stat_0':  prop_antiepilep_seiz_stat_0,
+                        'prop_antiepilep_seiz_stat_0': prop_antiepilep_seiz_stat_0,
                         'prop_antiepilep_seiz_stat_1': prop_antiepilep_seiz_stat_1,
                         'prop_antiepilep_seiz_stat_2': prop_antiepilep_seiz_stat_2,
-                        'prop_antiepilep_seiz_stat_3':  prop_antiepilep_seiz_stat_3,
-                        'n_epi_death':  n_epi_death,
-                        'cum_deaths':  cum_deaths,
+                        'prop_antiepilep_seiz_stat_3': prop_antiepilep_seiz_stat_3,
+                        'n_epi_death': n_epi_death,
+                        'cum_deaths': cum_deaths,
                         'epi_death_rate': epi_death_rate,
                         'n_seiz_stat_1_3': n_seiz_stat_1_3,
-                        'n_seiz_stat_2_3':  n_seiz_stat_2_3,
-                        'n_antiep':  n_antiep,
+                        'n_seiz_stat_2_3': n_seiz_stat_2_3,
+                        'n_antiep': n_antiep,
                     })
 
 
@@ -462,18 +465,13 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-
         df = self.sim.population.props
 
         df.at[person_id, 'ep_antiep'] = True
