@@ -2,7 +2,7 @@ import pytest
 import inspect
 import importlib
 
-import tlo.inspector as inspector
+import docs.inspector as inspector
 
 def test_generate_module_dict():
     # Gets a dictionary of files in directory tree with
@@ -54,8 +54,8 @@ def test_get_package_name_no_exceptions(dirpath, result):
 def test_get_package_name_with_exceptions(dirpath):
     with pytest.raises(ValueError) as e:
         inspector.get_package_name(dirpath)
-    assert "Sorry, /tlo/ isn't in dirpath" in str(e.value)
-
+    #assert "Sorry, /tlo/ isn't in dirpath" in str(e.value)
+    assert f"Sorry, /tlo/ isn't in dirpath ({dirpath})" == str(e.value)
 
 def get_classes_for_testing():
     fqn = "for_inspector.a"
