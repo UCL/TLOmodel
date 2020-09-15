@@ -110,7 +110,7 @@ class CareOfWomenDuringPregnancy(Module):
             'Number of doses of tetanus toxoid administered during this pregnancy'),
         'ac_gest_htn_on_treatment': Property(
             Types.BOOL,
-            'Whether this woman has been initiated on treatment for gestational hypertention'),
+            'Whether this woman has been initiated on treatment for gestational hypertension'),
     }
 
     def read_parameters(self, data_folder):
