@@ -5,18 +5,17 @@
 # /Users/matthewgillman/PycharmProjects/TLOmodel/src/tlo/inspector.py
 import inspect
 import importlib
-from os import walk
-from os.path import join
 import os.path
 import sys
 
-sys.path.insert(0, '../src')  # Needed if calling this script from its directory
-sys.path.insert(0, './src')  # Needed if calling from directory above (e.g. in tox.ini)
+from os import walk
+from pathlib import Path
 
+sys.path.insert(0, '../src')  # <- if calling this script from its directory
+sys.path.insert(0, './src')  # <- if calling from dir above (e.g. in tox.ini)
 import tlo
 from tlo import Module
 
-from pathlib import Path
 
 def get_package_name(dirpath):
     # e.g. if dirpath = "./src/tlo/logging/sublog"
@@ -26,7 +25,7 @@ def get_package_name(dirpath):
     if TLO not in dirpath:
         raise ValueError(f"Sorry, {TLO} isn't in dirpath ({dirpath})")
     parts = dirpath.split(TLO)
-    #print(f"parts = {parts}")
+    # print(f"parts = {parts}")
     runt = parts[-1]  # e.g. "logging/sublog"
     runt = runt.replace("/", ".")  # e.g. logging.sublog
     # print(f"now runt is {runt}")
@@ -44,40 +43,24 @@ def generate_module_dict(topdir):
     # (i.e. to topdir or one of its nested subdirectories), and
     # value = list of Python .py files in that directory.
     # :param topdir: root directory to traverse downwards from, iteratively.
-    # :returns: dict with key = a directory, value = list of Python files in dir `key`.
+    # :returns: dict with key = a directory,
+    # value = list of Python files in dir `key`.
     data = {}  # key = path to dir, value = list of .py files
 
     for (dirpath, dirnames, filenames) in walk(topdir):
-        # print(f"***dirpath:{dirpath}, dirnames:{dirnames}, filenames:{filenames}\n")
+        # print(f"**path:{dirpath}, dirnames:{dirnames}, files:{filenames}\n")
         if "__pycache__" in dirpath:
             continue
         if dirpath not in data:
             data[dirpath] = []
         for f in filenames:
-            # We can do this as compound-if statements are evaluated left-to-right in Python:
+            # We can do this as compound-if statements are evaluated
+            # left-to-right in Python:
             if (f == "__init__.py") or (f[-4:] == ".pyc") or (f[-3:] != ".py"):
                 print(f"skipping {f}")
             else:
                 (data[dirpath]).append(f)
     return data
-
-
-#def get_non_class_info(module_obj):
-#    '''Extract items from module (file) which are not part of a class
-#    e.g. a module-level doc string, an unbound function, etc
-#    :param module_obj: the object representing the module'''
-#    items = []  # list of (name, object, linenumber) tuples
-#    for name, obj in inspect.getmembers(module_obj):
-        # print(f"get_nci: name={name}, obj={obj}")
-        # e.g. name=getLogger, obj=<function getLogger at 0x10ca66048>
-        # name=__doc__, obj=None  (or it can be a long string!)
-        # name=__file__, obj=/Users/matthewgillman/PycharmProjects/TLOmodel/src/tlo/logging/helpers.py
-        # name=__name__, obj=tlo.logging.helpers
-        # name=__package__, obj=tlo.logging
-        # we want module __doc__ and functions __name__ and __doc__
-        # isfunction(obj), getfullargspec(func)
-        #if inspect.isfunction(obj)
-
 
 
 def get_classes_in_module(fqn, module_obj):
@@ -91,9 +74,11 @@ def get_classes_in_module(fqn, module_obj):
     Each entry in the list returned is itself a list of:
     [class name, class object, line number]
 
-    :param fqn: Fully-qualified name of the module, e.g. "tlo.methods.mockitis"
+    :param fqn: Fully-qualified name of the module,
+    e.g. "tlo.methods.mockitis"
     :param module_obj: an object representing this module
-    :param return: list of entries, each of the form: [class name, class object, line number]
+    :param return: list of entries, each of the form:
+    [class name, class object, line number]
     '''
     classes = []
     module_info = inspect.getmembers(module_obj)  # Gets everything
@@ -101,23 +86,22 @@ def get_classes_in_module(fqn, module_obj):
         # print(f"get_cim: name={name}, obj={obj}")
         # e.g. name=getLogger, obj=<function getLogger at 0x10ca66048>
         # name=__doc__, obj=None  (or it can be a long string!)
-        # name=__file__, obj=/Users/matthewgillman/PycharmProjects/TLOmodel/src/tlo/logging/helpers.py
+        # name=__file__,
+        #  obj=/Users/matthewgillman/..../TLOmodel/src/tlo/logging/helpers.py
         # name=__name__, obj=tlo.logging.helpers
         # name=__package__, obj=tlo.logging
         # we want module __doc__ and functions __name__ and __doc__
         # isfunction(obj), getfullargspec(func)
 
-
         # Pick out only the classes defined in this module:
         if inspect.isclass(obj) and fqn in str(obj):
-            #print(name)  # e.g. MockitisEvent
-            #print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
+            # print(name)  # e.g. MockitisEvent
+            # print(obj)  # e.g. <class 'tlo.methods.mockitis.MockitisEvent'>
             source, start_line = inspect.getsourcelines(obj)
             classes.append([name, obj, start_line])
-            #classes_in_module.append(obj)
-            #print(f"\n\nIn module {name} we find the following:")
-            #morestuff = inspect.getmembers(obj)
-            #print(morestuff)  # e.g. functions, PARAMETERS dict,...
+            # print(f"\n\nIn module {name} we find the following:")
+            # morestuff = inspect.getmembers(obj)
+            # print(morestuff)  # e.g. functions, PARAMETERS dict,...
 
     # print(f"before sorting, {classes}")
     # https://stackoverflow.com/questions/3169014/inspect-getmembers-in-order
@@ -141,7 +125,7 @@ def get_fully_qualified_name(filename, context):
     :return: a string, e.g. "tlo.methods.mockitis"
     '''
     parts = filename.split(".")
-    print(f"getfqn: {filename}, {context}")
+    # print(f"getfqn: {filename}, {context}")
     if context == "":
         return parts[0]
     else:
@@ -169,18 +153,20 @@ def write_rst_file(rst_dir, fqn, mobj):
 
         # Extract non-class information, e.g. module-level doc strings,
         # unbound functions, etc.
-        #get_non_class_info(mobj)
+        # get_non_class_info(mobj)
 
-        # TODO: This gets the classes, but not any docstring e.g. at the top
+        # NB This gets the classes, but not any docstring e.g. at the top
         # of the module, outside any classes. It also doesn't include
-        # any module-level functions.  *** NB not sure this is correct now **
-        classes_in_module = get_classes_in_module(fqn, mobj)  # may return empty.
+        # any module-level functions. But those items seem to get added in
+        # anyway.
+        # NB classes_in_module may be empty:
+        classes_in_module = get_classes_in_module(fqn, mobj)
         for c in classes_in_module:
             # c is [class name, class object, line number]
             str = get_class_output_string(c)
             out.write(f"{str}\n")
-        #out.write(".. class:: Noodle\n\n")
-        #out.write("   Noodle's docstring.\n")
+        # out.write(".. class:: Noodle\n\n")
+        # out.write("   Noodle's docstring.\n")
 
 
 def get_class_output_string(classinfo):
@@ -199,17 +185,14 @@ def get_class_output_string(classinfo):
     str += extract_bases(class_name, class_obj)
     str += "\n\n"
 
-    #str += "External hyperlinks, like `Python <http://www.python.org/>`_.\n\n"
-    #str += "something `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_\n\n"
-    #str += "Multiple: `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_, " \
-    #       "baa `tlo.methods.contraception.Contraception <./tlo.methods.contraception.html#tlo.methods.contraception.Contraception>`_\n\n"
-
     general_exclusions = ["__class__", "__dict__", "__init__", "__module__",
-                          "__slots__", "__weakref__",]
-    inherited_exclusions = ["initialise_population", "initialise_simulation", "on_birth",
-                            "read_parameters", "apply", "post_apply_hook",
-                            "on_hsi_alert", "report_daly_values", "run", "did_not_run",
-                            "SYMPTOMS",]
+                          "__slots__", "__weakref__", ]
+
+    inherited_exclusions = ["initialise_population", "initialise_simulation",
+                            "on_birth", "read_parameters", "apply",
+                            "post_apply_hook", "on_hsi_alert",
+                            "report_daly_values", "run", "did_not_run",
+                            "SYMPTOMS", ]
 
     classdat = inspect.getmembers(class_obj)  # Gets everything
 
@@ -222,18 +205,18 @@ def get_class_output_string(classinfo):
         # Skip over things inherited from object class or Module class
         object_description = f"{obj}"
         if ("of 'object' objects" in object_description
-            or "built-in method" in object_description
-            or "function Module." in object_description
-            or "of 'Module' objects" in object_description
-            or name in general_exclusions
-            or name in inherited_exclusions
-            or object_description == 'None'):
+                or "built-in method" in object_description
+                or "function Module." in object_description
+                or "of 'Module' objects" in object_description
+                or name in general_exclusions
+                or name in inherited_exclusions
+                or object_description == 'None'):
             continue
 
         if name == "__doc__" and obj is not None:
             str += f"**Description:**\n{obj}"
             continue
-        #print(f"next object in class {class_name} is {name} = {obj}")
+        # print(f"next object in class {class_name} is {name} = {obj}")
 
         # We want nice tables for PARAMETERS and PROPERTIES
         if name in ("PARAMETERS", "PROPERTIES"):
@@ -250,15 +233,11 @@ def get_class_output_string(classinfo):
         # function which hasn't been filtered out.
         #
         if inspect.isfunction(obj):
-            print(f"DEBUG: got a function: {name}, {object}")
+            # print(f"DEBUG: got a function: {name}, {object}")
             mystr = f"\n\n**Function {name}():**\n"
             mydat = inspect.getmembers(obj)
-            this_func_str = ""
             for the_name, the_object in mydat:
-                print(f"{the_name}: {the_object}")
-                #this_func_str = f"function {mydat.}"
-                #if the_name == "__name__":
-                #    this_func_str += f"function {the_object} \n"
+                # print(f"{the_name}: {the_object}")
                 if the_name == "__doc__":
                     mystr += f"\n\n{the_object} \n\n"
             str += mystr
@@ -268,7 +247,7 @@ def get_class_output_string(classinfo):
 
         # Anything else?
         str += f"{name} : {obj}\n\n"
-        print(f"DEBUG: something else... {name}, {obj}")
+        # print(f"DEBUG: something else... {name}, {obj}")
 
         # getdoc, getcomments,
 
@@ -281,13 +260,18 @@ def extract_bases(class_name, class_obj):
     '''
     Document which classes this class inherits from,
     except for the object class or this class itself.
-    :param class_name: name of the class (e.g. Mockitis) for which we want the bases
+    :param class_name: name of the class (e.g. Mockitis) for which we want the
+    bases
     :param class_obj: object with information about this class
-    :return: string of base(s) for this class (if any), with links to their docs.
+    :return: string of base(s) for this class (if any), with links to their
+    docs.
     '''
-    bases = inspect.getmro(class_obj)  # Includes "object" class and the class_name class
+    # This next line gets the base classes including "object" class,
+    # and also the class_name class itself:
+    bases = inspect.getmro(class_obj)
     # Typical example of "bases":
-    # (<class 'tlo.methods.mockitis.Mockitis'>, <class 'tlo.core.Module'>, <class 'object'>)
+    # (<class 'tlo.methods.mockitis.Mockitis'>,
+    # <class 'tlo.core.Module'>, <class 'object'>)
     # print(f"bases for {class_name}: {bases}")
     # classtree = inspect.getclasstree(bases)
     # print(f"classtree = {classtree}")
@@ -295,7 +279,8 @@ def extract_bases(class_name, class_obj):
     parents = []
 
     for b in bases:
-        # Example of this_base_string: `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
+        # Example of this_base_string:
+        # `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
         this_base_string = get_base_string(class_name, class_obj, b)
         if this_base_string is not (None or ""):
             parents.append(this_base_string)
@@ -306,7 +291,6 @@ def extract_bases(class_name, class_obj):
         str += f"Base #{numbase}: {parents[0]}\n\n"
         for p in parents[1:]:
             numbase += 1
-            #str += f", {p}"
             str += f"Base #{numbase}: {p}\n\n"
     else:
         str = ""
@@ -316,18 +300,20 @@ def extract_bases(class_name, class_obj):
     return str
 
 
-def get_base_string (class_name, class_obj, base_obj):
+def get_base_string(class_name, class_obj, base_obj):
     '''
     For this object, representing a base class,
     extract its name and add a hyperlink to it.
     Unless it is the root 'object' class, or the name of the class itself.
 
-    :param class_name: the name of the class (e.g. "Mockitis") for which obj is a base,
+    :param class_name: the name of the class (e.g. "Mockitis")
+    for which obj is a base,
     :param class_obj: object representing the class
     :param base_obj: the object representation of the *base* class,
     e.g. <class 'tlo.core.Module'> or <class 'object'>
     or <class 'tlo.methods.mockitis.Mockitis'>
-    :return: string with hyperlink, e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
+    :return: string with hyperlink,
+    e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
     '''
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
@@ -336,7 +322,8 @@ def get_base_string (class_name, class_obj, base_obj):
     # print(f"DEBUG: after = {class_name}, {fqn}")
     # The next line's getsourcefile() call will raise a TypeError
     # if the object is a built-in module, class, or function:
-    # print(f"and filename: {inspect.getsourcefile(base_obj)}, module: {inspect.getmodule(base_obj)}")
+    # print(f"and filename: {inspect.getsourcefile(base_obj)},
+    #  module: {inspect.getmodule(base_obj)}")
     # module like: <module 'tlo.methods.mockitis' from ...
 
     # fqn will now be something like "tlo.methods.mockitis.Mockitis"
@@ -358,9 +345,10 @@ def get_base_string (class_name, class_obj, base_obj):
     #     <code class="xref py py-class docutils literal notranslate">
     #     <span class="pre">tlo.core.Module</span></code></a></p>
     # So we need to write the right stuff to the .rst file.
-    # We want to return a string with the name of the base class, plus the link
-    # to its documentation.
-    # e.g. the string might be "tlo.core.Module <./tlo.core.html#tlo.core.Module>"
+    # We want to return a string with the name of the base class, plus
+    # the link to its documentation.
+    # e.g. the string might be:
+    # "tlo.core.Module <./tlo.core.html#tlo.core.Module>"
     mystr = "`" + fqn + " " + link + "`_"
     # print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
@@ -369,11 +357,14 @@ def get_base_string (class_name, class_obj, base_obj):
 def get_link(base_fqn, base_obj):
     '''Given a name like Mockitis and a base_string like
     tlo.core.Module, create a link to the latter's doc page.
-    :param base_fqn: fully-qualified name of the base class, e.g. tlo.core.Module
+    :param base_fqn: fully-qualified name of the base class,
+    e.g. tlo.core.Module
     :param base_obj: the object representing the base class
-    :return: a string with the link to the base class's place in the generated documentation.
+    :return: a string with the link to the base class's place in the generated
+     documentation.
     '''
-    module_defining_class = str(inspect.getmodule(base_obj))  # <module 'tlo.core' from '/Users/...
+    # Example of module_defining_class: <module 'tlo.core' from '/Users/...
+    module_defining_class = str(inspect.getmodule(base_obj))
     module_pieces = module_defining_class.split(" ")
     if len(module_pieces) > 1:
         module_name = module_pieces[1]  # e.g. 'tlo.core'
@@ -386,11 +377,9 @@ def get_link(base_fqn, base_obj):
     # We want a link string like: <./tlo.core.html#tlo.core.Module>
     # i.e. <base's file name#base's fqn>
 
-    # e.g. if this page is http://0.0.0.0:8000/reference/tlo.methods.mockitis.html
-    # here is a link to another class: `newborn_outcomes <./tlo.methods.newborn_outcomes.html>`_
-    # http://0.0.0.0:8000/reference/tlo.methods.newborn_outcomes.html
-    # or e.g. pointing to http://0.0.0.0:8000/reference/tlo.core.html#tlo.core.Module
-    # the link would be <./tlo.core.html#tlo.core.Module>
+    # Example link to a base class (from a class in reference directory):
+    # http://0.0.0.0:8000/reference/tlo.core.html#tlo.core.Module
+    # In this code the link would be <./tlo.core.html#tlo.core.Module>
     link_to_base = "<./" + module_name + ".html" + "#" + base_fqn + ">"
     # print(f"link_to_base = {link_to_base}")
     return link_to_base
@@ -447,29 +436,27 @@ if __name__ == '__main__':
 
     # Add command-line processing here
     # Ideally make these defaults but have command-line options.
-    root_dir = Path(__file__).resolve().parents[1]  # Ideally the TLOmodel directory.
-    MODULE_DIR = f"{root_dir}/src/tlo/methods"  # The trailing slash after tlo is required, if using .../src/tlo/ as root.
-    # LEADER = "tlo."  # "tlo.methods"
+    root_dir = Path(__file__).resolve().parents[1]  # e.g. TLOmodel directory.
+    # NB If MODULE_DIR is set to .../src/tlo/, the trailing slash
+    # after tlo is required.
+    MODULE_DIR = f"{root_dir}/src/tlo/methods"
     RST_DIR = f"{root_dir}/docs/reference"
-    #context = LEADER
     module_directory = MODULE_DIR
     rst_directory = RST_DIR
 
-    #mydata = generate_module_dict("./src/tlo/")  # Need the trailing slash after tlo - it needs "/tlo/"
+    # Need the trailing slash after tlo - it needs "/tlo/":
+    # mydata = generate_module_dict("./src/tlo/")
     mydata = generate_module_dict(MODULE_DIR)
     for dir in mydata:  # e.g. .../src/tlo/logging/sublog
         package = get_package_name(dir)  # e.g. "tlo.logging.sublog"
         files = mydata[dir]  # e.g. ["fileA.py", "fileB.py", ...]
-        print(f"[{dir}]: {files}")
+        print(f"In directory [{dir}]: files are {files}")
         for f in files:
-            fqn = get_fully_qualified_name(f, package)  # e.g. "tlo.logging.sublog.fileA"
-            print(f"DEBUG: dir: {dir}, package:{package}, f:{f}, fqn:{fqn}")
-            module_obj = importlib.import_module(fqn)  # Object creation from string.
-            print (f"module_obj is {module_obj}")
+            # e.g. "tlo.logging.sublog.fileA":
+            fqn = get_fully_qualified_name(f, package)
+            # print(f"DEBUG: dir: {dir}, package:{package}, f:{f}, fqn:{fqn}")
+            # Object creation from string:
+            module_obj = importlib.import_module(fqn)
+            # print(f"module_obj is {module_obj}")
             write_rst_file(rst_directory, fqn, module_obj)
     print(f"\n\nroot dir is {root_dir}")
-
-
-    # From Stef's sphinx_debug.py
-    #root_dir = Path(__file__).resolve().parents[2]
-    #print(f"root-dir is {root_dir}")
