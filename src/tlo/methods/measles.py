@@ -11,6 +11,8 @@ from tlo.events import (
 )
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
+from tlo.methods import Metadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,6 +28,18 @@ class Measles(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        # Store the symptoms that this module will use:
+        self.symptoms = {
+            'rash',
+            'fever',
+            'respiratory_symptoms',
+            'eye_complaint',
+            'diarrhoea',
+            'pneumonia',
+        }
+
+    METADATA = {Metadata.DISEASE_MODULE}
 
     PARAMETERS = {
         "beta_baseline": Parameter(
@@ -83,6 +97,14 @@ class Measles(Module):
         # ---- Register this module ----
         # Register this disease module with the health system
         self.sim.modules["HealthSystem"].register_disease_module(self)
+
+        # Declare symptoms that this module will cause and which are not included in the generic symptoms:
+        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        for symptom_name in self.symptoms:
+            if symptom_name not in generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # rash and pneumonia both non-emergencies
+                )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -205,7 +227,8 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, "me_date_measles"] = self.sim.date
 
         # assign symptoms
-        symptom_list = {"rash", "fever", "respiratory_symptoms", "eye_complaint", "diarrhoea", "pneumonia"}
+        # symptom_list = {"rash", "fever", "respiratory_symptoms", "eye_complaint", "diarrhoea", "pneumonia"}
+        symptom_list = self.module.symptoms
 
         ref_age = df.at[person_id, "age_years"]
         # age limit for symptom data is 20 years
@@ -222,14 +245,15 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
             # random sample whether person will have symptom
             if rng.random_sample(size=1) < specific_symptom_prob:
+
                 # schedule symptom onset
-                # same duration for all symptoms
                 self.sim.modules["SymptomManager"].change_symptom(
                     person_id=person_id,
                     symptom_string=symptom,
                     add_or_remove="+",
-                    disease_module=self.module,
-                    duration_in_days=14,
+                    disease_module=self.sim.modules["Measles"],
+                    date_of_onset=self.sim.date,
+                    duration_in_days=14,  # same duration for all symptoms
                 )
 
         # probability of death

@@ -12,7 +12,6 @@ from tlo.methods import (
     healthsystem,
     enhanced_lifestyle,
     dx_algorithm_child,
-    # dx_algorithm_adult,
     healthseekingbehaviour,
     symptommanager,
     antenatal_care,
