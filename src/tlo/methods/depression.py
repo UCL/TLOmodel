@@ -10,9 +10,11 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata
+from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,6 +28,14 @@ class Depression(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Module parameters
     PARAMETERS = {
@@ -183,11 +193,8 @@ class Depression(Module):
                                                      'or had a last pregnancy less than one year ago')
     }
 
-    # Symptom that this module will use
-    # NB. The 'em_' prefix means that the onset of this symptom leads to an GenericEmergencyAppt
-    SYMPTOMS = {'em_Injuries_From_Self_Harm'}
-
     def read_parameters(self, data_folder):
+        "read parameters, register disease module with healthsystem and register symptoms"
         self.load_parameters_from_dataframe(
             pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
                           sheet_name='parameter_values')
@@ -204,9 +211,9 @@ class Depression(Module):
             Predictor().when('(sex=="F") & de_recently_pregnant', p['init_rp_depr_f_rec_preg']),
             Predictor().when('(sex=="F") & ~de_recently_pregnant', p['init_rp_depr_f_not_rec_preg']),
             Predictor('age_years').when('.between(0, 14)', 0)
-                                  .when('.between(15, 19)', 1.0)
-                                  .when('.between(20, 59)', p['init_rp_depr_age2059'])
-                                  .otherwise(p['init_rp_depr_agege60'])
+                .when('.between(15, 19)', 1.0)
+                .when('.between(20, 59)', p['init_rp_depr_age2059'])
+                .otherwise(p['init_rp_depr_agege60'])
         )
 
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
@@ -295,8 +302,13 @@ class Depression(Module):
                 + 0.66 * self.daly_wts['moderate_episode_major_depressive_disorder']
             )
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+        # Symptom that this module will use
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='Injuries_From_Self_Harm',
+                emergency_in_adults=True
+            ),
+        )
 
     def apply_linear_model(self, lm, df):
         """
@@ -362,14 +374,14 @@ class Depression(Module):
 
         # Assign initial 'de_ever_talk_ther' status
         df.loc[df['is_alive'], 'de_ever_talk_ther'] = self.apply_linear_model(
-             self.linearModels['Ever_Talking_Therapy_Initialisation'],
-             df.loc[df['is_alive']]
+            self.linearModels['Ever_Talking_Therapy_Initialisation'],
+            df.loc[df['is_alive']]
         )
 
         # Assign initial 'de_ever_non_fatal_self_harm_event' status
         df.loc[df['is_alive'], 'de_ever_non_fatal_self_harm_event'] = self.apply_linear_model(
-             self.linearModels['Ever_Self_Harmed_Initialisation'],
-             df.loc[df['is_alive']]
+            self.linearModels['Ever_Self_Harmed_Initialisation'],
+            df.loc[df['is_alive']]
         )
 
         # Assign initial 'using anti-depressants' status to those who are currently depressed and diagnosed
@@ -377,7 +389,7 @@ class Depression(Module):
             self.apply_linear_model(
                 self.linearModels['Using_AntiDepressants_Initialisation'],
                 df.loc[df['is_alive'] & df['de_depr'] & df['de_ever_diagnosed_depression']]
-        )
+            )
 
     def initialise_simulation(self, sim):
         """
@@ -457,9 +469,9 @@ class Depression(Module):
         any_depr_in_the_last_month = (df['is_alive']) & (
             ~pd.isnull(df['de_date_init_most_rec_depr']) & (df['de_date_init_most_rec_depr'] <= self.sim.date)
         ) & (
-            pd.isnull(df['de_date_depr_resolved']) |
-            (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
-            )
+                                         pd.isnull(df['de_date_depr_resolved']) |
+                                         (df['de_date_depr_resolved'] >= (self.sim.date - DateOffset(months=1)))
+                                     )
 
         start_depr = left_censor(df.loc[any_depr_in_the_last_month, 'de_date_init_most_rec_depr'],
                                  self.sim.date - DateOffset(months=1))
@@ -597,7 +609,7 @@ class DepressionPollingEvent(RegularEvent, PopulationScopeEventMixin):
 class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
     """
     This is a Self-Harm event. It has been scheduled to occur by the DepressionPollingEvent.
-    It imposes the em_Injuries_From_Self_Harm symptom, which will lead to emergency care being sought
+    It imposes the Injuries_From_Self_Harm symptom, which will lead to emergency care being sought
     """
 
     def __init__(self, module, person_id):
@@ -615,7 +627,7 @@ class DepressionSelfHarmEvent(Event, IndividualScopeEventMixin):
             person_id=person_id,
             disease_module=self.module,
             add_or_remove='+',
-            symptom_string='em_Injuries_From_Self_Harm'
+            symptom_string='Injuries_From_Self_Harm'
         )
 
 
@@ -633,7 +645,7 @@ class DepressionSuicideEvent(Event, IndividualScopeEventMixin):
             return
 
         self.module.eventsTracker['SuicideEvents'] += 1
-        self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
+        self.sim.schedule_event(InstantaneousDeath(self.module, person_id, 'Suicide'), self.sim.date)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -719,13 +731,9 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id, facility_level):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.ALERT_OTHER_DISEASES = []
 
@@ -746,13 +754,9 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id, facility_level):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Antidepressant_Start'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
         self.ALERT_OTHER_DISEASES = []
 
@@ -797,13 +801,9 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Antidepressant_Refill'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -906,8 +906,13 @@ def compute_key_outputs_for_last_3_years(parsed_output):
         cols_for_15plus = [int(x[0]) >= 15 for x in df.columns.str.strip('+').str.split('-')]
         return df[df.columns[cols_for_15plus]].sum(axis=1)
 
-    tot_pop = get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_m']) + \
-        get_15plus_pop_by_year(parsed_output['tlo.methods.demography']['age_range_f'])
+    tot_pop = \
+        get_15plus_pop_by_year(
+            parsed_output['tlo.methods.demography']['age_range_m']
+        ) + \
+        get_15plus_pop_by_year(
+            parsed_output['tlo.methods.demography']['age_range_f']
+        )
 
     depr_event_rate = depr_events.div(tot_pop, axis=0)
 

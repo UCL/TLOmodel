@@ -4,12 +4,11 @@ Switching contraceptive methods, and discontiuation rates by age
 please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Pregnancy.pdf
 for conceptual diagram
 """
-import logging
 from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
 
@@ -28,6 +27,9 @@ class Contraception(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    # Declare Metadata
+    METADATA = {}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.

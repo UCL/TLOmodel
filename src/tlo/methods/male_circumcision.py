@@ -1,12 +1,11 @@
 """
 Male circumcision
 """
-import logging
 import os
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
 
@@ -22,6 +21,9 @@ class male_circumcision(Module):
     def __init__(self, name=None, resourcefilepath=None, par_est5=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    # Declare Metadata
+    METADATA = {}
 
     PARAMETERS = {
         'initial_circumcision': Parameter(Types.REAL, 'Prevalence of circumcision in the population at baseline'),
@@ -92,9 +94,6 @@ class male_circumcision(Module):
 
         sim.schedule_event(CircumcisionEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=1))
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.

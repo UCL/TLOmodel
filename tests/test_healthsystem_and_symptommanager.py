@@ -3,9 +3,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation, logging
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.events import IndividualScopeEventMixin
 from tlo.methods import (
+    Metadata,
     chronicsyndrome,
     contraception,
     demography,
@@ -18,6 +20,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
+from tlo.methods.healthsystem import HSI_Event
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -41,7 +44,7 @@ def check_dtypes(simulation):
 
 
 def test_run_with_healthsystem_no_disease_modules_defined():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -51,14 +54,12 @@ def test_run_with_healthsystem_no_disease_modules_defined():
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
-
-    sim.seed_rngs(0)
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -71,7 +72,12 @@ def test_run_no_interventions_allowed(tmpdir):
     # There should be no events run or scheduled
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"*": logging.INFO}
+    }
+    sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
     # Get ready for temporary log-file
     # Define the service availability as null
@@ -85,7 +91,7 @@ def test_run_no_interventions_allowed(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -94,16 +100,13 @@ def test_run_no_interventions_allowed(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks for the healthsystem
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
@@ -112,7 +115,7 @@ def test_run_no_interventions_allowed(tmpdir):
     # Do the checks for the symptom manager: some symptoms should be registered
     assert sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] \
         .apply(lambda x: x != set()).any().any()
-    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'object').all()
+    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'int').all()
     assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
     # Check that no one was cured of mockitis:
@@ -124,7 +127,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -137,7 +140,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -146,16 +149,13 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks for health system apppts
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -177,7 +177,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -190,7 +190,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -199,16 +199,13 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -224,7 +221,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -237,7 +234,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -246,16 +243,13 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -271,7 +265,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -284,7 +278,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -293,16 +287,13 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -320,7 +311,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -333,7 +324,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -342,16 +333,13 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -368,7 +356,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -381,7 +369,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -390,16 +378,13 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation, manually setting smaller values to decrease runtime (logfile size)
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=100)
     sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
@@ -418,7 +403,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # Ignoring consumables constraints --> all requests for consumables granted
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -432,7 +417,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                                            mode_appt_constraints=0,
                                            ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -441,16 +426,13 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath)
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks for the consumables: all requests granted
     for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
@@ -464,7 +446,7 @@ def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -487,16 +469,13 @@ def test_run_in_with_hs_disabled(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
@@ -513,7 +492,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0, log_config={"filename": "log", "directory": tmpdir})
 
     # Define the service availability
     service_availability = ['*']
@@ -526,7 +505,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(),
                  mockitis.Mockitis(),
                  chronicsyndrome.ChronicSyndrome(),
@@ -535,19 +514,104 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  )
 
-    sim.seed_rngs(0)
-
     # Run the simulation
-    f = sim.configure_logging("log", directory=tmpdir)
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
     # read the results
-    output = parse_log_file(f)
+    output = parse_log_file(sim.log_filepath)
 
     # Do the check for the occurance of the GenericFirstAppt which is created by the HSB module
     assert 'GenericFirstApptAtFacilityLevel1' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values
 
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
+
+
+def test_use_of_helper_function_get_all_consumables():
+    """Test that the helper function 'get_all_consumables' in the base class of the HSI works as expected."""
+
+    # Create a dummy disease module (to be the parent of the dummy HSI)
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialie_simulation(self, sim):
+            pass
+
+    # Create simulation with the healthsystem and DummyModule
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+
+    # Set availability of consumables
+    # Define availability of items
+    item_code_is_available = [0, 1, 2, 3]
+    item_code_not_available = [4, 5, 6, 7]
+    pkg_code_is_available = [1, 2]
+    pkg_code_not_available = [3, 4, 5]
+
+    sim.modules['HealthSystem'].cons_item_code_availability_today = \
+        sim.modules['HealthSystem'].prob_unique_item_codes_available > 0.0
+    cons = sim.modules['HealthSystem'].cons_item_code_availability_today
+    cons.loc[item_code_is_available, cons.columns] = True
+    cons.loc[item_code_not_available, cons.columns] = False
+
+    # Edit the item-package lookup-table to create packages that will be available or not
+    lookup = sim.modules['HealthSystem'].parameters['Consumables']
+    lookup['Intervention_Pkg_Code'] = -99
+
+    lookup.loc[item_code_is_available[0], 'Intervention_Pkg_Code'] = pkg_code_is_available[0]
+    lookup.loc[item_code_is_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_is_available[1]
+    lookup.loc[item_code_not_available[0], 'Intervention_Pkg_Code'] = pkg_code_not_available[0]
+    lookup.loc[item_code_not_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_not_available[1]
+    lookup.loc[[item_code_is_available[3], item_code_not_available[3]], 'Intervention_Pkg_Code'] = \
+        pkg_code_not_available[2]
+
+    # Create a dummy HSI event:
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = module.sim.modules['HealthSystem'].get_blank_appt_footprint()
+            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
+
+    # Test using item_codes:
+    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available[0])
+    assert True is hsi_event.get_all_consumables(item_codes=[item_code_is_available[0]])
+    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available)
+    assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available)
+    assert False is hsi_event.get_all_consumables(item_codes=[
+        item_code_is_available[0], item_code_not_available[0]])
+    assert False is hsi_event.get_all_consumables(item_codes=[
+        item_code_not_available[0], item_code_is_available[0]])
+
+    # Test using pkg_codes:
+    assert True is hsi_event.get_all_consumables(pkg_codes=pkg_code_is_available[0])
+    assert True is hsi_event.get_all_consumables(pkg_codes=[pkg_code_is_available[0]])
+    assert True is hsi_event.get_all_consumables(pkg_codes=pkg_code_is_available)
+    assert False is hsi_event.get_all_consumables(pkg_codes=pkg_code_not_available[2])
+    assert False is hsi_event.get_all_consumables(pkg_codes=pkg_code_not_available)
+    assert False is hsi_event.get_all_consumables(pkg_codes=[
+        pkg_code_is_available[0], pkg_code_not_available[0]])
+    assert False is hsi_event.get_all_consumables(pkg_codes=[
+        pkg_code_is_available[0], pkg_code_not_available[2]])
+
+    # Test using item_codes and pkg_codes:
+    assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_is_available)
+    assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available, pkg_codes=pkg_code_is_available)
+    assert False is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_not_available)
