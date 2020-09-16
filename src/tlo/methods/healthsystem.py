@@ -433,18 +433,13 @@ class HealthSystem(Module):
             else:
                 alert_modules = hsi_event.ALERT_OTHER_DISEASES
 
-            # Remove the originating module from the list of modules to alert.
-
-            # Get the name of the disease module that this event came from ultimately
-            originating_disease_module_name = hsi_event.module.name
-            if originating_disease_module_name in alert_modules:
-                alert_modules.remove(originating_disease_module_name)
-
-            # Do the alert:
+            # Alert each of the modules
             for module_name in alert_modules:
-                self.sim.modules[module_name].on_hsi_alert(
-                    person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID
-                )
+                # Don't notify originating module
+                if not hsi_event.module.name == module_name:
+                    self.sim.modules[module_name].on_hsi_alert(
+                        person_id=hsi_event.target, treatment_id=hsi_event.TREATMENT_ID
+                    )
 
     def reformat_daily_capabilities(self):
         """
