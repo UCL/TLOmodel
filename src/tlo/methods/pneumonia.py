@@ -15,10 +15,10 @@ from tlo.methods import demography
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class ALRI(Module):
     # Declare the pathogens that this module will simulate:
@@ -52,7 +52,6 @@ class ALRI(Module):
         'bacterial_pneumonia', 'viral_pneumonia', 'bronchiolitis'
     }
 
-
     PARAMETERS = {
         'base_inc_rate_ALRI_by_RSV': Parameter
         (Types.LIST, 'incidence of ALRI caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
@@ -69,7 +68,7 @@ class ALRI(Module):
         'base_inc_rate_ALRI_by_streptococcus': Parameter
         (Types.LIST, 'incidence of ALRI caused by streptoccocus in age groups 0-11, 12-23, 24-59 months'
          ),
-        'base_inc_rate_ALRI_by_hib': Parameter
+        'base_inc_rate_ALRI_by_haemophilus': Parameter
         (Types.LIST, 'incidence of ALRI caused by hib in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_inc_rate_ALRI_by_TB': Parameter
@@ -105,31 +104,37 @@ class ALRI(Module):
         'rr_ALRI_underweight': Parameter
         (Types.REAL, 'relative rate of ALRI for underweight'
          ),
+        'rr_ALRI_low_birth_weight': Parameter
+        (Types.REAL, 'relative rate of ALRI with low birth weight infants'
+         ),
         'rr_ALRI_not_excl_breastfeeding': Parameter
         (Types.REAL, 'relative rate of ALRI for not exclusive breastfeeding upto 6 months'
          ),
         'rr_ALRI_indoor_air_pollution': Parameter
         (Types.REAL, 'relative rate of ALRI for indoor air pollution'
          ),
-        'rr_ALRI_pneumococcal_vaccine': Parameter
-        (Types.REAL, 'relative rate of ALRI for pneumonococcal vaccine'
-         ),
-        'rr_ALRI_hib_vaccine': Parameter
-        (Types.REAL, 'relative rate of ALRI for hib vaccine'
-         ),
-        'rr_ALRI_influenza_vaccine': Parameter
-        (Types.REAL, 'relative rate of ALRI for influenza vaccine'
-         ),
-        'r_progress_to_severe_ALRI': Parameter
-        (Types.LIST,
-         'probability of progressing from non-severe to severe ALRI by age category '
-         'HIV negative, no SAM'
-         ),
+        # 'rr_ALRI_pneumococcal_vaccine': Parameter
+        # (Types.REAL, 'relative rate of ALRI for pneumonococcal vaccine'
+        #  ),
+        # 'rr_ALRI_hib_vaccine': Parameter
+        # (Types.REAL, 'relative rate of ALRI for hib vaccine'
+        #  ),
+        # 'rr_ALRI_influenza_vaccine': Parameter
+        # (Types.REAL, 'relative rate of ALRI for influenza vaccine'
+        #  ),
+        # 'r_progress_to_severe_ALRI': Parameter
+        # (Types.LIST,
+        #  'probability of progressing from non-severe to severe ALRI by age category '
+        #  'HIV negative, no SAM'
+        #  ),
         'prob_respiratory_failure_by_viral_pneumonia': Parameter
-        (Types.REAL, 'probability of respiratory failure caused by primary viral ALRI'
+        (Types.REAL, 'probability of respiratory failure caused by primary viral pneumonia'
          ),
         'prob_respiratory_failure_by_bacterial_pneumonia': Parameter
         (Types.REAL, 'probability of respiratory failure caused by primary or secondary bacterial pneumonia'
+         ),
+        'prob_respiratory_failure_by_bronchiolitis': Parameter
+        (Types.REAL, 'probability of respiratory failure caused by viral bronchiolitis'
          ),
         'prob_respiratory_failure_to_multiorgan_dysfunction': Parameter
         (Types.REAL, 'probability of respiratory failure causing multi-organ dysfunction'
@@ -140,17 +145,26 @@ class ALRI(Module):
         'prob_sepsis_by_bacterial_pneumonia': Parameter
         (Types.REAL, 'probability of sepsis caused by primary or secondary bacterial pneumonia'
          ),
-        'prob_sepsis_to_septic_shock': Parameter
-        (Types.REAL, 'probability of sepsis causing septic shock'
+        # 'prob_sepsis_to_septic_shock': Parameter
+        # (Types.REAL, 'probability of sepsis causing septic shock'
+        #  ),
+        # 'prob_septic_shock_to_multiorgan_dysfunction': Parameter
+        # (Types.REAL, 'probability of septic shock causing multi-organ dysfunction'
+        #  ),
+        'prob_sepsis_to_multiorgan_dysfunction': Parameter
+        (Types.REAL, 'probability of sepsis causing multi-organ dysfunction'
          ),
-        'prob_septic_shock_to_multiorgan_dysfunction': Parameter
-        (Types.REAL, 'probability of septic shock causing multi-organ dysfunction'
-         ),
-        'prob_meningitis_by_bacterial_ALRI': Parameter
+        'prob_meningitis_by_bacterial_pneumonia': Parameter
         (Types.REAL, 'probability of meningitis caused by primary or secondary bacterial pneumonia'
          ),
         'prob_pleural_effusion_by_bacterial_pneumonia': Parameter
         (Types.REAL, 'probability of pleural effusion caused by primary or secondary bacterial pneumonia'
+         ),
+        'prob_pleural_effusion_by_viral_pneumonia': Parameter
+        (Types.REAL, 'probability of pleural effusion caused by primary viral pneumonia'
+         ),
+        'prob_pleural_effusion_by_bronchiolitis': Parameter
+        (Types.REAL, 'probability of pleural effusion caused by bronchiolitis'
          ),
         'prob_pleural_effusion_to_empyema': Parameter
         (Types.REAL, 'probability of pleural effusion developing into empyema'
@@ -164,25 +178,21 @@ class ALRI(Module):
         'prob_pneumothorax_by_bacterial_pneumonia': Parameter
         (Types.REAL, 'probability of pneumothorax caused by primary or secondary bacterial pneumonia'
          ),
+        'prob_pneumothorax_by_viral_pneumonia': Parameter
+        (Types.REAL, 'probability of pneumothorax caused by primary viral pneumonia'
+         ),
+        'prob_atelectasis_by_bronchiolitis': Parameter
+        (Types.REAL, 'probability of atelectasis/ lung collapse caused by bronchiolitis'
+         ),
         'prob_pneumothorax_to_respiratory_failure': Parameter
         (Types.REAL, 'probability of pneumothorax causing respiratory failure'
          ),
         'prob_lung_abscess_to_sepsis': Parameter
         (Types.REAL, 'probability of lung abscess causing sepsis'
          ),
-        'r_death_from_ALRI_due_to_meningitis': Parameter
-        (Types.REAL, 'death rate from ALRI due to meningitis'
+        'r_death_from_ALRI': Parameter
+        (Types.REAL, 'death rate from ALRI'
          ),
-        'r_death_from_ALRI_due_to_sepsis': Parameter
-        (Types.REAL, 'death rate from ALRI due to sepsis'
-         ),
-        'r_death_from_ALRI_due_to_respiratory_failure': Parameter
-        (Types.REAL, 'death rate from ALRI due to respiratory failure'
-         ),
-        # 'rr_death_ALRI_agelt2mo': Parameter
-        # (Types.REAL,
-        #  'death rate of ALRI'
-        #  ),
         'rr_death_ALRI_age12to23mo': Parameter
         (Types.REAL,
          'death rate of ALRI for children aged 12 to 23 months'
@@ -325,7 +335,7 @@ class ALRI(Module):
             assert param_name in self.parameters, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
             assert param_name is not None, f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
             assert isinstance(self.parameters[param_name],
-                          type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
+                              param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
