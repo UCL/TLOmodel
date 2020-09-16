@@ -54,7 +54,7 @@ class ALRI(Module):
 
 
     PARAMETERS = {
-        'base_incidence_rate_ALRI_by_RSV': Parameter
+        'base_inc_rate_ALRI_by_RSV': Parameter
         (Types.LIST, 'incidence of ALRI caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
          ),
         'base_inc_rate_ALRI_by_rhinovirus': Parameter
