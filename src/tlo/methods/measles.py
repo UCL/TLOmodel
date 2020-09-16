@@ -39,7 +39,10 @@ class Measles(Module):
             'pneumonia',
         }
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # declare metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+    }
 
     PARAMETERS = {
         "beta_baseline": Parameter(

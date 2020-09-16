@@ -19,6 +19,7 @@ from tlo.methods import (
     epi,
     measles
 )
+from tlo.methods.healthsystem import HSI_Event
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)

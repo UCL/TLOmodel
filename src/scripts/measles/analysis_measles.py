@@ -35,8 +35,8 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.measles": logging.DEBUG,
-        # "tlo.methods.epi": logging.DEBUG,
+        "tlo.methods.measles": logging.INFO,
+        "tlo.methods.healthsystem": logging.INFO,
     }
 }
 

@@ -9,6 +9,7 @@ import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.dxmanager import DxManager
+from tlo.methods import Metadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
