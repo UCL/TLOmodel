@@ -19,7 +19,13 @@ class Epilepsy(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Module parameters
     PARAMETERS = {
@@ -163,9 +169,6 @@ class Epilepsy(Module):
         allocate_antiepileptic('1', p['init_prop_antiepileptic_seiz_stat_1'])
         allocate_antiepileptic('2', p['init_prop_antiepileptic_seiz_stat_2'])
         allocate_antiepileptic('3', p['init_prop_antiepileptic_seiz_stat_3'])
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.

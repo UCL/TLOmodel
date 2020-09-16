@@ -29,6 +29,9 @@ class Lifestyle(Module):
         super().__init__(name)
         self.resourcefilepath: Path = resourcefilepath
 
+    # Declare Metadata
+    METADATA = {}
+
     PARAMETERS = {
         # -------- list of parameters ---------------------------------------------------------------
         'init_p_urban': Parameter(Types.REAL, 'initial proportion urban'),
