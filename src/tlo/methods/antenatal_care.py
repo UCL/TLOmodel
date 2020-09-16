@@ -131,11 +131,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit(HSI_Even
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AntenatalFirst'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -199,11 +195,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -253,11 +245,7 @@ class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualSco
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_EmergencyTreatment'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -307,11 +295,8 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, Indi
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForPostAbortionCare'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        # TODO: determine most accurate appt time for this HSI (here and all HSI in this file)
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = []
 
@@ -359,11 +344,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth(HSI_
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
