@@ -1581,7 +1581,7 @@ class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, In
                         cons_req_as_footprint=consumables_gdm_testing,
                         to_log=True)
 
-                    gdm_treatment = HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(
+                    gdm_treatment = HSI_CareOfWomenDuringPregnancy_InitialAppointmentForManagementOfGestationalDiabetes(
                         self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(gdm_treatment, priority=0,
@@ -1592,7 +1592,9 @@ class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, In
         logger.debug('HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes: cannot not run with this'
                      ' configuration')
 
-class HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
+
+class HSI_CareOfWomenDuringPregnancy_InitialAppointmentForManagementOfGestationalDiabetes(HSI_Event,
+                                                                                          IndividualScopeEventMixin):
     """This HSI is unfinished"""
 
     def __init__(self, module, person_id):
@@ -1611,15 +1613,73 @@ class HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(HS
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes, person %d has '
-                     'presented for treatment of gestational diabetes on date %s at gestation %d',
+        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialAppointmentForManagementOfGestationalDiabetes, '
+                     'person %d has presented for intial treatment of gestational diabetes on date %s at gestation %d',
                      person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
 
-        # TODO: finish
+        # diet and excercise
+        # rebook testing
+        #
 
     def not_available(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes: cannot not run with this'
                      ' configuration')
+
+
+class HSI_CareOfWomenDuringPregnancy_InitiationOfOralMedicationsForGestationalDiabetes(HSI_Event,
+                                                                                      IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_InitiationOfOralMedicationsForGestationalDiabetes'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+        logger.debug('This is CareOfWomenDuringPregnancy_InitiationOfOralMedicationsForGestationalDiabetes, '
+                     'person %d has presented to commence oral antidiabetics on date %s at gestation %d',
+                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
+    def not_available(self):
+        logger.debug('HSI_CareOfWomenDuringPregnancy_InitiationOfOralMedicationsForGestationalDiabetes: cannot not run '
+                     'with this configuration')
+
+
+class HSI_CareOfWomenDuringPregnancy_InitiationOfInsulinForGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
+    """"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_InitiationOfInsulinForGestationalDiabetes'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+        logger.debug('This is CareOfWomenDuringPregnancy_InitiationOfInsulinForGestationalDiabetes, '
+                     'person %d has presented to commence insulin therapy on date %s at gestation %d',
+                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+
+    def not_available(self):
+        logger.debug('HSI_CareOfWomenDuringPregnancy_InitiationOfInsulinForGestationalDiabetes: cannot not run '
+                     'with this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(HSI_Event, IndividualScopeEventMixin):

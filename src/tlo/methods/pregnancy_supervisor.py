@@ -115,6 +115,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
             Types.REAL, 'probability of a woman undergoing 4 or more basic ANC visits'),
+        'intercept_emergency_care_seeking': Parameter(
+            Types.REAL, 'baseline probability of a woman seeking care for a perceived pregnancy emergency'),
     }
 
     PROPERTIES = {
@@ -300,7 +302,13 @@ class PregnancySupervisor(Module):
 
                 'four_or_more_anc_visits': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_four_or_more_anc_visits'])}
+                    params['prob_four_or_more_anc_visits']),
+
+                'care_seeking_preg_emergency': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['intercept_emergency_care_seeking'])
+
+        }
 
     def initialise_population(self, population):
 
