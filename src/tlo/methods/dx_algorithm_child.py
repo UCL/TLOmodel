@@ -201,8 +201,8 @@ class DxAlgorithmChild(Module):
                     if df.at[person_id, "ma_inf_type"] == "severe":
                         diagnosis_str = "severe_malaria"
 
-                        logger.debug(
-                            f"dx_algorithm_child diagnosing severe malaria for person {person_id} on date {self.sim.date}")
+                        logger.debug(f"dx_algorithm_child diagnosing severe malaria for person {person_id} "
+                                     f"on date {self.sim.date}")
 
                     # clinical malaria
                     elif df.at[person_id, "ma_inf_type"] == "clinical":
@@ -225,4 +225,3 @@ class DxAlgorithmChild(Module):
 
         # return the diagnosis as a string
         return diagnosis_str
-
