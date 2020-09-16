@@ -54,7 +54,7 @@ class ALRI(Module):
 
 
     PARAMETERS = {
-        'base_inc_rate_ALRI_by_RSV': Parameter
+        'base_incidence_rate_ALRI_by_RSV': Parameter
         (Types.LIST, 'incidence of ALRI caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
          ),
         'base_inc_rate_ALRI_by_rhinovirus': Parameter
@@ -352,6 +352,10 @@ class ALRI(Module):
 
         # ---- Key Current Status Classification Properties ----
         df['ri_primary_ALRI_pathogen'].values[:] = 'none'
+        df['ri_current_ALRI_symptoms'] = 'not_applicable'
+        df['ri_secondary_bacterial_pathogen'] = 'none'
+        df['ri_ALRI_disease_type'] = 'not_applicable'
+        df['ri_ALRI_complications'] = 'none'
 
         # ---- Internal values ----
         df['ri_ALRI_event_date_of_onset'] = pd.NaT
@@ -568,7 +572,7 @@ class ALRI(Module):
         # by disease type
         def make_symptom_probs(disease_type):
             return {
-                'fever':  p[f'prob_fever_uncomplicated_{disease_type}'],
+                'fever': p[f'prob_fever_uncomplicated_{disease_type}'],
                 'cough': p[f'prob_cough_uncomplicated_{disease_type}'],
                 'difficult_breathing': p[f'prob_difficult_breathing_uncomplicated_{disease_type}'],
                 'fast_breathing': p[f'prob_fast_breathing_uncomplicated_{disease_type}'],
@@ -638,12 +642,16 @@ class ALRI(Module):
         df = self.sim.population.props
 
         # ---- Key Current Status Classification Properties ----
-        df.at[child_id, 'gi_primary_ALRI_pathogen'] = 'none'
+        df.at[child_id, 'ri_primary_ALRI_pathogen'] = 'none'
+        df.at[child_id, 'ri_current_ALRI_symptoms'] = 'not_applicable'
+        df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'none'
+        df.at[child_id, 'ri_ALRI_disease_type'] = 'not_applicable'
+        df.at[child_id, 'ri_ALRI_complications'] ='none'
 
         # ---- Internal values ----
-        df.at[child_id, 'gi_ALRI_event_date_of_onset'] = pd.NaT
-        df.at[child_id, 'gi_ALRI_event_recovered_date'] = pd.NaT
-        df.at[child_id, 'gi_ALRI_event_death_date'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
+        df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
@@ -652,14 +660,13 @@ class ALRI(Module):
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
         df.at[child_id, 'tmp_continued_breastfeeding'] = False
 
+
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Pneumonia, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
-        pass
+    pass
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -700,6 +707,16 @@ class ALRI(Module):
         #
         # return daly_values_by_pathogen
 
+    def cancel_death_date(self, person_id):
+        """
+        Cancels a scheduled date of death due to diarrhoea for a person. This is called prior to the scheduling the
+        CureEvent to prevent deaths happening in the time between a treatment being given and the cure event occurring.
+        :param person_id:
+        :return:
+        """
+        df = self.sim.population.props
+        df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
@@ -707,12 +724,17 @@ class ALRI(Module):
 class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ This is the main event that runs the acquisition of pathogens that cause ALRI.
         It determines who is infected and when and schedules individual IncidentCase events to represent onset.
-        A known issue is that ALRI events are scheduled based on the risk of current age but occur a short time
-        later when the children have aged.
-        """
+
+        A known issue is that diarrhoea events are scheduled based on the risk of current age but occur a short time
+        later when the children will be slightly older. This means that when comparing the model output with data, the
+        model slightly under-represents incidence among younger age-groups and over-represents incidence among older
+        age-groups. This is a small effect when the frequency of the polling event is high.
+    """
+    # TODO: how to fix this
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=3))
+        # NB. The frequency of the occurrences of this event can be edited safely.
 
     def apply(self, population):
         """Apply this event to the population.
@@ -723,13 +745,13 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
         rng = self.module.rng
 
         # Compute the incidence rate for each person getting ALRI and then convert into a probability
-        # getting all children that do not have ALRI currently
+        # getting all children that do not currently have an ALRI episode (never had or last episode resolved)
         mask_could_get_new_alri_event = \
             df['is_alive'] & (df['age_years'] < 5) & ((df['ri_ALRI_event_recovered_date'] <= self.sim.date) |
                                                       pd.isnull(df['ri_ALRI_event_recovered_date']))
 
+        # Compute the incidence rate for each person acquiring ALRI
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
-
         for pathogen in m.pathogens:
             inc_of_acquiring_alri[pathogen] = m.incidence_equations_by_pathogen[pathogen] \
                 .predict(df.loc[mask_could_get_new_alri_event])
@@ -742,8 +764,8 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
         probs_of_acquiring_pathogen = 1 - np.exp(-inc_of_acquiring_alri * fraction_of_a_year_until_next_polling_event)
 
         # Create the probability of getting 'any' pathogen:
-        # (Assumes that pathogens are mutually exclusive)
-        prob_of_acquiring_any_pathogen = probs_of_acquiring_pathogen.sum(axis=1)
+        # (Assumes that pathogens are mutually exclusive); Prevents probability being greater than 1.0.
+        prob_of_acquiring_any_pathogen = probs_of_acquiring_pathogen.sum(axis=1).clip(upper=1.0)
         assert all(prob_of_acquiring_any_pathogen < 1.0)
 
         # Determine which persons will acquire any pathogen:
@@ -814,14 +836,15 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         df.at[person_id, 'ri_current_ALRI_complications'] = 'none' # all disease start as non-severe symptoms
         df.at[person_id, 'ri_current_ALRI_symptoms'] = self.symptoms
 
-        for pathogen, prob in m.proportions_of_ALRI_diseases_caused_by_each_pathogen.items():
+        for pathogen, prob in m.proportions_of_ALRI_disease_types_by_pathogen.items():
             if rng.rand() < prob:
-        # determine if it is viral or bacterial ALRI based on pathogen
-        if self.pathogen == self.module.pathogen_type['viral']:
-            if
-            df.at[person_id, 'ri_current_ALRI_disease_type'] = 'primarily viral'
-        if self.pathogen == self.module.pathogen_type['bacterial']:
-            df.at[person_id, 'ri_current_ALRI_disease_type'] = 'primarily bacterial'
+                df.at[person_id, 'ri_current_ALRI_disease_type'] = 'primarily bacterial'
+        # # determine if it is viral or bacterial ALRI based on pathogen
+        # if self.pathogen == self.module.pathogen_type['viral']:
+        #     if
+        #     df.at[person_id, 'ri_current_ALRI_disease_type'] = 'primarily viral'
+        # if self.pathogen == self.module.pathogen_type['bacterial']:
+        #     df.at[person_id, 'ri_current_ALRI_disease_type'] = 'primarily bacterial'
 
         # ----------------------- Allocate symptoms to onset of ALRI ----------------------
         possible_symptoms_by_severity = m.prob_symptoms_uncomplicated_ALRI[disease_type]
