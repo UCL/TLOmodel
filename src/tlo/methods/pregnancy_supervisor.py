@@ -1062,7 +1062,7 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
                 symptom_string='collapse'
             )
 
-        # TODO: Againg allow for care seeking & Treatment
+        # TODO:  allow for care seeking & Treatment
 
         # We delayed the death event by three days to allow any treatment effects to mitigate risk of death
         self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self.module, individual_id, cause='ectopic_pregnancy'),

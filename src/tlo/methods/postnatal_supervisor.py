@@ -162,8 +162,6 @@ class PostnatalSupervisor(Module):
         for person in women_who_will_develop_pph:
             assert df.at[person, 'pn_secondary_postpartum_haem']
 
-
-
         # Set the severity
         severity = ['mild', 'moderate', 'severe']
         probabilities = params['prob_secondary_pph_severity']
@@ -251,7 +249,7 @@ class SecondaryPostpartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin)
         if df.at[individual_id, 'is_alive']:
         #    assert df.at[individual_id, 'pn_secondary_postpartum_haem']
         #    assert df.at[individual_id, 'pn_secondary_postpartum_haem_severity'] is not 'none'
-
+            #todo FIX THIS ABOVE
             risk_of_death = params['pn_linear_equations']['secondary_postpartum_haem_death'].predict(df.loc[[
                 individual_id]])[individual_id]
 
@@ -333,7 +331,13 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                            (df.age_years < ra_upper_limit))]
         total_women_reproductive_age = len(women_reproductive_age)
 
-        dict_for_output = {}
+        total_pph = self.module.PostnatalTracker['secondary_pph']
+        total_pn_death = self.module.PostnatalTracker['postnatal_death']
+        total_pph_death = self.module.PostnatalTracker['secondary_pph_death']
+
+        dict_for_output = {'total_pph': total_pph,
+                           'total_deaths': total_pn_death,
+                           'total_pph_death': total_pph_death}
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
