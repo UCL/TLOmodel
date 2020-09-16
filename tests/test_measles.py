@@ -46,6 +46,7 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
         "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
             "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
             "tlo.methods.measles": logging.INFO,
+            "tlo.methods.healthsystem": logging.INFO,
         }
     }
 
@@ -93,12 +94,11 @@ def test_measles_cases_and_hsi_occurring(tmpdir):
     # check people die of measles
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
 
-
-#########################################################################################################
-    # check symptoms assigned - all those with measles should have rash
+    # check symptoms assigned - all those currently with measles should have rash
     has_symptoms = sim.modules['SymptomManager'].who_has('rash')
     current_measles = df.index[df.is_alive & df.me_has_measles]
-    assert set(current_measles) < set(has_symptoms)
+    if current_measles.any():
+        assert set(current_measles) < set(has_symptoms)
 
     # check measles HSI occurring
     assert len(log_df['tlo.methods.healthsystem']['HSI_Event']['Measles_Treatment']) > 0
@@ -152,11 +152,11 @@ def test_measles_high_death_rate(tmpdir):
 
     df = sim.population.props
 
-    # check that there have been deaths caused by Diarrhoea
+    # check that there have been deaths caused by measles
     assert df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
 
     # check all cases of measles also had a measles death
-    assert not df.loc[~df.is_alive & df.me_has_measles & (df.cause_of_death != "measles")].any()
+    assert df.cause_of_death.loc[~df.is_alive & df.me_has_measles].str.startswith('measles').all()
 
 
 def test_measles_zero_death_rate(tmpdir):
@@ -205,7 +205,7 @@ def test_measles_zero_death_rate(tmpdir):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # check that there have been no deaths caused by Diarrhoea
+    # check that there have been no deaths caused by measles
     df = sim.population.props
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
 
