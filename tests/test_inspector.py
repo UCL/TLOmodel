@@ -58,14 +58,18 @@ def test_get_package_name_with_exceptions(dirpath):
 
 
 def get_classes_for_testing():
+    '''Utility function.
+     Each entry in the list returned is itself a list of:
+     [class name, class object, line number]
+     The classes are those defined in file for_inspector/a.py
+    '''
     fqn = "for_inspector.a"
     module_obj = importlib.import_module(fqn)
     return inspector.get_classes_in_module(fqn, module_obj)
 
+
 def test_get_classes_in_module():
     classes = get_classes_for_testing()
-    # Each entry in the list returned is itself a list of:
-    # [class name, class object, line number]
     assert len(classes) == 5
     c1, c2, c3, c4, c5 = classes
     assert c1[0] == "Person"
@@ -100,19 +104,26 @@ def test_get_base_string():
     # Each item in classes list has format: [class name, class object, line number]
     # In this test case, Person is the base class of Employee.
     person_info = classes[0]
-    person_name = person_info[0]
+    # person_name = person_info[0]
     person_object = person_info[1]
     employee_info = classes[1]
     employee_name = employee_info[0]
     employee_object = employee_info[1]
     result = inspector.get_base_string(employee_name, employee_object, person_object)
-    # `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
     expected = "`for_inspector.a.Person <./for_inspector.a.html#for_inspector.a.Person>`_"
     assert result == expected
 
 
 def test_get_link():
-    pass
+    # Example link:
+    # <./tlo.core.html#tlo.core.Module>
+    classes = get_classes_for_testing()
+    base_class = classes[0]
+    base_fqn = "for_inspector.a.Person"
+    base_obj = base_class[1]
+    result = inspector.get_link(base_fqn, base_obj)
+    expected = f"<./for_inspector.a.html#{base_fqn}>"
+    assert result == expected
 
 
 def test_create_table():
