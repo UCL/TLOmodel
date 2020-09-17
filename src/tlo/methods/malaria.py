@@ -6,7 +6,6 @@ including the malaria RDT using DxTest
 write-up
 https://www.dropbox.com/scl/fi/p696ddbwlpn2yug2xuuuk/Method_malaria-Sept2019.docx?dl=0
 """
-import os
 from pathlib import Path
 
 import pandas as pd

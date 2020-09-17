@@ -69,7 +69,7 @@ def test_sims(tmpdir):
         newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
         antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
         pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-        malaria.Malaria( resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
+        malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
     )
 
     # Run the simulation and flush the logger
