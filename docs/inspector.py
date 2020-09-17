@@ -313,7 +313,7 @@ def get_base_string(class_name, class_obj, base_obj):
     e.g. <class 'tlo.core.Module'> or <class 'object'>
     or <class 'tlo.methods.mockitis.Mockitis'>
     :return: string with hyperlink,
-    e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`
+    e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_
     '''
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
@@ -348,7 +348,7 @@ def get_base_string(class_name, class_obj, base_obj):
     # We want to return a string with the name of the base class, plus
     # the link to its documentation.
     # e.g. the string might be:
-    # "tlo.core.Module <./tlo.core.html#tlo.core.Module>"
+    # "tlo.core.Module <./tlo.core.html#tlo.core.Module>_"
     mystr = "`" + fqn + " " + link + "`_"
     # print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
@@ -437,16 +437,14 @@ if __name__ == '__main__':
     # Add command-line processing here
     # Ideally make these defaults but have command-line options.
     root_dir = Path(__file__).resolve().parents[1]  # e.g. TLOmodel directory.
-    # NB If MODULE_DIR is set to .../src/tlo/, the trailing slash
+    # NB If module_directory is set to .../src/tlo/, the trailing slash
     # after tlo is required.
-    MODULE_DIR = f"{root_dir}/src/tlo/methods"
-    RST_DIR = f"{root_dir}/docs/reference"
-    module_directory = MODULE_DIR
-    rst_directory = RST_DIR
+    module_directory = f"{root_dir}/src/tlo/methods"
+    rst_directory = f"{root_dir}/docs/reference"
 
     # Need the trailing slash after tlo - it needs "/tlo/":
     # mydata = generate_module_dict("./src/tlo/")
-    mydata = generate_module_dict(MODULE_DIR)
+    mydata = generate_module_dict(module_directory)
     for dir in mydata:  # e.g. .../src/tlo/logging/sublog
         package = get_package_name(dir)  # e.g. "tlo.logging.sublog"
         files = mydata[dir]  # e.g. ["fileA.py", "fileB.py", ...]
