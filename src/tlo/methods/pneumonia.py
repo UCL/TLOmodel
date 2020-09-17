@@ -11,6 +11,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -360,42 +361,53 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of chest pain / pleurisy from pneumothorax'
                       ),
+        'prob_chest_pain_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of chest pain / pleurisy from sepsis'
+                      ),
+        'prob_chest_pain_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of chest pain / pleurisy from respiratory failure'
+                      ),
 
     }
 
     PROPERTIES = {
         # ---- The pathogen which is the attributed cause of ALRI ----
-        'ri_primary_ALRI_pathogen': Property(Types.CATEGORICAL,
-                                             'Attributable pathogen for the current ALRI event',
-                                             categories=list(pathogens) + ['none']),
-
+        'ri_primary_ALRI_pathogen':
+            Property(Types.CATEGORICAL,
+                     'Attributable pathogen for the current ALRI event',
+                     categories=list(pathogens) + ['none']
+                     ),
         # ---- The bacterial pathogen which is the attributed cause of ALRI ----
-        'ri_secondary_bacterial_pathogen': Property(Types.CATEGORICAL,
-                                                    'Secondary bacterial pathogen for the current ALRI event',
-                                                    categories=list(bacterial_patho) + ['none']),
-                                                    # categories=list(pathogen_type['bacterial']) + ['none']),
-
+        'ri_secondary_bacterial_pathogen':
+            Property(Types.CATEGORICAL,
+                     'Secondary bacterial pathogen for the current ALRI event',
+                     categories=list(bacterial_patho) + ['none']
+                     ),
         # ---- The underlying ALRI condition ----
-        'ri_ALRI_disease_type': Property(Types.CATEGORICAL, 'underlying ALRI condition',
-                                         categories=['viral_pneumonia', 'bacterial_pneumonia', 'co-infection',
-                                                     'bronchiolitis']),
-
+        'ri_ALRI_disease_type':
+            Property(Types.CATEGORICAL, 'underlying ALRI condition',
+                     categories=['viral_pneumonia', 'bacterial_pneumonia',
+                                 'bronchiolitis']
+                     ),
         # ---- Complications associated with ALRI ----
-        'ri_ALRI_complications': Property(Types.LIST,
-                                                  'complications that arose from the current ALRI event',
-                                                  categories=['pneumothorax', 'pleural_effusion', 'empyema',
-                                                              'lung_abscess', 'sepsis', 'meningitis',
-                                                              'respiratory_failure'] + ['none']
-                                                  ),
-
+        'ri_ALRI_complications':
+            Property(Types.LIST,
+                     'complications that arose from the current ALRI event',
+                     categories=['pneumothorax', 'pleural_effusion', 'empyema',
+                                 'lung_abscess', 'sepsis', 'meningitis',
+                                 'respiratory_failure'] + ['none']
+                     ),
         # ---- Symptoms associated with ALRI ----
-        'ri_current_ALRI_symptoms': Property(Types.LIST,
-                                             'symptoms of current ALRI event',
-                                             categories=['fever', 'cough', 'difficult_breathing',
-                                                         'fast_breathing', 'chest_indrawing', 'grunting',
-                                                         'cyanosis', 'severe_respiratory_distress', 'hypoxia',
-                                                         'danger_signs']
-                                             ),
+        'ri_current_ALRI_symptoms':
+            Property(Types.LIST,
+                     'symptoms of current ALRI event',
+                     categories=['fever', 'cough', 'difficult_breathing',
+                                 'fast_breathing', 'chest_indrawing', 'grunting',
+                                 'cyanosis', 'severe_respiratory_distress', 'hypoxia',
+                                 'danger_signs']
+                     ),
 
         # ---- Internal variables to schedule onset and deaths due to ALRI ----
         'ri_ALRI_event_date_of_onset': Property(Types.DATE, 'date of onset of current ALRI event'),
@@ -468,6 +480,17 @@ class ALRI(Module):
             '5+y': copy.deepcopy(zeros_counter)
         }
 
+        # Store the symptoms that this module will use:
+        self.symptoms = {
+            'cough',
+            'fever',
+            'difficult_breathing',
+            'fast_breathing',
+            'chest_indrawing',
+            'danger_signs',
+            'chest_pain'
+        }
+
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module
         """
@@ -489,13 +512,13 @@ class ALRI(Module):
         # Register this disease module with the health system
     # self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
-        # generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
-        # for symptom_name in self.symptoms:
-        #     if symptom_name not in generic_symptoms:
-        #         self.sim.modules['SymptomManager'].register_symptom(
-        #             Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
-        #         )
+        # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
+        generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
+        for symptom_name in self.symptoms:
+            if symptom_name not in generic_symptoms:
+                self.sim.modules['SymptomManager'].register_symptom(
+                    Symptom(name=symptom_name)  # (give non-generic symptom 'average' healthcare seeking)
+                )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -765,7 +788,8 @@ class ALRI(Module):
         # Make a dict containing the probability of additional symptoms given acquisition of complications
         # probability by complication
         def add_complication_symptom_probs(complicat):
-            if complicat in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax']:
+            if complicat in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax',
+                             'sepsis', 'respiratory_failure']:
                 return {
                     'chest_pain': p[f'prob_chest_pain_adding_from_{complicat}'],
                 }
@@ -846,7 +870,6 @@ class ALRI(Module):
         df.at[child_id, 'tmp_low_birth_weight'] = False
         df.at[child_id, 'tmp_exclusive_breastfeeding'] = False
         df.at[child_id, 'tmp_continued_breastfeeding'] = False
-
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -1020,29 +1043,31 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         # Update the properties in the dataframe:
         df.at[person_id, 'ri_primary_ALRI_pathogen'] = self.pathogen
         df.at[person_id, 'ri_ALRI_event_date_of_onset'] = self.sim.date
-        df.at[person_id, 'ri_current_ALRI_complications'] = 'none' # all disease start as non-severe
-        # df.at[person_id, 'ri_current_ALRI_symptoms'] = self.symptoms
+        df.at[person_id, 'ri_current_ALRI_complications'] = 'none'  # all disease start as non-severe
 
         alri_disease_type_for_this_person = m.proportions_of_ALRI_disease_types_by_pathogen[self.pathogen]
         df.at[person_id, 'ri_ALRI_disease_type'] = alri_disease_type_for_this_person
+        print(alri_disease_type_for_this_person)
 
         # ----------------------- Allocate symptoms to onset of ALRI ----------------------
-        # possible_symptoms_by_severity = m.prob_symptoms_uncomplicated_ALRI[disease]
-        # symptoms_for_this_person = list()
-        # for symptom, prob in possible_symptoms_by_severity.items():
-        #     if rng.rand() < prob:
-        #         symptoms_for_this_person.append(symptom)
-        #
-        # # Onset symptoms:
-        # for symptom in symptoms_for_this_person:
-        #     self.module.sim.modules['SymptomManager'].change_symptom(
-        #         person_id=person_id,
-        #         symptom_string=symptom,
-        #         add_or_remove='+',
-        #         disease_module=self.module,
-        #         duration_in_days=self.duration_in_days
-        #     )
+        prob_symptoms_uncomplicated_alri = m.prob_symptoms_uncomplicated_ALRI[alri_disease_type_for_this_person]
+        symptoms_for_this_person = list()
+        for symptom, prob in prob_symptoms_uncomplicated_alri.items():
+            if rng.rand() < prob:
+                symptoms_for_this_person.append(symptom)
 
+        # Onset symptoms:
+        for symptom in symptoms_for_this_person:
+            self.module.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string=symptom,
+                add_or_remove='+',
+                disease_module=self.module,
+                duration_in_days=self.duration_in_days
+            )
+        df.at[person_id, 'ri_current_ALRI_symptoms'] = symptoms_for_this_person
+
+        # date for recovery with uncomplicated ALRI
         date_of_outcome = self.module.sim.date + DateOffset(days=self.duration_in_days)
 
         complications_for_this_person = list()
@@ -1063,10 +1088,10 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
                     days=np.random.randint(3, high=self.duration_in_days))
                 print(i, date_onset_complications)
                 self.sim.schedule_event(PneumoniaWithComplicationsEvent(
-                    self.module, person_id, duration_in_days=self.duration_in_days, symptoms=self.symptoms,
+                    self.module, person_id, duration_in_days=self.duration_in_days, symptoms=symptoms_for_this_person,
                     complication=complications_for_this_person), date_onset_complications)
 
-        self.sim.modules['DxAlgorithmChild'].imnci_as_gold_standard(person_id=person_id)
+        # self.sim.modules['DxAlgorithmChild'].imnci_as_gold_standard(person_id=person_id)
 
         # Add this incident case to the tracker
         age = df.loc[person_id, ['age_years']]
@@ -1079,7 +1104,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
 
 class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
         """
-            This Event is for the onset of Clinical Severe Pneumonia. For some untreated children,
+            This Event is for the onset of any complication from Pneumonia. For some untreated children,
             this occurs a set number of days after onset of disease.
             It sets the property 'ri_current_ALRI_complications' to each complication and schedules the death.
             """
@@ -1100,7 +1125,7 @@ class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
                 return
 
             # complications for this person
-            df.at[person_id, 'ri_current_ALRI_complications'] = list(self.complication)
+            df.at[person_id, 'ri_ALRI_complications'] = list(self.complication)
 
             # add to the initial list of uncomplicated ALRI symptoms
             all_symptoms_for_this_person = list(self.symptoms)  # original uncomplicated symptoms list to add to
