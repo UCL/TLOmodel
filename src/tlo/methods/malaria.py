@@ -23,15 +23,11 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module):
-    def __init__(
-        self, name=None, resourcefilepath=None, testing=None, itn=None
-    ):
-
+    def __init__(self, name=None, resourcefilepath=None, testing=None, itn=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
+        self.resourcefilepath = Path(resourcefilepath)
         self.testing = testing  # calibrate value to match treatment coverage
         self.itn = itn  # projected ITN values from 2020
-
         logger.info(f"Malaria infection event running with projected ITN {self.itn}")
 
     METADATA = {
@@ -147,11 +143,7 @@ class Malaria(Module):
     # TODO reset ma_iptp after delivery
 
     def read_parameters(self, data_folder):
-
-        workbook = pd.read_excel(
-            os.path.join(self.resourcefilepath, "ResourceFile_malaria.xlsx"),
-            sheet_name=None,
-        )
+        workbook = pd.read_excel(self.resourcefilepath / "ResourceFile_malaria.xlsx", sheet_name=None)
         self.load_parameters_from_dataframe(workbook["parameters"])
 
         p = self.parameters
@@ -163,23 +155,15 @@ class Malaria(Module):
         p["irs_district"] = workbook["MAP_IRSrates"]
         p["sev_symp_prob"] = workbook["severe_symptoms"]
 
-        p["inf_inc"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_malaria_InfInc_expanded.csv"
-        )
-
-        p["clin_inc"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_malaria_ClinInc_expanded.csv"
-        )
-
-        p["sev_inc"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_malaria_SevInc_expanded.csv"
-        )
+        p["inf_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_InfInc_expanded.csv")
+        p["clin_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_ClinInc_expanded.csv")
+        p["sev_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_SevInc_expanded.csv")
 
         p["testing_adj"] = self.testing
         p["itn_proj"] = self.itn
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
-        if "HealthBurden" in self.sim.modules.keys():
+        if "HealthBurden" in self.sim.modules:
             p["daly_wt_none"] = self.sim.modules["HealthBurden"].get_daly_weight(50)
             p["daly_wt_clinical"] = self.sim.modules["HealthBurden"].get_daly_weight(50)
             p["daly_wt_severe"] = self.sim.modules["HealthBurden"].get_daly_weight(589)
