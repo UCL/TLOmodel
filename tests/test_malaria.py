@@ -44,11 +44,11 @@ def test_sims(tmpdir):
     service_availability = list(["malaria"])
     malaria_testing = 0.35  # adjust this to match rdt/tx levels
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
             service_availability=service_availability,
@@ -56,26 +56,20 @@ def test_sims(tmpdir):
             ignore_cons_constraints=True,
             ignore_priority=True,
             capabilities_coefficient=1.0,
-            disable=True,
-        )
-    )  # disables the health system constraints so all HSI events run
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-    sim.register(dx_algorithm_child.DxAlgorithmChild())
-    sim.register(dx_algorithm_adult.DxAlgorithmAdult())
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-    sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-    sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-    sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-    sim.register(
-        malaria.Malaria(
-            resourcefilepath=resourcefilepath,
-            testing=malaria_testing,
-            itn=None,
-        )
+            disable=True,  # disables the health system constraints so all HSI events run
+        ),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        dx_algorithm_child.DxAlgorithmChild(),
+        dx_algorithm_adult.DxAlgorithmAdult(),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        malaria.Malaria( resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
     )
 
     # Run the simulation and flush the logger
