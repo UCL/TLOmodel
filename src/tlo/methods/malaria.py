@@ -34,7 +34,12 @@ class Malaria(Module):
 
         logger.info(f"Malaria infection event running with projected ITN {self.itn}")
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.USES_SYMPTOMMANAGER
+    }
 
     PARAMETERS = {
         "mal_inc": Parameter(Types.REAL, "monthly incidence of malaria in all ages"),
@@ -178,10 +183,6 @@ class Malaria(Module):
             p["daly_wt_none"] = self.sim.modules["HealthBurden"].get_daly_weight(50)
             p["daly_wt_clinical"] = self.sim.modules["HealthBurden"].get_daly_weight(50)
             p["daly_wt_severe"] = self.sim.modules["HealthBurden"].get_daly_weight(589)
-
-        # ----------------------------------- REGISTER WITH HEALTH SYSTEM -----------------------------------
-        # need to register before any health system, stuff / symptom manager happens
-        self.sim.modules["HealthSystem"].register_disease_module(self)
 
         # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
         self.sim.modules['SymptomManager'].register_symptom(
