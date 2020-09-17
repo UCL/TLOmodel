@@ -186,25 +186,22 @@ class Malaria(Module):
 
         # ----------------------------------- INITIALISE THE POPULATION-----------------------------------
         # Set default for properties
-        df["ma_is_infected"] = False
-        df["ma_date_infected"] = pd.NaT
-        df["ma_date_symptoms"] = pd.NaT
-        df["ma_date_death"] = pd.NaT
-        df["ma_tx"] = False
-        df["ma_date_tx"] = pd.NaT
-        df["ma_inf_type"].values[:] = "none"
-        # df["ma_district_edited"] = df["district_of_residence"]
-        df["ma_age_edited"] = 0
+        df.loc[df.is_alive, "ma_is_infected"] = False
+        df.loc[df.is_alive, "ma_date_infected"] = pd.NaT
+        df.loc[df.is_alive, "ma_date_symptoms"] = pd.NaT
+        df.loc[df.is_alive, "ma_date_death"] = pd.NaT
+        df.loc[df.is_alive, "ma_tx"] = False
+        df.loc[df.is_alive, "ma_date_tx"] = pd.NaT
+        df.loc[df.is_alive, "ma_inf_type"] = "none"
+        # df.loc[df.is_alive, "ma_district_edited"] = df["district_of_residence"]
+        df.loc[df.is_alive, "ma_age_edited"] = 0
 
-        df["ma_clinical_counter"] = 0
-        df["ma_tx_counter"] = 0
-        df["ma_clinical_preg_counter"] = 0
-        df["ma_iptp"] = False
+        df.loc[df.is_alive, "ma_clinical_counter"] = 0
+        df.loc[df.is_alive, "ma_tx_counter"] = 0
+        df.loc[df.is_alive, "ma_clinical_preg_counter"] = 0
+        df.loc[df.is_alive, "ma_iptp"] = False
 
-        if now.year <= p["data_end"]:
-            current_year = now.year
-        else:
-            current_year = p["data_end"]  # fix values for 2018 onwards
+        current_year = min(now.year, p["data_end"])  # fix values for 2018 onwards
 
         # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
         # using .copy() avoids SettingWithCopyWarning due to chained indexing
