@@ -749,7 +749,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 10000
+popsize = 1000
 
 # if os.path.exists(logfile):
 #     os.remove(logfile)
@@ -757,74 +757,74 @@ popsize = 10000
 service_availability = ['*']
 logging.getLogger('tlo.methods.RTI').setLevel(logging.DEBUG)
 # ===================================== Test different scenarios =======================================================
-# scenarios = dict()
-# scenarios['none'] = []
-# scenarios['all_interventions'] = ['include_thoroscopy',
-#                                   'include_spine_surgery',
-#                                   'reduce_incidence']
-# #
-# scenarios['allow_medical_interventions'] = ['include_thoroscopy',
-#                                             'include_spine_surgery']
-# scenarios['preventative_interventions'] = ['reduce_incidence']
-# output_files = dict()
-# sum_YLD = []
-# deaths_in_sim = []
-# for label, allowed_interventions in scenarios.items():
-#     # Register the appropriate 'core' modules, can register y/n. Runs without issue? Y,N
-#     sim = Simulation(start_date=start_date)
-#     sim.register(demography.Demography(resourcefilepath=resourcefilepath),  # y, Y
-#                  # contraception.Contraception(resourcefilepath=resourcefilepath),  # y, Y
-#                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),  # y, Y
-#                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-#                                            service_availability=service_availability,
-#                                            mode_appt_constraints=2,
-#                                            capabilities_coefficient=1.0,
-#                                            ignore_cons_constraints=False,
-#                                            disable=False),  # y, Y
-#                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),  # y, Y
-#                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),  # y, Y
-#                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),  # y, Y
-#                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),  # y, Y
-#                  epilepsy.Epilepsy(resourcefilepath=resourcefilepath),  # y, Y
-#                  # oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath),  # y, Y
-#                  # labour.Labour(resourcefilepath=resourcefilepath),  # y, Y
-#                  # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),  # y, N
-#                  # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),  # y, Y
-#                  # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),  # y, Y
-#                  # hiv.hiv(resourcefilepath=resourcefilepath),  # y, N (Issue with requesting consumables)
-#                  # hiv_behaviour_change.BehaviourChange,  # n
-#                  # male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),  # y, Y (Issue with requesting
-#                  # consumables)
-#                  # tb.tb(resourcefilepath=resourcefilepath),  # y, N (probably because of HIV not working without issue)
-#                  # tb_hs_engagement.health_system_tb,  # n
-#                  rti.RTI(resourcefilepath=resourcefilepath)  # y, Y
-#                  )
-#     params = sim.modules['RTI'].parameters
-#     logfile = sim.configure_logging(filename="LogFile")
-#     output_files[label] = logfile
-#     sim.seed_rngs(0)
-#     sim.make_initial_population(n=popsize)
-#     params['allowed_interventions'] = allowed_interventions
-#     sim.simulate(end_date=end_date)
-#     health_burden_data = parse_log_file(logfile)['tlo.methods.healthburden']
-#     health_burden_data = health_burden_data['DALYS']
-#     sum_YLD.append(sum(health_burden_data['YLD_RTI_rt_disability']))
-#     deaths_this_run = parse_log_file(logfile)['tlo.methods.demography']['death']
-#     deaths_this_run = deaths_this_run.loc[deaths_this_run['cause'] == 'RTI_imm_death']
-#     deaths_this_run.append(deaths_this_run.loc[deaths_this_run['cause'] == 'RTI_death_with_med'])
-#     deaths_this_run.append(deaths_this_run.loc[deaths_this_run['cause'] == 'RTI_death_without_med'])
-#     deaths_in_sim.append(len(deaths_this_run))
-#     Generate_Graphs(parse_log_file(logfile), yearsrun, popsize, label)
-#     print(f"done {allowed_interventions}")
-# labels = [*scenarios]
-# deaths_in_sim
-# plt.bar(np.arange(4), sum_YLD, color='lightsteelblue')
-# plt.xticks(np.arange(4), labels, rotation=45)
-# plt.xlabel('Interventions')
-# plt.ylabel('Sum of YLD over all ages')
-# plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/CompareInterventionsYLD.png')
-# plt.clf()
-# plt.close()
+scenarios = dict()
+scenarios['none'] = []
+scenarios['all_interventions'] = ['include_thoroscopy',
+                                  'include_spine_surgery',
+                                  'reduce_incidence']
+#
+scenarios['allow_medical_interventions'] = ['include_thoroscopy',
+                                            'include_spine_surgery']
+scenarios['preventative_interventions'] = ['reduce_incidence']
+output_files = dict()
+sum_YLD = []
+deaths_in_sim = []
+for label, allowed_interventions in scenarios.items():
+    # Register the appropriate 'core' modules, can register y/n. Runs without issue? Y,N
+    sim = Simulation(start_date=start_date)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),  # y, Y
+                 # contraception.Contraception(resourcefilepath=resourcefilepath),  # y, Y
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),  # y, Y
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           mode_appt_constraints=2,
+                                           capabilities_coefficient=1.0,
+                                           ignore_cons_constraints=False,
+                                           disable=False),  # y, Y
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),  # y, Y
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),  # y, Y
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),  # y, Y
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),  # y, Y
+                 epilepsy.Epilepsy(resourcefilepath=resourcefilepath),  # y, Y
+                 # oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath),  # y, Y
+                 # labour.Labour(resourcefilepath=resourcefilepath),  # y, Y
+                 # newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),  # y, N
+                 # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),  # y, Y
+                 # antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),  # y, Y
+                 # hiv.hiv(resourcefilepath=resourcefilepath),  # y, N (Issue with requesting consumables)
+                 # hiv_behaviour_change.BehaviourChange,  # n
+                 # male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),  # y, Y (Issue with requesting
+                 # consumables)
+                 # tb.tb(resourcefilepath=resourcefilepath),  # y, N (probably because of HIV not working without issue)
+                 # tb_hs_engagement.health_system_tb,  # n
+                 rti.RTI(resourcefilepath=resourcefilepath)  # y, Y
+                 )
+    params = sim.modules['RTI'].parameters
+    logfile = sim.configure_logging(filename="LogFile")
+    output_files[label] = logfile
+    sim.seed_rngs(0)
+    sim.make_initial_population(n=popsize)
+    params['allowed_interventions'] = allowed_interventions
+    sim.simulate(end_date=end_date)
+    health_burden_data = parse_log_file(logfile)['tlo.methods.healthburden']
+    health_burden_data = health_burden_data['DALYS']
+    sum_YLD.append(sum(health_burden_data['YLD_RTI_rt_disability']))
+    deaths_this_run = parse_log_file(logfile)['tlo.methods.demography']['death']
+    deaths_this_run = deaths_this_run.loc[deaths_this_run['cause'] == 'RTI_imm_death']
+    deaths_this_run.append(deaths_this_run.loc[deaths_this_run['cause'] == 'RTI_death_with_med'])
+    deaths_this_run.append(deaths_this_run.loc[deaths_this_run['cause'] == 'RTI_death_without_med'])
+    deaths_in_sim.append(len(deaths_this_run))
+    Generate_Graphs(parse_log_file(logfile), yearsrun, popsize, label)
+    print(f"done {allowed_interventions}")
+labels = [*scenarios]
+deaths_in_sim
+plt.bar(np.arange(4), sum_YLD, color='lightsteelblue')
+plt.xticks(np.arange(4), labels, rotation=45)
+plt.xlabel('Interventions')
+plt.ylabel('Sum of YLD over all ages')
+plt.savefig('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/outputs/CompareInterventionsYLD.png')
+plt.clf()
+plt.close()
 # Run the simulation
 # ===================================== Incidence vs deaths ============================================================
 output_files = dict()
@@ -839,11 +839,7 @@ for inc in reduction_in_incidence:
                  # contraception.Contraception(resourcefilepath=resourcefilepath),  # y, Y
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),  # y, Y
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability,
-                                           mode_appt_constraints=2,
-                                           capabilities_coefficient=1.0,
-                                           ignore_cons_constraints=False,
-                                           disable=False),  # y, Y
+                                           service_availability=service_availability),  # y, Y
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),  # y, Y
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),  # y, Y
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),  # y, Y
