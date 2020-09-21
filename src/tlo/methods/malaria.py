@@ -22,7 +22,13 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module):
-    def __init__(self, name=None, resourcefilepath=None, testing=None, itn=None):
+    def __init__(self,
+                 name=None,
+                 resourcefilepath=None,
+                 testing=None,  # coverage of malaria testing, calibrated to match rdt/tx coverage levels
+                 itn=None  # coverage of insecticide-treated bednets
+                 ):
+
         super().__init__(name)
         self.resourcefilepath = Path(resourcefilepath)
         self.testing = testing  # calibrate value to match treatment coverage
