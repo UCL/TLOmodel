@@ -33,7 +33,13 @@ class Malaria(Module):
         self.resourcefilepath = Path(resourcefilepath)
         self.testing = testing  # calibrate value to match treatment coverage
         self.itn = itn  # projected ITN values from 2020
+
         logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
+
+        # empty parameter to hold cleaned coverage values for IRS and ITN
+        self.itn_curr = None
+        self.irs_curr = None
+
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -158,6 +164,16 @@ class Malaria(Module):
         p["interv"] = workbook["interventions"]
         p["itn_district"] = workbook["MAP_ITNrates"]
         p["irs_district"] = workbook["MAP_IRSrates"]
+
+        # using .copy() avoids SettingWithCopyWarning due to chained indexing
+        self.itn_curr = p["itn_district"].copy()
+        self.itn_curr["itn_rates"] = self.itn_curr["itn_rates"].round(decimals=1)
+
+        # IRS coverage rates
+        self.irs_curr = p["irs_district"].copy()
+        self.irs_curr.loc[self.irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
+        self.irs_curr.loc[self.irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
+
         p["sev_symp_prob"] = workbook["severe_symptoms"]
 
         p["inf_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_InfInc_expanded.csv")
@@ -216,10 +232,7 @@ class Malaria(Module):
         current_year = min(now.year, p["data_end"])  # fix values for 2018 onwards
 
         # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
-        # using .copy() avoids SettingWithCopyWarning due to chained indexing
-        itn_curr = p["itn_district"].copy()
-        itn_curr["itn_rates"] = itn_curr["itn_rates"].round(decimals=1)
-        itn_curr = itn_curr.loc[itn_curr.Year == current_year]
+        itn_curr = self.itn_curr.loc[self.itn_curr.Year == current_year]
 
         # TODO replace itn coverage with the projected value from 2020 onwards
         # if a projected itn coverage level has been supplied
@@ -227,10 +240,7 @@ class Malaria(Module):
             itn_curr["itn_rates"] = p["itn_proj"]
 
         # IRS coverage rates
-        irs_curr = p["irs_district"].copy()
-        irs_curr = irs_curr.loc[irs_curr.Year == current_year]
-        irs_curr.loc[irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
-        irs_curr.loc[irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
+        irs_curr = self.irs_curr.loc[self.irs_curr.Year == current_year]
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # inf_inc select current month and irs
@@ -1641,7 +1651,8 @@ class MalariaResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        logger.info(f"Resetting the malaria counter {now}")
+        logger.info(key='message',
+                    data=f'Resetting the malaria counter {now}')
 
         df["ma_clinical_counter"] = 0
         df["ma_tx_counter"] = 0
