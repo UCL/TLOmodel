@@ -7,13 +7,13 @@ import docs.inspector as inspector
 def test_generate_module_dict():
     # Gets a dictionary of files in directory tree with
     # key = path to dir, value = list of .py files
-    result = inspector.generate_module_dict("./for_inspector")
+    result = inspector.generate_module_dict("./for_inspector/tlo/")
     for dir in result:
         files = result[dir]
-        if "/tests/for_inspector/more" in dir:
+        if "/tests/for_inspector/tlo/more" in dir:
             assert files == ['c.py']
         else:
-            if "/tests/for_inspector" in dir:
+            if "/tests/for_inspector/tlo" in dir:
                 assert sorted(files) == ['a.py', 'b.py']
 
 
@@ -61,9 +61,10 @@ def get_classes_for_testing():
     '''Utility function.
      Each entry in the list returned is itself a list of:
      [class name, class object, line number]
-     The classes are those defined in file for_inspector/a.py
+     The classes are those defined in file for_inspector/a.py,
+     in the same order as they are defined in the source file.
     '''
-    fqn = "for_inspector.a"
+    fqn = "for_inspector.tlo.a"
     module_obj = importlib.import_module(fqn)
     return inspector.get_classes_in_module(fqn, module_obj)
 
@@ -74,8 +75,8 @@ def test_get_classes_in_module():
     c1, c2, c3, c4, c5 = classes
     assert c1[0] == "Person"
     assert c2[0] == "Employee"
-    assert str(c1[1]) == "<class 'for_inspector.a.Person'>"
-    assert str(c2[1]) == "<class 'for_inspector.a.Employee'>"
+    assert str(c1[1]) == "<class 'for_inspector.tlo.a.Person'>"
+    assert str(c2[1]) == "<class 'for_inspector.tlo.a.Employee'>"
     assert str(c5[0]) == "Offspring"
 
 
@@ -86,13 +87,30 @@ def test_extract_bases():
     offspring = classes[-1]
     name, obj = offspring[0:2]
     expected = "**Bases:**\n\n"
-    expected += f"Base #1: `for_inspector.a.Father <./for_inspector.a.html#for_inspector.a.Father>`_\n\n"
-    expected += f"Base #2: `for_inspector.a.Mother <./for_inspector.a.html#for_inspector.a.Mother>`_\n\n"
+    expected += f"Base #1: `for_inspector.tlo.a.Father <./for_inspector.tlo.a.html#for_inspector.tlo.a.Father>`_\n\n"
+    expected += f"Base #2: `for_inspector.tlo.a.Mother <./for_inspector.tlo.a.html#for_inspector.tlo.a.Mother>`_\n\n"
     assert expected == inspector.extract_bases(name, obj)
 
 
-def test_write_rst_file():
-    pass
+def ignore_this_test_write_rst_file():
+    module_directory = "./for_inspector/tlo/"
+    rst_directory = "./for_inspector/tlo/docs"
+
+    # Need the trailing slash after tlo - it needs "/tlo/":
+    # mydata = generate_module_dict("./src/tlo/")
+    mydata = generate_module_dict(module_directory)
+    for dir in mydata:  # e.g. .../src/tlo/logging/sublog
+        package = get_package_name(dir)  # e.g. "tlo.logging.sublog"
+        files = mydata[dir]  # e.g. ["fileA.py", "fileB.py", ...]
+        print(f"In directory [{dir}]: files are {files}")
+        for f in files:
+            # e.g. "tlo.logging.sublog.fileA":
+            fqn = get_fully_qualified_name(f, package)
+            # print(f"DEBUG: dir: {dir}, package:{package}, f:{f}, fqn:{fqn}")
+            # Object creation from string:
+            module_obj = importlib.import_module(fqn)
+            # print(f"module_obj is {module_obj}")
+            write_rst_file(rst_directory, fqn, module_obj)
 
 
 def test_get_class_output_string():
@@ -110,7 +128,7 @@ def test_get_base_string():
     employee_name = employee_info[0]
     employee_object = employee_info[1]
     result = inspector.get_base_string(employee_name, employee_object, person_object)
-    expected = "`for_inspector.a.Person <./for_inspector.a.html#for_inspector.a.Person>`_"
+    expected = "`for_inspector.tlo.a.Person <./for_inspector.tlo.a.html#for_inspector.tlo.a.Person>`_"
     assert result == expected
 
 
@@ -119,10 +137,10 @@ def test_get_link():
     # <./tlo.core.html#tlo.core.Module>
     classes = get_classes_for_testing()
     base_class = classes[0]
-    base_fqn = "for_inspector.a.Person"
+    base_fqn = "for_inspector.tlo.a.Person"
     base_obj = base_class[1]
     result = inspector.get_link(base_fqn, base_obj)
-    expected = f"<./for_inspector.a.html#{base_fqn}>"
+    expected = f"<./for_inspector.tlo.a.html#{base_fqn}>"
     assert result == expected
 
 
