@@ -194,6 +194,8 @@ def get_class_output_string(classinfo):
                             "report_daly_values", "run", "did_not_run",
                             "SYMPTOMS", ]
 
+    # Return all the members of an object in a list of (name, value) pairs
+    # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
 
     for name, obj in classdat:

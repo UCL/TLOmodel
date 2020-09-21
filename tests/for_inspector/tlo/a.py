@@ -1,14 +1,16 @@
 import inspect
 
 class Person:
-    '''The basic Person class'''
+    '''The basic Person class.'''
     def __init__(self, name):
         self._name = name
 
     def set_name(self, name):
+        '''Set the name.'''
         self._name = name
 
     def get_name(self):
+        '''Get the name.'''
         return self._name
 
 

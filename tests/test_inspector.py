@@ -114,7 +114,20 @@ def ignore_this_test_write_rst_file():
 
 
 def test_get_class_output_string():
-    pass
+    classes = get_classes_for_testing()
+    person = classes[0]
+    result = inspector.get_class_output_string(person)
+    expected = "\n\n\n.. class:: Person\n\n"
+    expected += "\n\n"
+    expected += "**Description:**\nThe basic Person class."  # <class for_inspector.tlo.a.Person>"
+    expected += "\n\n**Function get_name():**\n"
+    expected += f"\n\nGet the name. \n\n"
+    expected += "\n\n**Function set_name():**\n"
+    expected += f"\n\nSet the name. \n\n"
+    expected += "\n\n\n"
+    #expected.replace("\n", "")
+    #result.replace("\n", "")
+    assert result == expected
 
 
 def test_get_base_string():
