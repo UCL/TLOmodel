@@ -78,22 +78,18 @@ class DxAlgorithmAdult(Module):
                     if df.at[person_id, "ma_inf_type"] == "severe":
                         diagnosis_str = "severe_malaria"
 
-                        logger.debug(
-                            "DxAlgorithmAdult diagnosing severe malaria for person %d on date %s",
-                            person_id,
-                            self.sim.date,
-                        )
+                        logger.debug(key='message',
+                                     data=f'DxAlgorithmAdult diagnosing severe malaria for person {person_id}'
+                                          f'on date {self.sim.date}')
 
                     # clinical malaria
                     elif df.at[person_id, "ma_inf_type"] == "clinical":
 
                         diagnosis_str = "clinical_malaria"
 
-                        logger.debug(
-                            "DxAlgorithmAdult diagnosing clinical malaria for person %d on date %s",
-                            person_id,
-                            self.sim.date,
-                        )
+                        logger.debug(key='message',
+                                     data=f'DxAlgorithmAdult diagnosing clinical malaria for person {person_id}'
+                                          f'on date {self.sim.date}')
 
                 else:
                     diagnosis_str = "negative_malaria_test"
@@ -101,7 +97,8 @@ class DxAlgorithmAdult(Module):
             else:
                 diagnosis_str = "non-malarial fever"
 
-        logger.debug(f"{person_id} diagnosis is {diagnosis_str}")
+        logger.debug(key='message',
+                     data=f'{person_id} diagnosis is {diagnosis_str}')
 
         # return the diagnosis as a string
         return diagnosis_str

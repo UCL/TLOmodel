@@ -67,7 +67,9 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug("HSI_GenericFirstApptAtFacilityLevel1 for person %d", person_id)
+        logger.debug(key='message',
+                     data=f'HSI_GenericFirstApptAtFacilityLevel1 for person'
+                          f'{person_id}')
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
@@ -82,7 +84,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         if age < 5.0:
             # ----------------------------------- CHILD <5 -----------------------------------
             # It's a child:
-            logger.debug("Run the ICMI algorithm for this child [dx_algorithm_child]")
+            logger.debug(key='message',
+                         data='Run the ICMI algorithm for this child [dx_algorithm_child]')
 
             # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
             if 'diarrhoea' in symptoms:
@@ -206,8 +209,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     )
 
     def did_not_run(self):
-        logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
-
+        logger.debug(key='message',
+                     data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
@@ -237,11 +240,12 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_GenericFirstApptAtFacilityLevel0 for person %d', person_id)
+        logger.debug(key='message',
+                     data=f'This is HSI_GenericFirstApptAtFacilityLevel0 for person {person_id}')
 
     def did_not_run(self):
-        logger.debug('HSI_GenericFirstApptAtFacilityLevel0: did not run')
-
+        logger.debug(key='message',
+                     data='HSI_GenericFirstApptAtFacilityLevel0: did not run')
 
 # ---------------------------------------------------------------------------------------------------------
 #
@@ -287,7 +291,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person %d', person_id)
+        logger.debug(key='message',
+                     data=f'This is HSI_GenericEmergencyFirstApptAtFacilityLevel1 for person {person_id}')
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
@@ -379,7 +384,9 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
     def did_not_run(self):
-        logger.debug('HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
+        logger.debug(key='message',
+                     data='HSI_GenericEmergencyFirstApptAtFacilityLevel1: did not run')
+
         return False  # Labour debugging
         # pass
 

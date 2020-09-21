@@ -27,7 +27,7 @@ class Malaria(Module):
         self.resourcefilepath = Path(resourcefilepath)
         self.testing = testing  # calibrate value to match treatment coverage
         self.itn = itn  # projected ITN values from 2020
-        logger.info(f"Malaria infection event running with projected ITN {self.itn}")
+        logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -405,8 +405,6 @@ class Malaria(Module):
         asym = df.index[(df.ma_inf_type == "asym") & (df.ma_date_infected == now)]
 
         for person in df.loc[asym].index:
-            # logger.debug(
-            #     'Malaria Event: scheduling parasite clearance for asymptomatic person %d', person)
 
             random_date = rng.randint(low=0, high=p["dur_asym"])
             random_days = pd.to_timedelta(random_date, unit="d")
@@ -461,7 +459,9 @@ class Malaria(Module):
         ]
 
         for person in death:
-            logger.debug("MalariaEvent: scheduling malaria death for person %d", person)
+            logger.debug(key='message',
+                         data=f'MalariaEvent: scheduling malaria death for person'
+                              f'{person}')
 
             random_date = rng.randint(low=0, high=7)
             random_days = pd.to_timedelta(random_date, unit="d")
@@ -536,12 +536,9 @@ class Malaria(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug(
-            "This is Malaria, being alerted about a health system interaction "
-            "person %d for: %s",
-            person_id,
-            treatment_id,
-        )
+        logger.debug(key='message',
+                     data=f'This is Malaria, being alerted about a health system interaction for person'
+                          f'{person_id} and treatment {treatment_id}')
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -549,7 +546,8 @@ class Malaria(Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug("This is malaria reporting my health values")
+        logger.debug(key='message',
+                     data=f'This is malaria reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -735,9 +733,8 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        logger.debug(
-            "MalariaEvent: tracking the disease progression of the population."
-        )
+        logger.debug(key='message',
+                     data=f'MalariaEvent: tracking the disease progression of the population')
 
         df = population.props
         p = self.module.parameters
@@ -951,7 +948,8 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         # if any are infected
         if len(ml_idx):
-            logger.debug("This is MalariaEvent, assigning new malaria infections")
+            logger.debug(key='message',
+                         data=f'This is MalariaEvent, assigning new malaria infections')
 
             # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
             # schedule self-cure if no treatment, no self-cure from severe malaria
@@ -960,8 +958,9 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
             asym = df.index[(df.ma_inf_type == "asym") & (df.ma_date_infected == now)]
 
             for person in df.loc[asym].index:
-                logger.debug(
-                    'Malaria Event: scheduling parasite clearance for asymptomatic person %d', person)
+
+                logger.debug(key='message',
+                             data=f'Malaria Event: scheduling parasite clearance for asymptomatic person {person}')
 
                 cure = MalariaParasiteClearanceEvent(self.module, person)
                 self.sim.schedule_event(cure, (self.sim.date + DateOffset(days=rng.randint(0, p["dur_asym"]))))
@@ -1015,10 +1014,9 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
             ]
 
             for person in death:
-                logger.debug(
-                    "This is MalariaEvent, scheduling malaria death for person %d",
-                    person,
-                )
+
+                logger.debug(key='message',
+                             data=f'This is MalariaEvent, scheduling malaria death for person {person}')
 
                 death_event = MalariaDeathEvent(
                     self.module, individual_id=person, cause="severe_malaria"
@@ -1028,7 +1026,8 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
                 )  # schedule the death
 
         else:
-            logger.debug("MalariaEvent: no one is newly infected.")
+            logger.debug(key='message',
+                         data=f'MalariaEvent: no one is newly infected.')
 
 
 class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
@@ -1055,9 +1054,9 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         ]
 
         for person_index in test:
-            logger.debug(
-                f"MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}"
-            )
+
+            logger.debug(key='message',
+                         data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
 
             event = HSI_Malaria_rdt(self.module, person_id=person_index)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1081,9 +1080,9 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
         p1 = df.index[df.is_alive & df.is_pregnant & ~df.ma_is_infected & ~df.ma_iptp]
 
         for person_index in p1:
-            logger.debug(
-                f"MalariaIPTp: scheduling HSI_Malaria_IPTp for person {person_index}"
-            )
+
+            logger.debug(key='message',
+                         data=f'MalariaIPTp: scheduling HSI_Malaria_IPTp for person {person_index}')
 
             event = HSI_MalariaIPTp(self.module, person_id=person_index)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1169,7 +1168,9 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         district = df.at[person_id, "district_of_residence"]
-        logger.debug(f"HSI_Malaria_rdt: rdt test for person {person_id} in {district}")
+        logger.debug(key='message',
+                     data=f'HSI_Malaria_rdt: rdt test for person {person_id}'
+                          f'in district {district}')
 
         # call the DxTest RDT to diagnose malaria
         dx_result = hs.dx_manager.run_dx_test(
@@ -1190,9 +1191,9 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                     # paediatric severe malaria case
                     if df.at[person_id, "age_years"] < 15:
 
-                        logger.debug(
-                            f"HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child {person_id} on {self.sim.date}"
-                        )
+                        logger.debug(key='message',
+                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child {person_id}'
+                                          f'on date {self.sim.date}')
 
                         treat = HSI_Malaria_complicated_treatment_child(
                             self.sim.modules["Malaria"], person_id=person_id
@@ -1203,11 +1204,9 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                     else:
                         # adult severe malaria case
-                        logger.debug(
-                            "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
-                            person_id,
-                            (self.sim.date + DateOffset(days=1)),
-                        )
+                        logger.debug(key='message',
+                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_adult for person {person_id}'
+                                          f'on date {self.sim.date}')
 
                         treat = HSI_Malaria_complicated_treatment_adult(
                             self.module, person_id=person_id
@@ -1230,11 +1229,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                     # diagnosis / treatment for children <5
                     if diagnosed & (df.at[person_id, "age_years"] < 5):
-                        logger.debug(
-                            "This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_0_5 for person %d on date %s",
-                            person_id,
-                            (self.sim.date + DateOffset(days=1)),
-                        )
+
+                        logger.debug(key='message',
+                                     data=f'HSI_Malaria_rdt scheduling HSI_Malaria_tx_0_5 for person {person_id}'
+                                          f'on date {self.sim.date}')
 
                         treat = HSI_Malaria_non_complicated_treatment_age0_5(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1243,11 +1241,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                     # diagnosis / treatment for children 5-15
                     if diagnosed & (df.at[person_id, "age_years"] >= 5) & (df.at[person_id, "age_years"] < 15):
-                        logger.debug(
-                            "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
-                            person_id,
-                            (self.sim.date + DateOffset(days=1)),
-                        )
+
+                        logger.debug(key='message',
+                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_5_15 for person {person_id}'
+                                          f'on date {self.sim.date}')
 
                         treat = HSI_Malaria_non_complicated_treatment_age5_15(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1256,11 +1253,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                     # diagnosis / treatment for adults
                     if diagnosed & (df.at[person_id, "age_years"] >= 15):
-                        logger.debug(
-                            "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_adult for person %d on date %s",
-                            person_id,
-                            (self.sim.date + DateOffset(days=1)),
-                        )
+
+                        logger.debug(key='message',
+                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_adult for person {person_id}'
+                                          f'on date {self.sim.date}')
 
                         treat = HSI_Malaria_non_complicated_treatment_adult(self.module, person_id=person_id)
                         self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -1268,7 +1264,8 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                         )
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_rdt: did not run")
+        logger.debug(key='message',
+                     data='HSI_Malaria_rdt: did not run')
         pass
 
 
@@ -1296,10 +1293,8 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
         df = self.sim.population.props
         if not df.at[person_id, "ma_tx"]:
 
-            logger.debug(
-                "HSI_Malaria_tx_0_5: requesting malaria treatment for child %d",
-                person_id,
-            )
+            logger.debug(key='message',
+                         data=f'HSI_Malaria_tx_0_5: requesting malaria treatment for child {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
             pkg_code1 = pd.unique(
@@ -1325,10 +1320,9 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
             )
 
             if outcome_of_request_for_consumables:
-                logger.debug(
-                    "HSI_Malaria_tx_0_5: giving malaria treatment for child %d",
-                    person_id,
-                )
+
+                logger.debug(key='message',
+                             data=f'HSI_Malaria_tx_0_5: giving malaria treatment for child {person_id}')
 
                 if df.at[person_id, "is_alive"]:
                     df.at[person_id, "ma_tx"] = True
@@ -1341,7 +1335,8 @@ class HSI_Malaria_non_complicated_treatment_age0_5(HSI_Event, IndividualScopeEve
                     )
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_tx_0_5: did not run")
+        logger.debug(key='message',
+                     data='HSI_Malaria_tx_0_5: did not run')
         pass
 
 
@@ -1369,10 +1364,8 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
         df = self.sim.population.props
         if not df.at[person_id, "ma_tx"]:
 
-            logger.debug(
-                "HSI_Malaria_tx_5_15: requesting malaria treatment for child %d",
-                person_id,
-            )
+            logger.debug(key='message',
+                         data=f'HSI_Malaria_tx_5_15: requesting malaria treatment for child {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
             pkg_code1 = pd.unique(
@@ -1398,10 +1391,9 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
             )
 
             if outcome_of_request_for_consumables:
-                logger.debug(
-                    "HSI_Malaria_tx_5_15: giving malaria treatment for child %d",
-                    person_id,
-                )
+
+                logger.debug(key='message',
+                             data=f'HSI_Malaria_tx_5_15: giving malaria treatment for child {person_id}')
 
                 if df.at[person_id, "is_alive"]:
                     df.at[person_id, "ma_tx"] = True
@@ -1414,7 +1406,8 @@ class HSI_Malaria_non_complicated_treatment_age5_15(HSI_Event, IndividualScopeEv
                     )
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_tx_5_15: did not run")
+        logger.debug(key='message',
+                     data='HSI_Malaria_tx_5_15: did not run')
         pass
 
 
@@ -1442,10 +1435,8 @@ class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEven
         df = self.sim.population.props
         if not df.at[person_id, "ma_tx"]:
 
-            logger.debug(
-                "HSI_Malaria_tx_adult: requesting malaria treatment for person %d",
-                person_id,
-            )
+            logger.debug(key='message',
+                         data=f'HSI_Malaria_tx_adult: requesting malaria treatment for person {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
             pkg_code1 = pd.unique(
@@ -1470,10 +1461,9 @@ class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEven
             )
 
             if outcome_of_request_for_consumables:
-                logger.debug(
-                    "HSI_Malaria_tx_adult: giving malaria treatment for person %d",
-                    person_id,
-                )
+
+                logger.debug(key='message',
+                             data=f'HSI_Malaria_tx_adult: giving malaria treatment for person {person_id}')
 
                 if df.at[person_id, "is_alive"]:
                     df.at[person_id, "ma_tx"] = True
@@ -1486,7 +1476,8 @@ class HSI_Malaria_non_complicated_treatment_adult(HSI_Event, IndividualScopeEven
                     )
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_tx_adult: did not run")
+        logger.debug(key='message',
+                     data='HSI_Malaria_tx_adult: did not run')
         pass
 
 
@@ -1514,10 +1505,9 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
         df = self.sim.population.props
         if not df.at[person_id, "ma_tx"]:
 
-            logger.debug(
-                "HSI_Malaria_tx_compl_child: requesting complicated malaria treatment for child %d",
-                person_id,
-            )
+            logger.debug(key='message',
+                         data=f'HSI_Malaria_tx_compl_child: requesting complicated malaria treatment for '
+                              f'child {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
             pkg_code1 = pd.unique(
@@ -1541,10 +1531,10 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
             )
 
             if outcome_of_request_for_consumables:
-                logger.debug(
-                    "HSI_Malaria_tx_compl_child: giving complicated malaria treatment for child %d",
-                    person_id,
-                )
+
+                logger.debug(key='message',
+                             data=f'HSI_Malaria_tx_compl_child: giving complicated malaria treatment for '
+                                  f'child {person_id}')
 
                 if df.at[person_id, "is_alive"]:
                     df.at[person_id, "ma_tx"] = True
@@ -1557,7 +1547,8 @@ class HSI_Malaria_complicated_treatment_child(HSI_Event, IndividualScopeEventMix
                     )
 
     def did_not_run(self):
-        logger.debug("HSI_Malaria_tx_compl_child: did not run")
+        logger.debug(key='message',
+                     data='HSI_Malaria_tx_compl_child: did not run')
         pass
 
 
@@ -1585,10 +1576,9 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
         df = self.sim.population.props
         if not df.at[person_id, "ma_tx"]:
 
-            logger.debug(
-                "HSI_Malaria_tx_compl_adult: requesting complicated malaria treatment for person %d",
-                person_id,
-            )
+            logger.debug(key='message',
+                         data=f'HSI_Malaria_tx_compl_adult: requesting complicated malaria treatment '
+                              f'for person {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
             pkg_code1 = pd.unique(
@@ -1612,10 +1602,10 @@ class HSI_Malaria_complicated_treatment_adult(HSI_Event, IndividualScopeEventMix
             )
 
             if outcome_of_request_for_consumables:
-                logger.debug(
-                    "HSI_Malaria_tx_compl_adult: giving complicated malaria treatment for person %d",
-                    person_id,
-                )
+
+                logger.debug(key='message',
+                             data=f'HSI_Malaria_tx_compl_adult: giving complicated malaria treatment '
+                                  f'for person {person_id}')
 
                 if df.at[person_id, "is_alive"]:
                     df.at[person_id, "ma_tx"] = True
@@ -1662,7 +1652,8 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
             not df.at[person_id, "ma_tx"]
         ):
 
-            logger.debug("HSI_MalariaIPTp: requesting IPTp for person %d", person_id)
+            logger.debug(key='message',
+                         data=f'HSI_MalariaIPTp: requesting IPTp for person {person_id}')
 
             consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
             pkg_code1 = pd.unique(
@@ -1685,12 +1676,15 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
             )
 
             if outcome_of_request_for_consumables:
-                logger.debug("HSI_MalariaIPTp: giving IPTp for person %d", person_id)
+                logger.debug(key='message',
+                             data=f'HSI_MalariaIPTp: giving IPTp for person {person_id}')
 
                 df.at[person_id, "ma_iptp"] = True
 
     def did_not_run(self):
-        logger.debug("HSI_MalariaIPTp: did not run")
+
+        logger.debug(key='message',
+                     data='HSI_MalariaIPTp: did not run')
         pass
 
 
@@ -1702,10 +1696,9 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug(
-            "MalariaCureEvent: Stopping malaria treatment and curing person %d",
-            person_id,
-        )
+
+        logger.debug(key='message',
+                     data=f'MalariaCureEvent: Stopping malaria treatment and curing {person_id}')
 
         df = self.sim.population.props
 
