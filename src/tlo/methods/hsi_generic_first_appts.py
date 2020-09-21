@@ -52,7 +52,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         assert module is self.sim.modules['HealthSeekingBehaviour']
 
         # Work out if this is for a child or an adult
-        is_child = self.sim.population.props.at[person_id, "age_years"] < 5.0
+        is_child = self.sim.population.props.at[person_id, "age_years"] < 5
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         if is_child:
@@ -81,7 +81,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         # make sure query consumables has the generic hsi as the module requesting
 
         # diagnostic algorithm for child <5 yrs
-        if age < 5.0:
+        if age < 5:
             # ----------------------------------- CHILD <5 -----------------------------------
             # It's a child:
             logger.debug(key='message',
@@ -276,7 +276,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         assert module.name in ['HealthSeekingBehaviour', 'Labour']
 
         # Work out if this is for a child or an adult
-        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
+        is_child = self.sim.population.props.at[person_id, 'age_years'] < 5
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         if is_child:
