@@ -214,6 +214,15 @@ class DxAlgorithmChild(Module):
                                      data=f'dx_algorithm_child diagnosing clinical malaria for person'
                                           f'{person_id} on date {self.sim.date}')
 
+                    # asymptomatic malaria
+                    elif df.at[person_id, "ma_inf_type"] == "asym":
+
+                        diagnosis_str = "clinical_malaria"
+
+                        logger.debug(key='message',
+                                     data=f'dx_algorithm_child diagnosing clinical malaria for person {person_id}'
+                                          f'on date {self.sim.date}')
+
                 else:
                     diagnosis_str = "negative_malaria_test"
 
