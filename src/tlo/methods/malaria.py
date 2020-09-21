@@ -1788,28 +1788,30 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             "ma_clinical_preg_counter"
         ].sum()  # clinical episodes in pregnant women (inc severe)
 
-        logger.info(
-            "%s|incidence|%s",
-            now,
-            {
-                "number_new_cases": tmp,
-                "population": pop,
-                "inc_1000py": inc_1000py,
-                "inc_1000py_hiv": inc_1000py_hiv,
-                "new_cases_2_10": tmp2,
-                "population2_10": pop2_10,
-                "inc_1000py_2_10": inc_1000py_2_10,
-                "inc_clin_counter": inc_counter_1000py,
-                "clinical_preg_counter": clin_preg_episodes,
-            },
-        )
+        summary = {
+            "number_new_cases": tmp,
+            "population": pop,
+            "inc_1000py": inc_1000py,
+            "inc_1000py_hiv": inc_1000py_hiv,
+            "new_cases_2_10": tmp2,
+            "population2_10": pop2_10,
+            "inc_1000py_2_10": inc_1000py_2_10,
+            "inc_clin_counter": inc_counter_1000py,
+            "clinical_preg_counter": clin_preg_episodes,
+        }
+
+        logger.info(key='incidence',
+                    data=summary,
+                    description='Summary of incident malaria cases')
 
         # ------------------------------------ RUNNING COUNTS ------------------------------------
 
         counts = {"none": 0, "asym": 0, "clinical": 0, "severe": 0}
         counts.update(df.loc[df.is_alive, "ma_inf_type"].value_counts().to_dict())
 
-        logger.info("%s|status_counts|%s", now, counts)
+        logger.info(key='status_counts',
+                    data=counts,
+                    description='Running counts of incident malaria cases')
 
         # ------------------------------------ PARASITE PREVALENCE BY AGE ------------------------------------
 
@@ -1834,11 +1836,14 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         pop2 = len(df[df.is_alive])
         prev_clin = total_clin / pop2
 
-        logger.info(
-            "%s|prevalence|%s",
-            now,
-            {"child2_10_prev": child_prev, "clinical_prev": prev_clin},
-        )
+        prev = {
+            "child2_10_prev": child_prev,
+            "clinical_prev": prev_clin,
+        }
+
+        logger.info(key='prevalence',
+                    data=prev,
+                    description='Prevalence malaria cases')
 
 
 class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1860,15 +1865,15 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         tx_coverage = tx / clin if clin else 0
 
-        logger.info(
-            "%s|tx_coverage|%s",
-            now,
-            {
-                "number_treated": tx,
-                "number_clinical episodes": clin,
-                "treatment_coverage": tx_coverage,
-            },
-        )
+        treatment = {
+            "number_treated": tx,
+            "number_clinical episodes": clin,
+            "treatment_coverage": tx_coverage,
+        }
+
+        logger.info(key='tx_coverage',
+                    data=treatment,
+                    description='Treatment of malaria cases')
 
 
 class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1891,8 +1896,13 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         assert prev_ed.all() >= 0  # checks
         assert prev_ed.all() <= 1
 
-        logger.info("%s|prev_district|%s", self.sim.date, prev_ed.to_dict())
-        logger.info("%s|pop_district|%s", self.sim.date, pop.to_dict())
+        logger.info(key='prev_district',
+                    data=prev_ed.to_dict(),
+                    description='District estimates of malaria prevalence')
+
+        logger.info(key='pop_district',
+                    data=pop.to_dict(),
+                    description='District population sizes')
 
 
 # ---------------------------------------------------------------------------------
