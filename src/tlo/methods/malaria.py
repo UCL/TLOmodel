@@ -185,9 +185,6 @@ class Malaria(Module):
 
     def initialise_population(self, population):
         df = population.props
-        p = self.parameters
-        now = self.sim.date
-        rng = self.rng
 
         # ----------------------------------- INITIALISE THE POPULATION-----------------------------------
         # Set default for properties
@@ -206,6 +203,16 @@ class Malaria(Module):
         df.loc[df.is_alive, "ma_clinical_preg_counter"] = 0
         df.loc[df.is_alive, "ma_iptp"] = False
 
+        self.malaria_poll(population)
+
+    def malaria_poll(self, population):
+        """ Assign new malaria infections
+        """
+        df = population.props
+        p = self.parameters
+        now = self.sim.date
+        rng = self.rng
+
         current_year = min(now.year, p["data_end"])  # fix values for 2018 onwards
 
         # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
@@ -214,11 +221,16 @@ class Malaria(Module):
         itn_curr["itn_rates"] = itn_curr["itn_rates"].round(decimals=1)
         itn_curr = itn_curr.loc[itn_curr.Year == current_year]
 
+        # TODO replace itn coverage with the projected value from 2020 onwards
+        # if a projected itn coverage level has been supplied
+        if p["itn_proj"] and now.year >= 2020:
+            itn_curr["itn_rates"] = p["itn_proj"]
+
         # IRS coverage rates
         irs_curr = p["irs_district"].copy()
         irs_curr = irs_curr.loc[irs_curr.Year == current_year]
-        irs_curr.loc[irs_curr.irs_rates > 0.5, "irs_rates_round"] = 0.8
-        irs_curr.loc[irs_curr.irs_rates <= 0.5, "irs_rates_round"] = 0
+        irs_curr.loc[irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
+        irs_curr.loc[irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
 
         # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # inf_inc select current month and irs
@@ -427,10 +439,6 @@ class Malaria(Module):
         for person in df.loc[clin].index:
             # clinical symptoms resolve after 5 days
             # parasitaemia clears after much longer
-
-            # logger.debug(
-            #     'Malaria Event: scheduling parasite clearance and symptom end for symptomatic person %d',
-            #     person)
 
             date_para = rng.randint(low=0, high=p["dur_clin_para"])
             date_para_days = pd.to_timedelta(date_para, unit="d")
@@ -742,298 +750,7 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
         logger.debug(key='message',
                      data=f'MalariaEvent: tracking the disease progression of the population')
 
-        df = population.props
-        p = self.module.parameters
-        rng = self.module.rng
-        now = self.sim.date
-
-        # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
-
-        if now.year <= 2018:
-            current_year = now.year
-        else:
-            current_year = 2018  # fix values for 2018 onwards
-
-        # get ITN usage rates for current year by district
-        itn_curr = p["itn_district"].copy()
-        itn_curr["itn_rates"] = itn_curr["itn_rates"].round(decimals=1)
-        itn_curr = itn_curr.loc[itn_curr.Year == current_year]
-
-        # TODO replace itn coverage with the projected value from 2020 onwards
-        # if a projected itn coverage level has been supplied
-        if p["itn_proj"] and now.year >= 2020:
-            itn_curr["itn_rates"] = p["itn_proj"]
-
-        # IRS coverage rates
-        irs_curr = p["irs_district"].copy()
-        irs_curr = irs_curr.loc[irs_curr.Year == current_year]
-        irs_curr.loc[irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
-        irs_curr.loc[irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
-
-        # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
-        # inf_inc select current month and irs
-        month = now.month
-
-        inf_inc = p["inf_inc"]  # datasheet with infection incidence
-        inf_inc_month = inf_inc.loc[(inf_inc.month == month)]
-        clin_inc = p["clin_inc"]
-        clin_inc_month = clin_inc.loc[(clin_inc.month == month)]
-        sev_inc = p["sev_inc"]
-        sev_inc_month = sev_inc.loc[(sev_inc.month == month)]
-
-        # from lookup table, select entries which match the reported ITN and IRS coverage each year
-        # merge incidence dataframes with itn_curr and keep only matching rows
-        inf_inc_month_itn = inf_inc_month.merge(
-            itn_curr,
-            left_on=["admin", "llin"],
-            right_on=["District", "itn_rates"],
-            how="inner",
-        )
-        clin_inc_month_itn = clin_inc_month.merge(
-            itn_curr,
-            left_on=["admin", "llin"],
-            right_on=["District", "itn_rates"],
-            how="inner",
-        )
-        sev_inc_month_itn = sev_inc_month.merge(
-            itn_curr,
-            left_on=["admin", "llin"],
-            right_on=["District", "itn_rates"],
-            how="inner",
-        )
-
-        # merge incidence dataframes with irs_curr and keep only matching rows
-        inf_inc_month_irs = inf_inc_month_itn.merge(
-            irs_curr,
-            left_on=["admin", "irs"],
-            right_on=["District", "irs_rates_round"],
-            how="inner",
-        )
-        clin_inc_month_irs = clin_inc_month_itn.merge(
-            irs_curr,
-            left_on=["admin", "irs"],
-            right_on=["District", "irs_rates_round"],
-            how="inner",
-        )
-        sev_inc_month_irs = sev_inc_month_itn.merge(
-            irs_curr,
-            left_on=["admin", "irs"],
-            right_on=["District", "irs_rates_round"],
-            how="inner",
-        )
-
-        inf_prob = inf_inc_month_irs[["admin", "age", "monthly_prob_inf"]]
-        clin_prob = clin_inc_month_irs[["admin", "age", "monthly_prob_clin"]]
-        sev_prob = sev_inc_month_irs[["admin", "age", "monthly_prob_sev"]]
-
-        # tidy up - large files now not needed
-        del inf_inc, inf_inc_month, inf_inc_month_itn, inf_inc_month_irs
-        del clin_inc, clin_inc_month, clin_inc_month_itn, clin_inc_month_irs
-        del sev_inc, sev_inc_month, sev_inc_month_itn, sev_inc_month_irs
-
-        # for each district and age, look up incidence estimate using itn_2010 and irs_2010
-        # create new age column with 0, 0.5, 1, 2, ...
-        df.loc[df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
-        df.loc[df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
-        df.loc[(df.age_exact_years >= 1), "ma_age_edited"] = df.age_years[
-            df.age_years >= 1
-        ]
-        assert not pd.isnull(df["ma_age_edited"]).any()
-        df["ma_age_edited"] = df["ma_age_edited"].astype(
-            "float"
-        )  # for merge with malaria data
-
-        # merge the incidence into the main df and replace each event call
-        df_ml = (
-            df.merge(
-                inf_prob,
-                left_on=["district_of_residence", "ma_age_edited"],
-                right_on=["admin", "age"],
-                how="left",
-                indicator=True,
-            )
-        )
-        df_ml["monthly_prob_inf"] = df_ml["monthly_prob_inf"].fillna(
-            0
-        )  # 0 if over 80 yrs
-        assert not pd.isnull(df_ml["monthly_prob_inf"]).any()
-
-        df_ml = (
-            df_ml.merge(
-                clin_prob,
-                left_on=["district_of_residence", "ma_age_edited"],
-                right_on=["admin", "age"],
-                how="left",
-            )
-        )
-        df_ml["monthly_prob_clin"] = df_ml["monthly_prob_clin"].fillna(
-            0
-        )  # 0 if over 80 yrs
-        assert not pd.isnull(df_ml["monthly_prob_clin"]).any()
-
-        df_ml = (
-            df_ml.merge(
-                sev_prob,
-                left_on=["district_of_residence", "ma_age_edited"],
-                right_on=["admin", "age"],
-                how="left",
-            )
-        )
-        df_ml["monthly_prob_sev"] = df_ml["monthly_prob_sev"].fillna(
-            0
-        )  # 0 if over 80 yrs
-        assert not pd.isnull(df_ml["monthly_prob_sev"]).any()
-
-        # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
-
-        # infected
-        risk_ml = pd.Series(0, index=df.index)
-        risk_ml.loc[df.is_alive] = 1  # applied to everyone
-        # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
-
-        # new infections - sample from uninfected
-        random_draw = rng.random_sample(size=len(df_ml))
-        ml_idx = df_ml[
-            df_ml.is_alive
-            & ~df_ml.ma_is_infected
-            & (random_draw < df_ml.monthly_prob_inf)
-        ].index
-        df_ml.loc[ml_idx, "ma_is_infected"] = True
-        df_ml.loc[ml_idx, "ma_date_infected"] = now  # TODO: scatter dates across month
-        df_ml.loc[ml_idx, "ma_inf_type"] = "asym"
-        # print('len ml_idx', len(ml_idx))
-
-        # clinical - subset of anyone currently infected
-        random_draw = rng.random_sample(size=len(df_ml))
-        clin_idx = df_ml[
-            df_ml.is_alive
-            & df_ml.ma_is_infected
-            & (df_ml.ma_inf_type == "asym")
-            & (random_draw < df_ml.monthly_prob_clin)
-        ].index
-        df_ml.loc[clin_idx, "ma_inf_type"] = "clinical"
-        # print('len clin_idx', len(clin_idx))
-
-        # severe - subset of anyone currently clinical
-        random_draw = rng.random_sample(size=len(df_ml))
-        sev_idx = df_ml[
-            df_ml.is_alive
-            & df_ml.ma_is_infected
-            & (df_ml.ma_inf_type == "clinical")
-            & (random_draw < df_ml.monthly_prob_sev)
-        ].index
-        # print('len sev_idx', len(sev_idx))
-
-        # update the main dataframe
-        df.loc[ml_idx, "ma_date_infected"] = now
-        df.loc[ml_idx, "ma_is_infected"] = True
-        df.loc[ml_idx, "ma_inf_type"] = "asym"
-
-        df.loc[clin_idx, "ma_inf_type"] = "clinical"
-        df.loc[clin_idx, "ma_date_symptoms"] = now
-        df.loc[
-            clin_idx, "ma_clinical_counter"
-        ] += 1  # counter only for new clinical cases (inc severe)
-        # print('clin counter', df['ma_clinical_counter'].sum())
-
-        inf_preg = df.index[
-            (df.ma_date_infected == now)
-            & (df.ma_inf_type == "clinical")
-            & df.is_pregnant
-        ]
-
-        if len(inf_preg) > 0:
-            df.loc[
-                inf_preg, "ma_clinical_preg_counter"
-            ] += 1  # counter only for pregnant women
-
-        df.loc[sev_idx, "ma_inf_type"] = "severe"
-
-        # tidy up
-        del df_ml
-
-        # if any are infected
-        if len(ml_idx):
-            logger.debug(key='message',
-                         data=f'This is MalariaEvent, assigning new malaria infections')
-
-            # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
-            # schedule self-cure if no treatment, no self-cure from severe malaria
-
-            # asymptomatic
-            asym = df.index[(df.ma_inf_type == "asym") & (df.ma_date_infected == now)]
-
-            for person in df.loc[asym].index:
-
-                logger.debug(key='message',
-                             data=f'Malaria Event: scheduling parasite clearance for asymptomatic person {person}')
-
-                cure = MalariaParasiteClearanceEvent(self.module, person)
-                self.sim.schedule_event(cure, (self.sim.date + DateOffset(days=rng.randint(0, p["dur_asym"]))))
-
-            # clinical
-            clin = df.index[
-                (df.ma_inf_type == "clinical") & (df.ma_date_infected == now)
-            ]
-
-            # update clinical symptoms for all new clinical infections
-            self.module.clinical_symptoms(df, clin)
-
-            for person in df.loc[clin].index:
-                # logger.debug(
-                #     'Malaria Event: scheduling parasite clearance and symptom end for symptomatic person %d',
-                #     person)
-
-                date_para = rng.randint(low=0, high=p["dur_clin_para"])
-                date_para_days = pd.to_timedelta(date_para, unit="d")
-                # print('date_para_days', date_para_days)
-
-                cure = MalariaParasiteClearanceEvent(self, person)
-                self.sim.schedule_event(cure, (self.sim.date + date_para_days))
-
-                # symptoms are resolved using the symptom manager but have to change ma_inf_type == "clinical" to "none"
-                change_clinical_status = MalariaCureEvent(self, person)
-                self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
-
-            # SEVERE
-            severe = df.index[
-                (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
-            ]
-
-            children = df.index[df.index.isin(severe) & (df.age_exact_years < 5)]
-            adult = df.index[df.index.isin(severe) & (df.age_exact_years >= 5)]
-
-            # update symptoms for all new severe infections
-            self.module.severe_symptoms_child(df, children)
-            self.module.severe_symptoms_adult(df, adult)
-
-            # ----------------------------------- SCHEDULED DEATHS -----------------------------------
-            # schedule deaths within the next week
-            # Assign time of infections across the month
-            random_draw = rng.random_sample(size=len(df))
-
-            # the cfr applies to all severe malaria cases
-            death = df.index[
-                (df.ma_inf_type == "severe")
-                & (df.ma_date_infected == now)
-                & (random_draw < (p["cfr"] * p["mortality_adjust"]))
-            ]
-
-            for person in death:
-
-                logger.debug(key='message',
-                             data=f'This is MalariaEvent, scheduling malaria death for person {person}')
-
-                death_event = MalariaDeathEvent(
-                    self.module, individual_id=person, cause="severe_malaria"
-                )  # make that death event
-                self.sim.schedule_event(
-                    death_event, self.sim.date + DateOffset(days=rng.randint(low=0, high=7))
-                )  # schedule the death
-
-        else:
-            logger.debug(key='message',
-                         data=f'MalariaEvent: no one is newly infected.')
+        self.module.malaria_poll(population)
 
 
 class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
