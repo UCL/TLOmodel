@@ -70,7 +70,7 @@ class DxAlgorithmAdult(Module):
                 hsi_event=hsi_event
             )
 
-            if "malaria" in self.sim.modules:
+            if "Malaria" in self.sim.modules:
 
                 if dx_result:
 

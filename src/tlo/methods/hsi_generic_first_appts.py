@@ -175,7 +175,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
 
             # DxAlgorithmAdult only exists in the malaria branch currently
-            if "malaria" in self.sim.modules:
+            if "Malaria" in self.sim.modules:
                 # Run DxAlgorithmAdult to get additional diagnoses:
                 diagnosis = self.sim.modules["DxAlgorithmAdult"].diagnose(
                     person_id=person_id, hsi_event=self
@@ -200,7 +200,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                         self.sim.modules["Malaria"], person_id=person_id
                     )
 
-                    # Schedule relevant treament HSI event
+                    # Schedule relevant treatment HSI event
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         treatment_hsi, priority=1, topen=self.sim.date, tclose=None
                     )

@@ -1171,28 +1171,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         district = df.at[person_id, "district_of_residence"]
         logger.debug(f"HSI_Malaria_rdt: rdt test for person {person_id} in {district}")
 
-        # # the OneHealth consumables have Intervention_Pkg_Code= -99 which causes errors
-        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        # # this package contains treatment too
-        # pkg_code1 = pd.unique(
-        #     consumables.loc[
-        #         consumables["Items"] == "Malaria test kit (RDT)",
-        #         "Intervention_Pkg_Code",
-        #     ]
-        # )[0]
-        #
-        # consumables_needed = {
-        #     "Intervention_Package_Code": {pkg_code1: 1},
-        #     "Item_Code": {},
-        # }
-        #
-        # # request the RDT
-        # outcome_of_request_for_consumables = self.sim.modules[
-        #     "HealthSystem"
-        # ].request_consumables(
-        #     hsi_event=self, cons_req_as_footprint=consumables_needed
-        # )
-
         # call the DxTest RDT to diagnose malaria
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='malaria_rdt',

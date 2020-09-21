@@ -187,7 +187,7 @@ class DxAlgorithmChild(Module):
 
         if "fever" in self.sim.modules["SymptomManager"].has_what(person_id):
 
-            if "malaria" in self.sim.modules:
+            if "Malaria" in self.sim.modules:
 
                 # call the DxTest RDT to diagnose malaria
                 dx_result = hs.dx_manager.run_dx_test(
