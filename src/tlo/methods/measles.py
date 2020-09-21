@@ -42,6 +42,9 @@ class Measles(Module):
     # declare metadata
     METADATA = {
         Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_SYMPTOMMANAGER
     }
 
     PARAMETERS = {
@@ -96,10 +99,6 @@ class Measles(Module):
                 "diarrhoea": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=205),
                 "pneumonia": self.sim.modules["HealthBurden"].get_daly_weight(sequlae_code=206),
             }
-
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
 
         # Declare symptoms that this module will cause and which are not included in the generic symptoms:
         generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
