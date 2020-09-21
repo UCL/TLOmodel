@@ -40,6 +40,46 @@ class Malaria(Module):
         self.itn_curr = None
         self.irs_curr = None
 
+        # empty containers for monthly infection, clinical and severe malaria incidence by district
+        self.inf_inc_Jan = None
+        self.inf_inc_Feb = None
+        self.inf_inc_Mar = None
+        self.inf_inc_Apr = None
+        self.inf_inc_May = None
+        self.inf_inc_Jun = None
+        self.inf_inc_Jul = None
+        self.inf_inc_Aug = None
+        self.inf_inc_Sep = None
+        self.inf_inc_Oct = None
+        self.inf_inc_Nov = None
+        self.inf_inc_Dec = None
+
+        self.clin_inc_Jan = None
+        self.clin_inc_Feb = None
+        self.clin_inc_Mar = None
+        self.clin_inc_Apr = None
+        self.clin_inc_May = None
+        self.clin_inc_Jun = None
+        self.clin_inc_Jul = None
+        self.clin_inc_Aug = None
+        self.clin_inc_Sep = None
+        self.clin_inc_Oct = None
+        self.clin_inc_Nov = None
+        self.clin_inc_Dec = None
+
+        self.sev_inc_Jan = None
+        self.sev_inc_Feb = None
+        self.sev_inc_Mar = None
+        self.sev_inc_Apr = None
+        self.sev_inc_May = None
+        self.sev_inc_Jun = None
+        self.sev_inc_Jul = None
+        self.sev_inc_Aug = None
+        self.sev_inc_Sep = None
+        self.sev_inc_Oct = None
+        self.sev_inc_Nov = None
+        self.sev_inc_Dec = None
+
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -165,15 +205,6 @@ class Malaria(Module):
         p["itn_district"] = workbook["MAP_ITNrates"]
         p["irs_district"] = workbook["MAP_IRSrates"]
 
-        # using .copy() avoids SettingWithCopyWarning due to chained indexing
-        self.itn_curr = p["itn_district"].copy()
-        self.itn_curr["itn_rates"] = self.itn_curr["itn_rates"].round(decimals=1)
-
-        # IRS coverage rates
-        self.irs_curr = p["irs_district"].copy()
-        self.irs_curr.loc[self.irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
-        self.irs_curr.loc[self.irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
-
         p["sev_symp_prob"] = workbook["severe_symptoms"]
 
         p["inf_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_InfInc_expanded.csv")
@@ -182,6 +213,16 @@ class Malaria(Module):
 
         p["testing_adj"] = self.testing
         p["itn_proj"] = self.itn
+
+        # clean intervention data
+        # using .copy() avoids SettingWithCopyWarning due to chained indexing
+        self.itn_curr = p["itn_district"].copy()
+        self.itn_curr["itn_rates"] = self.itn_curr["itn_rates"].round(decimals=1)
+
+        # IRS coverage rates
+        self.irs_curr = p["irs_district"].copy()
+        self.irs_curr.loc[self.irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
+        self.irs_curr.loc[self.irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules:
@@ -305,9 +346,9 @@ class Malaria(Module):
 
         # for each district and age, look up incidence estimate using itn_2010 and irs_2010
         # create new age column with 0, 0.5, 1, 2, ...
-        df.loc[df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
-        df.loc[df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
-        df.loc[(df.age_exact_years >= 1), "ma_age_edited"] = df.age_years[
+        df.loc[df.is_alive & df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
+        df.loc[df.is_alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
+        df.loc[df.is_alive & (df.age_exact_years >= 1), "ma_age_edited"] = df.age_years[
             df.age_years >= 1
         ]
         assert not pd.isnull(df["ma_age_edited"]).any()
@@ -430,7 +471,7 @@ class Malaria(Module):
         # schedule self-cure if no treatment, no self-cure from severe malaria
 
         # asymptomatic
-        asym = df.index[(df.ma_inf_type == "asym") & (df.ma_date_infected == now)]
+        asym = df.index[df.is_alive & (df.ma_inf_type == "asym") & (df.ma_date_infected == now)]
 
         for person in df.loc[asym].index:
 
@@ -441,7 +482,7 @@ class Malaria(Module):
             self.sim.schedule_event(cure, (self.sim.date + random_days))
 
         # clinical
-        clin = df.index[(df.ma_inf_type == "clinical") & (df.ma_date_infected == now)]
+        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now)]
 
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
@@ -462,9 +503,9 @@ class Malaria(Module):
             self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
 
         # SEVERE CASES
-        severe = df.index[(df.ma_inf_type == "severe") & (df.ma_date_infected == now)]
-        children = df.index[df.index.isin(severe) & (df.age_exact_years < 5)]
-        adult = df.index[df.index.isin(severe) & (df.age_exact_years >= 5)]
+        severe = df.index[df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)]
+        children = df.index[df.is_alive & df.index.isin(severe) & (df.age_exact_years < 5)]
+        adult = df.index[df.is_alive & df.index.isin(severe) & (df.age_exact_years >= 5)]
 
         # update symptoms for all new severe infections
         self.severe_symptoms_child(df, children)
@@ -476,7 +517,7 @@ class Malaria(Module):
         random_draw = rng.random_sample(size=len(df))
 
         # the cfr applies to all severe malaria
-        death = df.index[
+        death = df.index[df.is_alive &
             (df.ma_inf_type == "severe")
             & (df.ma_date_infected == now)
             & (random_draw < (p["cfr"] * p["mortality_adjust"]))
@@ -618,9 +659,16 @@ class Malaria(Module):
             )
 
         # additional risk of severe anaemia in pregnancy
-        random_draw = rng.random_sample(size=len(df))
+        number_pregnant = len(df.index[df.is_alive
+            & (df.ma_inf_type == "clinical")
+            & (df.ma_date_infected == now)
+            & df.is_pregnant])
+
+        random_draw = rng.random_sample(size=number_pregnant)
+
         preg_infected = df.index[
-            (df.ma_inf_type == "clinical")
+            df.is_alive
+            & (df.ma_inf_type == "clinical")
             & (df.ma_date_infected == now)
             & df.is_pregnant
             & (random_draw < p["p_sev_anaemia_preg"])
@@ -902,7 +950,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
         district = df.at[person_id, "district_of_residence"]
         logger.debug(key='message',
-                     data=f'HSI_Malaria_rdt: rdt test for person {person_id}'
+                     data=f'HSI_Malaria_rdt: rdt test for person {person_id} '
                           f'in district {district}')
 
         # call the DxTest RDT to diagnose malaria
