@@ -16,6 +16,7 @@ from tlo.methods.symptommanager import Symptom
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -496,7 +497,7 @@ class ALRI(Module):
         }
         self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
 
-        zeros_counter = dict(zip(self.pathogens, [0]*len(self.pathogens)))
+        zeros_counter = dict(zip(self.pathogens, [0] * len(self.pathogens)))
         self.incident_case_tracker_zeros = {
             '0y': copy.deepcopy(zeros_counter),
             '1y': copy.deepcopy(zeros_counter),
@@ -531,7 +532,7 @@ class ALRI(Module):
                               param_type.python_type), f'Parameter "{param_name}" is not read in correctly from the resourcefile.'
 
         # Register this disease module with the health system
-    # self.sim.modules['HealthSystem'].register_disease_module(self)
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Declare symptoms that this modules will cause and which are not included in the generic symptoms:
         generic_symptoms = self.sim.modules['SymptomManager'].parameters['generic_symptoms']
@@ -608,6 +609,7 @@ class ALRI(Module):
             0-year-olds and then creates a new linear model with adjusted intercept so incidents in 0-year-olds
             matches the specified value in the model when averaged across the population
             """
+
             def make_linear_model(patho, intercept=1.0):
                 base_inc_rate = f'base_inc_rate_ALRI_by_{patho}'
                 return LinearModel(
@@ -796,7 +798,7 @@ class ALRI(Module):
                     'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][0],
                     'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][0],
                     'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][0],
-                    'danger_signs':  p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][0],
+                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][0],
                 }
             if disease_type == 'viral_pneumonia':
                 return {
@@ -805,7 +807,7 @@ class ALRI(Module):
                     'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][1],
                     'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][1],
                     'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][1],
-                    'danger_signs':  p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][1],
+                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][1],
                 }
             if disease_type == 'bronchiolitis':
                 return {
@@ -814,7 +816,7 @@ class ALRI(Module):
                     'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][2],
                     'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][2],
                     'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][2],
-                    'danger_signs':  p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][2],
+                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][2],
                 }
             if disease_type == 'fungal_pneumonia':
                 return {
@@ -823,7 +825,7 @@ class ALRI(Module):
                     'difficult_breathing': p['prob_difficult_breathing_uncomplicated_ALRI_by_disease_type'][1],
                     'fast_breathing': p['prob_fast_breathing_uncomplicated_ALRI_by_disease_type'][1],
                     'chest_indrawing': p['prob_chest_indrawing_uncomplicated_ALRI_by_disease_type'][1],
-                    'danger_signs':  p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][1],
+                    'danger_signs': p['prob_danger_signs_uncomplicated_ALRI_by_disease_type'][1],
                 }
 
         for disease in ALRI.disease_type:
@@ -905,7 +907,7 @@ class ALRI(Module):
         df.at[child_id, 'ri_current_ALRI_symptoms'] = 'not_applicable'
         df.at[child_id, 'ri_secondary_bacterial_pathogen'] = 'none'
         df.at[child_id, 'ri_ALRI_disease_type'] = 'not_applicable'
-        df.at[child_id, 'ri_ALRI_complications'] ='none'
+        df.at[child_id, 'ri_ALRI_complications'] = 'none'
 
         # ---- Internal values ----
         df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
@@ -988,6 +990,7 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
         model slightly under-represents incidence among younger age-groups and over-represents incidence among older
         age-groups. This is a small effect when the frequency of the polling event is high.
     """
+
     # TODO: how to fix this
 
     def __init__(self, module):
@@ -1104,8 +1107,13 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
         df.at[person_id, 'ri_ALRI_event_date_of_onset'] = self.sim.date
         df.at[person_id, 'ri_current_ALRI_complications'] = 'none'  # all disease start as non-severe
 
+        print(self.disease)
+
         # ----------------------- Allocate symptoms to onset of ALRI ----------------------
+        if self.disease == None:
+            return
         prob_symptoms_uncomplicated_alri = m.prob_symptoms_uncomplicated_ALRI[self.disease]
+
         symptoms_for_this_person = list()
         for symptom, prob in prob_symptoms_uncomplicated_alri.items():
             if rng.rand() < prob:
@@ -1159,77 +1167,77 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
 
 
 class PneumoniaWithComplicationsEvent(Event, IndividualScopeEventMixin):
-        """
+    """
             This Event is for the onset of any complication from Pneumonia. For some untreated children,
             this occurs a set number of days after onset of disease.
             It sets the property 'ri_current_ALRI_complications' to each complication and schedules the death.
             """
 
-        def __init__(self, module, person_id, duration_in_days, symptoms, complication):
-            super().__init__(module, person_id=person_id)
-            self.duration_in_days = duration_in_days
-            self.complication = complication
-            self.symptoms = symptoms
+    def __init__(self, module, person_id, duration_in_days, symptoms, complication):
+        super().__init__(module, person_id=person_id)
+        self.duration_in_days = duration_in_days
+        self.complication = complication
+        self.symptoms = symptoms
 
-        def apply(self, person_id):
-            df = self.sim.population.props  # shortcut to the dataframe
-            m = self.module
-            rng = self.module.rng
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        rng = self.module.rng
 
-            # terminate the event if the person has already died.
-            if not df.at[person_id, 'is_alive']:
-                return
+        # terminate the event if the person has already died.
+        if not df.at[person_id, 'is_alive']:
+            return
 
-            # complications for this person
-            df.at[person_id, 'ri_ALRI_complications'] = list(self.complication)
+        # complications for this person
+        df.at[person_id, 'ri_ALRI_complications'] = list(self.complication)
 
-            # add to the initial list of uncomplicated ALRI symptoms
-            all_symptoms_for_this_person = list(self.symptoms)  # original uncomplicated symptoms list to add to
+        # add to the initial list of uncomplicated ALRI symptoms
+        all_symptoms_for_this_person = list(self.symptoms)  # original uncomplicated symptoms list to add to
 
-            # keep only the probabilities for the complications of the person:
-            possible_symptoms_by_complication = {key: val for key, val in
-                                                 self.module.prob_extra_symptoms_complications.items()
-                                                 if key in list(self.complication)}
-            print(possible_symptoms_by_complication)
-            symptoms_from_complications = list()
-            for complication in possible_symptoms_by_complication:
-                for symptom, prob in possible_symptoms_by_complication[complication].items():
-                    if self.module.rng.rand() < prob:
-                        symptoms_from_complications.append(symptom)
-                    for i in symptoms_from_complications:
-                        # add symptoms from complications to the list
-                        all_symptoms_for_this_person.append(
-                            i) if i not in all_symptoms_for_this_person \
-                            else all_symptoms_for_this_person
+        # keep only the probabilities for the complications of the person:
+        possible_symptoms_by_complication = {key: val for key, val in
+                                             self.module.prob_extra_symptoms_complications.items()
+                                             if key in list(self.complication)}
+        print(possible_symptoms_by_complication)
+        symptoms_from_complications = list()
+        for complication in possible_symptoms_by_complication:
+            for symptom, prob in possible_symptoms_by_complication[complication].items():
+                if self.module.rng.rand() < prob:
+                    symptoms_from_complications.append(symptom)
+                for i in symptoms_from_complications:
+                    # add symptoms from complications to the list
+                    all_symptoms_for_this_person.append(
+                        i) if i not in all_symptoms_for_this_person \
+                        else all_symptoms_for_this_person
 
-            print(all_symptoms_for_this_person)
-            df.at[person_id, 'ri_current_ALRI_symptoms'] = all_symptoms_for_this_person
+        print(all_symptoms_for_this_person)
+        df.at[person_id, 'ri_current_ALRI_symptoms'] = all_symptoms_for_this_person
 
-            for symptom in all_symptoms_for_this_person:
-                self.module.sim.modules['SymptomManager'].change_symptom(
-                    person_id=person_id,
-                    symptom_string=symptom,
-                    add_or_remove='+',
-                    disease_module=self.module,
-                    duration_in_days=self.duration_in_days
-                )
+        for symptom in all_symptoms_for_this_person:
+            self.module.sim.modules['SymptomManager'].change_symptom(
+                person_id=person_id,
+                symptom_string=symptom,
+                add_or_remove='+',
+                disease_module=self.module,
+                duration_in_days=self.duration_in_days
+            )
 
-            # Determine death outcome -------------------------------------------------------------------------
-            date_of_outcome = \
-                df.at[person_id, 'ri_ALRI_event_date_of_onset'] + DateOffset(days=self.duration_in_days)
+        # Determine death outcome -------------------------------------------------------------------------
+        date_of_outcome = \
+            df.at[person_id, 'ri_ALRI_event_date_of_onset'] + DateOffset(days=self.duration_in_days)
 
-            prob_death_from_ALRI =\
-                m.risk_of_death_severe_ALRI.predict(df.loc[[person_id]]).values[0]
-            death_outcome = rng.rand() < prob_death_from_ALRI
+        prob_death_from_ALRI = \
+            m.risk_of_death_severe_ALRI.predict(df.loc[[person_id]]).values[0]
+        death_outcome = rng.rand() < prob_death_from_ALRI
 
-            if death_outcome:
-                df.at[person_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
-                df.at[person_id, 'ri_ALRI_event_death_date'] = date_of_outcome
-                self.sim.schedule_event(PneumoniaDeathEvent(self.module, person_id),
-                                        date_of_outcome)
-            else:
-                df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_outcome
-                df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
+        if death_outcome:
+            df.at[person_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
+            df.at[person_id, 'ri_ALRI_event_death_date'] = date_of_outcome
+            self.sim.schedule_event(PneumoniaDeathEvent(self.module, person_id),
+                                    date_of_outcome)
+        else:
+            df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_outcome
+            df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
 
 class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
