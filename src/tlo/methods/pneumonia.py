@@ -1043,13 +1043,13 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
 
             # ---- Allocate a secondary bacterial pathogen is primary viral pneumonia ----
             bacterial_patho_in_viral_pneumonia_coinfection = 'none'
-            pneumonia_will_have_bacterial_coinfection = \
-                m.viral_pneumonia_with_bacterial_coinfection.predict(df.loc[[person_id]]).values[0]
-
-            if pneumonia_will_have_bacterial_coinfection:
-                bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
-                                                            p=p['porportion_bacterial_coinfection_pathogen'])
-                bacterial_patho_in_viral_pneumonia_coinfection = bacterial_coinfection_pathogen
+            if pathogen in self.module.viral_patho:
+                pneumonia_will_have_bacterial_coinfection = \
+                    m.viral_pneumonia_with_bacterial_coinfection.predict(df.loc[[person_id]]).values[0]
+                if pneumonia_will_have_bacterial_coinfection:
+                    bacterial_coinfection_pathogen = rng.choice(list(self.module.bacterial_patho),
+                                                                p=p['porportion_bacterial_coinfection_pathogen'])
+                    bacterial_patho_in_viral_pneumonia_coinfection = bacterial_coinfection_pathogen
 
             # ---- Determine the ALRI disease type for this case ----
             alri_disease_type_for_this_person = m.proportions_of_ALRI_disease_types_by_pathogen[pathogen]
