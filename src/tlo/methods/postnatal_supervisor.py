@@ -31,24 +31,24 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'case fatality rate for secondary pph'),
         'prob_postnatal_sepsis_per_week': Parameter(
             Types.REAL, 'baseline weekly probability of a woman developing postnatal sepsis'),
+        'cfr_postnatal_sepsis': Parameter(
+            Types.REAL, 'case fatality rate for postnatal sepsis'),
         'prob_postnatal_gh_per_week': Parameter(
             Types.REAL, 'baseline weekly probability of a woman developing postnatal gestational hypertension'),
         'prob_postnatal_pe_per_week': Parameter(
             Types.REAL, 'baseline weekly probability of a woman developing postnatal mild pre-eclampsia'),
         'prob_secondary_pph_severity': Parameter(
             Types.LIST, 'probability of mild, moderate or severe secondary PPH'),
-
-
     }
 
     PROPERTIES = {
         'pn_postnatal_period_in_weeks': Property(Types.INT, 'The number of weeks a woman is in the postnatal period '
                                                             '(1-6)'),
-        'pn_secondary_postpartum_haem': Property(Types.BOOL, 'Whether this woman is experiencing a secondary '
+        'pn_postpartum_haem_secondary': Property(Types.BOOL, 'Whether this woman is experiencing a secondary '
                                                              'postpartum haemorrhage'),
-        'pn_secondary_postpartum_haem_severity': Property(Types.CATEGORICAL, 'severity of a womans secondary PPH ',
+        'pn_postpartum_haem_secondary_severity': Property(Types.CATEGORICAL, 'severity of a womans secondary PPH ',
                                                           categories=['none', 'mild', 'moderate', 'severe']),
-        'pn_postnatal_maternal_sepsis': Property(Types.BOOL, 'Whether this woman is experiencing postnatal (day7+) '
+        'pn_sepsis_late_postpartum': Property(Types.BOOL, 'Whether this woman is experiencing postnatal (day7+) '
                                                              'sepsis'),
         'pn_postnatal_gest_htn': Property(Types.BOOL, 'Whether this woman is experiencing postnatal gestational '
                                                       'hypertension'),
@@ -74,7 +74,7 @@ class PostnatalSupervisor(Module):
             'secondary_pph': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_secondary_pph_per_week']),
-            #    Predictor('pn_secondary_postpartum_haem_severity').when('mild', params['multiplier_death_mild_pph'])
+            #    Predictor('pn_postpartum_haem_secondary_severity').when('mild', params['multiplier_death_mild_pph'])
             #                                              .when('moderate', params['multiplier_death_moderate_pph'])
             #                                              .when('severe', params['multiplier_death_severe_pph'])),
 
@@ -85,6 +85,10 @@ class PostnatalSupervisor(Module):
             'postnatal_maternal_sepsis': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_postnatal_sepsis_per_week']),
+
+            'postnatal_sepsis_death': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['cfr_postnatal_sepsis']),
 
             'postnatal_new_onset_gest_htn': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -100,9 +104,9 @@ class PostnatalSupervisor(Module):
 
         df = population.props
         df.loc[df.is_alive, 'pn_postnatal_period_in_weeks'] = 0
-        df.loc[df.is_alive, 'pn_secondary_postpartum_haem'] = False
-        df.loc[df.is_alive, 'pn_secondary_postpartum_haem_severity'] = 'none'
-        df.loc[df.is_alive, 'pn_postnatal_maternal_sepsis'] = False
+        df.loc[df.is_alive, 'pn_postpartum_haem_secondary'] = False
+        df.loc[df.is_alive, 'pn_postpartum_haem_secondary_severity'] = 'none'
+        df.loc[df.is_alive, 'pn_sepsis_late_postpartum'] = False
         df.loc[df.is_alive, 'pn_postnatal_gest_htn'] = False
         df.loc[df.is_alive, 'pn_postnatal_mild_pre_eclamp'] = False
 
@@ -114,14 +118,15 @@ class PostnatalSupervisor(Module):
                            sim.date + DateOffset(years=1))
 
         # Define the conditions we want to track
-        self.PostnatalTracker = {'secondary_pph': 0,'postnatal_death': 0, 'secondary_pph_death': 0}
+        self.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
+                                 'postnatal_sepsis': 0, 'sepsis_death': 0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
         df.at[child_id, 'pn_postnatal_period_in_weeks'] = 0
-        df.at[child_id, 'pn_secondary_postpartum_haem'] = False
-        df.at[child_id, 'pn_secondary_postpartum_haem_severity'] = 'none'
-        df.at[child_id, 'pn_postnatal_maternal_sepsis'] = False
+        df.at[child_id, 'pn_postpartum_haem_secondary'] = False
+        df.at[child_id, 'pn_postpartum_haem_secondary_severity'] = 'none'
+        df.at[child_id, 'pn_sepsis_late_postpartum'] = False
         df.at[child_id, 'pn_postnatal_gest_htn'] = False
         df.at[child_id, 'pn_postnatal_mild_pre_eclamp'] = False
 
@@ -139,49 +144,45 @@ class PostnatalSupervisor(Module):
         df = self.sim.population.props
         params = self.parameters
 
-        # todo: does it matter we use one random draw column to derive all outcomes
-        result_pph = params['pn_linear_equations']['secondary_pph'].predict(index)
-        result_sepsis = params['pn_linear_equations']['postnatal_maternal_sepsis'].predict(index)
-        result_gh = params['pn_linear_equations']['postnatal_new_onset_gest_htn'].predict(index)
-        result_pe = params['pn_linear_equations']['postnatal_new_onset_pre_eclamp'].predict(index)
+    def progression_of_hypertensive_disorders(self, index):
+        """"""
+        df = self.sim.population.props
+        params = self.parameters
 
-        random_draw = pd.Series(self.rng.random_sample(size=len(index)), index=index.index)
-        temp_df = pd.concat([result_pph, result_sepsis, result_gh, result_pe, random_draw], axis=1)
-        temp_df.columns = ['result_pph', 'result_sepsis', 'result_gh', 'result_pe', 'random_draw']
+        gest_htn = index.ps_htn_disorders == 'gest_htn'
+    #    result = params['ps_linear_equations'][f'{complication}'].predict(index)
 
-        # -------------------------------------- SECONDARY PPH --------------------------------------------------------
-        women_who_will_develop_pph = temp_df.index[temp_df.random_draw < temp_df.result_pph]
+    #    # And use the result of a random draw to determine which women will experience the complication
+   #     random_draw = pd.Series(self.rng.random_sample(size=len(index)), index=index.index)
+    #    temp_df = pd.concat([result, random_draw], axis=1)
+    #    temp_df.columns = ['result', 'random_draw']
 
-        if not women_who_will_develop_pph.empty:
-            logger.debug(f'The following women have experienced secondary postpartum haemorrhage after delivery,'
-                         f' {women_who_will_develop_pph}')
+        # Then we use this index to make changes to the data frame and schedule any events required
+    #    positive_index = temp_df.index[temp_df.random_draw < temp_df.result]
+   #     if df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn':
+   #         risk_progression_gh_pe = params['la_labour_equations']['progression_gest_htn'].predict(df.loc[[
+   #                 individual_id]])[individual_id]
 
-        df.loc[women_who_will_develop_pph, 'pn_secondary_postpartum_haem'] = True
-        self.PostnatalTracker['secondary_pph'] += len(women_who_will_develop_pph)
+    #        if risk_progression_gh_pe > self.rng.random_sample():
+    #            df.at[individual_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
 
-        for person in women_who_will_develop_pph:
-            assert df.at[person, 'pn_secondary_postpartum_haem']
+    #    if df.at[individual_id, 'ps_htn_disorders'] == 'mild_pre_eclamp':
+    #        risk_progression_mpe_spe = params['la_labour_equations']['progression_mild_pre_eclamp'].predict(df.loc[[
+    #                individual_id]])[individual_id]
 
-        # Set the severity
-        severity = ['mild', 'moderate', 'severe']
-        probabilities = params['prob_secondary_pph_severity']
-        severity_draw = pd.Series(self.rng.choice(severity, p=probabilities, size=len(women_who_will_develop_pph)),
-                                  index=women_who_will_develop_pph)
-        df.loc[women_who_will_develop_pph, 'pn_secondary_postpartum_haem_severity'] = severity_draw
+    #        if risk_progression_mpe_spe > self.rng.random_sample():
+    #            df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+    #            self.labour_tracker['severe_pre_eclampsia'] += 1
 
-        # Todo:care seeking (+/- symptoms)
+    #    if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
+    #        risk_progression_spe_ec = params['la_labour_equations']['progression_severe_pre_eclamp'].predict(df.loc[[
+     #               individual_id]])[individual_id]
 
-        for person in women_who_will_develop_pph:
-            self.sim.schedule_event(SecondaryPostpartumHaemorrhageDeathEvent(self, person),
-                                    (self.sim.date + pd.Timedelta(days=5)))
+    #        if risk_progression_spe_ec > self.rng.random_sample():
+    #            df.at[individual_id, 'ps_htn_disorders'] = 'eclampsia'
+    #            df.at[individual_id, 'la_eclampsia_disab'] = True
+    #            self.labour_tracker['eclampsia'] += 1
 
-        # -------------------------------------- MATERNAL SEPSIS ------------------------------------------------------
-        women_who_will_develop_sepsis = temp_df.index[temp_df.random_draw < temp_df.result_sepsis]
-        df.loc[women_who_will_develop_sepsis, 'pn_postnatal_maternal_sepsis'] = True
-
-        # ------------------------------ MATERNAL HYPERTENSIVE DISORDERS ----------------------------------------------
-        # GEST HTN
-        # PRE ECLAMPSIA
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ """
@@ -191,7 +192,6 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        params = self.module.parameters
 
         # ================================ UPDATING LENGTH OF POSTPARTUM PERIOD  IN WEEKS  ============================
         # Here we update how far into the postpartum period each woman who has recently delivered is
@@ -203,37 +203,50 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug('updating postnatal periods on date %s', self.sim.date)
 
         # -------------------------------------- WEEK 1 (day 7) -------------------------------------------------------
-        week_1_postnatal_women = df.is_alive & (df.pn_postnatal_period_in_weeks == 1)
-        # self.module.set_postnatal_maternal_complications(df.is_alive & (df.sex == 'F'))
-        self.module.set_postnatal_maternal_complications(week_1_postnatal_women)
+        week_1_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
+                                        (df.pn_postnatal_period_in_weeks == 1)]
+        self.module.progression_of_hypertensive_disorders(week_1_postnatal_women)
 
         # -------------------------------------- WEEK 2 (day 14) -------------------------------------------------------
-        week_2_postnatal_women = df.is_alive & (df.pn_postnatal_period_in_weeks == 2)
-    #    self.module.set_postnatal_maternal_complications(week_2_postnatal_women)
+        week_2_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none')
+                                        & (df.pn_postnatal_period_in_weeks == 2)]
+        self.module.progression_of_hypertensive_disorders(week_2_postnatal_women)
 
         # -------------------------------------- WEEK 3 (day 21) -------------------------------------------------------
-        week_3_postnatal_women = df.is_alive & (df.pn_postnatal_period_in_weeks == 3)
-    #    self.module.set_postnatal_maternal_complications(week_3_postnatal_women)
+        week_3_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
+                                       (df.pn_postnatal_period_in_weeks == 3)]
+        self.module.progression_of_hypertensive_disorders(week_3_postnatal_women)
 
         # -------------------------------------- WEEK 4 (day 28) -------------------------------------------------------
-        week_4_postnatal_women = df.is_alive & (df.pn_postnatal_period_in_weeks == 4)
-    #    self.module.set_postnatal_maternal_complications(week_4_postnatal_women)
+        week_4_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
+                                        (df.pn_postnatal_period_in_weeks == 4)]
+        self.module.progression_of_hypertensive_disorders(week_4_postnatal_women)
 
         # -------------------------------------- WEEK 5 (day 35) -------------------------------------------------------
-        week_5_postnatal_women = df.is_alive & (df.pn_postnatal_period_in_weeks == 5)
-   #     self.module.set_postnatal_maternal_complications(week_5_postnatal_women)
+        week_5_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
+                                        (df.pn_postnatal_period_in_weeks == 5)]
+        self.module.progression_of_hypertensive_disorders(week_5_postnatal_women)
 
         # -------------------------------------- WEEK 6 (day 42) -------------------------------------------------------
-        week_6_postnatal_women = df.is_alive & (df.pn_postnatal_period_in_weeks == 6)
-    #    self.module.set_postnatal_maternal_complications(week_6_postnatal_women)
+        week_6_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none')
+                                        & (df.pn_postnatal_period_in_weeks == 6)]
+        self.module.progression_of_hypertensive_disorders(week_6_postnatal_women)
 
         # Here, one week after we stop applying risk of postpartum complications, we reset key postpartum variables
-        week_7_postnatal_women = df.is_alive & (df.pn_postnatal_period_in_weeks == 7)
+
+        week_7_postnatal_women = df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 7)
         df.loc[week_7_postnatal_women, 'pn_postnatal_period_in_weeks'] = 0
         df.loc[week_7_postnatal_women, 'la_is_postpartum'] = False
 
+        df.loc[week_7_postnatal_women, 'ps_htn_disorders'] = 'none'
+        df.loc[week_7_postnatal_women, 'ps_gestational_htn'] = False
+        df.loc[week_7_postnatal_women, 'ps_mild_pre_eclamp'] = False
+        df.loc[week_7_postnatal_women, 'ps_severe_pre_eclamp'] = False
+        df.loc[week_7_postnatal_women, 'ps_gestational_htn'] = False
+        df.loc[week_7_postnatal_women, 'ps_anaemia_in_pregnancy'] = False
 
-class SecondaryPostpartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin):
+
+class SecondaryPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin):
     """"""
 
     def __init__(self, module, individual_id):
@@ -243,44 +256,25 @@ class SecondaryPostpartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin)
         df = self.sim.population.props
         params = self.module.parameters
 
-        print(individual_id)
-        print(df.at[individual_id, 'pn_secondary_postpartum_haem'])
+        assert df.at[individual_id, 'la_is_postpartum']
 
         if df.at[individual_id, 'is_alive']:
-        #    assert df.at[individual_id, 'pn_secondary_postpartum_haem']
-        #    assert df.at[individual_id, 'pn_secondary_postpartum_haem_severity'] is not 'none'
-            #todo FIX THIS ABOVE
-            risk_of_death = params['pn_linear_equations']['secondary_postpartum_haem_death'].predict(df.loc[[
-                individual_id]])[individual_id]
+            df.at[individual_id, 'pn_postpartum_haem_secondary'] = True
+            # self.module.PostnatalTracker['secondary_pph'] += 1
 
-            if self.module.rng.random_sample() < risk_of_death:
-                logger.debug(f'person %d has died due to secondary postpartum haemorrhage on date %s', individual_id,
-                             self.sim.date)
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='secondary_pph'), self.sim.date)
+            # Set the severity
+            severity = ['mild', 'moderate', 'severe']
+            probabilities = params['prob_secondary_pph_severity']
+            severity_draw = self.module.rng.choice(severity, p=probabilities, size=1)
+            df.at[individual_id, 'pn_postpartum_haem_secondary_severity'] = severity_draw
 
-                self.module.PostnatalTracker['postnatal_death'] += 1
-                self.module.PostnatalTracker['secondary_pph_death'] += 1
+            # TODO: care seeking
 
-            else:
-                df.at[individual_id, 'pn_secondary_postpartum_haem'] = False
-                df.at[individual_id, 'pn_secondary_postpartum_haem_severity'] = 'none'
+            self.sim.schedule_event(LatePostpartumDeathEvent(self.module, individual_id, cause='pph'),
+                                    (self.sim.date + pd.Timedelta(days=3)))
 
 
-class FirstWeekPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin):
-    """"""
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-
-    pass
-
-
-class FirstWeekSepsisOnsetEvent(Event, IndividualScopeEventMixin):
+class LatePostpartumSepsisOnsetEvent(Event, IndividualScopeEventMixin):
     """"""
 
     def __init__(self, module, individual_id):
@@ -289,22 +283,77 @@ class FirstWeekSepsisOnsetEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-    pass
+        assert df.at[individual_id, 'la_is_postpartum']
 
+        if df.at[individual_id, 'is_alive']:
+            df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
+            self.module.PostnatalTracker['postnatal_sepsis'] += 1
 
-class FirstWeekHypertensionOnsetEvent(Event, IndividualScopeEventMixin):
+            self.sim.schedule_event(LatePostpartumDeathEvent(self.module, individual_id, cause='sepsis'),
+                                    (self.sim.date + pd.Timedelta(days=3)))
+
+class LateNeonatalSepsisOnsetEvent(Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+
+        pass
+
+class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
     """"""
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
-
         self.cause = cause
 
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
 
-        pass
+        if df.at[individual_id, 'is_alive']:
+
+            if self.cause == 'pph':
+                assert df.at[individual_id, 'pn_postpartum_haem_secondary']
+                assert df.at[individual_id, 'pn_postpartum_haem_secondary_severity'] is not 'none'
+
+                risk_of_death = params['pn_linear_equations']['secondary_postpartum_haem_death'].predict(df.loc[[
+                    individual_id]])[individual_id]
+
+                if self.module.rng.random_sample() < risk_of_death:
+                    logger.debug(f'person %d has died due to secondary postpartum haemorrhage on date %s', individual_id,
+                                 self.sim.date)
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='secondary_pph'), self.sim.date)
+
+                    self.module.PostnatalTracker['postnatal_death'] += 1
+                    self.module.PostnatalTracker['secondary_pph_death'] += 1
+
+                else:
+                    df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
+                    df.at[individual_id, 'pn_postpartum_haem_secondary_severity'] = 'none'
+
+            if self.cause == 'sepsis':
+                assert df.at[individual_id, 'pn_sepsis_late_postpartum']
+
+                risk_of_death = params['pn_linear_equations']['postnatal_sepsis_death'].predict(df.loc[[
+                    individual_id]])[individual_id]
+
+                if self.module.rng.random_sample() < risk_of_death:
+                    logger.debug(f'person %d has died due to secondary maternal sepsis on date %s',
+                                 individual_id,
+                                 self.sim.date)
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='maternal_sepsis'), self.sim.date)
+
+                    self.module.PostnatalTracker['postnatal_death'] += 1
+                    self.module.PostnatalTracker['sepsis_death'] += 1
+
+                else:
+                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
 
 
 class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -334,11 +383,16 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         total_pph = self.module.PostnatalTracker['secondary_pph']
         total_pn_death = self.module.PostnatalTracker['postnatal_death']
         total_pph_death = self.module.PostnatalTracker['secondary_pph_death']
+        total_sepsis = self.module.PostnatalTracker['postnatal_sepsis']
+        total_sepsis_death = self.module.PostnatalTracker['sepsis_death']
 
         dict_for_output = {'total_pph': total_pph,
                            'total_deaths': total_pn_death,
-                           'total_pph_death': total_pph_death}
+                           'total_pph_death': total_pph_death,
+                           'total_sepsis': total_sepsis,
+                           'total_sepsis_death': total_sepsis_death}
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
-        self.module.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0}
+        self.module.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
+                                        'postnatal_sepsis': 0, 'sepsis_death': 0}

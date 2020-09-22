@@ -18,7 +18,7 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, male_circumcision, hiv, tb, postnatal_supervisor
 )
 
 # %%
@@ -32,7 +32,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 5000
+popsize = 1000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -52,20 +52,22 @@ allowed_interventions = ['prophylactic_labour_interventions',
 
 
 # run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-#                                       service_availability=[]))
-
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(labour.Labour(resourcefilepath=resourcefilepath))
-sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
-sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath))
-sim.register(antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath))
-sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=['*']),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
+                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
 logfile = sim.configure_logging(filename="LogFile")
 sim.seed_rngs(1)
@@ -100,3 +102,5 @@ stats_nb['year'] = stats_nb['date'].dt.year
 stats_md = output['tlo.methods.labour']['summary_stats_death']
 stats_md['date'] = pd.to_datetime(stats_md['date'])
 stats_md['year'] = stats_md['date'].dt.year
+
+x='y'

@@ -17,7 +17,7 @@ from tlo.methods import (
     symptommanager,
     hiv,
     male_circumcision,
-    tb
+    tb, postnatal_supervisor
 )
 
 # Where will outputs go
@@ -62,6 +62,7 @@ def test_run():
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)

@@ -14,7 +14,7 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager, hiv, tb, male_circumcision
+    symptommanager, hiv, tb, male_circumcision, postnatal_supervisor
 )
 
 # Where will outputs go
@@ -51,7 +51,7 @@ def test_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -62,11 +62,21 @@ def test_run():
                  tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 
     sim.make_initial_population(n=popsize)
+    params_ps = sim.modules['PregnancySupervisor'].parameters
+    params_labour = sim.modules['Labour'].parameters
+
+    params_ps['prob_gest_htn_per_month'] = 1
+    params_ps['prob_pre_eclampsia_per_month'] = 1
+    params_ps['probability_htn_persists'] = 1
+    params_labour['prob_progression_gest_htn'] = 1
+    params_labour['prob_progression_mild_pre_eclamp'] = 1
+    params_labour['prob_progression_severe_pre_eclamp'] = 1
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
@@ -84,7 +94,7 @@ def test_run_health_system_high_squeeze():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=0.0,
@@ -97,6 +107,7 @@ def test_run_health_system_high_squeeze():
                  tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
@@ -106,7 +117,6 @@ def test_run_health_system_high_squeeze():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
-
 
 def test_run_health_system_events_wont_run():
     """This test runs a simulation in which no scheduled HSIs will run.. Therefore it tests the logic in the
@@ -118,7 +128,7 @@ def test_run_health_system_events_wont_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 #healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=[]),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -129,6 +139,7 @@ def test_run_health_system_events_wont_run():
                  tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
@@ -140,3 +151,5 @@ def test_run_health_system_events_wont_run():
     check_dtypes(sim)
 
 test_run()
+# test_run_health_system_events_wont_run()
+# test_run_health_system_high_squeeze()

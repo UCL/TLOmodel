@@ -115,6 +115,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
             Types.REAL, 'probability of a woman undergoing 4 or more basic ANC visits'),
+        'probability_htn_persists': Parameter(
+            Types.REAL, 'probability of a womans hypertension persisting post birth'),
     }
 
     PROPERTIES = {
@@ -344,6 +346,7 @@ class PregnancySupervisor(Module):
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
+        params = self.parameters
 
         df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
         df.at[child_id, 'ps_ectopic_pregnancy'] = False
@@ -372,9 +375,40 @@ class PregnancySupervisor(Module):
         # And we remove all the symptoms they may have had antenatally
         # TODO: not all conditions resolve at delivery (hypertension) so this may need adapting
         if df.at[mother_id, 'is_alive']:
-            self.sim.modules['SymptomManager'].clear_symptoms(
+             self.sim.modules['SymptomManager'].clear_symptoms(
                 person_id=mother_id,
                 disease_module=self)
+
+        # =========================================== RESET GDM STATUS ================================================
+        # We assume that hyperglycaemia from gestational diabetes resolves following birth
+        df.at[mother_id, 'ps_gest_diab'] = False
+        # TODO: link with future T2DM
+
+        # ========================== RISK OF ONGOING HTN /RESETTING STATUS AFTER BIRTH ================================
+        # Here we apply a one of probability that women who have experienced a hypertensive disorder during pregnancy
+        # will remain hypertensive after birth into the postnatal period
+        if df.at[mother_id, 'ps_htn_disorders'] == 'gest_htn' or 'mild_pre_eclamp' or 'severe_pre_eclamp':
+            if self.rng.random_sample() < params['probability_htn_persists']:
+                logger.debug('mother %d will remain hypertensive despite successfully delivering')
+            else:
+                df.at[mother_id, 'ps_htn_disorders'] = 'none'
+                df.at[mother_id, 'ps_gestational_htn'] = False
+                df.at[mother_id, 'ps_mild_pre_eclamp'] = False
+                df.at[mother_id, 'ps_severe_pre_eclamp'] = False
+                df.at[mother_id, 'ps_gestational_htn'] = False
+
+        # ================================= RISK OF DE NOVO HTN =======================================================
+        # Finally we apply a risk of de novo hypertension in women who have been normatensive during pregnancy
+
+        risk_of_gest_htn = params['ps_linear_equations']['gest_htn'].predict(df.loc[[mother_id]])[mother_id]
+        risk_of_mild_pre_eclampsia = params['ps_linear_equations']['pre_eclampsia'].predict(df.loc[[mother_id]])[
+            mother_id]
+
+        if self.rng.random_sample() < risk_of_gest_htn:
+            df.at[mother_id, 'ps_htn_disorders'] = 'gest_htn'
+        else:
+            if self.rng.random_sample() < risk_of_mild_pre_eclampsia:
+                df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug('This is PregnancySupervisor, being alerted about a health system interaction '
@@ -607,25 +641,6 @@ class PregnancySupervisor(Module):
 
         # TODO: Should symptoms and care-seeking be applied within this function if a woman progresses to a new state?
         # todo: whats the best way to count the incidence of new HDP when transitioning
-
-    def antenatal_disease_reset(self, individual_id):
-        """This function is scheduled by the DiseaseReset event in the labour module. It resets the properties for
-        antenatal diseases around two weeks after the date of delivery. We do not reset these using the on_birth
-        function as some of these conditions have effect in the immediate postpartum period."""
-
-        df = self.sim.population.props
-
-        # TODO: the on_birth function is not used to reset diseases of pregnancy as the effect of these conditions does
-        #  not end immediately at birth
-        # TODO: need additional checks here? there are checks in the function it comes from
-
-        df.at[individual_id, 'ps_anaemia_in_pregnancy'] = False
-        df.at[individual_id, 'ps_htn_disorders'] = 'none'
-        df.at[individual_id, 'ps_gestational_htn'] = False
-        df.at[individual_id, 'ps_mild_pre_eclamp'] = False
-        df.at[individual_id, 'ps_severe_pre_eclamp'] = False
-        df.at[individual_id, 'ps_currently_hypertensive'] = False
-        df.at[individual_id, 'ps_gest_diab'] = False
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
