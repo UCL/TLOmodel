@@ -2,9 +2,9 @@
 A skeleton template for disease methods.
 
 """
-
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 
 # ---------------------------------------------------------------------------------------------------------
@@ -19,6 +19,8 @@ class Skeleton(Module):
     """
     One line summary goes here...
 
+    If it another kind of module use base class Module
+
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation
     framework:
@@ -30,6 +32,13 @@ class Skeleton(Module):
     *  `report_daly_values()` [If this is disease module]
 
     """
+    # Declare Metadata (this is for a typical 'Disease Module')
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -72,9 +81,6 @@ class Skeleton(Module):
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
-        If this is a disease module, register this disease module with the healthsystem:
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         :param population: the population of individuals
         """

@@ -3,8 +3,10 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,6 +29,13 @@ class ChronicSyndrome(Module):
         - Receiving a 'squeeze factor'
         - Use of the SymptomManager
     """
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
@@ -53,12 +62,6 @@ class ChronicSyndrome(Module):
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
 
-    # Declaration of the symptoms that this module will use
-    SYMPTOMS = {
-        'inappropriate_jokes',  # will not trigger any health seeking behaviour
-        'em_craving_sandwiches'  # symptom that will trigger emergency HSI
-    }
-
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -67,14 +70,15 @@ class ChronicSyndrome(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-        For now, we are going to hard code them explicity
+        For now, we are going to hard code them explicity.
+        Register the module with the health system and register the symptoms
         """
         self.parameters['p_acquisition_per_year'] = 0.10
         self.parameters['p_cure'] = 0.10
         self.parameters['initial_prevalence'] = 0.30
         self.parameters['prob_of_symptoms'] = {
             'inappropriate_jokes': 0.95,
-            'em_craving_sandwiches': 0.5
+            'craving_sandwiches': 0.5
         }
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
@@ -83,16 +87,20 @@ class ChronicSyndrome(Module):
             # get the DALY weight that this module will use from the weight database (these codes are just random!)
             self.parameters['daly_wts'] = {
                 'inappropriate_jokes': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=86),
-                'em_craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
+                'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
             }
 
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
-        # # Register this disease module with the symptom manager and declare the symptoms
-        # self.sim.modules['SymptomManager'].register_disease_symptoms(module=self,
-        #                                                            list_of_symptoms=['coughing_and_irritable'])
+        # Register symptoms that this module will use:
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(
+                name='inappropriate_jokes',
+                odds_ratio_health_seeking_in_adults=3.0
+            ),
+            Symptom(
+                name='craving_sandwiches',
+                emergency_in_adults=True,
+            )
+        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -242,17 +250,13 @@ class ChronicSyndrome(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values_df = pd.DataFrame(index=df.index[df.is_alive])
-
+        health_values = pd.Series(index=df.index[df.is_alive], data=0)
         for symptom, daly_wt in self.parameters['daly_wts'].items():
-            health_values_df.loc[
-                self.sim.modules['SymptomManager'].who_has(symptom),
-                symptom
-            ] = daly_wt
+            health_values.loc[
+                health_values.index.isin(self.sim.modules['SymptomManager'].who_has(symptom))
+            ] += daly_wt
 
-        health_values_df.fillna(0, inplace=True)
-
-        return health_values_df
+        return health_values
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
@@ -311,7 +315,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # 3) Handle progression to severe symptoms
         curr_cs_but_not_craving_sandwiches = list(set(df.index[df.cs_has_cs & df.is_alive])
                                                   - set(
-            self.sim.modules['SymptomManager'].who_has('em_craving_sandwiches')))
+            self.sim.modules['SymptomManager'].who_has('craving_sandwiches')))
 
         become_severe = (
             self.module.rng.random_sample(size=len(curr_cs_but_not_craving_sandwiches))
@@ -321,7 +325,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=list(become_severe_idx),
-            symptom_string='em_craving_sandwiches',
+            symptom_string='craving_sandwiches',
             add_or_remove='+',
             disease_module=self.module
         )
@@ -382,14 +386,9 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         super().__init__(module, person_id=person_id)
         assert isinstance(module, ChronicSyndrome)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        # the_appt_footprint['AccidentsandEmerg'] = 0  # Plus, an amount of resources similar to an A&E
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
@@ -456,8 +455,10 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # APPP_FOOTPRINT: outreach event takes small amount of time for DCSA
         appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         appt_footprint['ConWithDCSA'] = 0.5
-        self.EXPECTED_APPT_FOOTPRINT = appt_footprint
+        # Demonstrate the equivalence with:
+        assert appt_footprint == self.make_appt_footprint({'ConWithDCSA': 0.5})
 
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 0.5})
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
@@ -488,8 +489,8 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': {pkg_code1: 1, pkg_code2: 4},
-            'Item_Code': {item_code1: 1, item_code2: 10},
+            'Intervention_Package_Code': {pkg_code1: 1, pkg_code2: 1},
+            'Item_Code': {item_code1: 1, item_code2: 1},
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -501,6 +502,21 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
             logger.debug(key='debug', data='PkgCode1 is available, so use it.')
         else:
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+
+        # check to see if all consumables returned (for demonstration purposes):
+        all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code1]) and \
+                        (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code2]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code1]) and \
+                        (outcome_of_request_for_consumables['Item_Code'][item_code2])
+
+        # use helper function instead (for demonstration purposes)
+        all_available_using_helper_function = self.get_all_consumables(
+            item_codes=[item_code1, item_code2],
+            pkg_codes=[pkg_code1, pkg_code2]
+        )
+
+        # Demonstrate equivalence
+        assert all_available == all_available_using_helper_function
 
         # Return the actual appt footprints
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected

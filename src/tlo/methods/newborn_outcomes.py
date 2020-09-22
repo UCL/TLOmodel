@@ -7,7 +7,7 @@ import scipy.stats
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import Metadata, demography
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -29,6 +29,13 @@ class NewbornOutcomes(Module):
 
         # This dictionary will track incidence of complications of following birth
         self.NewbornComplicationTracker = dict()
+
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'mean_birth_weights': Parameter(
@@ -196,9 +203,6 @@ class NewbornOutcomes(Module):
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['nb_daly_weights'] = {
@@ -979,11 +983,8 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'NewbornOutcomes_ReceivesSkilledAttendance'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1  # TODO: confirm best appt footprint to use
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
+        # TODO: confirm best appt footprint to use
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 
@@ -1125,11 +1126,7 @@ class HSI_NewbornOutcomes_NeonateInpatientDay(HSI_Event, IndividualScopeEventMix
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'NewbornOutcomes_NeonateInpatientDay'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['InpatientDays'] = 1
-
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'InpatientDays': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.ALERT_OTHER_DISEASES = []
 

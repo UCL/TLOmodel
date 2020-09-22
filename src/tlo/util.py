@@ -116,7 +116,7 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     return final_states
 
 
-class BitsetHandler():
+class BitsetHandler:
     def __init__(self, population: Population, column: str, elements: List[str]):
         """Provides functions to operate on an int column in the population dataframe as a bitset
 
@@ -206,6 +206,7 @@ class BitsetHandler():
         The elements are one of more valid items from the list of elements for this bitset
 
         :param where: condition to filter rows that will returned
+        :param first: return the first entry of the resulting series
         """
         def int_to_set(integer):
             bin_repr = format(integer, 'b')
@@ -234,6 +235,19 @@ class BitsetHandler():
         for element in self._elements:
             collect[element] = self.has_all(where, element)
         return pd.DataFrame(collect)
+
+    def not_empty(self, where, first=False) -> Union[pd.Series, bool]:
+        """Returns Series of bool indicating whether the BitSet entry is not empty. True is set is not empty, False
+        otherwise"""
+        return ~self.is_empty(where, first=first)
+
+    def is_empty(self, where, first=False) -> Union[pd.Series, bool]:
+        """Returns Series of bool indicating whether the BitSet entry is empty. True if the set is empty,
+        False otherwise"""
+        empty = self.df.loc[where, self._column] == 0
+        if first:
+            return empty.iloc[0]
+        return empty
 
     def clear(self, where) -> None:
         """Clears all the bits for the specified rows"""

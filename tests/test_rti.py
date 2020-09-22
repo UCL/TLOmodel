@@ -23,7 +23,8 @@ from tlo.methods import (
     newborn_outcomes,
     oesophagealcancer,
     pregnancy_supervisor,
-    male_circumcision
+    male_circumcision,
+    Metadata
 )
 
 start_date = Date(2010, 1, 1)
@@ -36,17 +37,18 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=0))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-    sim.register(rti.RTI(resourcefilepath=resourcefilepath))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           mode_appt_constraints=0),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 rti.RTI(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 
     return sim
+
 
 def test_run():
     """This test runs a simulation with a functioning health system with full service availability and no set
@@ -57,10 +59,11 @@ def test_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                 )
 
     sim.seed_rngs(0)
 
@@ -72,11 +75,13 @@ def test_run():
 
     check_dtypes(sim)
 
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
 
 def test_run_health_system_high_squeeze():
     """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
@@ -88,14 +93,14 @@ def test_run_health_system_high_squeeze():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*'],
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
-
+                 )
 
     sim.seed_rngs(0)
 
@@ -116,11 +121,11 @@ def test_run_health_system_events_wont_run():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=[]),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=[]),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                 )
 
     sim.seed_rngs(0)
 
@@ -140,8 +145,8 @@ def test_with_more_modules():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  depression.Depression(resourcefilepath=resourcefilepath),
@@ -150,8 +155,9 @@ def test_with_more_modules():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                 )
 
     sim.seed_rngs(0)
 
@@ -171,9 +177,10 @@ def test_sim_high_incidence():
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                 )
 
     sim.seed_rngs(0)
 
@@ -187,6 +194,7 @@ def test_sim_high_incidence():
 
     check_dtypes(sim)
 
+
 def test_tiny_population():
     sim = Simulation(start_date=start_date)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -194,9 +202,10 @@ def test_tiny_population():
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  rti.RTI(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+                 )
 
     sim.seed_rngs(0)
     # Note that when n=1 an error was thrown up by the enhanced_lifestyle module when calculating bmi
@@ -206,6 +215,7 @@ def test_tiny_population():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+
 
 if __name__ == '__main__':
     t0 = time.time()

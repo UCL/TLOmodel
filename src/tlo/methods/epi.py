@@ -4,6 +4,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,10 @@ class Epi(Module):
     """This is the expanded programme on immunisation module
     it sets up the vaccination schedule for all children from birth
     """
+
+    # Declare Metadata
+    METADATA = {Metadata.USES_HEALTHSYSTEM}
+
     PARAMETERS = {
         "baseline_coverage": Parameter(Types.DATA_FRAME, "baseline vaccination coverage (all vaccines)"),
         "vaccine_schedule": Parameter(Types.SERIES, "vaccination schedule applicable from 2018 onwards"),
@@ -52,10 +57,6 @@ class Epi(Module):
         p["district_vaccine_coverage"] = pd.read_csv(
             Path(self.resourcefilepath) / "ResourceFile_EPI_vaccine_coverage.csv"
         )
-
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules["HealthSystem"].register_disease_module(self)
 
     def initialise_population(self, population):
         df = population.props
@@ -414,13 +415,9 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["ConWithDCSA"] = 1  # This requires one ConWithDCSA appt
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = self.treatment_id()
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
