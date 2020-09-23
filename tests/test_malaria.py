@@ -20,10 +20,11 @@ from tlo.methods import (
     newborn_outcomes,
     pregnancy_supervisor,
     symptommanager,
+    diarrhoea,
 )
 
 from tlo.methods.healthsystem import HSI_Event
-
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
 from tlo.methods.malaria import (
     HSI_Malaria_rdt,
     HSI_Malaria_non_complicated_treatment_age0_5,
@@ -133,7 +134,6 @@ def test_sims(tmpdir):
 # remove scheduled rdt testing and disable health system, should be no rdts and no treatment
 # increase cfr for severe cases (all severe cases will die)
 def test_remove_malaria_test(tmpdir):
-
     malaria_testing = 0
 
     sim = Simulation(start_date=start_date, seed=0)
@@ -193,7 +193,6 @@ def test_remove_malaria_test(tmpdir):
 
 # test everyone regularly and check no treatment without positive rdt
 def test_schedule_rdt_for_all(tmpdir):
-
     malaria_testing = 1
     service_availability = list(["*"])
 
@@ -240,10 +239,9 @@ def test_schedule_rdt_for_all(tmpdir):
 
 
 def test_dx_algorithm_for_malaria_outcomes():
-    """Create a person and check if the functions in dx_algorithm_child create the correct HSI"""
+    """Create a person and check if the functions in dx_algorithm_child return the correct diagnosis"""
 
     def make_blank_simulation():
-        start_date = Date(2010, 1, 1)
         popsize = 200  # smallest population size that works
 
         sim = Simulation(start_date=start_date, seed=0)
@@ -256,7 +254,12 @@ def test_dx_algorithm_for_malaria_outcomes():
                      enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                      healthsystem.HealthSystem(
                          resourcefilepath=resourcefilepath,
-                         disable=False
+                         service_availability=["*"],
+                         mode_appt_constraints=0,
+                         ignore_cons_constraints=True,
+                         ignore_priority=True,
+                         capabilities_coefficient=1.0,
+                         disable=True,  # disables the health system constraints so all HSI events run
                      ),
                      symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                      healthseekingbehaviour.HealthSeekingBehaviour(
@@ -272,7 +275,7 @@ def test_dx_algorithm_for_malaria_outcomes():
                      newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                      antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                      malaria.Malaria(resourcefilepath=resourcefilepath, testing=malaria_testing, itn=None)
-        )
+                     )
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=start_date)
@@ -282,6 +285,13 @@ def test_dx_algorithm_for_malaria_outcomes():
             def __init__(self, module, person_id):
                 super().__init__(module, person_id=person_id)
                 self.TREATMENT_ID = 'DummyHSIEvent'
+
+                the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+                the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
+
+                self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+                self.ACCEPTED_FACILITY_LEVEL = 1
+                self.ALERT_OTHER_DISEASES = []
 
             def apply(self, person_id, squeeze_factor):
                 pass
@@ -293,7 +303,8 @@ def test_dx_algorithm_for_malaria_outcomes():
 
         return sim, hsi_event
 
-    # ---- CHILD AGED 0-5 WITH CLINICAL MALARIA: ---> HSI_Malaria_non_complicated_treatment_age0_5
+    # ----------------- Person with clinical malaria -----------------
+    #
     # Set up the simulation:
     sim, hsi_event = make_blank_simulation()
 
@@ -303,7 +314,6 @@ def test_dx_algorithm_for_malaria_outcomes():
     df.at[0, 'ma_date_infected'] = sim.date
     df.at[0, 'ma_date_symptoms'] = sim.date
     df.at[0, 'ma_inf_type'] = 'clinical'
-    df.at[0, 'age_years'] = 4
 
     symptom_list = {"fever", "headache", "vomiting", "stomachache"}
 
@@ -316,12 +326,132 @@ def test_dx_algorithm_for_malaria_outcomes():
             add_or_remove='+'
         )
 
-    # Run the diagnostic algorithm:
-    sim.modules['DxAlgorithmChild'].diagnose(
+    person_id = 0
+    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+
+    assert sim.modules['DxAlgorithmChild'].diagnose(
         person_id=0,
         hsi_event=hsi_event
+    ) == "clinical_malaria"
+
+    # ----------------- Person with severe malaria -----------------
+    #
+    # Set up the simulation:
+    sim, hsi_event = make_blank_simulation()
+
+    # Set up the person - clinical malaria and aged <5 years:
+    df = sim.population.props
+    df.at[0, 'ma_is_infected'] = True
+    df.at[0, 'ma_date_infected'] = sim.date
+    df.at[0, 'ma_date_symptoms'] = sim.date
+    df.at[0, 'ma_inf_type'] = 'severe'
+
+    symptom_list = {"fever", "headache", "vomiting", "stomachache"}
+
+    for symptom in symptom_list:
+        # no symptom resolution
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=0,
+            symptom_string=symptom,
+            disease_module=sim.modules['Malaria'],
+            add_or_remove='+'
+        )
+
+    person_id = 0
+    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
+
+    assert sim.modules['DxAlgorithmChild'].diagnose(
+        person_id=0,
+        hsi_event=hsi_event
+    ) == "severe_malaria"
+
+
+# check non-malarial fever returns correct diagnosis string (and no malaria treatment)
+def test_dx_algorithm_for_non_malaria_outcomes():
+    """Create a person and check if the functions in dx_algorithm_child return the correct diagnosis"""
+
+    def make_blank_simulation():
+        popsize = 200  # smallest population size that works
+
+        sim = Simulation(start_date=start_date, seed=0)
+
+        malaria_testing = 0.35  # adjust this to match rdt/tx levels
+
+        # Register the appropriate modules
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     contraception.Contraception(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         service_availability=["*"],
+                         mode_appt_constraints=0,
+                         ignore_cons_constraints=True,
+                         ignore_priority=True,
+                         capabilities_coefficient=1.0,
+                         disable=True,  # disables the health system constraints so all HSI events run
+                     ),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(
+                         resourcefilepath=resourcefilepath,
+                         force_any_symptom_to_lead_to_healthcareseeking=True
+                         # every symptom leads to health-care seeking
+                     ),
+                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                     labour.Labour(resourcefilepath=resourcefilepath),
+                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                     dx_algorithm_adult.DxAlgorithmAdult(),
+                     newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                     antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+                     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                     )
+
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=start_date)
+
+        # Create the HSI event that is notionally doing the call on diagnostic algorithm
+        class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+            def __init__(self, module, person_id):
+                super().__init__(module, person_id=person_id)
+                self.TREATMENT_ID = 'DummyHSIEvent'
+
+                the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+                the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
+
+                self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+                self.ACCEPTED_FACILITY_LEVEL = 1
+                self.ALERT_OTHER_DISEASES = []
+
+            def apply(self, person_id, squeeze_factor):
+                pass
+
+        # assume diarrhoea has created a fever (as an example of a non-malarial fever)
+        hsi_event = DummyHSIEvent(module=sim.modules['Diarrhoea'], person_id=0)
+
+        # check that the queue of events is empty
+        assert 0 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+
+        return sim, hsi_event
+
+    # ----------------- Person with fever (but not malaria) -----------------
+    #
+    # Set up the simulation:
+    sim, hsi_event = make_blank_simulation()
+
+    # Set up the person
+    # assign fever with no symptom resolution
+    person_id = 0
+
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=person_id,
+        symptom_string="fever",
+        disease_module=sim.modules['Diarrhoea'],
+        add_or_remove='+'
     )
 
-    assert 1 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
-    assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4], HSI_Malaria_non_complicated_treatment_age0_5)
+    assert "fever" in sim.modules["SymptomManager"].has_what(person_id)
 
+    assert sim.modules['DxAlgorithmChild'].diagnose(
+        person_id=0,
+        hsi_event=hsi_event
+    ) == "non-malarial fever"
