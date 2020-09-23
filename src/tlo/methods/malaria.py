@@ -40,47 +40,6 @@ class Malaria(Module):
         self.itn_curr = None
         self.irs_curr = None
 
-        # empty containers for monthly infection, clinical and severe malaria incidence by district
-        self.inf_inc_Jan = None
-        self.inf_inc_Feb = None
-        self.inf_inc_Mar = None
-        self.inf_inc_Apr = None
-        self.inf_inc_May = None
-        self.inf_inc_Jun = None
-        self.inf_inc_Jul = None
-        self.inf_inc_Aug = None
-        self.inf_inc_Sep = None
-        self.inf_inc_Oct = None
-        self.inf_inc_Nov = None
-        self.inf_inc_Dec = None
-
-        self.clin_inc_Jan = None
-        self.clin_inc_Feb = None
-        self.clin_inc_Mar = None
-        self.clin_inc_Apr = None
-        self.clin_inc_May = None
-        self.clin_inc_Jun = None
-        self.clin_inc_Jul = None
-        self.clin_inc_Aug = None
-        self.clin_inc_Sep = None
-        self.clin_inc_Oct = None
-        self.clin_inc_Nov = None
-        self.clin_inc_Dec = None
-
-        self.sev_inc_Jan = None
-        self.sev_inc_Feb = None
-        self.sev_inc_Mar = None
-        self.sev_inc_Apr = None
-        self.sev_inc_May = None
-        self.sev_inc_Jun = None
-        self.sev_inc_Jul = None
-        self.sev_inc_Aug = None
-        self.sev_inc_Sep = None
-        self.sev_inc_Oct = None
-        self.sev_inc_Nov = None
-        self.sev_inc_Dec = None
-
-
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
@@ -664,24 +623,26 @@ class Malaria(Module):
             & (df.ma_date_infected == now)
             & df.is_pregnant])
 
-        random_draw = rng.random_sample(size=number_pregnant)
+        if number_pregnant:
 
-        preg_infected = df.index[
-            df.is_alive
-            & (df.ma_inf_type == "clinical")
-            & (df.ma_date_infected == now)
-            & df.is_pregnant
-            & (random_draw < p["p_sev_anaemia_preg"])
-            ]
+            random_draw = rng.random_sample(size=number_pregnant)
 
-        if len(preg_infected) > 0:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(preg_infected),
-                symptom_string="severe_anaemia",
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
+            preg_infected = df.index[
+                df.is_alive
+                & (df.ma_inf_type == "clinical")
+                & (df.ma_date_infected == now)
+                & df.is_pregnant
+                & (random_draw < p["p_sev_anaemia_preg"])
+                ]
+
+            if len(preg_infected) > 0:
+                self.sim.modules["SymptomManager"].change_symptom(
+                    person_id=list(preg_infected),
+                    symptom_string="severe_anaemia",
+                    add_or_remove="+",
+                    disease_module=self,
+                    duration_in_days=None,
+                )
 
     def severe_symptoms_child(self, population, severe_index):
         """
@@ -1483,18 +1444,20 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        # stop treatment
-        if df.at[person_id, "is_alive"]:
+        # exit if person has died already
+        if not df.at[person_id, "is_alive"]:
+            return
 
-            # check that a fever is present and was caused by malaria before resolving it
-            if ("fever" in self.sim.modules["SymptomManager"].has_what(person_id)) & (
-                "Malaria"
-                in self.sim.modules["SymptomManager"].causes_of(person_id, "fever")
-            ):
-                # this will clear all malaria symptoms
-                self.sim.modules["SymptomManager"].clear_symptoms(
-                    person_id=person_id, disease_module=self.module
-                )
+        # stop treatment
+        # check that a fever is present and was caused by malaria before resolving it
+        if ("fever" in self.sim.modules["SymptomManager"].has_what(person_id)) & (
+            "Malaria"
+            in self.sim.modules["SymptomManager"].causes_of(person_id, "fever")
+        ):
+            # this will clear all malaria symptoms
+            self.sim.modules["SymptomManager"].clear_symptoms(
+                person_id=person_id, disease_module=self.module
+            )
 
         # change treatment and infection status
         df.at[person_id, "ma_tx"] = False

@@ -77,6 +77,10 @@ def test_sims(tmpdir):
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
+    # IRS rates should be 0 or 0.8
+
+
+
     # check malaria deaths only being scheduled due to severe malaria (not clinical or asym)
     df = sim.population.props
     assert not (
@@ -94,3 +98,22 @@ def test_sims(tmpdir):
     for person in df.index[df.is_alive & (df.ma_inf_type == "clinical")]:
         assert "fever" in sim.modules["SymptomManager"].has_what(person)
         assert "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever")
+
+    # if infected with malaria, must have date_infected and infection_type
+    for person in df.index[df.ma_is_infected]:
+        assert not pd.isnull(df.at[person, "ma_date_infected"])
+        assert not df.at[person, "ma_inf_type"] == "none"
+        assert df.at[person, "ma_clinical_counter"] > 0
+
+    # if on treatment, must have treatment start date
+
+
+
+
+# remove self testing and check no rdt or treatment
+
+
+# test everyone and check no treatment without positive rdt
+
+
+
