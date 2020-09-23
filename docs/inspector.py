@@ -149,11 +149,9 @@ def write_rst_file(rst_dir, fqn, mobj):
         out.write(f"{title}\n")
         for i in range(len(title)):
             out.write("=")
-        out.write("\n")
+        out.write("\n\n")
 
-        # Extract non-class information, e.g. module-level doc strings,
-        # unbound functions, etc.
-        # get_non_class_info(mobj)
+        out.write(f".. automodule:: {fqn}")
 
         # NB This gets the classes, but not any docstring e.g. at the top
         # of the module, outside any classes. It also doesn't include
@@ -177,12 +175,12 @@ def get_class_output_string(classinfo):
 
     '''
     class_name, class_obj, _ = classinfo
-    str = f"\n\n\n.. class:: {class_name}\n\n"
+    str = f"\n\n\n.. autoclass:: {class_name}\n\n"
 
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
 
-    str += extract_bases(class_name, class_obj)
+    #str += extract_bases(class_name, class_obj)
     str += "\n\n"
 
     general_exclusions = ["__class__", "__dict__", "__init__", "__module__",
@@ -215,9 +213,9 @@ def get_class_output_string(classinfo):
                 or object_description == 'None'):
             continue
 
-        if name == "__doc__" and obj is not None:
-            str += f"**Description:**\n{obj}"
-            continue
+        #if name == "__doc__" and obj is not None:
+        #    str += f"**Description:**\n{obj}"
+        #    continue
         # print(f"next object in class {class_name} is {name} = {obj}")
 
         # We want nice tables for PARAMETERS and PROPERTIES
@@ -225,9 +223,9 @@ def get_class_output_string(classinfo):
             table_list = create_table(obj)
             if table_list == []:
                 continue
-            str += f"**{name}:**\n"
+            str += f"     **{name}:**\n"
             for t in table_list:
-                str += f"{t}\n"
+                str += f"     {t}\n"
             str += "\n\n"
             continue
 
@@ -236,19 +234,20 @@ def get_class_output_string(classinfo):
         #
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
-            mystr = f"\n\n**Function {name}():**\n"
-            mydat = inspect.getmembers(obj)
-            for the_name, the_object in mydat:
+            #mystr = f"\n\n**Function {name}():**\n"
+            #mydat = inspect.getmembers(obj)
+            #for the_name, the_object in mydat:
                 # print(f"{the_name}: {the_object}")
-                if the_name == "__doc__":
-                    mystr += f"\n\n{the_object} \n\n"
-            str += mystr
+            #    if the_name == "__doc__":
+            #        mystr += f"\n\n{the_object} \n\n"
+            #str += mystr
+            str += f"    .. automethod:: {name}\n\n"
             continue
         #    if "population" in class_name:
         #        import pdb; pdb.set_trace()
 
         # Anything else?
-        str += f"{name} : {obj}\n\n"
+        #str += f"{name} : {obj}\n\n"
         # print(f"DEBUG: something else... {name}, {obj}")
 
         # getdoc, getcomments,
