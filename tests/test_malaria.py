@@ -118,13 +118,11 @@ def test_sims(tmpdir):
         if "Malaria" in sim.modules["SymptomManager"].causes_of(person, "fever"):
             assert not pd.isnull(df.at[person, "ma_date_infected"])
             assert not df.at[person, "ma_inf_type"] == "none"
-            assert df.at[person, "ma_clinical_counter"] > 0
 
     # if infected with malaria, must have date_infected and infection_type
     for person in df.index[df.ma_is_infected]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
         assert not df.at[person, "ma_inf_type"] == "none"
-        assert df.at[person, "ma_clinical_counter"] > 0
 
     # if on treatment, must have treatment start date
     for person in df.index[df.ma_tx]:
@@ -174,12 +172,12 @@ def test_remove_malaria_test(tmpdir):
 
     # Check malaria cases occurring
     assert 0 < df.ma_clinical_counter.sum()
-    assert (df['ma_date_infected'] != 'none').any()
-    assert (df['ma_date_symptoms'] != 'none').any()
-    assert (df['ma_date_death'] != 'none').any()
+    assert (df['ma_date_infected'] != pd.NaT).all()
+    assert (df['ma_date_symptoms'] != pd.NaT).all()
+    assert (df['ma_date_death'] != pd.NaT).all()
 
     # check all with severe malaria are assigned death date
-    for person in df.index[df.ma_inf_type] == "severe":
+    for person in df.index[(df.ma_inf_type == "severe")]:
         assert not pd.isnull(df.at[person, "ma_date_death"])
 
     # Check deaths are occurring
@@ -235,7 +233,6 @@ def test_schedule_rdt_for_all(tmpdir):
     for person in df.index[df.ma_tx]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
         assert not df.at[person, "ma_inf_type"] == "none"
-        assert df.at[person, "ma_clinical_counter"] > 0
 
 
 def test_dx_algorithm_for_malaria_outcomes():
