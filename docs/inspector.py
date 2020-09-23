@@ -264,7 +264,7 @@ def get_class_output_string(classinfo):
     return str
 
 
-def extract_bases(class_name, class_obj, spacer=None):
+def extract_bases(class_name, class_obj, spacer=""):
     '''
     Document which classes this class inherits from,
     except for the object class or this class itself.
