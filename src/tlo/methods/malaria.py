@@ -788,11 +788,10 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         # select people to go for testing (and subsequent tx)
         # random sample 0.4 to match clinical case tx coverage
         # this sample will include asymptomatic infections too to account for
-        # unnecessary treatments (subclinical infection)
+        # unnecessary treatments  and uninfected people
         test = df.index[
             (self.module.rng.random_sample(size=len(df)) < p["testing_adj"])
             & df.is_alive
-            & df.ma_is_infected
         ]
 
         for person_index in test:
