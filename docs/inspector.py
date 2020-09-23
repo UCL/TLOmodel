@@ -196,6 +196,9 @@ def get_class_output_string(classinfo):
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
 
+    numspaces = 5
+    spacer = numspaces * ' '
+
     for name, obj in classdat:
         # We only want to document things defined in this class itself,
         # rather than anything inherited from parent classes (including
@@ -223,9 +226,9 @@ def get_class_output_string(classinfo):
             table_list = create_table(obj)
             if table_list == []:
                 continue
-            str += f"     **{name}:**\n"
+            str += f"{spacer}**{name}:**\n"
             for t in table_list:
-                str += f"     {t}\n"
+                str += f"{spacer}{t}\n"
             str += "\n\n"
             continue
 
@@ -241,7 +244,7 @@ def get_class_output_string(classinfo):
             #    if the_name == "__doc__":
             #        mystr += f"\n\n{the_object} \n\n"
             #str += mystr
-            str += f"    .. automethod:: {name}\n\n"
+            str += f"{spacer}.. automethod:: {name}\n\n"
             continue
         #    if "population" in class_name:
         #        import pdb; pdb.set_trace()
