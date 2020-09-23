@@ -57,14 +57,17 @@ class DxManager:
                     assert all(elem in property_categories
                                for elem in d.target_categories), 'not all target_categories are valid categories'
 
+    # TODO: Discussed with TH 23/09/2020 - The below check has been commented to allow dx_tests looking at categorical
+    #  variables under the same property to run (i.e. ps_htn_disorders in ANC/SBA)
+
             # Check if this tuple of DxTests is a duplicate of something already registered.
-            if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
-                try:
-                    assert self.dx_tests[name] == dx_test
-                except (KeyError, AssertionError):
-                    raise ValueError(
-                        "The same Dx_Test or the same name have been registered previously against a different name "
-                        "or DxTest.")
+    #        if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
+    #            try:
+    #                assert self.dx_tests[name] == dx_test
+    #            except (KeyError, AssertionError):
+    #                raise ValueError(
+    #                    "The same Dx_Test or the same name have been registered previously against a different name "
+    #                    "or DxTest.")
 
             # Add the list of DxTests to the dict of registered DxTests
             self.dx_tests[name] = dx_test

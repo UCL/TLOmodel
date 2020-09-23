@@ -24,12 +24,14 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Scenarios Definitions:
-# *1: No Treatment
-# *2: Some Treatment
+# *1: Current coverage/access to ANC in Malawi
+# *2: All women attend all 8 ANC contacts starting at 13 weeks
 
 scenarios = dict()
-scenarios['No_Health_System'] = []
-scenarios['Health_System'] = ['*']
+gest_months_bl = [0, 0.05, 0.05, 0.1, 0.1, 0.2, 0.3, 0.1, 0.05, 0.05]
+gest_months_anc8 = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+scenarios['baseline'] = [gest_months_bl, 0.49, 0.7]
+scenarios['ANC8'] = [gest_months_anc8, 1, 1]
 
 # Create dict to capture the outputs
 output_files = dict()
@@ -37,10 +39,10 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 2)
-popsize = 500
+end_date = Date(2012, 1, 2)
+popsize = 10
 
-for label, service_avail in scenarios.items():
+for label, parameters in scenarios.items():
     # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date)
 
@@ -49,7 +51,7 @@ for label, service_avail in scenarios.items():
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_avail),
+                                           service_availability=['*']),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
                  hiv.hiv(resourcefilepath=resourcefilepath),
@@ -64,6 +66,14 @@ for label, service_avail in scenarios.items():
     logfile = sim.configure_logging(filename="LogFile")
     sim.seed_rngs(0)
     sim.make_initial_population(n=popsize)
+
+    params_preg_sup = sim.modules['PregnancySupervisor'].parameters
+    params_anc = sim.modules['Labour'].parameters
+
+    params_preg_sup['prob_first_anc_visit_gestational_age'] = parameters[0]
+    params_preg_sup['prob_four_or_more_anc_visits'] = parameters[1]
+    params_anc['prob_anc_continues'] = parameters[2]
+
     sim.simulate(end_date=end_date)
 
     # Save the full set of results:
@@ -84,37 +94,15 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         inplace=True
     )
 
-    maternal_counts_lab = output['tlo.methods.labour']['summary_stats_incidence']
-    maternal_counts_lab['year'] = pd.to_datetime(maternal_counts_lab['date']).dt.year
-    maternal_counts_lab['year'] = maternal_counts_lab['year'] - 1
-    maternal_counts_lab.drop(columns='date', inplace=True)
-    maternal_counts_lab.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
+    sbr = maternal_counts['antenatal_sbr']
 
-    maternal_counts['final_mmr'] = maternal_counts['antenatal_mmr'] + maternal_counts_lab['intrapartum_mmr']
-    maternal_counts['final_sbr'] = maternal_counts['antenatal_sbr'] + maternal_counts_lab['sbr']
-
-    mmr = maternal_counts['final_mmr']
-    sbr = maternal_counts['final_sbr']
-    ar = maternal_counts['anaemia_rate']
-    pe = maternal_counts['crude_pe']
-    gh = maternal_counts['crude_gest_htn']
-
-    return mmr, sbr, ar, pe, gh
+    return sbr
 
 
-maternal_mortality_ratio = dict()
 still_birth_ratio = dict()
-anaemia_rate = dict()
-crude_pre_eclampsia = dict()
-crude_gest_htn = dict()
 
 for label, file in output_files.items():
-    maternal_mortality_ratio[label], still_birth_ratio[label], anaemia_rate[label], crude_pre_eclampsia[label], \
-    crude_gest_htn[label] = \
+    still_birth_ratio[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
 data = {}
 
@@ -128,8 +116,4 @@ def generate_graphs(dictionary, title, saved_title):
     plt.show()
 
 
-generate_graphs(maternal_mortality_ratio,'Combined antenatal and intrapartum MMR by Year', "mmr_by_scenario")
-generate_graphs(still_birth_ratio, 'Combined antenatal and intrapartum SBR by Year', "sbr_by_scenario")
-#  generate_graphs(anaemia_rate, 'Anaemia Rate by Year', "ar_by_scenario")
-# generate_graphs(crude_pre_eclampsia, 'Crude new onset pre-eclampsia cases', "cpe_by_scenario")
-# generate_graphs(crude_gest_htn, 'Crude new onset gestational hypertension cases', "cpe_by_scenario")
+generate_graphs(still_birth_ratio, 'Antenatal SBR with normal coverage of ANC vs ANC8', "sbr_by_scenario")

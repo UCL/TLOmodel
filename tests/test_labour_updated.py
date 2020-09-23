@@ -55,13 +55,13 @@ def test_run():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
                  male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
                  hiv.hiv(resourcefilepath=resourcefilepath),
                  tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
@@ -71,12 +71,13 @@ def test_run():
     params_ps = sim.modules['PregnancySupervisor'].parameters
     params_labour = sim.modules['Labour'].parameters
 
-    params_ps['prob_gest_htn_per_month'] = 1
-    params_ps['prob_pre_eclampsia_per_month'] = 1
-    params_ps['probability_htn_persists'] = 1
-    params_labour['prob_progression_gest_htn'] = 1
-    params_labour['prob_progression_mild_pre_eclamp'] = 1
-    params_labour['prob_progression_severe_pre_eclamp'] = 1
+    #params_ps['prob_gest_htn_per_month'] = 1
+    #params_ps['prob_pre_eclampsia_per_month'] = 1
+    # params_ps['probability_htn_persists'] = 1
+    # params_labour['prob_progression_gest_htn'] = 1
+    # params_labour['prob_progression_mild_pre_eclamp'] = 1
+    # params_labour['prob_progression_severe_pre_eclamp'] = 1
+
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)

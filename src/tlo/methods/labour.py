@@ -205,6 +205,8 @@ class Labour (Module):
             Types.REAL, 'odds ratio of a woman developing sepsis following premature rupture of membranes '),
         'cfr_pp_pph': Parameter(
             Types.REAL, 'case fatality rate for postpartum haemorrhage'),
+        'rr_pph_death_anaemia': Parameter(
+            Types.REAL, 'relative risk increase of death in women who are anaemic at time of PPH'),
         'cfr_pp_eclampsia': Parameter(
             Types.REAL, 'case fatality rate for eclampsia following delivery'),
         'cfr_pp_sepsis': Parameter(
@@ -650,13 +652,14 @@ class Labour (Module):
             'postpartum_haem_pp': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_pph'],
-                Predictor('received_amtsl', external=True).when(True, params['rr_pph_amtsl'])
+                Predictor('received_amtsl', external=True).when(True, params['rr_pph_amtsl']),
                 # Predictor('la_obstructed_labour').when(True, params['rr_pph_pl_ol']),
             ),
 
             'postpartum_haem_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_pph'],
+                Predictor('ps_anaemia_in_pregnancy').when(True, params['rr_pph_death_anaemia']),
                 Predictor().when('la_postpartum_haem_treatment & __attended_delivery__',
                                  params['pph_prompt_treatment_effect_md']),
                 Predictor().when('la_postpartum_haem_treatment  & ~__attended_delivery__',
@@ -843,20 +846,22 @@ class Labour (Module):
 
             # Hypertension diagnosis
             assess_hypertension_hc=DxTest(
-                property='ps_currently_hypertensive',
+                property='ps_htn_disorders', target_categories=['gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp',
+                                                                'eclampsia'],
                 sensitivity=p['sensitivity_of_assessment_of_hypertension_hc']),
 
             assess_hypertension_hp=DxTest(
-                property='ps_currently_hypertensive',
+                property='ps_htn_disorders', target_categories=['gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp',
+                                                                'eclampsia'],
                 sensitivity=p['sensitivity_of_assessment_of_hypertension_hp']),
 
             # severe pre-eclampsia diagnosis
             assess_severe_pe_hc=DxTest(
-                property='ps_severe_pre_eclamp',
+                property='ps_htn_disorders', target_categories=['severe_pre_eclamp'],
                 sensitivity=p['sensitivity_of_assessment_of_severe_pe_hc']),
 
             assess_severe_pe_hp=DxTest(
-                property='ps_severe_pre_eclamp',
+                property='ps_htn_disorders', target_categories=['severe_pre_eclamp'],
                 sensitivity=p['sensitivity_of_assessment_of_severe_pe_hp']),
 
             # Antepartum Haemorrhage
@@ -1180,28 +1185,29 @@ class Labour (Module):
         """"""
         df = self.sim.population.props
         params = self.parameters
-        if df.at[individual_id, 'ps_htn_disorders'] == 'none':
-            return
 
-        elif df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn':
-            risk_progression_gh_pe = params['la_labour_equations']['progression_gest_htn'].predict(df.loc[[
+        risk_progression_gh_pe = params['la_labour_equations']['progression_gest_htn'].predict(df.loc[[
+            individual_id]])[individual_id]
+
+        risk_progression_mpe_spe = params['la_labour_equations']['progression_mild_pre_eclamp'].predict(df.loc[[
+            individual_id]])[individual_id]
+
+        risk_progression_spe_ec = params['la_labour_equations']['progression_severe_pre_eclamp'].predict(df.loc[[
                     individual_id]])[individual_id]
 
+       # if df.at[individual_id, 'ps_htn_disorders'] == 'none':
+        #    return
+
+        if df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn':
             if risk_progression_gh_pe > self.rng.random_sample():
                 df.at[individual_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
 
-        elif df.at[individual_id, 'ps_htn_disorders'] == 'mild_pre_eclamp':
-            risk_progression_mpe_spe = params['la_labour_equations']['progression_mild_pre_eclamp'].predict(df.loc[[
-                    individual_id]])[individual_id]
-
+        if df.at[individual_id, 'ps_htn_disorders'] == 'mild_pre_eclamp':
             if risk_progression_mpe_spe > self.rng.random_sample():
                 df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
                 self.labour_tracker['severe_pre_eclampsia'] += 1
 
-        elif df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
-            risk_progression_spe_ec = params['la_labour_equations']['progression_severe_pre_eclamp'].predict(df.loc[[
-                    individual_id]])[individual_id]
-
+        if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
             if risk_progression_spe_ec > self.rng.random_sample():
                 df.at[individual_id, 'ps_htn_disorders'] = 'eclampsia'
                 df.at[individual_id, 'la_eclampsia_disab'] = True
@@ -1232,6 +1238,7 @@ class Labour (Module):
             logger.debug(f'person %d has experienced a still birth following {cause} in labour')
             df.at[individual_id, 'la_intrapartum_still_birth'] = True
             df.at[individual_id, 'ps_previous_stillbirth'] = True
+            df.at[individual_id, 'is_pregnant'] = False
 
     def set_maternal_death_status_postpartum(self, individual_id, cause):
         """This function calculates an associated risk of death for a woman who has experience a complication following
@@ -1451,7 +1458,7 @@ class Labour (Module):
                     logger.debug('mother %d has has their severe pre-eclampsia identified during delivery. As '
                                  'consumables are available they will receive treatment', person_id)
 
-                elif df.at[person_id, 'ps_severe_pre_eclamp']:
+                elif df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
                     logger.debug('mother %d has not had their severe pre-eclampsia identified during delivery and will '
                                  'not be treated', person_id)
 

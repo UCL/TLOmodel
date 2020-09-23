@@ -139,18 +139,8 @@ class PregnancySupervisor(Module):
                                                         'pregnancy',
                                      categories=['none', 'gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp',
                                                  'eclampsia']),
-
-        # TODO: There is repetition between the the property 'ps_htn_disorders' and the following properties because
-        #  previously the dx_text could not work with categorical properties - however i cant have a dx_test for which
-        #  all properties APART FROM 'none' return a positive result - i.e. blood pressure monitoring should pick up all
-        #  types of hypertension and should only be negative for 'none'
-
-        'ps_gestational_htn': Property(Types.BOOL, 'whether this woman has gestational hypertension'),
-        'ps_mild_pre_eclamp': Property(Types.BOOL, 'whether this woman has mild pre-eclampsia'),
-        'ps_severe_pre_eclamp': Property(Types.BOOL, 'whether this woman has severe pre-eclampsia'),
         'ps_prev_pre_eclamp': Property(Types.BOOL, 'whether this woman has experienced pre-eclampsia in a previous '
                                                    'pregnancy'),
-        'ps_currently_hypertensive': Property(Types.BOOL, 'whether this woman is currently hypertensive'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
                                                   'during a previous pregnancy'),
@@ -318,11 +308,7 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
         df.loc[df.is_alive, 'ps_previous_stillbirth'] = False
         df.loc[df.is_alive, 'ps_htn_disorders'] = 'none'
-        df.loc[df.is_alive, 'ps_gestational_htn'] = False
-        df.loc[df.is_alive, 'ps_mild_pre_eclamp'] = False
-        df.loc[df.is_alive, 'ps_severe_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
-        df.loc[df.is_alive, 'ps_currently_hypertensive'] = False
         df.loc[df.is_alive, 'ps_gest_diab'] = False
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
         df.loc[df.is_alive, 'ps_antepartum_haemorrhage'] = False
@@ -358,11 +344,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_antepartum_still_birth'] = False
         df.at[child_id, 'ps_previous_stillbirth'] = False
         df.at[child_id, 'ps_htn_disorders'] = 'none'
-        df.at[child_id, 'ps_gestational_htn'] = False
-        df.at[child_id, 'ps_mild_pre_eclamp'] = False
-        df.at[child_id, 'ps_severe_pre_eclamp'] = False
         df.at[child_id, 'ps_prev_pre_eclamp'] = False
-        df.at[child_id, 'ps_currently_hypertensive'] = False
         df.at[child_id, 'ps_gest_diab'] = False
         df.at[child_id, 'ps_prev_gest_diab'] = False
         df.at[child_id, 'ps_antepartum_haemorrhage'] = False
@@ -392,10 +374,6 @@ class PregnancySupervisor(Module):
                 logger.debug('mother %d will remain hypertensive despite successfully delivering')
             else:
                 df.at[mother_id, 'ps_htn_disorders'] = 'none'
-                df.at[mother_id, 'ps_gestational_htn'] = False
-                df.at[mother_id, 'ps_mild_pre_eclamp'] = False
-                df.at[mother_id, 'ps_severe_pre_eclamp'] = False
-                df.at[mother_id, 'ps_gestational_htn'] = False
 
         # ================================= RISK OF DE NOVO HTN =======================================================
         # Finally we apply a risk of de novo hypertension in women who have been normatensive during pregnancy
@@ -490,7 +468,6 @@ class PregnancySupervisor(Module):
             for person in positive_index:
                 assert df.at[person, 'ps_htn_disorders'] == 'none'
 
-            df.loc[positive_index, 'ps_mild_pre_eclamp'] = True
             df.loc[positive_index, 'ps_prev_pre_eclamp'] = True
             df.loc[positive_index, 'ps_htn_disorders'] = 'mild_pre_eclamp'
             self.PregnancyDiseaseTracker['new_onset_pre_eclampsia'] += len(positive_index)
@@ -506,7 +483,6 @@ class PregnancySupervisor(Module):
                 assert df.at[person, 'ps_htn_disorders'] == 'none'
 
             # As hypertension is mostly asymptomatic no symptoms are set for these women
-            df.loc[positive_index, 'ps_gestational_htn'] = True
             df.loc[positive_index, 'ps_htn_disorders'] = 'gest_htn'
             self.PregnancyDiseaseTracker['new_onset_gest_htn'] += len(positive_index)
             if not positive_index.empty:

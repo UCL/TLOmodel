@@ -153,17 +153,18 @@ class CareOfWomenDuringPregnancy(Module):
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             blood_pressure_measurement=DxTest(
-                property='ps_currently_hypertensive',
+                property='ps_htn_disorders', target_categories=['gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp',
+                                                                'eclampsia'],
                 sensitivity=params['sensitivity_bp_monitoring'],
                 specificity=params['specificity_bp_monitoring']),
 
             urine_dipstick_protein_1_plus=DxTest(
-                property='ps_mild_pre_eclamp',
+                property='ps_htn_disorders', target_categories=['mild_pre_eclamp'],
                 sensitivity=params['sensitivity_urine_protein_1_plus'],
                 specificity=params['specificity_urine_protein_1_plus']),
 
             urine_dipstick_protein_3_plus=DxTest(
-                property='ps_severe_pre_eclamp',
+                property='ps_htn_disorders', target_categories=['severe_pre_eclamp'],
                 sensitivity=params['sensitivity_urine_protein_3_plus'],
                 specificity=params['specificity_urine_protein_3_plus']),
 
