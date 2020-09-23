@@ -177,10 +177,15 @@ def get_class_output_string(classinfo):
     class_name, class_obj, _ = classinfo
     str = f"\n\n\n.. autoclass:: {class_name}\n\n"
 
+    # This is needed to keep information neatly aligned
+    # with each class.
+    numspaces = 5
+    spacer = numspaces * ' '
+
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
 
-    #str += extract_bases(class_name, class_obj)
+    str += extract_bases(class_name, class_obj, spacer)
     str += "\n\n"
 
     general_exclusions = ["__class__", "__dict__", "__init__", "__module__",
@@ -196,8 +201,7 @@ def get_class_output_string(classinfo):
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
 
-    numspaces = 5
-    spacer = numspaces * ' '
+
 
     for name, obj in classdat:
         # We only want to document things defined in this class itself,
@@ -260,13 +264,14 @@ def get_class_output_string(classinfo):
     return str
 
 
-def extract_bases(class_name, class_obj):
+def extract_bases(class_name, class_obj, spacer=None):
     '''
     Document which classes this class inherits from,
     except for the object class or this class itself.
     :param class_name: name of the class (e.g. Mockitis) for which we want the
     bases
     :param class_obj: object with information about this class
+    :param spacer: string to use as whitespace padding.
     :return: string of base(s) for this class (if any), with links to their
     docs.
     '''
@@ -290,12 +295,12 @@ def extract_bases(class_name, class_obj):
             parents.append(this_base_string)
 
     if len(parents) > 0:
-        str = "**Bases:**\n\n"
+        str = f"{spacer}**Base classes:**\n\n"
         numbase = 1
-        str += f"Base #{numbase}: {parents[0]}\n\n"
+        str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
         for p in parents[1:]:
             numbase += 1
-            str += f"Base #{numbase}: {p}\n\n"
+            str += f"{spacer}Base #{numbase}: {p}\n\n"
     else:
         str = ""
 
