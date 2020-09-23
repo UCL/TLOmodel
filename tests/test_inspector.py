@@ -98,14 +98,14 @@ def ignore_this_test_write_rst_file():
 
     # Need the trailing slash after tlo - it needs "/tlo/":
     # mydata = generate_module_dict("./src/tlo/")
-    mydata = generate_module_dict(module_directory)
+    mydata = inspector.get_class_output_string(module_directory)
     for dir in mydata:  # e.g. .../src/tlo/logging/sublog
-        package = get_package_name(dir)  # e.g. "tlo.logging.sublog"
+        package = inspector.get_package_name(dir)  # e.g. "tlo.logging.sublog"
         files = mydata[dir]  # e.g. ["fileA.py", "fileB.py", ...]
         print(f"In directory [{dir}]: files are {files}")
         for f in files:
             # e.g. "tlo.logging.sublog.fileA":
-            fqn = get_fully_qualified_name(f, package)
+            fqn = inspector.get_fully_qualified_name(f, package)
             # print(f"DEBUG: dir: {dir}, package:{package}, f:{f}, fqn:{fqn}")
             # Object creation from string:
             module_obj = importlib.import_module(fqn)
@@ -125,8 +125,6 @@ def test_get_class_output_string():
     expected += "\n\n**Function set_name():**\n"
     expected += f"\n\nSet the name. \n\n"
     expected += "\n\n\n"
-    #expected.replace("\n", "")
-    #result.replace("\n", "")
     assert result == expected
 
 

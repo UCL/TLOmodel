@@ -2,7 +2,7 @@
 # with working directory set to (e.g.)
 # /Users/matthewgillman/PycharmProjects/TLOmodel
 # and Script path
-# /Users/matthewgillman/PycharmProjects/TLOmodel/src/tlo/inspector.py
+# /Users/matthewgillman/PycharmProjects/TLOmodel/docs/inspector.py
 import inspect
 import importlib
 import os.path
