@@ -9,6 +9,7 @@ from tlo.methods import (
     antenatal_care,
     contraception,
     demography,
+    diarrhoea,
     dx_algorithm_adult,
     dx_algorithm_child,
     enhanced_lifestyle,
@@ -20,17 +21,8 @@ from tlo.methods import (
     newborn_outcomes,
     pregnancy_supervisor,
     symptommanager,
-    diarrhoea,
 )
-
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
-from tlo.methods.malaria import (
-    HSI_Malaria_rdt,
-    HSI_Malaria_non_complicated_treatment_age0_5,
-    HSI_Malaria_non_complicated_treatment_age5_15,
-    HSI_Malaria_complicated_treatment_child
-)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
@@ -372,7 +364,8 @@ def test_dx_algorithm_for_non_malaria_outcomes():
 
         sim = Simulation(start_date=start_date, seed=0)
 
-        malaria_testing = 0.35  # adjust this to match rdt/tx levels
+        # adjust this to match rdt/tx levels
+        # malaria_testing = 0.35
 
         # Register the appropriate modules
         sim.register(demography.Demography(resourcefilepath=resourcefilepath),
