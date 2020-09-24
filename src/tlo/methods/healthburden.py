@@ -8,6 +8,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,6 +27,11 @@ class HealthBurden(Module):
         self.multi_index = None
         self.YearsLifeLost = None
         self.YearsLivedWithDisability = None
+
+        self.recognised_modules_names = None
+
+    # Declare Metadata
+    METADATA = {}
 
     PARAMETERS = {
         'DALY_Weight_Database': Property(Types.DATA_FRAME, 'DALY Weight Database from GBD'),
@@ -60,11 +66,15 @@ class HealthBurden(Module):
         self.YearsLifeLost = pd.DataFrame(index=multi_index)
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
-        # Check that all registered disease modules have the report_daly_values() function
-        assert 'HealthSystem' in self.sim.modules.keys(), "HealthBurden module is dependent on HealthSystem module."
+        # Store the name of all disease modules
+        self.recognised_modules_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_HEALTHBURDEN in m.METADATA
+        ]
 
-        for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
-            assert 'report_daly_values' in dir(self.sim.modules['HealthSystem'].registered_disease_modules[module_name])
+        # Check that all registered disease modules have the report_daly_values() function
+        for module_name in self.recognised_modules_names:
+            assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
+                   callable(self.sim.modules[module_name].report_daly_values)
 
         # Launch the DALY Logger to run every month, starting with the end of month 1
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
@@ -203,9 +213,9 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # 1) Ask each disease module to log the DALYS for the previous month
 
-        for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
+        for disease_module_name in self.module.recognised_modules_names:
 
-            disease_module = self.sim.modules['HealthSystem'].registered_disease_modules[disease_module_name]
+            disease_module = self.sim.modules[disease_module_name]
 
             dalys_from_disease_module = disease_module.report_daly_values()
 

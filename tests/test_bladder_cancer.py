@@ -83,7 +83,9 @@ def zero_out_init_prev(sim):
 
 def seed_init_prev_in_first_stage_only(sim):
     # Set initial prevalence to zero:
-    sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'] = [0.0] * 4
+    sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'] = \
+        [0.0] \
+        * len(sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'])
     # Put everyone in first stage ('low-grade-dysplasia')
     sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'][0] = 1.0
     return sim
@@ -91,7 +93,9 @@ def seed_init_prev_in_first_stage_only(sim):
 
 def make_high_init_prev(sim):
     # Set initial prevalence to a high value:
-    sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'] = [0.1] * 4
+    sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'] = \
+        [0.1] \
+        * len(sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'])
     return sim
 
 
@@ -111,6 +115,7 @@ def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
     sim.modules['BladderCancer'].parameters['r_t2p_bladder_cancer_tis_t1'] *= 5
     sim.modules['BladderCancer'].parameters['r_metastatic_bladder_cancer_t2p'] *= 5
+    # should this be r_metastatic_t2p_bladder_cancer
     return sim
 
 
@@ -153,7 +158,7 @@ def check_configuration_of_population(sim):
     assert (df.loc[df.bc_status == 'none', 'bc_stage_at_which_treatment_given'] == 'none').all()
 
     # check that treatment is never done for those with bc_status metastatic
-    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()
+    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()   # todo- this fails but may not be relevant
     assert 0 == (df.loc[~pd.isnull(df.bc_date_treatment)].bc_stage_at_which_treatment_given == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:

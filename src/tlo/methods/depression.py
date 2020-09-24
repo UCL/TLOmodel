@@ -29,7 +29,13 @@ class Depression(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Module parameters
     PARAMETERS = {
@@ -295,9 +301,6 @@ class Depression(Module):
                 0.33 * self.daly_wts['severe_episode_major_depressive_disorder']
                 + 0.66 * self.daly_wts['moderate_episode_major_depressive_disorder']
             )
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
