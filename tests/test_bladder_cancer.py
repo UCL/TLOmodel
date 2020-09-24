@@ -114,8 +114,8 @@ def zero_rate_of_onset_lgd(sim):
 def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
     sim.modules['BladderCancer'].parameters['r_t2p_bladder_cancer_tis_t1'] *= 5
-    sim.modules['BladderCancer'].parameters['r_metastatic_bladder_cancer_t2p'] *= 5
-    # should this be r_metastatic_t2p_bladder_cancer
+    sim.modules['BladderCancer'].parameters['r_metastatic_t2p_bladder_cancer'] *= 5
+
     return sim
 
 

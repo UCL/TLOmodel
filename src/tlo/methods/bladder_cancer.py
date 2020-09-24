@@ -169,7 +169,7 @@ class BladderCancer(Module):
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given ",
-            categories=["none", "tis_t1", "t2p","metastatic"],
+            categories=["none", "tis_t1", "t2p", "metastatic"],
         ),
 
         "bc_date_palliative_care": Property(
@@ -303,7 +303,8 @@ class BladderCancer(Module):
         treatment_initiated.loc[pd.isnull(df.bc_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "bc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "bc_status"]
+#       df.loc[treatment_initiated, "bc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "bc_status"]
+        df.loc[treatment_initiated, "bc_stage_at_which_treatment_given"] = "t2p"
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "bc_date_treatment"] = df.loc[treatment_initiated, "bc_date_diagnosis"]
