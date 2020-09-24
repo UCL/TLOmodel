@@ -22,7 +22,6 @@ from tlo.methods.symptommanager import Symptom
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 class BladderCancer(Module):
     """Bladder Cancer Disease Module"""
 
@@ -34,7 +33,12 @@ class BladderCancer(Module):
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         "init_prop_bladder_cancer_stage": Parameter(
@@ -188,18 +192,17 @@ class BladderCancer(Module):
                           sheet_name="parameter_values")
         )
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='blood_urine',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=4.00,
+                    no_healthcareseeking_in_children=True)
         )
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='pelvic_pain',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=4.00,
+                    no_healthcareseeking_in_children=True)
         )
 
     def initialise_population(self, population):
