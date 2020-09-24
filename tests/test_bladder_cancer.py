@@ -158,7 +158,7 @@ def check_configuration_of_population(sim):
     assert (df.loc[df.bc_status == 'none', 'bc_stage_at_which_treatment_given'] == 'none').all()
 
     # check that treatment is never done for those with bc_status metastatic
-    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()
+    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()   # todo- this fails but may not be relevant
     assert 0 == (df.loc[~pd.isnull(df.bc_date_treatment)].bc_stage_at_which_treatment_given == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:
