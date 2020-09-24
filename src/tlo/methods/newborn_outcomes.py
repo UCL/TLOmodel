@@ -7,7 +7,7 @@ import scipy.stats
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography
+from tlo.methods import demography, postnatal_supervisor
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -141,6 +141,12 @@ class NewbornOutcomes(Module):
             Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 health centre'),
         'sensitivity_of_assessment_of_lbw_hp': Parameter(
             Types.REAL, 'sensitivity of dx_test assessment of low birth weight in level 1 hospital'),
+
+        # ============================================ ADDITIONAL ==================================================
+        'days_of_neonatal_period': Parameter(
+            Types.LIST, 'number of days in the neonatal period'),
+        'daily_risk_of_neonatal_sepsis_onset': Parameter(
+            Types.LIST, 'risk of sepsis onset for each day of the neonatal period'),
     }
 
     PROPERTIES = {
@@ -494,17 +500,29 @@ class NewbornOutcomes(Module):
             logger.debug(F'This is NewbornOutcomes scheduling a death for person %d on date %s who died due to {cause}'
                          'complications following birth', individual_id, self.sim.date)
 
-    def apply_risk_of_early_onset_neonatal_sepsis(self, child_id):
+    def apply_risk_of_neonatal_sepsis(self, child_id):
         """This function uses the linear model to determines if a neonate will develop early onset
         neonatal sepsis and makes the appropriate changes to the data frame"""
         params = self.parameters
         df = self.sim.population.props
 
         if self.eval(params['nb_newborn_equations']['neonatal_sepsis'], child_id):
-            df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
             self.NewbornComplicationTracker['neonatal_sepsis'] += 1
-            logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
-                        child_id, self.sim.date)
+
+            length_of_neonatal_period = params['days_of_neonatal_period']
+            day_of_onset = int(self.rng.choice(length_of_neonatal_period, size=1,
+                                           p=params['daily_risk_of_neonatal_sepsis_onset']))
+            if day_of_onset < 3:
+                df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
+                logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
+                            child_id, self.sim.date)
+
+            elif day_of_onset > 2:
+                logger.info('Neonate %d will develop late onset sepsis following a home birth on date %s',
+                            child_id, self.sim.date)
+                self.sim.schedule_event(postnatal_supervisor.LateNeonatalSepsisOnsetEvent
+                                        (self.sim.modules['PostnatalSupervisor'], child_id), self.sim.date +
+                                        DateOffset(days=day_of_onset))
 
     def apply_risk_of_encephalopathy(self, child_id):
         """This function uses the linear model to determines if a neonate will develop neonatal
@@ -627,7 +645,7 @@ class NewbornOutcomes(Module):
 
         # We apply the risk of neonatal complications that would have occured if the HSI was able to run
         if ~nci[individual_id]['sought_care_for_complication']:
-            self.module.apply_risk_of_early_onset_neonatal_sepsis(individual_id)
+            self.module.apply_risk_of_neonatal_sepsis(individual_id)
             self.module.apply_risk_of_encephalopathy(individual_id)
             self.module.apply_risk_of_failure_to_transition(individual_id)
 
@@ -724,7 +742,7 @@ class NewbornOutcomes(Module):
             # If the child's mother has delivered at home, we immediately apply the risk and make changes to the
             # data frame. Otherwise this is done during the HSI
             if nci[child_id]['delivery_setting'] == 'home_birth':
-                self.apply_risk_of_early_onset_neonatal_sepsis(child_id)
+                self.apply_risk_of_neonatal_sepsis(child_id)
 
                 # TODO: (IMPORTANT) apply distribution of onset of neonatal sepsis, days 0-7, and add code to the
                 #  postpartum module to give these newborns symptoms and seek care
@@ -1059,7 +1077,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
             # Following the administration of prophylaxis we determine if this neonate has developed
             # any complications following birth
             if ~nci[person_id]['sought_care_for_complication']:
-                self.module.apply_risk_of_early_onset_neonatal_sepsis(person_id)
+                self.module.apply_risk_of_neonatal_sepsis(person_id)
 
                 self.module.apply_risk_of_encephalopathy(person_id)
 

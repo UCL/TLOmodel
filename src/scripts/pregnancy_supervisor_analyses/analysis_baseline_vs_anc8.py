@@ -30,8 +30,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 scenarios = dict()
 gest_months_bl = [0, 0.05, 0.05, 0.1, 0.1, 0.2, 0.3, 0.1, 0.05, 0.05]
 gest_months_anc8 = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
-scenarios['baseline'] = [gest_months_bl, 0.49, 0.7]
-scenarios['ANC8'] = [gest_months_anc8, 1, 1]
+scenarios['status_quo'] = [gest_months_bl, 0.49, 0.7]
+# scenarios['50%_ANC8_coverage'] = [gest_months_bl, 0.49, 0.7]
+scenarios['100%_ANC8_coverage'] = [gest_months_anc8, 1, 1]
 
 # Create dict to capture the outputs
 output_files = dict()
@@ -39,8 +40,8 @@ output_files = dict()
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 2)
-popsize = 10
+end_date = Date(2016, 1, 2)
+popsize = 10000
 
 for label, parameters in scenarios.items():
     # add file handler for the purpose of logging
