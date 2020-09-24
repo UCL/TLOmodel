@@ -57,6 +57,10 @@ class DxManager:
                     assert all(elem in property_categories
                                for elem in d.target_categories), 'not all target_categories are valid categories'
 
+            """The following section was intended to prevent unintended duplicates of DxTests being registered.
+            However, use cases are arising in which it is OK for there to have two tests with different names that
+            are functionally identical
+
             # Check if this tuple of DxTests is a duplicate of something already registered.
             if (dx_test in self.dx_tests.values()) or (name in self.dx_tests):
                 try:
@@ -65,6 +69,7 @@ class DxManager:
                     raise ValueError(
                         "The same Dx_Test or the same name have been registered previously against a different name "
                         "or DxTest.")
+            """
 
             # Add the list of DxTests to the dict of registered DxTests
             self.dx_tests[name] = dx_test
