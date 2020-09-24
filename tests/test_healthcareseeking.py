@@ -36,7 +36,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     """test that a symptom that gives healthcare seeking results in generic HSI scheduled."""
 
     class DummyDisease(Module):
-        METADATA = {Metadata.DISEASE_MODULE}
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
@@ -102,7 +102,7 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     """test that a symptom that should not give healthseeeking does not give heaslth seeking."""
 
     class DummyDisease(Module):
-        METADATA = {Metadata.DISEASE_MODULE}
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(
@@ -171,7 +171,7 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     """test that a symptom that give emergency healthcare seeking results in emergency HSI scheduled."""
 
     class DummyDisease(Module):
-        METADATA = {Metadata.DISEASE_MODULE}
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
         """Dummy Disease - it's only job is to create a symptom and impose it everyone"""
         def read_parameters(self, data_folder):
             self.sim.modules['SymptomManager'].register_symptom(

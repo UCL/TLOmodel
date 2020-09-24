@@ -8,7 +8,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, tb
+from tlo.methods import Metadata, demography, tb
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,14 @@ class hiv(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         # self.beta_calib = par_est
+
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -678,9 +686,6 @@ class hiv(Module):
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))

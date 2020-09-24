@@ -34,7 +34,13 @@ class OesophagealCancer(Module):
         self.lm_onset_dysphagia = None
         self.daly_wts = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         "init_prop_oes_cancer_stage": Parameter(
@@ -190,9 +196,6 @@ class OesophagealCancer(Module):
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(

@@ -29,7 +29,13 @@ class ChronicSyndrome(Module):
         - Receiving a 'squeeze factor'
         - Use of the SymptomManager
     """
-    METADATA = {Metadata.DISEASE_MODULE}
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
@@ -83,10 +89,6 @@ class ChronicSyndrome(Module):
                 'inappropriate_jokes': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=86),
                 'craving_sandwiches': self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=87)
             }
-
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Register symptoms that this module will use:
         self.sim.modules['SymptomManager'].register_symptom(
