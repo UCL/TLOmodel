@@ -1281,8 +1281,8 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
             (df.at[person_id, 'ri_ALRI_event_death_date'] == self.sim.date):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
-                                                                  cause='Pneumonia_' + df.at[
-                                                                      person_id, 'ri_primary_ALRI_pathogen']
+                                                                  cause='ALRI_' + df.at[
+                                                                      person_id, 'ri_ALRI_disease_type']
                                                                   ), self.sim.date)
 
 
@@ -1323,6 +1323,44 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                     self.sim.date,
                     counts
                     )
+
+        # log the information on complications
+        if 'respiratory_failure' in df.ri_ALRI_complications:
+            count_alri_complic_resp_failure = df.ri_ALRI_complications.count('respiratory_failure')
+            logger.info('%s|alri_complication_count|%s',
+                        self.sim.date,
+                        count_alri_complic_resp_failure
+                        )
+        if 'pneumothorax' in df.ri_ALRI_complications:
+            count_alri_complic_pneumothorax = df.ri_ALRI_complications.count('pneumothorax')
+            logger.info('%s|alri_complication_count|%s',
+                        self.sim.date,
+                        count_alri_complic_pneumothorax
+                        )
+        if 'pleural_effusion' in df.ri_ALRI_complications:
+            count_alri_complic_pleural_eff = df.ri_ALRI_complications.count('pleural_effusion')
+            logger.info('%s|alri_complication_count|%s',
+                        self.sim.date,
+                        count_alri_complic_pleural_eff
+                        )
+        if 'empyema' in df.ri_ALRI_complications:
+            count_alri_complic_empyema = df.ri_ALRI_complications.count('empyema')
+            logger.info('%s|alri_complication_count|%s',
+                        self.sim.date,
+                        {'empyema': count_alri_complic_empyema}
+                        )
+
+        # logger.info('%s|alri_complication_count|%s',
+        #             self.sim.date,
+        #             {'pneumothorax': alri_complications_count['pneumonthorax'],
+        #              'pleural_effusion': alri_complications_count['pleural_effusion'],
+        #              'empyema': alri_complications_count['empyema'],
+        #              'lung_abscess': alri_complications_count['lung_abscess'],
+        #              'sepsis': alri_complications_count['sepsis'],
+        #              'meningitis': alri_complications_count['meningitis'],
+        #              'respiratory_failure': alri_complications_count['respiratory_failure']
+        #              }
+        #             )
 
         # imci_classification_count = \
         #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()

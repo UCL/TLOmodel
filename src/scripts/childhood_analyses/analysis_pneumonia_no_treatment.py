@@ -9,7 +9,9 @@ There is no treatment.
 import datetime
 from pathlib import Path
 
+import matplotlib.dates as mdates
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
@@ -74,6 +76,7 @@ for label, service_avail in scenarios.items():
     # Save the full set of results:
     output_files[label] = sim.log_filepath
 
+
 # %% Extract the relevant outputs and make a graph:
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
@@ -116,9 +119,9 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     # calculate death rate
     deaths_df = output['tlo.methods.demography']['death']
     deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
-    deaths = deaths_df.loc[deaths_df['cause'].str.startswith('Diarrhoea')].groupby('year').size()
+    alri_deaths = deaths_df.loc[deaths_df['cause'].str.startswith('ALRI')].groupby('year').size()
 
-    return inc_mean, deaths
+    return inc_mean, alri_deaths
 
 
 inc_by_pathogen = dict()
@@ -135,7 +138,7 @@ def plot_for_column_of_interest(results, column_of_interest):
     data = 100 * pd.concat(summary_table, axis=1)
     data.plot.bar()
     plt.title(f'Incidence rate (/100 py): {column_of_interest}')
-    plt.savefig(outputpath / ("Diarrhoea_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
+    plt.savefig(outputpath / ("ALRI_inc_rate_by_scenario" + datestamp + ".pdf"), format='pdf')
     plt.show()
 
 
@@ -152,56 +155,66 @@ plt.title('Number of Deaths Due to ALRI')
 plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
-# ---------------------------------------------------------------------------------------------------------------------
-# # Load the incidence rate data to which we calibrate
-# calibration_incidence_rate_0_year_olds = {
-#     'RSV': 24.0979 / 100.0,
-#     'rhinovirus': 1.7603 / 100.0,
-#     'hMPV': 5.0381 / 100.0,
-#     'parainfluenza': 4.7346 / 100.0,
-#     'streptococcus': 2.8529 / 100.0,
-#     'haemophilus': 3.5813 / 100.0,
-#     'TB': 4.0669 / 100.0,
-#     'staphylococcus': 2.2459 / 100.0,
-#     'influenza': 0.9712 / 100.0,
-#     'jirovecii': 1.821 / 100.0,
-#     'adenovirus': 0.1 / 100.0,
-#     'coronavirus': 0.1 / 100.0,
-#     'bocavirus': 0.1 / 100.0,
-#     'other_pathogens': 5.9486 / 100.0
-# }
-#
-# calibration_incidence_rate_1_year_olds = {
-#     'RSV': 5.62356 / 100.0,
-#     'rhinovirus': 5.21208 / 100.0,
-#     'hMPV': 2.16027 / 100.0,
-#     'parainfluenza': 2.29743 / 100.0,
-#     'streptococcus': 3.63474 / 100.0,
-#     'haemophilus': 2.29743 / 100.0,
-#     'TB': 1.33731 / 100.0,
-#     'staphylococcus': 0.30861 / 100.0,
-#     'influenza': 0.99441 / 100.0,
-#     'jirovecii': 0.13716 / 100.0,
-#     'adenovirus': 0.1 / 100.0,
-#     'coronavirus': 0.1 / 100.0,
-#     'bocavirus': 0.1 / 100.0,
-#     'other_pathogens': 9.39546 / 100.0
-# }
-#
-# calibration_incidence_rate_2_to_4_year_olds = {
-#     'RSV': 1.9866 / 100.0,
-#     'rhinovirus': 1.91436 / 100.0,
-#     'hMPV': 0.71036 / 100.0,
-#     'parainfluenza': 0.81872 / 100.0,
-#     'streptococcus': 1.10768 / 100.0,
-#     'haemophilus': 0.52976 / 100.0,
-#     'TB': 0.71036 / 100.0,
-#     'staphylococcus': 0.14448 / 100.0,
-#     'influenza': 0.38528 / 100.0,
-#     'jirovecii': 0.02408 / 100.0,
-#     'adenovirus': 0.1 / 100.0,
-#     'coronavirus': 0.1 / 100.0,
-#     'bocavirus': 0.1 / 100.0,
-#     'other_pathogens': 3.39528 / 100.0
-# }
-#
+
+def get_alri_complications_from_logfile(logfile):
+    output = parse_log_file(logfile)
+
+    # %% Plot Incidence of Diarrhoea Over time:
+    years = mdates.YearLocator()  # every year
+    months = mdates.MonthLocator()  # every month
+    years_fmt = mdates.DateFormatter('%Y')
+
+    # Load Model Results on ALRI complications
+    complications_per_year_df = output['tlo.methods.pneumonia']['alri_complication_count']
+    complications_per_year_df['year'] = pd.to_datetime(complications_per_year_df['date']).dt.year
+    complications_per_year_df.drop(columns='date', inplace=True)
+    complications_per_year_df.set_index(
+        'year',
+        drop=True,
+        inplace=True
+    )
+    # pneumothorax_compl_per_year = complications_per_year_df.count_alri_complic_pneumothorax
+    # pleural_effusion_compl_per_year = complications_per_year_df.count_alri_complic_pleural_eff
+    # respiratory_failure_compl_per_year = complications_per_year_df.count_alri_complic_respiratory_failure
+
+    # ig1, ax = plt.subplots()
+    # ax.plot(np.asarray(complications_per_year_df['year']), pneumothorax_compl_per_year)
+    # ax.plot(np.asarray(complications_per_year_df['year']), pleural_effusion_compl_per_year)
+    # ax.plot(np.asarray(complications_per_year_df['year']), respiratory_failure_compl_per_year)
+    #
+    # # format the ticks
+    # ax.xaxis.set_major_locator(years)
+    # ax.xaxis.set_major_formatter(years_fmt)
+    #
+    # plt.title("ALRI complications by year")
+    # plt.xlabel("Year")
+    # plt.ylabel("number of cases with complication")
+    # plt.legend(['pneumothorax', 'pleural effusion', 'respiratory_failure'])
+    # plt.savefig(outputpath + 'ALRI complications by year' + datestamp + '.pdf')
+    #
+    # plt.show()
+
+    # Incidence rate among 0, 1, 2-4 year-olds
+    complications_per_year = dict()
+    for complication in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
+                         'sepsis', 'meningitis', 'respiratory_failure']:
+        complications_per_year[complication] = complications_per_year_df[complication].apply(pd.Series).dropna()
+
+    # Produce mean inicence rates of incidence rate during the simulation:
+    complic_mean = pd.DataFrame()
+    complic_mean['pneumothorax_model_output'] = complications_per_year['pneumothorax'].mean()
+    complic_mean['pleural_effusion_model_output'] = complications_per_year['pleural_effusion'].mean()
+    complic_mean['empyema_model_output'] = complications_per_year['empyema'].mean()
+    complic_mean['lung_abscess_model_output'] = complications_per_year['lung_abscess'].mean()
+    complic_mean['sepsis_model_output'] = complications_per_year['sepsis'].mean()
+    complic_mean['meningitis_model_output'] = complications_per_year['meningitis'].mean()
+    complic_mean['respiratory_failure_model_output'] = complications_per_year['respiratory_failure'].mean()
+
+    return complic_mean
+
+
+complications_by_pathogen = dict()
+deaths = dict()
+for label, file in output_files.items():
+    complications_by_pathogen[label], deaths[label] = \
+        get_alri_complications_from_logfile(file)
