@@ -463,5 +463,5 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
         self.module.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
-                                        'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia':0,
-                                        'late_neonatal_sepsis':0}
+                                        'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
+                                        'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}

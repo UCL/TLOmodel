@@ -2619,6 +2619,11 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
                                                                 tclose=self.sim.date + DateOffset(days=1))
         # TODO: same issue as with the labour event
 
+        # ========================================== SCHEDULE PNC1 ===================================================
+        # TODO: will need to check if they remain an inpatient?
+
+
+
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # TODO: modify based on complications?
         return actual_appt_footprint
 
