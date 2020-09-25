@@ -44,8 +44,8 @@ log_config = {
 }
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
-pop_size = 500
+end_date = Date(2015, 12, 31)
+pop_size = 5000
 
 # Path to the resource files used by the disease and intervention methods
 resources = Path('./resources')
