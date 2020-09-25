@@ -44,8 +44,8 @@ log_config = {
 }
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-pop_size = 5000
+end_date = Date(2030, 12, 31)
+pop_size = 25000
 
 # Path to the resource files used by the disease and intervention methods
 resources = Path('./resources')
@@ -270,7 +270,7 @@ plt.show()
 plt.subplot(111)  # numrows, numcols, fignum
 for i in baseline_measles_age.index:
     plt.plot(age_ranges, baseline_measles_age.iloc[i, 1:22])
-plt.title('Age distribution', fontsize=10)
+plt.title('Annual age distribution of cases', fontsize=10)
 plt.xlabel('Age-group', fontsize=10)
 plt.ylabel('Proportion of cases', fontsize=10)
 plt.xticks(rotation=90)
