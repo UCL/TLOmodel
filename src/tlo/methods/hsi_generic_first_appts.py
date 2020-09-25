@@ -327,9 +327,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         # -----  SUSPECTED DEPRESSION  -----
-        if 'Injuries_From_Self_Harm' in symptoms:
-            self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
-            # TODO: Trigger surgical care for injuries.
+        if "Depression" in self.sim.modules:
+
+            if 'Injuries_From_Self_Harm' in symptoms:
+                self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
+                # TODO: Trigger surgical care for injuries.
 
         # ------ MALARIA ------
         if "Malaria" in self.sim.modules:
