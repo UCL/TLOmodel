@@ -68,7 +68,7 @@ for label, service_avail in scenarios.items():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  pneumonia.ALRI(resourcefilepath=resourcefilepath),
-                 # dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -125,9 +125,9 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
 
 
 inc_by_pathogen = dict()
-deaths = dict()
+alri_deaths = dict()
 for label, file in output_files.items():
-    inc_by_pathogen[label], deaths[label] = \
+    inc_by_pathogen[label], alri_deaths[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
 
 
@@ -148,8 +148,8 @@ for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].colum
 
 # Plot death rates by year: across the scenarios
 data = {}
-for label in deaths.keys():
-    data.update({label: deaths[label]})
+for label in alri_deaths.keys():
+    data.update({label: alri_deaths[label]})
 pd.concat(data, axis=1).plot.bar()
 plt.title('Number of Deaths Due to ALRI')
 plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')

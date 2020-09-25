@@ -1319,10 +1319,7 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                 for t in list_of_times:
                     assert self.date_last_run <= t <= self.sim.date
 
-        logger.info('%s|incidence_count_by_pathogen|%s',
-                    self.sim.date,
-                    counts
-                    )
+        logger.info(key='incidence_count_by_pathogen', data=counts)
 
         # log the information on complications
         if 'respiratory_failure' in df.ri_ALRI_complications:
@@ -1349,6 +1346,24 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                         self.sim.date,
                         {'empyema': count_alri_complic_empyema}
                         )
+        if 'lung_abscess' in df.ri_ALRI_complications:
+            count_alri_complic_empyema = df.ri_ALRI_complications.count('lung_abscess')
+            logger.info('%s|alri_complication_count|%s',
+                        self.sim.date,
+                        {'lung_abscess': count_alri_complic_empyema}
+                        )
+        if 'sepsis' in df.ri_ALRI_complications:
+            count_alri_complic_empyema = df.ri_ALRI_complications.count('sepsis')
+            logger.info('%s|alri_complication_count|%s',
+                        self.sim.date,
+                        {'sepsis': count_alri_complic_empyema}
+                        )
+        if 'meningitis' in df.ri_ALRI_complications:
+            count_alri_complic_empyema = df.ri_ALRI_complications.count('meningitis')
+            logger.info('%s|alri_complication_count|%s',
+                        self.sim.date,
+                        {'meningitis': count_alri_complic_empyema}
+                        )
 
         # logger.info('%s|alri_complication_count|%s',
         #             self.sim.date,
@@ -1362,13 +1377,10 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
         #              }
         #             )
 
-        # imci_classification_count = \
-        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
+        imci_classification_count = \
+            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
 
-        # logger.info('%s|imci_classicications_count|%s',
-        #             self.sim.date,
-        #             imci_classification_count
-        #             )
+        logger.info(key='imci_classicications_count', data=imci_classification_count)
 
         # Reset the counters and the date_last_run
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)

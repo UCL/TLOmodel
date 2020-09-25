@@ -111,7 +111,6 @@ class DxAlgorithmChild(Module):
         p['sensitivity_HSA_assessing_respiratory_rate_for_age'] = 0.81
         p['specificity_HSA_assessing_respiratory_rate_for_age'] = 0.81
 
-
     def initialise_population(self, population):
         pass
 
@@ -140,7 +139,7 @@ class DxAlgorithmChild(Module):
             # test the classification of pneumonia performance at the health centre level
             classify_IMCI_pneumonia_level_1=DxTest(
                 property='ri_pneumonia_IMCI_classification',
-                sensitivity=p['sensitivity_of_classification_of_pneumonia_level_1'],
+                sensitivity=p['sensitivity_of_classification_of_pneumonia_level_1'][0],
                 target_categories=['common cold', 'non-severe pneumonia', 'severe pneumonia']
                 ),
 
@@ -268,6 +267,7 @@ class DxAlgorithmChild(Module):
                                  )
                     self.child_disease_management_information.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Pneumonia_Treatment_level_0})
+                    logger.info(key='pneumonia_management_child_info', data=self.child_disease_management_information)
 
                 if care_plan_result and df.at[
                     person_id, 'ri_pneumonia_iCCM_classification'] == 'severe pneumonia':
@@ -279,6 +279,7 @@ class DxAlgorithmChild(Module):
                                  )
                     self.child_disease_management_information.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Severe_Pneumonia_Treatment_level_0})
+                    logger.info(key='pneumonia_management_child_info', data=self.child_disease_management_information)
             # ---------------------------------------------------------------------------------------------
             # If not correctly classified, determine the classification given:
             else:
@@ -587,10 +588,10 @@ class DxAlgorithmChild(Module):
                          )
         # -----------------------------------------------------
 
+
 #  ----------------------------------------------------------------------------------------------------------
 #  *********************************** HSI Events ***********************************************************
 #  ----------------------------------------------------------------------------------------------------------
-
 
 class HSI_iCCM_Pneumonia_Treatment_level_0(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
