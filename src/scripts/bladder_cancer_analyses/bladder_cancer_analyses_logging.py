@@ -39,7 +39,10 @@ log_config = {
     'filename': 'LogFile',
     'directory': outputpath,
     'custom_levels': {
-        'tlo.methods.demography': logging.DEBUG
+        'tlo.methods.demography': logging.CRITICAL,
+        'tlo.methods.contraception': logging.CRITICAL,
+        'tlo.methods.healthsystem': logging.CRITICAL,
+        'tlo.methods.labour': logging.CRITICAL,
     }
 }
 sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
