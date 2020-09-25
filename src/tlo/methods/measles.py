@@ -124,6 +124,7 @@ class Measles(Module):
         """
         sim.schedule_event(MeaslesEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(MeaslesLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MeaslesLoggingAnnualEvent(self), sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -413,3 +414,36 @@ class MeaslesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key="incidence",
                     data=incidence_summary,
                     description="summary of measles incidence per month")
+
+
+class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(years=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+        now = self.sim.date
+
+        # get annual distribution of cases by age-range
+
+        # ------------------------------------ ANNUAL INCIDENCE ------------------------------------
+
+        # infected in the last time-step
+
+        age_count = df[df.is_alive].groupby('age_range').size()
+
+        logger.info(key='pop_age_range', data=age_count.to_dict(), description="population sizes by age range")
+
+        # get the numbers infected by age group
+        infected_age_counts = df[(df.me_date_measles > (now - DateOffset(months=self.repeat)))].groupby('age_range').size()
+        total_infected = len(
+            df.loc[(df.me_date_measles > (now - DateOffset(months=self.repeat)))]
+        )
+        if total_infected:
+            prop_infected_by_age = infected_age_counts / total_infected
+        else:
+            prop_infected_by_age = infected_age_counts  # just output the series of zeros by age group
+
+        logger.info(key='measles_incidence_age_range', data=prop_infected_by_age.to_dict(), description="measles incidence by age group")
