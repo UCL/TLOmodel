@@ -96,30 +96,32 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 person_id=person_id, hsi_event=self
             )
 
-            # Treat / refer based on diagnosis
-            if diagnosis == "severe_malaria":
+            if "Malaria" in self.sim.modules:
 
-                # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_complicated_treatment_child(
-                    self.sim.modules["Malaria"], person_id=person_id
-                )
+                # Treat / refer based on diagnosis
+                if diagnosis == "severe_malaria":
 
-                # Schedule the HSI event:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treatment_hsi, priority=1, topen=self.sim.date, tclose=None
-                )
+                    # Make the relevant treatment HSI event:
+                    treatment_hsi = HSI_Malaria_complicated_treatment_child(
+                        self.sim.modules["Malaria"], person_id=person_id
+                    )
 
-            elif diagnosis == "clinical_malaria":
+                    # Schedule the HSI event:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        treatment_hsi, priority=1, topen=self.sim.date, tclose=None
+                    )
 
-                # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_non_complicated_treatment_age0_5(
-                    self.sim.modules["Malaria"], person_id=person_id
-                )
+                elif diagnosis == "clinical_malaria":
 
-                # Schedule the HSI event:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treatment_hsi, priority=1, topen=self.sim.date, tclose=None
-                )
+                    # Make the relevant treatment HSI event:
+                    treatment_hsi = HSI_Malaria_non_complicated_treatment_age0_5(
+                        self.sim.modules["Malaria"], person_id=person_id
+                    )
+
+                    # Schedule the HSI event:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        treatment_hsi, priority=1, topen=self.sim.date, tclose=None
+                    )
 
         if (age >= 5) and (age < 15):
             # ----------------------------------- CHILD 5-14 -----------------------------------
@@ -129,30 +131,32 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 person_id=person_id, hsi_event=self
             )
 
-            # Treat / refer based on diagnosis
-            if diagnosis == "severe_malaria":
+            if "Malaria" in self.sim.modules:
 
-                # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_complicated_treatment_child(
-                    self.sim.modules["Malaria"], person_id=person_id
-                )
+                # Treat / refer based on diagnosis
+                if diagnosis == "severe_malaria":
 
-                # Schedule the relevant HSI event:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treatment_hsi, priority=1, topen=self.sim.date, tclose=None
-                )
+                    # Make the relevant treatment HSI event:
+                    treatment_hsi = HSI_Malaria_complicated_treatment_child(
+                        self.sim.modules["Malaria"], person_id=person_id
+                    )
 
-            elif diagnosis == "clinical_malaria":
+                    # Schedule the relevant HSI event:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        treatment_hsi, priority=1, topen=self.sim.date, tclose=None
+                    )
 
-                # Make the relevant treatment HSI event:
-                treatment_hsi = HSI_Malaria_non_complicated_treatment_age5_15(
-                    self.sim.modules["Malaria"], person_id=person_id
-                )
+                elif diagnosis == "clinical_malaria":
 
-                # Schedule the relevant HSI event:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treatment_hsi, priority=1, topen=self.sim.date, tclose=None
-                )
+                    # Make the relevant treatment HSI event:
+                    treatment_hsi = HSI_Malaria_non_complicated_treatment_age5_15(
+                        self.sim.modules["Malaria"], person_id=person_id
+                    )
+
+                    # Schedule the relevant HSI event:
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        treatment_hsi, priority=1, topen=self.sim.date, tclose=None
+                    )
 
         if age >= 15:
             # ----------------------------------- ADULT -----------------------------------
