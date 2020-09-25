@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 5000
+end_date = Date(2012, 1, 1)
+popsize = 1000
 
 # Establish the simulation object
 log_config = {
@@ -46,7 +46,7 @@ log_config = {
         'tlo.methods.healthburden': logging.CRITICAL
     }
 }
-sim = Simulation(start_date=start_date, seed=2, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=4, log_config=log_config)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow

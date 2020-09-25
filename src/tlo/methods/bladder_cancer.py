@@ -269,6 +269,25 @@ class BladderCancer(Module):
             disease_module=self
         )
 
+        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of pelvic pain:
+        lm_init_pelvic_pain = LinearModel.multiplicative(
+            Predictor('bc_status')  .when("none", 0.0)
+                                    .when("tis_t1",
+                                          p['init_prop_pelvic_pain_bladder_cancer_by_stage'][0])
+                                    .when("t2p",
+                                          p['init_prop_pelvic_pain_bladder_cancer_by_stage'][1])
+                                    .when("metastatic",
+                                          p['init_prop_pelvic_pain_bladder_cancer_by_stage'][2])
+        )
+        has_pelvic_pain_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=has_pelvic_pain_at_init.index[has_pelvic_pain_at_init].tolist(),
+            symptom_string='pelvic_pain',
+            add_or_remove='+',
+            disease_module=self
+        )
+
+
         # -------------------- bc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor('bc_status')  .when("none", 0.0)
