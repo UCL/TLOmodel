@@ -64,13 +64,13 @@ class DxAlgorithmAdult(Module):
 
         if "fever" in self.sim.modules["SymptomManager"].has_what(person_id):
 
-            # call the DxTest RDT to diagnose malaria
-            dx_result = hs.dx_manager.run_dx_test(
-                dx_tests_to_run='malaria_rdt',
-                hsi_event=hsi_event
-            )
-
             if "Malaria" in self.sim.modules:
+
+                # call the DxTest RDT to diagnose malaria
+                dx_result = hs.dx_manager.run_dx_test(
+                    dx_tests_to_run='malaria_rdt',
+                    hsi_event=hsi_event
+                )
 
                 if dx_result:
 
