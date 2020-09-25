@@ -476,11 +476,11 @@ class Malaria(Module):
         random_draw = rng.random_sample(size=len(df))
 
         # the cfr applies to all severe malaria
-        death = df.index[df.is_alive &
-            (df.ma_inf_type == "severe")
-            & (df.ma_date_infected == now)
-            & (random_draw < (p["cfr"] * p["mortality_adjust"]))
-        ]
+        death = df.index[
+            df.is_alive & (df.ma_inf_type == "severe") &
+            (df.ma_date_infected == now) &
+            (random_draw < (p["cfr"] * p["mortality_adjust"]))
+            ]
 
         for person in death:
             logger.debug(key='message',
@@ -571,7 +571,7 @@ class Malaria(Module):
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logger.debug(key='message',
-                     data=f'This is malaria reporting my health values')
+                     data='This is malaria reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -618,10 +618,9 @@ class Malaria(Module):
             )
 
         # additional risk of severe anaemia in pregnancy
-        number_pregnant = len(df.index[df.is_alive
-            & (df.ma_inf_type == "clinical")
-            & (df.ma_date_infected == now)
-            & df.is_pregnant])
+        number_pregnant = sum(
+            df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now) & df.is_pregnant
+        )
 
         if number_pregnant:
 
@@ -767,7 +766,7 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
 
         logger.debug(key='message',
-                     data=f'MalariaEvent: tracking the disease progression of the population')
+                     data='MalariaEvent: tracking the disease progression of the population')
 
         self.module.malaria_poll(population)
 
@@ -946,8 +945,8 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                     else:
                         # adult severe malaria case
                         logger.debug(key='message',
-                                     data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_adult for person {person_id}'
-                                          f'on date {self.sim.date}')
+                                     data='HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_adult for person '
+                                          f'{person_id} on date {self.sim.date}')
 
                         treat = HSI_Malaria_complicated_treatment_adult(
                             self.module, person_id=person_id
@@ -1597,7 +1596,6 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
-        now = self.sim.date
 
         # ------------------------------------ TREATMENT COVERAGE ------------------------------------
         # prop clinical episodes which had treatment, all ages

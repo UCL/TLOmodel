@@ -216,6 +216,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 #    HSI_GenericFirstApptAtFacilityLevel0
 # ---------------------------------------------------------------------------------------------------------
 
+
 class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
