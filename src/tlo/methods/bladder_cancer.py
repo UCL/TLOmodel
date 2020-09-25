@@ -420,7 +420,7 @@ class BladderCancer(Module):
                 sensitivity=self.parameters['sensitivity_of_cytoscopy_for_bladder_cancer_pelvic_pain'],
                 target_categories=["tis_t1", "t2p", "metastatic"]
             )
-        )
+         )
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
@@ -669,13 +669,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
 
 
 class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, IndividualScopeEventMixin):
-    """
-    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    pelvic_pain.
-    This event begins the investigation that may result in diagnosis of bladder Cancer and the scheduling of
-    treatment or palliative care.
-    It is for people with the symptom pelvic_pain.
-    """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -961,3 +955,6 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
 
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[10].to_dict())

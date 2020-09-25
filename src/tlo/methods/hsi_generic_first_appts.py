@@ -107,7 +107,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     tclose=None
                 )
 
-            # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
+      # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
             if 'pelvic_pain' in symptoms:
                 hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
                     module=self.sim.modules['BladderCancer'],
@@ -120,9 +120,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     tclose=None
                 )
 
-
-
-            # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
+    # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:
                 depr = self.sim.modules['Depression']
                 if (squeeze_factor == 0.0) and (self.module.rng.rand() <
