@@ -44,7 +44,7 @@ log_config = {
 }
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
+end_date = Date(2025, 12, 31)
 pop_size = 500
 
 # Path to the resource files used by the disease and intervention methods
@@ -92,13 +92,20 @@ log_df = parse_log_file(sim.log_filepath)
 # # ------------------------------------- BASELINE MODEL OUTPUTS  ------------------------------------- #
 
 baseline_measles = log_df['tlo.methods.measles']['incidence']['inc_1000py']
-model_date = log_df['tlo.methods.measles']['incidence']['date']
+monthly_dates = log_df['tlo.methods.measles']['incidence']['date']
 
 baseline_measles_age = log_df['tlo.methods.measles']['measles_incidence_age_range']
+annual_dates = log_df['tlo.methods.measles']['measles_incidence_age_range']['date']
+
+tmp = log_df["tlo.methods.demography"]["age_range_f"]
+del tmp['date']
+age_ranges = tmp.T.index.tolist()
 
 # calculate death rate
 deaths_df = log_df['tlo.methods.demography']['death']
 deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
+deaths_years = deaths_df.groupby("year")["year"].mean()
+
 baseline_deaths = deaths_df.loc[deaths_df['cause'].str.startswith('measles')].groupby('year').size()
 
 
@@ -215,6 +222,7 @@ no_vaccine_measles_age = log_df3['tlo.methods.measles']['measles_incidence_age_r
 # calculate death rate
 deaths_df = log_df3['tlo.methods.demography']['death']
 deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
+
 no_vaccine_deaths = deaths_df.loc[deaths_df['cause'].str.startswith('measles')].groupby('year').size()
 
 # ------------------------------------- PLOTS  ------------------------------------- #
@@ -222,41 +230,56 @@ no_vaccine_deaths = deaths_df.loc[deaths_df['cause'].str.startswith('measles')].
 plt.style.use('ggplot')
 
 # Measles incidence
-plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(model_date, baseline_measles)
-plt.plot(model_date, stop_vaccine_measles)
-plt.plot(model_date, no_vaccine_measles)
-plt.title('Measles incidence')
-plt.xlabel('Date')
-plt.ylabel('Incidence per 1000py')
+plt.subplot(111)  # numrows, numcols, fignum
+plt.plot(monthly_dates, baseline_measles)
+plt.plot(monthly_dates, stop_vaccine_measles)
+plt.plot(monthly_dates, no_vaccine_measles)
+plt.title('Measles incidence', fontsize=10)
+plt.xlabel('')
+plt.ylabel('Incidence per 1000py', fontsize=10)
 plt.xticks(rotation=90)
-plt.legend(['Baseline', 'Stop vaccination 2019', 'No vaccination'], bbox_to_anchor=(1.04, 1), loc='upper left')
-# plt.savefig(outputpath / ("Measles_incidence_scenarios" + datestamp + ".pdf"), format='pdf')
+plt.legend(['Baseline', 'Stop vaccination 2019', 'No vaccination'],
+           bbox_to_anchor=(1.04, 1),
+           loc='upper left',
+           fontsize=10)
+plt.savefig(outputpath / ("Measles_incidence_scenarios" + datestamp + ".pdf"),
+            format='pdf',
+            bbox_inches='tight')
 plt.show()
 
 # Measles deaths
-plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(model_date, baseline_deaths)
-plt.plot(model_date, stop_vaccine_deaths)
-plt.plot(model_date, no_vaccine_deaths)
-plt.title('Measles incidence')
-plt.xlabel('Date')
-plt.ylabel('Number of deaths')
+# no deaths in some years so plot using the index
+plt.subplot(111)  # numrows, numcols, fignum
+plt.plot(baseline_deaths.index, baseline_deaths)
+plt.plot(stop_vaccine_deaths.index, stop_vaccine_deaths)
+plt.plot(no_vaccine_deaths.index, no_vaccine_deaths)
+plt.title('Measles deaths', fontsize=10)
+plt.xlabel('')
+plt.ylabel('Number of deaths', fontsize=10)
 plt.xticks(rotation=90)
-plt.legend(['Baseline', 'Stop vaccination 2019', 'No vaccination'], bbox_to_anchor=(1.04, 1), loc='upper left')
-# plt.savefig(outputpath / ("Measles_deaths_scenarios" + datestamp + ".pdf"), format='pdf')
+plt.legend(['Baseline', 'Stop vaccination 2019', 'No vaccination'],
+           bbox_to_anchor=(1.04, 1),
+           loc='upper left',
+           fontsize=10)
+plt.savefig(outputpath / ("Measles_deaths_scenarios" + datestamp + ".pdf"),
+            format='pdf',
+            bbox_inches='tight')
 plt.show()
 
-# Measles cases age distribution
-plt.subplot(223)  # numrows, numcols, fignum
-plt.plot(model_date, baseline_measles_age)
-plt.title('Age distribution')
-plt.xlabel('Date')
-plt.ylabel('Proportion of cases')
+# Measles cases age distribution, plot for each year
+plt.subplot(111)  # numrows, numcols, fignum
+for i in baseline_measles_age.index:
+    plt.plot(age_ranges, baseline_measles_age.iloc[i, 1:22])
+plt.title('Age distribution', fontsize=10)
+plt.xlabel('Age-group', fontsize=10)
+plt.ylabel('Proportion of cases', fontsize=10)
 plt.xticks(rotation=90)
-plt.legend(['Baseline'], bbox_to_anchor=(1.04, 1), loc='upper left')
-# plt.savefig(outputpath / ("Measles_age_distribution_scenarios" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("Measles_age_distribution_scenarios" + datestamp + ".pdf"),
+            format='pdf',
+            bbox_inches='tight')
 plt.show()
+
+
 
 
 
