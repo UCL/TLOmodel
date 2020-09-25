@@ -862,53 +862,56 @@ class CareOfWomenDuringPregnancy(Module):
 
             # If this woman has attended less than 4 visits, and is predicted to attend > 4. Her subsequent ANC
             # appointment is automatically scheduled
-            if visit_number < 4:
-                if df.at[individual_id, 'ps_will_attend_four_or_more_anc']:
-
+            # if visit_number < 4:
+            #    if df.at[individual_id, 'ps_will_attend_four_or_more_anc']:
                     # We schedule a womans next ANC appointment by subtracting her current gestational age from the
                     # target gestational age from the next visit on the ANC schedule (assuming health care workers would
                     # ask women to return for the next appointment on the schedule, regardless of their gestational age
                     # at presentation)
-                    weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
-                                                                                      'ps_gestational_age_in_weeks'])
-                    visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                        topen=visit_date,
-                                                                        tclose=visit_date + DateOffset(days=7))
-                else:
+            #        weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
+            #                                                                          'ps_gestational_age_in_weeks'])
+            #        visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
+            #        self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+            #                                                            topen=visit_date,
+            #                                                            tclose=visit_date + DateOffset(days=7))
+            #    else:
                     # Women who were not predicted to attend ANC4+ will have a probability applied that they will not
                     # continue with ANC contacts
 
-                    if self.rng.random_sample() < params['ac_linear_equations']['anc_continues'].predict(df.loc[[
-                                                                                    individual_id]])[individual_id]:
-                        weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
-                                                                                          'ps_gestational_age_in_'
-                                                                                          'weeks'])
-                        visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                            topen=visit_date,
-                                                                            tclose=visit_date + DateOffset(days=7))
-                    else:
-                        logger.debug('mother %d will not seek any additional antenatal care for this pregnancy',
-                                     individual_id)
-            elif visit_number >= 4:
-                # Here we block women who are not predicted to attend ANC4+ from doing so
-                if ~df.at[individual_id, 'ps_will_attend_four_or_more_anc']:
-                    return
+            if df.at[individual_id, 'ps_will_attend_eight_or_more_anc']:
+                will_anc_continue = 1
+            else:
+                will_anc_continue = params['ac_linear_equations']['anc_continues'].predict(df.loc[[
+                                                                                    individual_id]])[individual_id]
 
-                else:
-                    if self.rng.random_sample() < params['ac_linear_equations']['anc_continues'].predict(df.loc[[
-                                                                                    individual_id]])[individual_id]:
-                        weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
-                                                                                          'ps_gestational_age_in_'
-                                                                                          'weeks'])
-                        visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+            if self.rng.random_sample() < will_anc_continue:
+                weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
+                                                                                  'ps_gestational_age_in_weeks'])
+                visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
                                                                             topen=visit_date,
                                                                             tclose=visit_date + DateOffset(days=7))
-                    else:
-                        logger.debug('mother %d will not seek any additional antenatal care for this pregnancy',
+            else:
+                logger.debug('mother %d will not seek any additional antenatal care for this pregnancy',
                                      individual_id)
+            # elif visit_number >= 4:
+                # Here we block women who are not predicted to attend ANC4+ from doing so
+            #    if ~df.at[individual_id, 'ps_will_attend_four_or_more_anc']:
+            #        return
+
+            #    else:
+            #        if self.rng.random_sample() < params['ac_linear_equations']['anc_continues'].predict(df.loc[[
+            #                                                                        individual_id]])[individual_id]:
+            #            weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
+            #                                                                              'ps_gestational_age_in_'
+            #                                                                              'weeks'])
+            #            visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
+            #            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
+            #                                                                topen=visit_date,
+            #                                                                tclose=visit_date + DateOffset(days=7))
+            #        else:
+            #            logger.debug('mother %d will not seek any additional antenatal care for this pregnancy',
+            #                         individual_id)
         if visit_to_be_scheduled == 2:
             set_anc_date(individual_id, 2)
 
@@ -1509,6 +1512,7 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 8
+            self.module.ANCTracker['anc8+'] += 1
 
             self.module.interventions_delivered_at_every_contact(hsi_event=self)
             self.module.calcium_supplementation(hsi_event=self)

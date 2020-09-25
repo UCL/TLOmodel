@@ -6,6 +6,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -30,9 +31,11 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 scenarios = dict()
 gest_months_bl = [0, 0.05, 0.05, 0.1, 0.1, 0.2, 0.3, 0.1, 0.05, 0.05]
 gest_months_anc8 = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
-scenarios['status_quo'] = [gest_months_bl, 0.49, 0.7]
+scenarios['status_quo'] = [gest_months_bl, LinearModel(LinearModelType.MULTIPLICATIVE, 0.49),
+                           LinearModel(LinearModelType.MULTIPLICATIVE, 0.7)]
 # scenarios['50%_ANC8_coverage'] = [gest_months_bl, 0.49, 0.7]
-scenarios['100%_ANC8_coverage'] = [gest_months_anc8, 1, 1]
+scenarios['100%_ANC8_coverage'] = [gest_months_anc8, LinearModel(LinearModelType.MULTIPLICATIVE, 1),
+                                   LinearModel(LinearModelType.MULTIPLICATIVE, 1)]
 
 # Create dict to capture the outputs
 output_files = dict()
@@ -69,10 +72,10 @@ for label, parameters in scenarios.items():
     sim.make_initial_population(n=popsize)
 
     params_preg_sup = sim.modules['PregnancySupervisor'].parameters
-    params_anc = sim.modules['Labour'].parameters
+    params_anc = sim.modules['CareOfWomenDuringPregnancy'].parameters
 
     params_preg_sup['prob_first_anc_visit_gestational_age'] = parameters[0]
-    params_preg_sup['prob_four_or_more_anc_visits'] = parameters[1]
+    params_preg_sup['ps_linear_equations']['four_or_more_anc_visits'] = parameters[1]
     params_anc['prob_anc_continues'] = parameters[2]
 
     sim.simulate(end_date=end_date)

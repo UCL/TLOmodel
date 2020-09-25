@@ -115,6 +115,8 @@ class PregnancySupervisor(Module):
             Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
             Types.REAL, 'probability of a woman undergoing 4 or more basic ANC visits'),
+        'prob_eight_or_more_anc_visits': Parameter(
+            Types.REAL, 'probability of a woman undergoing 8 or more basic ANC visits'),
         'probability_htn_persists': Parameter(
             Types.REAL, 'probability of a womans hypertension persisting post birth'),
     }
@@ -126,6 +128,8 @@ class PregnancySupervisor(Module):
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
         'ps_anaemia_in_pregnancy': Property(Types.BOOL, 'Whether this womans is anaemic during pregnancy'),
         'ps_will_attend_four_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
+                                                                'antenatal care visits during her pregnancy'),
+        'ps_will_attend_eight_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 8 or more '
                                                                 'antenatal care visits during her pregnancy'),
         'ps_induced_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
                                                                  'following an induced abortion'),
@@ -292,7 +296,13 @@ class PregnancySupervisor(Module):
 
                 'four_or_more_anc_visits': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_four_or_more_anc_visits'])}
+                    params['prob_four_or_more_anc_visits']),
+
+                'eight_or_more_anc_visits': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_eight_or_more_anc_visits']),
+
+        }
 
     def initialise_population(self, population):
 
@@ -303,6 +313,7 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_multiple_pregnancy'] = False
         df.loc[df.is_alive, 'ps_anaemia_in_pregnancy'] = False
         df.loc[df.is_alive, 'ps_will_attend_four_or_more_anc'] = False
+        df.loc[df.is_alive, 'ps_will_attend_eight_or_more_anc'] = False
         df.loc[df.is_alive, 'ps_induced_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_spontaneous_abortion_complication'] = 'none'
         df.loc[df.is_alive, 'ps_antepartum_still_birth'] = False
@@ -664,13 +675,26 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[person, 'dummy_anc_counter'] += 1
 
             # TODO: In the final equation we will assume women dont start attending until it is realistic that they are
-            #  aware they are pregnant. The current probabilities are dummyes (have requested data from author of study
+            #  aware they are pregnant. The current probabilities are dummys (have requested data from author of study
             #  for whom this equation is based on)
 
             # TODO: need to calibrate to ensure that 95% attend 1 ANC
 
-            random_draw_gest_at_anc = self.module.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                                                             p=params['prob_first_anc_visit_gestational_age'])
+        #    will_attend_anc4 = params['ps_linear_equations']['four_or_more_anc_visits'].predict(df.loc[[person]])[
+        #        person]
+        #    if self.module.rng.random_sample() < will_attend_anc4:
+        #        df.at[person, 'ps_will_attend_four_or_more_anc'] = True
+
+            will_attend_anc8 = params['ps_linear_equations']['eight_or_more_anc_visits'].predict(df.loc[[person]])[
+                        person]
+
+            if self.module.rng.random_sample() < will_attend_anc8:
+                    df.at[person, 'ps_will_attend_eight_or_more_anc'] = True
+                    random_draw_gest_at_anc = self.module.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                                                                p=[0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+            else:
+                random_draw_gest_at_anc = self.module.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                                                                 p=params['prob_first_anc_visit_gestational_age'])
 
             first_anc_date = self.sim.date + DateOffset(months=random_draw_gest_at_anc)
             first_anc_appt = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -679,17 +703,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(first_anc_appt, priority=0,
                                                                 topen=first_anc_date,
                                                                 tclose=first_anc_date + DateOffset(days=7))
-
-        # Additionally, we use the linear model to predict if recently pregnant women will attended greater or fewer
-        # than 4 ANC visits during pregnancy
-        result = params['ps_linear_equations']['four_or_more_anc_visits'].predict(np_no_ectopic)
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(np_no_ectopic)), index=np_no_ectopic.index)
-        temp_df = pd.concat([result, random_draw], axis=1)
-        temp_df.columns = ['result', 'random_draw']
-
-        # And store changes in the data frame accordingly
-        positive_index = temp_df.index[temp_df.random_draw < temp_df.result]
-        df.loc[positive_index, 'ps_will_attend_four_or_more_anc'] = True
 
         # =========================================== MONTH 1 =========================================================
         # TODO: its from here onwards that I'm not sure i'm taking the best approach with this repeat indexing of the
