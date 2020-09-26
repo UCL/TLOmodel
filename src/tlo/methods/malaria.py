@@ -265,6 +265,7 @@ class Malaria(Module):
         now = self.sim.date
         rng = self.rng
 
+        # ----------------------------------- DISTRICT INTERVENTION COVERAGE -----------------------------------
         # fix values for 2018 onwards
         current_year = min(now.year, p["data_end"])
 
@@ -274,14 +275,16 @@ class Malaria(Module):
         itn_irs_curr.insert(0, "month", now.month)  # add current month for the incidence index lookup
         month_admin_itn_irs_lookup = [tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
 
+        # ----------------------------------- DISTRICT INCIDENCE ESTIMATES -----------------------------------
         # get all corresponding rows from the incidence table; drop unneeded column; set new index
         curr_inc = self.all_inc.loc[month_admin_itn_irs_lookup]
         curr_inc = curr_inc.reset_index().drop(["month", "llin", "irs"], axis=1).set_index(["admin", "age"])
 
+        # ----------------------------------- DISTRICT NEW INFECTIONS -----------------------------------
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_lookup = df[_where].set_index(["district_of_residence", "age_years"]).index
+            district_age_lookup = df[_where].set_index(["district_of_residence", "ma_age_edited"]).index
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it"s the same as the original population dataframe for these individuals
@@ -293,6 +296,11 @@ class Malaria(Module):
 
         # we don't have incidence data for over 80s
         alive = df.is_alive & (df.age_years < 80)
+
+        alive_over_one = alive & (df.age_exact_years >= 1)
+        df.loc[alive & df.age_exact_years.between(0, 0.5), "ma_age_edited"] = 0
+        df.loc[alive & df.age_exact_years.between(0.5, 1), "ma_age_edited"] = 0.5
+        df.loc[alive_over_one, "ma_age_edited"] = df.loc[alive_over_one, "age_years"]
 
         alive_uninfected = alive & ~df.ma_is_infected
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
