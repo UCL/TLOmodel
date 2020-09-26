@@ -22,13 +22,14 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module):
-    def __init__(self,
-                 name=None,
-                 resourcefilepath=None,
-                 testing=None,  # coverage of malaria testing, calibrated to match rdt/tx coverage levels
-                 itn=None  # coverage of insecticide-treated bednets
-                 ):
+    def __init__(self, name=None, resourcefilepath=None, testing=None, itn=None):
+        """Create instance of Malaria module
 
+        :param name: Name of this module (optional, defaults to name of class)
+        :param resourcefilepath: Path to the TLOmodel `resources` directory
+        :param testing: coverage of malaria testing, calibrated to match rdt/tx coverage levels
+        :param itn: coverage of insecticide-treated bednets
+        """
         super().__init__(name)
         self.resourcefilepath = Path(resourcefilepath)
         self.testing = testing  # calibrate value to match treatment coverage
@@ -36,9 +37,12 @@ class Malaria(Module):
 
         logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
 
-        # empty parameter to hold cleaned coverage values for IRS and ITN
+        # cleaned coverage values for IRS and ITN (populated in `read_parameters`)
         self.itn_curr = None
         self.irs_curr = None
+
+        self.itn_irs = None
+        self.all_inc = None
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -183,6 +187,40 @@ class Malaria(Module):
         self.irs_curr.loc[self.irs_curr.irs_rates > p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_upper"]
         self.irs_curr.loc[self.irs_curr.irs_rates <= p["irs_rates_boundary"], "irs_rates_round"] = p["irs_rates_lower"]
 
+        # ===============================================================================
+        # single dataframe for itn and irs district/year data; set index for fast lookup
+        # ===============================================================================
+        itn_curr = p["itn_district"]
+        itn_curr = itn_curr.set_index(["District", "Year"])
+        itn_curr["itn_rates"] = itn_curr["itn_rates"].round(decimals=1)
+        itn_curr.rename(columns={"itn_rates": "itn_rate"}, inplace=True)
+
+        irs_curr = p["irs_district"]
+        irs_curr = irs_curr.set_index(["District", "Year"])
+        irs_curr.drop(["Region"], axis=1, inplace=True)
+        irs_curr.rename(columns={"irs_rates": "irs_rate"}, inplace=True)
+        irs_curr["irs_rate"] = irs_curr["irs_rate"].round(decimals=1)
+        irs_curr.loc[irs_curr.irs_rate > p["irs_rates_boundary"], "irs_rate"] = p["irs_rates_upper"]
+        irs_curr.loc[irs_curr.irs_rate <= p["irs_rates_boundary"], "irs_rate"] = p["irs_rates_lower"]
+
+        self.itn_irs = pd.concat([itn_curr, irs_curr], axis=1)
+
+        # ===============================================================================
+        # put the all incidence data into single table with month/admin/llin/irs index
+        # ===============================================================================
+        inf_inc = p["inf_inc"].set_index(["month", "admin", "llin", "irs", "age"])
+        inf_inc = inf_inc.loc[:, ["monthly_prob_inf"]]
+
+        clin_inc = p["clin_inc"].set_index(["month", "admin", "llin", "irs", "age"])
+        clin_inc = clin_inc.loc[:, ["monthly_prob_clin"]]
+
+        sev_inc = p["sev_inc"].set_index(["month", "admin", "llin", "irs", "age"])
+        sev_inc = sev_inc.loc[:, ["monthly_prob_sev"]]
+
+        all_inc = pd.concat([inf_inc, clin_inc, sev_inc], axis=1)
+        # we don't want age to be part of index
+        self.all_inc = all_inc.reset_index().set_index(["month", "admin", "llin", "irs"])
+
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if "HealthBurden" in self.sim.modules:
             p["daly_wt_none"] = self.sim.modules["HealthBurden"].get_daly_weight(50)
@@ -221,8 +259,66 @@ class Malaria(Module):
 
         self.malaria_poll(population)
 
+    def malaria_poll2(self, population):
+        df = population.props
+        p = self.parameters
+        now = self.sim.date
+        rng = self.rng
+
+        # fix values for 2018 onwards
+        current_year = min(now.year, p["data_end"])
+
+        # get itn_irs rows for current year; slice multiindex for all districts & current_year
+        itn_irs_curr = self.itn_irs.loc[pd.IndexSlice[:, current_year], :]
+        itn_irs_curr = itn_irs_curr.reset_index().drop("Year", axis=1)  # we don"t use the year column
+        itn_irs_curr.insert(0, "month", now.month)  # add current month for the incidence index lookup
+        month_admin_itn_irs_lookup = [tuple(r) for r in itn_irs_curr.values]  # every row is a key in incidence table
+
+        # get all corresponding rows from the incidence table; drop unneeded column; set new index
+        curr_inc = self.all_inc.loc[month_admin_itn_irs_lookup]
+        curr_inc = curr_inc.reset_index().drop(["month", "llin", "irs"], axis=1).set_index(["admin", "age"])
+
+        def _draw_incidence_for(_col, _where):
+            """a helper function to perform random draw for selected individuals on column of probabilities"""
+            # create an index from the individuals to lookup entries in the current incidence table
+            district_age_lookup = df[_where].set_index(["District", "age_years"]).index
+            # get the monthly incidence probabilities for these individuals
+            monthly_prob = curr_inc.loc[district_age_lookup, _col]
+            # update the index so it"s the same as the original population dataframe for these individuals
+            monthly_prob = monthly_prob.set_axis(df.index[_where], inplace=False)
+            # select individuals for infection
+            random_draw = rng.random_sample(_where.sum()) > monthly_prob
+            now_infected = _where & random_draw
+            return now_infected
+
+        # we don't have incidence data for over 80s
+        alive = df.is_alive & (df.age_years < 80)
+
+        alive_uninfected = alive & ~df.ma_is_infected
+        now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
+        df.loc[now_infected, "ma_is_infected"] = True
+        df.loc[now_infected, "ma_date_infected"] = now  # TODO: scatter dates across month
+        df.loc[now_infected, "ma_inf_type"] = "asym"
+
+        alive_infected = alive & df.ma_is_infected
+
+        alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
+        now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
+        df.loc[now_clinical, "ma_inf_type"] = "clinical"
+        df.loc[now_clinical, "ma_date_symptoms"] = now
+        df.loc[now_clinical, "ma_clinical_counter"] += 1
+
+        alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
+        now_severe = _draw_incidence_for("monthly_prob_sev", alive_infected_clinical)
+        df.loc[now_severe, "ma_inf_type"] = "severe"
+
+        alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
+        df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
+
+        # wip - to be continued...
+
     def malaria_poll(self, population):
-        """ Assign new malaria infections
+        """Assign new malaria infections
         """
         df = population.props
         p = self.parameters
@@ -430,9 +526,9 @@ class Malaria(Module):
         # schedule self-cure if no treatment, no self-cure from severe malaria
 
         # asymptomatic
-        asym = df.index[df.is_alive & (df.ma_inf_type == "asym") & (df.ma_date_infected == now)]
+        asym = df.is_alive & (df.ma_inf_type == "asym") & (df.ma_date_infected == now)
 
-        for person in df.loc[asym].index:
+        for person in df.index[asym]:
 
             random_date = rng.randint(low=0, high=p["dur_asym"])
             random_days = pd.to_timedelta(random_date, unit="d")
@@ -499,23 +595,17 @@ class Malaria(Module):
 
     def initialise_simulation(self, sim):
 
-        sim.schedule_event(
-            MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1)
-        )
+        sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=1))
         sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(months=1))
 
-        sim.schedule_event(
-            MalariaResetCounterEvent(self), sim.date + DateOffset(days=365)
-        )  # 01 jan each year
+        sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(days=365))  # 01 jan each year
 
         # add an event to log to screen - 31st Dec each year
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
-        sim.schedule_event(
-            MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1)
-        )
+        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
 
         # ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis
@@ -539,9 +629,7 @@ class Malaria(Module):
         )
 
     def on_birth(self, mother_id, child_id):
-
         df = self.sim.population.props
-
         df.at[child_id, "ma_is_infected"] = False
         df.at[child_id, "ma_date_infected"] = pd.NaT
         df.at[child_id, "ma_date_symptoms"] = pd.NaT
@@ -556,10 +644,8 @@ class Malaria(Module):
         df.at[child_id, "ma_iptp"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
+        """This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-
         logger.debug(key='message',
                      data=f'This is Malaria, being alerted about a health system interaction for person'
                           f'{person_id} and treatment {treatment_id}')
@@ -574,7 +660,6 @@ class Malaria(Module):
                      data='This is malaria reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
-
         p = self.parameters
 
         health_values = df.loc[df.is_alive, "ma_inf_type"].map(
@@ -590,13 +675,11 @@ class Malaria(Module):
         return health_values.loc[df.is_alive]  # returns the series
 
     def clinical_symptoms(self, population, clinical_index):
-        """
-        assign clinical symptoms to new clinical malaria cases and schedule symptom resolution
+        """assign clinical symptoms to new clinical malaria cases and schedule symptom resolution
 
         :param population:
         :param clinical_index:
         """
-
         df = population
         p = self.parameters
         rng = self.rng
@@ -650,7 +733,6 @@ class Malaria(Module):
         :param population: the population dataframe
         :param severe_index: the indices of new clinical cases
         """
-
         df = population
         p = self.parameters
         rng = self.rng
@@ -701,14 +783,12 @@ class Malaria(Module):
                     )
 
     def severe_symptoms_adult(self, population, severe_index):
-        """
-        assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
+        """assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
         for persons >= 5 years of age at onset
 
         :param population: the population dataframe
         :param severe_index: the indices of new clinical cases
         """
-
         df = population
         p = self.parameters
         rng = self.rng
