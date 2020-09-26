@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 7, 1)
+end_date = Date(2020,  1, 1)
 popsize = 19000
 
 # Establish the simulation object
@@ -43,7 +43,10 @@ log_config = {
         'tlo.methods.contraception': logging.CRITICAL,
         'tlo.methods.healthsystem': logging.CRITICAL,
         'tlo.methods.labour': logging.CRITICAL,
-        'tlo.methods.healthburden': logging.CRITICAL
+        'tlo.methods.healthburden': logging.CRITICAL,
+        'tlo.methods.symptommanager': logging.CRITICAL,
+        'tlo.methods.healthseekingbehaviour': logging.CRITICAL,
+        'tlo.methods.pregnancy_supervisor': logging.CRITICAL
     }
 }
 sim = Simulation(start_date=start_date, seed=4, log_config=log_config)
