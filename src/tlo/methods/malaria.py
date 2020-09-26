@@ -288,8 +288,8 @@ class Malaria(Module):
             monthly_prob = monthly_prob.set_axis(df.index[_where], inplace=False)
             # select individuals for infection
             random_draw = rng.random_sample(_where.sum()) > monthly_prob
-            now_infected = _where & random_draw
-            return now_infected
+            selected = _where & random_draw
+            return selected
 
         # we don't have incidence data for over 80s
         alive = df.is_alive & (df.age_years < 80)
