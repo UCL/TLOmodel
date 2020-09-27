@@ -191,17 +191,19 @@ class Malaria(Module):
         # single dataframe for itn and irs district/year data; set index for fast lookup
         # ===============================================================================
         itn_curr = p["itn_district"]
-        itn_curr = itn_curr.set_index(["District", "Year"])
-        itn_curr["itn_rates"] = itn_curr["itn_rates"].round(decimals=1)
         itn_curr.rename(columns={"itn_rates": "itn_rate"}, inplace=True)
+        itn_curr["itn_rate"] = itn_curr["itn_rate"].round(decimals=1)
+        # maximum itn is 0.7; see comment https://github.com/UCL/TLOmodel/pull/165#issuecomment-699625290
+        itn_curr.loc[itn_curr.itn_rate > 0.7, "itn_rate"] = 0.7
+        itn_curr = itn_curr.set_index(["District", "Year"])
 
         irs_curr = p["irs_district"]
-        irs_curr = irs_curr.set_index(["District", "Year"])
-        irs_curr.drop(["Region"], axis=1, inplace=True)
         irs_curr.rename(columns={"irs_rates": "irs_rate"}, inplace=True)
+        irs_curr.drop(["Region"], axis=1, inplace=True)
         irs_curr["irs_rate"] = irs_curr["irs_rate"].round(decimals=1)
         irs_curr.loc[irs_curr.irs_rate > p["irs_rates_boundary"], "irs_rate"] = p["irs_rates_upper"]
         irs_curr.loc[irs_curr.irs_rate <= p["irs_rates_boundary"], "irs_rate"] = p["irs_rates_lower"]
+        irs_curr = irs_curr.set_index(["District", "Year"])
 
         self.itn_irs = pd.concat([itn_curr, irs_curr], axis=1)
 
