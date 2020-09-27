@@ -258,13 +258,13 @@ def test_check_progression_through_stages_is_happeneing():
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-#   assert len(df.loc[df.is_alive & (df.bc_status != 'none')]) > 0
-#   assert not pd.isnull(df.bc_status).any()
-#   assert (df.loc[df.is_alive].bc_status.value_counts().drop(index='none') > 0).all()
+    assert len(df.loc[df.is_alive & (df.bc_status != 'none')]) > 0
+    assert not pd.isnull(df.bc_status).any()
+    assert (df.loc[df.is_alive].bc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
-#   assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
+    assert yll['YLL_BladderCancer_BladderCancer'].sum() > 0
 
     # check that people are being diagnosed, going onto treatment and palliative care:
     assert (df.bc_date_diagnosis > start_date).any()
