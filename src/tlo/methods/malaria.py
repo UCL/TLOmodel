@@ -573,8 +573,8 @@ class Malaria(Module):
         adult = severe & (df.age_exact_years >= 5)
 
         # update symptoms for all new severe infections
-        self.severe_symptoms_child(df, df.index[children])
-        self.severe_symptoms_adult(df, df.index[adult])
+        self.severe_symptoms(df, df.index[children], child=True)
+        self.severe_symptoms(df, df.index[adult], child=False)
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
@@ -720,68 +720,13 @@ class Malaria(Module):
                     duration_in_days=None,
                 )
 
-    def severe_symptoms_child(self, population, severe_index):
-        """
-        assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
-
-        :param population: the population dataframe
-        :param severe_index: the indices of new clinical cases
-        """
-        df = population
-        p = self.parameters
-        rng = self.rng
-        now = self.sim.date
-
-        df.loc[severe_index, "ma_date_symptoms"] = now
-
-        # general symptoms - applied to all
-        symptom_list = {"fever", "headache", "vomiting", "stomachache"}
-
-        for symptom in symptom_list:
-            self.sim.modules["SymptomManager"].change_symptom(
-                person_id=list(severe_index),
-                symptom_string=symptom,
-                add_or_remove="+",
-                disease_module=self,
-                duration_in_days=None,
-            )
-
-        # symptoms specific to severe cases
-        # get range of probabilities of each symptom for severe cases for children and adults
-        range_symp = p["sev_symp_prob"]
-        range_symp_child = range_symp.loc[range_symp.age_group == "0_5"]
-
-        symptom_list_severe = list(range_symp_child.symptom)
-
-        # assign symptoms
-        for child in severe_index:
-
-            for symptom in symptom_list_severe:
-
-                # random sample whether child will have symptom
-                symptom_probability = rng.uniform(
-                    low=range_symp_child.loc[range_symp_child.symptom == symptom, "prop_lower"],
-                    high=range_symp_child.loc[range_symp_child.symptom == symptom, "prop_upper"],
-                    size=1
-                )[0]
-
-                if self.rng.random_sample(size=1) < symptom_probability:
-
-                    # schedule symptom onset
-                    self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=child,
-                        symptom_string=symptom,
-                        add_or_remove="+",
-                        disease_module=self,
-                        duration_in_days=None,
-                    )
-
-    def severe_symptoms_adult(self, population, severe_index):
+    def severe_symptoms(self, population, severe_index, child=False):
         """assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
-        for persons >= 5 years of age at onset
+        handles both adult and child (using the child parameter) symptoms
 
         :param population: the population dataframe
         :param severe_index: the indices of new clinical cases
+        :param child: to apply severe symptoms to children (otherwise applied to adults)
         """
         df = population
         p = self.parameters
@@ -805,19 +750,23 @@ class Malaria(Module):
         # symptoms specific to severe cases
         # get range of probabilities of each symptom for severe cases for children and adults
         range_symp = p["sev_symp_prob"]
-        range_symp_adult = range_symp.loc[range_symp.age_group == "5_60"]
 
-        symptom_list_severe = list(range_symp_adult.symptom)
+        if child:
+            range_symp = range_symp.loc[range_symp.age_group == "0_5"]
+        else:
+            range_symp = range_symp.loc[range_symp.age_group == "5_60"]
+
+        symptom_list_severe = list(range_symp.symptom)
 
         # assign symptoms
-        for adult in severe_index:
+        for person in severe_index:
 
             for symptom in symptom_list_severe:
 
                 # random sample whether child will have symptom
                 symptom_probability = rng.uniform(
-                    low=range_symp_adult.loc[range_symp_adult.symptom == symptom, "prop_lower"],
-                    high=range_symp_adult.loc[range_symp_adult.symptom == symptom, "prop_upper"],
+                    low=range_symp.loc[range_symp.symptom == symptom, "prop_lower"],
+                    high=range_symp.loc[range_symp.symptom == symptom, "prop_upper"],
                     size=1
                 )[0]
 
@@ -825,13 +774,12 @@ class Malaria(Module):
 
                     # schedule symptom onset
                     self.sim.modules["SymptomManager"].change_symptom(
-                        person_id=adult,
+                        person_id=person,
                         symptom_string=symptom,
                         add_or_remove="+",
                         disease_module=self,
                         duration_in_days=None,
                     )
-
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
