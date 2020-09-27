@@ -781,15 +781,13 @@ class Malaria(Module):
                         duration_in_days=None,
                     )
 
+
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-
-        logger.debug(key='message',
-                     data='MalariaEvent: tracking the disease progression of the population')
-
+        logger.debug(key='message', data='MalariaEvent: tracking the disease progression of the population')
         self.module.malaria_poll(population)
 
 
@@ -810,19 +808,16 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
         # random sample 0.4 to match clinical case tx coverage
         # this sample will include asymptomatic infections too to account for
         # unnecessary treatments  and uninfected people
-        test = df.index[
-            (self.module.rng.random_sample(size=len(df)) < p["testing_adj"])
-            & df.is_alive
-        ]
+        alive = df.is_alive
+        test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
 
         for person_index in test:
-
             logger.debug(key='message',
                          data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
-
-            event = HSI_Malaria_rdt(self.module, person_id=person_index)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                event, priority=1, topen=now, tclose=None
+                HSI_Malaria_rdt(self.module, person_id=person_index),
+                priority=1,
+                topen=now, tclose=None
             )
 
 
@@ -830,7 +825,6 @@ class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
     """ malaria prophylaxis for pregnant women
     """
-
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
