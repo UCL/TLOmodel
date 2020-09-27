@@ -431,17 +431,21 @@ class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
         # so if symptoms have resolved they won't be included
 
         # symptom_list = {"rash", "fever", "respiratory_symptoms", "eye_complaint", "diarrhoea", "pneumonia"}
+
         symptom_list = self.module.symptoms
         symptom_output = dict()
         symptom_output['Key'] = symptom_list
 
-        # infected in past 2 weeks
+        # currently infected and has rash (every case)
         tmp = len(
-            df.loc[(df.me_date_measles > (now - DateOffset(months=self.repeat)))]
+            df.index[df.is_alive & df.me_has_measles & (df.sy_rash > 0)]
         )
 
+        # get distribution of all symptoms
+        # only measles running currently, no other causes of symptoms
+        # if they have died, who_has does not count them
         for symptom in symptom_list:
-            # sum has_what
+            # sum who has each symptom
             number_with_symptom = len(self.sim.modules['SymptomManager'].who_has(symptom))
             if tmp:
                 proportion_with_symptom = number_with_symptom / tmp
