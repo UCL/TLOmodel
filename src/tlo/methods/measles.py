@@ -124,6 +124,7 @@ class Measles(Module):
         """
         sim.schedule_event(MeaslesEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(MeaslesLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MeaslesLoggingFortnightEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(MeaslesLoggingAnnualEvent(self), sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
@@ -297,7 +298,6 @@ class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, "me_has_measles"] = False
 
 
-
 class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
@@ -414,6 +414,44 @@ class MeaslesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key="incidence",
                     data=incidence_summary,
                     description="summary of measles incidence per month")
+
+
+class MeaslesLoggingFortnightEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        self.repeat = 2
+        super().__init__(module, frequency=DateOffset(weeks=self.repeat))
+
+    def apply(self, population):
+        df = population.props
+        now = self.sim.date
+
+        # ------------------------------------ SYMPTOMS ------------------------------------
+        # this will check for all measles cases in the past two weeks (average symptom duration)
+        # and look at current symptoms
+        # so if symptoms have resolved they won't be included
+
+        # symptom_list = {"rash", "fever", "respiratory_symptoms", "eye_complaint", "diarrhoea", "pneumonia"}
+        symptom_list = self.module.symptoms
+        symptom_output = dict()
+        symptom_output['Key'] = symptom_list
+
+        # infected in past 2 weeks
+        tmp = len(
+            df.loc[(df.me_date_measles > (now - DateOffset(months=self.repeat)))]
+        )
+
+        for symptom in symptom_list:
+            # sum has_what
+            number_with_symptom = len(self.sim.modules['SymptomManager'].who_has(symptom))
+            if tmp:
+                proportion_with_symptom = number_with_symptom / tmp
+            else:
+                proportion_with_symptom = 0
+            symptom_output[symptom] = proportion_with_symptom
+
+        logger.info(key="measles_symptoms",
+                    data=symptom_output,
+                    description="summary of measles symptoms each month")
 
 
 class MeaslesLoggingAnnualEvent(RegularEvent, PopulationScopeEventMixin):
