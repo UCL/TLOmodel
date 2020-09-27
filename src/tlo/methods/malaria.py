@@ -552,7 +552,7 @@ class Malaria(Module):
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
 
-        for person in df.loc[clin].index:
+        for person in clin:
             # clinical symptoms resolve after 5 days
             # parasitaemia clears after much longer
 
@@ -568,30 +568,26 @@ class Malaria(Module):
             self.sim.schedule_event(change_clinical_status, (self.sim.date + DateOffset(days=5)))
 
         # SEVERE CASES
-        severe = df.index[df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)]
-        children = df.index[df.is_alive & df.index.isin(severe) & (df.age_exact_years < 5)]
-        adult = df.index[df.is_alive & df.index.isin(severe) & (df.age_exact_years >= 5)]
+        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
+        children = severe & (df.age_exact_years < 5)
+        adult = severe & (df.age_exact_years >= 5)
 
         # update symptoms for all new severe infections
-        self.severe_symptoms_child(df, children)
-        self.severe_symptoms_adult(df, adult)
+        self.severe_symptoms_child(df, df.index[children])
+        self.severe_symptoms_adult(df, df.index[adult])
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
         # Assign time of infections across the month
-        random_draw = rng.random_sample(size=len(df))
 
         # the cfr applies to all severe malaria
-        death = df.index[
-            df.is_alive & (df.ma_inf_type == "severe") &
-            (df.ma_date_infected == now) &
-            (random_draw < (p["cfr"] * p["mortality_adjust"]))
-            ]
+        targets = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
+        random_draw = rng.random_sample(size=targets.sum())
+        death = df.index[targets][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
             logger.debug(key='message',
-                         data=f'MalariaEvent: scheduling malaria death for person'
-                              f'{person}')
+                         data=f'MalariaEvent: scheduling malaria death for person {person}')
 
             random_date = rng.randint(low=0, high=7)
             random_days = pd.to_timedelta(random_date, unit="d")
@@ -711,22 +707,10 @@ class Malaria(Module):
             )
 
         # additional risk of severe anaemia in pregnancy
-        number_pregnant = sum(
-            df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now) & df.is_pregnant
-        )
-
-        if number_pregnant:
-
-            random_draw = rng.random_sample(size=number_pregnant)
-
-            preg_infected = df.index[
-                df.is_alive
-                & (df.ma_inf_type == "clinical")
-                & (df.ma_date_infected == now)
-                & df.is_pregnant
-                & (random_draw < p["p_sev_anaemia_preg"])
-                ]
-
+        pregnant_infected = df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now) & df.is_pregnant
+        if pregnant_infected.sum() > 0:
+            random_draw = rng.random_sample(size=pregnant_infected.sum())
+            preg_infected = df.index[pregnant_infected][random_draw < p["p_sev_anaemia_preg"]]
             if len(preg_infected) > 0:
                 self.sim.modules["SymptomManager"].change_symptom(
                     person_id=list(preg_infected),
