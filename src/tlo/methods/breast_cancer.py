@@ -369,7 +369,7 @@ class BreastCancer(Module):
         # This properties of conditional on the test being done only to persons with the Symptom, 'breast_lump_discernible'.
         # todo: depends on underlying stage not symptoms
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_stage1=DxTest(
+            biopsy_for_breast_cancer_given_breast_lump_discernible=DxTest(
                 property='brc_status',
                 sensitivity=self.parameters['sensitivity_of_biopsy_for_stage1_breast_cancer'],
                 target_categories=["stage1", "stage2", "stage3", "stage4"]
@@ -625,7 +625,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
             else:
                 # start palliative care:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_breastCancer_PalliativeCare(
+                    hsi_event=HSI_BreastCancer_PalliativeCare(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -855,6 +855,8 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'palliative_since_last_log': df.brc_date_palliative_care.between(date_lastlog, date_now).sum()
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
+#       logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-        
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[10].to_dict())
