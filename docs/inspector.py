@@ -298,7 +298,7 @@ def extract_bases(class_name, class_obj, spacer=""):
         str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
         for p in parents[1:]:
             numbase += 1
-            str += f"{spacer}Base #{numbase}: {p}\n\n"
+            str += f"{spacer}Base class #{numbase}: {p}\n\n"
     else:
         str = ""
 

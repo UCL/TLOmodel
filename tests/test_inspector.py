@@ -86,9 +86,9 @@ def test_extract_bases():
     # [class name, class object, line number]
     offspring = classes[-1]
     name, obj = offspring[0:2]
-    expected = "**Bases:**\n\n"
-    expected += f"Base #1: `for_inspector.tlo.a.Father <./for_inspector.tlo.a.html#for_inspector.tlo.a.Father>`_\n\n"
-    expected += f"Base #2: `for_inspector.tlo.a.Mother <./for_inspector.tlo.a.html#for_inspector.tlo.a.Mother>`_\n\n"
+    expected = "**Base classes:**\n\n"
+    expected += f"Base class #1: `for_inspector.tlo.a.Father <./for_inspector.tlo.a.html#for_inspector.tlo.a.Father>`_\n\n"
+    expected += f"Base class #2: `for_inspector.tlo.a.Mother <./for_inspector.tlo.a.html#for_inspector.tlo.a.Mother>`_\n\n"
     assert expected == inspector.extract_bases(name, obj)
 
 
