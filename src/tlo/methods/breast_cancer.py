@@ -856,3 +856,5 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         })
 
         logger.info('%s|summary_stats|%s', self.sim.date, out)
+
+        
