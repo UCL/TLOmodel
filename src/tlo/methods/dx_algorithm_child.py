@@ -7,8 +7,8 @@ There should be a method here to respond to every symptom that a child could pre
 """
 
 import pandas as pd
-from tlo import Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin
+from tlo import Module, Parameter, Property, Types, logging, DateOffset
+from tlo.events import IndividualScopeEventMixin, RegularEvent, PopulationScopeEventMixin
 from tlo.methods.diarrhoea import HSI_Diarrhoea_Treatment_PlanA, HSI_Diarrhoea_Treatment_PlanB, \
     HSI_Diarrhoea_Treatment_PlanC, \
     HSI_Diarrhoea_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Dysentery
@@ -267,7 +267,6 @@ class DxAlgorithmChild(Module):
                                  )
                     self.child_disease_management_information.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Pneumonia_Treatment_level_0})
-                    logger.info(key='pneumonia_management_child_info', data=self.child_disease_management_information)
 
                 if care_plan_result and df.at[
                     person_id, 'ri_pneumonia_iCCM_classification'] == 'severe pneumonia':
@@ -279,7 +278,6 @@ class DxAlgorithmChild(Module):
                                  )
                     self.child_disease_management_information.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_iCCM_Severe_Pneumonia_Treatment_level_0})
-                    logger.info(key='pneumonia_management_child_info', data=self.child_disease_management_information)
             # ---------------------------------------------------------------------------------------------
             # If not correctly classified, determine the classification given:
             else:
@@ -381,6 +379,7 @@ class DxAlgorithmChild(Module):
                                  )
                     self.child_disease_management_information.update(
                         {'correct_pneumonia_care': True, 'care_plan': HSI_IMCI_Severe_Pneumonia_Treatment_level_1})
+
             # ---------------------------------------------------------------------------------------------
             # If not correctly classified, determine the classification given:
             else:
@@ -862,3 +861,34 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_2(HSI_Event, IndividualScopeEven
 #             hsi_event=self, cons_req_as_footprint=consumables_needed)
 #
 # # todo: OR just have as a package deal for consumables?
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   LOGGING EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This Event logs the number of incident cases that have occurred since the previous logging event.
+    Analysis scripts expect that the frequency of this logging event is once per year.
+    """
+
+    def __init__(self, module):
+        # This event to occur every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.date_last_run = self.sim.date
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        imci_classification_count = \
+            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
+
+        logger.info(key='imci_classicications_count', data=imci_classification_count)
+
+        # Convert the list of timestamps into a number of timestamps
+        # and check that all the dates have occurred since self.date_last_run
+        dict_to_output = self.module.child_disease_management_information
+        print(dict_to_output)
+        logger.info(key='pneumonia_management_child_info', data=dict_to_output)

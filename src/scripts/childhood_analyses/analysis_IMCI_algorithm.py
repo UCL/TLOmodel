@@ -78,26 +78,73 @@ sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
 
 # parse the simulation logfile to get the output dataframes
-log_df = parse_log_file(sim.log_filepath)  # output
+log_df = sim.log_filepath  # output
 
 
-def get_pneumonia_management_information(logfile):
+def get_imci_pneumonia_classification(logfile):
     output = parse_log_file(logfile)
     # Calculate the IMCI algorithm from the output counts of ALRI episodes
-    counts = output['tlo.methods.pneumonia']['pneumonia_management_child_info']
-    counts['year'] = pd.to_datetime(counts['date']).dt.year
-    counts.drop(columns='date', inplace=True)
-    counts.set_index(
+    pneum_classification_df = output['tlo.methods.dx_algorithm_child']['imci_classicications_count']
+    pneum_classification_df['year'] = pd.to_datetime(pneum_classification_df['date']).dt.year
+    pneum_classification_df.drop(columns='date', inplace=True)
+    pneum_classification_df.set_index(
         'year',
         drop=True,
         inplace=True
     )
-    # create empty dictionary of {'column_name': column_data}, then fill it with all data
-    df_data = {}
-    for col in ['A', 'B', 'C', 'D']:
-        column_name = f'column_{col}'
-        column_data = function_that_returns_list_of_data(col)
-        df_data[column_name] = column_data
+    excel_file = pneum_classification_df.to_csv(r'./outputs/imci_pneumonia_classification.csv', index=False)
 
-    # convert dictionary into pandas dataframe
-    pd.DataFrame(data=df_data, index=index)  # the index here can be left out if not relevant
+    imci_classification_rate = dict()
+    for severity in ['no pneumonia', 'non-severe pneumonia', 'severe pneumonia']:
+        imci_classification_rate[severity] = pneum_classification_df[severity].apply(pd.Series).div([severity],
+                                                                                                    axis=0).dropna()
+    return imci_classification_rate, excel_file
+
+
+get_imci_pneumonia_classification(log_df)
+
+# def plot_for_column_of_interest(results, column_of_interest):
+#     summary_table = dict()
+#     for label in results.keys():
+#         summary_table.update({label: results[label][column_of_interest]})
+#     data = 100 * pd.concat(summary_table, axis=1)
+#     data.plot.bar()
+#     plt.title(f'IMCI classification severity {column_of_interest}')
+#     plt.savefig(("imci_pneumonia_classification" + datestamp + ".pdf"), format='pdf')
+#     plt.show()
+#
+#
+# # Plot incidence by pathogen: across the sceanrios
+# for column_of_interest in imci_classification_rate[list(imci_classification_rate.keys())[0]].columns:
+#     plot_for_column_of_interest(imci_classification_rate, column_of_interest)
+#
+#
+# def get_pneumonia_management_information(logfile):
+#     output = parse_log_file(logfile)
+#     # Calculate the IMCI algorithm from the output counts of ALRI episodes
+#     pneum_management_df = output['tlo.methods.pneumonia']['pneumonia_management_child_info']
+#     pneum_management_df['year'] = pd.to_datetime(pneum_management_df['date']).dt.year
+#     pneum_management_df.drop(columns='date', inplace=True)
+#     pneum_management_df.set_index(
+#         'year',
+#         drop=True,
+#         inplace=True
+#     )
+#
+#     # data_items = output['tlo.methods.pneumonia']['pneumonia_management_child_info'].items()
+#     # df = pd.DataFrame(data_items)
+#     # return print(df)
+#
+#     # create empty dictionary of {'column_name': column_data}, then fill it with all data
+#     df_data = {}
+#     for col in pneum_management_df.keys():
+#         column_name = f'{col}'
+#         column_data = pneum_management_df.values()
+#         df_data[column_name] = column_data
+#
+#     # convert dictionary into pandas dataframe
+#     df_results_management = pd.DataFrame(data=df_data, index=sim.population.props.loc['ri_ALRI_status'])
+#     return print(df_results_management)
+#
+#
+# get_pneumonia_management_information(log_df)

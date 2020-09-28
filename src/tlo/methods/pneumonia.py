@@ -396,6 +396,11 @@ class ALRI(Module):
 
     PROPERTIES = {
         # ---- The pathogen which is the attributed cause of ALRI ----
+        'ri_ALRI_status':
+            Property(Types.BOOL,
+                     'ALRI status (current)'
+                     ),
+        # ---- The pathogen which is the attributed cause of ALRI ----
         'ri_primary_ALRI_pathogen':
             Property(Types.CATEGORICAL,
                      'Attributable pathogen for the current ALRI event',
@@ -1364,23 +1369,6 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
                         self.sim.date,
                         {'meningitis': count_alri_complic_empyema}
                         )
-
-        # logger.info('%s|alri_complication_count|%s',
-        #             self.sim.date,
-        #             {'pneumothorax': alri_complications_count['pneumonthorax'],
-        #              'pleural_effusion': alri_complications_count['pleural_effusion'],
-        #              'empyema': alri_complications_count['empyema'],
-        #              'lung_abscess': alri_complications_count['lung_abscess'],
-        #              'sepsis': alri_complications_count['sepsis'],
-        #              'meningitis': alri_complications_count['meningitis'],
-        #              'respiratory_failure': alri_complications_count['respiratory_failure']
-        #              }
-        #             )
-
-        imci_classification_count = \
-            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
-
-        logger.info(key='imci_classicications_count', data=imci_classification_count)
 
         # Reset the counters and the date_last_run
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
