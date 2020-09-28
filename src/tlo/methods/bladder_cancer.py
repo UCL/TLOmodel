@@ -313,8 +313,6 @@ class BladderCancer(Module):
                                           p['init_prop_treatment_status_bladder_cancer'][0])
                                     .when("t2p",
                                           p['init_prop_treatment_status_bladder_cancer'][1])
-                                    .when("metastatic",
-                                          p['init_prop_treatment_status_bladder_cancer'][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
