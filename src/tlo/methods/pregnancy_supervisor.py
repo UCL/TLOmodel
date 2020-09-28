@@ -119,6 +119,9 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of a woman undergoing 8 or more basic ANC visits'),
         'probability_htn_persists': Parameter(
             Types.REAL, 'probability of a womans hypertension persisting post birth'),
+        'prob_3_early_visits': Parameter(
+            Types.REAL, 'DUMMY'), # TODO: Remove
+
     }
 
     PROPERTIES = {
@@ -129,8 +132,7 @@ class PregnancySupervisor(Module):
         'ps_anaemia_in_pregnancy': Property(Types.BOOL, 'Whether this womans is anaemic during pregnancy'),
         'ps_will_attend_four_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
                                                                 'antenatal care visits during her pregnancy'),
-        'ps_will_attend_eight_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 8 or more '
-                                                                'antenatal care visits during her pregnancy'),
+        'ps_will_attend_eight_or_more_anc': Property(Types.BOOL, 'DUMMY'),  # todo: remove? 
         'ps_induced_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
                                                                  'following an induced abortion'),
         'ps_spontaneous_abortion_complication': Property(Types.LIST, 'List of any complications a woman has experience '
@@ -153,7 +155,8 @@ class PregnancySupervisor(Module):
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
                                                                   'premature rupture of membranes'),
-        'dummy_anc_counter': Property(Types.INT, 'dummy tester')
+        'dummy_anc_counter': Property(Types.INT, 'DUMMY'),  # TODO: remove 
+        'ps_will_attend_3_early_visits': Property(Types.BOOL, 'DUMMY')  # TODO: remove
     }
 
     def read_parameters(self, data_folder):
@@ -325,6 +328,7 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_antepartum_haemorrhage'] = False
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
         df.loc[df.is_alive, 'dummy_anc_counter'] = 0
+        df.loc[df.is_alive, 'ps_will_attend_3_early_visits'] = False
 
     def initialise_simulation(self, sim):
 
@@ -339,7 +343,8 @@ class PregnancySupervisor(Module):
                                         'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
                                         'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
                                         'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0,
-                                        'new_onset_gest_htn': 0, 'antepartum_haem': 0, 'antepartum_haem_death': 0}
+                                        'new_onset_gest_htn': 0, 'antepartum_haem': 0, 'antepartum_haem_death': 0,
+                                        'women_at_6_months' :0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -361,6 +366,7 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_antepartum_haemorrhage'] = False
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
         df.at[child_id, 'dummy_anc_counter'] = 0
+        df.at[child_id, 'ps_will_attend_3_early_visits'] = False
 
         # We reset all womans gestational age when they deliver
         df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
@@ -685,13 +691,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         #    if self.module.rng.random_sample() < will_attend_anc4:
         #        df.at[person, 'ps_will_attend_four_or_more_anc'] = True
 
-            will_attend_anc8 = params['ps_linear_equations']['eight_or_more_anc_visits'].predict(df.loc[[person]])[
-                        person]
-
-            if self.module.rng.random_sample() < will_attend_anc8:
-                    df.at[person, 'ps_will_attend_eight_or_more_anc'] = True
-                    random_draw_gest_at_anc = self.module.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                                                                p=[0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+        #    will_attend_anc8 = params['ps_linear_equations']['eight_or_more_anc_visits'].predict(df.loc[[person]])[
+        #                person]
+        
+            will_attend_early_anc3 = params['prob_3_early_visits']
+        
+            if self.module.rng.random_sample() < will_attend_early_anc3:
+                df.at[person, 'ps_will_attend_3_early_visits'] = True
+                random_draw_gest_at_anc = 2
             else:
                 random_draw_gest_at_anc = self.module.rng.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
                                                                  p=params['prob_first_anc_visit_gestational_age'])
@@ -820,6 +827,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # still birth
         month_6_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
                              ~df.la_currently_in_labour]
+        # todo: remove
+        self.module.PregnancyDiseaseTracker['women_at_6_months'] += len(month_6_idx)
+
         self.module.set_pregnancy_complications(month_6_idx, 'antenatal_stillbirth')
 
         # anaemia
@@ -863,6 +873,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # still birth
         month_7_idx = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
                              ~df.la_currently_in_labour]
+
         self.module.set_pregnancy_complications(month_7_idx, 'antenatal_stillbirth')
 
         # anaemia
@@ -1200,8 +1211,12 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         crude_aph = self.module.PregnancyDiseaseTracker['antepartum_haem']
         crude_aph_death = self.module.PregnancyDiseaseTracker['antepartum_haem_death']
 
+        women_month_6 = self.module.PregnancyDiseaseTracker['women_at_6_months']
+
+
         dict_for_output = {'repro_women': total_women_reproductive_age,
                            'antenatal_mmr': (antenatal_maternal_deaths/total_births_last_year) * 100000,
+                           'crude_antenatal_sb': antepartum_stillbirths,
                            'antenatal_sbr': (antepartum_stillbirths/total_births_last_year) * 100,
                            'total_spontaneous_abortions': total_spontaneous_abortions_t,
                            'spontaneous_abortion_rate': (total_spontaneous_abortions_t /
@@ -1218,7 +1233,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'crude_pe': crude_new_onset_pe,
                            'crude_gest_htn': crude_new_gh,
                            'crude_aph':crude_aph,
-                           'crude_aph_death':crude_aph_death}
+                           'crude_aph_death':crude_aph_death,
+                           'women_month_6': women_month_6}
 
         logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
 
@@ -1227,4 +1243,4 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                'spontaneous_abortion_death': 0, 'maternal_anaemia': 0,
                                                'antenatal_death': 0, 'antenatal_stillbirth': 0,
                                                'new_onset_pre_eclampsia': 0, 'new_onset_gest_htn': 0,
-                                               'antepartum_haem': 0, 'antepartum_haem_death': 0}
+                                               'antepartum_haem': 0, 'antepartum_haem_death': 0, 'women_at_6_months':0}

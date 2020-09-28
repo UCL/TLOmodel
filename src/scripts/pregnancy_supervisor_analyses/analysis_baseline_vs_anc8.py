@@ -26,16 +26,14 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Scenarios Definitions:
 # *1: Current coverage/access to ANC in Malawi
-# *2: All women attend all 8 ANC contacts starting at 13 weeks
+# *2: 50% of women will attend 3 ANC visits prior to 30 weeks gestation
+# *2: All women attend will attend 3 ANC visits prior to 30 weeks gestation
 
 scenarios = dict()
-gest_months_bl = [0, 0.05, 0.05, 0.1, 0.1, 0.2, 0.3, 0.1, 0.05, 0.05]
-gest_months_anc8 = [0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
-scenarios['status_quo'] = [gest_months_bl, LinearModel(LinearModelType.MULTIPLICATIVE, 0.49),
-                           LinearModel(LinearModelType.MULTIPLICATIVE, 0.7)]
-# scenarios['50%_ANC8_coverage'] = [gest_months_bl, 0.49, 0.7]
-scenarios['100%_ANC8_coverage'] = [gest_months_anc8, LinearModel(LinearModelType.MULTIPLICATIVE, 1),
-                                   LinearModel(LinearModelType.MULTIPLICATIVE, 1)]
+
+scenarios['90%_early_anc3_coverage'] = [0.9]
+scenarios['50%_early_anc3_coverage'] = [0.5]
+scenarios['status_quo'] = [0.21]
 
 # Create dict to capture the outputs
 output_files = dict()
@@ -44,7 +42,7 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 1, 2)
-popsize = 10000
+popsize = 20000
 
 for label, parameters in scenarios.items():
     # add file handler for the purpose of logging
@@ -72,11 +70,8 @@ for label, parameters in scenarios.items():
     sim.make_initial_population(n=popsize)
 
     params_preg_sup = sim.modules['PregnancySupervisor'].parameters
-    params_anc = sim.modules['CareOfWomenDuringPregnancy'].parameters
 
-    params_preg_sup['prob_first_anc_visit_gestational_age'] = parameters[0]
-    params_preg_sup['ps_linear_equations']['four_or_more_anc_visits'] = parameters[1]
-    params_anc['prob_anc_continues'] = parameters[2]
+    params_preg_sup['prob_3_early_visits'] = parameters[0]
 
     sim.simulate(end_date=end_date)
 
@@ -88,26 +83,50 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    maternal_counts = output['tlo.methods.pregnancy_supervisor']['summary_stats']
-    maternal_counts['year'] = pd.to_datetime(maternal_counts['date']).dt.year
-    maternal_counts['year'] = maternal_counts['year'] - 1
-    maternal_counts.drop(columns='date', inplace=True)
-    maternal_counts.set_index(
+    preg_sup_counts = output['tlo.methods.pregnancy_supervisor']['summary_stats']
+    preg_sup_counts['year'] = pd.to_datetime(preg_sup_counts['date']).dt.year
+    preg_sup_counts['year'] = preg_sup_counts['year'] - 1
+    preg_sup_counts.drop(columns='date', inplace=True)
+    preg_sup_counts.set_index(
         'year',
         drop=True,
         inplace=True
     )
 
-    sbr = maternal_counts['antenatal_sbr']
+    anc_counts = output['tlo.methods.antenatal_care']['anc_summary_stats']
+    anc_counts['year'] = pd.to_datetime(anc_counts['date']).dt.year
+    anc_counts['year'] = anc_counts['year'] - 1
+    anc_counts.drop(columns='date', inplace=True)
+    anc_counts.set_index(
+        'year',
+        drop=True,
+        inplace=True
+    )
 
-    return sbr
+    anc_counts['diet_supps'] = (anc_counts['diet_supps_6_months']/preg_sup_counts['women_month_6']) * 100
+    anc_counts['early_anc3_coverage_women_at_6m'] = (anc_counts['early_anc3']/preg_sup_counts['women_month_6']) * 100
+    sbr = preg_sup_counts['antenatal_sbr']
+    crude_sb = preg_sup_counts['crude_antenatal_sb']
+    early_anc3_coverage_births = anc_counts['early_anc3_proportion_of_births']
+    early_anc3_coverage_women = anc_counts['early_anc3_coverage_women_at_6m']
+    diet_supps = anc_counts['diet_supps']
+
+    #anc_counts.to_csv(r'./outputs/anc_counts.csv', index=False)
+    #preg_sup_counts.to_csv(r'./outputs/preg_sup_counts.csv', index=False)
+
+    return sbr, crude_sb, diet_supps, early_anc3_coverage_births, early_anc3_coverage_women
 
 
 still_birth_ratio = dict()
+still_births = dict()
+diet_supplements = dict()
+eanc3 = dict()
+eanc3women = dict()
 
 for label, file in output_files.items():
-    still_birth_ratio[label] = \
+    still_birth_ratio[label], still_births[label], diet_supplements[label], eanc3[label], eanc3women[label] = \
         get_incidence_rate_and_death_numbers_from_logfile(file)
+
 data = {}
 
 
@@ -118,6 +137,29 @@ def generate_graphs(dictionary, title, saved_title):
     plt.title(f'{title}')
     plt.savefig(outputpath / (f"{saved_title}" + datestamp + ".pdf"), format='pdf')
     plt.show()
+    final_results = pd.DataFrame.from_dict(data)
+
+    if saved_title == "eanc3_by_scenario":
+        final_results.to_csv(r'./outputs/eanc3_by_scenario.csv', index=False)
+
+    if saved_title == "eanc3_by_scenario_women":
+        final_results.to_csv(r'./outputs/eanc3_by_scenario_women.csv', index=False)
+
+    if saved_title == 'sbr_by_scenario':
+        final_results.to_csv(r'./outputs/sbr_by_scenario.csv', index=False)
+
+    if saved_title == "sb_by_scenario":
+        final_results.to_csv(r'./outputs/sb_by_scenario.csv', index=False)
+
+    if saved_title == "diet_supp_by_scenario":
+        final_results.to_csv(r'./outputs/diet_supp_by_scenario.csv', index=False)
 
 
-generate_graphs(still_birth_ratio, 'Antenatal SBR with normal coverage of ANC vs ANC8', "sbr_by_scenario")
+generate_graphs(eanc3, 'Coverage of early initiation of ANC1-3 by scenario (birth denom)', "eanc3_by_scenario")
+generate_graphs(eanc3women, 'Coverage of early initiation of ANC1-3 by scenario (women denom)',
+                "eanc3_by_scenario_women")
+generate_graphs(still_birth_ratio, 'Antenatal SBR with current, 50% and 90% coverage of early ANC3', "sbr_by_scenario")
+generate_graphs(still_births, 'Crude number of antenatal stillbirths with current, 50% and 90% coverage of early ANC3',
+                              'sb_by_scenario')
+generate_graphs(diet_supplements, 'Proportion of women reach 30 weeks gestation who are receiving diet supplements '
+                                  'at 30 weeks', 'diet_supp_by_scenario')

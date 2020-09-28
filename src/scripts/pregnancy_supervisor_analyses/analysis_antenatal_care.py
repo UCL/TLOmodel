@@ -22,8 +22,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 1000
+end_date = Date(2015, 1, 1)
+popsize = 20000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -54,8 +54,8 @@ sim.make_initial_population(n=popsize)
 
 params_preg_sup = sim.modules['PregnancySupervisor'].parameters
 
-#params_preg_sup['ps_linear_equations']['eight_or_more_anc_visits'] = LinearModel(
- #                   LinearModelType.MULTIPLICATIVE, 1)
+# params_preg_sup['ps_linear_equations']['eight_or_more_anc_visits'] = LinearModel(
+#                    LinearModelType.MULTIPLICATIVE, 1)
 
 sim.simulate(end_date=end_date)
 
@@ -92,12 +92,6 @@ final_anc4_df = pd.concat([women_with_anc4_by_year, women_with_anc8_by_year, tot
 final_anc4_df.columns = ['women_with_anc4', 'women_with_anc8', 'total_births']
 final_anc4_df['proportion_of_anc4'] = (final_anc4_df.women_with_anc4 / final_anc4_df.total_births) * 100
 final_anc4_df['proportion_of_anc8'] = (final_anc4_df.women_with_anc8 / final_anc4_df.total_births) * 100
-
-
-print(full_anc_output)
-print(women_with_anc4_by_year)
-print(final_anc4_df)
-
 
 final_anc4_df.plot.bar(y='proportion_of_anc4', stacked=True)
 plt.title("Proportion of women achieving ANC4+ by year")
