@@ -117,13 +117,16 @@ def test_get_class_output_string():
     classes = get_classes_for_testing()
     person = classes[0]
     result = inspector.get_class_output_string(person)
-    expected = "\n\n\n.. class:: Person\n\n"
-    expected += "\n\n"
-    expected += "**Description:**\nThe basic Person class."  # <class for_inspector.tlo.a.Person>"
-    expected += "\n\n**Function get_name():**\n"
-    expected += f"\n\nGet the name. \n\n"
-    expected += "\n\n**Function set_name():**\n"
-    expected += f"\n\nSet the name. \n\n"
+    expected = "\n\n\n.. autoclass:: Person\n\n"
+    expected += "\n\n"  # It has no bases to extract.
+    numspaces = 5
+    spacer = numspaces * ' '
+
+    # NB we expect the following to be in name order
+    # i.e. alphabetical rather than source code order.
+    expected += f"{spacer}.. automethod:: get_name\n\n"
+    expected += f"{spacer}.. automethod:: set_name\n\n"
+
     expected += "\n\n\n"
     assert result == expected
 

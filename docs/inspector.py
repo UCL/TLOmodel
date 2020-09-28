@@ -201,8 +201,6 @@ def get_class_output_string(classinfo):
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
 
-
-
     for name, obj in classdat:
         # We only want to document things defined in this class itself,
         # rather than anything inherited from parent classes (including
