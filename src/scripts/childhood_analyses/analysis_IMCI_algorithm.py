@@ -35,7 +35,7 @@ log_config = {
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.pneumonia": logging.INFO,
-        "tlo.methods.dx_algorithm_child": logging.DEBUG
+        "tlo.methods.dx_algorithm_child": logging.INFO
     }
 }
 
@@ -92,13 +92,13 @@ def get_imci_pneumonia_classification(logfile):
         drop=True,
         inplace=True
     )
-    excel_file = pneum_classification_df.to_csv(r'./outputs/imci_pneumonia_classification.csv', index=False)
+    pneum_classification_df.to_csv(r'./outputs/imci_pneumonia_classification.csv', index=False)
 
     imci_classification_rate = dict()
     for severity in ['no pneumonia', 'non-severe pneumonia', 'severe pneumonia']:
         imci_classification_rate[severity] = pneum_classification_df[severity].apply(pd.Series).div([severity],
                                                                                                     axis=0).dropna()
-    return imci_classification_rate, excel_file
+    return imci_classification_rate
 
 
 get_imci_pneumonia_classification(log_df)

@@ -882,13 +882,15 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
-        imci_classification_count = \
+        imci_pneumonia_classification_count = \
             df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
 
-        logger.info(key='imci_classicications_count', data=imci_classification_count)
+        logger.info('%s|imci_classicications_count|%s', self.sim.date,
+                    {'pneum_classifications': imci_pneumonia_classification_count})
 
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
         dict_to_output = self.module.child_disease_management_information
         print(dict_to_output)
-        logger.info(key='pneumonia_management_child_info', data=dict_to_output)
+        logger.info('%s|pneumonia_management_child_info|%s',
+                    self.sim.date, dict_to_output)
