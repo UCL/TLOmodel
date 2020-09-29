@@ -377,7 +377,6 @@ class SymptomManager(Module):
 
         return [s for s in self.symptom_names if person[f'sy_{s}'] > 0]
 
-
     def causes_of(self, person_id, symptom_string):
         """
         This is a helper function that will give a list of the disease modules causing a particular symptom for
