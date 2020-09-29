@@ -366,19 +366,17 @@ class SymptomManager(Module):
         df = self.sim.population.props
         assert df.at[person_id, 'is_alive'], "The person is not alive"
 
+        columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+        df = self.sim.population.props
+        person = df.loc[person_id, columns]
+
         if disease_module:
             assert disease_module.name in ([self.name] + self.recognised_module_names), \
                 "Disease Module Name is not recognised"
-            disease_modules_of_interest = {disease_module.name}
-        else:
-            disease_modules_of_interest = set([self.name] + self.recognised_module_names)
+            return [s for s in self.symptom_names if disease_module.name in self.bsh[s].to_strings(person[f'sy_{s}'])]
 
-        symptoms_for_this_person = [
-            s for s in self.symptom_names if
-            disease_modules_of_interest.intersection(self.bsh[s].get([person_id], first=True))
-        ]
+        return [s for s in self.symptom_names if person[f'sy_{s}'] > 0]
 
-        return symptoms_for_this_person
 
     def causes_of(self, person_id, symptom_string):
         """
