@@ -167,83 +167,61 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
 
         # =============================== Adjust generic first appt for RTI requirements ============================
+        if 'RTI' in self.sim.modules:
+            road_traffic_injuries = self.sim.modules['RTI']
+            columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                           'rt_injury_7', 'rt_injury_8']
+            df = self.sim.population.props
+            if columns[0] in df.columns:  # Simple check to see if RTI module is registered
+                persons_injuries = df.loc[[person_id], columns]
 
-        def rti_find_and_count_injuries(dataframe, tloinjcodes):
-            """
-            A function that searches a user given dataframe for a list of injuries (tloinjcodes). If the injury code is
-            found in the dataframe, this function returns the index for who has the injury/injuries and the number of
-            injuries found. This function works much faster if the dataframe is smaller, hence why the searched dataframe
-            is a parameter in the function.
+                # ================================ Fractures require x-rays ============================================
+                fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
+                if len(idx) > 0:
+                    the_appt_footprint['DiagRadio'] = 1
+                # ========================= Traumatic brain injuries require ct scan ===================================
+                codes = ['133', '134', '135']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+                # ============================= Abdominal trauma requires ct scan ======================================
+                codes = ['552', '553', '554']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    the_appt_footprint['Tomography'] = 1
 
-            :param dataframe: The dataframe to search for the tlo injury codes in
-            :param tloinjcodes: The injury codes to search for in the data frame
-            :return: the df index of who has the injuries and how many injuries in the search were found.
-            """
-            index = pd.Index([])
-            counts = 0
-            for code in tloinjcodes:
-                for col in dataframe.columns:
-                    # Find where a searched for injury code is in the columns, store the matches in counts
-                    counts += len(dataframe[dataframe[col] == code])
-                    if len(dataframe[dataframe[col] == code]) > 0:
-                        # If you find a matching code, update the index to include the matching person
-                        inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
-                        injidx = inj.index[inj]
-                        index = index.union(injidx)
-            return index, counts
-        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
-                       'rt_injury_7', 'rt_injury_8']
-        df = self.sim.population.props
-        if columns[0] in df.columns:  # Simple check to see if RTI module is registered
-            persons_injuries = df.loc[[person_id], columns]
+                # ============================== Spinal cord injury require x ray ======================================
+                codes = ['673', '674', '675', '676']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
 
-            # ================================ Fractures require x-rays ===============================================
-            fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, fracture_codes)
-            if len(idx) > 0:
-                the_appt_footprint['DiagRadio'] = 1
-            # ========================= Traumatic brain injuries require ct scan =======================================
-            codes = ['133', '134', '135']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-            # ============================= Abdominal trauma requires ct scan ==========================================
-            codes = ['552', '553', '554']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                the_appt_footprint['Tomography'] = 1
+                # ============================== Dislocations require x ray ============================================
+                codes = ['322', '323', '722', '822']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
 
-            # ============================== Spinal cord injury require x ray ==========================================
-            codes = ['673', '674', '675', '676']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+                # --------------------------------- Soft tissue injury in neck -----------------------------------------
+                codes = ['342', '343']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
 
-            # ============================== Dislocations require x ray ==============================================
-            codes = ['322', '323', '722', '822']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+                # --------------------------------- Soft tissue injury in thorax/ lung injury --------------------------
+                codes = ['441', '443', '453']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
 
-            # --------------------------------- Soft tissue injury in neck ---------------------------------------------
-            codes = ['342', '343']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
-
-            # --------------------------------- Soft tissue injury in thorax/ lung injury ------------------------------
-            codes = ['441', '443', '453']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-                the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
-
-            # -------------------------------- Internal bleeding ------------------------------------------------------
-            codes = ['361', '363', '461', '463']
-            idx, counts = rti_find_and_count_injuries(persons_injuries, codes)
-            if len(idx) > 0:
-                the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+                # ----------------------------- Internal bleeding ------------------------------------------------------
+                codes = ['361', '363', '461', '463']
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
+                if len(idx) > 0:
+                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -304,19 +282,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                                                                 )
         if 'RTI' in self.sim.modules:
             if 'severe_trauma' in symptoms:
-                def rti_find_and_count_injuries(dataframe, tloinjcodes):
-                    index = pd.Index([])
-                    counts = 0
-                    for code in tloinjcodes:
-                        for col in dataframe.columns:
-                            # Find where a searched for injury code is in the columns, store the matches in counts
-                            counts += len(dataframe[dataframe[col] == code])
-                            if len(dataframe[dataframe[col] == code]) > 0:
-                                # If you find a matching code, update the index to include the matching person
-                                inj = dataframe.apply(lambda row: row.astype(str).str.contains(code).any(0), axis=1)
-                                injidx = inj.index[inj]
-                                index = index.union(injidx)
-                    return index, counts
+
                 df = self.sim.population.props
                 consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
@@ -328,7 +294,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 # is dealt with in the RTI module itself.
                 road_traffic_injuries = self.sim.modules['RTI']
                 fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
-                idx, counts = rti_find_and_count_injuries(persons_injuries, fracture_codes)
+                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
                 if counts >= 1:
 
                     item_code_x_ray_film = pd.unique(
