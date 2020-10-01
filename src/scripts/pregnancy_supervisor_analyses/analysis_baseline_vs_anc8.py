@@ -32,51 +32,54 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 scenarios = dict()
 
 scenarios['90%_early_anc3_coverage'] = [0.9]
-scenarios['50%_early_anc3_coverage'] = [0.5]
-scenarios['status_quo'] = [0.21]
+#scenarios['50%_early_anc3_coverage'] = [0.5]
+#scenarios['status_quo'] = [0.21]
 
 # Create dict to capture the outputs
-output_files = dict()
+# output_files = dict()
+output_files = {'90%_early_anc3_coverage': r'./outputs/LogFile__2020-09-28T152554.log',
+                '50%_early_anc3_coverage': r'./outputs/LogFile__2020-09-28T165027.log',
+                'status_quo': r'./outputs/LogFile__2020-09-28T181445.log'}
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 2)
-popsize = 20000
+end_date = Date(2011, 1, 2)
+popsize = 100
 
-for label, parameters in scenarios.items():
-    # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date)
+#for label, parameters in scenarios.items():
+#    # add file handler for the purpose of logging
+#    sim = Simulation(start_date=start_date)
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=['*']),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
+#    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+#                 contraception.Contraception(resourcefilepath=resourcefilepath),
+#                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+#                 # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+#                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+#                                           service_availability=['*']),
+#                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+#                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+#                 hiv.hiv(resourcefilepath=resourcefilepath),
+#                 tb.tb(resourcefilepath=resourcefilepath),
+#                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+#                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+#                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+#                 labour.Labour(resourcefilepath=resourcefilepath),
+#                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+#                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    logfile = sim.configure_logging(filename="LogFile")
-    sim.seed_rngs(0)
-    sim.make_initial_population(n=popsize)
+#    logfile = sim.configure_logging(filename="LogFile")
+#    sim.seed_rngs(0)
+#    sim.make_initial_population(n=popsize)
 
-    params_preg_sup = sim.modules['PregnancySupervisor'].parameters
+#    params_preg_sup = sim.modules['PregnancySupervisor'].parameters
 
-    params_preg_sup['prob_3_early_visits'] = parameters[0]
+#    params_preg_sup['prob_3_early_visits'] = parameters[0]
 
-    sim.simulate(end_date=end_date)
+#    sim.simulate(end_date=end_date)
 
     # Save the full set of results:
-    output_files[label] = logfile
+#    output_files[label] = logfile
 
 
 def get_incidence_rate_and_death_numbers_from_logfile(logfile):
