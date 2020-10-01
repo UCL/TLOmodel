@@ -298,6 +298,7 @@ class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, "me_has_measles"] = False
 
 
+# todo modify this death event if person has received ORS or pneumonia treatment (as appropriate)
 class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
@@ -318,7 +319,7 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
 
         self.sim.schedule_event(
             InstantaneousDeath(
-                self.module, individual_id, cause="measles"), self.sim.date)
+                self.module, individual_id, cause=self.cause), self.sim.date)
 
 
 # ---------------------------------------------------------------------------------
@@ -349,8 +350,6 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="HSI_Measles_Treatment",
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")
-
-        df = self.sim.population.props
 
         # treatment for dehydration and vitamin A
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
