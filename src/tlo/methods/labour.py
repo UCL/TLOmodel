@@ -6,7 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography, postnatal_supervisor
+from tlo.methods import Metadata, demography, postnatal_supervisor
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -33,6 +33,13 @@ class Labour (Module):
         # These lists will contain possible complications and are used as checks in assert functions
         self.possible_intrapartum_complications = list()
         self.possible_postpartum_complications = list()
+
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.USES_SYMPTOMMANAGER
+    }
 
     PARAMETERS = {
         #  ===================================  NATURAL HISTORY PARAMETERS =============================================
@@ -457,8 +464,6 @@ class Labour (Module):
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
-
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Here we will include DALY weights if applicable...
         if 'HealthBurden' in self.sim.modules:
@@ -942,11 +947,11 @@ class Labour (Module):
 
     def on_hsi_alert(self, person_id, treatment_id):
         """ This is called whenever there is an HSI event commissioned by one of the other disease modules."""
-        logger.info('This is Labour, being alerted about a health system interaction '
-                    'person %d for: %s', person_id, treatment_id)
+        logger.info(key='message', data=f'This is Labour, being alerted about a health system interaction '
+                                        f'person {person_id }for: {treatment_id}')
 
     def report_daly_values(self):
-        logger.debug('This is Labour reporting my health values')
+        logger.debug(key='message', data='This is Labour reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties data frame
         p = self.parameters
@@ -996,7 +1001,8 @@ class Labour (Module):
 
         df = self.sim.population.props
         eqs = self.parameters['la_labour_equations']
-        logger.debug('person %d is having their labour scheduled on date %s', individual_id, self.sim.date)
+        logger.debug(key='message', data=f'person {individual_id} is having their labour scheduled on date '
+                                         f'{self.sim.date}',)
 
         # Check only alive newly pregnant women are scheduled to this function
         assert df.at[individual_id, 'is_alive'] and df.at[individual_id, 'is_pregnant']
@@ -1112,8 +1118,8 @@ class Labour (Module):
             else:
                 df.at[individual_id, f'la_{complication}_disab'] = True
 
-            logger.debug(f'person %d has developed {complication} during birth on date f %s', individual_id,
-                         self.sim.date)
+            logger.debug(key='message', data=f'person %d has developed {complication} during birth on date'
+                                             f'{self.sim.date}')
 
     def set_postpartum_complications(self, individual_id, complication):
         """Uses the result of a linear equation to determine a womans individual risk of developing a set of
@@ -1157,8 +1163,8 @@ class Labour (Module):
                     else:
                         df.at[individual_id, 'la_maternal_haem_severe_disab'] = True
 
-                    logger.debug(f'person %d has developed {complication} during the postpartum phase of a birth'
-                                 f' on date %s', individual_id, self.sim.date)
+                    logger.debug(key='message', data=f'person {individual_id} has developed {complication} during the'
+                                                     f' postpartum phase of a birth on date {self.sim.date}')
 
                 # If the bleeding will start at day 4+ we schedule an event in the postnatal module which will onset
                 # bleeding and possible care seeking/death on the future day of the postnatal period
@@ -1224,7 +1230,7 @@ class Labour (Module):
 
         # First we determine if this woman will die of the complication defined in the function
         if self.predict(params['la_labour_equations'][f'{cause}_death'], individual_id):
-            logger.debug(f'{cause} has contributed to person %d death during labour', individual_id)
+            logger.debug(key='message', data=f'{cause} has contributed to person {individual_id} death during labour')
 
             mni[individual_id]['death_in_labour'] = True
             mni[individual_id]['cause_of_death_in_labour'].append(cause)
@@ -1235,7 +1241,9 @@ class Labour (Module):
         #  And then a risk of stillbirth is calculated, maternal death is a used as a predictor and set very high if
         #  true
         if self.predict(params['la_labour_equations'][f'{cause}_stillbirth'], individual_id):
-            logger.debug(f'person %d has experienced a still birth following {cause} in labour')
+            logger.debug(key='message', data=f'person {individual_id} has experienced a still birth following {cause} '
+                                             f'in labour')
+
             df.at[individual_id, 'la_intrapartum_still_birth'] = True
             df.at[individual_id, 'ps_previous_stillbirth'] = True
             df.at[individual_id, 'is_pregnant'] = False
@@ -1251,7 +1259,7 @@ class Labour (Module):
         assert cause in self.possible_postpartum_complications
 
         if self.predict(params['la_labour_equations'][f'{cause}_pp_death'], individual_id):
-            logger.debug(f'{cause} has contributed to person %d death following labour', individual_id)
+            logger.debug(key='message',data=f'{cause} has contributed to person {individual_id} death following labour')
 
             self.labour_tracker[f'{cause}_death'] += 1
             mni[individual_id]['death_postpartum'] = True
@@ -1379,20 +1387,20 @@ class Labour (Module):
             # Availability of consumables determines if the intervention is delivered...
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_uncomplicated_delivery]:
                 mni[person_id]['clean_delivery_kit_used'] = True
-                logger.debug('This facility has delivery kits available and have been used for mother %d delivery.',
-                             person_id)
+                logger.debug(key='message', data='This facility has delivery kits available and have been used for '
+                                                 f'mother {person_id} delivery.')
             else:
-                logger.debug('This facility has no delivery kits.')
+                logger.debug(key='message', data='This facility has no delivery kits.')
 
             # Prophylactic antibiotics for premature rupture of membranes in term deliveries...
             if mni[person_id]['labour_state'] == 'term_labour' and df.at[person_id,
                                                                          'ps_premature_rupture_of_membranes']:
                 if outcome_of_request_for_consumables['Item_Code'][item_code_abx_prom]:
                     mni[person_id]['abx_for_prom_given'] = True
-                    logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
-                                 'to PROM.', person_id)
+                    logger.debug(key='message', data=f'This facility has provided antibiotics for mother {person_id} '
+                                                     f'who is a risk of sepsis due to PROM')
                 else:
-                    logger.debug('This facility has no antibiotics for the treatment of PROM.')
+                    logger.debug(key='message', data='This facility has no antibiotics for the treatment of PROM.')
 
             # Prophylactic antibiotics for premature rupture of membranes in preterm deliveries...
             if (mni[person_id]['labour_state'] == 'early_preterm_labour' or
@@ -1401,10 +1409,10 @@ class Labour (Module):
 
                 if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_pprom]:
                     mni[person_id]['abx_for_pprom_given'] = True
-                    logger.debug('This facility has provided antibiotics for mother %d who is a risk of sepsis due '
-                                 'to PPROM.', person_id)
+                    logger.debug(key='message',data=f'This facility has provided antibiotics for mother {person_id} who'
+                                                    f'is a risk of sepsis due to PPROM.')
                 else:
-                    logger.debug('This facility has no antibiotics for the treatment of PROM.')
+                    logger.debug(key='message', data=f'This facility has no antibiotics for the treatment of PROM.')
 
             # Prophylactic steroids and antibiotics for women who have gone into preterm labour...
             if mni[person_id]['labour_state'] == 'early_preterm_labour' or \
@@ -1413,17 +1421,17 @@ class Labour (Module):
                 if outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_betamethasone] and \
                  outcome_of_request_for_consumables['Item_Code'][item_code_steroids_prem_dexamethasone]:
                     mni[person_id]['corticosteroids_given'] = True
-                    logger.debug('This facility has provided corticosteroids for mother %d who is in preterm labour',
-                                 person_id)
+                    logger.debug(key='message', data=f'This facility has provided corticosteroids for mother {person_id}'
+                                                     f' who is in preterm labour')
                 else:
-                    logger.debug('This facility has no steroids for women in preterm labour.')
+                    logger.debug(key='message', data='This facility has no steroids for women in preterm labour.')
 
                 if outcome_of_request_for_consumables['Item_Code'][item_code_antibiotics_gbs_proph]:
                     mni[person_id]['abx_for_preterm_given'] = True
-                    logger.debug('This facility has provided antibiotics for mother %d whose baby is a risk of '
-                                 'Group B strep', person_id)
+                    logger.debug(key='message', data=f'This facility has provided antibiotics for mother {person_id} '
+                                                     f'whose baby is a risk of Group B strep')
                 else:
-                    logger.debug('This facility has no antibiotics for group B strep prophylaxis.')
+                    logger.debug(key='message', data='This facility has no antibiotics for group B strep prophylaxis.')
 
     def assessment_and_treatment_of_severe_pre_eclampsia(self, hsi_event, facility_type):
         """This function defines the required consumables, determines correct diagnosis and administers an intervention
@@ -1455,12 +1463,13 @@ class Labour (Module):
 
                 if outcome_of_request_for_consumables_spe:
                     df.at[person_id, 'la_severe_pre_eclampsia_treatment'] = True
-                    logger.debug('mother %d has has their severe pre-eclampsia identified during delivery. As '
-                                 'consumables are available they will receive treatment', person_id)
+                    logger.debug(key='message', data=f'mother {person_id} has has their severe pre-eclampsia identified'
+                                                     f' during delivery. As consumables are available they will receive'
+                                                     ' treatment')
 
                 elif df.at[person_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
-                    logger.debug('mother %d has not had their severe pre-eclampsia identified during delivery and will '
-                                 'not be treated', person_id)
+                    logger.debug(key='message', data=f'mother {person_id} has not had their severe pre-eclampsia '
+                                                     f'identified during delivery and will not be treated')
 
     def assessment_and_treatment_of_obstructed_labour(self, hsi_event, facility_type):
         """This function defines the required consumables, determines correct diagnosis and administers an intervention
@@ -1497,8 +1506,10 @@ class Labour (Module):
 
                 if outcome_of_request_for_consumables_ol:
 
-                    logger.debug('mother %d has had her obstructed labour identified during delivery. Staff will '
-                                 'attempt an assisted vaginal delivery as the equipment is available', person_id)
+                    logger.debug(key='message', data=f'mother {person_id} has had her obstructed labour identified'
+                                                     f'during delivery. Staff will attempt an assisted vaginal delivery '
+                                                     f'as the equipment is available')
+
                     treatment_success = params['prob_successful_assisted_vaginal_delivery'] > self.rng.random_sample()
 
                     if treatment_success:
@@ -1506,8 +1517,8 @@ class Labour (Module):
                         mni[person_id]['mode_of_delivery'] = 'instrumental'
 
                     else:
-                        logger.debug('Following a failed assisted vaginal delivery other %d will need additional '
-                                     'treatment', person_id)
+                        logger.debug(key='message', data=f'Following a failed assisted vaginal delivery other '
+                                                         f'{person_id} will need additional treatment')
 
                         if mni[person_id]['delivery_attended']:
                             mni[person_id]['refer_for_cs'] = 'prompt_referral'
@@ -1515,8 +1526,8 @@ class Labour (Module):
                             mni[person_id]['refer_for_cs'] = 'delayed_referral'
 
             elif df.at[person_id, 'la_obstructed_labour']:
-                logger.debug('mother %d has not had their obstructed labour identified during delivery and will not'
-                             'be treated', person_id)
+                logger.debug(key='message', data=f'mother {person_id} has not had their obstructed labour identified '
+                                                 f'during delivery and will not be treated')
 
     def assessment_and_treatment_of_maternal_sepsis(self, hsi_event, facility_type, labour_stage):
         """This function defines the required consumables, determines correct diagnosis and administers intervention
@@ -1544,13 +1555,15 @@ class Labour (Module):
                     dx_tests_to_run=f'assess_sepsis_{facility_type}_{labour_stage}', hsi_event=hsi_event):
 
                 if outcome_of_request_for_consumables_sep:
-                    logger.debug('mother %d has has their sepsis identified during delivery. As consumables are '
-                                 'available they will receive treatment', person_id)
+                    logger.debug(key='message', data=f'mother {person_id} has has their sepsis identified during '
+                                                     f'delivery. As consumables are available they will receive '
+                                                     f'treatment')
+
                     df.at[person_id, 'la_sepsis_treatment'] = True
 
                 elif df.at[person_id, 'la_sepsis']:
-                    logger.debug('mother %d has not had their sepsis identified during delivery and will not be '
-                                 'treated', person_id)
+                    logger.debug(key='message', data=f'mother {person_id} has not had their sepsis identified during '
+                                                     f'delivery and will not be treated')
 
     def assessment_and_treatment_of_hypertension(self, hsi_event, facility_type):
         """This function defines the required consumables, determines correct diagnosis and administers intervention
@@ -1579,12 +1592,13 @@ class Labour (Module):
 
                 if outcome_of_request_for_consumables_htn:
                     df.at[person_id, 'la_maternal_hypertension_treatment'] = True
-                    logger.debug('mother %d has has their hypertension identified during delivery. As '
-                                 'consumables are available they will receive treatment', person_id)
+                    logger.debug(key='message', data=f'mother {person_id} has has their hypertension identified during '
+                                                     f'delivery. As consumables are available they will receive'
+                                                     f' treatment')
 
             elif df.at[person_id, 'ps_gestational_htn']:
-                logger.debug('mother %d has not had their hypertension identified during delivery and will '
-                             'not be treated', person_id)
+                logger.debug(key='message', data= f'mother {person_id} has not had their hypertension identified during '
+                                                  f'delivery and will not be treated')
 
     def assessment_and_treatment_of_eclampsia(self, hsi_event):
         """This function defines the required consumables, determines correct diagnosis and administers intervention
@@ -1610,11 +1624,12 @@ class Labour (Module):
 
             if outcome_of_request_for_consumables_ec:
                 df.at[person_id, 'la_eclampsia_treatment'] = True
-                logger.debug('mother %d has has their eclampsia identified during delivery. As '
-                             'consumables are available they will receive treatment', person_id)
+                logger.debug(key='message',data=f'mother {person_id} has has their eclampsia identified during delivery.'
+                                                f' As consumables are available they will receive treatment')
+
             elif df.at[person_id, 'ps_htn_disorders'] == 'eclampsia':
-                logger.debug('mother %d has not had their eclampsia identified during delivery and will '
-                             'not be treated', person_id)
+                logger.debug(key='message', data=f'mother {person_id} has not had their eclampsia identified during '
+                                                 f'delivery and will not be treated')
 
     def assessment_and_plan_for_referral_antepartum_haemorrhage(self, hsi_event, facility_type, treatment_or_referral):
         """This function determines correct diagnosis and referral for intervention for women suffering from antepartum
@@ -1630,8 +1645,9 @@ class Labour (Module):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                dx_tests_to_run=f'assess_for_{treatment_or_referral}_aph_{facility_type}',
                hsi_event=hsi_event):
-                logger.debug('mother %d has has their antepartum haemorrhage identified during delivery. They will now '
-                             'be referred for additional treatment', person_id)
+                logger.debug(key='message', data=f'mother {person_id} has has their antepartum haemorrhage identified '
+                                                 f'during delivery. They will now be referred for additional treatment')
+
                 if mni[person_id]['delivery_attended']:
                     mni[person_id]['referred_for_cs'] = 'prompt_referral'
                     mni[person_id]['referred_for_blood'] = 'prompt_referral'
@@ -1640,8 +1656,8 @@ class Labour (Module):
                     mni[person_id]['referred_for_blood'] = 'delayed_referral'
 
             elif df.at[person_id, 'la_antepartum_haem']:
-                logger.debug('mother %d has not had their antepartum haemorrhage identified during delivery and will'
-                             'not be referred for treatment', person_id)
+                logger.debug(key='message', data=f'mother {person_id} has not had their antepartum haemorrhage '
+                                                 f'identified during delivery and will not be referred for treatment')
 
     def assessment_and_plan_for_referral_uterine_rupture(self, hsi_event, facility_type, treatment_or_referral):
         """This function determines correct diagnosis and referral for intervention for women suffering from uterine
@@ -1657,8 +1673,8 @@ class Labour (Module):
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                dx_tests_to_run=f'assess_for_{treatment_or_referral}_uterine_rupture_{facility_type}',
                hsi_event=hsi_event):
-                logger.debug('mother %d has has their uterine rupture identified during delivery. They will now be '
-                             'referred for additional treatment', person_id)
+                logger.debug(key='message', data='mother %d has has their uterine rupture identified during delivery. '
+                                                 'They will now be referred for additional treatment')
                 if mni[person_id]['delivery_attended']:
                     mni[person_id]['referred_for_surgery'] = 'prompt_referral'
                     mni[person_id]['referred_for_cs'] = 'prompt_referral'
@@ -1667,8 +1683,8 @@ class Labour (Module):
                     mni[person_id]['referred_for_cs'] = 'delayed_referral'
 
             elif df.at[person_id, 'la_uterine_rupture']:
-                logger.debug('mother %d has not had their uterine_rupture identified during delivery and will not be '
-                             'referred for treatment', person_id)
+                logger.debug(key='message', data=f'mother {person_id} has not had their uterine_rupture identified '
+                                                 f'during delivery and will not be referred for treatment')
 
     def active_management_of_the_third_stage_of_labour(self, hsi_event):
         """This function define consumables and administration of active management of the third stage of labour for
@@ -1696,11 +1712,11 @@ class Labour (Module):
             # Here we apply a risk reduction of post partum bleeding following active management of the third stage of
             # labour (additional oxytocin, uterine massage and controlled cord traction)
             if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_am]:
-                logger.debug('pkg_code_am is available, so use it.')
+                logger.debug(key='message', data='pkg_code_am is available, so use it.')
                 mni[person_id]['amtsl_given'] = True
             else:
-                logger.debug('mother %d did not receive active management of the third stage of labour as she delivered'
-                             'without assistance', person_id)
+                logger.debug(key='message', data=f'mother {person_id} did not receive active management of the third '
+                                                 f'stage of labour as she delivered without assistance')
 
     def assessment_and_treatment_of_pph_retained_placenta(self, hsi_event):
         """This function defines consumables and administration of treatment for women suffering from a postpartum
@@ -1791,14 +1807,16 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
         # We exclude women who may have been previously pregnant/had their due date has been moved by an intervention
         # and should no longer be in labour today
         if not (person.is_alive and person.is_pregnant and person.la_due_date_current_pregnancy == self.sim.date):
-            logger.debug('person %d has just reached LabourOnsetEvent on %s, however this is event is no longer '
-                         'relevant for this individual and will not run', individual_id, self.sim.date)
+            logger.debug(key='message', data=f'person {individual_id} has just reached LabourOnsetEvent on '
+                                             f'{self.sim.date}, however this is event is no longer relevant for this '
+                                             f'individual and will not run')
             return
 
         else:
 
             # For women pregnant women who are due today, they move through the event
-            logger.debug('person %d has just reached LabourOnsetEvent on %s', individual_id, self.sim.date)
+            logger.debug(key='message', data=f'person {individual_id} has just reached LabourOnsetEvent on '
+                                             f'{self.sim.date}')
 
             # We indicate this woman is now in labour using this property, and by adding her individual ID to our
             # labour list (for testing)
@@ -1872,8 +1890,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             assert mni[individual_id]['labour_state'] is not None
 
             labour_state = mni[individual_id]['labour_state']
-            logger.debug(f'This is LabourOnsetEvent, person %d has now gone into {labour_state} on date %s',
-                         individual_id, self.sim.date)
+            logger.debug(key='message',data=f'This is LabourOnsetEvent, person {individual_id} has now gone into '
+                                            f'{labour_state} on date {self.sim.date}')
 
             # ===================================== CARE SEEKING AND DELIVERY SETTING ==============
             # Here we calculate this womans predicted risk of home birth and health centre birth
@@ -1903,8 +1921,9 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             if mni[individual_id]['delivery_setting'] == 'home_birth':
                 self.sim.schedule_event(LabourAtHomeEvent(self.module, individual_id), self.sim.date)
 
-                logger.info('This is LabourOnsetEvent, person %d as they has chosen not to seek care at a health centre'
-                            'for delivery and will give birth at home on date %s', individual_id, self.sim.date)
+                logger.info(key='message', data=f'This is LabourOnsetEvent, person {individual_id} as they has chosen '
+                                                f'not to seek care at a health centre for delivery and will give birth '
+                                                f'at home on date {self.sim.date}')
 
             # Otherwise the appropriate HSI is scheduled
             elif mni[individual_id]['delivery_setting'] == 'health_centre':
@@ -1914,9 +1933,10 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-                logger.info('This is LabourOnsetEvent, scheduling HSI_Labour_PresentsForSkilledAttendanceInLabour on '
-                            'date %s for person %d as they have chosen to seek care at a health centre for delivery',
-                            self.sim.date, individual_id)
+                logger.info(key='message', data=f'This is LabourOnsetEvent, scheduling '
+                                                f'HSI_Labour_PresentsForSkilledAttendanceInLabour on date '
+                                                f'{self.sim.date} for person {individual_id} as they have chosen to '
+                                                f'seek care at a health centre for delivery')
 
             elif mni[individual_id]['delivery_setting'] == 'hospital':
                 # TODO: rng.choice is a placeholder for how to proceed with this aspect of care seeking
@@ -1936,11 +1956,11 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
             # will pass through birth event
             due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
             self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=5))
-            logger.debug('This is LabourOnsetEvent scheduling a birth on date %s to mother %d', due_date,
-                         individual_id)
+            logger.debug(key='message', data=f'This is LabourOnsetEvent scheduling a birth on date {due_date} to mother '
+                                             f'{individual_id}')
 
-            logger.debug('This is LabourOnsetEvent scheduling a potential death on date %s for mother %d',
-                         self.sim.date, individual_id)
+            logger.debug(key='message', data=f'This is LabourOnsetEvent scheduling a potential death on date'
+                                             f'{self.sim.date} for mother {individual_id}')
 
             # ======================================== RUNNING CHECKS ON EVENT QUEUES ==============
             # Here we run a check to ensure at the end of the preliminary labour event, women have the appropriate
@@ -1971,7 +1991,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
         # Condition the event on women being alive and log the birth in a tracker
         if individual.is_alive:
-            logger.debug('person %d has is now going to deliver at home', individual_id)
+            logger.debug(key='message', data=f'person {individual_id} has is now going to deliver at home')
             self.module.labour_tracker['home_birth'] += 1
 
             # ===================================  APPLICATION OF COMPLICATIONS ====================
@@ -2008,8 +2028,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                                 person_id=individual_id
                                 )
 
-                        logger.debug('mother %d will now seek care for a complication that has developed during labour '
-                                     'on date %s', individual_id, self.sim.date)
+                        logger.debug(key='message', data=f'mother {individual_id} will now seek care for a complication'
+                                                         f' that has developed during labour on date {self.sim.date}')
                         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                             priority=0,
                                                                             topen=self.sim.date,
@@ -2030,7 +2050,7 @@ class BirthEvent(Event, IndividualScopeEventMixin):
 
         # This event tells the simulation that the woman's pregnancy is over and generates the new child in the
         # data frame
-        logger.info('mother %d at birth event on date %s', mother_id, self.sim.date)
+        logger.info(key='message', data=f'mother {mother_id} at birth event on date {self.sim.date}')
 
         # Check the correct amount of time has passed between labour onset and birth event and that women at the event
         # have the right characteristics present
@@ -2041,18 +2061,19 @@ class BirthEvent(Event, IndividualScopeEventMixin):
         # postpartum event to determine if she experiences any additional complications (intrapartum stillbirths till
         # trigger births for monitoring purposes)
         if person.is_alive and person.is_pregnant:
-            logger.info('@@@@ A Birth is now occuring, to mother %d', mother_id)
+            logger.info(key='message', data=f'A Birth is now occurring, to mother {mother_id}')
             self.sim.do_birth(mother_id)
-            logger.debug('This is BirthEvent scheduling mother %d to undergo the PostPartumEvent following birth',
-                         mother_id)
+            logger.debug(key='message', data=f'This is BirthEvent scheduling mother {mother_id} to undergo the '
+                                             f'PostPartumEvent following birth')
             self.sim.schedule_event(PostpartumLabourSchedulerEvent(self.module, mother_id),
                                     self.sim.date)
 
         # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
         # stillbirth rates. She will not pass through the postpartum complication events
         if ~person.is_alive and ~person.la_intrapartum_still_birth and person.la_maternal_death_in_labour:
-            logger.debug('@@@@ A Birth is now occuring, to mother %d who died in childbirth but her child survived',
-                         mother_id)
+            logger.info(key='message', data=f'A Birth is now occuring, to mother {mother_id} who died in childbirth but'
+                                            f'her child survived')
+
             self.sim.do_birth(mother_id)
 
 
@@ -2085,20 +2106,22 @@ class PostpartumLabourSchedulerEvent(Event, IndividualScopeEventMixin):
 
         if mni[individual_id]['delivery_setting'] == 'home_birth':
             self.sim.schedule_event(PostpartumLabourAtHomeEvent(self.module, individual_id), self.sim.date)
-            logger.info('This is PostPartumEvent scheduling PostpartumLabourAtHomeEvent for person %d on date %s',
-                        individual_id, self.sim.date)
+            logger.info(key='message',data=f'This is PostPartumEvent scheduling PostpartumLabourAtHomeEvent for person '
+                                           f'{individual_id} on date {self.sim.date}')
 
         elif mni[individual_id]['delivery_setting'] == 'health_centre':
-            logger.info('This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartumPeriod '
-                        'for person %d on date %s', individual_id, self.sim.date)
+            logger.info(key='message', data='This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartum'
+                                            f'Period for person {individual_id} on date {self.sim.date}')
             self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_care,
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         elif mni[individual_id]['delivery_setting'] == 'hospital':
-            logger.info('This is PostPartumEvent scheduling HSI_Labour_ReceivesCareForPostpartumPeriod '
-                        'for person %d on date %s', individual_id, self.sim.date)
+            logger.info(key='message', data='This is PostPartumEvent scheduling'
+                                            ' HSI_Labour_ReceivesCareForPostpartumPeriod '
+                                            f'for person {individual_id} on date {self.sim.date}')
+
             self.sim.modules['HealthSystem'].schedule_hsi_event(all_facility_care,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -2107,8 +2130,9 @@ class PostpartumLabourSchedulerEvent(Event, IndividualScopeEventMixin):
         # We schedule all women to then go through the death event where those with untreated/unsuccessfully treated
         # complications may experience death
         self.sim.schedule_event(EarlyPostPartumDeathEvent(self.module, individual_id), self.sim.date + DateOffset(days=5))
-        logger.info('This is PostPartumEvent scheduling a potential death for person %d on date %s',
-                    individual_id, self.sim.date + DateOffset(days=4))  # Date offset to allow for interventions
+        logger.info(key='message',data=f'This is PostPartumEvent scheduling a potential death for person {individual_id}'
+                                       f' on date {self.sim.date + DateOffset(days=4)}')
+        # Date offset to allow for interventions
 
 
 class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
@@ -2164,8 +2188,8 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                     topen=self.sim.date,
                     tclose=self.sim.date + DateOffset(days=1))
 
-                logger.debug('mother %d will now seek care for a complication that has developed following labour '
-                             'on date %s', individual_id, self.sim.date)
+                logger.debug(key='message', data=f'mother {individual_id} will now seek care for a complication that'
+                                                 f' has developed following labour on date {self.sim.date}')
 
 
 class LabourDeathEvent (Event, IndividualScopeEventMixin):
@@ -2206,12 +2230,15 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                                                                   cause='labour'), self.sim.date)
 
             # Log the maternal death
-            logger.info('This is LabourDeathEvent scheduling a death for person %d on date %s who died due to '
-                        'intrapartum complications', individual_id, self.sim.date)
+            logger.info(key='message', data=f'This is LabourDeathEvent scheduling a death for person {individual_id} on'
+                                            f' date {self.sim.date} who died due to intrapartum complications')
 
-            logger.info('%s|labour_complications|%s', self.sim.date,
-                        {'person_id': individual_id,
-                         'labour_profile': mni[individual_id]})
+            labour_complications = {'person_id': individual_id,
+                                    'death_date': self.sim.date,
+                                    'labour_profile': mni[individual_id]}
+
+            logger.info(key='labour_complications', data=labour_complications, description='mni dictionary for a woman '
+                                                                                           'who has died in labour')
 
             if mni[individual_id]['death_in_labour'] and df.at[individual_id, 'la_intrapartum_still_birth']:
                 # We delete the mni dictionary if both mother and baby have died in labour, if the mother has died but
@@ -2220,9 +2247,11 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'la_intrapartum_still_birth']:
             self.module.labour_tracker['ip_stillbirth'] += 1
-            logger.info('@@@@ A Still Birth has occurred, to mother %s', individual_id)
-            logger.info('%s|still_birth|%s', self.sim.date,
-                        {'mother_id': individual_id})
+            logger.info(key='message', data=f'A Still Birth has occurred, to mother {individual_id}')
+            still_birth = {'mother_id':individual_id,
+                           'date_of_ip_stillbirth': self.sim.date}
+
+            logger.info(key='intrapartum_stillbirth', data=still_birth, description='record of intrapartum stillbirth')
 
 
 class EarlyPostPartumDeathEvent (Event, IndividualScopeEventMixin):
@@ -2237,7 +2266,7 @@ class EarlyPostPartumDeathEvent (Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         mni = self.module.mother_and_newborn_info
 
-        logger.debug('mother %d at PPD at date %s', individual_id, self.sim.date)
+        logger.debug(key='message', data=f'mother {individual_id} at PPD at date {self.sim.date}')
 
         # Check the correct amount of time has passed between labour onset and PostPartumDeathEvent
         assert pd.to_timedelta(10, unit='D') >= (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy'])\
@@ -2259,19 +2288,26 @@ class EarlyPostPartumDeathEvent (Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='postpartum labour'), self.sim.date)
 
-                logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
-                             'postpartum complications', individual_id,
-                             self.sim.date)
+                logger.debug(key='message', data=f'This is PostPartumDeathEvent scheduling a death for person '
+                                                 f'{individual_id} on date {self.sim.date} who died due to postpartum '
+                                                 f'complications')
 
-                logger.debug('%s|labour_complications|%s', self.sim.date,
-                             {'person_id': individual_id,
-                              'labour_profile': mni[individual_id]})
+                labour_complications = {'person_id': individual_id,
+                                        'death_date': self.sim.date,
+                                        'labour_profile': mni[individual_id]}
+
+                logger.info(key='labour_complications', data=labour_complications,
+                            description='mni dictionary for a woman who has died in labour')
+
                 del mni[individual_id]
 
             else:
-                logger.debug('%s|labour_complications|%s', self.sim.date,
-                             {'person_id': individual_id,
-                              'labour_profile': mni[individual_id]})
+                labour_complications = {'person_id': individual_id,
+                                        'death_date': self.sim.date,
+                                        'labour_profile': mni[individual_id]}
+
+                logger.info(key='labour_complications', data=labour_complications,
+                            description='mni dictionary for a woman who has died in labour')
 
             # End the period of current labour
             # should this be for everyone?
@@ -2333,8 +2369,9 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         if not df.at[person_id, 'is_alive']:
             return
 
-        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother %d has presented to a health '
-                    'facility on date %s following the onset of her labour', person_id, self.sim.date)
+        logger.info(key='message', data=f'This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Mother {person_id} '
+                                        f'has presented to a health facility on date {self.sim.date} following the onset'
+                                        f' of her labour')
 
         # Women who developed a complication at home, then presented to a facility for delivery, are counted as
         # facility deliveries
@@ -2360,10 +2397,12 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         # delivery care from a health care professional, or if she will delivered unassisted in a facility
         if squeeze_factor > params['squeeze_factor_threshold_delivery_attendance']:
             mni[person_id]['delivery_attended'] = False
-            logger.debug('mother %d is delivering without assistance at a health facility', person_id)
+            logger.debug(key='message', data=f'mother {person_id} is delivering without assistance at a health '
+                                             f'facility')
         else:
             mni[person_id]['delivery_attended'] = True
-            logger.debug('mother %d is delivering with assistance at a level 1 health facility', person_id)
+            logger.debug(key='message', data=f'mother {person_id} is delivering with assistance at a level 1 health '
+                                             f'facility')
 
         # Run checks that key facility properties in the mni have been set
         assert mni[person_id]['delivery_attended'] is not None
@@ -2380,7 +2419,8 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
             self.module.prophylactic_labour_interventions(self)
         else:
             # Otherwise she receives no benefit of prophylaxis
-            logger.debug('mother %d received no prophylaxis as she is delivering unattended', person_id)
+            logger.debug(key='message', data=f'mother {person_id} received no prophylaxis as she is delivering '
+                                             f'unattended')
 
         # ================================= PROPHYLACTIC MANAGEMENT PRE-ECLAMPSIA  ==============================
         # As women with severe pre-eclampsia are the most at risk group of women to develop eclampsia, they should
@@ -2499,16 +2539,18 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         # If a woman has chosen to deliver in a facility from the onset of labour, but the squeeze factor is too high,
         # she will be forced to return home to deliver
         if not mni[person_id]['sought_care_for_complication']:
-            logger.debug('squeeze factor is too high for this event to run for mother %d on date %s and she will now '
-                         'deliver at home', person_id, self.sim.date)
+            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} '
+                                             f'on date {self.sim.date} and she will now deliver at home')
+
             mni[person_id]['delivery_setting'] = 'home_birth'
             mni[person_id]['squeeze_to_high_for_hsi'] = True
             self.sim.schedule_event(LabourAtHomeEvent(self.module, person_id), self.sim.date)
 
         # If a woman has presented to this event during labour due to a complication, she will not receive any treatment
         if mni[person_id]['sought_care_for_complication']:
-            logger.debug('squeeze factor is too high for this event to run for mother %d on date %s and she could not '
-                         'receive care for the complications developed during her homebirth', person_id, self.sim.date)
+            logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} '
+                                             f'on date {self.sim.date} and she could not receive care for the '
+                                             f'complications developed during her homebirth')
 
         return False
 
@@ -2521,8 +2563,9 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         mni = self.module.mother_and_newborn_info
         # If a woman has chosen to deliver in a facility but this event isnt allowed with the set service configuration
         # then she will deliver at home
-        logger.debug('This event is not in the allowed service availability and therefore cannot  run for mother %d on '
-                     'date %s, she will now deliver at home', person_id, self.sim.date)
+        logger.debug(key='message', data=f'This event is not in the allowed service availability and therefore cannot '
+                                         f'run for mother {person_id} on date {self.sim.date}, she will now deliver at '
+                                         f'home')
 
         if not mni[person_id]['sought_care_for_complication']:
             mni[person_id]['delivery_setting'] = 'home_birth'
@@ -2550,8 +2593,8 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         mni = self.module.mother_and_newborn_info
         df = self.sim.population.props
 
-        logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing skilled attendance '
-                    'following birth for person %d', person_id)
+        logger.info(key='message', data='This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing '
+                                        f'skilled attendance following birth for person {person_id}')
 
         if not df.at[person_id, 'is_alive']:
             return
@@ -2570,8 +2613,8 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         if mni[person_id]['delivery_attended'] and ~mni[person_id]['sought_care_for_complication']:
             self.module.active_management_of_the_third_stage_of_labour(self)
         else:
-            logger.debug('mother %d did not receive active management of the third stage of labour due to resource '
-                         'constraints')
+            logger.debug(key='message', data='mother %d did not receive active management of the third stage of labour '
+                                             'due to resource constraints')
 
         # ===================================== APPLYING COMPLICATION INCIDENCE ================
         # Again we use the mothers individual risk of each complication to determine if she will experience any
@@ -2631,8 +2674,8 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         person_id = self.target
         mni = self.module.mother_and_newborn_info
 
-        logger.debug('HSI_Labour_ReceivesCareForPostpartumPeriod: did not run as the squeeze factor is too high, '
-                     'mother %d will return home on date %s', person_id, self.sim.date)
+        logger.debug(key='message', data='HSI_Labour_ReceivesCareForPostpartumPeriod: did not run as the squeeze factor'
+                                         f'is too high, mother {person_id} will return home on date {self.sim.date}')
 
         # Women who delivered at a facility, but can receive no more care due to high squeeze, will go home for the
         # immediate period after birth- where there risk of complications is applied
@@ -2644,8 +2687,9 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
 
     def not_available(self):
         person_id = self.target
-        logger.debug('This event is not in the allowed service availability and therefore cannot  run for mother %d on '
-                     'date %s, she will now deliver at home', person_id, self.sim.date)
+        logger.debug(key='message', data='This event is not in the allowed service availability and therefore cannot '
+                                         f'run for mother {person_id} on date {self.sim.date}, she will now deliver at '
+                                         f'home')
 
 
 class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
@@ -2669,8 +2713,9 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
         assert mni[person_id]['delivery_setting'] != 'home_birth'
         assert mni[person_id]['referred_for_cs'] != 'none'
 
-        logger.info('This is HSI_Labour_CaesareanSection: Person %d will now undergo delivery via Caesarean Section',
-                    person_id)
+        logger.info(key='message', data=f'This is HSI_Labour_CaesareanSection: Person {person_id} will now undergo '
+                                        f'delivery via Caesarean Section')
+
         self.module.labour_tracker['caesarean_section'] += 1
 
         # We define the consumables needed for this event
@@ -2687,9 +2732,10 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
 
         # Currently we do not stop the event from running if consumables are unavailble
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_cs]:
-            logger.debug('All the required consumables are available and will can be used for this caesarean delivery.')
+            logger.debug(key='message', data='All the required consumables are available and will can be used for this'
+                                             'caesarean delivery.')
         else:
-            logger.debug('The required consumables are not available for this delivery')
+            logger.debug(key='message', data='The required consumables are not available for this delivery')
 
         # Set the variables to indicate this woman has undergone a caesarean delivery...
         mni[person_id]['mode_of_delivery'] = 'caesarean_section'
@@ -2704,8 +2750,8 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         person_id = self.target
-        logger.debug('squeeze factor is too high for this event to run for mother %s on date %d and she is unable to '
-                     'deliver via caesarean section', person_id, self.sim.date)
+        logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} on '
+                                        f'date {self.sim.date} and she is unable to deliver via caesarean section')
 
         # Here we apply the risk that for women who were referred for caesarean, but it wasnt performed, develop uterine
         # rupture
@@ -2718,8 +2764,9 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
         # This function would only run if a simulation is ran in which skilled birth attendance is allowed, but
         # caesareans are not. Therefore we need to apply a risk of uterine rupture to women who needed a caesarean but
         # didnt get one
-        logger.debug('this event is not allowed in the current service availability, for mother %s on date %d and '
-                     'she is unable to deliver via caesarean section', person_id, self.sim.date)
+        logger.debug(key='message', data=f'this event is not allowed in the current service availability, for mother '
+                                         f'{person_id} on date {self.sim.date} and she is unable to deliver via '
+                                         f'caesarean section')
 
         self.module.set_intrapartum_complications(
             person_id, complication='uterine_rupture')
@@ -2746,8 +2793,9 @@ class HSI_Labour_ReceivesBloodTransfusion(HSI_Event, IndividualScopeEventMixin):
         assert mni[person_id]['delivery_setting'] != 'home_birth'
         assert mni[person_id]['referred_for_blood'] != 'none'
 
-        logger.info('This is HSI_Labour_ReceivesBloodTransfusionFacilityLevel1: Person %d will now receive a blood '
-                    'transfusion following haemorrhage/blood loss delivery', person_id)
+        logger.info(key='message', data=f'This is HSI_Labour_ReceivesBloodTransfusionFacilityLevel1: Person {person_id} '
+                                        f'will now receive a blood transfusion following haemorrhage/blood loss '
+                                        f'delivery')
 
         # Required consumables are defined
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2762,20 +2810,19 @@ class HSI_Labour_ReceivesBloodTransfusion(HSI_Event, IndividualScopeEventMixin):
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=consumables_needed_bt)
 
-        # If they're availble, the event happens
+        # If they're available, the event happens
         if outcome_of_request_for_consumables:
             mni[person_id]['received_blood_transfusion'] = True
-            logger.debug('Mother %s has received a blood transfusion due following a maternal haemorrhage',
-                         person_id)
+            logger.debug(key='message', data=f'Mother {person_id} has received a blood transfusion due following a'
+                                             f' maternal haemorrhage')
         else:
-            logger.debug('Mother %s was unable to receive a blood transfusion due to insufficient consumables',
-                         person_id)
+            logger.debug(key='message', data=f'Mother {person_id} was unable to receive a blood transfusion due to '
+                                             f'insufficient consumables')
 
     def did_not_run(self):
         person_id = self.target
-        logger.debug('squeeze factor is too high for this event to run for mother %s on date %d and she is unable to '
-                     'receive a blood transfusion', person_id, self.sim.date)
-
+        logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} on '
+                                         f'date {self.sim.date} and she is unable to receive a blood transfusion')
         return False
 
     def not_available(self):
@@ -2805,8 +2852,8 @@ class HSI_Labour_SurgeryForLabourComplications(HSI_Event, IndividualScopeEventMi
         assert mni[person_id]['delivery_setting'] != 'home_birth'
         assert mni[person_id]['referred_for_surgery'] != 'none'
 
-        logger.info('This is HSI_Labour_SurgeryForLabourComplications: Person %d will now undergo surgery'
-                    'for complications developed in labour', person_id)
+        logger.info(key='message', data=f'This is HSI_Labour_SurgeryForLabourComplications: Person {person_id} will now '
+                                        f'undergo surgery for complications developed in labour')
 
         # TODO: Consumable aren't currently correct
 
@@ -2822,9 +2869,11 @@ class HSI_Labour_SurgeryForLabourComplications(HSI_Event, IndividualScopeEventMi
             hsi_event=self, cons_req_as_footprint=consumables_needed_surgery)
 
         if outcome_of_request_for_consumables:
-            logger.debug('Consumables required for surgery are available and therefore have been used')
+            logger.debug(key='message', data='Consumables required for surgery are available and therefore have been '
+                                             'used')
         else:
-            logger.debug('Consumables required for surgery are unavailable and therefore have not been used')
+            logger.debug(key='message', data='Consumables required for surgery are unavailable and therefore have not '
+                                             'been used')
 
         # Interventions...
         treatment_success_ur = params['success_rate_uterine_repair'] < self.module.rng.random_sample()
@@ -2858,13 +2907,14 @@ class HSI_Labour_SurgeryForLabourComplications(HSI_Event, IndividualScopeEventMi
             elif treatment_success_pph:
                 df.at[person_id, 'la_postpartum_haem_treatment'] = True
             elif ~treatment_success_pph:
-                logger.debug('Surgical intervention for mothers %d postpartum haemorrhage has been unsuccessful',
-                             person_id)
+                logger.debug(key='message', data='Surgical intervention for mothers %d postpartum haemorrhage has been '
+                                                 'unsuccessful')
 
     def did_not_run(self):
         person_id = self.target
-        logger.debug('squeeze factor is too high for this event to run for mother %s on date %d and she is unable to '
-                     'receive surgical care for her complication in labour', person_id, self.sim.date)
+        logger.debug(key='message', data=f'squeeze factor is too high for this event to run for mother {person_id} on'
+                                         f' date {self.sim.date} and she is unable to receive surgical care for her '
+                                         f'complication in labour')
         return False
 
     def not_available(self):
@@ -2977,10 +3027,18 @@ class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: SBR, health system outputs, check denominators
 
-        logger.info('%s|summary_stats_incidence|%s', self.sim.date, dict_for_output)
-        logger.info('%s|summary_stats_crude_cases|%s', self.sim.date, dict_crude_cases)
-        logger.info('%s|summary_stats_deliveries|%s', self.sim.date, deliveries)
-        logger.info('%s|summary_stats_death|%s', self.sim.date, deaths)
+        logger.info(key='labour_summary_stats_incidence', data=dict_for_output, description='Yearly incidence summary '
+                                                                                            'statistics output from '
+                                                                                            'the labour module')
+        logger.info(key='labour_summary_stats_crude_cases', data=dict_crude_cases, description='Yearly crude '
+                                                                                               'summary statistics '
+                                                                                               'output from the labour '
+                                                                                               'module')
+        logger.info(key='labour_summary_stats_delivery', data=deliveries, description='Yearly delivery summary '
+                                                                                      'statistics output from the '
+                                                                                      'labour module')
+        logger.info(key='labour_summary_stats_death', data=deaths, description='Yearly death summary statistics '
+                                                                               'output from the labour module')
 
         # Reset the EventTracker
         self.module.labour_tracker = {'ip_stillbirth': 0, 'maternal_death': 0, 'obstructed_labour': 0,

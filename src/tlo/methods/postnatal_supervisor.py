@@ -67,7 +67,6 @@ class PostnatalSupervisor(Module):
     #    if 'HealthBurden' in self.sim.modules.keys():
     #        params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
 
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     # ==================================== LINEAR MODEL EQUATIONS =====================================================
 
@@ -137,13 +136,13 @@ class PostnatalSupervisor(Module):
             # todo: should treatment be the only thing that turns this variable off/ or self resolution?
 
     def on_hsi_alert(self, person_id, treatment_id):
-        logger.debug('This is PostnatalSupervisor, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        logger.debug(key='message', data=f'This is PostnatalSupervisor, being alerted about a health system interaction '
+                                         f'person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
         df = self.sim.population.props
 
-        logger.debug('This is PostnatalSupervisor reporting my health values')
+        logger.debug(key='message', data='This is PostnatalSupervisor reporting my health values')
 
     def set_postnatal_maternal_complications(self, index):
         """"""
@@ -188,7 +187,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         ppp_in_weeks = ppp_in_days / np.timedelta64(1, 'W')
 
         df.loc[alive_and_recently_delivered, 'pn_postnatal_period_in_weeks'] = ppp_in_weeks.astype('int64')
-        logger.debug('updating postnatal periods on date %s', self.sim.date)
+        logger.debug(key='message', data=f'updating postnatal periods on date {self.sim.date}')
 
         # -------------------------------------- WEEK 1 (day 7) -------------------------------------------------------
         week_1_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
@@ -325,8 +324,8 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     individual_id]])[individual_id]
 
                 if self.module.rng.random_sample() < risk_of_death:
-                    logger.debug(f'person %d has died due to secondary postpartum haemorrhage on date %s', individual_id,
-                                 self.sim.date)
+                    logger.debug(key='message', data=f'person {individual_id} has died due to secondary postpartum '
+                                                     f'haemorrhage on date {self.sim.date}')
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='secondary_pph'), self.sim.date)
 
@@ -344,9 +343,9 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     individual_id]])[individual_id]
 
                 if self.module.rng.random_sample() < risk_of_death:
-                    logger.debug(f'person %d has died due to late maternal sepsis on date %s',
-                                 individual_id,
-                                 self.sim.date)
+                    logger.debug(key='message', data=f'person {individual_id} has died due to late maternal sepsis on '
+                    f'date {self.sim.date}')
+
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='maternal_sepsis'), self.sim.date)
 
@@ -363,9 +362,9 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     individual_id]])[individual_id]
 
                 if self.module.rng.random_sample() < risk_of_death:
-                    logger.debug(f'person %d has died due to late neonatal sepsis on date %s',
-                                 individual_id,
-                                 self.sim.date)
+                    logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
+                    f'date {self.sim.date}')
+
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='neonatal_sepsis'), self.sim.date)
 
@@ -460,7 +459,9 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'total_sepsis': total_sepsis,
                            'total_sepsis_death': total_sepsis_death}
 
-        logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
+        logger.info(key='postnatal_summary_stats', data=dict_for_output, description= 'Yearly summary statistics output '
+                                                                                      'from the postnatal supervisor '
+                                                                                      'module')
 
         self.module.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
                                         'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,

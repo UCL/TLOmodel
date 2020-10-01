@@ -7,7 +7,7 @@ import scipy.stats
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import demography, postnatal_supervisor
+from tlo.methods import Metadata, demography, postnatal_supervisor
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -29,6 +29,13 @@ class NewbornOutcomes(Module):
 
         # This dictionary will track incidence of complications of following birth
         self.NewbornComplicationTracker = dict()
+
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.USES_SYMPTOMMANAGER
+    }
 
     PARAMETERS = {
         'mean_birth_weights': Parameter(
@@ -203,8 +210,6 @@ class NewbornOutcomes(Module):
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['nb_daly_weights'] = {
@@ -497,8 +502,9 @@ class NewbornOutcomes(Module):
             df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
             self.NewbornComplicationTracker[f'{cause}_death'] += 1
             nci[individual_id]['cause_of_death_after_birth'].append(cause)
-            logger.debug(F'This is NewbornOutcomes scheduling a death for person %d on date %s who died due to {cause}'
-                         'complications following birth', individual_id, self.sim.date)
+            logger.debug(key='message', data=F'This is NewbornOutcomes scheduling a death for person {individual_id} on'
+                                             F'date {self.sim.date} who died due to {cause} complications following '
+                                             F'birth')
 
     def apply_risk_of_neonatal_sepsis(self, child_id):
         """This function uses the linear model to determines if a neonate will develop early onset
@@ -514,12 +520,13 @@ class NewbornOutcomes(Module):
                                            p=params['daily_risk_of_neonatal_sepsis_onset']))
             if day_of_onset < 3:
                 df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
-                logger.info('Neonate %d has developed early onset sepsis following a home birth on date %s',
-                            child_id, self.sim.date)
+                logger.debug(key='message', data=f'Neonate {child_id} has developed early onset sepsis following a home '
+                                                 f'birth on date {self.sim.date}')
 
             elif day_of_onset > 2:
-                logger.info('Neonate %d will develop late onset sepsis following a home birth on date %s',
-                            child_id, self.sim.date)
+                logger.debug(key='message', data=f'Neonate {child_id} will develop late onset sepsis following a home '
+                                                 f'birth on date {self.sim.date}')
+
                 self.sim.schedule_event(postnatal_supervisor.LateNeonatalSepsisOnsetEvent
                                         (self.sim.modules['PostnatalSupervisor'], child_id), self.sim.date +
                                         DateOffset(days=day_of_onset))
@@ -556,14 +563,15 @@ class NewbornOutcomes(Module):
             # All encephalopathic children will need some form of neonatal resuscitation
             df.at[child_id, 'nb_failed_to_transition'] = True
             self.NewbornComplicationTracker['failed_to_transition'] += 1
-            logger.debug('Neonate %d has failed to transition from foetal to neonatal state and is not breathing '
-                         'following delivery', child_id)
+            logger.debug(key='message', data=f'Neonate {child_id} has failed to transition from foetal to neonatal state'
+                                             f' and is not breathing following delivery')
+
         # Otherwise we use the linear model to calculate risk and make changes to the data frame
         elif self.eval(params['nb_newborn_equations']['failure_to_transition'], child_id):
             df.at[child_id, 'nb_failed_to_transition'] = True
             self.NewbornComplicationTracker['failed_to_transition'] += 1
-            logger.debug('Neonate %d has failed to transition from foetal to neonatal state and is not breathing '
-                         'following delivery', child_id)
+            logger.debug(key='message', data=f'Neonate {child_id} has failed to transition from foetal to neonatal '
+                                             f'state and is not breathing following delivery')
 
     # ======================================== HSI INTERVENTION FUNCTIONS ==========================
     # Here we store interventions delivered following birth as functions that are called within the HSIs
@@ -581,8 +589,9 @@ class NewbornOutcomes(Module):
             df.at[person_id, 'nb_kangaroo_mother_care'] = True
             self.NewbornComplicationTracker['kmc'] += 1
 
-            logger.debug('Neonate %d has been correctly identified as being low birth weight, and kangaroo mother '
-                         'care has been initiated', person_id, self.sim.date)
+            logger.debug(key='message', data=f'Neonate {person_id} has been correctly identified as being low birth '
+                                             f'weight, and kangaroo mother care has been initiated on date '
+                                             f'{self.sim.date}')
 
     def assessment_and_initiation_of_neonatal_resus(self, hsi_event, facility_type):
         """This function manages the diagnosis of failure to transition/encephalopathy and the
@@ -736,8 +745,8 @@ class NewbornOutcomes(Module):
                 random_draw = self.rng.choice(('mild', 'moderate', 'severe', 'blindness'),
                                               p=params['prob_retinopathy_severity'])
                 df.at[child_id, 'nb_retinopathy_prem'] = random_draw
-                logger.debug(f'Neonate %d has developed {random_draw}retinopathy of prematurity',
-                             child_id)
+                logger.debug(key='message', data=f'Neonate {child_id} has developed {random_draw} retinopathy of '
+                                                 f'prematurity')
 
             # If the child's mother has delivered at home, we immediately apply the risk and make changes to the
             # data frame. Otherwise this is done during the HSI
@@ -764,8 +773,9 @@ class NewbornOutcomes(Module):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-                logger.debug('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesSkilledAttendance'
-                             'FollowingBirthFacilityLevel1 for child %d following a facility delivery', child_id)
+                logger.debug(key='message', data=f'This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_'
+                                                 f'ReceivesSkilledAttendanceFollowingBirthFacilityLevel1 for child '
+                                                 f'{child_id} following a facility delivery on {self.sim.date}')
 
             elif m['delivery_setting'] == 'hospital':
                 event = HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(
@@ -774,8 +784,9 @@ class NewbornOutcomes(Module):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
 
-                logger.debug('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesSkilledAttendance'
-                             'FollowingBirthFacilityLevel1 for child %d following a facility delivery', child_id)
+                logger.debug(key='message', data=f'This is NewbornOutcomesEvent scheduling '
+                                                 f'HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth'
+                                                 f'FacilityLevel1 for child {child_id} following a facility delivery')
 
                 # todo: we're randomly allocating type of facility here, which is wrong
 
@@ -796,9 +807,10 @@ class NewbornOutcomes(Module):
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                         event, priority=0, topen=self.sim.date, tclose=self.sim.date + DateOffset(days=1))
 
-                    logger.debug('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesSkilledAttendance'
-                                 'FollowingBirthFacilityLevel1 for child %d whose mother has sought care after a '
-                                 'complication has developed following a home_birth', child_id)
+                    logger.debug(key='message', data=f'This is NewbornOutcomesEvent scheduling '
+                                                     f'HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth'
+                                                     f'FacilityLevel1 for child {child_id }whose mother has sought care'
+                                                     f'after a complication has developed following a home_birth')
 
             # We apply a probability that women who deliver at home will initiate breastfeeding within one hour of birth
             # We assume that neonates with complications will not start breastfeeding within one hour
@@ -808,22 +820,24 @@ class NewbornOutcomes(Module):
 
                 if self.rng.random_sample() < params['prob_early_breastfeeding_hb']:
                     df.at[child_id, 'nb_early_breastfeeding'] = True
-                    logger.debug(
-                        'Neonate %d has started breastfeeding within 1 hour of birth', child_id)
+                    logger.debug(key='message', data=f'Neonate {child_id} has started breastfeeding within 1 hour of '
+                                                     f'birth')
                 else:
-                    logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', child_id)
+                    logger.debug(key='message', data=f'Neonate {child_id} did not start breastfeeding within 1 hour of '
+                                                     f'birth')
 
             # All newborns are then scheduled to pass through a newborn death event to determine likelihood of death
             # in the presence of complications
             self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=3))
-            logger.info('This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person %d', child_id)
+            logger.debug(key='message', data=f'This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person '
+                                             f'{child_id}')
 
     def on_hsi_alert(self, person_id, treatment_id):
-        logger.info('This is NewbornOutcomes, being alerted about a health system interaction '
-                    'person %d for: %s', person_id, treatment_id)
+        logger.info(key='message', data=f'This is NewbornOutcomes, being alerted about a health system interaction '
+                                        f'person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
-        logger.debug('This is Newborn Outcomes reporting my health values')
+        logger.debug(key='message', data='This is Newborn Outcomes reporting my health values')
 
         df = self.sim.population.props
         p = self.parameters['nb_daly_weights']
@@ -911,7 +925,8 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
             # complications
             self.sim.schedule_event(NewbornDisabilityEvent(self.module, individual_id),
                                     self.sim.date + DateOffset(days=4))
-            logger.info('This is NewbornOutcomesEvent scheduling NewbornDisabilityEvent for person %d', individual_id)
+            logger.debug(key='message', data=f'This is NewbornOutcomesEvent scheduling NewbornDisabilityEvent for person'
+                                             f' {individual_id}')
 
         #  TODO: Tim C suggested we need to create an offset (using a distribution?) so we're generating deaths for the
         #  first 48 hours
@@ -942,11 +957,11 @@ class NewbornDisabilityEvent(Event, IndividualScopeEventMixin):
             # Neonates who dont develop any complications do not accrue any DALYs
             if (~child.nb_early_preterm and ~child.nb_late_preterm and child.nb_encephalopathy == 'none' and
                     ~child.nb_early_onset_neonatal_sepsis and ~child.nb_failed_to_transition):
-                logger.debug('This is NewbornDisabilityEvent, person %d has not accrued any DALYs following delivery',
-                             individual_id)
+                logger.debug(key='message', data=f'This is NewbornDisabilityEvent, person {individual_id} has not '
+                                                 f'accrued any DALYs following delivery')
             else:
-                logger.debug('This is NewbornDisabilityEvent, person %d will have their DALYs calculated following '
-                             'complications after birth', individual_id)
+                logger.debug(key='message', data=f'This is NewbornDisabilityEvent, person {individual_id} will have '
+                                                 f'their DALYs calculated following complications after birth')
 
             disability_categories = ['none', 'mild_motor_and_cog', 'mild_motor', 'moderate_motor', 'severe_motor']
 
@@ -1007,8 +1022,9 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
         params = self.module.parameters
         df = self.sim.population.props
 
-        logger.info('This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth: child %d is '
-                    'receiving care following delivery in a health facility on date %s', person_id, self.sim.date)
+        logger.info(key='message', data=f'This is HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth:'
+                                        f' child {person_id} is receiving care following delivery in a health facility '
+                                        f'on date {self.sim.date}')
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
@@ -1045,33 +1061,37 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 # Tetracycline eye care and vitamin k prophylaxis are conditioned on the availability of consumables
 
                 if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
-                    logger.debug('Neonate %d has received tetracycline eye drops to reduce sepsis risk following a '
-                                 'facility delivery', person_id)
+                    logger.debug(key='message', data=f'Neonate {person_id} has received tetracycline eye drops to '
+                                                     f'reduce sepsis risk following a facility delivery')
+
                     nci[person_id]['tetra_eye_d'] = True
                     self.module.NewbornComplicationTracker['t_e_d'] += 1
 
                 else:
-                    logger.debug('This facility has no tetracycline and therefore was not given')
+                    logger.debug(key='message', data='This facility has no tetracycline and therefore was not given')
 
                 if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k] and \
                    outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]:
-                    logger.debug('Neonate %d has received vitamin k prophylaxis following a facility delivery',
-                                 person_id)
+                    logger.debug(key='message', data=f'Neonate {person_id} has received vitamin k prophylaxis following'
+                                                     f' a facility delivery')
                     nci[person_id]['vit_k'] = True
                     self.module.NewbornComplicationTracker['vit_k'] += 1
                 else:
-                    logger.debug('This facility has no vitamin K and therefore was not given')
+                    logger.debug(key='message', data='This facility has no vitamin K and therefore was not given')
 
                 # ---------------------------------EARLY INITIATION OF BREAST FEEDING --------------
                 # A probably that early breastfeeding will initiated in a facility is applied
                 if self.module.rng.random_sample() < params['prob_early_breastfeeding_hf']:
                     df.at[person_id, 'nb_early_breastfeeding'] = True
-                    logger.debug('Neonate %d has started breastfeeding within 1 hour of birth', person_id)
+                    logger.debug(key='message', data=f'Neonate {person_id} has started breastfeeding within 1 hour of '
+                                                     f'birth')
                 else:
-                    logger.debug('Neonate %d did not start breastfeeding within 1 hour of birth', person_id)
+                    logger.debug(key='message', data=f'Neonate {person_id} did not start breastfeeding within 1 hour of '
+                                                     f'birth')
             else:
                 # Otherwise they receives no benefit of prophylaxis
-                logger.debug('neonate %d received no prophylaxis as they were delivered unattended', person_id)
+                logger.debug(key='message', data=f'neonate {person_id} received no prophylaxis as they were delivered '
+                                                 f'unattended')
 
             # --------------------------------- COMPLICATION RISKS ---------------------------------
             # Following the administration of prophylaxis we determine if this neonate has developed
@@ -1118,15 +1138,17 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
     def did_not_run(self):
         person_id = self.target
 
-        logger.debug('Neonate %d did not receive care after birth as the squeeze factor was too high', person_id)
+        logger.debug(key='message', data=f'Neonate {person_id} did not receive care after birth as the squeeze factor '
+                                         f'was too high')
         self.module.hsi_cannot_run(person_id)
 
         return False
 
     def not_available(self):
         person_id = self.target
-        logger.debug('Neonate %d did not receive care after birth as this HSI is not allowed in current configuration',
-                     person_id)
+        logger.debug(key='message', data=f'Neonate {person_id} did not receive care after birth as this HSI is not '
+                                         f'allowed in current configuration')
+
         self.module.hsi_cannot_run(person_id)
         # ------------------------------ (To go here- referral for further care) --------------------
 
@@ -1236,7 +1258,8 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            }
         # TODO: health system outputs, check denominators
 
-        logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
+        logger.info(key='neonatal_summary_stats', data=dict_for_output, description='Yearly summary statistics output '
+                                                                                    'from the neonatal outcome module')
 
         # Reset the EventTracker
         self.module.NewbornComplicationTracker = {

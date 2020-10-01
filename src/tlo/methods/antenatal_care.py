@@ -6,6 +6,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
+from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
@@ -30,6 +31,13 @@ class CareOfWomenDuringPregnancy(Module):
         # This dictionary is used by to track the frequency of certain events in the module which are processed by the
         # logging event
         self.ANCTracker = dict()
+
+    METADATA = {
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN,
+        Metadata.USES_SYMPTOMMANAGER
+    }
+
 
     PARAMETERS = {
         'prob_anc_continues': Parameter(
@@ -215,10 +223,15 @@ class CareOfWomenDuringPregnancy(Module):
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
 
         # We store the total number of ANC vists a woman achieves prior to her birth in this logging dataframe
-        logger.info('%s|total_anc_per_woman|%s', self.sim.date,
-                    {'person_id': mother_id,
-                     'age': df.at[mother_id, 'age_years'],
-                     'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy']})
+
+        total_anc_visit_count={'person_id': mother_id,
+                               'age': df.at[mother_id, 'age_years'],
+                               'date_of_delivery': self.sim.date,
+                               'total_anc': df.at[mother_id, 'ac_total_anc_visits_current_pregnancy']}
+
+        logger.info(key='anc_count_on_birth', data=total_anc_visit_count, description='A dictionary containg the '
+                                                                                      'number of ANC visits each woman'
+                                                                                      'has on birth')
 
         # And then reset the variable
         df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] = 0
@@ -236,10 +249,9 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[mother_id, 'ac_gest_htn_on_treatment'] = False
         # todo: this will be used postnatally so needs to stay
 
-
     def on_hsi_alert(self, person_id, treatment_id):
-        logger.debug('This is CareOfWomenDuringPregnancy, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        logger.debug(key='message', data=f'This is CareOfWomenDuringPregnancy, being alerted about a health system '
+        f'interaction person {person_id} for: {treatment_id}')
 
     def determine_gestational_age_for_next_contact(self, person_id):
         """This function determines when a woman should be scheduled to return to ANC based on her current gestation at
@@ -392,8 +404,9 @@ class CareOfWomenDuringPregnancy(Module):
         # If hypertension is diagnosed a woman is referred for  additional treatment. The type of treatment is
         # determined by the presence and severity of proteinuria
         if hypertension_diagnosed == 'mild' and proteinuria_diagnosed == 'none':
-            logger.debug('Mother %d has been diagnosed with gestational hypertension and has been referred on to '
-                         'additional care from ANC on date %s', person_id, self.sim.date)
+            logger.debug(key='message', data=f'Mother {person_id} has been diagnosed with gestational hypertension and'
+                                             f' has been referred on to additional care from ANC on date'
+                                             f' {self.sim.date}')
 
             additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
@@ -403,8 +416,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                 tclose=self.sim.date + DateOffset(days=7))
 
         elif hypertension_diagnosed == 'mild' and proteinuria_diagnosed == 'mild':
-            logger.debug('Mother %d has been diagnosed with mild pre-eclampsia and has been referred on to '
-                         'additional care from ANC on date %s', person_id, self.sim.date)
+            logger.debug(key='message', data=f'Mother {person_id} has been diagnosed with mild pre-eclampsia and has '
+            f'been referred on to additional care from ANC on date {self.sim.date}')
 
             additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
@@ -414,8 +427,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                 tclose=self.sim.date + DateOffset(days=2))
 
         elif hypertension_diagnosed == 'severe' and proteinuria_diagnosed == 'severe':
-            logger.debug('Mother %d has been diagnosed with severe pre-eclampsia and has been referred on to '
-                         'additional care from ANC on date %s', person_id, self.sim.date)
+            logger.debug(key='message', data=f'Mother {person_id} has been diagnosed with severe pre-eclampsia and has '
+                                             f'been referred on to additional care from ANC on date {self.sim.date}')
 
             additional_care = HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
@@ -654,7 +667,7 @@ class CareOfWomenDuringPregnancy(Module):
             to_log=False)
 
         if outcome_of_request_for_consumables['Item_Code'][item_code_albendazole]:
-                logger.debug('albendazole given')
+                logger.debug(key='message', data='albendazole given')
                 self.sim.modules['HealthSystem'].request_consumables(
                     hsi_event=hsi_event,
                     cons_req_as_footprint=consumables_albendazole,
@@ -687,7 +700,7 @@ class CareOfWomenDuringPregnancy(Module):
             to_log=False)
 
         if outcome_of_request_for_consumables:
-            logger.debug('hepatitis B test given')
+            logger.debug(key='message', data='hepatitis B test given')
             self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_hep_b_test,
@@ -721,7 +734,7 @@ class CareOfWomenDuringPregnancy(Module):
             to_log=False)
 
         if outcome_of_request_for_consumables:
-            logger.debug('syphilis')
+            logger.debug(key='message',data='syphilis test given')
             self.sim.modules['HealthSystem'].request_consumables(
                 hsi_event=hsi_event,
                 cons_req_as_footprint=consumables_syphilis,
@@ -772,7 +785,7 @@ class CareOfWomenDuringPregnancy(Module):
                 hsi_event=hsi_event, cons_req_as_footprint=the_cons_footprint, to_log=False)
 
         if outcome_of_request_for_consumables:
-            logger.debug("giving IPTp for person %d", person_id)
+            logger.debug(key='message', data=f'giving IPTp for person {person_id}')
 
             # IPTP is a single dose drug given at a number of time points during pregnancy. Therefore the number of
             # doses received during this pregnancy are stored as an integer
@@ -890,8 +903,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                             topen=visit_date,
                                                                             tclose=visit_date + DateOffset(days=7))
                     else:
-                        logger.debug('mother %d will not seek any additional antenatal care for this pregnancy',
-                                     individual_id)
+                        logger.debug(key='message', data=f'mother {individual_id} will not seek any additional antenatal'
+                                                         f' care for this pregnancy')
             elif visit_number >= 3:
                 if self.rng.random_sample() < params['ac_linear_equations']['anc_continues'].predict(df.loc[[
                                                                                     individual_id]])[individual_id]:
@@ -903,8 +916,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                         topen=visit_date,
                                                                         tclose=visit_date + DateOffset(days=7))
                 else:
-                    logger.debug('mother %d will not seek any additional antenatal care for this pregnancy',
-                                 individual_id)
+                    logger.debug(key='message', data=f'mother {individual_id} will not seek any additional antenatal '
+                                                     f'care for this pregnancy')
 
         if visit_to_be_scheduled == 2:
             set_anc_date(individual_id, 2)
@@ -946,9 +959,10 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit, person %d has '
-                     'presented for the first antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit, '
+                                         f'person {person_id} has presented for the first antenatal care visit of their'
+                                         f'pregnancy on date {self.sim.date} at gestation'
+                                         f' {df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         # We condition this event on the woman being alive, pregnant, not currently in labour and not previously
         # attending an ANC visit
@@ -1024,10 +1038,11 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         return actual_appt_footprint
 
     def did_not_run(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareVisit: did not run')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareVisit: did not run')
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareVisit: cannot not run with this configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareVisit: cannot not run with '
+                                         'this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1052,9 +1067,10 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit, person %d has '
-                     'presented for the second antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit, '
+                                         f'person {person_id} has presented for the second antenatal care visit of '
+                                         f'their pregnancy on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
@@ -1125,7 +1141,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit: cannot not run with this configuration')
+        logger.debug(key='message',data='HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit: cannot not run with '
+                                        'this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1145,9 +1162,10 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact, person %d has '
-                     'presented for the third antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact, '
+                                         f'person {person_id} has presented for the third antenatal care visit of '
+                                         f'their pregnancy on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour'] and \
@@ -1218,7 +1236,8 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact: cannot not run with this configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact: cannot not run with '
+                                         'this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1242,9 +1261,10 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact, person %d has '
-                     'presented for the fourth antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact, '
+                                         f'person {person_id} has presented for the fourth antenatal care visit of '
+                                         f'their pregnancy on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
@@ -1297,7 +1317,8 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact: cannot not run with this configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact: cannot not run with'
+                                         'this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1317,9 +1338,10 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact, person %d has '
-                     'presented for the fifth antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact, '
+                                         f'person {person_id} has presented for the fifth antenatal care visit of '
+                                         f'their pregnancy on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
@@ -1365,7 +1387,8 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact: cannot not run with this configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact: cannot not run with '
+                                         'this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1390,9 +1413,10 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact, person %d has '
-                     'presented for the sixth antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact, '
+                                         f'person {person_id} has presented for the sixth antenatal care visit of '
+                                         f'their pregnancy on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
@@ -1428,7 +1452,8 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact: cannot not run with this configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact: cannot not run with'
+                                         'this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1441,7 +1466,7 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
-        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForPostAbortionCare'
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_SeventhAntenatalCareContact'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = []
@@ -1449,9 +1474,10 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact, person %d has '
-                     'presented for the seventh antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact, '
+                                         f'person {person_id} has presented for the seventh antenatal care visit of '
+                                         f'their pregnancy on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
@@ -1480,8 +1506,8 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact: cannot not run with this '
-                     'configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact: cannot not run'
+                                         ' with this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1504,9 +1530,10 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact, person %d has '
-                     'presented for the eighth antenatal care visit of their pregnancy on date %s at '
-                     'gestation %d', person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact, '
+                                         f'person {person_id} has presented for the eighth antenatal care visit of '
+                                         f'their pregnancy on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
@@ -1526,8 +1553,8 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         pass
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact: cannot not run with this'
-                     ' configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact: cannot not run'
+                                         ' with this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
@@ -1548,9 +1575,10 @@ class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, In
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes, person %d has '
-                     'presented for additional testing for gestational diabetes on date %s at gestation %d',
-                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes, '
+                                         f'person {person_id} has presented for additional testing for gestational '
+                                         f'diabetes on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive']:
 
@@ -1596,8 +1624,8 @@ class HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes(HSI_Event, In
                                                                         tclose=self.sim.date + DateOffset(days=7))
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes: cannot not run with this'
-                     ' configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_TestingForGestationalDiabetes: cannot not '
+                                         'run with this configuration')
 
 class HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(HSI_Event, IndividualScopeEventMixin):
     """This HSI is unfinished"""
@@ -1618,15 +1646,16 @@ class HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes(HS
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes, person %d has '
-                     'presented for treatment of gestational diabetes on date %s at gestation %d',
-                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestational'
+                                         f'Diabetes, person {person_id} has presented for treatment of gestational '
+                                         f'diabetes on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         # TODO: finish
 
     def not_available(self):
-        logger.debug('HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes: cannot not run with this'
-                     ' configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_InitiationOfTreatmentGestationalDiabetes: '
+                                         'cannot not run with this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(HSI_Event, IndividualScopeEventMixin):
@@ -1651,9 +1680,10 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension(
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestationalHypertension, person %d has '
-                     'presented for treatment of gestational hypertension on date %s at gestation %d',
-                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfGestational'
+                                         f'Hypertension, person {person_id} has presented for treatment of gestational '
+                                         f'hypertension on date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive']:
 
@@ -1718,9 +1748,10 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia(HSI_Eve
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia, person %d has '
-                     'presented for treatment of mild pre-eclampsia on date %s at gestation %d',
-                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildPreEclampsia, '
+                                         f'person {person_id} has presented for treatment of mild pre-eclampsia on '
+                                         f'date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(HSI_Event, IndividualScopeEventMixin):
@@ -1743,9 +1774,10 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia(HSI_E
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia, person %d has '
-                     'presented for treatment of severe pre-eclampsia on date %s at gestation %d',
-                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSeverePreEclampsia,'
+                                         f'person {person_id} has presented for treatment of severe pre-eclampsia on '
+                                         f'date {self.sim.date} at gestation '
+                                          f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
@@ -1770,9 +1802,10 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(H
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.module.parameters
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy, person %d has '
-                     'presented for treatment of mild anaemia on date %s at gestation %d',
-                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaIn'
+                                         f'Pregnancy, person {person_id} has presented for treatment of mild anaemia on '
+                                         f'date {self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         # TODO: how to manage anaemia in women already receiving iron supplementation antenatally?
         # TODO: are we happy to assume that most women will be treated with iron OR should we allow for testing for
@@ -1802,8 +1835,8 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(H
                     # We assume that treatment has two effects- it reduces the risk of anaemia redeveloping as pregnancy
                     # progresses AND corrects the current anaemia
                     df.at[person_id, 'ac_receiving_iron_folic_acid'] = True
-                    logger.debug('mother %d has been started on daily iron and folic acid after a diagnosis of anaemia '
-                                 'during ANC')
+                    logger.debug(key='message', data='mother %d has been started on daily iron and folic acid after a '
+                                                     'diagnosis of anaemia during ANC')
 
                     self.sim.modules['HealthSystem'].request_consumables(
                         hsi_event=self,
@@ -1812,8 +1845,8 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(H
 
                     if params['treatment_effect_iron_folate_anaemia'] < self.module.rng.random_sample():
                         df.at[person_id, 'ps_anaemia_in_pregnancy'] = False
-                        logger.debug('mother %d has received initial iron and folic acid treatment for anaemia in '
-                                     'pregnancy')
+                        logger.debug(key='message', data='mother %d has received initial iron and folic acid treatment '
+                                                         'for anaemia in pregnancy')
 
                 # All women who are seen are scheduled to return between 2-4 weeks for additional Hb testing
                 additional_care = HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy(
@@ -1825,9 +1858,9 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy(H
                                                                     tclose=self.sim.date +
                                                                            DateOffset(days=future_appt_date))
 
-                logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemiaInPregnancy '
-                             'scheduling follow-up Hb testing for a mother recently diagnosed with anaemia during '
-                             'pregnancy', person_id)
+                logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfMildAnaemia'
+                                                 f'InPregnancy scheduling follow-up Hb testing for  mother {person_id}'
+                                                 'recently diagnosed with anaemia during pregnancy')
 
 
 class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy(HSI_Event, IndividualScopeEventMixin):
@@ -1854,9 +1887,10 @@ class HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         params = self.module.parameters
 
-        logger.debug('This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemiaInPregnancy, person %d'
-                     ' has presented for treatment of severe anaemia on date %s at gestation %d',
-                     person_id, self.sim.date, df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_InitialManagementOfSevereAnaemia'
+                                          f'InPregnancy, person {person_id} has presented for treatment of severe '
+                                          f'anaemia on date {self.sim.date} at gestation '
+        f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive']:
 
@@ -1916,10 +1950,10 @@ class HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy(HSI_Event, I
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
-        logger.debug(
-            'This is HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy, person %d has '
-            'presented for monitoring of anaemia status on date %s at gestation %d', person_id, self.sim.date,
-            df.at[person_id, 'ps_gestational_age_in_weeks'])
+        logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy, '
+                                         f'person {person_id} has presented for monitoring of anaemia status on date '
+                                         f'{self.sim.date} at gestation '
+                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         # Define the required consumables
         item_code_hb_test = pd.unique(
@@ -1998,7 +2032,9 @@ class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: check logic for ANC4+ calculation
 
-        logger.info('%s|anc_summary_stats|%s', self.sim.date, dict_for_output)
+        logger.info(key='anc_summary_statistics',
+                    data=dict_for_output,
+                    description='Yearly summary statistics output from the antenatal care module')
 
         self.module.ANCTracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
                                   'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months':0}

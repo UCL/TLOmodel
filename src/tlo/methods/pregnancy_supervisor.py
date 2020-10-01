@@ -28,7 +28,8 @@ class PregnancySupervisor(Module):
         # Here we define the PregnancyDiseaseTracker dictionary used by the logger to calculate summary stats
         self.PregnancyDiseaseTracker = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}  # declare that this is a disease module (leave as empty set otherwise)
+    METADATA = {Metadata.DISEASE_MODULE,
+                Metadata.USES_SYMPTOMMANAGER}  # declare that this is a disease module (leave as empty set otherwise)
 
     PARAMETERS = {
         'prob_ectopic_pregnancy': Parameter(
@@ -205,8 +206,6 @@ class PregnancySupervisor(Module):
         # TODO: DALYs are not finalised/captured fully yet from this model awaiting updates
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
-
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     # ==================================== LINEAR MODEL EQUATIONS =====================================================
         # All linear equations used in this module are stored within the ps_linear_equations parameter below
@@ -388,7 +387,8 @@ class PregnancySupervisor(Module):
         # will remain hypertensive after birth into the postnatal period
         if df.at[mother_id, 'ps_htn_disorders'] == 'gest_htn' or 'mild_pre_eclamp' or 'severe_pre_eclamp':
             if self.rng.random_sample() < params['probability_htn_persists']:
-                logger.debug('mother %d will remain hypertensive despite successfully delivering')
+                logger.debug(key='message', data=f'mother {mother_id} will remain hypertensive despite successfully '
+                                                 f'delivering')
             else:
                 df.at[mother_id, 'ps_htn_disorders'] = 'none'
 
@@ -406,14 +406,14 @@ class PregnancySupervisor(Module):
                 df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
 
     def on_hsi_alert(self, person_id, treatment_id):
-        logger.debug('This is PregnancySupervisor, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        logger.debug(key='message', data='This is PregnancySupervisor, being alerted about a health system interaction '
+                                         f'person {person_id} for: {treatment_id}')
 
     def report_daly_values(self):
         df = self.sim.population.props
 
         # TODO: Dummy code, waiting for new DALY set up
-        logger.debug('This is PregnancySupervisor reporting my health values')
+        logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
 
         health_values_1 = df.loc[df.is_alive, 'ps_ectopic_pregnancy'].map(
             {False: 0, True: 0.2})
@@ -458,7 +458,8 @@ class PregnancySupervisor(Module):
                 self.sim.schedule_event(EctopicPregnancyEvent(self, person),
                                         (self.sim.date + pd.Timedelta(days=7 * 4 + self.rng.randint(0, 7 * 2))))
             if not positive_index.empty:
-                logger.debug(f'The following women have experience an ectopic pregnancy,{positive_index}')
+                logger.debug(key='message', data=f'The following women have experience an ectopic pregnancy,'
+                                                 f'{positive_index}')
 
         # TODO: this may be removed (havent yet accurately quantified how important a risk factor multiple
         #  pregnancies is)
@@ -471,14 +472,15 @@ class PregnancySupervisor(Module):
                 # TODO: this actually probably doesnt need to be its own function as its only called once
                 self.abortion(person, complication)
             if not positive_index.empty:
-                logger.debug(f'The following women have experienced an abortion,{positive_index}')
+                logger.debug(key='message', data=f'The following women have experience an abortion {positive_index}')
 
         # Women with new onset anaemia have that property set
         if complication == 'maternal_anaemia':
             df.loc[positive_index, 'ps_anaemia_in_pregnancy'] = True
             self.PregnancyDiseaseTracker['maternal_anaemia'] += len(positive_index)
             if not positive_index.empty:
-                logger.debug(f'The following women have developed anaemia during their pregnancy,{positive_index}')
+                logger.debug(key='message', data=f'The following women have developed anaemia during their pregnancy '
+                                                 f'{positive_index}')
 
         if complication == 'pre_eclampsia':
             # Check only women without current hypertensive disorder can develop hypertension
@@ -493,7 +495,7 @@ class PregnancySupervisor(Module):
             # women with new onset pre-eclampsia will be symptomatic
             self.set_symptoms(params['prob_of_symptoms_mild_pre_eclampsia'], positive_index)
             if not positive_index.empty:
-                logger.debug(f'The following women have developed pre_eclampsia,{positive_index}')
+                logger.debug(key='message', data=f'The following women have developed pre_eclampsia {positive_index}')
 
         if complication == 'gest_htn':
             for person in positive_index:
@@ -503,7 +505,8 @@ class PregnancySupervisor(Module):
             df.loc[positive_index, 'ps_htn_disorders'] = 'gest_htn'
             self.PregnancyDiseaseTracker['new_onset_gest_htn'] += len(positive_index)
             if not positive_index.empty:
-                logger.debug(f'The following women have developed gestational hypertension,{positive_index}')
+                logger.debug(key='message', data=f'The following women have developed gestational hypertension'
+                                                 f'{positive_index}')
 
         # The same process is followed for gestational diabetes
         if complication == 'gest_diab':
@@ -514,7 +517,8 @@ class PregnancySupervisor(Module):
             df.loc[positive_index, 'ps_prev_gest_diab'] = True
             self.set_symptoms(params['prob_of_symptoms_gest_diab'], positive_index)
             if not positive_index.empty:
-                logger.debug(f'The following women have developed gestational diabetes,{positive_index}')
+                logger.debug(key='message', data=f'The following women have developed gestational diabetes,'
+                                                 f'{positive_index}')
 
         if complication == 'antepartum_haem':
             df.loc[positive_index, 'ps_antepartum_haemorrhage'] = True
@@ -536,7 +540,7 @@ class PregnancySupervisor(Module):
                                                       cause='antenatal death')
                 self.sim.schedule_event(death, self.sim.date)
             if not positive_index.empty:
-                logger.debug(f'The following women have died during pregnancy,{positive_index}')
+                logger.debug(key='message', data=f'The following women have died during pregnancy,{positive_index}')
 
         if complication == 'antenatal_stillbirth':
             self.PregnancyDiseaseTracker['antenatal_stillbirth'] += len(positive_index)
@@ -548,7 +552,8 @@ class PregnancySupervisor(Module):
             df.loc[positive_index, 'ps_gestational_age_in_weeks'] = 0
 
             if not positive_index.empty:
-                logger.debug(f'The following women have have experienced an antepartum stillbirth,{positive_index}')
+                logger.debug(key='message', data=f'The following women have have experienced an antepartum'
+                                                 f' stillbirth,{positive_index}')
 
     def set_symptoms(self, parameter, index):
         """This function applies symptoms to women who have developed a condition during pregnancy"""
@@ -655,7 +660,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
 
         df.loc[alive_and_preg, 'ps_gestational_age_in_weeks'] = gestation_in_weeks.astype('int64')
-        logger.debug('updating gestational ages on date %s', self.sim.date)
+        logger.debug(key='message', data=f'updating gestational ages on date {self.sim.date}')
 
         # ========================PREGNANCY COMPLICATIONS - ECTOPIC PREGNANCY & MULTIPLES =============================
         # Here we use the set_pregnancy_complications function to calculate each womans risk of ectopic pregnancy,
@@ -1066,8 +1071,8 @@ class EctopicPregnancyRuptureEvent(Event, IndividualScopeEventMixin):
         # assert self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy'] < pd.Timedelta(43, unit='d')
 
         if df.at[individual_id, 'is_alive']:
-            logger.debug('persons %d untreated ectopic pregnancy has now ruptured on date %s', individual_id,
-                         self.sim.date)
+            logger.debug(key='message', data=f'persons {individual_id} untreated ectopic pregnancy has now ruptured on '
+                                             f'date {self.sim.date}')
 
             # We apply an emergency symptom of 'collapse' to all women who have experienced a rupture
             self.sim.modules['SymptomManager'].change_symptom(
@@ -1106,8 +1111,9 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
 
             # If the death occurs we record it here
             if self.module.rng.random_sample() < risk_of_death:
-                logger.debug(f'person %d has died due to {self.cause} on date %s', individual_id,
-                             self.sim.date)
+                logger.debug(key='message', data=f'person {individual_id} has died due to {self.cause} on date '
+                                                 f'{self.sim.date}')
+
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause=f'{self.cause}'), self.sim.date)
                 self.module.PregnancyDiseaseTracker[f'{self.cause}_death'] += 1
@@ -1141,16 +1147,18 @@ class AntepartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'is_alive']:
 
             if self.module.rng.random_sample() < risk_of_death:
-                logger.debug(f'person %d has died due to antepartum haemorrhage on date %s', individual_id,
-                             self.sim.date)
+                logger.debug(key='message', data=f'person {individual_id} has died due to antepartum haemorrhage on date '
+                                                 f'{self.sim.date}')
+
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='antepartum_haemorrhage'), self.sim.date)
                 self.module.PregnancyDiseaseTracker['antenatal_death'] += 1
                 self.module.PregnancyDiseaseTracker['antepartum_haem_death'] += 1
 
             elif self.module.rng.random_sample() < risk_of_stillbirth:
-                logger.debug(f'person %d has experience an antepartum stillbirth on date %s', individual_id,
-                             self.sim.date)
+                logger.debug(key='message', data=f'person {individual_id} has experience an antepartum stillbirth on '
+                                                 f'date {self.sim.date}')
+
                 self.module.PregnancyDiseaseTracker['antenatal_stillbirth'] += 1
 
                 df.at[individual_id, 'ps_antepartum_still_birth'] = True
@@ -1236,7 +1244,8 @@ class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'crude_aph_death':crude_aph_death,
                            'women_month_6': women_month_6}
 
-        logger.info('%s|summary_stats|%s', self.sim.date, dict_for_output)
+        logger.info(key='ps_summary_statistics', data=dict_for_output,
+                    description='Yearly summary statistics output from the pregnancy supervisor module')
 
         self.module.PregnancyDiseaseTracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
                                                'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,

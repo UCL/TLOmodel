@@ -2,7 +2,7 @@ import datetime
 import os
 from pathlib import Path
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -20,11 +20,22 @@ from tlo.methods import (
     tb, postnatal_supervisor
 )
 
-# Where will outputs go
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+seed = 567
 
-# date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+log_config = {
+    "filename": "pregnancy_testing",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.labour": logging.DEBUG,
+        "tlo.methods.healthsystem": logging.FATAL,
+        "tlo.methods.hiv": logging.FATAL,
+        "tlo.methods.newborn_outcomes": logging.DEBUG,
+        "tlo.methods.antenatal_care": logging.DEBUG,
+        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+        "tlo.methods.postnatal_supervisor": logging.DEBUG,
+    }
+}
 
 # The resource files
 try:
@@ -46,7 +57,7 @@ def check_dtypes(simulation):
 
 
 def test_run():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -73,7 +84,7 @@ def test_run():
     check_dtypes(sim)
 
 def test_run_no_healthsystem():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -99,4 +110,4 @@ def test_run_no_healthsystem():
     check_dtypes(sim)
 
 test_run()
-test_run_no_healthsystem()
+#test_run_no_healthsystem()
