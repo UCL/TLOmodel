@@ -125,6 +125,9 @@ class SymptomManager(Module):
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
     """
 
+    # Declare Metadata
+    METADATA = {}
+
     PROPERTIES = dict()  # updated as pre-initialise population once symptoms have been registered.
 
     PARAMETERS = {
@@ -142,7 +145,7 @@ class SymptomManager(Module):
         self.all_registered_symptoms = set()
         self.symptom_names = set()
 
-        self.disease_module_names = None
+        self.recognised_module_names = None
 
     def get_column_name_for_symptom(self, symptom_name):
         """get the column name that corresponds to the symptom_name"""
@@ -212,8 +215,10 @@ class SymptomManager(Module):
         """
         Establish the BitSetHandler for each of the symptoms:
         """
-        self.disease_module_names = [m.name for m in self.sim.modules.values() if Metadata.DISEASE_MODULE in m.METADATA]
-        modules_that_can_impose_symptoms = [self.name] + self.disease_module_names
+        self.recognised_module_names = [
+            m.name for m in self.sim.modules.values() if Metadata.USES_SYMPTOMMANAGER in m.METADATA
+        ]
+        modules_that_can_impose_symptoms = [self.name] + self.recognised_module_names
 
         # Establish the BitSetHandler for each symptoms
         self.bsh = dict()
@@ -280,7 +285,7 @@ class SymptomManager(Module):
             assert int(duration_in_days) > 0
 
         # Check that the provided disease_module is a disease_module or is the SymptomManager itself
-        assert disease_module.name in ([self.name] + self.disease_module_names)
+        assert disease_module.name in ([self.name] + self.recognised_module_names)
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (isinstance(date_of_onset, pd.Timestamp) and date_of_onset >= self.sim.date)
@@ -361,19 +366,16 @@ class SymptomManager(Module):
         df = self.sim.population.props
         assert df.at[person_id, 'is_alive'], "The person is not alive"
 
+        columns = [self.get_column_name_for_symptom(s) for s in self.symptom_names]
+        df = self.sim.population.props
+        person = df.loc[person_id, columns]
+
         if disease_module:
-            assert disease_module.name in ([self.name] + self.disease_module_names), \
+            assert disease_module.name in ([self.name] + self.recognised_module_names), \
                 "Disease Module Name is not recognised"
-            disease_modules_of_interest = {disease_module.name}
-        else:
-            disease_modules_of_interest = set([self.name] + self.disease_module_names)
+            return [s for s in self.symptom_names if disease_module.name in self.bsh[s].to_strings(person[f'sy_{s}'])]
 
-        symptoms_for_this_person = [
-            s for s in self.symptom_names if
-            disease_modules_of_interest.intersection(self.bsh[s].get([person_id], first=True))
-        ]
-
-        return symptoms_for_this_person
+        return [s for s in self.symptom_names if person[f'sy_{s}'] > 0]
 
     def causes_of(self, person_id, symptom_string):
         """
@@ -404,7 +406,7 @@ class SymptomManager(Module):
 
         assert isinstance(person_id, (int, np.int64)), 'person_id must be a single integer for one particular person'
         assert df.at[person_id, 'is_alive'], "The person is not alive"
-        assert disease_module.name in ([self.name] + self.disease_module_names), \
+        assert disease_module.name in ([self.name] + self.recognised_module_names), \
             "Disease Module Name is not recognised"
 
         symptoms_caused_by_this_disease_module = self.has_what(person_id, disease_module)

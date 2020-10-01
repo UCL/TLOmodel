@@ -41,6 +41,9 @@ class Demography(Module):
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
 
+    # Declare Metadata
+    METADATA = {}
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
