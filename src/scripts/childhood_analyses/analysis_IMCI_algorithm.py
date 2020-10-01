@@ -44,7 +44,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2015, 1, 1)
 pop_size = 1000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -52,7 +52,7 @@ pop_size = 1000
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Path to the resource files used by the disease and intervention methods
-resources = "./resources"
+resources = Path('./resources')
 
 # Used to configure health system behaviour
 service_availability = ["*"]
@@ -80,28 +80,46 @@ sim.simulate(end_date=end_date)
 # parse the simulation logfile to get the output dataframes
 log_df = sim.log_filepath  # output
 
+# --------------------------------------- Model outputs ---------------------------------------
+pneum_classification_df = log_df['tlo.methods.dx_algorithm_child']['imci_classicications_count']
+pneum_classification_df['year'] = pd.to_datetime(pneum_classification_df['date']).dt.year
+# pneum_management_df = log_df['tlo.methods.pneumonia']['pneumonia_management_child_info']
 
-def get_imci_pneumonia_classification(logfile):
-    output = parse_log_file(logfile)
-    # Calculate the IMCI algorithm from the output counts of ALRI episodes
-    pneum_classification_df = output['tlo.methods.dx_algorithm_child']['imci_classicications_count']
-    pneum_classification_df['year'] = pd.to_datetime(pneum_classification_df['date']).dt.year
-    pneum_classification_df.drop(columns='date', inplace=True)
-    pneum_classification_df.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
-    pneum_classification_df.to_csv(r'./outputs/imci_pneumonia_classification.csv', index=False)
+# --------------------------------------- Plotting ---------------------------------------
+plt.style.use("ggplot")
 
-    imci_classification_rate = dict()
-    for severity in ['no pneumonia', 'non-severe pneumonia', 'severe pneumonia']:
-        imci_classification_rate[severity] = pneum_classification_df[severity].apply(pd.Series).div([severity],
-                                                                                                    axis=0).dropna()
-    return imci_classification_rate
+# Pneumonia incidence
+plt.subplot(111)  # numrows, numcols, fignum
+plt.plot(pneum_classification_df, pneum_classification_df['year'])
+plt.title("Pneumonia classification")
+plt.xlabel("Date")
+plt.ylabel("number of classifications")
+plt.xticks(rotation=90)
+plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 
+plt.show()
 
-get_imci_pneumonia_classification(log_df)
+# def get_imci_pneumonia_classification(logfile):
+#     output = parse_log_file(logfile)
+#     # Calculate the IMCI algorithm from the output counts of ALRI episodes
+#     pneum_classification_df = output['tlo.methods.dx_algorithm_child']['imci_classicications_count']
+#     pneum_classification_df['year'] = pd.to_datetime(pneum_classification_df['date']).dt.year
+#     pneum_classification_df.drop(columns='date', inplace=True)
+#     pneum_classification_df.set_index(
+#         'year',
+#         drop=True,
+#         inplace=True
+#     )
+#     pneum_classification_df.to_csv(r'./outputs/imci_pneumonia_classification.csv', index=False)
+#
+#     imci_classification_rate = dict()
+#     for severity in ['no pneumonia', 'non-severe pneumonia', 'severe pneumonia']:
+#         imci_classification_rate[severity] = pneum_classification_df[severity].apply(pd.Series).div([severity],
+#                                                                                                     axis=0).dropna()
+#     return imci_classification_rate
+#
+#
+# get_imci_pneumonia_classification(log_df)
 
 # def plot_for_column_of_interest(results, column_of_interest):
 #     summary_table = dict()

@@ -1106,6 +1106,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             return
 
         # Update the properties in the dataframe:
+        df.at[person_id, 'ri_ALRI_status'] = True
         df.at[person_id, 'ri_primary_ALRI_pathogen'] = self.pathogen
         df.at[person_id, 'ri_secondary_bacterial_pathogen'] = self.bacterial_pathogen
         df.at[person_id, 'ri_ALRI_disease_type'] = self.disease
@@ -1262,6 +1263,9 @@ class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'ri_ALRI_event_recovered_date'] = self.sim.date
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
+        # clear other properties
+        df.at[person_id, 'ri_ALRI_status'] = False
+
         # clear the treatment prperties
         df.at[person_id, 'ri_ALRI_treatment'] = False
         df.at[person_id, 'ri_ALRI_tx_start_date'] = pd.NaT
@@ -1326,50 +1330,111 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
 
         logger.info(key='incidence_count_by_pathogen', data=counts)
 
-        # log the information on complications
-        if 'respiratory_failure' in df.ri_ALRI_complications:
-            count_alri_complic_resp_failure = df.ri_ALRI_complications.count('respiratory_failure')
-            logger.info('%s|alri_complication_count|%s',
-                        self.sim.date,
-                        count_alri_complic_resp_failure
-                        )
-        if 'pneumothorax' in df.ri_ALRI_complications:
-            count_alri_complic_pneumothorax = df.ri_ALRI_complications.count('pneumothorax')
-            logger.info('%s|alri_complication_count|%s',
-                        self.sim.date,
-                        count_alri_complic_pneumothorax
-                        )
-        if 'pleural_effusion' in df.ri_ALRI_complications:
-            count_alri_complic_pleural_eff = df.ri_ALRI_complications.count('pleural_effusion')
-            logger.info('%s|alri_complication_count|%s',
-                        self.sim.date,
-                        count_alri_complic_pleural_eff
-                        )
-        if 'empyema' in df.ri_ALRI_complications:
-            count_alri_complic_empyema = df.ri_ALRI_complications.count('empyema')
-            logger.info('%s|alri_complication_count|%s',
-                        self.sim.date,
-                        {'empyema': count_alri_complic_empyema}
-                        )
-        if 'lung_abscess' in df.ri_ALRI_complications:
-            count_alri_complic_empyema = df.ri_ALRI_complications.count('lung_abscess')
-            logger.info('%s|alri_complication_count|%s',
-                        self.sim.date,
-                        {'lung_abscess': count_alri_complic_empyema}
-                        )
-        if 'sepsis' in df.ri_ALRI_complications:
-            count_alri_complic_empyema = df.ri_ALRI_complications.count('sepsis')
-            logger.info('%s|alri_complication_count|%s',
-                        self.sim.date,
-                        {'sepsis': count_alri_complic_empyema}
-                        )
-        if 'meningitis' in df.ri_ALRI_complications:
-            count_alri_complic_empyema = df.ri_ALRI_complications.count('meningitis')
-            logger.info('%s|alri_complication_count|%s',
-                        self.sim.date,
-                        {'meningitis': count_alri_complic_empyema}
-                        )
+        # get single row of dataframe (but not a series) ----------------
+        index_children = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        individual_child = df.loc[[index_children[1]]]
+
+        logger.debug(key='individual_check',
+                     data=individual_child,
+                     description='following an individual through simulation')
+
+        # log the information on complications ----------------
+        index_alri_with_complications = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status &
+                                                 (df.ri_ALRI_complications != 'none')]
+        # make a df with children with alri complications as the columns
+        df_alri_complications = pd.DataFrame(index=index_alri_with_complications,
+                                             data=bool(),
+                                             columns=list(self.module.complications))
+        for i in index_alri_with_complications:
+            if 'respiratory_failure' in df.ri_ALRI_complications[i]:
+                update_df = pd.DataFrame({'respiratory_failure': True}, index=[i])
+                df_alri_complications.update(update_df)
+            if 'pleural_effusion' in df.ri_ALRI_complications[i]:
+                update_df = pd.DataFrame({'pleural_effusion': True}, index=[i])
+                df_alri_complications.update(update_df)
+            if 'empyema' in df.ri_ALRI_complications[i]:
+                update_df = pd.DataFrame({'empyema': True}, index=[i])
+                df_alri_complications.update(update_df)
+            if 'lung_abscess' in df.ri_ALRI_complications[i]:
+                update_df = pd.DataFrame({'lung_abscess': True}, index=[i])
+                df_alri_complications.update(update_df)
+            if 'sepsis' in df.ri_ALRI_complications[i]:
+                update_df = pd.DataFrame({'sepsis': True}, index=[i])
+                df_alri_complications.update(update_df)
+            if 'meningitis' in df.ri_ALRI_complications[i]:
+                update_df = pd.DataFrame({'meningitis': True}, index=[i])
+                df_alri_complications.update(update_df)
+        print(df_alri_complications)
+
+        count_alri_complications = {}
+        for complic in df_alri_complications.columns:
+            count_complication = df_alri_complications[complic].sum()
+            update_dict = {f'{complic}': count_complication}
+            count_alri_complications.update(update_dict)
+            print(count_complication)
+
+        print(count_alri_complications)
+
+        complications_summary = {
+            'count': count_alri_complications,
+            'number_of_children_with_complications': len(index_alri_with_complications)
+        }
+
+        logger.debug(key='alri_complications',
+                    data=complications_summary,
+                    description='Summary of complications in a year')
+
+
+        # for i in index_alri_with_complications:
+        # count_alri_complications.update({'pleural_effusion': df.ri_ALRI_complications.count('pleural_effusion')})
+        # count_alri_complications['pneumothorax'] = df.ri_ALRI_complications.count('pneumothorax')
+        # count_alri_complications['pleural_effusion'] = df.ri_ALRI_complications.count('pleural_effusion')
+        # count_alri_complications['empyema'] = df.ri_ALRI_complications.count('empyema')
+        # count_alri_complications['lung_abscess'] = df.ri_ALRI_complications.count('lung_abscess')
+        # count_alri_complications['sepsis'] = df.ri_ALRI_complications.count('sepsis')
+        # count_alri_complications['meningitis'] = df.ri_ALRI_complications.count('meningitis')
+        #     count_alri_complic_resp_failure = df.ri_ALRI_complications[i].count('respiratory_failure')
+        #     count_alri_complic_pneumothorax = df.ri_ALRI_complications[i].count('pneumothorax')
+        #     count_alri_complic_pleural_eff = df.ri_ALRI_complications[i].count('pleural_effusion')
+        #     count_alri_complic_empyema = df.ri_ALRI_complications[i].count('empyema')
+        #     count_alri_complic_lung_abscess = df.ri_ALRI_complications[i].count('lung_abscess')
+        #     count_alri_complic_sepsis = df.ri_ALRI_complications[i].count('sepsis')
+        #     count_alri_complic_meningitis = df.ri_ALRI_complications[i].count('meningitis')
+        #
+        #     complications_summary = {
+        #         'respiratory_failure': count_alri_complic_resp_failure,
+        #         'pneumothorax:': count_alri_complic_pneumothorax,
+        #         'pleural_effusion': count_alri_complic_pleural_eff,
+        #         'empyema': count_alri_complic_empyema,
+        #         'lung_abscess': count_alri_complic_lung_abscess,
+        #         'sepsis': count_alri_complic_sepsis,
+        #         'meningitis': count_alri_complic_meningitis,
+        #     }
+        #
+        #     logger.debug(key='alri_complications',
+        #                 data=complications_summary,
+        #                 description='Summary of complications in a year')
+
+
+        # if 'pneumothorax' in df.ri_ALRI_complications:
+        #     count_alri_complic_pneumothorax = df.ri_ALRI_complications.count('pneumothorax')
+        #     logger.info('%s|alri_complication_count|%s',
+        #                 self.sim.date,
+        #                 count_alri_complic_pneumothorax
+        #                 )
+        # if 'pleural_effusion' in df.ri_ALRI_complications:
+        #     count_alri_complic_pleural_eff = df.ri_ALRI_complications.count('pleural_effusion')
+        #     logger.info('%s|alri_complication_count|%s',
+        #                 self.sim.date,
+        #                 count_alri_complic_pleural_eff
+        #                 )
+        # if 'empyema' in df.ri_ALRI_complications:
+        #     count_alri_complic_empyema = df.ri_ALRI_complications.count('empyema')
+        #     logger.info('%s|alri_complication_count|%s',
+        #                 self.sim.date,
 
         # Reset the counters and the date_last_run
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
         self.date_last_run = self.sim.date
+
+# todo : empyema not being added not complications

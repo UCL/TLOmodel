@@ -881,16 +881,26 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-
-        imci_pneumonia_classification_count = \
-            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
-
-        logger.info('%s|imci_classicications_count|%s', self.sim.date,
-                    {'pneum_classifications': imci_pneumonia_classification_count})
+        #
+        # imci_pneumonia_classification_count = \
+        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_IMCI_classification').size()
+        #
+        # logger.info('%s|imci_classicications_count|%s', self.sim.date,
+        #             imci_pneumonia_classification_count)
 
         # Convert the list of timestamps into a number of timestamps
         # and check that all the dates have occurred since self.date_last_run
-        dict_to_output = self.module.child_disease_management_information
-        print(dict_to_output)
-        logger.info('%s|pneumonia_management_child_info|%s',
-                    self.sim.date, dict_to_output)
+        dict_to_output = {}
+        dict_to_output.update({
+            f'total_{k}': v for k, v in df.doc[df.is_alive].ri_pneumonia_IMCI_classification.value_counts().items()
+        })
+        logger.info('%s|imci_classicications_count|%s', self.sim.date,
+                    dict_to_output)
+
+        # self.module.child_disease_management_information
+        # print(dict_to_output)
+        # logger.info('%s|pneumonia_management_child_info|%s',
+        #             self.sim.date, dict_to_output)
+        #
+        # logger.info('%s|person_id|%s',
+        #             self.sim.date, to_dict)
