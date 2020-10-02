@@ -400,24 +400,22 @@ class BladderCancer(Module):
         assert set(lm).union({'none'}) == set(df.bc_status.cat.categories)
 
         # Linear Model for the onset of blood_urine, in each 3 month period
-        self.lm_onset_blood_urine = LinearModel.multiplicative(
-            Predictor('bc_status').when('tis_t1',
-                                         p['r_blood_urine_tis_t1_bladder_cancer'])
-                                  .when('t2p',
-                                        p['rr_blood_urine_t2p_bladder_cancer'] * p['r_blood_urine_tis_t1_bladder_cancer'])
-                                  .when('metastatic', p['rr_blood_urine_metastatic_bladder_cancer']
-                                        * p['r_blood_urine_tis_t1_bladder_cancer'])
+        self.lm_onset_blood_urine = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_blood_urine_tis_t1_bladder_cancer'],
+            Predictor('bc_status').when('tis_t1', 1.0)
+                                  .when('t2p', p['rr_blood_urine_t2p_bladder_cancer'])
+                                  .when('metastatic', p['rr_blood_urine_metastatic_bladder_cancer'])
                                   .otherwise(0.0)
         )
 
         # Linear Model for the onset of pelvic_pain, in each 3 month period
-        self.lm_onset_pelvic_pain = LinearModel.multiplicative(
-            Predictor('bc_status').when('tis_t1',
-                                         p['r_pelvic_pain_tis_t1_bladder_cancer'])
-                                  .when('t2p',
-                                        p['rr_pelvic_pain_t2p_bladder_cancer'] * p['r_pelvic_pain_tis_t1_bladder_cancer'])
-                                  .when('metastatic', p['rr_pelvic_pain_metastatic_bladder_cancer']
-                                        * p['r_pelvic_pain_tis_t1_bladder_cancer'])
+        self.lm_onset_pelvic_pain = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_pelvic_pain_tis_t1_bladder_cancer'],
+            Predictor('bc_status').when('tis_t1', 1.0)
+                                  .when('t2p', p['rr_pelvic_pain_t2p_bladder_cancer'])
+                                  .when('metastatic', p['rr_pelvic_pain_metastatic_bladder_cancer'])
                                   .otherwise(0.0)
         )
 
@@ -574,9 +572,9 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'bc_status'] = stage
 
-            # -------------------- UPDATING OF SYMPTOM OF blood_urine OVER TIME --------------------------------
-            # Each time this event is called (event 3 months) individuals may develop the symptom of blood_urine.
-            # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
+        # -------------------- UPDATING OF SYMPTOM OF blood_urine OVER TIME --------------------------------
+        # Each time this event is called (event 3 months) individuals may develop the symptom of blood_urine.
+        # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
         onset_blood_urine = self.module.lm_onset_blood_urine.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_blood_urine[onset_blood_urine].index.tolist(),
@@ -972,8 +970,8 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_bladder_cancer_since_last_log': df.date_death_bladder_cancer.between(date_lastlog, date_now).sum()
         })
 
- #      logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-        logger.info('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[10].to_dict())
+        # logger.info('%s|person_one|%s',
+        #              self.sim.date,
+        #              df.loc[10].to_dict())

@@ -99,13 +99,13 @@ def make_high_init_prev(sim):
     return sim
 
 
-def incr_rate_of_onset_lgd(sim):
+def incr_rate_of_onset_cancer(sim):
     # Rate of cancer onset per 3 months:
-    sim.modules['BladderCancer'].parameters['r_tis_t1_bladder_cancer_none'] = 0.05
+    sim.modules['BladderCancer'].parameters['r_tis_t1_bladder_cancer_none'] *= 5
     return sim
 
 
-def zero_rate_of_onset_lgd(sim):
+def zero_rate_of_onset_cancer(sim):
     # Rate of cancer onset per 3 months:
     sim.modules['BladderCancer'].parameters['r_tis_t1_bladder_cancer_none'] = 0.00
     return sim
@@ -113,9 +113,8 @@ def zero_rate_of_onset_lgd(sim):
 
 def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
-    sim.modules['BladderCancer'].parameters['r_t2p_bladder_cancer_tis_t1'] *= 5
-    sim.modules['BladderCancer'].parameters['r_metastatic_t2p_bladder_cancer'] *= 5
-
+    sim.modules['BladderCancer'].parameters['r_t2p_bladder_cancer_tis_t1'] = 0.2
+    sim.modules['BladderCancer'].parameters['r_metastatic_t2p_bladder_cancer'] = 0.2
     return sim
 
 
@@ -205,6 +204,8 @@ def test_initial_config_of_pop_zero_prevalence():
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
+    df = sim.population.props
+    assert (df.loc[df.is_alive].bc_status == 'none').all()
 
 
 def test_initial_config_of_pop_usual_prevalence():
@@ -221,7 +222,7 @@ def test_run_sim_from_high_prevalence():
     sim = make_simulation_healthsystemdisabled()
     sim = make_high_init_prev(sim)
     sim = incr_rates_of_progression(sim)
-    sim = incr_rate_of_onset_lgd(sim)
+    sim = incr_rate_of_onset_cancer(sim)
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
     check_configuration_of_population(sim)
@@ -230,7 +231,7 @@ def test_run_sim_from_high_prevalence():
     check_configuration_of_population(sim)
 
 
-def test_check_progression_through_stages_is_happeneing():
+def test_check_progression_through_stages_is_happening():
     """Put all people into the first stage, let progression happen (with no treatment effect) and check that people end
     up in late stages and some die of this cause.
     Use a functioning healthsystem that allows HSI and check that diagnosis, treatment and palliative care is happening.
@@ -241,7 +242,7 @@ def test_check_progression_through_stages_is_happeneing():
     sim = zero_out_init_prev(sim)
 
     # no incidence of new cases
-    sim = zero_rate_of_onset_lgd(sim)
+    sim = zero_rate_of_onset_cancer(sim)
 
     # remove effect of treatment:
     sim = make_treatment_ineffective(sim)
@@ -257,16 +258,15 @@ def test_check_progression_through_stages_is_happeneing():
         sim.population.props.is_alive & (sim.population.props.age_years >= 15), "bc_status"] = 'tis_t1'
     check_configuration_of_population(sim)
 
-    # Simulate
-    sim.simulate(end_date=Date(2015, 1, 1))
+    # Simulate for one year
+    sim.simulate(end_date=Date(2011, 1, 1))
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-    assert len(df.loc[df.is_alive & (df.bc_status != 'none')]) > 0
     assert not pd.isnull(df.bc_status).any()
-    assert (df.loc[df.is_alive].bc_status.value_counts().drop(index='none') > 0).all()
+    assert (df.loc[df.is_alive & (df.age_years >= 15)].bc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of bladder cancer
     yll = sim.modules['HealthBurden'].YearsLifeLost
@@ -290,7 +290,7 @@ def test_that_there_is_no_treatment_without_the_hsi_running():
     sim = zero_out_init_prev(sim)
 
     # no incidence of new cases
-    sim = zero_rate_of_onset_lgd(sim)
+    sim = zero_rate_of_onset_cancer(sim)
 
     # remove effect of treatment:
     sim = make_treatment_ineffective(sim)
@@ -337,7 +337,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     sim = zero_out_init_prev(sim)
 
     # no incidence of new cases
-    sim = zero_rate_of_onset_lgd(sim)
+    sim = zero_rate_of_onset_cancer(sim)
 
     # remove effect of treatment:
     sim = make_treamtment_perfectly_effective(sim)
