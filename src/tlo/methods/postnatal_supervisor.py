@@ -39,6 +39,8 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'Weekly probability of anaemia in pregnancy'),
         'cfr_late_neonatal_sepsis': Parameter(
             Types.REAL, 'Risk of death from late neonatal sepsis'),
+        'prob_attend_pnc3': Parameter(
+            Types.REAL, 'Probability that a woman receiving PNC2 care will return for PNC3 care'),
     }
 
     PROPERTIES = {
@@ -66,7 +68,6 @@ class PostnatalSupervisor(Module):
 
     #    if 'HealthBurden' in self.sim.modules.keys():
     #        params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
-
 
     # ==================================== LINEAR MODEL EQUATIONS =====================================================
 
@@ -375,22 +376,6 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
 
 
-class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScopeEventMixin):
-    """ """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactOne'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-
 class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScopeEventMixin):
     """ """
 
@@ -405,7 +390,21 @@ class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScope
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        params = self.module.parameters
 
+        #days_postnatal = self.sim.date - df.at[person_id, ]
+
+        #logger.debug(key='message', data=f'Mother {person_id} has presented to PNC2 on {self.sim.date} at {} '
+        #                                 f'days postnatal')
+
+        # --------------------------------------- CARE SEEKING FOR PNC3 ----------------------------------------------
+        if self.module.rng.random_sample() < params['prob_attend_pnc3']:
+            pnc3 = HSI_PostnatalSupervisor_PostnatalCareContactTwo(
+                self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(pnc3,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=35))
 
 class HSI_PostnatalSupervisor_PostnatalCareContactThree(HSI_Event, IndividualScopeEventMixin):
     """ """
@@ -422,6 +421,8 @@ class HSI_PostnatalSupervisor_PostnatalCareContactThree(HSI_Event, IndividualSco
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
+        #logger.debug(key='message', data=f'Mother {person_id} has presented to PNC3 on {self.sim.date} at {} '
+        #                                 f'days postnatal')
 
 class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """"""
@@ -459,9 +460,9 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                            'total_sepsis': total_sepsis,
                            'total_sepsis_death': total_sepsis_death}
 
-        logger.info(key='postnatal_summary_stats', data=dict_for_output, description= 'Yearly summary statistics output '
-                                                                                      'from the postnatal supervisor '
-                                                                                      'module')
+        logger.info(key='postnatal_summary_stats', data=dict_for_output, description= 'Yearly summary statistics '
+                                                                                      'output from the postnatal '
+                                                                                      'supervisor module')
 
         self.module.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
                                         'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,

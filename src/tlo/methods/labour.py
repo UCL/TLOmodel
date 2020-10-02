@@ -288,6 +288,8 @@ class Labour (Module):
         'or_comp_careseeking_wealth_2': Parameter(
             Types.REAL, 'odds ratio of a woman of wealth level 2 seeking assistance after developing a complication at '
                         'a home birth '),
+        'prob_attend_pnc2': Parameter(
+            Types.REAL, 'probability a woman will return to receive PNC at day 7 postnatal'),
 
         # ================================= TREATMENT PARAMETERS =====================================================
         'rr_maternal_sepsis_clean_delivery': Parameter(
@@ -2191,6 +2193,20 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 logger.debug(key='message', data=f'mother {individual_id} will now seek care for a complication that'
                                                  f' has developed following labour on date {self.sim.date}')
 
+        # SHEDULE POSTNATAL CARE VISIT 2 (DAY 7)
+        # TODO: shouldnt we actually schedule these women to arrive/receive PNC1 (24-48 hours) not just PNC2
+        elif ~df.at[individual_id, 'la_sepsis_postpartum'] or \
+            df.at[individual_id, 'ps_htn_disorders'] =='none' or \
+            df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn' or \
+            ~df.at[individual_id, 'la_postpartum_haem']:
+
+            if self.module.rng.random_sample() < params['prob_attend_pnc2']:
+                pnc2 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo(
+                    self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
+                days_till_pnc = self.module.rng.randint(2, 4)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    pnc2, priority=0, topen=self.sim.date, tclose=self.sim.date + DateOffset(days=days_till_pnc))
+
 
 class LabourDeathEvent (Event, IndividualScopeEventMixin):
     """This is the LabourDeathEvent. It is scheduled by the LabourOnsetEvent for all women who go through labour. This
@@ -2592,6 +2608,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
     def apply(self, person_id, squeeze_factor):
         mni = self.module.mother_and_newborn_info
         df = self.sim.population.props
+        params = self.module.parameters
 
         logger.info(key='message', data='This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing '
                                         f'skilled attendance following birth for person {person_id}')
@@ -2662,10 +2679,17 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
                                                                 tclose=self.sim.date + DateOffset(days=1))
         # TODO: same issue as with the labour event
 
-        # ========================================== SCHEDULE PNC1 ===================================================
+        # ========================================== SCHEDULE PNC2 ===================================================
         # TODO: will need to check if they remain an inpatient?
 
-
+        if self.module.rng.random_sample() < params['prob_attend_pnc2']:
+            pnc2 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo(
+                self.sim.modules['PostnatalSupervisor'], person_id=person_id)
+            days_till_pnc = self.module.rng.randint(2, 4)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(pnc2,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=days_till_pnc))
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # TODO: modify based on complications?
         return actual_appt_footprint
@@ -2676,6 +2700,9 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
 
         logger.debug(key='message', data='HSI_Labour_ReceivesCareForPostpartumPeriod: did not run as the squeeze factor'
                                          f'is too high, mother {person_id} will return home on date {self.sim.date}')
+
+        # TODO: i think if they have received care in labour we should assume they get this (i.e. remove did_not_run
+        #  option)
 
         # Women who delivered at a facility, but can receive no more care due to high squeeze, will go home for the
         # immediate period after birth- where there risk of complications is applied
