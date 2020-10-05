@@ -1,5 +1,5 @@
 """
-A skeleton template for disease methods.
+The joint NCDs model by Tim Hallett and Britta Jewell, October 2020
 
 """
 from pathlib import Path
@@ -39,9 +39,28 @@ class Ncds(Module):
 
     PROPERTIES = {
         # These are all the states:
-        'diabetes': Property(Types.BOOL, 'Whether or not someone currently has diabetes'),
-        'hypertension': Property(Types.BOOL, 'Whether or not someone currently has hypertension'),
-        'frailty': Property(Types.BOOL, 'Whether or not someone currently has frailty'),
+        'nc_ldl_hdl': Property(Types.BOOL, 'Whether or not someone currently has LDL/HDL'),
+        'nc_chronic_inflammation': Property(Types.BOOL, 'Whether or not someone currently has chronic inflammation'),
+        'nc_diabetes': Property(Types.BOOL, 'Whether or not someone currently has diabetes'),
+        'nc_hypertension': Property(Types.BOOL, 'Whether or not someone currently has hypertension'),
+        'nc_depression': Property(Types.BOOL, 'Whether or not someone currently has depression'),
+        'nc_muscoskeletal': Property(Types.BOOL, 'Whether or not someone currently has muscoskeletal conditions'),
+        'nc_frailty': Property(Types.BOOL, 'Whether or not someone currently has frailty'),
+        'nc_chronic_lower_back_pain': Property(Types.BOOL, 'Whether or not someone currently has chronic lower back pain'),
+        'nc_arthritis': Property(Types.BOOL, 'Whether or not someone currently has arthritis'),
+        'nc_vision_disorders': Property(Types.BOOL, 'Whether or not someone currently has vision disorders'),
+        'nc_chronic_liver_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic liver disease'),
+        'nc_chronic_kidney_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic kidney disease'),
+        'nc_chronic_ischemic_heart_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic ischemic heart disease'),
+        'nc_lower_extremity_disease': Property(Types.BOOL, 'Whether or not someone currently has lower extremity disease'),
+        'nc_dementia': Property(Types.BOOL, 'Whether or not someone currently has dementia'),
+        'nc_bladder_cancer': Property(Types.BOOL, 'Whether or not someone currently has bladder cancer'),
+        'nc_oesophageal_cancer': Property(Types.BOOL, 'Whether or not someone currently has oesophageal cancer'),
+        'nc_breast_cancer': Property(Types.BOOL, 'Whether or not someone currently has breast cancer'),
+        'nc_prostate_cancer': Property(Types.BOOL, 'Whether or not someone currently has prostate cancer'),
+        'nc_other_cancers': Property(Types.BOOL, 'Whether or not someone currently has other cancers'),
+        'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
+        'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
     }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
@@ -62,7 +81,7 @@ class Ncds(Module):
         To access files use: Path(self.resourcefilepath) / file_name
         """
         xls = pd.ExcelFile(
-            Path(self.resourcefilepath / 'ResourceFile_Ncds.xlsx')
+            Path(self.resourcefilepath / 'ResourceFile_NCDs.xlsx')
         )
 
         # check that we have got parameters for each of the conditions
@@ -228,7 +247,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for condition in self.module.conditions:
             dict_for_output = pd.DataFrame(df.loc[df.is_alive].groupby(by=['sex', 'age-group'])[condition].mean()).reset_index().to_dict()
-            logger.info(key=f'prevalence_{condition}', data=dict_to_output)
+            logger.info(key=f'prevalence_{condition}', data=dict_for_output)
 
 
 
