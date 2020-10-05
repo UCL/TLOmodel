@@ -7,6 +7,7 @@
 # https://medium.com/@eikonomega/getting-started-with-sphinx-autodoc-part-1-2cebbbca5365
 #
 
+import docutils
 import os
 import sys
 
@@ -266,7 +267,99 @@ def process_signature(app, what, name, obj, options, signature, return_annotatio
             options['undoc-members'] = False
     pass
 
+def source_read_handler(app, docname, source):
+    # docname is something like 'index' or 'contributing' or 'reference/tlo.methods'
+    # source is a list with one item, the string rep of the page
+    #print('do something here...')
+    #if docname == 'reference/tlo.methods':
+    #    import pdb; pdb.set_trace()
 
+    #or maybe doctree-read() ???
+
+    pass
+
+# or do we want doctree-resolved(app, doctree, docname) ?
+# https://stackoverflow.com/questions/39171989/docutils-traverse-sections
+# example docnames: 'authors', 'reference/index', 'reference/modules'
+# 'reference/tlo.methods', 'temp/tlo.methods'...
+# (Pdb) doctree
+# <document: <section "tlo.methods package"...>>
+# type(doctree): <class 'docutils.nodes.document'>
+# sections = [section for section in doctree.traverse(docutils.nodes.section)]
+# mysection = sections[3]
+# (Pdb) mysection.__class__
+# <class 'docutils.nodes.section'>
+# (Pdb) mysection.__module__
+# 'docutils.nodes'
+# (Pdb) mysection.attlist()
+# [('ids', ['module-tlo.methods.chronicsyndrome', 'tlo-methods-chronicsyndrome-module']),
+#     ('names', ['tlo.methods.chronicsyndrome module'])]
+# (Pdb) mysection.shortrepr()
+# '<section "tlo.methods.chronicsyndrome module"...>'
+# (Pdb) "tlo.methods." in mysection.shortrepr()
+# True
+# (Pdb) myx = mysection.__getitem__('names')
+# (Pdb) myx
+# ['tlo.methods.chronicsyndrome module']
+# (Pdb) mysection.child_text_separator
+# '\n\n'
+
+# items = [item for item in mysection._all_traverse()]
+# len(items) = 782, some of which are:
+# <desc_name: <#text: 'PROPERTIES'>>, <#text: 'PROPERTIES'>,
+# <desc_annotation: <#text: " = {'cs_date_a ...">>,
+# <#text: " = {'cs_date_acquired': <tlo.core.Property object>,
+# 'cs_date_cur ...">, <desc_content: <table...>>,
+# <table: <tgroup...>>,
+# <tgroup: <colspec...><colspec...><colspec...><thead...><tbody...>>,
+# <colspec: >, <colspec: >, <colspec: >, <thead: <row...>>,
+# <row: <entry...><entry...><entry...>>,
+# <entry: <paragraph...>>, <paragraph: <#text: 'Item'>>,
+# <#text: 'Item'>, <entry: <paragraph...>>,
+# <paragraph: <#text: 'Type'>>, <#text: 'Type'>,
+# <entry: <paragraph...>>, <paragraph: <#text: 'Description'>>,
+# <#text: 'Description'>, <tbody: <row...><row...><row...><row...><row...>>,
+# <row: <entry...><entry...><entry...>>, <entry: <paragraph...>>,
+
+
+
+def doctree_resolved_handler(app, doctree, docname):
+    if docname == 'reference/tlo.methods':
+        import pdb; pdb.set_trace()
+    pass
+
+def doctree_read_handler(app, doctree):
+    import pdb; pdb.set_trace()
+
+    # doctree.nameids ['tlo.methods.chronicsyndrome module']
+    #    = 'tlo-methods-chronicsyndrome-module'
+    # etc.
+    # (Pdb) doctree
+    # <document: <section "tlo.methods package"...>>
+    # (Pdb) type(doctree)
+    # <class 'docutils.nodes.document'>
+    # mylist = [section for section in doctree.traverse(docutils.nodes.section)]
+    # typical entry in mylist:   mysection = mylist[3]
+    # <section "tlo.methods.chronicsyndrome module": <title...><index...><index...><desc...><index...><desc.. ...>
+    # title = mysection.next_node(docutils.nodes.Titular)
+    # (Pdb) title.astext()
+    # 'tlo.methods.chronicsyndrome module'
+    # (Pdb) type(mysection)
+    # <class 'docutils.nodes.section'>
+    # mysection.astext() --> lots of text
+    # (Pdb) doctree.__class__
+    # <class 'docutils.nodes.document'>
+    #(Pdb) app.doctreedir
+    #'/Users/matthewgillman/repos/addtables/TLOmodel/dist/docs/.doctrees'
+    # (Pdb) app.outdir
+    # '/Users/matthewgillman/repos/addtables/TLOmodel/dist/docs'
+    #
+    # In folder /Users/matthewgillman/repos/addtables/TLOmodel/dist/docs/.doctrees/reference
+    # are various files e.g. tlo.methods.doctree, tlo.events.doctree, tlo.parameters.doctree
+    # (Pdb) app.env.get_doctree('reference/tlo.methods')
+    # <document: <section "tlo.methods package"...>>
+
+    pass
 
 def setup(app):
     '''
@@ -295,6 +388,11 @@ def setup(app):
     app.connect('autodoc-skip-member', skip)
     app.connect("autodoc-process-docstring", anotherfunc)
     #app.connect("autodoc-process-signature", process_signature)
+
+    app.connect('source-read', source_read_handler)
+
+    #app.connect('doctree-read', doctree_read_handler)
+    app.connect('doctree-resolved', doctree_resolved_handler)
 
     # When the autodoc-process-docstring event is emitted, handle it with
     # add_dict_to_docstring():
