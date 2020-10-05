@@ -4,12 +4,11 @@ Switching contraceptive methods, and discontiuation rates by age
 please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Pregnancy.pdf
 for conceptual diagram
 """
-import logging
 from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
 
@@ -28,6 +27,9 @@ class Contraception(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    # Declare Metadata
+    METADATA = {}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -228,7 +230,9 @@ class Contraception(Module):
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
-        df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
+        # TODO- commented out by joe, this way women always keep the date on which they most recently became pregnant,
+        #  it is over written for new pregnancy
+        # df.at[mother_id, 'date_of_last_pregnancy'] = pd.NaT
 
         # Initiation of mother's contraception after birth (was previously Init2 event)
         # Notes: decide what contraceptive method they have (including not_using, according to
@@ -315,20 +319,21 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         # select a random contraceptive for everyone not currently using
         random_co = df.loc[individuals_not_using, 'age_years'].apply(pick_random_contraceptive)
 
-        # get index of all those now using
-        now_using_co = random_co.index[random_co != 'not_using']
+        if len(random_co):
+            # get index of all those now using
+            now_using_co = random_co.index[random_co != 'not_using']
 
-        # only update entries for all those now using a contraceptive
-        df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
+            # only update entries for all those now using a contraceptive
+            df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
 
-        for woman in now_using_co:
-            logger.info('%s|start_contraception1|%s',
-                        self.sim.date,
-                        {
-                            'woman_index': woman,
-                            'age': df.at[woman, 'age_years'],
-                            'co_contraception': df.at[woman, 'co_contraception']
-                        })
+            for woman in now_using_co:
+                logger.info('%s|start_contraception1|%s',
+                            self.sim.date,
+                            {
+                                'woman_index': woman,
+                                'age': df.at[woman, 'age_years'],
+                                'co_contraception': df.at[woman, 'co_contraception']
+                            })
 
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
@@ -387,15 +392,16 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
         # random choose some to discontinue
         random_draw = rng.random_sample(size=len(individuals_using))
-        co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
-        df.loc[co_discontinue, 'co_contraception'] = 'not_using'
+        if len(random_draw):
+            co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
+            df.loc[co_discontinue, 'co_contraception'] = 'not_using'
 
-        for woman in co_discontinue:
-            logger.info('%s|stop_contraception|%s',
-                        self.sim.date,
-                        {
-                            'woman_index': woman,
-                        })
+            for woman in co_discontinue:
+                logger.info('%s|stop_contraception|%s',
+                            self.sim.date,
+                            {
+                                'woman_index': woman,
+                            })
 
 
 class Fail(RegularEvent, PopulationScopeEventMixin):
@@ -418,13 +424,20 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
 
         prob_of_failure = p['contraception_failure']
 
-        # TODO: N.B edited by joe- was allowing pregnant women (at baseline) to become pregnant again!,
-        # And - to include breastfeeding, which is slated to be included in the lifestyle module
-        # ~df.is_pregnant added
+        # TODO: N.B edited by joe- women who are in labour, have been pregnant in the last month or have previously had
+        #  a hysterectomy cannot get pregnant(eventually should remove women with hysterectomy from being on
+        #  contraception?)
+
         possible_to_fail = ((df.sex == 'F') &
-                            df.is_alive & ~df.is_pregnant & ~df.la_currently_in_labour &
+                            df.is_alive &
+                            ~df.is_pregnant &
+                            ~df.la_currently_in_labour &
+                            ~df.la_has_had_hysterectomy &
                             df.age_years.between(self.age_low, self.age_high) &
-                            ~df.co_contraception.isin(['not_using', 'female_steralization']))
+                            ~df.co_contraception.isin(['not_using', 'female_steralization']) &
+                            (pd.isnull(df.la_due_date_current_pregnancy) | (self.sim.date >
+                                                                            df.la_due_date_current_pregnancy +
+                                                                            pd.to_timedelta(42, unit='D'))))
 
         prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
@@ -472,8 +485,11 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df = population.props  # get the population dataframe
 
         # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (
-            df.co_contraception == 'not_using') & ~df.la_currently_in_labour
+        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & \
+                 (df.co_contraception == 'not_using') & ~df.la_currently_in_labour & ~df.la_has_had_hysterectomy &\
+                 (pd.isnull(df.la_due_date_current_pregnancy) | (self.sim.date > df.la_due_date_current_pregnancy +
+                                                                 pd.to_timedelta(42, unit='D')))
+
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)

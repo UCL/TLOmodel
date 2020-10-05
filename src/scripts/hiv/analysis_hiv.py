@@ -1,9 +1,7 @@
 import datetime
-import logging
-import os
 from pathlib import Path
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
@@ -29,59 +27,44 @@ end_date = Date(2015, 1, 1)
 popsize = 5000
 
 # Establish the simulation object
-sim = Simulation(start_date=start_date)
-
-# Establish the logger
-logfile = outputpath / ("LogFile" + datestamp + ".log")
-
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
+log_config = {
+    'filename': 'Logfile',
+    'directory': outputpath,
+    'custom_levels': {
+        '*': logging.WARNING,
+        'tlo.methods.hiv': logging.INFO,
+        'tlo.methods.tb': logging.INFO,
+        'tlo.methods.male_circumcision': logging.INFO
+    }
+}
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ["*"]
 
-logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
-logging.getLogger("tlo.methods.lifestyle").setLevel(logging.WARNING)
-logging.getLogger("tlo.methods.healthburden").setLevel(logging.WARNING)
-logging.getLogger("tlo.methods.hiv").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
-logging.getLogger("tlo.methods.male_circumcision").setLevel(logging.INFO)
-
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
-sim.register(tb.tb(resourcefilepath=resourcefilepath))
-sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+             hiv.hiv(resourcefilepath=resourcefilepath),
+             tb.tb(resourcefilepath=resourcefilepath),
+             male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
 
 # Run the simulation and flush the logger
-sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-fh.flush()
-# fh.close()
 
 # %% read the results
 
-output = parse_log_file(logfile)
+output = parse_log_file(sim.log_filepath)
 
 
 # outputpath = './src/scripts/outputLogs/'
 # TODO: I am removing the redef of outputpath (see above)
 
-# date-stamp to label log files and any other outputs
-# datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-# logfile = outputpath + 'LogFile' + datestamp + '.log'
-# outputs = parse_log_file(logfile)
-#
 # deaths_df = outputs['tlo.methods.demography']['death']
 # deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 # deaths_df['year'] = deaths_df['date'].dt.year

@@ -9,7 +9,8 @@ from typing import Dict, Union
 
 import numpy as np
 
-from tlo import Population, logging
+from tlo import Date, Population, logging
+from tlo.events import IndividualScopeEventMixin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -39,27 +40,43 @@ class Simulation:
         with independent state.
     """
 
-    def __init__(self, *, start_date):
+    def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
             a keyword parameter for clarity
+        :param seed: the seed for random number generator. class will create one if not supplied
+        :param log_config: sets up the logging configuration for this simulation
         """
+        # simulation
         self.date = self.start_date = start_date
         self.modules = OrderedDict()
-        self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
         self.end_date = None
         self.output_file = None
 
-        # clear entire logging environment for this new simulation
-        logging.init_logging()
+        # logging
+        if log_config is None:
+            log_config = dict()
+        self._custom_log_levels = None
+        self._log_filepath = None
+        self.configure_logging(**log_config)
+
+        # random number generator
+        if seed is None:
+            seed = np.random.randint(2 ** 31 - 1)
+            seed_from = 'auto'
+        else:
+            seed_from = 'user'
+        self._seed = seed
+        logger.info(key='info', data=f'Simulation RNG {seed_from} seed: {self._seed}')
+        self.rng = np.random.RandomState(self._seed)
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
                           custom_levels: Dict[str, int] = None):
         """
-        Set up logging for analysis scripts, optional custom levels for specific loggers can be given.
-        If no filename is given, configuration is set up writing to stdout.
+        Configure logging, can write logging to a logfile in addition the default of stdout.
+        Minimum custom levels for each loggers can be specified for filtering out messages.
 
         :param filename: Prefix for logfile name, final logfile will have a datetime appended
         :param directory: Path to output directory, default value is the outputs folder.
@@ -67,24 +84,35 @@ class Simulation:
                               This is likely to be used to disable all disease modules, and then enable one of interest
                               e.g. {'*': logging.CRITICAL
                                     'tlo.methods.hiv': logging.INFO}
-        :return: Path of the log file.
+        :return: Path of the log file if a filename has been given.
         """
-        if not filename:
-            # no filename given, clear setup and initialise writing to stdout
-            logging.init_logging()
-            return
-
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
-        log_path = Path(directory) / f"{filename}__{timestamp}.log"
-        self.output_file = logging.set_output_file(log_path)
+        # clear logging environment
+        logging.init_logging()
+        logging.set_simulation(self)
 
         if custom_levels:
-            if not self.modules:
-                raise ValueError("You must register disease modules before adding custom logging levels")
-            module_paths = (module.__module__ for module in self.modules.values())
-            logging.set_logging_levels(custom_levels, module_paths)
+            # if modules have already been registered
+            if self.modules:
+                module_paths = (module.__module__ for module in self.modules.values())
+                logging.set_logging_levels(custom_levels, module_paths)
+            else:
+                # save the configuration and apply in the `register` phase
+                self._custom_log_levels = custom_levels
 
-        return log_path
+        if filename:
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
+            log_path = Path(directory) / f"{filename}__{timestamp}.log"
+            self.output_file = logging.set_output_file(log_path)
+            logger.info(key='info', data=f'Log output: {log_path}')
+            self._log_filepath = log_path
+            return log_path
+
+    @property
+    def log_filepath(self):
+        return self._log_filepath
+
+    def _set_module_log_level(self, module_path, level):
+        logging.set_logging_levels({module_path: level}, [module_path])
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
@@ -95,9 +123,24 @@ class Simulation:
         for module in modules:
             assert module.name not in self.modules, (
                 'A module named {} has already been registered'.format(module.name))
+
+            # set the rng seed for the registered module
+            module_seed = self.rng.randint(2 ** 31 - 1)
+            logger.info(key='info', data=f'{module.name} RNG auto seed: {module_seed}')
+            module.rng = np.random.RandomState(module_seed)
+
+            # if user provided custom log levels
+            if self._custom_log_levels is not None:
+                # get the log level of this module
+                path = module.__module__
+                if path in self._custom_log_levels:
+                    self._set_module_log_level(path, self._custom_log_levels[path])
+                elif '*' in self._custom_log_levels:
+                    self._set_module_log_level(path, self._custom_log_levels['*'])
+
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters('')  # TODO: Use a proper data_folder - or remove the 'data_folder' as not used
+            module.read_parameters('')
 
     def seed_rngs(self, seed):
         """Seed the random number generator (RNG) for the Simulation instance and registered modules
@@ -106,14 +149,16 @@ class Simulation:
         RNG with its own state, which is seeded using a random integer drawn from the (newly seeded)
         Simulation RNG
 
-        :param seed: the seed for the Simulation RNG
+        :param seed: the seed for the Simulation RNG. If seed is not provided, a random seed will be
+            used.
         """
+        logger.warning(key='warning', data='seed_rngs() is deprecated. Provide `seed` argument to Simulation().')
         self.rng.seed(seed)
-        logger.info("Simulation RNG user seed %d", seed)
+        logger.info(key='info', data=f'Simulation RNG user seed: {seed}')
         for module in self.modules.values():
             module_seed = self.rng.randint(2 ** 31 - 1)
-            logger.info("%s RNG auto seed %d", module.name, module_seed)
-            module.rng.seed(module_seed)
+            logger.info(key='info', data=f'{module.name} RNG auto seed: {module_seed}')
+            module.rng = np.random.RandomState(module_seed)
 
     def make_initial_population(self, *, n):
         """Create the initial population to simulate.
@@ -199,6 +244,22 @@ class Simulation:
         for module in self.modules.values():
             module.on_birth(mother_id, child_id)
         return child_id
+
+    def find_events_for_person(self, person_id: int):
+        """Find the events in the queue for a particular person.
+        :param person_id: the person_id of interest
+        :returns list of tuples (date_of_event, event) for that person_id in the queue.
+
+        NB. This is for debugging and testing only - not for use in real simulations as it is slow
+        """
+        person_events = list()
+
+        for date, counter, event in self.event_queue.queue:
+            if isinstance(event, IndividualScopeEventMixin):
+                if event.target == person_id:
+                    person_events.append((date, event))
+
+        return person_events
 
 
 class EventQueue:

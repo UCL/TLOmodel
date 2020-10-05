@@ -2,8 +2,10 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.symptommanager import Symptom
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,6 +22,13 @@ class Mockitis(Module):
         - Restrictive requirements on the facility_level for the HSI_event
         - Use of the SymptomManager
     """
+    # Declare Metadata
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         'p_infection': Parameter(
@@ -50,13 +59,6 @@ class Mockitis(Module):
             Types.DATE, 'Date an infected individual was cured')
     }
 
-    # Declaration of the symptoms that this module will use
-    SYMPTOMS = {
-        'weird_sense_of_deja_vu',       # will not trigger any health seeking behaviour
-        'coughing_and_irritable',       # will not trigger any health seeking behaviour
-        'em_extreme_pain_in_the_nose'   # symptom that will trigger emergency HSI
-    }
-
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
@@ -64,7 +66,8 @@ class Mockitis(Module):
         self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
-        '''This is the docstring for read_parameters method.'''
+        """Read in parameters and do the registration of this module and its symptoms"""
+
         p = self.parameters
 
         p['p_infection'] = 0.001
@@ -77,7 +80,7 @@ class Mockitis(Module):
                 'level_of_symptoms': ['none',
                                       'weird_sense_of_deja_vu',
                                       'coughing_and_irritable',
-                                      'em_extreme_pain_in_the_nose'],
+                                      'extreme_pain_in_the_nose'],
                 'probability': [0.25, 0.25, 0.25, 0.25]
             })
 
@@ -86,12 +89,18 @@ class Mockitis(Module):
             p['daly_wts'] = {
                 'weird_sense_of_deja_vu': self.sim.modules['HealthBurden'].get_daly_weight(48),
                 'coughing_and_irritable': self.sim.modules['HealthBurden'].get_daly_weight(49),
-                'em_extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
+                'extreme_pain_in_the_nose': self.sim.modules['HealthBurden'].get_daly_weight(50)
             }
 
-        # ---- Register this module ----
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+        # ---- Register the Symptoms ----
+        self.sim.modules['SymptomManager'].register_symptom(
+            Symptom(name='weird_sense_of_deja_vu'),  # will not trigger any health seeking behaviour
+            Symptom(name='coughing_and_irritable'),  # will not trigger any health seeking behaviour
+            Symptom(name='extreme_pain_in_the_nose',
+                    emergency_in_adults=True,
+                    emergency_in_children=True
+                    )
+        )
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -237,8 +246,9 @@ class Mockitis(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Mockitis, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        logger.debug(key='debug',
+                     data='This is Mockitis, being alerted about a health system interaction '
+                          'person %d for: %s' % (person_id, treatment_id))
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -246,14 +256,15 @@ class Mockitis(Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug('This is mockitis reporting my daly values')
+        logger.debug(key='debug', data='This is mockitis reporting my daly values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
         health_values = pd.Series(index=df.index[df.is_alive], data=0)
         for symptom, daly_wt in self.parameters['daly_wts'].items():
             health_values.loc[
-                self.sim.modules['SymptomManager'].who_has(symptom)] += daly_wt
+                self.sim.modules['SymptomManager'].who_has(symptom)
+            ] += daly_wt
 
         return health_values  # returns the series
 
@@ -270,7 +281,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        logger.debug('This is MockitisEvent, tracking the disease progression of the population.')
+        logger.debug(key='debug', data='This is MockitisEvent, tracking the disease progression of the population.')
 
         df = population.props
 
@@ -324,7 +335,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                     )
 
         else:
-            logger.debug('This is MockitisEvent, no one is newly infected.')
+            logger.debug(key='debug', data='This is MockitisEvent, no one is newly infected.')
 
 
 class MockitisDeathEvent(Event, IndividualScopeEventMixin):
@@ -363,24 +374,23 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Mockitis)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the apppointment must be run at that facility-level
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the appointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
-                     person_id)
+        logger.debug(
+            key='debug',
+            data=f'This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person {person_id}',
+        )
 
         logger.debug(
-            '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: \
-            there should now be treatment for person %d',
-            person_id)
+            key='debug',
+            data=('...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: '
+                  f'there should now be treatment for person {person_id}'),
+        )
 
         event = HSI_Mockitis_StartTreatment(self.module, person_id=person_id)
         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -389,7 +399,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
                                                             tclose=None)
 
     def did_not_run(self):
-        logger.debug('HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
+        logger.debug(key='debug', data='HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
         # return False to prevent this event from being rescheduled if it did not run.
         return False
 
@@ -406,19 +416,15 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Mockitis)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at those facility-levels
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
+        logger.debug(key='debug',
+                     data=f'This is HSI_Mockitis_StartTreatment: initiating treatent for person {person_id}')
         df = self.sim.population.props
 
         if not df.at[person_id, 'is_alive']:
@@ -456,8 +462,10 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
 
         logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
+            key='debug',
+            data=('....This is HSI_Mockitis_StartTreatment: '
+                  f'scheduling a follow-up appointment for person {person_id} on date {target_date_for_followup_appt}'),
+        )
 
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
@@ -469,7 +477,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                                                             )
 
     def did_not_run(self):
-        logger.debug('HSI_Mockitis_StartTreatment: did not run')
+        logger.debug(key='debug', data='HSI_Mockitis_StartTreatment: did not run')
         pass
 
 
@@ -486,14 +494,9 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Mockitis)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1  # Allows this HSI to occur at any facility-level
         self.ALERT_OTHER_DISEASES = ['*']
 
@@ -510,8 +513,10 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
 
         logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
+            key='debug',
+            data=('....This is HSI_Mockitis_StartTreatment: '
+                  f'scheduling a follow-up appointment for person {person_id} on date {target_date_for_followup_appt}'),
+        )
 
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
@@ -522,7 +527,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
                                                             tclose=target_date_for_followup_appt + DateOffset(weeks=2))
 
     def did_not_run(self):
-        logger.debug('HSI_Mockitis_TreatmentMonitoring: did not run')
+        logger.debug(key='debug', data='HSI_Mockitis_TreatmentMonitoring: did not run')
         pass
 
 
@@ -554,12 +559,11 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
         counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
 
-        logger.info('%s|summary|%s', self.sim.date,
-                    {
-                        'TotalInf': infected_total,
-                        'PropInf': proportion_infected,
-                        'PrevMonth': infected_in_last_month,
-                        'Cured': cured_in_last_month,
-                    })
+        logger.info(key='summary',
+                    data={'TotalInf': infected_total,
+                          'PropInf': proportion_infected,
+                          'PrevMonth': infected_in_last_month,
+                          'Cured': cured_in_last_month,
+                          })
 
-        logger.info('%s|status_counts|%s', self.sim.date, counts)
+        logger.info(key='status_counts', data=counts)

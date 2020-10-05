@@ -5,6 +5,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,8 @@ class CareOfWomenDuringPregnancy(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+    METADATA = {Metadata.USES_HEALTHSYSTEM}
 
     PARAMETERS = {
         'prob_seek_care_first_anc': Parameter(
@@ -63,6 +66,7 @@ class CareOfWomenDuringPregnancy(Module):
         }
 
     def initialise_population(self, population):
+
         df = population.props
         df.loc[df.is_alive, 'ac_total_anc_visits'] = 0
 
@@ -127,11 +131,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit(HSI_Even
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AntenatalFirst'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AntenatalFirst': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -180,6 +180,9 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit(HSI_Even
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit: did not run')
 
+    def not_available(self):
+        pass
+
 
 class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI_Event, IndividualScopeEventMixin):
     """This is the HSI PThis is the HSI PresentsForSubsequentAntenatalCareVisit. Currently it is not scheduled to run, but
@@ -192,11 +195,7 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -231,6 +230,9 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit(HSI
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_PresentsForSubsequentAntenatalCareVisit: did not run')
 
+    def not_available(self):
+        pass
+
 
 class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin):
     """ This is the HSI EmergencyTreatment. Currently it is not scheduled to run, but will be scheduled via the
@@ -243,11 +245,7 @@ class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualSco
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_EmergencyTreatment'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -282,6 +280,9 @@ class HSI_CareOfWomenDuringPregnancy_EmergencyTreatment(HSI_Event, IndividualSco
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_EmergencyTreatment: did not run')
 
+    def not_available(self):
+        pass
+
 
 class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI PostAbortionCare. Currently it is not scheduled, but will be scheduled via the PregnancySupervisor
@@ -294,11 +295,8 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, Indi
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PresentsForPostAbortionCare'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
+        # TODO: determine most accurate appt time for this HSI (here and all HSI in this file)
         self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = []
 
@@ -331,6 +329,9 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare(HSI_Event, Indi
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_PresentsForPostAbortionCare: did not run')
 
+    def not_available(self):
+        pass
+
 
 class HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI TreatmentFollowingAntepartumStillbirth. Currently it is not scheduled but will be scheduled by the
@@ -343,11 +344,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth(HSI_
         assert isinstance(module, CareOfWomenDuringPregnancy)
 
         self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth'
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -380,3 +377,6 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth(HSI_
 
     def did_not_run(self):
         logger.debug('HSI_CareOfWomenDuringPregnancy_TreatmentFollowingAntepartumStillbirth: did not run')
+
+    def not_available(self):
+        pass

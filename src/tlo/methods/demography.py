@@ -41,6 +41,9 @@ class Demography(Module):
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
 
+    # Declare Metadata
+    METADATA = {}
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
@@ -56,6 +59,7 @@ class Demography(Module):
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
+        'cause_of_death': Property(Types.STRING, 'Cause of death of this individual, as entered to the logger'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         # Age calculation is handled by demography module
@@ -125,6 +129,7 @@ class Demography(Module):
         df.is_alive.values[:] = True
         df['date_of_birth'] = demog_char_to_assign['date_of_birth']
         df['date_of_death'] = pd.NaT
+        df['cause_of_death'] = ''
         df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
@@ -173,6 +178,9 @@ class Demography(Module):
         df.at[child_id, 'is_alive'] = True
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
+        df.at[child_id, 'date_of_death'] = pd.NaT
+        df.at[child_id, 'cause_of_death'] = ''
+
         p_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
         df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[p_male, 1 - p_male])
 
@@ -187,13 +195,65 @@ class Demography(Module):
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
         # Log the birth:
-        logger.info('%s|on_birth|%s',
-                    self.sim.date,
-                    {
-                        'mother': mother_id,
-                        'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years']
-                    })
+        logger.info(
+            key='on_birth',
+            data={'mother': mother_id,
+                  'child': child_id,
+                  'mother_age': df.at[mother_id, 'age_years']}
+        )
+
+    def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1)):
+        """
+        This is a helper method to compute the person-years that were lived in the previous year by age.
+        It outputs a pd.DataFrame with the index being single year of age, 0 to 99.
+        """
+        df = self.sim.population.props
+
+        # get everyone who was alive during the previous year
+        one_year_ago = self.sim.date - delta
+        condition = df.is_alive | (df.date_of_death > one_year_ago)
+        df_py = df.loc[condition, ['sex', 'age_exact_years', 'age_years', 'date_of_birth']]
+
+        # renaming columns for clarity
+        df_py = df_py.rename({'age_exact_years': 'age_exact_end', 'age_years': 'age_years_end'}, axis=1)
+
+        df_py['age_exact_start'] = (one_year_ago - df_py.date_of_birth) / pd.Timedelta(1, 'Y')  # exact age at the start
+        df_py['age_years_start'] = np.floor(df_py.age_exact_start).astype(np.int64)  # int age at start of the period
+        df_py['years_in_age_start'] = df_py.age_years_end - df_py.age_exact_start  # time spent in age at start
+        df_py['years_in_age_end'] = df_py.age_exact_end - df_py.age_years_end  # time spent in age at end
+
+        # correction for those individuals who started the year and then died at the same age
+        condition = df_py.age_years_end == df_py.age_years_start
+        df_py.loc[condition, 'years_in_age_start'] = df_py.age_exact_end - df_py.age_exact_start
+        df_py.loc[condition, 'years_in_age_end'] = 0
+
+        # zero out entries for those born in the year passed (no time spend in age at start of year)
+        condition = df_py.age_exact_start < 0
+        df_py.loc[condition, 'years_in_age_start'] = 0
+        df_py.loc[condition, 'age_years_start'] = 0
+        df_py.loc[condition, 'age_exact_start'] = 0
+
+        # collected all time spent in age at start of period
+        df1 = df_py[['sex', 'years_in_age_start', 'age_years_start']].groupby(by=['sex', 'age_years_start']).sum()
+        df1 = df1.unstack('sex')
+        df1.columns = df1.columns.droplevel(0)
+        df1.index.rename('age_years', inplace=True)
+
+        # collect all time spent in age at end of period
+        df2 = df_py[['sex', 'years_in_age_end', 'age_years_end']].groupby(by=['sex', 'age_years_end']).sum()
+        df2 = df2.unstack('sex')
+        df2.columns = df2.columns.droplevel(0)
+        df2.index.rename('age_years', inplace=True)
+
+        # add the two time spents together
+        py = pd.DataFrame(
+            index=pd.Index(data=list(self.AGE_RANGE_LOOKUP.keys()), name='age_years'),
+            columns=['M', 'F'],
+            data=0.0
+        )
+        py = py.add(df1, fill_value=0).add(df2, fill_value=0)
+
+        return py
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -228,7 +288,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        logger.debug('Checking to see if anyone should die...')
+        logger.debug(key='death_poll_start', data='Checking to see if anyone should die...')
 
         # Get shortcut to main dataframe
         df = population.props
@@ -246,7 +306,8 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # confirms that we go to the five year period that we are in, not the exact year.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
-        mort_sched = mort_sched.loc[mort_sched.fallbackyear == fallbackyear, ['age_years', 'sex', 'death_rate']].copy()
+        mort_sched = mort_sched.loc[
+            mort_sched.fallbackyear == fallbackyear, ['age_years', 'sex', 'death_rate']].copy()
 
         # get the population
         alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
@@ -265,7 +326,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < prob_of_dying_during_next_month)
-        logger.debug('Will die count: %d', will_die.sum())
+        logger.debug(key='death_count', data=f'Will die count: {will_die.sum()}')
 
         # loop through to see who is going to die:
         for person in alive.index[will_die]:
@@ -286,31 +347,33 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        logger.debug("@@@@ A Death is now occuring, to person %s", individual_id)
+        logger.debug(key='death_occurring', data=f"@@@@ A Death is now occurring, to person {individual_id}")
 
         if df.at[individual_id, 'is_alive']:
             # here comes the death.......
             df.at[individual_id, 'is_alive'] = False
-            # the person is now dead
             df.at[individual_id, 'date_of_death'] = self.sim.date
+            df.at[individual_id, 'cause_of_death'] = self.cause
 
-        logger.debug("*******************************************The person %s "
-                     "is now officially dead and has died of %s", individual_id, self.cause)
+        logger.debug(key='official_death',
+                     data=(f"*******************************************The person {individual_id} "
+                           f"is now officially dead and has died of {self.cause}"))
 
         # Log the death
-        logger.info('%s|death|%s', self.sim.date,
-                    {
-                        'age': df.at[individual_id, 'age_years'],
-                        'sex': df.at[individual_id, 'sex'],
-                        'cause': self.cause,
-                        'person_id': individual_id
-                    })
+        logger.info(
+            key='death',
+            data={'age': df.at[individual_id, 'age_years'],
+                  'sex': df.at[individual_id, 'sex'],
+                  'cause': self.cause,
+                  'person_id': individual_id
+                  })
 
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
             date_of_birth = df.at[individual_id, 'date_of_birth']
             sex = df.at[individual_id, 'sex']
-            label = self.module.name + '_' + self.cause  # creates a label for these YLL of <ModuleName>_<CauseOfDeath>
+            label = self.module.name + '_' + self.cause  # creates a label for these YLL of
+            # <ModuleName>_<CauseOfDeath>
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=sex,
                                                                     date_of_birth=date_of_birth,
                                                                     label=label)
@@ -329,27 +392,37 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info('%s|population|%s',
-                    self.sim.date,
-                    {
-                        'total': sum(sex_count),
-                        'male': sex_count['M'],
-                        'female': sex_count['F']
-                    })
+        logger.info(
+            key='population',
+            data={'total': sum(sex_count),
+                  'male': sex_count['M'],
+                  'female': sex_count['F']
+                  })
 
         # if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info('%s|age_range_m|%s', self.sim.date,
-                    m_age_counts.to_dict())
+        logger.info(key='age_range_m', data=m_age_counts.to_dict())
 
-        logger.info('%s|age_range_f|%s', self.sim.date,
-                    f_age_counts.to_dict())
+        logger.info(key='age_range_f', data=f_age_counts.to_dict())
+
+        # Output by single year of age for under-fives
+        # (need to gurantee output always is for each of the years - even if size() is 0)
+        num_children = pd.Series(index=range(5), data=0).add(
+            df[df.is_alive & (df.age_years < 5)].groupby('age_years').size(),
+            fill_value=0
+        )
+
+        logger.info(key='num_children', data=num_children.to_dict())
+
+        # Output the person-years lived by single year of age in the past year
+        py = self.module.calc_py_lived_in_last_year()
+        logger.info(key='person_years', data=py.to_dict())
 
 
-def scale_to_population(parsed_output, resourcefilepath):
+def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False):
     """
     This helper function scales certain outputs so that they can create statistics for the whole population.
     e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
@@ -375,6 +448,9 @@ def scale_to_population(parsed_output, resourcefilepath):
 
     # Calculate ratio for scaling
     ratio_data_to_model = cens_tot / model_tot
+
+    if rtn_scaling_ratio:
+        return ratio_data_to_model
 
     # Do the scaling on selected columns in the parsed outputs:
     o = parsed_output.copy()
