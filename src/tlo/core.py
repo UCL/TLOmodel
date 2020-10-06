@@ -112,10 +112,7 @@ class Specifiable:
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
-    #def __repr__(self):
-    #    return ""
-    #def __str__(self):
-    #    return ""
+
 
 class Property(Specifiable):
     """Used to specify properties of individuals."""
@@ -161,21 +158,6 @@ class Property(Specifiable):
 
         return s
 
-#class mattdict(dict):
-#    def __repr__(self):
-#        return ""
-#    def __str__(self):
-#        return ""
-
-#class nullstr(str):
-#    def __repr__(self):
-#        return ""
-#    def __str__(self):
-#        return ""
-#    def say(self):
-#        return super().__str__()
-#    def sigh(self):
-#        return super().__repr__()
 
 class Module:
     """The base class for disease modules.
@@ -206,7 +188,7 @@ class Module:
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.
-    PARAMETERS = {}   # mattdict() # {}
+    PARAMETERS = {}
 
     # Subclasses may declare this dictionary to specify properties of individuals.
     # We give an empty definition here as default.

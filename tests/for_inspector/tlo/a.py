@@ -1,5 +1,3 @@
-import inspect
-
 class Person:
     '''The basic Person class.'''
     def __init__(self, name):
