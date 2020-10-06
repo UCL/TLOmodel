@@ -1,8 +1,19 @@
-# Best to run this from within PyCharm configuration
-# with working directory set to (e.g.)
-# /Users/matthewgillman/PycharmProjects/TLOmodel
-# and Script path
-# /Users/matthewgillman/PycharmProjects/TLOmodel/docs/inspector.py
+# tlo_methods_rst.py
+# (formerly inspector.py)
+#
+# This module is used to generate nice documentation.
+# A typical invocation, as is done in tox.ini, would be:
+# > python docs/tlo_methods_rst.py
+#
+# Within the src/tlo/methods directory, and any directory
+# structure within that, it parses the Python source files
+# and uses a mixture of Sphinx auto methods and bespoke
+# methods to generate the module-specific .rst files (which are
+# subsequently converted by Sphinx into the HTMl files desired).
+# e.g. the PARAMETERS and PROPERTIES dictionaries are displayed
+# as nice tables rather than the raw Python representation of
+# dictionaries, using bespoke methods defined here.
+
 import inspect
 import importlib
 import os.path
