@@ -187,7 +187,6 @@ class SymptomManager(Module):
                 )
             )
 
-
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
         Stores the symptom classes that are passed. Registration must be done before 'pre-initialise population' is
@@ -288,8 +287,7 @@ class SymptomManager(Module):
         # Check that the provided disease_module is a disease_module or is the SymptomManager itself
         assert disease_module.name in ([self.name] + self.recognised_module_names)
 
-        # Check that a sensible or no date_of_onset of the symptom is provided
-        # i.e. you have a disease, but maybe not this symptom.
+        # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (isinstance(date_of_onset, pd.Timestamp) and date_of_onset >= self.sim.date)
 
         # If the date of onset if not equal to today's date, then schedule the auto_onset event
@@ -304,6 +302,7 @@ class SymptomManager(Module):
         # Make the operation:
         if add_or_remove == '+':
             # Add this disease module as a cause of this symptom
+
             self.bsh[symptom_string].set(person_id, disease_module.name)
             self.persons_with_newly_onset_symptoms = self.persons_with_newly_onset_symptoms.union(person_id)
 
@@ -327,7 +326,7 @@ class SymptomManager(Module):
     def who_has(self, list_of_symptoms):
         """
         This is a helper function to look up who has a particular symptom or set of symptoms.
-        It returns a list of indices for person that have all of the symptoms specified
+        It returns a list of indicies for person that have all of the symptoms specified
 
         :param: list_of_symptoms : string or list of strings for the symptoms of interest
         :return: list of person_ids for those with all of the symptoms in list_of_symptoms who are alive
