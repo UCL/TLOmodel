@@ -94,15 +94,6 @@ def get_classes_in_module(fqn, module_obj):
     classes = []
     module_info = inspect.getmembers(module_obj)  # Gets everything
     for name, obj in module_info:
-        # print(f"get_cim: name={name}, obj={obj}")
-        # e.g. name=getLogger, obj=<function getLogger at 0x10ca66048>
-        # name=__doc__, obj=None  (or it can be a long string!)
-        # name=__file__,
-        #  obj=/Users/matthewgillman/..../TLOmodel/src/tlo/logging/helpers.py
-        # name=__name__, obj=tlo.logging.helpers
-        # name=__package__, obj=tlo.logging
-        # we want module __doc__ and functions __name__ and __doc__
-        # isfunction(obj), getfullargspec(func)
 
         # Pick out only the classes defined in this module:
         if inspect.isclass(obj) and fqn in str(obj):
@@ -174,6 +165,7 @@ def write_rst_file(rst_dir, fqn, mobj):
             # c is [class name, class object, line number]
             str = get_class_output_string(c)
             out.write(f"{str}\n")
+        # Example of use in .rst file:
         # out.write(".. class:: Noodle\n\n")
         # out.write("   Noodle's docstring.\n")
 
@@ -199,7 +191,9 @@ def get_class_output_string(classinfo):
     str += extract_bases(class_name, class_obj, spacer)
     str += "\n\n"
 
-    general_exclusions = ["__class__", "__dict__", "__init__", "__module__",
+    # Asif says we should probably not exclude __init__ in the following,
+    # because some disease classes have custom arguments:
+    general_exclusions = ["__class__", "__dict__", "__module__",
                           "__slots__", "__weakref__", ]
 
     inherited_exclusions = ["initialise_population", "initialise_simulation",
