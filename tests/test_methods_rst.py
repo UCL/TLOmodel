@@ -1,8 +1,9 @@
-import pytest
 import importlib
+import sys
 
 import docs.tlo_methods_rst as tmr
-import sys
+import pytest
+
 sys.path.insert(0, '.')
 sys.path.insert(0, './tlo_methods_rst')
 
