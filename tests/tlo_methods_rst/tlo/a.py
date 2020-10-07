@@ -43,8 +43,8 @@ class Mother:
 
 class Offspring (Father, Mother):
     def __init__(self, age, job, name):
-        #super(Father, self).__init__(age)
-        #super(Mother, self).__init__(job)
+        # super(Father, self).__init__(age)
+        # super(Mother, self).__init__(job)
         self._age = age
         self._job = job
         self._name = name
@@ -59,7 +59,6 @@ class Offspring (Father, Mother):
 
 if __name__ == '__main__':
     p = Person("John")
-    #import pdb;pdb.set_trace()
     print(f"The name of this person is {p.get_name()}")
     e = Employee("Peter")
     e.pay(30000)

@@ -1,11 +1,11 @@
 import pytest
-import inspect
 import importlib
 
 import docs.tlo_methods_rst as tmr
 import sys
 sys.path.insert(0, '.')
 sys.path.insert(0, './tlo_methods_rst')
+
 
 def test_generate_module_dict():
     # Gets a dictionary of files in directory tree with
@@ -90,8 +90,12 @@ def test_extract_bases():
     offspring = classes[-1]
     name, obj = offspring[0:2]
     expected = "**Base classes:**\n\n"
-    expected += f"Base class #1: `tlo_methods_rst.tlo.a.Father <./tlo_methods_rst.tlo.a.html#tlo_methods_rst.tlo.a.Father>`_\n\n"
-    expected += f"Base class #2: `tlo_methods_rst.tlo.a.Mother <./tlo_methods_rst.tlo.a.html#tlo_methods_rst.tlo.a.Mother>`_\n\n"
+    expected += ("Base class #1: `tlo_methods_rst.tlo.a.Father "
+                 "<./tlo_methods_rst.tlo.a.html"
+                 "#tlo_methods_rst.tlo.a.Father>`_\n\n")
+    expected += ("Base class #2: `tlo_methods_rst.tlo.a.Mother "
+                 "<./tlo_methods_rst.tlo.a.html"
+                 "#tlo_methods_rst.tlo.a.Mother>`_\n\n")
     assert expected == tmr.extract_bases(name, obj)
 
 
@@ -113,7 +117,7 @@ def ignore_this_test_write_rst_file():
             # Object creation from string:
             module_obj = importlib.import_module(fqn)
             # print(f"module_obj is {module_obj}")
-            write_rst_file(rst_directory, fqn, module_obj)
+            tmr.write_rst_file(rst_directory, fqn, module_obj)
 
 
 def test_get_class_output_string():
@@ -127,6 +131,7 @@ def test_get_class_output_string():
 
     # NB we expect the following to be in name order
     # i.e. alphabetical rather than source code order.
+    expected += f"{spacer}.. automethod:: __init__\n\n"
     expected += f"{spacer}.. automethod:: get_name\n\n"
     expected += f"{spacer}.. automethod:: set_name\n\n"
 
