@@ -4,6 +4,7 @@
 # This module is used to generate nice documentation.
 # A typical invocation, as is done in tox.ini, would be:
 # > python docs/tlo_methods_rst.py
+# although see note below about ordering of import statements.
 #
 # Within the src/tlo/methods directory, and any directory
 # structure within that, it parses the Python source files
@@ -14,21 +15,22 @@
 # as nice tables rather than the raw Python representation of
 # dictionaries, using bespoke methods defined here.
 
-import inspect
 import importlib
+import inspect
 import os.path
 import sys
-
 from os import walk
 from pathlib import Path
+
+# If running as a standalone script, the next two lines
+# need to go after the sys.path.insert() line further down.
+import tlo
+from tlo import Module
 
 # We assume this script is called from tox.ini, in the directory above
 # this one. If called from this script's own directory, we would use
 # sys.path.insert(0, '../src') instead.
 sys.path.insert(0, './src')
-import tlo
-from tlo import Module
-
 
 def get_package_name(dirpath):
     # e.g. if dirpath = "./src/tlo/logging/sublog"
