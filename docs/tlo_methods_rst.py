@@ -22,8 +22,10 @@ import sys
 from os import walk
 from pathlib import Path
 
-sys.path.insert(0, '../src')  # <- if calling this script from its directory
-sys.path.insert(0, './src')  # <- if calling from dir above (e.g. in tox.ini)
+# We assume this script is called from tox.ini, in the directory above
+# this one. If called from this script's own directory, we would use
+# sys.path.insert(0, '../src') instead.
+sys.path.insert(0, './src')
 import tlo
 from tlo import Module
 
@@ -223,7 +225,7 @@ def get_class_output_string(classinfo):
                 or object_description == 'None'):
             continue
 
-        #if name == "__doc__" and obj is not None:
+        # if name == "__doc__" and obj is not None:
         #    str += f"**Description:**\n{obj}"
         #    continue
         # print(f"next object in class {class_name} is {name} = {obj}")
@@ -244,20 +246,20 @@ def get_class_output_string(classinfo):
         #
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
-            #mystr = f"\n\n**Function {name}():**\n"
-            #mydat = inspect.getmembers(obj)
-            #for the_name, the_object in mydat:
+            # mystr = f"\n\n**Function {name}():**\n"
+            # mydat = inspect.getmembers(obj)
+            # for the_name, the_object in mydat:
                 # print(f"{the_name}: {the_object}")
             #    if the_name == "__doc__":
             #        mystr += f"\n\n{the_object} \n\n"
-            #str += mystr
+            # str += mystr
             str += f"{spacer}.. automethod:: {name}\n\n"
             continue
         #    if "population" in class_name:
         #        import pdb; pdb.set_trace()
 
         # Anything else?
-        #str += f"{name} : {obj}\n\n"
+        # str += f"{name} : {obj}\n\n"
         # print(f"DEBUG: something else... {name}, {obj}")
 
         # getdoc, getcomments,
