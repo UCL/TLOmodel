@@ -38,19 +38,16 @@ class ChronicSyndrome(Module):
     }
 
     PARAMETERS = {
-        'p_acquisition_per_year' : Parameter(
-            Types.REAL, 'Probability that an uninfected individual becomes infected'),
-        'prob_of_symptoms' : Parameter(
+        'p_acquisition_per_year': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
+        'prob_of_symptoms': Parameter(
             Types.DICT, 'Probabilities of developing each type of symptom at onset'),
-        'p_cure' :  Parameter(
-            Types.REAL, 'Probability that a treatment is succesful in curing the individual'),
-        'initial_prevalence': Parameter(
-            Types.REAL, 'Prevalence of the disease in the initial population'),
+        'p_cure': Parameter(Types.REAL, 'Probability that a treatment is succesful in curing the individual'),
+        'initial_prevalence': Parameter(Types.REAL, 'Prevalence of the disease in the initial population'),
         'prob_dev_symptom_craving_sandwiches': Parameter(
             Types.REAL, 'Probability per year of developing severe symptoms of craving sandwiches'
         ),
         'prob_seek_emergency_care_if_craving_sandwiches': Parameter(
-            Types.REAL, 'Probability that an individual will seek emergency care following onset of craving sandwiches'
+            Types.REAL, 'Probability that an individual will seak emergency care following onset of craving sandwiches'
         ),
         'daly_wts': Parameter(Types.DICT, 'DALY weights for conditions'),
     }
