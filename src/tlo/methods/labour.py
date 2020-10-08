@@ -2201,9 +2201,9 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
             ~df.at[individual_id, 'la_postpartum_haem']:
 
             if self.module.rng.random_sample() < params['prob_attend_pnc2']:
-                pnc2 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo(
+                pnc2 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
                     self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
-                days_till_pnc = self.module.rng.randint(2, 4)
+                days_till_pnc = 2
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     pnc2, priority=0, topen=self.sim.date, tclose=self.sim.date + DateOffset(days=days_till_pnc))
 
@@ -2312,8 +2312,8 @@ class EarlyPostPartumDeathEvent (Event, IndividualScopeEventMixin):
                                         'death_date': self.sim.date,
                                         'labour_profile': mni[individual_id]}
 
-                logger.info(key='labour_complications', data=labour_complications,
-                            description='mni dictionary for a woman who has died in labour')
+    #            logger.info(key='labour_complications', data=labour_complications,
+    #                        description='mni dictionary for a woman who has died in labour')
 
                 del mni[individual_id]
 
@@ -2322,8 +2322,8 @@ class EarlyPostPartumDeathEvent (Event, IndividualScopeEventMixin):
                                         'death_date': self.sim.date,
                                         'labour_profile': mni[individual_id]}
 
-                logger.info(key='labour_complications', data=labour_complications,
-                            description='mni dictionary for a woman who has died in labour')
+    #            logger.info(key='labour_complications', data=labour_complications,
+    #                        description='mni dictionary for a woman who has died in labour')
 
             # End the period of current labour
             # should this be for everyone?
@@ -2683,9 +2683,9 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         # TODO: will need to check if they remain an inpatient?
 
         if self.module.rng.random_sample() < params['prob_attend_pnc2']:
-            pnc2 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactTwo(
+            pnc2 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
                 self.sim.modules['PostnatalSupervisor'], person_id=person_id)
-            days_till_pnc = self.module.rng.randint(2, 4)
+            days_till_pnc = 2
             self.sim.modules['HealthSystem'].schedule_hsi_event(pnc2,
                                                                 priority=0,
                                                                 topen=self.sim.date,
