@@ -7,6 +7,7 @@ from pathlib import Path
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.healthsystem import HSI_Event
 
 import pandas as pd
@@ -32,7 +33,9 @@ class Ncds(Module):
 
 
     PARAMETERS = {
-        'interval_between_polls': Parameter(Types.INT, 'months between the main polling event')
+        'interval_between_polls': Parameter(Types.INT, 'months between the main polling event'),
+        'baseline_prob_ldl_hdl': Parameter(Types.REAL, 'baseline prob of ldl hdl'),
+        'rr_male': Parameter(Types.REAL, 'rr if male')
     }
 
     # Note that all properties must have a two letter prefix that identifies them to this module.
@@ -51,7 +54,7 @@ class Ncds(Module):
         'nc_vision_disorders': Property(Types.BOOL, 'Whether or not someone currently has vision disorders'),
         'nc_chronic_liver_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic liver disease'),
         'nc_chronic_kidney_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic kidney disease'),
-        'nc_chronic_ischemic_heart_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic ischemic heart disease'),
+        'nc_chronic_ischemic_hd': Property(Types.BOOL, 'Whether or not someone currently has chronic ischemic heart disease'),
         'nc_lower_extremity_disease': Property(Types.BOOL, 'Whether or not someone currently has lower extremity disease'),
         'nc_dementia': Property(Types.BOOL, 'Whether or not someone currently has dementia'),
         'nc_bladder_cancer': Property(Types.BOOL, 'Whether or not someone currently has bladder cancer'),
@@ -99,6 +102,9 @@ class Ncds(Module):
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
 
+        self.parameters['baseline_prob_ldl_hdl'] = 0.06
+        self.parameters['rr_male'] = 1.2
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -117,25 +123,52 @@ class Ncds(Module):
         * Main Logging Event
         * Build the LinearModels for the onset/removal of each condition:
         """
-        sim.schedule_event(Ncds_MainPollingEvent(self, self.parameters['interval_between_polls']), self.date)
-        sim.schedule_event(Ncds_LoggingEvent(self), self.date)
+        sim.schedule_event(Ncds_MainPollingEvent(self, self.parameters['interval_between_polls']), sim.date)
+        sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
 
         # Build the LinearModel for onset/removal of each condition
         self.lms_onset = dict()
         self.lms_removal = dict()
+
         for condition in self.conditions:
-            self.lms_onset[condition] = self.build_linear_model(self.params_dict[condition]['onset'])
-            self.lms_removal[condition] = self.build_linear_model(self.params_dict[condition]['removal'])
+            self.lms_onset[condition] = self.build_linear_model(condition,self.parameters['interval_between_polls'])
+            self.lms_removal[condition] = self.build_linear_model(condition,self.parameters['interval_between_polls'])
 
 
-    def build_linear_model(self, params_dict, interval_between_polls):
+    def build_linear_model(self, condition, interval_between_polls):
         """
         :param_dict: the dict read in from the resourcefile
         :param interval_between_polls: the duration (in months) between the polls
         :return: a linear model
         """
 
-        # todo: @Britta - adjust the rates according to the freqyency at which the MainPollingEvent will be called
+        # read in parameters from resource file
+
+        xls = pd.ExcelFile(
+            Path(self.resourcefilepath / 'ResourceFile_NCDs.xlsx')
+        )
+
+        #def read_excel_sheet(df):
+            #"""Helper function to read in the sheet"""
+            #pass
+
+        p = self.parameters
+
+        self.lms_onset[condition] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            self.parameters['baseline_prob_ldl_hdl'],
+            Predictor().when('(sex=="M")', p['rr_male'])
+        )
+
+        self.lms_removal[condition] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            self.parameters['baseline_prob_ldl_hdl'],
+            Predictor().when('(sex=="M")', p['rr_male'])
+        )
+
+        return self.lms_onset, self.lms_removal
+
+        # todo: @Britta - adjust the rates according to the frequency at which the MainPollingEvent will be called
 
 
 
@@ -216,6 +249,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 self.module.lms_onset[condition].predict(df.loc[df.is_alive & ~df[condition]
                                                                 ],
                                                          self.module.rng), condition] = True
+
             # removal:
             df.loc[
                 self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
