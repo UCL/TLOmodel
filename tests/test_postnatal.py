@@ -59,7 +59,7 @@ def check_dtypes(simulation):
 
 
 def test_run():
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),

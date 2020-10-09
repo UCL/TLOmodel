@@ -210,7 +210,6 @@ class NewbornOutcomes(Module):
         self.load_parameters_from_dataframe(dfd)
         params = self.parameters
 
-
         if 'HealthBurden' in self.sim.modules.keys():
             params['nb_daly_weights'] = {
                 'mild_motor_cognitive_preterm': self.sim.modules['HealthBurden'].get_daly_weight(357),
@@ -518,12 +517,12 @@ class NewbornOutcomes(Module):
             length_of_neonatal_period = params['days_of_neonatal_period']
             day_of_onset = int(self.rng.choice(length_of_neonatal_period, size=1,
                                            p=params['daily_risk_of_neonatal_sepsis_onset']))
-            if day_of_onset < 3:
+            if day_of_onset < 2:
                 df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
                 logger.debug(key='message', data=f'Neonate {child_id} has developed early onset sepsis following a home '
                                                  f'birth on date {self.sim.date}')
 
-            elif day_of_onset > 2:
+            elif day_of_onset > 1:
                 logger.debug(key='message', data=f'Neonate {child_id} will develop late onset sepsis following a home '
                                                  f'birth on date {self.sim.date}')
 
@@ -572,6 +571,50 @@ class NewbornOutcomes(Module):
             self.NewbornComplicationTracker['failed_to_transition'] += 1
             logger.debug(key='message', data=f'Neonate {child_id} has failed to transition from foetal to neonatal '
                                              f'state and is not breathing following delivery')
+
+    def apply_risk_of_early_neonatal_death(self, individual_id):
+        """"""
+        df = self.sim.population.props
+        child = df.loc[individual_id]
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
+
+        # Using the set_neonatal_death_status function, defined above, it is determined if newborns who have experienced
+        # complications will die because of them.
+        if child.nb_early_onset_neonatal_sepsis:
+            self.set_neonatal_death_status(individual_id, cause='neonatal_sepsis')
+
+        if child.nb_encephalopathy == 'mild_enceph':
+            self.set_neonatal_death_status(individual_id, cause='mild_enceph')
+        if child.nb_encephalopathy == 'moderate_enceph':
+            self.set_neonatal_death_status(individual_id, cause='moderate_enceph')
+        if child.nb_encephalopathy == 'severe_enceph':
+            self.set_neonatal_death_status(individual_id, cause='severe_enceph')
+
+        if child.nb_failed_to_transition and child.nb_encephalopathy == 'none':
+            self.set_neonatal_death_status(individual_id, cause='failed_to_transition')
+
+        if child.nb_early_preterm or child.nb_late_preterm:
+            self.set_neonatal_death_status(individual_id, cause='preterm_birth')
+
+        # If a neonate has died, the death is scheduled and tracked
+        if child.nb_death_after_birth:
+            self.NewbornComplicationTracker['death'] += 1
+            self.sim.schedule_event(demography.InstantaneousDeath(self, individual_id,
+                                                                  cause="neonatal complications"), self.sim.date)
+        else:
+            # Surviving newborns are scheduled to the disability event which determines morbidity following birth
+            # complications
+            self.sim.schedule_event(NewbornDisabilityEvent(self, individual_id),
+                                    self.sim.date + DateOffset(days=4))
+            logger.debug(key='message',
+                         data=f'This is NewbornOutcomesEvent scheduling NewbornDisabilityEvent for person'
+                         f' {individual_id}')
+
+        # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
+        # is done here as we use variables from the mni as predictors in some of the above equations
+        mother_id = df.loc[individual_id, 'mother_id']
+        if df.at[mother_id, 'la_maternal_death_in_labour']:
+            del mni[mother_id]
 
     # ======================================== HSI INTERVENTION FUNCTIONS ==========================
     # Here we store interventions delivered following birth as functions that are called within the HSIs
@@ -657,6 +700,8 @@ class NewbornOutcomes(Module):
             self.module.apply_risk_of_neonatal_sepsis(individual_id)
             self.module.apply_risk_of_encephalopathy(individual_id)
             self.module.apply_risk_of_failure_to_transition(individual_id)
+
+            self.module.apply_risk_of_early_neonatal_death(individual_id)
 
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module sets properties of the newborn, including prematurity
@@ -812,6 +857,11 @@ class NewbornOutcomes(Module):
                                                      f'FacilityLevel1 for child {child_id }whose mother has sought care'
                                                      f'after a complication has developed following a home_birth')
 
+                else:
+                    # If care will not be sought for this newborn we immediately apply risk of death and make changes to
+                    # the dataframe accordingly
+                    self.apply_risk_of_early_neonatal_death(child_id)
+
             # We apply a probability that women who deliver at home will initiate breastfeeding within one hour of birth
             # We assume that neonates with complications will not start breastfeeding within one hour
             if (m['delivery_setting'] == 'home_birth') and (~child.nb_failed_to_transition and
@@ -828,9 +878,9 @@ class NewbornOutcomes(Module):
 
             # All newborns are then scheduled to pass through a newborn death event to determine likelihood of death
             # in the presence of complications
-            self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=3))
-            logger.debug(key='message', data=f'This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person '
-                                             f'{child_id}')
+            #self.sim.schedule_event(NewbornDeathEvent(self, child_id), self.sim.date + DateOffset(days=3))
+            #logger.debug(key='message', data=f'This is NewbornOutcomesEvent scheduling NewbornDeathEvent for person '
+            #                                 f'{child_id}')
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.info(key='message', data=f'This is NewbornOutcomes, being alerted about a health system interaction '
@@ -1134,6 +1184,14 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                     df.at[person_id, 'nb_failed_to_transition'] and \
                     ~df.at[person_id, 'nb_received_neonatal_resus']:
                 self.module.apply_risk_of_encephalopathy(person_id)
+
+        # --------------------------------------- RISK OF DEATH ------------------------------------------------------
+            # For newborns that have experience any complications following delivery in a facility we now determine if
+            # they will die following treatment
+            if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or \
+               df.at[person_id, 'nb_failed_to_transition'] or \
+               df.at[person_id, 'nb_encephalopathy'] != 'none':
+                self.module.apply_risk_of_early_neonatal_death(person_id)
 
     def did_not_run(self):
         person_id = self.target
