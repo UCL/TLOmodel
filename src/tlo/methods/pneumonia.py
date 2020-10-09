@@ -391,6 +391,8 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of chest pain / pleurisy from meningitis'
                       ),
+        'days_between_treatment_and_cure':
+            Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.')
 
     }
 
@@ -440,6 +442,11 @@ class ALRI(Module):
         'ri_ALRI_event_date_of_onset': Property(Types.DATE, 'date of onset of current ALRI event'),
         'ri_ALRI_event_recovered_date': Property(Types.DATE, 'date of recovery from current ALRI event'),
         'ri_ALRI_event_death_date': Property(Types.DATE, 'date of death caused by current ALRI event'),
+        'ri_end_of_last_alri_episode':
+            Property(Types.DATE, 'date on which the last episode of diarrhoea is resolved, (including '
+                                 'allowing for the possibility that a cure is scheduled following onset). '
+                                 'This is used to determine when a new episode can begin. '
+                                 'This stops successive episodes interfering with one another.'),
 
         # ---- Temporary Variables: To be replaced with the properties of other modules ----
         'tmp_malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
@@ -570,6 +577,7 @@ class ALRI(Module):
         df['ri_ALRI_event_date_of_onset'] = pd.NaT
         df['ri_ALRI_event_recovered_date'] = pd.NaT
         df['ri_ALRI_event_death_date'] = pd.NaT
+        df['ri_end_of_last_alri_episode'] = pd.NaT
 
         df['ri_ALRI_treatment'] = False
         df['ri_ALRI_tx_start_date'] = pd.NaT
@@ -918,6 +926,7 @@ class ALRI(Module):
         df.at[child_id, 'ri_ALRI_event_date_of_onset'] = pd.NaT
         df.at[child_id, 'ri_ALRI_event_recovered_date'] = pd.NaT
         df.at[child_id, 'ri_ALRI_event_death_date'] = pd.NaT
+        df.at[child_id, 'ri_end_of_last_alri_episode'] = pd.NaT
 
         # ---- Temporary values ----
         df.at[child_id, 'tmp_malnutrition'] = False
@@ -1016,6 +1025,8 @@ class AcuteLowerRespiratoryInfectionPollingEvent(RegularEvent, PopulationScopeEv
         mask_could_get_new_alri_event = \
             df['is_alive'] & (df['age_years'] < 5) & ((df['ri_ALRI_event_recovered_date'] <= self.sim.date) |
                                                       pd.isnull(df['ri_ALRI_event_recovered_date']))
+        # (df.ri_end_of_last_alri_episode < self.sim.date) | pd.isnull(df.ri_end_of_last_alri_episode))
+
 
         # Compute the incidence rate for each person acquiring ALRI
         inc_of_acquiring_alri = pd.DataFrame(index=df.loc[mask_could_get_new_alri_event].index)
@@ -1161,6 +1172,12 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             df.at[person_id, 'ri_ALRI_event_recovered_date'] = date_of_outcome
             df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
 
+        # Record 'episode end' data. This the date when this episode ends. It is the last possible data that any HSI
+        # could affect this episode.
+        df.at[person_id, 'ri_end_of_last_alri_episode'] = date_of_outcome + DateOffset(
+            days=self.module.parameters['days_between_treatment_and_cure']
+        )
+
         # self.sim.modules['DxAlgorithmChild'].imnci_as_gold_standard(person_id=person_id)
 
         # Add this incident case to the tracker
@@ -1259,6 +1276,17 @@ class PneumoniaCureEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
+        # Cure should not happen if the person has already recovered
+        if df.at[person_id, 'ri_ALRI_event_recovered_date'] <= self.sim.date:
+            return
+
+        # This event should only run after the person has received a treatment during this episode
+        assert (
+            (df.at[person_id, 'ri_ALRI_event_date_of_onset']) <=
+            (df.at[person_id, 'ri_ALRI_tx_start_date']) <=
+            self.sim.date
+        )
+
         # Stop the person from dying of ALRI (if they were going to die)
         df.at[person_id, 'ri_ALRI_event_recovered_date'] = self.sim.date
         df.at[person_id, 'ri_ALRI_event_death_date'] = pd.NaT
@@ -1285,13 +1313,27 @@ class PneumoniaDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+
+        # The event should not run if the person is not currently alive
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Confirm that this is event is occurring during a current episode of diarrhoea
+        assert (
+            (df.at[person_id, 'ri_ALRI_event_date_of_onset']) <=
+            self.sim.date <=
+            (df.at[person_id, 'ri_end_of_last_alri_episode'])
+        )
+
         # Check if person should still die of ALRI
-        if (df.at[person_id, 'is_alive']) and \
-            (df.at[person_id, 'ri_ALRI_event_death_date'] == self.sim.date):
+        if (
+            df.at[person_id, 'ri_ALRI_event_death_date'] == self.sim.date) and \
+            pd.isnull(df.at[person_id, 'ri_ALRI_event_recovered_date']
+                      ):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module,
                                                                   person_id,
                                                                   cause='ALRI_' + df.at[
-                                                                      person_id, 'ri_ALRI_disease_type']
+                                                                      person_id, 'ri_primary_ALRI_pathogen']
                                                                   ), self.sim.date)
 
 
@@ -1331,8 +1373,8 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
         logger.info(key='incidence_count_by_pathogen', data=counts)
 
         # get single row of dataframe (but not a series) ----------------
-        index_children = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
-        individual_child = df.loc[[index_children[1]]]
+        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        individual_child = df.loc[[index_children_with_alri[0]]]
 
         logger.debug(key='individual_check',
                      data=individual_child,
@@ -1371,70 +1413,21 @@ class AcuteLowerRespiratoryInfectionLoggingEvent(RegularEvent, PopulationScopeEv
             count_complication = df_alri_complications[complic].sum()
             update_dict = {f'{complic}': count_complication}
             count_alri_complications.update(update_dict)
-            print(count_complication)
-
         print(count_alri_complications)
 
         complications_summary = {
             'count': count_alri_complications,
-            'number_of_children_with_complications': len(index_alri_with_complications)
+            'number_of_children_with_complications': len(index_alri_with_complications),
+            'number_of_children_with_and_without_complications': len(index_children_with_alri)
         }
+        print(complications_summary)
 
-        logger.debug(key='alri_complications',
+        logger.info(key='alri_complications',
                     data=complications_summary,
                     description='Summary of complications in a year')
 
-
-        # for i in index_alri_with_complications:
-        # count_alri_complications.update({'pleural_effusion': df.ri_ALRI_complications.count('pleural_effusion')})
-        # count_alri_complications['pneumothorax'] = df.ri_ALRI_complications.count('pneumothorax')
-        # count_alri_complications['pleural_effusion'] = df.ri_ALRI_complications.count('pleural_effusion')
-        # count_alri_complications['empyema'] = df.ri_ALRI_complications.count('empyema')
-        # count_alri_complications['lung_abscess'] = df.ri_ALRI_complications.count('lung_abscess')
-        # count_alri_complications['sepsis'] = df.ri_ALRI_complications.count('sepsis')
-        # count_alri_complications['meningitis'] = df.ri_ALRI_complications.count('meningitis')
-        #     count_alri_complic_resp_failure = df.ri_ALRI_complications[i].count('respiratory_failure')
-        #     count_alri_complic_pneumothorax = df.ri_ALRI_complications[i].count('pneumothorax')
-        #     count_alri_complic_pleural_eff = df.ri_ALRI_complications[i].count('pleural_effusion')
-        #     count_alri_complic_empyema = df.ri_ALRI_complications[i].count('empyema')
-        #     count_alri_complic_lung_abscess = df.ri_ALRI_complications[i].count('lung_abscess')
-        #     count_alri_complic_sepsis = df.ri_ALRI_complications[i].count('sepsis')
-        #     count_alri_complic_meningitis = df.ri_ALRI_complications[i].count('meningitis')
-        #
-        #     complications_summary = {
-        #         'respiratory_failure': count_alri_complic_resp_failure,
-        #         'pneumothorax:': count_alri_complic_pneumothorax,
-        #         'pleural_effusion': count_alri_complic_pleural_eff,
-        #         'empyema': count_alri_complic_empyema,
-        #         'lung_abscess': count_alri_complic_lung_abscess,
-        #         'sepsis': count_alri_complic_sepsis,
-        #         'meningitis': count_alri_complic_meningitis,
-        #     }
-        #
-        #     logger.debug(key='alri_complications',
-        #                 data=complications_summary,
-        #                 description='Summary of complications in a year')
-
-
-        # if 'pneumothorax' in df.ri_ALRI_complications:
-        #     count_alri_complic_pneumothorax = df.ri_ALRI_complications.count('pneumothorax')
-        #     logger.info('%s|alri_complication_count|%s',
-        #                 self.sim.date,
-        #                 count_alri_complic_pneumothorax
-        #                 )
-        # if 'pleural_effusion' in df.ri_ALRI_complications:
-        #     count_alri_complic_pleural_eff = df.ri_ALRI_complications.count('pleural_effusion')
-        #     logger.info('%s|alri_complication_count|%s',
-        #                 self.sim.date,
-        #                 count_alri_complic_pleural_eff
-        #                 )
-        # if 'empyema' in df.ri_ALRI_complications:
-        #     count_alri_complic_empyema = df.ri_ALRI_complications.count('empyema')
-        #     logger.info('%s|alri_complication_count|%s',
-        #                 self.sim.date,
-
-        # Reset the counters and the date_last_run
+        # Reset the counters and the date_last_run --------------------
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
         self.date_last_run = self.sim.date
 
-# todo : empyema not being added not complications
+# todo : empyema not being added complications

@@ -894,6 +894,10 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         dict_to_output.update({
             f'total_{k}': v for k, v in df.doc[df.is_alive].ri_pneumonia_IMCI_classification.value_counts().items()
         })
+        print(dict_to_output)
+
+        dict_2 = {}
+
         logger.info('%s|imci_classicications_count|%s', self.sim.date,
                     dict_to_output)
 

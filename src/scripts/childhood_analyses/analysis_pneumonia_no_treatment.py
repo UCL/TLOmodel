@@ -50,7 +50,7 @@ output_files = dict()
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 1, 1)
-popsize = 5000
+popsize = 500
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'LogFile'}
@@ -155,66 +155,3 @@ plt.title('Number of Deaths Due to ALRI')
 plt.savefig(outputpath / ("ALRI_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
-
-def get_alri_complications_from_logfile(logfile):
-    output = parse_log_file(logfile)
-
-    # %% Plot Incidence of Diarrhoea Over time:
-    years = mdates.YearLocator()  # every year
-    months = mdates.MonthLocator()  # every month
-    years_fmt = mdates.DateFormatter('%Y')
-
-    # Load Model Results on ALRI complications
-    complications_per_year_df = output['tlo.methods.pneumonia']['alri_complication_count']
-    complications_per_year_df['year'] = pd.to_datetime(complications_per_year_df['date']).dt.year
-    complications_per_year_df.drop(columns='date', inplace=True)
-    complications_per_year_df.set_index(
-        'year',
-        drop=True,
-        inplace=True
-    )
-    # pneumothorax_compl_per_year = complications_per_year_df.count_alri_complic_pneumothorax
-    # pleural_effusion_compl_per_year = complications_per_year_df.count_alri_complic_pleural_eff
-    # respiratory_failure_compl_per_year = complications_per_year_df.count_alri_complic_respiratory_failure
-
-    # ig1, ax = plt.subplots()
-    # ax.plot(np.asarray(complications_per_year_df['year']), pneumothorax_compl_per_year)
-    # ax.plot(np.asarray(complications_per_year_df['year']), pleural_effusion_compl_per_year)
-    # ax.plot(np.asarray(complications_per_year_df['year']), respiratory_failure_compl_per_year)
-    #
-    # # format the ticks
-    # ax.xaxis.set_major_locator(years)
-    # ax.xaxis.set_major_formatter(years_fmt)
-    #
-    # plt.title("ALRI complications by year")
-    # plt.xlabel("Year")
-    # plt.ylabel("number of cases with complication")
-    # plt.legend(['pneumothorax', 'pleural effusion', 'respiratory_failure'])
-    # plt.savefig(outputpath + 'ALRI complications by year' + datestamp + '.pdf')
-    #
-    # plt.show()
-
-    # Incidence rate among 0, 1, 2-4 year-olds
-    complications_per_year = dict()
-    for complication in ['pneumothorax', 'pleural_effusion', 'empyema', 'lung_abscess',
-                         'sepsis', 'meningitis', 'respiratory_failure']:
-        complications_per_year[complication] = complications_per_year_df[complication].apply(pd.Series).dropna()
-
-    # Produce mean inicence rates of incidence rate during the simulation:
-    complic_mean = pd.DataFrame()
-    complic_mean['pneumothorax_model_output'] = complications_per_year['pneumothorax'].mean()
-    complic_mean['pleural_effusion_model_output'] = complications_per_year['pleural_effusion'].mean()
-    complic_mean['empyema_model_output'] = complications_per_year['empyema'].mean()
-    complic_mean['lung_abscess_model_output'] = complications_per_year['lung_abscess'].mean()
-    complic_mean['sepsis_model_output'] = complications_per_year['sepsis'].mean()
-    complic_mean['meningitis_model_output'] = complications_per_year['meningitis'].mean()
-    complic_mean['respiratory_failure_model_output'] = complications_per_year['respiratory_failure'].mean()
-
-    return complic_mean
-
-
-complications_by_pathogen = dict()
-deaths = dict()
-for label, file in output_files.items():
-    complications_by_pathogen[label], deaths[label] = \
-        get_alri_complications_from_logfile(file)
