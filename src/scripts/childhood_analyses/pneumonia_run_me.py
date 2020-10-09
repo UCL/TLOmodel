@@ -46,5 +46,3 @@ sim.register(pneumonia.ALRI(resourcefilepath=resourcefilepath))
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-
-
