@@ -3,17 +3,19 @@ import sys
 
 import pytest
 
-import docs.tlo_methods_rst as tmr
-
 sys.path.insert(0, '.')
 sys.path.insert(0, './tlo_methods_rst')
+sys.path.insert(0, '../src') #/tlo')
 #sys.path.insert(0, './tests/')
+#from tlo.docs import generate_module_dict, get_package_name, \
+#    get_fully_qualified_name, write_rst_file, get_classes_in_module
+from tlo.docs import *
 
 
 def test_generate_module_dict():
     # Gets a dictionary of files in directory tree with
     # key = path to dir, value = list of .py files
-    result = tmr.generate_module_dict("./tlo_methods_rst/tlo/")
+    result = generate_module_dict("./tlo_methods_rst/tlo/")
     for dir in result:
         files = result[dir]
         if "/tests/tlo_methods_rst/tlo/more" in dir:
@@ -34,7 +36,7 @@ def test_generate_module_dict():
 )
 def test_get_fully_qualified_name(filename, context, result):
     # Get the fully-qualified name of the module (file).
-    assert result == tmr.get_fully_qualified_name(filename, context)
+    assert result == get_fully_qualified_name(filename, context)
 
 
 @pytest.mark.parametrize(
@@ -45,7 +47,7 @@ def test_get_fully_qualified_name(filename, context, result):
     ]
 )
 def test_get_package_name_no_exceptions(dirpath, result):
-    assert result == tmr.get_package_name(dirpath)
+    assert result == get_package_name(dirpath)
 
 
 @pytest.mark.parametrize(
@@ -59,7 +61,7 @@ def test_get_package_name_no_exceptions(dirpath, result):
 )
 def test_get_package_name_with_exceptions(dirpath):
     with pytest.raises(ValueError) as e:
-        tmr.get_package_name(dirpath)
+        get_package_name(dirpath)
     assert f"Sorry, /tlo/ isn't in dirpath ({dirpath})" == str(e.value)
 
 
@@ -72,7 +74,7 @@ def get_classes_for_testing():
     '''
     fqn = "tlo_methods_rst.tlo.a"
     module_obj = importlib.import_module(fqn)
-    return tmr.get_classes_in_module(fqn, module_obj)
+    return get_classes_in_module(fqn, module_obj)
 
 
 def test_get_classes_in_module():
@@ -99,7 +101,7 @@ def test_extract_bases():
     expected += ("Base class #2: `tlo_methods_rst.tlo.a.Mother "
                  "<./tlo_methods_rst.tlo.a.html"
                  "#tlo_methods_rst.tlo.a.Mother>`_\n\n")
-    assert expected == tmr.extract_bases(name, obj)
+    assert expected == extract_bases(name, obj)
 
 
 def ignore_this_test_write_rst_file():
@@ -108,14 +110,14 @@ def ignore_this_test_write_rst_file():
 
     # Need the trailing slash after tlo - it needs "/tlo/":
     # mydata = generate_module_dict("./src/tlo/")
-    mydata = tmr.get_class_output_string(module_directory)
+    mydata = get_class_output_string(module_directory)
     for dir in mydata:  # e.g. .../src/tlo/logging/sublog
-        package = tmr.get_package_name(dir)  # e.g. "tlo.logging.sublog"
+        package = get_package_name(dir)  # e.g. "tlo.logging.sublog"
         files = mydata[dir]  # e.g. ["fileA.py", "fileB.py", ...]
         print(f"In directory [{dir}]: files are {files}")
         for f in files:
             # e.g. "tlo.logging.sublog.fileA":
-            fqn = tmr.get_fully_qualified_name(f, package)
+            fqn = get_fully_qualified_name(f, package)
             # print(f"DEBUG: dir: {dir}, package:{package}, f:{f}, fqn:{fqn}")
             # Object creation from string:
             module_obj = importlib.import_module(fqn)
@@ -126,7 +128,7 @@ def ignore_this_test_write_rst_file():
 def test_get_class_output_string():
     classes = get_classes_for_testing()
     person = classes[0]
-    result = tmr.get_class_output_string(person)
+    result = get_class_output_string(person)
     expected = "\n\n\n.. autoclass:: Person\n\n"
     expected += "\n\n"  # It has no bases to extract.
     numspaces = 5
@@ -152,7 +154,7 @@ def test_get_base_string():
     employee_info = classes[1]
     employee_name = employee_info[0]
     employee_object = employee_info[1]
-    result = tmr.get_base_string(employee_name, employee_object, person_object)
+    result = get_base_string(employee_name, employee_object, person_object)
     expected = "`tlo_methods_rst.tlo.a.Person <./tlo_methods_rst.tlo.a.html#tlo_methods_rst.tlo.a.Person>`_"
     assert result == expected
 
@@ -164,7 +166,7 @@ def test_get_link():
     base_class = classes[0]
     base_fqn = "tlo_methods_rst.tlo.a.Person"
     base_obj = base_class[1]
-    result = tmr.get_link(base_fqn, base_obj)
+    result = get_link(base_fqn, base_obj)
     expected = f"<./tlo_methods_rst.tlo.a.html#{base_fqn}>"
     assert result == expected
 

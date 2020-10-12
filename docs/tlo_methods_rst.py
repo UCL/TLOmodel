@@ -19,15 +19,13 @@
 # The methods in here have been moved to TLOmodel/src/tlo/docs.py.
 
 import importlib
-#import inspect
-#import os.path
 import sys
 #from os import walk
 from pathlib import Path
 
-# If running as a standalone script, the next two lines
+sys.path.insert(0, './src')
+# If running as a standalone script, the next few lines
 # need to go after the sys.path.insert() line further down.
-
 import tlo
 from tlo import Module
 #import tlo.docs
@@ -39,8 +37,6 @@ from tlo.docs import generate_module_dict, get_package_name, \
 # sys.path.insert(0, '../src') instead.
 #sys.path.insert(0, '.')
 #sys.path.insert(0, './src')
-sys.path.insert(0, '../src/tlo')
-
 
 
 if __name__ == '__main__':
