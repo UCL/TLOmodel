@@ -7,6 +7,7 @@ import docs.tlo_methods_rst as tmr
 
 sys.path.insert(0, '.')
 sys.path.insert(0, './tlo_methods_rst')
+#sys.path.insert(0, './tests/')
 
 
 def test_generate_module_dict():
