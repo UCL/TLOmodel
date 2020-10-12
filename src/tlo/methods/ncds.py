@@ -34,8 +34,65 @@ class Ncds(Module):
 
     PARAMETERS = {
         'interval_between_polls': Parameter(Types.INT, 'months between the main polling event'),
-        'baseline_prob_ldl_hdl': Parameter(Types.REAL, 'baseline prob of ldl hdl'),
-        'rr_male': Parameter(Types.REAL, 'rr if male')
+        'baseline_annual_probability': Parameter(Types.REAL, 'baseline annual probability of acquiring/losing condition'),
+        'rr_male': Parameter(Types.REAL, 'rr if male'),
+        'rr_0_4': Parameter(Types.REAL, 'rr if 0-4'),
+        'rr_5_9': Parameter(Types.REAL, 'rr if 5-9'),
+        'rr_10_14': Parameter(Types.REAL, 'rr if 10-14'),
+        'rr_15_19': Parameter(Types.REAL, 'rr if 15-19'),
+        'rr_20_24': Parameter(Types.REAL, 'rr if 20-24'),
+        'rr_25_29': Parameter(Types.REAL, 'rr if 25-29'),
+        'rr_30_34': Parameter(Types.REAL, 'rr if 30-34'),
+        'rr_35_39': Parameter(Types.REAL, 'rr if 35-39'),
+        'rr_40_44': Parameter(Types.REAL, 'rr if 40-44'),
+        'rr_45_49': Parameter(Types.REAL, 'rr if 45-49'),
+        'rr_50_54': Parameter(Types.REAL, 'rr if 50-54'),
+        'rr_55_59': Parameter(Types.REAL, 'rr if 55-59'),
+        'rr_60_64': Parameter(Types.REAL, 'rr if 60-64'),
+        'rr_65_69': Parameter(Types.REAL, 'rr if 65-69'),
+        'rr_70_74': Parameter(Types.REAL, 'rr if 70-74'),
+        'rr_75_79': Parameter(Types.REAL, 'rr if 75-79'),
+        'rr_80_84': Parameter(Types.REAL, 'rr if 80-84'),
+        'rr_85_89': Parameter(Types.REAL, 'rr if 85-89'),
+        'rr_90_94': Parameter(Types.REAL, 'rr if 90-94'),
+        'rr_95_99': Parameter(Types.REAL, 'rr if 95-99'),
+        'rr_100': Parameter(Types.REAL, 'rr if 100+'),
+        'rr_urban': Parameter(Types.REAL, 'rr if living in an urban area'),
+        'rr_wealth_1': Parameter(Types.REAL, 'rr if wealth 1'),
+        'rr_wealth_2': Parameter(Types.REAL, 'rr if wealth 2'),
+        'rr_wealth_3': Parameter(Types.REAL, 'rr if wealth 3'),
+        'rr_wealth_4': Parameter(Types.REAL, 'rr if wealth 4'),
+        'rr_wealth_5': Parameter(Types.REAL, 'rr if wealth 5'),
+        'rr_bmi_1': Parameter(Types.REAL, 'rr if bmi 1'),
+        'rr_bmi_2': Parameter(Types.REAL, 'rr if bmi 2'),
+        'rr_bmi_3': Parameter(Types.REAL, 'rr if bmi 3'),
+        'rr_bmi_4': Parameter(Types.REAL, 'rr if bmi 4'),
+        'rr_bmi_5': Parameter(Types.REAL, 'rr if bmi 5'),
+        'rr_low_exercise': Parameter(Types.REAL, 'rr if low exercise'),
+        'rr_high_salt': Parameter(Types.REAL, 'rr if high salt'),
+        'rr_high_sugar': Parameter(Types.REAL, 'rr if high sugar'),
+        'rr_tobacco': Parameter(Types.REAL, 'rr if tobacco'),
+        'rr_alcohol': Parameter(Types.REAL, 'rr if alcohol'),
+        'rr_marital_status_1': Parameter(Types.REAL, 'rr if never married'),
+        'rr_marital_status_2': Parameter(Types.REAL, 'rr if currently married'),
+        'rr_marital_status_3': Parameter(Types.REAL, 'rr if widowed or divorced'),
+        'rr_in_education': Parameter(Types.REAL, 'rr if in education'),
+        'rr_current_education_level_1': Parameter(Types.REAL, 'rr if education level 1'),
+        'rr_current_education_level_2': Parameter(Types.REAL, 'rr if education level 2'),
+        'rr_current_education_level_3': Parameter(Types.REAL, 'rr if education level 3'),
+        'rr_unimproved_sanitation': Parameter(Types.REAL, 'rr if unimproved sanitation'),
+        'rr_no_access_handwashing': Parameter(Types.REAL, 'rr if no access to handwashing'),
+        'rr_no_clean_drinking_water': Parameter(Types.REAL, 'rr if no access to drinking water'),
+        'rr_wood_burning_stove': Parameter(Types.REAL, 'rr if wood-burning stove'),
+        'rr_ldl_hdl': Parameter(Types.REAL, 'rr if currently has ldl/hdl'),
+        'rr_chronic_inflammation': Parameter(Types.REAL, 'rr if currently has chronic inflammation'),
+        'rr_diabetes': Parameter(Types.REAL, 'rr if currently has diabetes'),
+        'rr_hypertension': Parameter(Types.REAL, 'rr if currently has hypertension'),
+        'rr_depression': Parameter(Types.REAL, 'rr if currently has depression'),
+        'rr_chronic_kidney_disease': Parameter(Types.REAL, 'rr if currently has chronic kidney disease'),
+        'rr_chronic_ischemic_heart_disease': Parameter(Types.REAL, 'rr if currently has chronic ischemic heart disease'),
+        'rr_stroke': Parameter(Types.REAL, 'rr if currently has stroke'),
+        'rr_cancers': Parameter(Types.REAL, 'rr if currently has cancers'),
     }
 
     # Note that all properties must have a two letter prefix that identifies them to this module.
@@ -47,23 +104,23 @@ class Ncds(Module):
         'nc_diabetes': Property(Types.BOOL, 'Whether or not someone currently has diabetes'),
         'nc_hypertension': Property(Types.BOOL, 'Whether or not someone currently has hypertension'),
         'nc_depression': Property(Types.BOOL, 'Whether or not someone currently has depression'),
-        'nc_muscoskeletal': Property(Types.BOOL, 'Whether or not someone currently has muscoskeletal conditions'),
-        'nc_frailty': Property(Types.BOOL, 'Whether or not someone currently has frailty'),
+        #'nc_muscoskeletal': Property(Types.BOOL, 'Whether or not someone currently has muscoskeletal conditions'),
+        #'nc_frailty': Property(Types.BOOL, 'Whether or not someone currently has frailty'),
         'nc_chronic_lower_back_pain': Property(Types.BOOL, 'Whether or not someone currently has chronic lower back pain'),
-        'nc_arthritis': Property(Types.BOOL, 'Whether or not someone currently has arthritis'),
-        'nc_vision_disorders': Property(Types.BOOL, 'Whether or not someone currently has vision disorders'),
-        'nc_chronic_liver_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic liver disease'),
+        #'nc_arthritis': Property(Types.BOOL, 'Whether or not someone currently has arthritis'),
+        #'nc_vision_disorders': Property(Types.BOOL, 'Whether or not someone currently has vision disorders'),
+        #'nc_chronic_liver_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic liver disease'),
         'nc_chronic_kidney_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic kidney disease'),
         'nc_chronic_ischemic_hd': Property(Types.BOOL, 'Whether or not someone currently has chronic ischemic heart disease'),
-        'nc_lower_extremity_disease': Property(Types.BOOL, 'Whether or not someone currently has lower extremity disease'),
-        'nc_dementia': Property(Types.BOOL, 'Whether or not someone currently has dementia'),
-        'nc_bladder_cancer': Property(Types.BOOL, 'Whether or not someone currently has bladder cancer'),
-        'nc_oesophageal_cancer': Property(Types.BOOL, 'Whether or not someone currently has oesophageal cancer'),
-        'nc_breast_cancer': Property(Types.BOOL, 'Whether or not someone currently has breast cancer'),
-        'nc_prostate_cancer': Property(Types.BOOL, 'Whether or not someone currently has prostate cancer'),
-        'nc_other_cancers': Property(Types.BOOL, 'Whether or not someone currently has other cancers'),
-        'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
-        'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
+        #'nc_lower_extremity_disease': Property(Types.BOOL, 'Whether or not someone currently has lower extremity disease'),
+        #'nc_dementia': Property(Types.BOOL, 'Whether or not someone currently has dementia'),
+        #'nc_bladder_cancer': Property(Types.BOOL, 'Whether or not someone currently has bladder cancer'),
+        #'nc_oesophageal_cancer': Property(Types.BOOL, 'Whether or not someone currently has oesophageal cancer'),
+        #'nc_breast_cancer': Property(Types.BOOL, 'Whether or not someone currently has breast cancer'),
+        #'nc_prostate_cancer': Property(Types.BOOL, 'Whether or not someone currently has prostate cancer'),
+        'nc_cancers': Property(Types.BOOL, 'Whether or not someone currently has cancers'),
+        #'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
+        #'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
     }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
@@ -84,7 +141,7 @@ class Ncds(Module):
         To access files use: Path(self.resourcefilepath) / file_name
         """
         xls = pd.ExcelFile(
-            Path(self.resourcefilepath / 'ResourceFile_NCDs.xlsx')
+            Path(self.resourcefilepath / 'ResourceFile_NCDs2.xlsx')
         )
 
         # check that we have got parameters for each of the conditions
@@ -102,8 +159,8 @@ class Ncds(Module):
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
 
-        self.parameters['baseline_prob_ldl_hdl'] = 0.06
-        self.parameters['rr_male'] = 1.2
+        #self.parameters['baseline_prob_ldl_hdl'] = 0.06
+        #self.parameters['rr_male'] = 1.2
 
 
     def initialise_population(self, population):
@@ -131,8 +188,8 @@ class Ncds(Module):
         self.lms_removal = dict()
 
         for condition in self.conditions:
-            self.lms_onset[condition] = self.build_linear_model(condition,self.parameters['interval_between_polls'])
-            self.lms_removal[condition] = self.build_linear_model(condition,self.parameters['interval_between_polls'])
+            self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
+            #self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
 
 
     def build_linear_model(self, condition, interval_between_polls):
@@ -143,30 +200,123 @@ class Ncds(Module):
         """
 
         # read in parameters from resource file
+        # ResourceFile_NCDs2.xlsx = simplified version with no removal of conditions
 
-        xls = pd.ExcelFile(
-            Path(self.resourcefilepath / 'ResourceFile_NCDs.xlsx')
-        )
-
-        #def read_excel_sheet(df):
-            #"""Helper function to read in the sheet"""
-            #pass
+        if condition == 'nc_ldl_hdl':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                            sheet_name="nc_ldl_hdl")
+            )
+        elif condition == 'nc_chronic_inflammation':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_chronic_inflammation")
+            )
+        elif condition == 'nc_diabetes':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_diabetes")
+            )
+        elif condition == 'nc_hypertension':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_hypertension")
+            )
+        elif condition == 'nc_depression':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_depression")
+            )
+        elif condition == 'nc_chronic_lower_back_pain':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_chronic_lower_back_pain")
+            )
+        elif condition == 'nc_chronic_kidney_disease':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_chronic_kidney_disease")
+            )
+        elif condition == 'nc_chronic_ischemic_hd':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_chronic_ischemic_hd")
+            )
+        elif condition == 'nc_stroke':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_stroke")
+            )
+        elif condition == 'nc_cancers':
+            self.load_parameters_from_dataframe(
+                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                              sheet_name="nc_cancers")
+            )
 
         p = self.parameters
+        p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
 
         self.lms_onset[condition] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.parameters['baseline_prob_ldl_hdl'],
-            Predictor().when('(sex=="M")', p['rr_male'])
+            self.parameters['baseline_annual_probability'],
+            Predictor().when('(sex=="M")', p['rr_male']),
+            Predictor('age_years').when('.between(0, 4)', p['rr_0_4'])
+                .when('.between(5, 9)', p['rr_5_9'])
+                .when('.between(10, 14)', p['rr_10_14'])
+                .when('.between(15, 19)', p['rr_15_19'])
+                .when('.between(20, 24)', p['rr_20_24'])
+                .when('.between(25, 29)', p['rr_25_29'])
+                .when('.between(30, 34)', p['rr_30_34'])
+                .when('.between(35, 39)', p['rr_35_39'])
+                .when('.between(40, 44)', p['rr_40_44'])
+                .when('.between(45, 49)', p['rr_45_49'])
+                .when('.between(50, 54)', p['rr_50_54'])
+                .when('.between(55, 59)', p['rr_55_59'])
+                .when('.between(60, 64)', p['rr_60_64'])
+                .when('.between(65, 69)', p['rr_65_69'])
+                .when('.between(70, 74)', p['rr_70_74'])
+                .when('.between(75, 79)', p['rr_75_79'])
+                .when('.between(80, 84)', p['rr_80_84'])
+                .when('.between(85, 89)', p['rr_85_89'])
+                .when('.between(90, 94)', p['rr_90_94'])
+                .when('.between(95, 99)', p['rr_95_99'])
+                .otherwise(p['rr_100']),
+            Predictor('li_urban').when(True, p['rr_urban']),
+            Predictor('li_wealth').when('==1', p['rr_wealth_1'])
+                .when('==2', p['rr_wealth_2'])
+                .when('==3', p['rr_wealth_3'])
+                .when('==4', p['rr_wealth_4'])
+                .when('==5', p['rr_wealth_5']),
+            Predictor('li_bmi').when('<18', p['rr_bmi_1'])
+                .when('>=18 & <25', p['rr_bmi_2'])
+                .when('>=25 & <30', p['rr_bmi_3'])
+                .when('>=30 & <35', p['rr_bmi_4'])
+                .when('>=35', p['rr_bmi_5']),
+            Predictor('li_low_ex').when(True, p['rr_low_exercise']),
+            Predictor('li_high_salt').when(True, p['rr_high_salt']),
+            Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
+            Predictor('li_tob').when(True, p['rr_tobacco']),
+            Predictor('li_ex_alc').when(True, p['rr_alcohol']),
+            Predictor('li_mar_stat').when('==1', p['rr_marital_status_1'])
+                .when('==2', p['rr_marital_status_2'])
+                .when('==3', p['rr_marital_status_3']),
+            Predictor('li_in_ed').when(True, p['rr_in_education']),
+            Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
+                .when('==2', p['rr_current_education_level_2'])
+                .when('==3', p['rr_current_education_level_3']),
+            Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
+            Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
+            Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
+            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove'])
         )
 
-        self.lms_removal[condition] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            self.parameters['baseline_prob_ldl_hdl'],
-            Predictor().when('(sex=="M")', p['rr_male'])
-        )
+        #self.lms_removal[condition] = LinearModel(
+            #LinearModelType.MULTIPLICATIVE,
+            #self.parameters['baseline_prob_ldl_hdl'],
+            #Predictor().when('(sex=="M")', p['rr_male'])
+        #)
 
-        return self.lms_onset, self.lms_removal
+        return self.lms_onset
 
         # todo: @Britta - adjust the rates according to the frequency at which the MainPollingEvent will be called
 
