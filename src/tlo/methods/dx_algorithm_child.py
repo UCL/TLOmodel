@@ -18,6 +18,7 @@ from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Treatment_PlanC,
 )
 from tlo.methods.dxmanager import DxTest
+from tlo.methods.measles import HSI_Measles_Treatment
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -165,5 +166,4 @@ class DxAlgorithmChild(Module):
                              tclose=None
                              )
             # -----------------------------------------------------
-
 

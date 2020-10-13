@@ -53,7 +53,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -64,9 +64,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
+        schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
+
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
-        #--------------------------- measles diagnosis ---------------------------
+        # --------------------------- measles diagnosis ---------------------------
 
         # measles diagnosis and treatment referral (independent of age)
         if "rash" in symptoms:
@@ -75,14 +77,14 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             hsi_event = HSI_Measles_Treatment(module=self.sim.modules['Measles'],
                                               person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
+            schedule_hsi(
                 hsi_event,
                 priority=0,
                 topen=self.sim.date,
                 tclose=None
             )
 
-        #--------------------------- IMCI ---------------------------
+        # --------------------------- IMCI ---------------------------
 
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
@@ -91,15 +93,16 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
             if 'diarrhoea' in symptoms:
+                # TODO this has a conditional that only runs if module Diarrhoea is registered
                 self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
 
-        #--------------------------- ADULT DIAGNOSIS ---------------------------
+        # --------------------------- ADULT DIAGNOSIS ---------------------------
 
         else:
             # It's an adult
             logger.debug('To fill in ... what to with an adult')
 
-            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            # --------------------------- oesophageal cancer ---------------------------
 
             # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
             if 'dysphagia' in symptoms:
@@ -114,13 +117,13 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     tclose=None
                 )
 
-            # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
+            # --------------------------- depression ---------------------------
+
             if 'Depression' in self.sim.modules:
                 depr = self.sim.modules['Depression']
                 if (squeeze_factor == 0.0) and (self.module.rng.rand() <
                                                 depr.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
-            # -------------------------------
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
@@ -195,7 +198,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         if is_child:
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
-            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+            the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # Adult out-patient appointment
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'
@@ -215,15 +218,15 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION DURING BIRTH  -----
             if person_id in labour_list:
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
                     event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
-            # -----  COMPLICATION AFTER BIRTH  -----
+                # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
-                        & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
+                    & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
                     event = HSI_Labour_ReceivesCareForPostpartumPeriod(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))

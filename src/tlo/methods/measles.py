@@ -351,17 +351,38 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key="HSI_Measles_Treatment",
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")
 
-        # treatment for dehydration and vitamin A
+        # treatment combinations available
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         item_code1 = pd.unique(
-            consumables.loc[consumables["Items"] == "ORS, sachet", "Item_Code"])[0]
-
-        item_code2 = pd.unique(
             consumables.loc[consumables["Items"] == "Vitamin A, caplet, 100,000 IU", "Item_Code"])[0]
 
+        package_code1 = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
+                            'Intervention_Pkg_Code'])[0]
+
+        package_code2 = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe pneumonia',
+                            'Intervention_Pkg_Code'])[0]
+
+        # for non-complicated measles
         the_cons_footprint = {
             "Intervention_Package_Code": {},
-            "Item_Code": {item_code1: 1, item_code2: 1}}
+            "Item_Code": {item_code1: 1}
+        }
+
+        # for measles with severe diarrhoea
+        if "diarrhoea" in self.sim.modules["SymptomManager"].has_what(person_id):
+            the_cons_footprint = {
+                "Intervention_Package_Code": {package_code1: 1},
+                "Item_Code": {item_code1: 1}
+            }
+
+        # for measles with pneumonia
+        if "Pneumonia" in self.sim.modules["SymptomManager"].has_what(person_id):
+            the_cons_footprint = {
+                "Intervention_Package_Code": {package_code2: 1},
+                "Item_Code": {item_code1: 1}
+            }
 
         # request the treatment
         outcome_of_request_for_consumables = self.sim.modules["HealthSystem"].request_consumables(
@@ -369,7 +390,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
 
         if outcome_of_request_for_consumables:
             logger.debug(key="HSI_Measles_Treatment",
-                         data=f"HSI_Measles_Treatment: giving ORS and vitamin A to person {person_id}")
+                         data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
 
             # schedule symptom resolution following treatment: assume perfect treatment
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
@@ -381,6 +402,69 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         )
         pass
 
+
+class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
+    """
+    This is a treatment for diarrhoea with severe dehydration administered at outpatient setting through IMCI
+    """
+
+    # if child has no other severe classification: PLAN C
+    # Or if child has another severe classification:
+    # refer urgently to hospital with mother giving frequent ORS on the way, advise on breastfeeding
+    # if cholera is in your area, give antibiotic for cholera
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        self.TREATMENT_ID = 'Treatment_PlanC'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(key='debug', data='Provide Treatment Plan C for Diarrhoea with severe dehydration')
+
+        # Stop the person from dying of Diarrhoea (if they were going to die)
+        df = self.sim.population.props
+
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Get consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
+                            'Intervention_Pkg_Code'])[0]
+
+        the_consumables_needed = {
+            'Intervention_Package_Code': {pkg_code: 1},
+            'Item_Code': {}
+        }
+
+        # Outcome of the request for treatment
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
+
+        if is_cons_available['Intervention_Package_Code'][pkg_code]:
+            logger.debug(
+                key='debug',
+                data=f'HSI_Diarrhoea_Dysentery: giving dysentery treatment for child {person_id}')
+            if (
+                self.module.rng.rand() < self.module.parameters['prob_of_cure_given_Treatment_PlanC']
+            ):
+                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
+                self.module.cancel_death_date(person_id)
+                # schedule cure date
+                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(
+                                            days=self.module.parameters['days_between_treatment_and_cure']))
+
+
+# ---------------------------------------------------------------------------------
+# Health System Interaction Events
+# ---------------------------------------------------------------------------------
 
 class MeaslesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
