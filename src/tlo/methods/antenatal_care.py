@@ -30,7 +30,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # This dictionary is used by to track the frequency of certain events in the module which are processed by the
         # logging event
-        self.ANCTracker = dict()
+        self.anc_tracker = dict()
 
     METADATA = {
         Metadata.USES_HEALTHSYSTEM,
@@ -154,7 +154,7 @@ class CareOfWomenDuringPregnancy(Module):
                            sim.date + DateOffset(years=1))
 
         # Populate the tracker
-        self.ANCTracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
+        self.anc_tracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
                            'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months':0}
 
         # DX_TESTS
@@ -257,40 +257,36 @@ class CareOfWomenDuringPregnancy(Module):
         """This function determines when a woman should be scheduled to return to ANC based on her current gestation at
         her most recent visit"""
         df = self.sim.population.props
+        mother = df.loc[person_id]
 
-        if df.at[person_id, 'ps_gestational_age_in_weeks'] < 20:
+        if mother.ps_gestational_age_in_weeks < 20:
             recommended_gestation_next_anc = 20
             return recommended_gestation_next_anc
 
-        elif 20 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 26:
+        elif 20 >= mother.ps_gestational_age_in_weeks < 26:
             recommended_gestation_next_anc = 26
-            return recommended_gestation_next_anc
 
-        elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 30:
+        elif 26 >= mother.ps_gestational_age_in_weeks < 30:
             recommended_gestation_next_anc = 30
-            return recommended_gestation_next_anc
 
-        elif 30 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 34:
+        elif 30 >= mother.ps_gestational_age_in_weeks < 34:
             recommended_gestation_next_anc = 34
-            return recommended_gestation_next_anc
 
-        elif 34 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
+        elif 34 >= mother.ps_gestational_age_in_weeks < 36:
             recommended_gestation_next_anc = 36
-            return recommended_gestation_next_anc
 
-        elif 36 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
+        elif 36 >= mother.ps_gestational_age_in_weeks < 38:
             recommended_gestation_next_anc = 38
-            return recommended_gestation_next_anc
 
-        elif 38 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+        elif 38 >= mother.ps_gestational_age_in_weeks < 40:
             recommended_gestation_next_anc = 40
-            return recommended_gestation_next_anc
 
         # TODO: this is a quick fix for women who present very late to ANC so that they get some treatment coverage
         #  before they likely give birth
-        elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
+        elif mother.ps_gestational_age_in_weeks >= 40:
             recommended_gestation_next_anc = 45
-            return recommended_gestation_next_anc
+
+        return recommended_gestation_next_anc
 
     # ================================= INTERVENTION FUNCTIONS =======================================================
     # Following functions contain code for the interventions which are called by each ANC contact
@@ -512,13 +508,13 @@ class CareOfWomenDuringPregnancy(Module):
         # TB screening...
         # Currently we schedule women to the TB screening HSI in the TB module, however this may over-use resources so
         # possible the TB screening should also just live in this code
+        if 'tb' in self.sim.modules.keys():
+            tb_screen = HSI_TbScreening(
+                module=self.sim.modules['tb'], person_id=person_id)
 
-        tb_screen = HSI_TbScreening(
-            module=self.sim.modules['tb'], person_id=person_id)
-
-        self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
-                                                            topen=self.sim.date,
-                                                            tclose=self.sim.date + DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
         # TODO: not clear from guidelines the frequency of screening so currently just initiated in first vist (one off)
 
     def tetanus_vaccination(self, hsi_event):
@@ -748,13 +744,16 @@ class CareOfWomenDuringPregnancy(Module):
         #  HSI?
         # TODO: Also check with tara if treatment in pregnancy is the same (or does the HIV code already allow for
         #  this?)
+        if 'hiv' in self.sim.modules.keys():
+            hiv_testing = HSI_Hiv_PresentsForCareWithSymptoms(
+                module=self.sim.modules['hiv'], person_id=person_id)
 
-        hiv_testing = HSI_Hiv_PresentsForCareWithSymptoms(
-            module=self.sim.modules['hiv'], person_id=person_id)
-
-        self.sim.modules['HealthSystem'].schedule_hsi_event(hiv_testing, priority=0,
-                                                            topen=self.sim.date,
-                                                            tclose=self.sim.date + DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(hiv_testing, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+        else:
+            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+                                               'testing will not happen in antenatal care')
 
     def iptp_administration(self, hsi_event):
         """ This functions manages the administration of Intermittent preventative treatment for the prevention of
@@ -919,26 +918,8 @@ class CareOfWomenDuringPregnancy(Module):
                     logger.debug(key='message', data=f'mother {individual_id} will not seek any additional antenatal '
                                                      f'care for this pregnancy')
 
-        if visit_to_be_scheduled == 2:
-            set_anc_date(individual_id, 2)
-
-        if visit_to_be_scheduled == 3:
-            set_anc_date(individual_id, 3)
-
-        if visit_to_be_scheduled == 4:
-            set_anc_date(individual_id, 4)
-
-        if visit_to_be_scheduled == 5:
-            set_anc_date(individual_id, 5)
-
-        if visit_to_be_scheduled == 6:
-            set_anc_date(individual_id, 6)
-
-        if visit_to_be_scheduled == 7:
-            set_anc_date(individual_id, 7)
-
-        if visit_to_be_scheduled == 8:
-            set_anc_date(individual_id, 8)
+        if 2 <= visit_to_be_scheduled <= 8:
+            set_anc_date(individual_id, visit_to_be_scheduled)
 
 
 class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -979,10 +960,10 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             assert df.at[person_id, 'ps_gestational_age_in_weeks'] is not pd.NaT
 
             # We store some information for summary statistics
-            self.module.ANCTracker['cumm_ga_at_anc1'] += df.at[person_id, 'ps_gestational_age_in_weeks']
-            self.module.ANCTracker['total_first_anc_visits'] += 1
+            self.module.anc_tracker['cumm_ga_at_anc1'] += df.at[person_id, 'ps_gestational_age_in_weeks']
+            self.module.anc_tracker['total_first_anc_visits'] += 1
             if df.at[person_id, 'ps_gestational_age_in_weeks'] < 14:
-                self.module.ANCTracker['total_anc1_first_trimester'] += 1
+                self.module.anc_tracker['total_anc1_first_trimester'] += 1
 
             # First, we use the follow function to determine at what gestational age this woman should be scheduled to
             # return for her next ANC visit (based on gestational age at presentation to ANC1)
@@ -1008,14 +989,14 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 20 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 26:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 26:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
                 self.module.anc_catch_up_interventions(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=2,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.interventions_delivered_only_at_first_contact(hsi_event=self)
                 self.module.anc_catch_up_interventions(hsi_event=self)
 
@@ -1092,7 +1073,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 26 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 30:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 30:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.gdm_screening(hsi_event=self)
@@ -1100,14 +1081,14 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.schedule_next_anc(person_id, visit_to_be_scheduled=3,
                                               recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 30 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 34:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 34:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 34 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
 
@@ -1117,14 +1098,14 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 36 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.hb_testing(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 38 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
 
@@ -1175,7 +1156,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3
 
             if df.at[person_id, 'ps_gestational_age_in_weeks'] < 30:
-                self.module.ANCTracker['timely_ANC3'] += 1
+                self.module.anc_tracker['timely_ANC3'] += 1
 
             self.module.interventions_delivered_at_every_contact(hsi_event=self)
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
@@ -1190,14 +1171,14 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 30 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 34:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 34:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 34 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
 
@@ -1207,14 +1188,14 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 36 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.hb_testing(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=4,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 38 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
 
@@ -1227,7 +1208,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             # todo: remove
             if df.at[person_id, 'ps_gestational_age_in_weeks'] < 30 and df.at[person_id,
                                                                               'ac_receiving_diet_supplements']:
-                self.module.ANCTracker['diet_supp_6_months'] += 1
+                self.module.anc_tracker['diet_supp_6_months'] += 1
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -1283,7 +1264,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=5,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 34 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 36:
                 self.module.iptp_administration(hsi_event=self)
                 self.module.calcium_supplementation(hsi_event=self)
 
@@ -1293,14 +1274,14 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=5,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 36 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.hb_testing(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=5,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 38 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
 
@@ -1363,14 +1344,14 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=6,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 36 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 38:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.hb_testing(hsi_event=self)
 
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=6,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 38 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
 
@@ -1435,7 +1416,7 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=7,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            elif 38 >= df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
+            elif df.at[person_id, 'ps_gestational_age_in_weeks'] < 40:
                 self.module.calcium_supplementation(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
 
@@ -1541,7 +1522,7 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 8
-            self.module.ANCTracker['anc8+'] += 1
+            self.module.anc_tracker['anc8+'] += 1
 
             self.module.interventions_delivered_at_every_contact(hsi_event=self)
             self.module.calcium_supplementation(hsi_event=self)
@@ -2009,14 +1990,14 @@ class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if total_births_last_year == 0:
             total_births_last_year = 1
 
-        total_anc1_visits = self.module.ANCTracker['total_first_anc_visits']
+        total_anc1_visits = self.module.anc_tracker['total_first_anc_visits']
         if total_anc1_visits == 0:
             total_anc1_visits = 1
 
-        anc1_in_first_trimester = self.module.ANCTracker['total_anc1_first_trimester']
-        cumm_gestation = self.module.ANCTracker['cumm_ga_at_anc1']
-        early_anc3 = self.module.ANCTracker['timely_ANC3']
-        diet_sup_6_months = self.module.ANCTracker['diet_supp_6_months']
+        anc1_in_first_trimester = self.module.anc_tracker['total_anc1_first_trimester']
+        cumm_gestation = self.module.anc_tracker['cumm_ga_at_anc1']
+        early_anc3 = self.module.anc_tracker['timely_ANC3']
+        diet_sup_6_months = self.module.anc_tracker['diet_supp_6_months']
 
         ra_lower_limit = 14
         ra_upper_limit = 50
@@ -2036,6 +2017,6 @@ class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=dict_for_output,
                     description='Yearly summary statistics output from the antenatal care module')
 
-        self.module.ANCTracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
+        self.module.anc_tracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
                                   'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months':0}
 

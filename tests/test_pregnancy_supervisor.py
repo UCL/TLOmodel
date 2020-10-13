@@ -76,7 +76,6 @@ def test_run():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -102,7 +101,6 @@ def test_run_no_healthsystem():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)

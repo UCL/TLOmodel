@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     antenatal_care,
@@ -21,6 +21,23 @@ from tlo.methods import (
     symptommanager, male_circumcision, hiv, tb, postnatal_supervisor
 )
 
+seed = 567
+
+log_config = {
+    "filename": "postnatal_analysis",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.labour": logging.DEBUG,
+        "tlo.methods.healthsystem": logging.FATAL,
+        "tlo.methods.hiv": logging.FATAL,
+        "tlo.methods.newborn_outcomes": logging.DEBUG,
+        "tlo.methods.antenatal_care": logging.DEBUG,
+        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+        "tlo.methods.postnatal_supervisor": logging.DEBUG,
+    }
+}
+
 # %%
 outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
@@ -32,10 +49,10 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 3000
+popsize = 100
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 # service_availability = ['*']
 
 allowed_interventions = ['prophylactic_labour_interventions',
@@ -69,15 +86,12 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-logfile = sim.configure_logging(filename="LogFile")
-sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-# Get the output from the logfile
-output = parse_log_file(logfile)
+log_df = parse_log_file(sim.log_filepath)
 
-stats_incidence = output['tlo.methods.labour']['summary_stats_incidence']
+stats_incidence = log_df['tlo.methods.labour']['labour_summary_stats_incidence']
 stats_incidence['year'] = pd.to_datetime(stats_incidence['date']).dt.year
 stats_incidence.drop(columns='date', inplace=True)
 stats_incidence.set_index(
@@ -87,19 +101,19 @@ stats_incidence.set_index(
     )
 
 
-stats_crude = output['tlo.methods.labour']['summary_stats_crude_cases']
+stats_crude = log_df['tlo.methods.labour']['labour_summary_stats_crude_cases']
 stats_crude['date'] = pd.to_datetime(stats_crude['date'])
 stats_crude['year'] = stats_crude['date'].dt.year
 
-stats_deliveries = output['tlo.methods.labour']['summary_stats_deliveries']
+stats_deliveries = log_df['tlo.methods.labour']['labour_summary_stats_delivery']
 stats_deliveries['date'] = pd.to_datetime(stats_deliveries['date'])
 stats_deliveries['year'] = stats_deliveries['date'].dt.year
 
-stats_nb = output['tlo.methods.newborn_outcomes']['summary_stats']
+stats_nb = log_df['tlo.methods.newborn_outcomes']['neonatal_summary_stats']
 stats_nb['date'] = pd.to_datetime(stats_nb['date'])
 stats_nb['year'] = stats_nb['date'].dt.year
 
-stats_md = output['tlo.methods.labour']['summary_stats_death']
+stats_md = log_df['tlo.methods.labour']['labour_summary_stats_death']
 stats_md['date'] = pd.to_datetime(stats_md['date'])
 stats_md['year'] = stats_md['date'].dt.year
 

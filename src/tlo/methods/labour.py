@@ -194,6 +194,8 @@ class Labour (Module):
             Types.REAL, 'relative risk of postpartum haemorrhage following obstructed labour'),
         'prob_pph_source': Parameter(
             Types.LIST, 'probability of uterine atony and retained placenta as the source of postpartum bleeding '),
+        'prob_pph_secondary': Parameter(
+            Types.REAL, 'probability of a woman developing a secondary postpartum hemorrhage (post 48hrs) '),
         'odds_pp_sepsis': Parameter(
             Types.REAL, 'odds of a woman developing sepsis following delivery'),
         'or_pp_sepsis_rural': Parameter(
@@ -395,8 +397,6 @@ class Labour (Module):
             Types.REAL, 'effect of delayed treatment for uterine rupture on risk of intrapartum stillbirth'),
         'allowed_interventions': Parameter(
             Types.LIST, 'list of interventions allowed to run, used in analysis'),
-
-
 
         # ================================= DALY WEIGHT PARAMETERS =====================================================
         'daly_wt_haemorrhage_moderate': Parameter(
@@ -663,6 +663,10 @@ class Labour (Module):
                 # Predictor('la_obstructed_labour').when(True, params['rr_pph_pl_ol']),
             ),
 
+            'postpartum_haem_secondary_pp': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_pph_secondary']),
+
             'postpartum_haem_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_pp_pph'],
@@ -812,7 +816,8 @@ class Labour (Module):
         self.possible_intrapartum_complications = ['obstructed_labour', 'antepartum_haem', 'sepsis',
                                                    'uterine_rupture', 'eclampsia', 'severe_pre_eclamp']
 
-        self.possible_postpartum_complications = ['sepsis', 'postpartum_haem', 'eclampsia', 'severe_pre_eclamp']
+        self.possible_postpartum_complications = ['sepsis', 'postpartum_haem', 'postpartum_haem_secondary',
+                                                  'eclampsia', 'severe_pre_eclamp']
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
         # We register all the dx_tests needed within the labour HSI events. dx_tests in this module represent assessment
@@ -1144,36 +1149,27 @@ class Labour (Module):
             # TODO: wouldnt AMTSL only prevent PPH 2ndry to uterine atony, a lot of secondary pph is retained products.
 
             if complication == 'postpartum_haem':
+                df.at[individual_id, f'la_{complication}'] = True
+                self.labour_tracker[f'{complication}'] += 1
+                mni[individual_id]['source_pph'] = self.rng.choice(['uterine_atony', 'retained_placenta'],
+                                                                   size=1, p=params['prob_pph_source'])
+                random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
+                                                p=params['severity_maternal_haemorrhage'])
 
-                # Draw a day of onset, from a list (0-42 days) weighted to occur mostly close to delivery
+                if random_choice == 'non_severe':
+                    df.at[individual_id, 'la_maternal_haem_non_severe_disab'] = True
+                else:
+                    df.at[individual_id, 'la_maternal_haem_severe_disab'] = True
+
+                logger.debug(key='message', data=f'person {individual_id} has developed {complication} during the'
+                                                 f' postpartum phase of a birth on date {self.sim.date}')
+
+            if complication == 'postpartum_haem_secondary':
                 day_of_onset = int(self.rng.choice(postnatal_days, size=1, p=params['daily_risk_of_pph_onset']))
 
-                # If the PPH will occur before day 4 we make the changes to the dataframe now
-                if day_of_onset < 2:
-                    # Severity of bleeding is assigned if a woman experiences a postpartum haemorrhage to map to
-                    # DALY weights
-                    df.at[individual_id, f'la_{complication}'] = True
-                    self.labour_tracker[f'{complication}'] += 1
-
-                    mni[individual_id]['source_pph'] = self.rng.choice(['uterine_atony', 'retained_placenta'],
-                                                                       size=1, p=params['prob_pph_source'])
-                    random_choice = self.rng.choice(['non_severe', 'severe'], size=1,
-                                                    p=params['severity_maternal_haemorrhage'])
-
-                    if random_choice == 'non_severe':
-                        df.at[individual_id, 'la_maternal_haem_non_severe_disab'] = True
-                    else:
-                        df.at[individual_id, 'la_maternal_haem_severe_disab'] = True
-
-                    logger.debug(key='message', data=f'person {individual_id} has developed {complication} during the'
-                                                     f' postpartum phase of a birth on date {self.sim.date}')
-
-                # If the bleeding will start at day 4+ we schedule an event in the postnatal module which will onset
-                # bleeding and possible care seeking/death on the future day of the postnatal period
-                if day_of_onset > 1:
-                    self.sim.schedule_event(postnatal_supervisor.SecondaryPostpartumHaemorrhageOnsetEvent
-                                            (self.sim.modules['PostnatalSupervisor'], individual_id), self.sim.date +
-                                            DateOffset(days=day_of_onset))
+                self.sim.schedule_event(postnatal_supervisor.SecondaryPostpartumHaemorrhageOnsetEvent
+                                        (self.sim.modules['PostnatalSupervisor'], individual_id), self.sim.date +
+                                        DateOffset(days=day_of_onset))
 
             # A similar pattern is then followed for sepsis
             if complication == 'sepsis':
@@ -2171,7 +2167,6 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         mni = self.module.mother_and_newborn_info
         params = self.module.parameters
-        child_id = int(df.at[individual_id, 'pn_id_most_recent_child'])
 
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(5, unit='D')
         self.module.postpartum_characteristics_checker(individual_id)
@@ -2184,6 +2179,7 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
         # We first determine if this woman will experience any complications immediately following/ or in the days after
         # birth
         self.module.set_postpartum_complications(individual_id, complication='postpartum_haem')
+        self.module.set_postpartum_complications(individual_id, complication='postpartum_haem_secondary')
         self.module.progression_of_hypertensive_disorders(individual_id)
 
         if ~df.at[individual_id, 'la_sepsis']:
@@ -2237,20 +2233,11 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 # If the woman survives her complication we then determine if they will present for their first PNC
                 # visit 1-2 days postnatal
                 if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-                    maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal(
+                    maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
                     self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
-
-                    neonatal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOneNeonatal(
-                        self.sim.modules['PostnatalSupervisor'], person_id=child_id)
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
                             maternal_pnc1,
-                            priority=0,
-                            topen=self.sim.date + DateOffset(days=1),
-                            tclose=self.sim.date + DateOffset(days=2))
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            neonatal_pnc1,
                             priority=0,
                             topen=self.sim.date + DateOffset(days=1),
                             tclose=self.sim.date + DateOffset(days=2))
@@ -2260,20 +2247,11 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
              or df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn' or ~df.at[individual_id, 'la_postpartum_haem']:
 
             if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-                maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal(
+                maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
                     self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
-
-                neonatal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOneNeonatal(
-                    self.sim.modules['PostnatalSupervisor'], person_id=child_id)
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     maternal_pnc1,
-                    priority=0,
-                    topen=self.sim.date + DateOffset(days=1),
-                    tclose=self.sim.date + DateOffset(days=2))
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    neonatal_pnc1,
                     priority=0,
                     topen=self.sim.date + DateOffset(days=1),
                     tclose=self.sim.date + DateOffset(days=2))
@@ -2605,7 +2583,6 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         mni = self.module.mother_and_newborn_info
         df = self.sim.population.props
         params = self.module.parameters
-        child_id = int(df.at[person_id, 'pn_id_most_recent_child'])
 
         logger.info(key='message', data='This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing '
                                         f'skilled attendance following birth for person {person_id}')
@@ -2638,6 +2615,8 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
 
             self.module.set_postpartum_complications(
                 person_id, complication='postpartum_haem')
+            self.module.set_postpartum_complications(
+                person_id, complication='postpartum_haem_secondary')
 
             # Only women who haven't already developed sepsis are able to become septic at this point
             if ~df.at[person_id, 'la_sepsis']:
@@ -2688,20 +2667,11 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         #  instantaneous death event)
 
         if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-            maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal(
+            maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
                     self.sim.modules['PostnatalSupervisor'], person_id=person_id)
-
-            neonatal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOneNeonatal(
-                    self.sim.modules['PostnatalSupervisor'], person_id=child_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 maternal_pnc1,
-                priority=0,
-                topen=self.sim.date + DateOffset(days=1),
-                tclose=self.sim.date + DateOffset(days=2))
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                neonatal_pnc1,
                 priority=0,
                 topen=self.sim.date + DateOffset(days=1),
                 tclose=self.sim.date + DateOffset(days=2))

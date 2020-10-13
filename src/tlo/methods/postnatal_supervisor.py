@@ -23,7 +23,7 @@ class PostnatalSupervisor(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.PostnatalTracker = dict()
+        self.postnatal_tracker = dict()
 
     METADATA = {Metadata.DISEASE_MODULE,
                 Metadata.USES_HEALTHSYSTEM}  # declare that this is a disease module (leave as empty set otherwise)
@@ -78,6 +78,8 @@ class PostnatalSupervisor(Module):
                                                         'following discharge'),
         'pn_sepsis_late_neonatal_treatment': Property(Types.BOOL, 'Whether this neonate has received treatment for '
                                                                   'neonatal sepsis'),
+        'pn_anaemia_in_postpartum_period': Property(Types.BOOL, 'Whether this woman has developed anaemia following '
+                                                                'birth'),
     }
 
     def read_parameters(self, data_folder):
@@ -136,6 +138,7 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_vesicovaginal_fistula'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal_treatment'] = False
+        df.loc[df.is_alive, 'pn_anaemia_in_postpartum_period'] = False
 
     def initialise_simulation(self, sim):
         sim.schedule_event(PostnatalSupervisorEvent(self),
@@ -145,7 +148,7 @@ class PostnatalSupervisor(Module):
                            sim.date + DateOffset(years=1))
 
         # Define the conditions we want to track
-        self.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
+        self.postnatal_tracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
                                  'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
                                  'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}
 
@@ -183,6 +186,7 @@ class PostnatalSupervisor(Module):
         df.at[child_id, 'pn_obstetric_fistula'] = False
         df.at[child_id, 'pn_sepsis_late_neonatal'] = False
         df.at[child_id, 'pn_sepsis_late_neonatal_treatment'] = False
+        df.at[child_id, 'pn_anaemia_in_postpartum_period'] = False
 
         # We store the ID number of the child this woman has just delivered
         df.at[mother_id, 'pn_id_most_recent_child'] = child_id
@@ -193,7 +197,7 @@ class PostnatalSupervisor(Module):
 
         if self.rng.random_sample() < risk_of_fistula:
             df.at[mother_id, 'pn_obstetric_fistula'] = True
-            self.PostnatalTracker['fistula'] += 1
+            self.postnatal_tracker['fistula'] += 1
             # todo: should treatment be the only thing that turns this variable off/ or self resolution?
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -205,10 +209,6 @@ class PostnatalSupervisor(Module):
 
         logger.debug(key='message', data='This is PostnatalSupervisor reporting my health values')
 
-    def set_postnatal_maternal_complications(self, index):
-        """"""
-        df = self.sim.population.props
-        params = self.parameters
 
     def progression_of_hypertensive_disorders(self, index):
         """"""
@@ -228,8 +228,8 @@ class PostnatalSupervisor(Module):
         temp_df.columns = ['result', 'random_draw']
 
         positive_index = temp_df.index[temp_df.random_draw < temp_df.result]
-        df.loc[positive_index, 'ps_anaemia_in_pregnancy'] = True
-        self.PostnatalTracker['postnatal_anaemia'] += len(positive_index)
+        df.loc[positive_index, 'pn_anaemia_in_postpartum_period'] = True
+        self.postnatal_tracker['postnatal_anaemia'] += len(positive_index)
 
     def maternal_postnatal_care_contact_intervention_bundle(self, individual_id, hsi_event):
         """This function is called by each of the postnatal care visits. Currently it the interventions include
@@ -277,8 +277,35 @@ class PostnatalSupervisor(Module):
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
+    def neonatal_postnatal_care_contact_intervention_bundle(self, individual_id, hsi_event):
+        """This function is called by each of the postnatal care visits. Currently it the interventions include
+        assessment for neonatal sepsis. If detected, neonates are admitted for treatment"""
+        # ------------------------------ESSENTIAL NEWBORN CARE (IF HOME BIRTH & VISIT ONE)--------------------------
+
+        # Tetracycline
+        # Cord care
+        # Vit k
+        # starting breast feeding
+
+        # TODO: how will we apply the effect of late essential interventions if we have already applied sepsis risk
+
+        # --------------------------NEONATAL ASSESSMENT AND TREATMENT ---------------------------------------------
+        # SEPSIS
+        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
+                                                                   'assessment_for_neonatal_sepsis',
+                                                                   hsi_event=hsi_event):
+            logger.debug(key='message', data=f'Neonate {individual_id} has been assessed and diagnosed with neonatal '
+            f'sepsis, they will be admitted for treatment')
+
+            sepsis_treatment = HSI_PostnatalSupervisor_InpatientCareForNeonatalSepsis(
+                self, person_id=individual_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(sepsis_treatment,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+
     def maternal_postnatal_care_care_seeking(self, individual_id, recommended_day_next_pnc, next_pnc_visit,
-                                             maternal_pnc, neonatal_pnc):
+                                             maternal_pnc):
         df = self.sim.population.props
         params = self.parameters
 
@@ -292,31 +319,6 @@ class PostnatalSupervisor(Module):
                                                                 topen=date_next_pnc,
                                                                 tclose=date_next_pnc + DateOffset(days=3))
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(neonatal_pnc,
-                                                                priority=0,
-                                                                topen=date_next_pnc,
-                                                                tclose=date_next_pnc + DateOffset(days=3))
-
-    def neonatal_postnatal_care_contact_intervention_bundle(self, individual_id, hsi_event):
-        """This function is called by each of the postnatal care visits. Currently it the interventions include
-        assessment for neonatal sepsis. If detected, neonates are admitted for treatment"""
-
-        # --------------------------NEONATAL ASSESSMENT AND TREATMENT ---------------------------------------------
-        # SEPSIS
-        if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=
-                                                                   'assessment_for_neonatal_sepsis',
-                                                                   hsi_event=hsi_event):
-            logger.debug(key='message', data=f'Neonate {individual_id} has been assessed and diagnosed with neonatal '    
-                                             f'sepsis, they will be admitted for treatment')
-
-            sepsis_treatment = HSI_PostnatalSupervisor_InpatientCareForNeonatalSepsis(
-                                                        self, person_id=individual_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(sepsis_treatment,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
-
-        # TODO: add 'essential newborn care' for women who delivered at home
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """ """
@@ -388,7 +390,9 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class SecondaryPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin):
-    """"""
+    """This is SecondaryPostpartumHaemorrhageOnsetEvent. It is scheduled from the Labour module for women who will
+    develop a postpartum haemorrhage during the postpartum period, after discharge. Currently this event applies
+    severity of bleeding and schedules the LatePostpartumDeathEvent. It is unfinished."""
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
@@ -401,7 +405,7 @@ class SecondaryPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin)
 
         if df.at[individual_id, 'is_alive']:
             df.at[individual_id, 'pn_postpartum_haem_secondary'] = True
-            self.module.PostnatalTracker['secondary_pph'] += 1
+            self.module.postnatal_tracker['secondary_pph'] += 1
 
             # Set the severity
             severity = ['mild', 'moderate', 'severe']
@@ -412,11 +416,13 @@ class SecondaryPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin)
             # TODO: care seeking
 
             self.sim.schedule_event(LatePostpartumDeathEvent(self.module, individual_id, cause='pph'),
-                                    (self.sim.date + pd.Timedelta(days=3)))
+                                    (self.sim.date + pd.Timedelta(days=4)))
 
 
 class LatePostpartumSepsisOnsetEvent(Event, IndividualScopeEventMixin):
-    """"""
+    """This is LatePostpartumSepsisOnsetEvent. It is scheduled from the Labour module for women who will
+    develop a postpartum sepsis during the postpartum period, after discharge. Currently this event makes changes to the
+     dataframe and schedules the LatePostpartumDeathEvent. It is unfinished."""
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
@@ -428,14 +434,16 @@ class LatePostpartumSepsisOnsetEvent(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'is_alive']:
             df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
-            self.module.PostnatalTracker['postnatal_sepsis'] += 1
+            self.module.postnatal_tracker['postnatal_sepsis'] += 1
 
             self.sim.schedule_event(LatePostpartumDeathEvent(self.module, individual_id, cause='sepsis'),
                                     (self.sim.date + pd.Timedelta(days=4)))
 
 
 class LateNeonatalSepsisOnsetEvent(Event, IndividualScopeEventMixin):
-    """"""
+    """This is LateNeonatalSepsisOnsetEvent. It is scheduled from the Newborn outcomes module for newborns who will
+    develop sepsis during the postpartum period, after discharge. Currently this event makes changes to the
+     data frame and schedules the LatePostpartumDeathEvent. It is unfinished"""
 
     def __init__(self, module, individual_id):
         super().__init__(module, person_id=individual_id)
@@ -445,14 +453,17 @@ class LateNeonatalSepsisOnsetEvent(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'is_alive']:
             df.at[individual_id, 'pn_sepsis_late_neonatal'] = True
-            self.module.PostnatalTracker['late_neonatal_sepsis'] += 1
+            self.module.postnatal_tracker['late_neonatal_sepsis'] += 1
 
             self.sim.schedule_event(LatePostpartumDeathEvent(self.module, individual_id, cause='neonatal_sepsis'),
                                     (self.sim.date + pd.Timedelta(days=4)))
 
 
 class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
-    """"""
+    """This is LatePostpartumDeathEvent. It is scheduled from SecondaryPostpartumHaemorrhageOnsetEvent,
+    LatePostpartumSepsisOnsetEvent or LateNeonatalSepsisOnsetEvent for women and newborns who have developed
+    complications in the postpartum period. It uses the linear model to calculte risk of death and schedules death in
+    that instance"""
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
@@ -477,8 +488,8 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='secondary_pph'), self.sim.date)
 
-                    self.module.PostnatalTracker['postnatal_death'] += 1
-                    self.module.PostnatalTracker['secondary_pph_death'] += 1
+                    self.module.postnatal_tracker['postnatal_death'] += 1
+                    self.module.postnatal_tracker['secondary_pph_death'] += 1
 
                 else:
                     df.at[individual_id, 'pn_postpartum_haem_secondary'] = False
@@ -492,13 +503,13 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
 
                 if self.module.rng.random_sample() < risk_of_death:
                     logger.debug(key='message', data=f'person {individual_id} has died due to late maternal sepsis on '
-                    f'date {self.sim.date}')
+                                                     f'date {self.sim.date}')
 
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='maternal_sepsis'), self.sim.date)
 
-                    self.module.PostnatalTracker['postnatal_death'] += 1
-                    self.module.PostnatalTracker['sepsis_death'] += 1
+                    self.module.postnatal_tracker['postnatal_death'] += 1
+                    self.module.postnatal_tracker['sepsis_death'] += 1
 
                 else:
                     df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
@@ -511,19 +522,19 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
 
                 if self.module.rng.random_sample() < risk_of_death:
                     logger.debug(key='message', data=f'person {individual_id} has died due to late neonatal sepsis on '
-                    f'date {self.sim.date}')
+                                                     f'date {self.sim.date}')
 
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='neonatal_sepsis'), self.sim.date)
 
-                    self.module.PostnatalTracker['neonatal_death'] += 1
-                    self.module.PostnatalTracker['neonatal_sepsis_death'] += 1
+                    self.module.postnatal_tracker['neonatal_death'] += 1
+                    self.module.postnatal_tracker['neonatal_sepsis_death'] += 1
 
                 else:
                     df.at[individual_id, 'pn_sepsis_late_neonatal'] = False
 
 
-class HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal(HSI_Event, IndividualScopeEventMixin):
+class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScopeEventMixin):
     """This is HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal. It is scheduled by
     HSI_Labour_ReceivesCareForPostpartumPeriod or PostpartumLabourAtHomeEvent. This event is the first PNC visit women
     are reccomended to undertake. If women deliver at home this should be within 12 hours, if in a facility then before
@@ -546,20 +557,24 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal(HSI_Event, Individ
 
         assert df.at[person_id, 'la_is_postpartum']
         assert df.at[person_id, 'pn_pnc_visits_maternal'] == 0
+        assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 0
 
         if df.at[person_id, 'is_alive']:
-            logger.debug(key='message', data=f'Mother {person_id} has arrived for PNC1 on date {self.sim.date}')
+            logger.debug(key='message', data=f'Mother {person_id} and child {child_id} have arrived for PNC1 on date'
+                                             f' {self.sim.date}')
 
-            maternal_pnc = HSI_PostnatalSupervisor_PostnatalCareContactTwoMaternal(
+            maternal_pnc = HSI_PostnatalSupervisor_PostnatalCareContactTwo(
                                                              self.module, person_id=person_id)
-            neonatal_pnc = HSI_PostnatalSupervisor_PostnatalCareContactTwoNeonatal(
-                                                             self.module, person_id=child_id)
+
             df.at[person_id, 'pn_pnc_visits_maternal'] += 1
+            df.at[child_id, 'pn_pnc_visits_neonatal'] += 1
+
             self.module.maternal_postnatal_care_contact_intervention_bundle(person_id, self)
-            self.module.maternal_postnatal_care_care_seeking(person_id, 7, 'pnc2', maternal_pnc, neonatal_pnc)
+            self.module.neonatal_postnatal_care_contact_intervention_bundle(child_id, self)
+            self.module.maternal_postnatal_care_care_seeking(person_id, 7, 'pnc2', maternal_pnc)
 
 
-class HSI_PostnatalSupervisor_PostnatalCareContactTwoMaternal(HSI_Event, IndividualScopeEventMixin):
+class HSI_PostnatalSupervisor_PostnatalCareContactTwo(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI_PostnatalSupervisor_PostnatalCareContactTwoMaternal. It is scheduled by
     HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal This event is the second PNC visit women
     are recommended to undertake around week 1. This event is currently unfinished"""
@@ -578,23 +593,25 @@ class HSI_PostnatalSupervisor_PostnatalCareContactTwoMaternal(HSI_Event, Individ
         child_id = int(df.at[person_id, 'pn_id_most_recent_child'])
 
         assert df.at[person_id, 'pn_pnc_visits_maternal'] == 1
+        assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 1
         assert df.at[person_id, 'la_is_postpartum']
 
         if df.at[person_id, 'is_alive']:
-            logger.debug(key='message', data=f'Mother {person_id} has arrived for PNC2 on date {self.sim.date}')
+            logger.debug(key='message', data=f'Mother {person_id} and child {child_id} have arrived for PNC2 on date'
+                                             f' {self.sim.date}')
 
             df.at[person_id, 'pn_pnc_visits_maternal'] += 1
+            df.at[child_id, 'pn_pnc_visits_neonatal'] += 1
 
-            maternal_pnc = HSI_PostnatalSupervisor_PostnatalCareContactThreeMaternal(
+            maternal_pnc = HSI_PostnatalSupervisor_PostnatalCareContactThree(
                 self.module, person_id=person_id)
-            neonatal_pnc = HSI_PostnatalSupervisor_PostnatalCareContactThreeNeonatal(
-                self.module, person_id=child_id)
 
             self.module.maternal_postnatal_care_contact_intervention_bundle(person_id, self)
-            self.module.maternal_postnatal_care_care_seeking(person_id, 42, 'pnc3',maternal_pnc, neonatal_pnc)
+            self.module.neonatal_postnatal_care_contact_intervention_bundle(child_id, self)
+            self.module.maternal_postnatal_care_care_seeking(person_id, 42, 'pnc3', maternal_pnc)
 
 
-class HSI_PostnatalSupervisor_PostnatalCareContactThreeMaternal(HSI_Event, IndividualScopeEventMixin):
+class HSI_PostnatalSupervisor_PostnatalCareContactThree(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI_PostnatalSupervisor_PostnatalCareContactThreeMaternal. It is scheduled by
     HSI_PostnatalSupervisor_PostnatalCareContactOneMaternal This event is the third PNC visit women
     are recommended to undertake around week 6. This event is currently unfinished"""
@@ -610,92 +627,21 @@ class HSI_PostnatalSupervisor_PostnatalCareContactThreeMaternal(HSI_Event, Indiv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        child_id = int(df.at[person_id, 'pn_id_most_recent_child'])
 
         assert df.at[person_id, 'pn_pnc_visits_maternal'] == 2
+        assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 2
         assert df.at[person_id, 'la_is_postpartum']
 
         if df.at[person_id, 'is_alive']:
-            logger.debug(key='message', data=f'Mother {person_id} has arrived for PNC3 on date {self.sim.date}')
+            logger.debug(key='message', data=f'Mother {person_id} and child {child_id} have arrived for PNC3 on date'
+                                             f' {self.sim.date}')
 
             df.at[person_id, 'pn_pnc_visits_maternal'] += 1
+            df.at[child_id, 'pn_pnc_visits_neonatal'] += 1
+
             self.module.maternal_postnatal_care_contact_intervention_bundle(person_id, self)
-
-
-class HSI_PostnatalSupervisor_PostnatalCareContactOneNeonatal(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_PostnatalSupervisor_PostnatalCareContactOneNeonatal. It is scheduled by
-    HSI_Labour_ReceivesCareForPostpartumPeriod or PostpartumLabourAtHomeEvent. This event is the first PNC visit
-    neonates are recommended to undertake. If neonates are delivered at home this should be within 12 hours, if in a
-    facility then before 48 hours. This event is currently unfinished"""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactOneNeonatal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        assert df.at[person_id, 'pn_pnc_visits_neonatal'] == 0
-
-        if df.at[person_id, 'is_alive']:
-            logger.debug(key='message', data=f'Neonate {person_id} has arrived for PNC1 on date {self.sim.date}')
-            df.at[person_id, 'pn_pnc_visits_neonatal'] += 1
-
-            self.module.neonatal_postnatal_care_contact_intervention_bundle(person_id, self)
-
-
-class HSI_PostnatalSupervisor_PostnatalCareContactTwoNeonatal(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_PostnatalSupervisor_PostnatalCareContactTwoNeonatal. It is scheduled by
-    maternal PNC contact. This event is the second PNC visit neonates are recommended to undertake at around 1 week"""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactOneNeonatal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        assert df.at[person_id, 'pn_pnc_visits_neonatal'] == 1
-
-        if df.at[person_id, 'is_alive']:
-            logger.debug(key='message', data=f'Neonate {person_id} has arrived for PNC2 on date {self.sim.date}')
-            df.at[person_id, 'pn_pnc_visits_neonatal'] += 1
-
-            self.module.neonatal_postnatal_care_contact_intervention_bundle(person_id, self)
-
-
-class HSI_PostnatalSupervisor_PostnatalCareContactThreeNeonatal(HSI_Event, IndividualScopeEventMixin):
-    """This is HSI_PostnatalSupervisor_PostnatalCareContactThreeNeonatal. It is scheduled by
-    maternal PNC contact. This event is the third PNC visit neonates are recommended to undertake at around 6 weeks"""
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, PostnatalSupervisor)
-
-        self.TREATMENT_ID = 'PostnatalSupervisor_PostnatalCareContactOneNeonatal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ANCSubsequent': 1})
-        self.ACCEPTED_FACILITY_LEVEL = 1
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        assert df.at[person_id, 'pn_pnc_visits_neonatal'] == 2
-
-        if df.at[person_id, 'is_alive']:
-            logger.debug(key='message', data=f'Neonate {person_id} has arrived for PNC2 on date {self.sim.date}')
-            df.at[person_id, 'pn_pnc_visits_neonatal'] += 1
-
-            self.module.neonatal_postnatal_care_contact_intervention_bundle(person_id, self)
+            self.module.neonatal_postnatal_care_contact_intervention_bundle(child_id, self)
 
 
 class HSI_PostnatalSupervisor_InpatientCareForMaternalSepsis(HSI_Event, IndividualScopeEventMixin):
@@ -872,11 +818,11 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                            (df.age_years < ra_upper_limit))]
         total_women_reproductive_age = len(women_reproductive_age)
 
-        total_pph = self.module.PostnatalTracker['secondary_pph']
-        total_pn_death = self.module.PostnatalTracker['postnatal_death']
-        total_pph_death = self.module.PostnatalTracker['secondary_pph_death']
-        total_sepsis = self.module.PostnatalTracker['postnatal_sepsis']
-        total_sepsis_death = self.module.PostnatalTracker['sepsis_death']
+        total_pph = self.module.postnatal_tracker['secondary_pph']
+        total_pn_death = self.module.postnatal_tracker['postnatal_death']
+        total_pph_death = self.module.postnatal_tracker['secondary_pph_death']
+        total_sepsis = self.module.postnatal_tracker['postnatal_sepsis']
+        total_sepsis_death = self.module.postnatal_tracker['sepsis_death']
 
         dict_for_output = {'total_pph': total_pph,
                            'total_deaths': total_pn_death,
@@ -888,6 +834,6 @@ class PostnatalLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                                                                       'output from the postnatal '
                                                                                       'supervisor module')
 
-        self.module.PostnatalTracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
+        self.module.postnatal_tracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
                                         'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
                                         'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}

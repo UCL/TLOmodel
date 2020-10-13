@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     antenatal_care,
@@ -18,7 +18,22 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager, male_circumcision, hiv, tb, postnatal_supervisor
 )
+seed = 567
 
+log_config = {
+    "filename": "postnatal_analysis",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.labour": logging.DEBUG,
+        "tlo.methods.healthsystem": logging.FATAL,
+        "tlo.methods.hiv": logging.FATAL,
+        "tlo.methods.newborn_outcomes": logging.DEBUG,
+        "tlo.methods.antenatal_care": logging.DEBUG,
+        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+        "tlo.methods.postnatal_supervisor": logging.DEBUG,
+    }
+}
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -38,11 +53,11 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 2)
-popsize = 500
+popsize = 100
 
 for label, service_avail in scenarios.items():
     # add file handler for the purpose of logging
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -61,8 +76,9 @@ for label, service_avail in scenarios.items():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    logfile = sim.configure_logging(filename="LogFile")
-    sim.seed_rngs(0)
+    logfile = log_config["filename"]
+    #logfile = sim.configure_logging(filename="LogFile")
+
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
@@ -74,7 +90,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
     output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
-    maternal_counts = output['tlo.methods.pregnancy_supervisor']['summary_stats']
+    maternal_counts = output['tlo.methods.pregnancy_supervisor']['ps_summary_statistics']
     maternal_counts['year'] = pd.to_datetime(maternal_counts['date']).dt.year
     maternal_counts['year'] = maternal_counts['year'] - 1
     maternal_counts.drop(columns='date', inplace=True)
@@ -84,7 +100,7 @@ def get_incidence_rate_and_death_numbers_from_logfile(logfile):
         inplace=True
     )
 
-    maternal_counts_lab = output['tlo.methods.labour']['summary_stats_incidence']
+    maternal_counts_lab = output['tlo.methods.labour']['labour_summary_stats_incidence']
     maternal_counts_lab['year'] = pd.to_datetime(maternal_counts_lab['date']).dt.year
     maternal_counts_lab['year'] = maternal_counts_lab['year'] - 1
     maternal_counts_lab.drop(columns='date', inplace=True)

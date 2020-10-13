@@ -3,7 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import pandas as pd
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
     parse_log_file,
 )
@@ -11,21 +11,33 @@ from tlo.methods import demography, contraception, labour, enhanced_lifestyle, n
     pregnancy_supervisor, antenatal_care, symptommanager, healthseekingbehaviour, male_circumcision, hiv, tb, \
     postnatal_supervisor
 
+seed = 567
+
+log_config = {
+    "filename": "postnatal_analysis",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.labour": logging.DEBUG,
+        "tlo.methods.healthsystem": logging.FATAL,
+        "tlo.methods.hiv": logging.FATAL,
+        "tlo.methods.newborn_outcomes": logging.DEBUG,
+        "tlo.methods.antenatal_care": logging.DEBUG,
+        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+        "tlo.methods.postnatal_supervisor": logging.DEBUG,
+    }
+}
+
 # %%
-outputpath = Path("./outputs")
 resourcefilepath = Path("./resources")
 
-# Create name for log-file
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
 # %% Run the Simulation
-
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-popsize = 10000
+popsize = 1000
 
 # add file handler for the purpose of logging
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -45,15 +57,16 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-logfile = sim.configure_logging(filename="LogFile")
-sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
+log_df = parse_log_file(sim.log_filepath)
 
-# Get the output from the logfile
-output = parse_log_file(logfile)
-
-stats = output['tlo.methods.postnatal_supervisor']['summary_stats']
+stats = log_df['tlo.methods.postnatal_supervisor']['postnatal_summary_stats']
 stats['date'] = pd.to_datetime(stats['date'])
 stats['year'] = stats['date'].dt.year
+
+nstats = log_df['tlo.methods.newborn_outcomes']['neonatal_summary_stats']
+nstats['date'] = pd.to_datetime(nstats['date'])
+nstats['year'] = nstats['date'].dt.year
+
 x='y'
