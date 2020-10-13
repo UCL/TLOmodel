@@ -320,9 +320,6 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        logger.debug(key="MeaslesDeathEvent",
-                     data=f"MeaslesDeathEvent: scheduling death for {person_id} on {self.sim.date}")
-
         reduction_in_death_risk = 1
 
         if df.at[person_id, "me_on_treatment"]:
@@ -331,6 +328,8 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         # reduction in risk of death if being treated for measles complications
         if self.module.rng.rand() < reduction_in_death_risk:
 
+            logger.debug(key="MeaslesDeathEvent",
+                         data=f"MeaslesDeathEvent: scheduling death for {person_id} on {self.sim.date}")
             self.sim.schedule_event(
                 InstantaneousDeath(
                     self.module, person_id, cause=self.cause), self.sim.date)
