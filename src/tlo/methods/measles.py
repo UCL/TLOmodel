@@ -62,6 +62,8 @@ class Measles(Module):
             Types.REAL, "Efficacy of second measles vaccine dose against measles infection"),
         "prob_severe": Parameter(
             Types.REAL, "Probability of severe measles infection, requiring hospitalisation"),
+        "risk_death_on_treatment": Parameter(
+            Types.REAL, "Risk of scheduled death occurring if on treatment for measles complications"),
         "symptom_prob": Parameter(
             Types.DATA_FRAME, "Probability of each symptom with measles infection"),
     }
@@ -274,7 +276,7 @@ class MeaslesOnsetEvent(Event, IndividualScopeEventMixin):
 
             # make that death event
             death_event = MeaslesDeathEvent(
-                self.module, individual_id=person_id, cause="measles")
+                self.module, person_id=person_id, cause="measles")
 
             # schedule the death
             self.sim.schedule_event(
