@@ -69,6 +69,7 @@ class Measles(Module):
     PROPERTIES = {
         "me_has_measles": Property(Types.BOOL, "Measles infection status"),
         "me_date_measles": Property(Types.DATE, "Date of onset of measles"),
+        "me_on_treatment": Property(Types.BOOL, "Currently on treatment for measles complications"),
     }
 
     # Declaration of the specific symptoms that this module will use
@@ -116,6 +117,7 @@ class Measles(Module):
 
         df.loc[df.is_alive, "me_has_measles"] = False  # default: no individuals infected
         df.loc[df.is_alive, "me_date_measles"] = pd.NaT
+        df.loc[df.is_alive, "me_on_treatment"] = False
 
     def initialise_simulation(self, sim):
 
@@ -137,6 +139,7 @@ class Measles(Module):
         df = self.sim.population.props  # shortcut to the population props dataframe
         df.at[child_id, "me_has_measles"] = False
         df.at[child_id, "me_date_measles"] = pd.NaT
+        df.at[child_id, "me_on_treatment"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -297,29 +300,40 @@ class MeaslesSymptomResolveEvent(Event, IndividualScopeEventMixin):
             # change measles status
             df.at[person_id, "me_has_measles"] = False
 
+            # change treatment status if needed
+            if df.at[person_id, "me_on_treatment"]:
+                df.at[person_id, "me_on_treatment"] = False
 
-# todo modify this death event if person has received ORS or pneumonia treatment (as appropriate)
+
 class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
     """
 
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id)
         self.cause = cause
 
-    def apply(self, individual_id):
+    def apply(self, person_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, "is_alive"]:
+        if not df.at[person_id, "is_alive"]:
             return
 
         logger.debug(key="MeaslesDeathEvent",
-                     data=f"MeaslesDeathEvent: scheduling death for {individual_id} on {self.sim.date}")
+                     data=f"MeaslesDeathEvent: scheduling death for {person_id} on {self.sim.date}")
 
-        self.sim.schedule_event(
-            InstantaneousDeath(
-                self.module, individual_id, cause=self.cause), self.sim.date)
+        reduction_in_death_risk = 1
+
+        if df.at[person_id, "me_on_treatment"]:
+            reduction_in_death_risk = self.module.parameters["risk_death_on_treatment"]
+
+        # reduction in risk of death if being treated for measles complications
+        if self.module.rng.rand() < reduction_in_death_risk:
+
+            self.sim.schedule_event(
+                InstantaneousDeath(
+                    self.module, person_id, cause=self.cause), self.sim.date)
 
 
 # ---------------------------------------------------------------------------------
@@ -350,6 +364,8 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="HSI_Measles_Treatment",
                      data=f"HSI_Measles_Treatment: treat person {person_id} for measles")
+
+        df = self.sim.population.props
 
         # treatment combinations available
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
@@ -392,7 +408,11 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
 
+            # modify person property which is checked when scheduled death occurs (or shouldn't occur)
+            df.at[person_id, "me_on_treatment"] = True
+
             # schedule symptom resolution following treatment: assume perfect treatment
+            # also changes treatment status back to False
             self.sim.schedule_event(MeaslesSymptomResolveEvent(self.module, person_id),
                                     self.sim.date + DateOffset(days=7))
 
