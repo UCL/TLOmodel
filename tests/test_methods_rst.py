@@ -1,4 +1,5 @@
 import importlib
+
 import pytest
 
 from tlo import docs
@@ -70,6 +71,7 @@ def get_classes_for_testing():
     #module_obj = importlib.import_module(fqn)  # add package arg import importlib
     #module_obj = importlib.import_module(fqn, package="tests")
     from .tlo_methods_rst.tlo import a
+
     ###module_name = 'subpackage.i.import'
     ####special_module = importlib.import_module(module_name, package='my_current_pkg')
     return get_classes_in_module(fqn, a)

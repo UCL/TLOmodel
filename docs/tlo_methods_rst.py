@@ -19,25 +19,17 @@
 # The methods in here have been moved to TLOmodel/src/tlo/docs.py.
 
 import importlib
-import sys
-#from os import walk
 from pathlib import Path
 
-sys.path.insert(0, './src')
-# If running as a standalone script, the next few lines
-# need to go after the sys.path.insert() line further down.
 import tlo
 from tlo import Module
 #import tlo.docs
-from tlo.docs import generate_module_dict, get_package_name, \
-    get_fully_qualified_name, write_rst_file
-
-# We assume this script is called from tox.ini, in the directory above
-# this one. If called from this script's own directory, we would use
-# sys.path.insert(0, '../src') instead.
-#sys.path.insert(0, '.')
-#sys.path.insert(0, './src')
-
+from tlo.docs import (
+    generate_module_dict,
+    get_fully_qualified_name,
+    get_package_name,
+    write_rst_file,
+)
 
 if __name__ == '__main__':
 
