@@ -1,14 +1,7 @@
 import importlib
-import sys
-
 import pytest
 
-sys.path.insert(0, '.')
-sys.path.insert(0, './tlo_methods_rst')
-sys.path.insert(0, '../src') #/tlo')
-#sys.path.insert(0, './tests/')
-#from tlo.docs import generate_module_dict, get_package_name, \
-#    get_fully_qualified_name, write_rst_file, get_classes_in_module
+from tlo import docs
 from tlo.docs import *
 
 
@@ -72,9 +65,14 @@ def get_classes_for_testing():
      The classes are those defined in file for_tlo_methods_rst/tlo/a.py,
      in the same order as they are defined in the source file.
     '''
-    fqn = "tlo_methods_rst.tlo.a"
-    module_obj = importlib.import_module(fqn)
-    return get_classes_in_module(fqn, module_obj)
+    # asif: from .tlo_methods_rst.tlo import a
+    fqn = "tlo_methods_rst.tlo.a"  # was fqn = "tlo_methods_rst.tlo.a"
+    #module_obj = importlib.import_module(fqn)  # add package arg import importlib
+    #module_obj = importlib.import_module(fqn, package="tests")
+    from .tlo_methods_rst.tlo import a
+    ###module_name = 'subpackage.i.import'
+    ####special_module = importlib.import_module(module_name, package='my_current_pkg')
+    return get_classes_in_module(fqn, a)
 
 
 def test_get_classes_in_module():
@@ -83,8 +81,8 @@ def test_get_classes_in_module():
     c1, c2, c3, c4, c5 = classes
     assert c1[0] == "Person"
     assert c2[0] == "Employee"
-    assert str(c1[1]) == "<class 'tlo_methods_rst.tlo.a.Person'>"
-    assert str(c2[1]) == "<class 'tlo_methods_rst.tlo.a.Employee'>"
+    assert str(c1[1]) == "<class 'tests.tlo_methods_rst.tlo.a.Person'>"
+    assert str(c2[1]) == "<class 'tests.tlo_methods_rst.tlo.a.Employee'>"
     assert str(c5[0]) == "Offspring"
 
 
@@ -95,12 +93,12 @@ def test_extract_bases():
     offspring = classes[-1]
     name, obj = offspring[0:2]
     expected = "**Base classes:**\n\n"
-    expected += ("Base class #1: `tlo_methods_rst.tlo.a.Father "
-                 "<./tlo_methods_rst.tlo.a.html"
-                 "#tlo_methods_rst.tlo.a.Father>`_\n\n")
-    expected += ("Base class #2: `tlo_methods_rst.tlo.a.Mother "
-                 "<./tlo_methods_rst.tlo.a.html"
-                 "#tlo_methods_rst.tlo.a.Mother>`_\n\n")
+    expected += ("Base class #1: `tests.tlo_methods_rst.tlo.a.Father "
+                 "<./tests.tlo_methods_rst.tlo.a.html"
+                 "#tests.tlo_methods_rst.tlo.a.Father>`_\n\n")
+    expected += ("Base class #2: `tests.tlo_methods_rst.tlo.a.Mother "
+                 "<./tests.tlo_methods_rst.tlo.a.html"
+                 "#tests.tlo_methods_rst.tlo.a.Mother>`_\n\n")
     assert expected == extract_bases(name, obj)
 
 
@@ -155,7 +153,7 @@ def test_get_base_string():
     employee_name = employee_info[0]
     employee_object = employee_info[1]
     result = get_base_string(employee_name, employee_object, person_object)
-    expected = "`tlo_methods_rst.tlo.a.Person <./tlo_methods_rst.tlo.a.html#tlo_methods_rst.tlo.a.Person>`_"
+    expected = "`tests.tlo_methods_rst.tlo.a.Person <./tests.tlo_methods_rst.tlo.a.html#tests.tlo_methods_rst.tlo.a.Person>`_"
     assert result == expected
 
 
@@ -164,10 +162,10 @@ def test_get_link():
     # <./tlo.core.html#tlo.core.Module>
     classes = get_classes_for_testing()
     base_class = classes[0]
-    base_fqn = "tlo_methods_rst.tlo.a.Person"
+    base_fqn = "tests.tlo_methods_rst.tlo.a.Person"
     base_obj = base_class[1]
     result = get_link(base_fqn, base_obj)
-    expected = f"<./tlo_methods_rst.tlo.a.html#{base_fqn}>"
+    expected = f"<./tests.tlo_methods_rst.tlo.a.html#{base_fqn}>"
     assert result == expected
 
 
