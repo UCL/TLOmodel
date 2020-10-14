@@ -159,9 +159,6 @@ class Ncds(Module):
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
 
-        #self.parameters['baseline_prob_ldl_hdl'] = 0.06
-        #self.parameters['rr_male'] = 1.2
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -287,11 +284,11 @@ class Ncds(Module):
                 .when('==3', p['rr_wealth_3'])
                 .when('==4', p['rr_wealth_4'])
                 .when('==5', p['rr_wealth_5']),
-            Predictor('li_bmi').when('<18', p['rr_bmi_1'])
-                .when('>=18 & <25', p['rr_bmi_2'])
-                .when('>=25 & <30', p['rr_bmi_3'])
-                .when('>=30 & <35', p['rr_bmi_4'])
-                .when('>=35', p['rr_bmi_5']),
+            Predictor('li_bmi').when('==1', p['rr_bmi_1'])
+                .when('==2', p['rr_bmi_2'])
+                .when('==3', p['rr_bmi_3'])
+                .when('==4', p['rr_bmi_4'])
+                .when('==5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
@@ -316,7 +313,7 @@ class Ncds(Module):
             #Predictor().when('(sex=="M")', p['rr_male'])
         #)
 
-        return self.lms_onset
+        return self.lms_onset[condition]
 
         # todo: @Britta - adjust the rates according to the frequency at which the MainPollingEvent will be called
 
@@ -391,20 +388,24 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         df = population.props
+        m = self.module
+        rng = m.rng
 
         # Determine onset/removal of conditions
         for condition in self.module.conditions:
+
             # onset:
-            df.loc[
-                self.module.lms_onset[condition].predict(df.loc[df.is_alive & ~df[condition]
-                                                                ],
-                                                         self.module.rng), condition] = True
+            eligible_population = df.is_alive & ~df[condition]
+            acquires_condition = self.module.lms_onset[condition].predict(df.loc[df.is_alive], rng,
+                                                                          eligible_population=eligible_population)
+            idx_acquires_condition = acquires_condition[acquires_condition].index
+            df.loc[idx_acquires_condition, condition] = True
 
             # removal:
-            df.loc[
-                self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
-                                                                ],
-                                                         self.module.rng), condition] = False
+            # df.loc[
+                # self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
+                                                                # ],
+                                                         # self.module.rng), condition] = False
 
 
 
@@ -430,7 +431,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         for condition in self.module.conditions:
-            dict_for_output = pd.DataFrame(df.loc[df.is_alive].groupby(by=['sex', 'age-group'])[condition].mean()).reset_index().to_dict()
+            dict_for_output = pd.DataFrame(df.loc[df.is_alive].groupby(by=['sex', 'age_range'])[condition].mean()).reset_index().to_dict()
             logger.info(key=f'prevalence_{condition}', data=dict_for_output)
 
 
