@@ -20,7 +20,7 @@ from tlo.methods import (
     tb, postnatal_supervisor
 )
 
-seed = 567
+seed = 560
 
 log_config = {
     "filename": "pregnancy_testing",   # The name of the output file (a timestamp will be appended).
@@ -75,7 +75,6 @@ def test_run():
                  labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)

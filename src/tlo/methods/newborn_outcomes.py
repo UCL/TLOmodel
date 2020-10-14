@@ -422,18 +422,20 @@ class NewbornOutcomes(Module):
         # Here we define all the possible external variables used in the linear model
         cord_care_given = nci[person_id]['cord_care']
         tetra_cycline_given = nci[person_id]['tetra_eye_d']
+        # TODO: edit the LM equation for these variables so that catagorical ps_htn_disorders is used
+        #
         gestational_htn = df.at[mother_id, 'ps_gestational_htn']
-        mild_pre_eclampsia = df.at[mother_id, 'ps_mild_pre_eclamp']
-        severe_pre_eclampsia = df.at[mother_id, 'ps_severe_pre_eclamp']
+        #mild_pre_eclampsia = df.at[mother_id, 'ps_htn_disorders'] == 'mild_pre_eclamp'
+        #severe_pre_eclampsia = df.at[mother_id, 'ps_severe_pre_eclamp']
         steroid_status = mni[mother_id]['corticosteroids_given']
         birth_attendance = mni[mother_id]['delivery_attended']
 
         return self.rng.random_sample(size=1) < eq.predict(person,
                                                            cord_care_given=cord_care_given,
                                                            tetra_cycline_given=tetra_cycline_given,
-                                                           mother_gestational_htn=gestational_htn,
-                                                           mother_mild_pre_eclamp=mild_pre_eclampsia,
-                                                           mother_severe_pre_eclamp=severe_pre_eclampsia,
+                                                           #mother_gestational_htn=gestational_htn,
+                                                           #mother_mild_pre_eclamp=mild_pre_eclampsia,
+                                                          # mother_severe_pre_eclamp=severe_pre_eclampsia,
                                                            received_corticosteroids=steroid_status,
                                                            attended_birth=birth_attendance
                                                            )[person_id]

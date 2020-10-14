@@ -1595,7 +1595,7 @@ class Labour (Module):
                                                      f'delivery. As consumables are available they will receive'
                                                      f' treatment')
 
-            elif df.at[person_id, 'ps_gestational_htn']:
+            elif df.at[person_id, 'ps_htn_disorders'] == 'gest_htn':
                 logger.debug(key='message', data= f'mother {person_id} has not had their hypertension identified during '
                                                   f'delivery and will not be treated')
 

@@ -139,6 +139,7 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal_treatment'] = False
         df.loc[df.is_alive, 'pn_anaemia_in_postpartum_period'] = False
+        df.loc[df.is_alive, 'pn_obstetric_fistula'] = False
 
     def initialise_simulation(self, sim):
         sim.schedule_event(PostnatalSupervisorEvent(self),

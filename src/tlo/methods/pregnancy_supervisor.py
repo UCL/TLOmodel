@@ -75,6 +75,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'underlying risk of antenatal maternal death per month without the impact of risk factors'),
         'monthly_cfr_gest_htn': Parameter(
             Types.REAL, 'monthly risk of death associated with gestational hypertension'),
+        'monthly_cfr_severe_gest_htn': Parameter(
+            Types.REAL, 'monthly risk of death associated with severe gestational hypertension'),
         'monthly_cfr_mild_pre_eclamp': Parameter(
             Types.REAL, 'monthly risk of death associated with mild pre-eclampsia'),
         'monthly_cfr_severe_pre_eclamp': Parameter(
@@ -112,6 +114,10 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of stillbirth for a woman suffering acute antepartum haemorrhage'),
         'prob_antepartum_haem_death': Parameter(
             Types.REAL, 'probability of death for a woman suffering acute antepartum haemorrhage'),
+        'prob_antenatal_spe_death': Parameter(
+            Types.REAL, 'probability of death for a woman experiencing acute severe pre-eclampsia'),
+        'prob_antenatal_ec_death': Parameter(
+            Types.REAL, 'probability of death for a woman experiencing eclampsia'),
         'prob_first_anc_visit_gestational_age': Parameter(
             Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
@@ -144,8 +150,8 @@ class PregnancySupervisor(Module):
                                                        'still birth'),  # consider if this should be an interger
         'ps_htn_disorders': Property(Types.CATEGORICAL, 'if this woman suffers from a hypertensive disorder of '
                                                         'pregnancy',
-                                     categories=['none', 'gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp',
-                                                 'eclampsia']),
+                                     categories=['none', 'gest_htn', 'severe_gest_htn', 'mild_pre_eclamp',
+                                                 'severe_pre_eclamp', 'eclampsia']),
         'ps_prev_pre_eclamp': Property(Types.BOOL, 'whether this woman has experienced pre-eclampsia in a previous '
                                                    'pregnancy'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
@@ -265,6 +271,7 @@ class PregnancySupervisor(Module):
                     LinearModelType.ADDITIVE,
                     0,
                     Predictor('ps_htn_disorders').when('gest_htn', params['monthly_cfr_gest_htn'])
+                                                 .when('severe_gest_htn', params['monthly_cfr_severe_gest_htn'])
                                                  .when('mild_pre_eclamp', params['monthly_cfr_mild_pre_eclamp'])
                                                  .when('severe_pre_eclamp', params['monthly_cfr_severe_pre_eclamp']),
                     Predictor('ps_gest_diab').when(True, params['monthly_cfr_gest_diab'])),
@@ -293,6 +300,14 @@ class PregnancySupervisor(Module):
                 'antepartum_haemorrhage_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_antepartum_haem_death']),
+
+                'severe_pre_eclamp_death': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_antenatal_spe_death']),
+
+                'eclampsia_death': LinearModel(
+                    LinearModelType.MULTIPLICATIVE,
+                    params['prob_antenatal_ec_death']),
 
                 # TODO: severity of bleed should be a predictor for both of the 2 equations
 
@@ -339,11 +354,11 @@ class PregnancySupervisor(Module):
 
         # Define the conditions we want to track
         self.pregnancy_disease_tracker = {'ectopic_pregnancy': 0, 'induced_abortion': 0, 'spontaneous_abortion': 0,
-                                        'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
-                                        'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
-                                        'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0,
-                                        'new_onset_gest_htn': 0, 'antepartum_haem': 0, 'antepartum_haem_death': 0,
-                                        'women_at_6_months' :0}
+                                          'ectopic_pregnancy_death': 0, 'induced_abortion_death': 0,
+                                          'spontaneous_abortion_death': 0, 'maternal_anaemia': 0, 'antenatal_death': 0,
+                                          'antenatal_stillbirth': 0, 'new_onset_pre_eclampsia': 0,
+                                          'new_onset_gest_htn': 0, 'antepartum_haem': 0, 'antepartum_haem_death': 0,
+                                          'women_at_6_months' :0}
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -429,7 +444,6 @@ class PregnancySupervisor(Module):
         Similarly symptoms are set for women who develop new complications"""
         df = self.sim.population.props
         params = self.parameters
-        rng = np.random.RandomState(0)  # todo: is this right, copied from test_lm to use rng in predict
 
         # Run checks on women passed to this function
         if not df_slice.empty:
@@ -437,11 +451,16 @@ class PregnancySupervisor(Module):
                 assert df.at[person, 'is_alive'] and df.at[person, 'is_pregnant'] and df.at[person, 'sex'] == 'F' and \
                        51 > df.at[person, 'age_years'] > 14
 
-        # We use the linear model to determine who will experience a complication
-        result = params['ps_linear_equations'][f'{complication}'].predict(df_slice, rng=rng)
+        # We apply the results of the linear model to the index of women in question
+        result = params['ps_linear_equations'][f'{complication}'].predict(df_slice)
 
-        # And select the index of women for who the result of a random draw against the linear model leads to True
-        positive_index = result[result].index
+        # And use the result of a random draw to determine which women will experience the complication
+        random_draw = pd.Series(self.rng.random_sample(size=len(df_slice)), index=df_slice.index)
+        temp_df = pd.concat([result, random_draw], axis=1)
+        temp_df.columns = ['result', 'random_draw']
+
+        # Then we use this index to make changes to the data frame and schedule any events required
+        positive_index = temp_df.index[temp_df.random_draw < temp_df.result]
 
         # This is done by cycling through each possible complication that can be passed to this function...
         if complication == 'ectopic':
@@ -616,25 +635,56 @@ class PregnancySupervisor(Module):
         hypertensive disorder to another during each month of pregnancy"""
         df = self.sim.population.props
 
-        disease_states = ['gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
+        # We first define the possible states that can be moved between
+        disease_states = ['gest_htn', 'severe_gest_htn', 'mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia']
         prob_matrix = pd.DataFrame(columns=disease_states, index=disease_states)
 
         # TODO: these should be parameters
-        prob_matrix['gest_htn'] = [0.8, 0.2, 0.0, 0.0]
-        prob_matrix['mild_pre_eclamp'] = [0.0, 0.8, 0.1, 0.1]
-        prob_matrix['severe_pre_eclamp'] = [0.0, 0.1, 0.6, 0.3]
-        prob_matrix['eclampsia'] = [0.0, 0.0, 0.1, 0.9]
+        # Probability of moving between states is stored in a matrix
+        prob_matrix['gest_htn'] = [0.8, 0.1, 0.1, 0.0, 0.0]
+        prob_matrix['severe_gest_htn'] = [0.0, 0.8, 0.0, 0.2, 0.0]
+        prob_matrix['mild_pre_eclamp'] = [0.0, 0.0, 0.8, 0.2, 0.0]
+        prob_matrix['severe_pre_eclamp'] = [0.0, 0.0, 0.0, 0.6, 0.4]
+        prob_matrix['eclampsia'] = [0.0, 0.0, 0.0, 0.0, 1]
 
-        # todo: I think eventutally these values would need to be manipulated by treatment effects? (or will things
+        # todo: I think eventually these values would need to be manipulated by treatment effects? (or will things
         #  like calcium only effect onset of pre-eclampsia not progression)
-        # TODO: also should this just be linear, no progression backward or more than one step?
 
+        # todo: record new cases of spe/ec
+
+        # We update the dataframe with transitioned states (which may not have changed)
         current_status = df.loc[selected, "ps_htn_disorders"]
         new_status = util.transition_states(current_status, prob_matrix, self.rng)
         df.loc[selected, "ps_htn_disorders"] = new_status
 
-        # TODO: Should symptoms and care-seeking be applied within this function if a woman progresses to a new state?
-        # todo: whats the best way to count the incidence of new HDP when transitioning
+        # We evaluate the series of women in this function and select the women who have transitioned to severe
+        # pre-eclampsia
+        assess_status_change_for_severe_pre_eclampsia = (current_status != "severe_pre_eclamp") & \
+                                                        (new_status == "severe_pre_eclamp")
+        new_onset_severe_pre_eclampsia = assess_status_change_for_severe_pre_eclampsia[
+            assess_status_change_for_severe_pre_eclampsia]
+
+        # For these women we schedule them to an onset event where they may develop symptoms and seek care
+        if not new_onset_severe_pre_eclampsia.empty:
+            logger.debug(key='message', data='The following women have developed severe pre-eclampsia during their '
+                                             f'pregnancy {new_onset_severe_pre_eclampsia.index} on {self.sim.date}')
+
+            for person in new_onset_severe_pre_eclampsia.index:
+                self.sim.schedule_event(
+                    SeverePreEclampsiaAndEclampsiaOnsetEvent(self, person, cause='severe_pre_eclamp'),
+                    self.sim.date)
+
+        # This process is then repeated for women who have developed eclampsia
+        assess_status_change_for_eclampsia = (current_status != "eclampsia") & (new_status == "eclampsia")
+        new_onset_eclampsia = assess_status_change_for_eclampsia[assess_status_change_for_eclampsia]
+
+        if not new_onset_eclampsia.empty:
+            logger.debug(key='message', data='The following women have developed eclampsia during their '
+                                             f'pregnancy {new_onset_eclampsia.index} on {self.sim.date}')
+
+            for person in new_onset_eclampsia.index:
+                self.sim.schedule_event(SeverePreEclampsiaAndEclampsiaOnsetEvent(self, person, cause='eclampsia'),
+                                        self.sim.date)
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1173,6 +1223,80 @@ class AntepartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin):
 
             else:
                 df.at[individual_id, 'ps_antepartum_haemorrhage'] = False
+
+
+class SeverePreEclampsiaAndEclampsiaOnsetEvent(Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+        self.cause = cause
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+        mother = df.loc[individual_id]
+
+        assert mother.ps_htn_disorders == 'severe_pre_eclamp' or mother.ps_htn_disorders == 'eclampsia'
+
+        if mother.is_alive and mother.is_pregnant and ~mother.la_currently_in_labour:
+            logger.debug(key='message', data= f'Mother {individual_id} has reached '
+                                             f'SeverePreEclampsiaAndEclampsiaOnsetEvent on {self.sim.date}')
+            # we will apply symptoms and care seeking for severe pre-eclampsia here but not schedule death event as
+            # death is included in monthly death calculation
+
+            # TODO: care seeking and symptoms (using cause variable)
+            # todo: rename as not onset event really
+
+            if self.cause == 'eclampsia':
+                logger.debug(key='message', data=f'As mother {individual_id} has developed eclampsia she will pass '
+                                                 f'through the death event on  on {self.sim.date + DateOffset(days=3)}')
+                self.sim.schedule_event(EclampsiaDeathEvent(self.module, individual_id, cause=self.cause),
+                                        self.sim.date + DateOffset(days=3))
+
+
+class EclampsiaDeathEvent(Event, IndividualScopeEventMixin):
+    """"""
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+        self.cause = cause
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        assert df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia'
+
+        if df.at[individual_id, 'is_alive']:
+            logger.debug(key='message', data=f'Mother {individual_id} has reached '
+                                             f'EclampsiaDeathEvent on {self.sim.date}')
+
+            # Individual risk of death is calculated through the linear model
+            risk_of_death = params['ps_linear_equations'][f'{self.cause}_death'].predict(df.loc[[individual_id]])[
+                individual_id]
+
+            # If the death occurs we record it here
+            if self.module.rng.random_sample() < risk_of_death:
+                logger.debug(key='message', data=f'mother {individual_id} has died due to {self.cause} on date '
+                                                 f'{self.sim.date}')
+
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause=f'{self.cause}'), self.sim.date)
+                # self.module.pregnancy_disease_tracker[f'{self.cause}_death'] += 1
+                self.module.pregnancy_disease_tracker['antenatal_death'] += 1
+
+            # And if the woman survives we assume she is no longer symptomatic and remove any existing symptoms
+            elif self.cause == 'eclampsia':
+                logger.debug(key='message', data=f'mother {individual_id} has survived this episode of eclampsia, '
+                                                 f'she is no longer seizing and has reverted to severe pre-eclampsia')
+                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+
+                #self.module.sim.modules['SymptomManager'].clear_symptoms(
+                #    person_id=individual_id,
+                #    disease_module=self.module)
 
 
 class PregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
