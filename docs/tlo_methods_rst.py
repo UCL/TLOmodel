@@ -1,29 +1,20 @@
-# tlo_methods_rst.py
-# (formerly inspector.py)
-#
-# This module is used to generate nice documentation.
-# A typical invocation, as is done in tox.ini, would be:
-# > python docs/tlo_methods_rst.py
-# although see note below about ordering of import statements.
-#
-# Within the src/tlo/methods directory, and any directory
-# structure within that, it parses the Python source files
-# and uses a mixture of Sphinx auto methods and bespoke
-# methods to generate the module-specific .rst files (which are
-# subsequently converted by Sphinx into the HTMl files desired).
-# e.g. the PARAMETERS and PROPERTIES dictionaries are displayed
-# as nice tables rather than the raw Python representation of
-# dictionaries, using bespoke methods defined here.
-#
-# Update 12th October 2020:
-# The methods in here have been moved to TLOmodel/src/tlo/docs.py.
+''' This module is used to generate nice documentation.
+
+A typical invocation, as is done in tox.ini, would be:
+ > python docs/tlo_methods_rst.py
+
+Within the src/tlo/methods directory, and any directory
+structure within that, it parses the Python source files
+and uses a mixture of Sphinx auto methods and bespoke
+methods to generate the module-specific .rst files (which are
+subsequently converted by Sphinx into the HTMl files desired).
+e.g. the PARAMETERS and PROPERTIES dictionaries are displayed
+as nice tables rather than the raw Python representation of
+dictionaries, using bespoke methods defined here.'''
 
 import importlib
 from pathlib import Path
 
-import tlo
-from tlo import Module
-#import tlo.docs
 from tlo.docs import (
     generate_module_dict,
     get_fully_qualified_name,

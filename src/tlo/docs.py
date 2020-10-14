@@ -1,15 +1,7 @@
-# TLOmodel/src/tlo/docs.py
-#
-# Update 12th October 2020:
-# The functions originally in tlo_methods_rst.py have been moved here
-# to aid the set-up of the configuration needed for testing.
+'''The functions used by tlo_methods_rst.py.'''
 
-import importlib
 import inspect
-#import os.path
-import sys
 from os import walk
-from pathlib import Path
 
 
 def get_package_name(dirpath):
@@ -231,7 +223,7 @@ def get_class_output_string(classinfo):
             # mystr = f"\n\n**Function {name}():**\n"
             # mydat = inspect.getmembers(obj)
             # for the_name, the_object in mydat:
-                # print(f"{the_name}: {the_object}")
+            # print(f"{the_name}: {the_object}")
             #    if the_name == "__doc__":
             #        mystr += f"\n\n{the_object} \n\n"
             # str += mystr
@@ -394,7 +386,7 @@ def create_table(mydict):
     If there is no data, an empty list is returned.
     '''
 
-    examplestr = f'''
+    examplestr = '''
 .. list-table::
    :widths: 25 25 50
    :header-rows: 1
