@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -350,6 +351,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.group2
 def test_run_in_mode_2_with_no_capacity(tmpdir):
     # No individual level events should run and the log should contain events with a flag showing that all individual
     # events did not run. Population level events should have run.
@@ -442,6 +444,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     assert any(sim.population.props['mi_status'] == 'P')
 
 
+@pytest.mark.group2
 def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem
 

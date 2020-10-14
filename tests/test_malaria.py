@@ -81,9 +81,7 @@ def test_sims(tmpdir):
     check_dtypes(sim)
 
     # IRS rates should be 0 or 0.8
-    # if greater than 0, must equal 0.8
-    assert not ((sim.modules['Malaria'].irs_curr.irs_rates.any() > 0) &
-                (sim.modules['Malaria'].irs_curr.irs_rates.any() < 0.8))
+    assert (sim.modules['Malaria'].itn_irs.irs_rate.isin([0, 0.8])).all()
 
     # assert (sim.modules['Malaria'].irs_curr.irs_rates == 0) | (sim.modules['Malaria'].irs_curr == 0.8)
 

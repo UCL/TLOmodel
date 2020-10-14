@@ -38,9 +38,6 @@ class Malaria(Module):
         logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
 
         # cleaned coverage values for IRS and ITN (populated in `read_parameters`)
-        self.itn_curr = None
-        self.irs_curr = None
-
         self.itn_irs = None
         self.all_inc = None
 

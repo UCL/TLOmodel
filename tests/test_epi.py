@@ -2,6 +2,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -39,6 +41,7 @@ def check_dtypes(simulation):
 # only hpv should stay at zero, other vaccines start as individual events (year=2010-2018)
 # coverage should gradually decline for all after 2018
 # hard constraints (mode=2) and zero capabilities
+@pytest.mark.group2
 def test_no_health_system(tmpdir):
     log_config = {
         'filename': 'test_log',
@@ -84,6 +87,7 @@ def test_no_health_system(tmpdir):
 
 
 # check epi module does schedule hsi events
+@pytest.mark.group2
 def test_epi_scheduling_hsi_events(tmpdir):
 
     log_config = {

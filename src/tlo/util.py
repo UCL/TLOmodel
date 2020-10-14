@@ -216,6 +216,14 @@ class BitsetHandler:
             return sets.iloc[0]
         return sets
 
+    def to_strings(self, integer):
+        """Given an integer value, returns the corresponding string. For fast lookup
+
+        :param integer: the integer value for the bitset
+        """
+        bin_repr = format(integer, 'b')
+        return {self._lookup[2 ** k] for k, v in enumerate(reversed(list(bin_repr))) if v == '1'}
+
     def compress(self, uncompressed: pd.DataFrame) -> None:
         def convert(column):
             value_of_column = self._lookup[column.name]

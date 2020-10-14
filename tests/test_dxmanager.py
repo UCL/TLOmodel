@@ -156,22 +156,16 @@ def test_create_dx_test_and_register(bundle):
     dx_manager.print_info_about_all_dx_tests()
     assert 3 == len(dx_manager.dx_tests)
 
-    # Create duplicate of a test with a different name and same DxTest: should fail and not add a test
-    try:
-        dx_manager.register_dx_test(my_test2_diff_name_should_not_be_added=my_test2)
-    except ValueError:
-        pass
-    assert 3 == len(dx_manager.dx_tests)
+    # Create duplicate of a test with a different name and same DxTest: should not fail and add a test
+    dx_manager.register_dx_test(my_test2_diff_name_should_not_be_added=my_test2)
+    assert 4 == len(dx_manager.dx_tests)
 
     # Create a duplicate of test: same name and different DxTest: should fail and not add a test
-    try:
-        dx_manager.register_dx_test(my_test1=DxTest(property='is_alive'))
-    except ValueError:
-        pass
-    assert 3 == len(dx_manager.dx_tests)
+    dx_manager.register_dx_test(my_test1=DxTest(property='is_alive'))
+    assert 4 == len(dx_manager.dx_tests)
 
 
-def test_create_duplicate_test_that_should_be_ignored(bundle):
+def test_create_duplicate_test_that_should_be_allowed(bundle):
     sim = bundle.simulation
     cons_req_as_footprint_for_consumable_that_is_available = \
         bundle.cons_req_as_footprint_for_consumable_that_is_available
@@ -193,50 +187,39 @@ def test_create_duplicate_test_that_should_be_ignored(bundle):
     )
 
     # Give the same test but under a different name: only name provided - should fail and not add test
-    try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
-        dx_manager.register_dx_test(
-            my_test1=my_test1_property_only,
-            my_test1_copy=my_test1_property_only
-        )
-    except ValueError:
-        pass
-    assert len(dx_manager.dx_tests) == 1
+    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager.register_dx_test(
+        my_test1=my_test1_property_only,
+        my_test1_copy=my_test1_property_only
+    )
+    assert len(dx_manager.dx_tests) == 2
 
     # Give the same test but under a different name: name and consumbales provided - should fail and not add test
-    try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
-        dx_manager.register_dx_test(
-            my_test1=my_test1_property_and_consumable,
-            my_test1_copy=my_test1_property_and_consumable
-        )
-    except ValueError:
-        pass
-    assert len(dx_manager.dx_tests) == 1
+    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager.register_dx_test(
+        my_test1=my_test1_property_and_consumable,
+        my_test1_copy=my_test1_property_and_consumable
+    )
+    assert len(dx_manager.dx_tests) == 2
 
     # Give the same test but under a different name: name and consumbales provided and sens/spec provided:
     #       --- should fail and not add test
-    try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
-        dx_manager.register_dx_test(
-            my_test1=my_test1_property_and_consumable_and_sensspec,
-            my_test1_copy=my_test1_property_and_consumable_and_sensspec
-        )
-    except ValueError:
-        pass
-    assert len(dx_manager.dx_tests) == 1
+
+    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager.register_dx_test(
+        my_test1=my_test1_property_and_consumable_and_sensspec,
+        my_test1_copy=my_test1_property_and_consumable_and_sensspec
+    )
+    assert len(dx_manager.dx_tests) == 2
 
     # Give duplicated list of tests under different name: only one should be added
     #       --- should throw error but add the one test
-    try:
-        dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
-        dx_manager.register_dx_test(
-            my_list_of_tests1=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only),
-            my_list_of_tests1_copy=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only)
-        )
-    except ValueError:
-        pass
-    assert len(dx_manager.dx_tests) == 1
+    dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
+    dx_manager.register_dx_test(
+        my_list_of_tests1=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only),
+        my_list_of_tests1_copy=(my_test1_property_and_consumable_and_sensspec, my_test1_property_only)
+    )
+    assert len(dx_manager.dx_tests) == 2
 
     # Give list of test that use the same test components but in different order: both should be added, no errors
     dx_manager = DxManager(sim.modules['HealthSystem'])  # get new DxManager
