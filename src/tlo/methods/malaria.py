@@ -210,11 +210,11 @@ class Malaria(Module):
         # we don't want age to be part of index
         self.all_inc = all_inc.reset_index().set_index(["month", "admin", "llin", "irs"])
 
-        # get the DALY weight that this module will use from the weight database (these codes are just random!)
+        # get the DALY weight that this module will use from the weight database
         if "HealthBurden" in self.sim.modules:
-            p["daly_wt_none"] = self.sim.modules["HealthBurden"].get_daly_weight(50)
-            p["daly_wt_clinical"] = self.sim.modules["HealthBurden"].get_daly_weight(50)
-            p["daly_wt_severe"] = self.sim.modules["HealthBurden"].get_daly_weight(589)
+            p["daly_wt_none"] = self.sim.modules["HealthBurden"].get_daly_weight(236)
+            p["daly_wt_clinical"] = self.sim.modules["HealthBurden"].get_daly_weight(218)
+            p["daly_wt_severe"] = self.sim.modules["HealthBurden"].get_daly_weight(213)
 
         # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
         self.sim.modules['SymptomManager'].register_symptom(
@@ -454,7 +454,7 @@ class Malaria(Module):
         health_values = df.loc[df.is_alive, "ma_inf_type"].map(
             {
                 "none": 0,
-                "asym": 0,
+                "asym": p["daly_wt_none"],
                 "clinical": p["daly_wt_clinical"],
                 "severe": p["daly_wt_severe"],
             }
