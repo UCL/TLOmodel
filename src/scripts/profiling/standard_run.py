@@ -4,11 +4,11 @@ A run of the model at scale using all disease modules currently included in Mast
 For use in profiling.
 """
 
-import datetime
 from pathlib import Path
 
+import pandas as pd
+
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
@@ -20,13 +20,19 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
-    symptommanager, oesophagealcancer, malaria, epi, epilepsy, dx_algorithm_adult,
+    symptommanager,
+    oesophagealcancer,
+    malaria,
+    epi,
+    epilepsy,
+    dx_algorithm_adult,
 )
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 1000
+end_date = start_date + pd.DateOffset(years=30)
+
+popsize = int(5e5)
 
 # The resource files
 resourcefilepath = Path("./resources")
