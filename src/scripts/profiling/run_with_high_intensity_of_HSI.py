@@ -45,9 +45,9 @@ from tlo.methods import (
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(years=1)
+end_date = start_date + pd.DateOffset(years=5)
 
-popsize = int(100)
+popsize = int(20e3)
 
 # The resource files
 resourcefilepath = Path("./resources")
