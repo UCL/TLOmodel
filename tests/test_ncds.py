@@ -37,6 +37,19 @@ def routine_checks(sim):
     orig = sim.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
+    # check that someone has had onset of each condition
+
+    df = sim.population.props
+    assert df.nc_ldl_hdl.any()
+    assert df.nc_chronic_inflammation.any()
+    assert df.nc_diabetes.any()
+    assert df.nc_hypertension.any()
+    assert df.nc_depression.any()
+    assert df.nc_chronic_lower_back_pain.any()
+    assert df.nc_chronic_kidney_disease.any()
+    assert df.nc_chronic_ischemic_hd.any()
+    assert df.nc_cancers.any()
+
     pass
 
 
