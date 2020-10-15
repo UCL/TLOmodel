@@ -20,7 +20,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     pregnancy_supervisor,
-    symptommanager, oesophagealcancer, malaria, epi, epilepsy,
+    symptommanager, oesophagealcancer, malaria, epi, epilepsy, dx_algorithm_adult,
 )
 
 # Key parameters about the simulation:
@@ -52,9 +52,10 @@ sim.register(
     labour.Labour(resourcefilepath=resourcefilepath),
     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+    dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
     #
-    # Disease modules:
-    malaria.Malaria(resourcefilepath=resourcefilepath, testing=1),
+    # Disease modules considered complete:
+    malaria.Malaria(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
