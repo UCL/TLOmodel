@@ -40,14 +40,14 @@ from tlo.methods import (
     malaria,
     epi,
     epilepsy,
-    dx_algorithm_adult,
+    dx_algorithm_adult, diarrhoea,
 )
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(years=30)
+end_date = start_date + pd.DateOffset(years=1)
 
-popsize = int(5e5)
+popsize = int(100)
 
 # The resource files
 resourcefilepath = Path("./resources")
@@ -55,7 +55,10 @@ resourcefilepath = Path("./resources")
 log_config = {
     "filename": "for_profiling",
     "directory": "./outputs",
-    "custom_levels": {"*": logging.WARNING}
+    "custom_levels": {
+        "*": logging.WARNING,
+        'healthsystem': logging.INFO
+    }
 }
 
 sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
@@ -66,8 +69,7 @@ sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                              mode_appt_constraints=1,
-                              capabilities_coefficient=0.2
+                              mode_appt_constraints=0
                               ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                   spurious_symptoms=True),
@@ -81,6 +83,7 @@ sim.register(
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
     #
     # Disease modules considered complete:
+    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath, testing=1),
     epi.Epi(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
@@ -89,6 +92,24 @@ sim.register(
 )
 
 # Adjust parameters so that there are lots of HSI events:
+
+# * Diarrhoea
+for param_name in sim.modules['Diarrhoea'].parameters.keys():
+    # Increase incidence:
+    if param_name.startswith('base_inc_rate_diarrhoea_by_'):
+        sim.modules['Diarrhoea'].parameters[param_name] = \
+            [4.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]
+
+    # Increase symptoms:
+    if param_name.startswith('proportion_AWD_by_'):
+        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+    if param_name.startswith('fever_by_'):
+        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+    if param_name.startswith('vomiting_by_'):
+        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+    if param_name.startswith('dehydration_by_'):
+        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+
 
 #   * Depression
 sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25

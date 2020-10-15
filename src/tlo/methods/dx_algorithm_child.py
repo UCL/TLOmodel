@@ -91,6 +91,7 @@ class DxAlgorithmChild(Module):
 
         # Gather information that can be reported:
         # 1) Get duration of diarrhoea to date
+        gi_last_diarrhoea_date_of_onset
         duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
         assert duration_in_days >= 0
 

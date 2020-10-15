@@ -28,7 +28,7 @@ from tlo.methods import (
     malaria,
     epi,
     epilepsy,
-    dx_algorithm_adult,
+    dx_algorithm_adult, diarrhoea,
 )
 
 # Key parameters about the simulation:
@@ -64,6 +64,7 @@ sim.register(
     dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
     #
     # Disease modules considered complete:
+    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
