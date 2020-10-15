@@ -32,8 +32,16 @@ class Malaria(Module):
         """
         super().__init__(name)
         self.resourcefilepath = Path(resourcefilepath)
-        self.testing = testing  # calibrate value to match treatment coverage
-        self.itn = itn  # projected ITN values from 2020
+
+        if testing is not None:
+            self.testing = testing  # calibrate value to match treatment coverage
+        else:
+            self.testing = 0  # default to no testing
+
+        if itn is not None:
+            self.itn = itn  # projected ITN values from 2020
+        else:
+            self.itn = 0  # default to no ITN
 
         logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
 

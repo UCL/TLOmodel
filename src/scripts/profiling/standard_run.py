@@ -26,7 +26,7 @@ from tlo.methods import (
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 200
+popsize = 1000
 
 # The resource files
 resourcefilepath = Path("./resources")
@@ -54,7 +54,7 @@ sim.register(
     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
     #
     # Disease modules:
-    malaria.Malaria(resourcefilepath=resourcefilepath),
+    malaria.Malaria(resourcefilepath=resourcefilepath, testing=1),
     epi.Epi(resourcefilepath=resourcefilepath),
     depression.Depression(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
