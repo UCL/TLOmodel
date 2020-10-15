@@ -11,6 +11,8 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.healthsystem import HSI_Event
 
 import pandas as pd
+import copy
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -134,6 +136,39 @@ class Ncds(Module):
 
         # save a list of the conditions that covered in this module (extracted from PROPERTIES)
         self.conditions = list(self.PROPERTIES.keys())
+
+        # dict to hold counters for the number of episodes by condition-type and age-group
+        # (0yrs, 1yrs, 2-4yrs)
+        blank_counter = dict(zip(self.conditions, [list() for _ in self.conditions]))
+        self.incident_case_tracker_blank = {
+            '0-10y': copy.deepcopy(blank_counter),
+            '11-20y': copy.deepcopy(blank_counter),
+            '21-30y': copy.deepcopy(blank_counter),
+            '31-40y': copy.deepcopy(blank_counter),
+            '41-50y': copy.deepcopy(blank_counter),
+            '51-60y': copy.deepcopy(blank_counter),
+            '61-70y': copy.deepcopy(blank_counter),
+            '71-80y': copy.deepcopy(blank_counter),
+            '81-90y': copy.deepcopy(blank_counter),
+            '91-100y': copy.deepcopy(blank_counter),
+            '100+y': copy.deepcopy(blank_counter)
+        }
+        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
+
+        zeros_counter = dict(zip(self.conditions, [0] * len(self.conditions)))
+        self.incident_case_tracker_zeros = {
+            '0-10y': copy.deepcopy(zeros_counter),
+            '11-20y': copy.deepcopy(zeros_counter),
+            '21-30y': copy.deepcopy(zeros_counter),
+            '31-40y': copy.deepcopy(zeros_counter),
+            '41-50y': copy.deepcopy(zeros_counter),
+            '51-60y': copy.deepcopy(zeros_counter),
+            '61-70y': copy.deepcopy(zeros_counter),
+            '71-80y': copy.deepcopy(zeros_counter),
+            '81-90y': copy.deepcopy(zeros_counter),
+            '91-100y': copy.deepcopy(zeros_counter),
+            '100+y': copy.deepcopy(zeros_counter)
+        }
 
 
     def read_parameters(self, data_folder):
@@ -315,8 +350,6 @@ class Ncds(Module):
 
         return self.lms_onset[condition]
 
-        # todo: @Britta - adjust the rates according to the frequency at which the MainPollingEvent will be called
-
 
 
     def on_birth(self, mother_id, child_id):
@@ -401,6 +434,34 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             idx_acquires_condition = acquires_condition[acquires_condition].index
             df.loc[idx_acquires_condition, condition] = True
 
+            # -------------------------------------------------------------------------------------------
+            # Add this incident case to the tracker
+            age = df.loc[idx_acquires_condition, ['age_years']]
+            if age.values[0] < 11:
+                age_grp = '0-10y'
+            elif age.values[0] >= 11 & age.values[0] < 20:
+                age_grp = '11-20y'
+            elif age.values[0] >= 21 & age.values[0] < 30:
+                age_grp = '21-30y'
+            elif age.values[0] >= 31 & age.values[0] < 40:
+                age_grp = '31-40y'
+            elif age.values[0] >= 41 & age.values[0] < 50:
+                age_grp = '41-50y'
+            elif age.values[0] >= 51 & age.values[0] < 60:
+                age_grp = '51-60y'
+            elif age.values[0] >= 61 & age.values[0] < 70:
+                age_grp = '61-70y'
+            elif age.values[0] >= 71 & age.values[0] < 80:
+                age_grp = '71-80y'
+            elif age.values[0] >= 81 & age.values[0] < 90:
+                age_grp = '81-90y'
+            elif age.values[0] >= 91 & age.values[0] < 100:
+                age_grp = '91-100y'
+            else:
+                age_grp = '100+y'
+            self.module.incident_case_tracker[age_grp][condition].append(self.sim.date)
+            # -------------------------------------------------------------------------------------------
+
             # removal:
             # df.loc[
                 # self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
@@ -424,9 +485,28 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.date_last_run = self.sim.date
         assert isinstance(module, Ncds)
 
     def apply(self, population):
+
+        # Convert the list of timestamps into a number of timestamps
+        # and check that all the dates have occurred since self.date_last_run
+        counts = copy.deepcopy(self.module.incident_case_tracker_zeros)
+
+        for age_grp in self.module.incident_case_tracker.keys():
+            for condition in self.module.conditions:
+                list_of_times = self.module.incident_case_tracker[age_grp][condition]
+                counts[age_grp][condition] = len(list_of_times)
+                for t in list_of_times:
+                    assert self.date_last_run <= t <= self.sim.date
+
+        logger.info(key='incidence_count_by_condition', data=counts)
+
+        # Reset the counters and the date_last_run
+        self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
+        self.date_last_run = self.sim.date
+
         # Make some summary statistics for prevalence by age/sex for each condition
         df = population.props
 
