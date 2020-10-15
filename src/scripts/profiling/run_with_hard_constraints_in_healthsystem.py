@@ -41,7 +41,7 @@ from tlo.methods import (
 start_date = Date(2010, 1, 1)
 end_date = start_date + pd.DateOffset(years=30)
 
-popsize = int(5e5)
+popsize = int(100)
 
 # The resource files
 resourcefilepath = Path("./resources")
