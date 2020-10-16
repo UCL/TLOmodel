@@ -47,19 +47,24 @@ class ALRI(Module):
     # Declare the pathogens that this module will simulate:
     pathogens = {
         'RSV',
-        'rhinovirus',
-        'hMPV',
-        'parainfluenza',
-        'streptococcus',
-        'haemophilus',
-        'TB',
-        'staphylococcus',
-        'influenza',
-        'jirovecii',
-        'adenovirus',
-        'coronavirus',
-        'bocavirus',
-        'other_pathogens'
+        'Rhinovirus',
+        'HMPV',
+        'Parainfluenza',
+        'Strep_pneumoniae_PCV13',
+        'Strep_pneumoniae_non_PCV13',
+        'Hib',
+        'H.influenzae_non_type-b',
+        'Staph_aureus',
+        'Enterobacteriaceae',  # includes E. coli, Enterobacter species, and Klebsiella species,
+        'other_Strepto_Enterococci',  # includes Streptococcus pyogenes and Enterococcus faecium
+        'Influenza',
+        'P.jirovecii',
+        'Bocavirus',
+        'Adenovirus',
+        'other_viral_pathogens',  # Coronaviruses NL63, 229E OC43 and HKU1, Cytomegalovirus, Parechovirus/Enterovirus
+        'other_bacterial_pathogens'  # includes Bordetella pertussis, Chlamydophila pneumoniae, Legionella species,
+        # Mycoplasma pneumoniae, Moraxella catarrhalis,
+        # Non-fermenting gram-negative rods (Acinetobacter species and Pseudomonas species), Neisseria meningitidis
     }
 
     # Declare Metadata
@@ -90,57 +95,71 @@ class ALRI(Module):
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by RSV in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_rhinovirus':
+        'base_inc_rate_ALRI_by_Rhinovirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by rhinovirus in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Rhinovirus in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_hMPV':
+        'base_inc_rate_ALRI_by_HMPV':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by hMPV in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by HMPV in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_parainfluenza':
+        'base_inc_rate_ALRI_by_Parainfluenza':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Parainfluenza 1-4 in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_streptococcus':
+        'base_inc_rate_ALRI_by_Strep_pneumoniae_PCV13':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by streptoccocus pneumoniae in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Streptoccocus pneumoniae PCV13 serotype '
+                      'in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_haemophilus':
+        'base_inc_rate_ALRI_by_Strep_pneumoniae_non_PCV13':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by haemophilus influenzae in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Streptoccocus pneumoniae non PCV13 serotype '
+                      'in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_TB':
+        'base_inc_rate_ALRI_by_hib':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by TB in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Haemophilus influenzae type b '
+                      'in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_staphylococcus':
+        'base_inc_rate_ALRI_by_H.influenzae_non_type_b':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by Staphylococcus aureus in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Haemophilus influenzae non-type b '
+                      'in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_influenza':
+        'base_inc_rate_ALRI_by_Enterobacteriaceae':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by influenza in age groups 0-11, 12-23, 24-59 months'
+                      'baseline incidence of ALRI caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_jirovecii':
+        'base_inc_rate_ALRI_by_Staph_aureus':
+            Parameter(Types.LIST,
+                      'baseline incidence of ALRI caused by Staphylococcus aureus '
+                      'in age groups 0-11, 12-23, 24-59 months'
+                      ),
+        'base_inc_rate_ALRI_by_Influenza':
+            Parameter(Types.LIST,
+                      'baseline incidence of ALRI caused by Influenza type A, B, and C '
+                      'in age groups 0-11, 12-23, 24-59 months'
+                      ),
+        'base_inc_rate_ALRI_by_P.jirovecii':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by P. jirovecii in age groups 0-11, 12-59 months'
                       ),
-        'base_inc_rate_ALRI_by_adenovirus':
+        'base_inc_rate_ALRI_by_Adenovirus':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by P. adenovirus in age groups 0-11, 12-59 months'
                       ),
-        'base_inc_rate_ALRI_by_coronavirus':
-            Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by P. coronavirus in age groups 0-11, 12-59 months'
-                      ),
-        'base_inc_rate_ALRI_by_bocavirus':
+        'base_inc_rate_ALRI_by_Bocavirus':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by bocavirus in age groups 0-11, 12-59 months'
                       ),
-        'base_inc_rate_ALRI_by_other_pathogens':
+        'base_inc_rate_ALRI_by_other_viral_pathogens':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by other pathogens in age groups 0-11, 12-59 months'
+                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months'
+                      ),
+        'base_inc_rate_ALRI_by_other_bacterial_pathogens':
+            Parameter(Types.LIST,
+                      'baseline incidence of ALRI caused by other viral pathogens in age groups 0-11, 12-59 months'
                       ),
         # Risk factors parameters -----
         'rr_ALRI_HHhandwashing':
@@ -566,7 +585,7 @@ class ALRI(Module):
         p = self.parameters
         self.load_parameters_from_dataframe(
             pd.read_excel(
-                Path(self.resourcefilepath) / 'ResourceFile_ALRI.xlsx', sheet_name='Parameter_values'))
+                Path(self.resourcefilepath) / 'ResourceFile_ALRI2.xlsx', sheet_name='Parameter_values'))
 
         # Check that every value has been read-in successfully
         for param_name, param_type in self.PARAMETERS.items():
