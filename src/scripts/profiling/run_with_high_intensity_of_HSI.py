@@ -11,6 +11,7 @@ A run of the model that has a lot of HSI's being run:
 
 For use in profiling.
 """
+from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 
 """
@@ -57,7 +58,7 @@ log_config = {
     "directory": "./outputs",
     "custom_levels": {
         "*": logging.WARNING,
-        'healthsystem': logging.INFO
+        'HealthSystem': logging.INFO
     }
 }
 
@@ -134,7 +135,8 @@ sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-
+# Parse the log-file
+log_df = parse_log_file(sim.log_filepath)
 
 
 
