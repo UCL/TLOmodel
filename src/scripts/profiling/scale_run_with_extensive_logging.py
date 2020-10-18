@@ -16,19 +16,20 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
+    diarrhoea,
+    dx_algorithm_adult,
     dx_algorithm_child,
     enhanced_lifestyle,
+    epi,
+    epilepsy,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    malaria,
+    oesophagealcancer,
     pregnancy_supervisor,
     symptommanager,
-    oesophagealcancer,
-    malaria,
-    epi,
-    epilepsy,
-    dx_algorithm_adult, diarrhoea,
 )
 
 # Key parameters about the simulation:
@@ -78,9 +79,3 @@ sim.simulate(end_date=end_date)
 
 # Parse the log-file
 log_df = parse_log_file(sim.log_filepath)
-
-
-
-
-
-

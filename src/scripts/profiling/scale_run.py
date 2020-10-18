@@ -13,19 +13,20 @@ from tlo.methods import (
     contraception,
     demography,
     depression,
+    diarrhoea,
+    dx_algorithm_adult,
     dx_algorithm_child,
     enhanced_lifestyle,
+    epi,
+    epilepsy,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    malaria,
+    oesophagealcancer,
     pregnancy_supervisor,
     symptommanager,
-    oesophagealcancer,
-    malaria,
-    epi,
-    epilepsy,
-    dx_algorithm_adult, diarrhoea,
 )
 
 # Key parameters about the simulation:
@@ -72,9 +73,3 @@ sim.register(
 # Run the simulation
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-
-
-
-
-
-

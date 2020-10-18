@@ -11,38 +11,39 @@ A run of the model that has a lot of HSI's being run:
 
 For use in profiling.
 """
-from tlo.analysis.utils import parse_log_file
-from tlo.lm import LinearModel, LinearModelType
-
-"""
-A run of the model at scale using all disease modules currently included in Master - with no logging
-
-For use in profiling.
-"""
 
 from pathlib import Path
 
 import pandas as pd
 
 from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file
+from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     contraception,
     demography,
     depression,
+    diarrhoea,
+    dx_algorithm_adult,
     dx_algorithm_child,
     enhanced_lifestyle,
+    epi,
+    epilepsy,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     labour,
+    malaria,
+    oesophagealcancer,
     pregnancy_supervisor,
     symptommanager,
-    oesophagealcancer,
-    malaria,
-    epi,
-    epilepsy,
-    dx_algorithm_adult, diarrhoea,
 )
+
+"""
+A run of the model at scale using all disease modules currently included in Master - with no logging
+
+For use in profiling.
+"""
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
@@ -111,7 +112,6 @@ for param_name in sim.modules['Diarrhoea'].parameters.keys():
     if param_name.startswith('dehydration_by_'):
         sim.modules['Diarrhoea'].parameters[param_name] = 1.0
 
-
 #   * Depression
 sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
 sim.modules['Depression'].linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
@@ -137,9 +137,3 @@ sim.simulate(end_date=end_date)
 
 # Parse the log-file
 log_df = parse_log_file(sim.log_filepath)
-
-
-
-
-
-
