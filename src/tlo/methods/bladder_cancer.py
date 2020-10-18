@@ -923,9 +923,9 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
-        """schedule logging to repeat every 3 months
+        """schedule logging to repeat every 1 month
         """
-        self.repeat = 3
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -970,8 +970,8 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_bladder_cancer_since_last_log': df.date_death_bladder_cancer.between(date_lastlog, date_now).sum()
         })
 
-#       logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-        logger.info('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[10].to_dict())
+#       logger.info('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[10].to_dict())
