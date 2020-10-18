@@ -954,10 +954,6 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             df.bc_date_treatment) & pd.isnull(
             df.bc_date_palliative_care)), 'bc_status'].value_counts().items()})
 
-        # Current counts, on palliative care
-        out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.bc_date_palliative_care), 'bc_status'].value_counts().items()})
-
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
         date_now = self.sim.date
