@@ -41,7 +41,8 @@ sim.register(pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcef
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 sim.register(pneumonia.ALRI(resourcefilepath=resourcefilepath))
-# sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
+
+sim.register(dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)

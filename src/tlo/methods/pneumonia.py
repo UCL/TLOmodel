@@ -53,7 +53,7 @@ class ALRI(Module):
         'Strep_pneumoniae_PCV13',
         'Strep_pneumoniae_non_PCV13',
         'Hib',
-        'H.influenzae_non_type-b',
+        'H.influenzae_non_type_b',
         'Staph_aureus',
         'Enterobacteriaceae',  # includes E. coli, Enterobacter species, and Klebsiella species,
         'other_Strepto_Enterococci',  # includes Streptococcus pyogenes and Enterococcus faecium
@@ -80,9 +80,13 @@ class ALRI(Module):
                      'sepsis', 'meningitis', 'respiratory_failure'}
 
     # Declare the pathogen types + pathogens:
-    viral_patho = {'RSV', 'rhinovirus', 'hMPV', 'parainfluenza', 'influenza', 'adenovirus', 'coronavirus', 'bocavirus'}
-    bacterial_patho = {'streptococcus', 'haemophilus', 'TB', 'staphylococcus'}
-    fungal_patho = {'jirovecii'}
+    viral_patho = {'RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', 'Adenovirus', 'Bocavirus',
+                   'other_viral_pathogens'}
+
+    bacterial_patho = {'Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', 'Hib', 'H.influenzae_non_type_b',
+                       'Staph_aureus', 'Enterobacteriaceae', 'other_Strepto_Enterococci', 'other_bacterial_pathogens'}
+
+    fungal_patho = {'P.jirovecii'}
 
     # Declare the disease types:
     disease_type = {
@@ -117,7 +121,7 @@ class ALRI(Module):
                       'baseline incidence of ALRI caused by Streptoccocus pneumoniae non PCV13 serotype '
                       'in age groups 0-11, 12-23, 24-59 months'
                       ),
-        'base_inc_rate_ALRI_by_hib':
+        'base_inc_rate_ALRI_by_Hib':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Haemophilus influenzae type b '
                       'in age groups 0-11, 12-23, 24-59 months'
@@ -130,6 +134,11 @@ class ALRI(Module):
         'base_inc_rate_ALRI_by_Enterobacteriaceae':
             Parameter(Types.LIST,
                       'baseline incidence of ALRI caused by Enterobacteriaceae in age groups 0-11, 12-23, 24-59 months'
+                      ),
+        'base_inc_rate_ALRI_by_other_Strepto_Enterococci':
+            Parameter(Types.LIST,
+                      'baseline incidence of ALRI caused by other streptococci and Enterococci including '
+                      'Streptococcus pyogenes and Enterococcus faecium in age groups 0-11, 12-23, 24-59 months'
                       ),
         'base_inc_rate_ALRI_by_Staph_aureus':
             Parameter(Types.LIST,
@@ -147,7 +156,7 @@ class ALRI(Module):
                       ),
         'base_inc_rate_ALRI_by_Adenovirus':
             Parameter(Types.LIST,
-                      'baseline incidence of ALRI caused by P. adenovirus in age groups 0-11, 12-59 months'
+                      'baseline incidence of ALRI caused by adenovirus in age groups 0-11, 12-59 months'
                       ),
         'base_inc_rate_ALRI_by_Bocavirus':
             Parameter(Types.LIST,
@@ -330,35 +339,31 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'proportion of RSV infection causing viral pneumonia'
                       ),
-        'proportion_viral_pneumonia_by_rhinovirus':
+        'proportion_viral_pneumonia_by_Rhinovirus':
             Parameter(Types.REAL,
-                      'proportion of rhinovirus infection causing viral pneumonia'
+                      'proportion of Rhinovirus infection causing viral pneumonia'
                       ),
-        'proportion_viral_pneumonia_by_hMPV':
+        'proportion_viral_pneumonia_by_HMPV':
             Parameter(Types.REAL,
                       'proportion of HMPV infection causing viral pneumonia'
                       ),
-        'proportion_viral_pneumonia_by_parainfluenza':
+        'proportion_viral_pneumonia_by_Parainfluenza':
             Parameter(Types.REAL,
-                      'proportion of parainfluenza infection causing viral pneumonia'
+                      'proportion of Parainfluenza infection causing viral pneumonia'
                       ),
-        'proportion_viral_pneumonia_by_influenza':
+        'proportion_viral_pneumonia_by_Influenza':
             Parameter(Types.REAL,
-                      'proportion of influenza infection causing viral pneumonia'
+                      'proportion of Influenza infection causing viral pneumonia'
                       ),
-        'proportion_viral_pneumonia_by_adenovirus':
+        'proportion_viral_pneumonia_by_Adenovirus':
             Parameter(Types.REAL,
-                      'proportion of adenovirus infection causing viral pneumonia'
+                      'proportion of Adenovirus infection causing viral pneumonia'
                       ),
-        'proportion_viral_pneumonia_by_coronavirus':
+        'proportion_viral_pneumonia_by_Bocavirus':
             Parameter(Types.REAL,
-                      'proportion of coronavirus infection causing viral pneumonia'
+                      'proportion of Bocavirus infection causing viral pneumonia'
                       ),
-        'proportion_viral_pneumonia_by_bocavirus':
-            Parameter(Types.REAL,
-                      'proportion of bocavirus infection causing viral pneumonia'
-                      ),
-        'proportion_viral_pneumonia_by_other_pathogens':
+        'proportion_viral_pneumonia_by_other_viral_pathogens':
             Parameter(Types.REAL,
                       'proportion of other pathogens infection causing viral pneumonia'
                       ),
@@ -742,18 +747,6 @@ class ALRI(Module):
         # =====================================================================================================
         # APPLY PROBABILITY OF CO- / SECONDARY BACTERIAL INFECTION
         # -----------------------------------------------------------------------------------------------------
-        # Create a linear model equation for the probability of a viral/bacterial co-infection in pneumonia
-        # self.viral_pneumonia_with_bacterial_coinfection = \
-        #     LinearModel(LinearModelType.MULTIPLICATIVE,
-        #                 1.0,
-        #                 Predictor()
-        #                 .when(
-        #                     "ri_primary_ALRI_pathogen.isin(['RSV', 'rhinovirus', 'hMPV', "
-        #                     "'parainfluenza', 'influenza']) & "
-        #                     "ri_ALRI_disease_type == 'viral_pneumonia'",
-        #                     p['prob_viral_pneumonia_bacterial_coinfection'])
-        #                 )
-
         # Create a linear model equation for the probability of a secondary bacterial superinfection
         self.prob_secondary_bacterial_superinfection = \
             LinearModel(LinearModelType.MULTIPLICATIVE,
@@ -784,8 +777,14 @@ class ALRI(Module):
                             1.0,
                             Predictor('ri_primary_ALRI_pathogen')
                             .when(
-                                ".isin(['streptococcus', 'haemophilus', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
+                                "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
+                                "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_pneumothorax_by_bacterial_pneumonia'])
+                            .when(
+                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', "
+                                "'other_viral_pathogens'])",
+                                p['prob_pneumothorax_by_viral_pneumonia'])
                             .otherwise(0.0)
                             ),
 
@@ -794,7 +793,9 @@ class ALRI(Module):
                             1.0,
                             Predictor('ri_primary_ALRI_pathogen')
                             .when(
-                                ".isin(['streptococcus', 'haemophilus', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
+                                "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
+                                "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_pleural_effusion_by_bacterial_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -811,7 +812,9 @@ class ALRI(Module):
                             1.0,
                             Predictor('ri_primary_ALRI_pathogen')
                             .when(
-                                ".isin(['streptococcus', 'haemophilus', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
+                                "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
+                                "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_lung_abscess_by_bacterial_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -821,10 +824,13 @@ class ALRI(Module):
                             1.0,
                             Predictor('ri_primary_ALRI_pathogen')
                             .when(
-                                ".isin(['streptococcus', 'haemophilus', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
+                                "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
+                                "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_sepsis_by_bacterial_pneumonia'])
                             .when(
-                                ".isin(['RSV', 'rhinovirus', 'hMPV', 'parainfluenza', 'influenza'])",
+                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', "
+                                "'other_viral_pathogens'])",
                                 p['prob_sepsis_by_viral_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -834,7 +840,9 @@ class ALRI(Module):
                             1.0,
                             Predictor('ri_primary_ALRI_pathogen' or 'ri_secondary_bacterial_pathogen')
                             .when(
-                                ".isin(['streptococcus', 'haemophilus', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
+                                "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
+                                "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_meningitis_by_bacterial_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -844,11 +852,14 @@ class ALRI(Module):
                             1.0,
                             Predictor('ri_primary_ALRI_pathogen')
                             .when(
-                                ".isin(['streptococcus', 'haemophilus', 'TB', 'staphylococcus', 'other_pathogens'])",
+                                ".isin(['Strep_pneumoniae_PCV13', 'Strep_pneumoniae_non_PCV13', "
+                                "'Hib', 'H.influenzae_non_type_b', 'Staph_aureus', 'Enterobacteriaceae', "
+                                "'other_Strepto_Enterococci', 'other_bacterial_pathogens'])",
                                 p['prob_respiratory_failure_by_bacterial_pneumonia'])
 
                             .when(
-                                ".isin(['RSV', 'rhinovirus', 'hMPV', 'parainfluenza', 'influenza'])",
+                                ".isin(['RSV', 'Rhinovirus', 'HMPV', 'Parainfluenza', 'Influenza', "
+                                "'other_viral_pathogens'])",
                                 p['prob_respiratory_failure_by_viral_pneumonia'])
                             .otherwise(0.0)
                             ),
@@ -1203,7 +1214,7 @@ class AcuteLowerRespiratoryInfectionIncidentCase(Event, IndividualScopeEventMixi
             # choose a secondary bacterial pathogen
             secondary_bacterial_pathogen = rng.choice(list(self.module.bacterial_patho),
                                                       p=p['porportion_bacterial_coinfection_pathogen'])
-            # date of onset of secondary bacterial infeotion
+            # date of onset of secondary bacterial infection
             date_onset_secondary_bacterial = self.module.sim.date + DateOffset(
                 days=np.random.randint(1, high=self.duration_in_days))  # todo: has to be less than full duration
 

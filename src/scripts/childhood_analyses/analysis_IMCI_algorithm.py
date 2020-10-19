@@ -34,7 +34,7 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        "tlo.methods.pneumonia": logging.INFO,
+        # "tlo.methods.pneumonia": logging.INFO,
         "tlo.methods.dx_algorithm_child": logging.INFO
     }
 }
@@ -44,7 +44,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2013, 1, 1)
 pop_size = 100
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
@@ -78,26 +78,38 @@ sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
 
 # parse the simulation logfile to get the output dataframes
-log_df = sim.log_filepath  # output
+output = parse_log_file(sim.log_filepath)
 
 # --------------------------------------- Model outputs ---------------------------------------
-pneum_classification_df = log_df['tlo.methods.dx_algorithm_child']['imci_classicications_count']
-pneum_classification_df['year'] = pd.to_datetime(pneum_classification_df['date']).dt.year
-# pneum_management_df = log_df['tlo.methods.pneumonia']['pneumonia_management_child_info']
+pneum_classification = output['tlo.methods.dx_algorithm_child']['imci_classicications_count']
+pneum_classification['date'] = pd.to_datetime(pneum_classification['date']).dt.year
+pneum_classification = pneum_classification.set_index('date')
 
+print(pneum_classification)
+
+# pneum_management_df = log_df['tlo.methods.pneumonia']['pneumonia_management_child_info']
 # --------------------------------------- Plotting ---------------------------------------
 plt.style.use("ggplot")
 
-# Pneumonia incidence
-plt.subplot(111)  # numrows, numcols, fignum
-plt.plot(pneum_classification_df, pneum_classification_df['year'])
-plt.title("Pneumonia classification")
-plt.xlabel("Date")
-plt.ylabel("number of classifications")
-plt.xticks(rotation=90)
-plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-
+# Pneumonia IMCI classification
+names = list(pneum_classification.columns)
+print(names)
+ax = pneum_classification.plot.bar(rot=0)
 plt.show()
+
+plt.figure(figsize=(9, 3))
+plt.bar(names, values)
+plt.subplot(521)
+# plt.plot(names, values)
+plt.suptitle('Categorical Plotting')
+plt.show()
+
+# plt.plot(pneum_classification_df, pneum_classification_df['year'])
+# plt.title("Pneumonia classification")
+# plt.xlabel("Date")
+# plt.ylabel("number of classifications")
+#
+# plt.show()
 
 # def get_imci_pneumonia_classification(logfile):
 #     output = parse_log_file(logfile)
