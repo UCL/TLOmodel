@@ -24,7 +24,7 @@ from tlo.methods import (
 seed = 567
 
 log_config = {
-    "filename": "postnatal_analysis",   # The name of the output file (a timestamp will be appended).
+    "filename": "labour_incidence_analysis",   # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING

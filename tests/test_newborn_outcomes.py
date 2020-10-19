@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -16,18 +16,44 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager, hiv, tb, male_circumcision
+    symptommanager
 )
+seed = 567
+
+log_config = {
+    "filename": "newborn_testing",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.labour": logging.DEBUG,
+        "tlo.methods.healthsystem": logging.FATAL,
+        "tlo.methods.hiv": logging.FATAL,
+        "tlo.methods.newborn_outcomes": logging.DEBUG,
+        "tlo.methods.antenatal_care": logging.DEBUG,
+        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+        "tlo.methods.postnatal_supervisor": logging.DEBUG,
+    }
+}
+# The resource files
+try:
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+except NameError:
+    # running interactively
+    resourcefilepath = 'resources'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 1000
 
+def check_dtypes(simulation):
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
 
 @pytest.fixture(scope='module')
-def simulation():
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim = Simulation(start_date=start_date)
+def test_run():
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
@@ -37,32 +63,15 @@ def simulation():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(1)
-    return sim
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    check_dtypes(sim)
 
 
-def test_run(simulation):
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+test_run()
 
-
-def test_dypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    test_run(simulation)
-    t1 = time.time()
-    print('Time taken', t1 - t0)

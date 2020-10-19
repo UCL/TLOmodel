@@ -9,6 +9,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, postnatal_supervisor
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -232,8 +233,9 @@ class Labour (Module):
         'daily_risk_of_postnatal_sepsis_onset': Parameter(
             Types.LIST, 'probability of sepsis onset for each day of the postnatal period for a woman who will '
                         'experience sepsis'),
-        'prob_progression_gest_htn': Parameter(
-            Types.REAL, 'probability of gestational hypertension progressing to mild pre-eclampsia during/after labour'),
+        'prob_progression_severe_gest_htn': Parameter(
+            Types.REAL, 'probability of severe gestational hypertension progressing to severe pre-eclampsia '
+                        'during/after labour'),
         'prob_progression_mild_pre_eclamp': Parameter(
             Types.REAL, 'probability of mild pre-eclampsia progressing to severe pre-eclampsia during/after labour'),
         'prob_progression_severe_pre_eclamp': Parameter(
@@ -457,7 +459,9 @@ class Labour (Module):
         'la_maternal_death_in_labour_date': Property(Types.DATE, 'date of death for a date in pregnancy'),
         'la_date_most_recent_delivery': Property(Types.DATE, 'date of on which this mother last delivered'),
         'la_is_postpartum': Property(Types.BOOL, 'Whether a woman is in the postpartum period, from delivery until '
-                                                 'day +42 (6 weeks)')
+                                                 'day +42 (6 weeks)'),
+        'la_iron_folic_acid_postnatal': Property(Types.BOOL, 'Whether a woman is receiving iron and folic acid during '
+                                                             'the postnatal period'),
     }
 
     def read_parameters(self, data_folder):
@@ -709,9 +713,9 @@ class Labour (Module):
                                  params['ur_delayed_treatment_effect_sb'])
             ),
 
-            'progression_gest_htn': LinearModel(
+            'progression_severe_gest_htn': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_progression_gest_htn']),
+                params['prob_progression_severe_gest_htn']),
 
             'progression_mild_pre_eclamp': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -1190,7 +1194,7 @@ class Labour (Module):
         df = self.sim.population.props
         params = self.parameters
 
-        risk_progression_gh_pe = params['la_labour_equations']['progression_gest_htn'].predict(df.loc[[
+        risk_progression_sgh_spe = params['la_labour_equations']['progression_severe_gest_htn'].predict(df.loc[[
             individual_id]])[individual_id]
 
         risk_progression_mpe_spe = params['la_labour_equations']['progression_mild_pre_eclamp'].predict(df.loc[[
@@ -1199,12 +1203,9 @@ class Labour (Module):
         risk_progression_spe_ec = params['la_labour_equations']['progression_severe_pre_eclamp'].predict(df.loc[[
                     individual_id]])[individual_id]
 
-       # if df.at[individual_id, 'ps_htn_disorders'] == 'none':
-        #    return
-
-        if df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn':
-            if risk_progression_gh_pe > self.rng.random_sample():
-                df.at[individual_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
+        if df.at[individual_id, 'ps_htn_disorders'] == 'severe_gest_htn':
+            if risk_progression_sgh_spe > self.rng.random_sample():
+                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
 
         if df.at[individual_id, 'ps_htn_disorders'] == 'mild_pre_eclamp':
             if risk_progression_mpe_spe > self.rng.random_sample():
@@ -1236,6 +1237,12 @@ class Labour (Module):
             df.at[individual_id, 'la_maternal_death_in_labour_date'] = self.sim.date
             self.labour_tracker[f'{cause}_death'] += 1
 
+        else:
+            # As eclampsia is a transient acute event, if women survive we reset their disease state to severe
+            # pre-eclampsia
+            if cause == 'eclampsia':
+                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
+
         #  And then a risk of stillbirth is calculated, maternal death is a used as a predictor and set very high if
         #  true
         if self.predict(params['la_labour_equations'][f'{cause}_stillbirth'], individual_id):
@@ -1264,6 +1271,10 @@ class Labour (Module):
             mni[individual_id]['cause_of_death_in_labour'].append(f'{cause}_postpartum')
             df.at[individual_id, 'la_maternal_death_in_labour'] = True
             df.at[individual_id, 'la_maternal_death_in_labour_date'] = self.sim.date
+
+        else:
+            if cause == 'eclampsia':
+                df.at[individual_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
 
     def labour_characteristics_checker(self, individual_id):
         """This function is called at different points in the module to ensure women of the right characteristics are
@@ -2229,20 +2240,20 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 # For women who dont seek care for complications following birth we apply risk of death
                 self.module.apply_risk_of_early_postpartum_death(individual_id)
 
-            if ~mni[individual_id]['death_postpartum']:
-                # If the woman survives her complication we then determine if they will present for their first PNC
-                # visit 1-2 days postnatal
-                if self.module.rng.random_sample() < params['prob_attend_pnc1']:
-                    maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
-                    self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
+                if ~mni[individual_id]['death_postpartum']:
+                    # If the woman survives her complication we then determine if they will present for their first PNC
+                    # visit 1-2 days postnatal
+                    if self.module.rng.random_sample() < params['prob_attend_pnc1']:
+                        maternal_pnc1 = postnatal_supervisor.HSI_PostnatalSupervisor_PostnatalCareContactOne(
+                        self.sim.modules['PostnatalSupervisor'], person_id=individual_id)
 
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            maternal_pnc1,
-                            priority=0,
-                            topen=self.sim.date + DateOffset(days=1),
-                            tclose=self.sim.date + DateOffset(days=2))
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                maternal_pnc1,
+                                priority=0,
+                                topen=self.sim.date + DateOffset(days=1),
+                                tclose=self.sim.date + DateOffset(days=2))
 
-        # If a woman doesnt experience any complications, when they determine if she will seek care for PNC1
+        # If a woman doesnt experience any complications, we then determine if she will seek care for PNC1
         elif ~df.at[individual_id, 'la_sepsis_postpartum'] or df.at[individual_id, 'ps_htn_disorders'] == 'none' \
              or df.at[individual_id, 'ps_htn_disorders'] == 'gest_htn' or ~df.at[individual_id, 'la_postpartum_haem']:
 
@@ -2475,7 +2486,7 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         # women who will be referred for caesarean also wont have the risk applied
         if ~df.at[person_id, 'la_obstructed_labour_treatment'] or mni[person_id]['referred_for_cs'] == 'none':
             self.module.set_intrapartum_complications(
-                person_id, complication='uterine_rupture')
+                person_id, complication='uterine_rupture')  # TODO: should this be fully blocked? 
 
         # Uterine rupture follows the same pattern as antepartum haemorrhage
         if mni[person_id]['delivery_setting'] == 'health_centre':
@@ -2583,6 +2594,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         mni = self.module.mother_and_newborn_info
         df = self.sim.population.props
         params = self.module.parameters
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
         logger.info(key='message', data='This is HSI_Labour_ReceivesCareForPostpartumPeriodFacilityLevel1: Providing '
                                         f'skilled attendance following birth for person {person_id}')
@@ -2658,6 +2670,40 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
             if mni[person_id]['referred_for_surgery'] == 'none' and mni[person_id]['referred_for_blood'] == 'none':
 
                 self.module.apply_risk_of_early_postpartum_death(person_id)
+
+        # TODO: is there a smart way to condition on death before these next interventions (despite referral)
+
+        #  =======================POSTNATAL INTERVENTIONS TO BE DELIVERED PRE DISCHARGE ===============================
+
+        # --------------------------------HIV testing and counselling  ----------------------------------------------
+        # todo: discuss with Tara (replace with in-event testing (not hsi))--
+        if 'hiv' in self.sim.modules.keys():
+            hiv_testing = HSI_Hiv_PresentsForCareWithSymptoms(
+                module=self.sim.modules['hiv'], person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(hiv_testing, priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
+
+        # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
+        item_code_iron_folic_acid = pd.unique(
+            consumables.loc[consumables['Items'] == 'Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg', 'Item_Code'])[0]
+
+        consumables_iron = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_iron_folic_acid: 93}}  # days in 3 months 
+
+        # Check there availability
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=consumables_iron,
+            to_log=False)
+        
+        if outcome_of_request_for_consumables['Item_Code'][item_code_iron_folic_acid]:
+            df.at[person_id, 'la_iron_folic_acid_postnatal'] = True
+
+        # ------------------------------- Postnatal immunisations ----------------------------------------------------
+        # TODO: link up with Tara and EPI module
 
         # ========================================== SCHEDULE PNC1 ===================================================
         # For women who survived the immediate postpartum period in facility, we determine if they will return in 1-2

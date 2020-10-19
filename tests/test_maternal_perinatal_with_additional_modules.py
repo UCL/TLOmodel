@@ -1,4 +1,6 @@
-import datetime
+"""This test runs the full set of maternal and perinatal health modules INCLUDING all other modules called by these
+module as having all called modules registered in other tests lead to long run times."""
+
 import os
 from pathlib import Path
 
@@ -14,14 +16,14 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager,
-    postnatal_supervisor
+    postnatal_supervisor,
+    symptommanager, hiv, tb, male_circumcision
 )
 
-seed = 560
+seed = 567
 
 log_config = {
-    "filename": "pregnancy_supervisor_test",   # The name of the output file (a timestamp will be appended).
+    "filename": "maternal_perinatal_all_modules",   # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
@@ -34,6 +36,7 @@ log_config = {
         "tlo.methods.postnatal_supervisor": logging.DEBUG,
     }
 }
+
 
 # The resource files
 try:
@@ -63,11 +66,14 @@ def test_run():
                  # healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=['*']),
+                 labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 hiv.hiv(resourcefilepath=resourcefilepath),
+                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
@@ -76,27 +82,4 @@ def test_run():
 
     check_dtypes(sim)
 
-def test_run_no_healthsystem():
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=[]),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
-
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
-
 test_run()
-#test_run_no_healthsystem()

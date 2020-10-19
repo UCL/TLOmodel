@@ -16,15 +16,12 @@ from tlo.methods import (
     pregnancy_supervisor,
     postnatal_supervisor,
     symptommanager,
-    hiv,
-    male_circumcision,
-    tb
 )
 
 seed = 567
 
 log_config = {
-    "filename": "pregnancy_testing",   # The name of the output file (a timestamp will be appended).
+    "filename": "postnatal_testing",   # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
@@ -69,9 +66,6 @@ def test_run():
                                            service_availability=['*']),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 #male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 #hiv.hiv(resourcefilepath=resourcefilepath),
-                 #tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),

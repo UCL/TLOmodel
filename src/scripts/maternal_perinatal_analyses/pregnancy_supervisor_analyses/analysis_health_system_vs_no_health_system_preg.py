@@ -66,9 +66,9 @@ for label, service_avail in scenarios.items():
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_avail),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
+                 #male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
+                 #hiv.hiv(resourcefilepath=resourcefilepath),
+                 #tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
@@ -76,8 +76,8 @@ for label, service_avail in scenarios.items():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    logfile = log_config["filename"]
-    #logfile = sim.configure_logging(filename="LogFile")
+    #logfile = log_config["filename"]
+    logfile = sim.configure_logging(filename="LogFile")
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -145,7 +145,7 @@ def generate_graphs(dictionary, title, saved_title):
 
 
 generate_graphs(maternal_mortality_ratio,'Combined antenatal and intrapartum MMR by Year', "mmr_by_scenario")
-generate_graphs(still_birth_ratio, 'Combined antenatal and intrapartum SBR by Year', "sbr_by_scenario")
+# generate_graphs(still_birth_ratio, 'Combined antenatal and intrapartum SBR by Year', "sbr_by_scenario")
 #  generate_graphs(anaemia_rate, 'Anaemia Rate by Year', "ar_by_scenario")
 # generate_graphs(crude_pre_eclampsia, 'Crude new onset pre-eclampsia cases', "cpe_by_scenario")
 # generate_graphs(crude_gest_htn, 'Crude new onset gestational hypertension cases', "cpe_by_scenario")

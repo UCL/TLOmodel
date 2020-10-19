@@ -120,6 +120,10 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_gest_htn_on_treatment': Property(
             Types.BOOL,
             'Whether this woman has been initiated on treatment for gestational hypertension'),
+        'ac_ectopic_pregnancy_treated': Property(
+            Types.BOOL,
+            'Whether this woman has received treatment for an ectopic pregnancy'),
+
     }
 
     def read_parameters(self, data_folder):
@@ -137,6 +141,8 @@ class CareOfWomenDuringPregnancy(Module):
     def initialise_population(self, population):
 
         df = population.props
+
+        # todo: these variables need to be reset on pregnancy loss?
         df.loc[df.is_alive, 'ac_total_anc_visits_current_pregnancy'] = 0
         df.loc[df.is_alive, 'ac_receiving_iron_folic_acid'] = False
         df.loc[df.is_alive, 'ac_date_ifa_runs_out'] = pd.NaT
@@ -148,6 +154,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_itn_provided'] = False
         df.loc[df.is_alive, 'ac_ttd_received'] = 0
         df.loc[df.is_alive, 'ac_gest_htn_on_treatment'] = False
+        df.loc[df.is_alive, 'ac_ectopic_pregnancy_treated'] = False
 
     def initialise_simulation(self, sim):
         sim.schedule_event(AntenatalCareLoggingEvent(self),
@@ -218,6 +225,7 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_itn_provided'] = False
         df.at[child_id, 'ac_ttd_received'] = 0
         df.at[child_id, 'ac_gest_htn_on_treatment'] = False
+        df.at[child_id, 'ac_ectopic_pregnancy_treated'] = False
 
         # Run a check at birth to make sure no women exceed 8 visits, which shouldn't occur through this logic
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
@@ -1974,6 +1982,116 @@ class HSI_CareOfWomenDuringPregnancy_MonitoringOfAnaemiaInPregnancy(HSI_Event, I
                 self.sim.modules['HealthSystem'].schedule_hsi_event(additional_care, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=7))
+
+
+class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, IndividualScopeEventMixin):
+    """"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_PostAbortionCaseManagement'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ANCSubsequent'] = 1
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+        # TODO: PAC interventions
+
+        # If haemorrhage
+        # ...blood
+
+        # If septic
+        # ...antibiotics
+
+        # If incomplete
+        # ....Medical Management
+
+        # ....Surgical Management
+
+
+
+class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, IndividualScopeEventMixin):
+    """"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['MajorSurg'] = 1  # TODO: higher level as surgery? # TODO: add some inpatient time
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        mother = df.loc[person_id]
+
+        assert mother.ps_ectopic_pregnancy
+
+        if mother.is_alive:
+            logger.debug(key='message', data='This is HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy, '
+                                             f'person {person_id} has been diagnosed with ectopic pregnancy after '
+                                             f'presenting and will now undergo surgery')
+
+            # We define the required consumables
+            # TODO: finalise consumables
+            ectopic_pkg = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Ectopic case management',
+                                                    'Intervention_Pkg_Code'])[0]
+
+            consumables_needed_surgery = {'Intervention_Package_Code': {ectopic_pkg: 1}, 'Item_Code': {}}
+
+            # Check their availability
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed_surgery, to_log=False)
+
+            if outcome_of_request_for_consumables:
+                # If available, the treatment can go ahead
+                logger.debug(key='message',
+                             data='Consumables required for ectopic surgery are available and therefore have been used')
+
+                self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self, cons_req_as_footprint=consumables_needed_surgery, to_log=True)
+
+                # Treatment variable set to true, reducing risk of death at death event in PregnancySupervisor
+                df.at[person_id, 'ac_ectopic_pregnancy_treated'] = True
+
+            else:
+                logger.debug(key='message',
+                             data='Consumables required for surgery are unavailable and therefore have not '
+                                  'been used')
+
+
+class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAdmission(HSI_Event, IndividualScopeEventMixin):
+    """"""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, CareOfWomenDuringPregnancy)
+
+        self.TREATMENT_ID = 'CareOfWomenDuringPregnancy_MaternalEmergencyAdmission'
+
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ANCSubsequent'] = 1
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+
+        # TODO: This event acts as maternal A&E for women who present to the health system during pregnancy, outside of
+        #  the usual ANC structure
 
 
 class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):

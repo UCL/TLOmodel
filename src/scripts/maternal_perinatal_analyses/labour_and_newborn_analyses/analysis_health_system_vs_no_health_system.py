@@ -78,16 +78,16 @@ for label, service_avail in scenarios.items():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
+    logfile = sim.configure_logging(filename="LogFile")
+
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-    log_df = parse_log_file(sim.log_filepath)
 
     # Save the full set of results:
-    output_files[label] = log_df
+    output_files[label] = logfile
 
-
-def get_incidence_rate_and_death_numbers_from_logfile(log_df):
-    output = log_df
+def get_incidence_rate_and_death_numbers_from_logfile(logfile):
+    output = parse_log_file(logfile)
 
     # Calculate the "incidence rate" from the output counts of incidence
     maternal_counts = output['tlo.methods.labour']['summary_stats_incidence']

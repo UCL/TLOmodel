@@ -16,9 +16,8 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager, male_circumcision, hiv, tb, postnatal_supervisor
+    symptommanager, male_circumcision, tb, hiv, postnatal_supervisor
 )
-
 seed = 567
 
 log_config = {
@@ -35,16 +34,36 @@ log_config = {
 }
 
 resourcefilepath = Path("./resources")
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
 # Scenarios Definitions:
-# *1: All complications occuring in facilities will be identified correctly and prompt treatment administered
-# *2: Set dx_test sensitivity is applied
+# *1: All interventions called within the Labour HSI are able to run
+# *2: Selected interventions called within the Labour HSI are able to run, as listed
 
 scenarios = dict()
-scenarios['dx_test_total_sensitivity'] = [1.0, 0.99]
-scenarios['dx_test_standard_sensitivity'] = [0.8, 0.4]
+scenarios['all_interventions'] = ['prophylactic_labour_interventions',
+                                  'assessment_and_treatment_of_severe_pre_eclampsia',
+                                  'assessment_and_treatment_of_obstructed_labour',
+                                  'assessment_and_treatment_of_maternal_sepsis',
+                                  'assessment_and_treatment_of_hypertension',
+                                  'assessment_and_treatment_of_eclampsia',
+                                  'assessment_and_plan_for_referral_antepartum_haemorrhage',
+                                  'assessment_and_plan_for_referral_uterine_rupture',
+                                  'active_management_of_the_third_stage_of_labour',
+                                  'assessment_and_treatment_of_pph_retained_placenta',
+                                  'assessment_and_treatment_of_pph_uterine_atony']
+#
+scenarios['selected_interventions'] = ['prophylactic_labour_interventions',
+                                       'assessment_and_treatment_of_severe_pre_eclampsia',
+                                       'assessment_and_treatment_of_obstructed_labour',
+                                       'assessment_and_treatment_of_maternal_sepsis',
+                                       'assessment_and_treatment_of_hypertension',
+                                       'assessment_and_treatment_of_eclampsia',
+                                       'assessment_and_plan_for_referral_antepartum_haemorrhage',
+                                       'active_management_of_the_third_stage_of_labour',
+                                       'assessment_and_treatment_of_pph_retained_placenta',
+                                       'assessment_and_treatment_of_pph_uterine_atony']
 
 # Create dict to capture the outputs
 output_files = dict()
@@ -53,9 +72,9 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 2)
-popsize = 20000
+popsize = 10000
 
-for label, dx_test_specificity in scenarios.items():
+for label, allowed_interventions in scenarios.items():
     # add file handler for the purpose of logging
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
@@ -76,38 +95,17 @@ for label, dx_test_specificity in scenarios.items():
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
+    logfile = sim.configure_logging(filename="LogFile")
 
     sim.make_initial_population(n=popsize)
 
     params = sim.modules['Labour'].parameters
-
-    params['sensitivity_of_assessment_of_obstructed_labour_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_assessment_of_obstructed_labour_hp'] = dx_test_specificity[0]
-    params['sensitivity_of_assessment_of_sepsis_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_assessment_of_sepsis_hp'] = dx_test_specificity[0]
-    params['sensitivity_of_assessment_of_hypertension_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_assessment_of_hypertension_hp'] = dx_test_specificity[0]
-    params['sensitivity_of_assessment_of_severe_pe_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_assessment_of_severe_pe_hp'] = dx_test_specificity[0]
-    params['sensitivity_of_referral_assessment_of_antepartum_haem_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_treatment_assessment_of_antepartum_haem_hp'] = dx_test_specificity[0]
-    params['sensitivity_of_referral_assessment_of_uterine_rupture_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_treatment_assessment_of_uterine_rupture_hp'] = dx_test_specificity[0]
-
-    params_nb = sim.modules['NewbornOutcomes'].parameters
-
-    params['sensitivity_of_assessment_of_neonatal_sepsis_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_assessment_of_neonatal_sepsis_hp'] = dx_test_specificity[0]
-    params['sensitivity_of_assessment_of_ftt_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_assessment_of_ftt_hp'] = dx_test_specificity[0]
-    params['sensitivity_of_assessment_of_lbw_hc'] = dx_test_specificity[1]
-    params['sensitivity_of_assessment_of_lbw_hp'] = dx_test_specificity[0]
+    params['allowed_interventions'] = allowed_interventions
 
     sim.simulate(end_date=end_date)
-    log_df = parse_log_file(sim.log_filepath)
 
     # Save the full set of results:
-    output_files[label] = log_df
+    output_files[label] = logfile
 
 
 def get_incidence_rate_and_death_numbers_from_logfile(log_df):
@@ -145,4 +143,4 @@ def generate_graphs(dictionary, title, saved_title):
     plt.show()
 
 
-generate_graphs(maternal_deaths, 'Maternal Mortality Ratio by Year', "mmr_dx_death_by_scenario")
+generate_graphs(maternal_deaths, 'Maternal Mortality Ratio by Year', "mmr_selected_interventions_death_by_scenario")

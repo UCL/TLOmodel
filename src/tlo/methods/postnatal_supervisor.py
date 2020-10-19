@@ -29,7 +29,8 @@ class PostnatalSupervisor(Module):
                 Metadata.USES_HEALTHSYSTEM}  # declare that this is a disease module (leave as empty set otherwise)
 
     PARAMETERS = {
-
+        'prob_htn_resolves': Parameter(
+            Types.REAL, 'probability hypertension resolves during postpartum'),
         'cfr_secondary_pph': Parameter(
             Types.REAL, 'case fatality rate for secondary pph'),
         'cfr_postnatal_sepsis': Parameter(
@@ -52,6 +53,8 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'Treatment effect for secondary pph'),
         'neonatal_sepsis_treatment_effect': Parameter(
             Types.REAL, 'Treatment effect for neonatal sepsis'),
+        'weekly_prob_postnatal_death': Parameter(
+            Types.REAL, 'Weekly risk of postnatal death'),
     }
 
     PROPERTIES = {
@@ -95,6 +98,10 @@ class PostnatalSupervisor(Module):
     # ==================================== LINEAR MODEL EQUATIONS =====================================================
 
         params['pn_linear_equations'] = {
+            'resolution_of_hypertension': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_htn_resolves']),
+
             'secondary_postpartum_haem_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_secondary_pph'],
@@ -120,6 +127,11 @@ class PostnatalSupervisor(Module):
                 params['cfr_late_neonatal_sepsis'],
                 Predictor('pn_sepsis_late_neonatal_treatment').when(True, params[
                     'neonatal_sepsis_treatment_effect'])),
+
+            'postnatal_death_weekly': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['weekly_prob_postnatal_death']),
+                # todo: predictors, HTN, anaemia?
 
         }
 
@@ -150,8 +162,8 @@ class PostnatalSupervisor(Module):
 
         # Define the conditions we want to track
         self.postnatal_tracker = {'secondary_pph': 0, 'postnatal_death': 0, 'secondary_pph_death': 0,
-                                 'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
-                                 'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}
+                                  'postnatal_sepsis': 0, 'sepsis_death': 0, 'fistula': 0, 'postnatal_anaemia': 0,
+                                  'late_neonatal_sepsis': 0, 'neonatal_death': 0, 'neonatal_sepsis_death': 0}
 
         # Register dx_tests used as assessment for postnatal conditions
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -199,7 +211,6 @@ class PostnatalSupervisor(Module):
         if self.rng.random_sample() < risk_of_fistula:
             df.at[mother_id, 'pn_obstetric_fistula'] = True
             self.postnatal_tracker['fistula'] += 1
-            # todo: should treatment be the only thing that turns this variable off/ or self resolution?
 
     def on_hsi_alert(self, person_id, treatment_id):
         logger.debug(key='message', data=f'This is PostnatalSupervisor, being alerted about a health system interaction '
@@ -210,27 +221,46 @@ class PostnatalSupervisor(Module):
 
         logger.debug(key='message', data='This is PostnatalSupervisor reporting my health values')
 
-
-    def progression_of_hypertensive_disorders(self, index):
-        """"""
+    def set_or_resolve_postnatal_complications(self, df_slice, complication):
+        """This function is applied to women at each week of their postnatal period. Currently it determines if
+        hypertensive women will revert to normatension and if women will become anaemic. It is incomplete"""
         df = self.sim.population.props
         params = self.parameters
 
-        pass
+        # TODO: should death be included here?
 
-    def apply_weekly_risk_of_postnatal_anaemia(self, index):
-        df = self.sim.population.props
-        params = self.parameters
+        # Run checks on women passed to this function
+        if not df_slice.empty:
+            for person in df_slice.index:
+                assert df.at[person, 'is_alive'] and df.at[person, 'la_is_postpartum']
 
-        result = params['pn_linear_equations']['postpartum_anaemia'].predict(index)
+        def create_index(eq):
+            result = params['pn_linear_equations'][f'{eq}'].predict(df_slice)
+            random_draw = pd.Series(self.rng.random_sample(size=len(df_slice)), index=df_slice.index)
+            temp_df = pd.concat([result, random_draw], axis=1)
+            temp_df.columns = ['result', 'random_draw']
+            index = temp_df.index[temp_df.random_draw < temp_df.result]
+            return index
 
-        random_draw = pd.Series(self.rng.random_sample(size=len(index)), index=index.index)
-        temp_df = pd.concat([result, random_draw], axis=1)
-        temp_df.columns = ['result', 'random_draw']
+        if complication == 'hypertension':
+            # TODO this doesnt need to be a linear model but a probability varied by week?
+            positive_index = create_index('resolution_of_hypertension')
+            df.loc[positive_index, 'ps_htn_disorders'] = 'none'
 
-        positive_index = temp_df.index[temp_df.random_draw < temp_df.result]
-        df.loc[positive_index, 'pn_anaemia_in_postpartum_period'] = True
-        self.postnatal_tracker['postnatal_anaemia'] += len(positive_index)
+        if complication == 'anaemia':
+            positive_index = create_index('postpartum_anaemia')
+            df.loc[positive_index, 'pn_anaemia_in_postpartum_period'] = True
+            self.postnatal_tracker['postnatal_anaemia'] += len(positive_index)
+
+        if complication == 'death':
+            positive_index = create_index('postnatal_death_weekly')
+            for person in positive_index:
+                self.postnatal_tracker['postnatal_death'] += len(positive_index)
+
+                death = demography.InstantaneousDeath(self.sim.modules['Demography'], person,
+                                                      cause='postnatal death')
+                self.sim.schedule_event(death, self.sim.date)
+
 
     def maternal_postnatal_care_contact_intervention_bundle(self, individual_id, hsi_event):
         """This function is called by each of the postnatal care visits. Currently it the interventions include
@@ -322,13 +352,17 @@ class PostnatalSupervisor(Module):
 
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
-    """ """
+    """ This is the PostnatalSupervisorEvent. It runs every week and applies risk of disease onset/resolution to women
+    in the postnatal period of their pregnancy (48hrs - +42days post birth) """
 
     def __init__(self, module, ):
         super().__init__(module, frequency=DateOffset(weeks=1))
 
     def apply(self, population):
         df = population.props
+
+        # TODO: Move to pregnancy supervisor event (PregnancyAndPostnatalSupervisor) as that event already runs weekly
+        # TODO: does it matter were apply risk of HTN resolution to women without HTN (opposite for anaemia)
 
         # ================================ UPDATING LENGTH OF POSTPARTUM PERIOD  IN WEEKS  ============================
         # Here we update how far into the postpartum period each woman who has recently delivered is
@@ -340,40 +374,39 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug(key='message', data=f'updating postnatal periods on date {self.sim.date}')
 
         # -------------------------------------- WEEK 1 (day 7) -------------------------------------------------------
-        week_1_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
-                                        (df.pn_postnatal_period_in_weeks == 1)]
-        self.module.progression_of_hypertensive_disorders(week_1_postnatal_women)
-        self.module.apply_weekly_risk_of_postnatal_anaemia(week_1_postnatal_women)
+        week_1_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 1)]
+
+        for complication in ['hypertension', 'anaemia', 'death']:
+            self.module.set_or_resolve_postnatal_complications(week_1_postnatal_women, complication=complication)
 
         # -------------------------------------- WEEK 2 (day 14) -------------------------------------------------------
-        week_2_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none')
-                                        & (df.pn_postnatal_period_in_weeks == 2)]
-        self.module.progression_of_hypertensive_disorders(week_2_postnatal_women)
-        self.module.apply_weekly_risk_of_postnatal_anaemia(week_2_postnatal_women)
+        week_2_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 2)]
+        for complication in ['hypertension', 'anaemia', 'death']:
+            self.module.set_or_resolve_postnatal_complications(week_2_postnatal_women, complication=complication)
 
         # -------------------------------------- WEEK 3 (day 21) -------------------------------------------------------
-        week_3_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
-                                       (df.pn_postnatal_period_in_weeks == 3)]
-        self.module.progression_of_hypertensive_disorders(week_3_postnatal_women)
-        self.module.apply_weekly_risk_of_postnatal_anaemia(week_3_postnatal_women)
+        week_3_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 3)]
+
+        for complication in ['hypertension', 'anaemia', 'death']:
+            self.module.set_or_resolve_postnatal_complications(week_3_postnatal_women, complication=complication)
 
         # -------------------------------------- WEEK 4 (day 28) -------------------------------------------------------
-        week_4_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
-                                        (df.pn_postnatal_period_in_weeks == 4)]
-        self.module.progression_of_hypertensive_disorders(week_4_postnatal_women)
-        self.module.apply_weekly_risk_of_postnatal_anaemia(week_4_postnatal_women)
+        week_4_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 4)]
+
+        for complication in ['hypertension', 'anaemia', 'death']:
+            self.module.set_or_resolve_postnatal_complications(week_4_postnatal_women, complication=complication)
 
         # -------------------------------------- WEEK 5 (day 35) -------------------------------------------------------
-        week_5_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none') &
-                                        (df.pn_postnatal_period_in_weeks == 5)]
-        self.module.progression_of_hypertensive_disorders(week_5_postnatal_women)
-        self.module.apply_weekly_risk_of_postnatal_anaemia(week_5_postnatal_women)
+        week_5_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 5)]
+
+        for complication in ['hypertension', 'anaemia', 'death']:
+            self.module.set_or_resolve_postnatal_complications(week_5_postnatal_women, complication=complication)
 
         # -------------------------------------- WEEK 6 (day 42) -------------------------------------------------------
-        week_6_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.ps_htn_disorders != 'none')
-                                        & (df.pn_postnatal_period_in_weeks == 6)]
-        self.module.progression_of_hypertensive_disorders(week_6_postnatal_women)
-        self.module.apply_weekly_risk_of_postnatal_anaemia(week_6_postnatal_women)
+        week_6_postnatal_women = df.loc[df.is_alive & df.la_is_postpartum & (df.pn_postnatal_period_in_weeks == 6)]
+
+        for complication in ['hypertension', 'anaemia', 'death']:
+            self.module.set_or_resolve_postnatal_complications(week_6_postnatal_women, complication=complication)
 
         # Here, one week after we stop applying risk of postpartum complications, we reset key postpartum variables
 
@@ -557,6 +590,7 @@ class HSI_PostnatalSupervisor_PostnatalCareContactOne(HSI_Event, IndividualScope
         # TODO: currently storing treatment and assessment of sepsis/pph/htn within this HSI but should mya
 
         assert df.at[person_id, 'la_is_postpartum']
+        print(person_id)
         assert df.at[person_id, 'pn_pnc_visits_maternal'] == 0
         assert df.at[child_id, 'pn_pnc_visits_neonatal'] == 0
 
@@ -706,6 +740,8 @@ class HSI_PostnatalSupervisor_InpatientCareForSecondaryPostpartumHaemorrhage(HSI
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # todo: check MSTG has specific section on secondary PPH
 
         # First check the availability of consumables for treatment
         pkg_code_pph = pd.unique(consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of postpartum '

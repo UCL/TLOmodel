@@ -10,6 +10,10 @@ from tlo.methods.labour import (
     HSI_Labour_PresentsForSkilledBirthAttendanceInLabour,
     HSI_Labour_ReceivesCareForPostpartumPeriod,
 )
+from tlo.methods.antenatal_care import (
+    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
+    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement
+)
 from tlo.methods.malaria import (
     HSI_Malaria_complicated_treatment_adult,
     HSI_Malaria_complicated_treatment_child,
@@ -278,7 +282,8 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         super().__init__(module, person_id=person_id)
 
         # Confirm that this appointment has been created by the HealthSeekingBehaviour module or Labour module
-        assert module.name in ['HealthSeekingBehaviour', 'Labour']
+        # TODO: pregnancy supervisor added as per discussions with TH, eventually will combine with HSB
+        assert module.name in ['HealthSeekingBehaviour', 'Labour', 'PregnancySupervisor']
 
         # Work out if this is for a child or an adult
         is_child = self.sim.population.props.at[person_id, 'age_years'] < 5
@@ -304,6 +309,19 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         age = df.at[person_id, "age_years"]
 
         health_system = self.sim.modules["HealthSystem"]
+
+        if 'PregnancySupervisor' in self.sim.modules:
+            if df.at[person_id, 'ps_ectopic_pregnancy']:
+                # todo: diagnostics?
+                event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
+                    module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+
+            if df.at[person_id, 'ps_spontaneous_abortion_complication'] == 'complications':
+                # todo: diagnostics?
+                event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
+                    module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
 
         if 'Labour' in self.sim.modules:
             mni = self.sim.modules['Labour'].mother_and_newborn_info

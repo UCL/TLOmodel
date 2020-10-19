@@ -997,6 +997,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
         if df.at[person_id, 'is_alive']:
             if nci[person_id]['delivery_attended'] and ~nci[person_id]['sought_care_for_complication']:
 
+                # =================================  ESSENTIAL NEWBORN CARE ===========================================
                 # The required consumables are defined
                 item_code_tetracycline = pd.unique(consumables.loc[consumables['Items'] == 'Tetracycline eye ointment '
                                                                    '1%_3.5_CMST', 'Item_Code'])[0]
@@ -1021,6 +1022,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 # risk may be covered by 'clean birth practices' effect in labour module. review
                 nci[person_id]['cord_care'] = True
 
+                # ------------------------------------------ EYE CARE -------------------------------------------------
                 # Tetracycline eye care and vitamin k prophylaxis are conditioned on the availability of consumables
 
                 if outcome_of_request_for_consumables['Item_Code'][item_code_tetracycline]:
@@ -1033,6 +1035,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 else:
                     logger.debug(key='message', data='This facility has no tetracycline and therefore was not given')
 
+                # ------------------------------------------ VITAMIN K ------------------------------------------------
                 if outcome_of_request_for_consumables['Item_Code'][item_code_vit_k] and \
                    outcome_of_request_for_consumables['Item_Code'][item_code_vit_k_syringe]:
                     logger.debug(key='message', data=f'Neonate {person_id} has received vitamin k prophylaxis following'
@@ -1042,7 +1045,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 else:
                     logger.debug(key='message', data='This facility has no vitamin K and therefore was not given')
 
-                # ---------------------------------EARLY INITIATION OF BREAST FEEDING --------------
+                # ---------------------------------EARLY INITIATION OF BREAST FEEDING ---------------------------------
                 # A probably that early breastfeeding will initiated in a facility is applied
                 if self.module.rng.random_sample() < params['prob_early_breastfeeding_hf']:
                     df.at[person_id, 'nb_early_breastfeeding'] = True
@@ -1055,8 +1058,13 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 # Otherwise they receives no benefit of prophylaxis
                 logger.debug(key='message', data=f'neonate {person_id} received no prophylaxis as they were delivered '
                                                  f'unattended')
+                # ------------------------------------- IMMUNISATIONS -------------------------------------------------
+                # TODO: Discuss with Tara
 
-            # --------------------------------- COMPLICATION RISKS ---------------------------------
+                # ----------------------------------- ARV PROPHYLAXIS ------------------------------------------------
+                # TODO: Discuss with Tara
+
+            # =================================  COMPLICATION RISKS ===================================================
             # Following the administration of prophylaxis we determine if this neonate has developed
             # any complications following birth
             if ~nci[person_id]['sought_care_for_complication']:
@@ -1066,7 +1074,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
 
                 self.module.apply_risk_of_failure_to_transition(person_id)
 
-            # --------------------------------------- INTERVENTIONS --------------------------------
+            # ================================= COMPLICATION MANAGEMENT ==============================================
             # Only stable neonates are assessed for KMC as per guidelines
             if nci[person_id]['delivery_attended'] and (~df.at[person_id, 'nb_early_onset_neonatal_sepsis'] and
                                                         ~df.at[person_id, 'nb_failed_to_transition'] and
@@ -1098,7 +1106,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                     ~df.at[person_id, 'nb_received_neonatal_resus']:
                 self.module.apply_risk_of_encephalopathy(person_id)
 
-        # --------------------------------------- RISK OF DEATH ------------------------------------------------------
+        # =======================================  RISK OF DEATH ======================================================
             # For newborns that have experience any complications following delivery in a facility we now determine if
             # they will die following treatment
             if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or \

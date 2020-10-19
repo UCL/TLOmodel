@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     antenatal_care,
     contraception,
@@ -16,14 +16,25 @@ from tlo.methods import (
     labour,
     newborn_outcomes,
     pregnancy_supervisor,
-    symptommanager, hiv, tb, male_circumcision, postnatal_supervisor
+    symptommanager, postnatal_supervisor
 )
 
-# Where will outputs go
-outputpath = Path("./outputs")  # folder for convenience of storing outputs
+seed = 567
 
-# date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+log_config = {
+    "filename": "labour_testing",   # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.labour": logging.DEBUG,
+        "tlo.methods.healthsystem": logging.FATAL,
+        "tlo.methods.hiv": logging.FATAL,
+        "tlo.methods.newborn_outcomes": logging.DEBUG,
+        "tlo.methods.antenatal_care": logging.DEBUG,
+        "tlo.methods.pregnancy_supervisor": logging.DEBUG,
+        "tlo.methods.postnatal_supervisor": logging.DEBUG,
+    }
+}
 
 # The resource files
 try:
@@ -49,7 +60,7 @@ def test_run():
     """This test runs a simulation with a functioning health system with full service availability and no set
     constraints"""
 
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -61,14 +72,10 @@ def test_run():
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
 
     sim.make_initial_population(n=popsize)
     params_ps = sim.modules['PregnancySupervisor'].parameters
@@ -92,7 +99,7 @@ def test_run_health_system_high_squeeze():
     factor is too high. Therefore it tests the logic in the did_not_run functions of the Labour HSIs to ensure women
     who want to deliver in a facility, but cant, due to lacking capacity, have the correct events scheduled to continue
     their labour"""
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the core modules
 
@@ -107,15 +114,11 @@ def test_run_health_system_high_squeeze():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -129,7 +132,7 @@ def test_run_health_system_events_wont_run():
     """This test runs a simulation in which no scheduled HSIs will run.. Therefore it tests the logic in the
     not_available functions of the Labour HSIs to ensure women who want to deliver in a facility, but cant, due to the
     service being unavailble, have the correct events scheduled to continue their labour"""
-    sim = Simulation(start_date=start_date)
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
     # Register the core modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -141,15 +144,11 @@ def test_run_health_system_events_wont_run():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 male_circumcision.male_circumcision(resourcefilepath=resourcefilepath),
-                 hiv.hiv(resourcefilepath=resourcefilepath),
-                 tb.tb(resourcefilepath=resourcefilepath),
                  antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath))
 
-    sim.seed_rngs(0)
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
