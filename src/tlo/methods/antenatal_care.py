@@ -11,6 +11,7 @@ from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
 from tlo.methods.tb import HSI_TbScreening
+from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -38,8 +39,33 @@ class CareOfWomenDuringPregnancy(Module):
         Metadata.USES_SYMPTOMMANAGER
     }
 
-
     PARAMETERS = {
+        'prob_evac_procedure_mild_ac': Parameter(
+            Types.LIST, 'list of probabilities for method of evacuation for a woman with mild abortion complications'),
+        'prob_evac_procedure_moderate_ac': Parameter(
+            Types.LIST, 'list of probabilities for method of evacuation for a woman with moderate abortion '
+                        'complications'),
+        'prob_evac_procedure_severe_ac': Parameter(
+            Types.LIST, 'list of probabilities for method of evacuation for a woman with severe abortion '
+                        'complications'),
+        'prob_analgesia_mild_ac': Parameter(
+            Types.REAL, 'probability a woman with mild abortion complications will be given analgesia'),
+        'prob_analgesia_moderate_ac': Parameter(
+            Types.REAL, 'probability a woman with moderate abortion complications will be given analgesia'),
+        'prob_analgesia_severe_ac': Parameter(
+            Types.REAL, 'probability a woman with severe abortion complications will be given analgesia'),
+        'prob_antibiotics_mild_ac': Parameter(
+            Types.REAL, 'probability a woman with mild abortion complications will be given antibiotics'),
+        'prob_antibiotics_moderate_ac': Parameter(
+            Types.REAL, 'probability a woman with moderate abortion complications will be given antibiotics'),
+        'prob_antibiotics_severe_ac': Parameter(
+            Types.REAL, 'probability a woman with severe abortion complications will be given antibiotics'),
+        'prob_blood_transfusion_mild_ac': Parameter(
+            Types.REAL, 'probability a woman with mild abortion complications will be given a blood transfusion'),
+        'prob_blood_transfusion_moderate_ac': Parameter(
+            Types.REAL, 'probability a woman with moderate abortion complications will be given a blood transfusion'),
+        'prob_blood_transfusion_severe_ac': Parameter(
+            Types.REAL, 'probability a woman with severe abortion complications will be given a blood transfusion'),
         'prob_anc_continues': Parameter(
             Types.REAL, 'probability a woman will return for a subsequent ANC appointment'),
         'prob_bp_check': Parameter(
@@ -123,6 +149,9 @@ class CareOfWomenDuringPregnancy(Module):
         'ac_ectopic_pregnancy_treated': Property(
             Types.BOOL,
             'Whether this woman has received treatment for an ectopic pregnancy'),
+        'ac_post_abortion_care_interventions': Property(
+            Types.INT,
+            'bitset list of interventions delivered to a woman undergoing post abortion care '),
 
     }
 
@@ -156,13 +185,16 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_gest_htn_on_treatment'] = False
         df.loc[df.is_alive, 'ac_ectopic_pregnancy_treated'] = False
 
+        self.pac_interventions = BitsetHandler(self.sim.population, 'ac_post_abortion_care_interventions',
+                                 ['mva', 'd_and_c', 'misoprostol', 'analgesia', 'antibiotics', 'blood_products'])
+
     def initialise_simulation(self, sim):
         sim.schedule_event(AntenatalCareLoggingEvent(self),
                            sim.date + DateOffset(years=1))
 
         # Populate the tracker
         self.anc_tracker = {'total_first_anc_visits': 0, 'cumm_ga_at_anc1': 0, 'total_anc1_first_trimester': 0,
-                           'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months':0}
+                            'anc8+': 0, 'timely_ANC3': 0, 'diet_supp_6_months':0}
 
         # DX_TESTS
         params = self.parameters
@@ -297,7 +329,103 @@ class CareOfWomenDuringPregnancy(Module):
         return recommended_gestation_next_anc
 
     # ================================= INTERVENTION FUNCTIONS =======================================================
-    # Following functions contain code for the interventions which are called by each ANC contact
+    # Following functions contain code for the interventions which are called by antenatal HSIs such as Post Abortion
+    # Care and the ANC contacts
+
+    def post_abortion_care_interventions(self, hsi_event, individual_id, severity):
+        """This function is called by HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement. It houses the
+        interventions delivered to women needing PAC. Likelihood of intervention is determined by severity of
+        complications (not specific complications). Treatments are stored using bitset handler and mitigate risk of
+        death in EarlyPregnancyLossDeathEvent in the PregnancySupversior Module """
+
+        params = self.parameters
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        # First, based on severity of complications, we determine what form of uterine evacuation this woman will
+        # undergo and store it accordingly
+        evac_procedures = ['d_and_c', 'mva', 'misoprostol']
+        probability_of_evac_procedure = params[f'prob_evac_procedure_{severity}_ac']
+        random_draw = self.rng.choice(evac_procedures, p=probability_of_evac_procedure)
+
+        self.pac_interventions.set(individual_id, random_draw)
+        # TODO: consumables/equipment for evacuation methods
+        # TODO: should surgical PAC be referred up to a higher facility
+
+        # Next we determine if this woman will require analgesia
+        if self.rng.random_sample() < params[f'prob_analgesia_{severity}_ac']:
+
+            # As analgesia is not modelled to effect outcomes, we check the availability of consumables and log
+            # accordingly
+            item_code_paracetamol = pd.unique(
+                consumables.loc[consumables['Items'] == 'Paracetamol, tablet, 500 mg', 'Item_Code'])[0]
+            item_code_pethidine = pd.unique(
+                consumables.loc[
+                    consumables['Items'] == 'Pethidine, 50 mg/ml, 2 ml ampoule', 'Item_Code'])[0]
+            item_code_needle = pd.unique(
+                consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+            item_code_gloves = pd.unique(
+                consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+            consumables_analgesia_pac = {
+                'Intervention_Package_Code': {},
+                'Item_Code': {item_code_paracetamol: 8,  # 24 hour dose
+                              item_code_pethidine: 1,
+                              item_code_needle: 1,
+                              item_code_gloves: 1}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_analgesia_pac,
+                to_log=False)
+
+            if outcome_of_request_for_consumables:
+                self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event,
+                    cons_req_as_footprint=consumables_analgesia_pac,
+                    to_log=True)
+                self.pac_interventions.set(individual_id, 'analgesia')
+
+        # Next it is determine if this woman will need to receive antibiotics
+        if self.rng.random_sample() < params[f'prob_antibiotics_{severity}_ac']:
+
+            pkg_code_infection = pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Maternal sepsis case management',
+                                'Intervention_Pkg_Code'])[0]
+
+            consumables_needed_sepsis = {'Intervention_Package_Code': {pkg_code_infection: 1}, 'Item_Code': {}}
+
+            outcome_of_request_for_consumables_sep = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_needed_sepsis,
+                to_log=False)
+
+            if outcome_of_request_for_consumables_sep:
+                self.pac_interventions.set(individual_id, 'antibiotics')
+                self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event,
+                    cons_req_as_footprint=consumables_needed_sepsis,
+                    to_log=True)
+
+        # And finally if this woman needs a blood transfusion
+        if self.rng.random_sample() < params[f'prob_blood_transfusion_{severity}_ac']:
+
+            item_code_bt1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
+            item_code_bt2 = \
+            pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
+            item_code_bt3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
+            item_code_bt4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
+                                                      'Item_Code'])[0]
+
+            consumables_needed_bt = {'Intervention_Package_Code': {}, 'Item_Code': {item_code_bt1: 2, item_code_bt2: 1,
+                                                                                    item_code_bt3: 1, item_code_bt4: 2}}
+
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt, to_log=False)
+
+            if outcome_of_request_for_consumables:
+                self.pac_interventions.set(individual_id, 'blood_products')
+                self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=hsi_event, cons_req_as_footprint=consumables_needed_bt, to_log=True)
 
     def interventions_delivered_at_every_contact(self, hsi_event):
         """This function houses all the interventions that should be delivered at every ANC contact regardless of
@@ -2001,21 +2129,50 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+        person = df.loc[person_id]
 
-        # TODO: PAC interventions
+        # We check only women with complications post abortion are sent to this event
+        assert person.ps_spontaneous_abortion_complication != 'none' \
+               or person.ps_induced_abortion_complication != 'none'
 
-        # If haemorrhage
-        # ...blood
+        if person.is_alive:
+            # Women are able to undergo a number of interventions to manage abortion complications including evacuation
+            # of the uterus, antibiotics, pain management and blood transfusion
 
-        # If septic
-        # ...antibiotics
+            logger.debug(key='message', data=f'Person {person} is now undergoing Post Abortion Care at a facility')
 
-        # If incomplete
-        # ....Medical Management
+            # A woman's probability of requiring these interventions is varied by severity of complications and taken
+            # from a study in Malawi
+            if person.ps_spontaneous_abortion_complication == 'mild' \
+                                                              or person.ps_induced_abortion_complication != 'mild':
+                logger.debug(key='message', data=f'Person {person} is experiencing mild complications of abortion and '
+                                                 f'will be treated accordingly')
 
-        # ....Surgical Management
+                # The intervention package is stored in this function
+                self.module.post_abortion_care_interventions(self, person_id, 'mild')
 
+            if person.ps_spontaneous_abortion_complication == 'moderate' \
+                                                              or person.ps_induced_abortion_complication != 'moderate':
 
+                logger.debug(key='message', data=f'Person {person} is experiencing moderate complications of abortion '
+                                                 f'and will be treated accordingly')
+
+                self.module.post_abortion_care_interventions(self, person_id, 'moderate')
+
+            if person.ps_spontaneous_abortion_complication == 'severe' \
+                                                              or person.ps_induced_abortion_complication != 'severe':
+
+                logger.debug(key='message', data=f'Person {person} is experiencing severe complications of abortion and'
+                                                 f'will be treated accordingly')
+
+                self.module.post_abortion_care_interventions(self, person_id, 'severe')
+
+    def did_not_run(self):
+        pass
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement: cannot not run '
+                                         'with this configuration')
 
 class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, IndividualScopeEventMixin):
     """"""
@@ -2070,6 +2227,13 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
                 logger.debug(key='message',
                              data='Consumables required for surgery are unavailable and therefore have not '
                                   'been used')
+
+    def did_not_run(self):
+        pass
+
+    def not_available(self):
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy: cannot not run '
+                                         'with this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAdmission(HSI_Event, IndividualScopeEventMixin):

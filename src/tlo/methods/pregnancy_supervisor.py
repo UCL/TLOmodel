@@ -11,7 +11,6 @@ from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_FirstAnten
     HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAdmission
 from tlo.methods.symptommanager import Symptom
 from tlo.methods import Metadata
-from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -89,31 +88,16 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of a woman dying from a ruptured ectopic pregnancy'),
         'treatment_effect_ectopic_pregnancy': Parameter(
             Types.REAL, 'Treatment effect of ectopic pregnancy case management'),
-        'prob_induced_abortion_type': Parameter(
-            Types.LIST, 'probabilities that the type of abortion a woman has will be 1.) Surgical or 2.) Medical'),
         'prob_any_complication_induced_abortion': Parameter(
             Types.REAL, 'probability of a woman that undergoes an induced abortion experiencing any complications'),
         'prob_any_complication_spontaneous_abortion': Parameter(
             Types.REAL, 'probability of a woman that experiences a late miscarriage experiencing any complications'),
-        'prob_haemorrhage_spontaneous_abortion': Parameter(
-            Types.REAL, 'probability that a woman who has undergone a spontaneous abortion will experience haemorrhage '
-                        'as a complication'),
-        'prob_sepsis_spontaneous_abortion': Parameter(
-            Types.REAL, 'probability that a woman who has undergone a spontaneous abortion will experience sepsis '
-                        'as a complication'),
-        'prob_haemorrhage_induced_abortion': Parameter(
-            Types.REAL, 'probability that a woman who has undergone an induced abortion will experience haemorrhage '
-                        'as a complication'),
-        'prob_sepsis_induced_abortion': Parameter(
-            Types.REAL, 'probability that a woman who has undergone an induced abortion will experience sepsis '
-                        'as a complication'),
-        'prob_injury_induced_abortion': Parameter(
-            Types.REAL, 'probability that a woman who has undergone an induced abortion will experience injury '
-                        'as a complication'),
         'prob_induced_abortion_death': Parameter(
             Types.REAL, 'underlying risk of death following an induced abortion'),
         'prob_spontaneous_abortion_death': Parameter(
             Types.REAL, 'underlying risk of death following an spontaneous abortion'),
+        'treatment_effect_post_abortion_care': Parameter(
+            Types.REAL, 'Treatment effect of post abortion care'),
         'prob_antepartum_haem_stillbirth': Parameter(
             Types.REAL, 'probability of stillbirth for a woman suffering acute antepartum haemorrhage'),
         'prob_antepartum_haem_death': Parameter(
@@ -131,7 +115,7 @@ class PregnancySupervisor(Module):
         'probability_htn_persists': Parameter(
             Types.REAL, 'probability of a womans hypertension persisting post birth'),
         'prob_3_early_visits': Parameter(
-            Types.REAL, 'DUMMY'), # TODO: Remove
+            Types.REAL, 'DUMMY'),  # TODO: Remove
         'prob_seek_care_pregnancy_complication': Parameter(
             Types.REAL, 'Probability that a woman who is pregnant will seek care in the event of a complication'),
         'prob_seek_care_pregnancy_loss': Parameter(
@@ -147,15 +131,12 @@ class PregnancySupervisor(Module):
         'ps_will_attend_four_or_more_anc': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more '
                                                                 'antenatal care visits during her pregnancy'),
         'ps_will_attend_eight_or_more_anc': Property(Types.BOOL, 'DUMMY'),  # todo: remove? 
-        #'ps_induced_abortion_complication': Property(Types.CATEGORICAL, 'complications a woman has experienceD following '
-        #                                                                'an induced abortion',
-        #                                             categories=['none', 'complications']), #todo: edit
-        #'ps_spontaneous_abortion_complication': Property(Types.CATEGORICAL, 'List of any complications a woman has experience '
-        #                                                             'following an spontaneous abortion',
-        #                                                 categories=['none', 'complications']),  # todo: edit
-        'ps_induced_abortion_complication': Property(Types.INT, 'TEST'),
-        'ps_spontaneous_abortion_complication': Property(Types.INT, 'TEST'),
-
+        'ps_induced_abortion_complication': Property(Types.CATEGORICAL, 'severity of complications faced following '
+                                                                        'induced abortion',
+                                                     categories=['none', 'mild', 'moderate', 'severe']),
+        'ps_spontaneous_abortion_complication': Property(Types.CATEGORICAL, 'severity of complications faced following '
+                                                                            'induced abortion',
+                                                         categories=['none', 'mild', 'moderate', 'severe']),
         'ps_antepartum_still_birth': Property(Types.BOOL, 'whether this woman has experienced an antepartum still birth'
                                                           'of her current pregnancy'),
         'ps_previous_stillbirth': Property(Types.BOOL, 'whether this woman has had any previous pregnancies end in '
@@ -247,6 +228,12 @@ class PregnancySupervisor(Module):
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_induced_abortion_per_month']),
 
+                #  'abortion_complication_severity': LinearModel(
+                #    LinearModelType.MULTIPLICATIVE,
+                #    params['prob_moderate_or_severe_abortion_comps']),
+                # todo: TAKE FULL EQUATION FROM Kalilani-PhirI ET AL. The severity of abortion complications in
+                #  malawi
+
                 'maternal_anaemia': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['prob_anaemia_per_month'],
@@ -300,11 +287,21 @@ class PregnancySupervisor(Module):
 
                 'induced_abortion_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_induced_abortion_death']),
+                    params['prob_induced_abortion_death'],
+                    Predictor('ac_post_abortion_care_interventions').when('>0',
+                                                                          params[
+                                                                              'treatment_effect_post_abortion_care'])),
 
                 'spontaneous_abortion_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_spontaneous_abortion_death']),
+                    params['prob_spontaneous_abortion_death'],
+                    Predictor('ac_post_abortion_care_interventions').when('>0',
+                                                                          params[
+                                                                              'treatment_effect_post_abortion_care'])),
+
+                # TODO: both of the above death models need to vary by severity
+                # TODO: both of the above death models need to vary treatment effect by specific treatment,
+                #  this is just any treatment
 
                 'antepartum_haemorrhage_stillbirth': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -342,15 +339,12 @@ class PregnancySupervisor(Module):
 
         }
 
+        # Create bitset handler for these two columns so they can be used as lists later on
+
+
     def initialise_population(self, population):
 
         df = population.props
-
-        self.induced_abortion_comps = BitsetHandler(self.sim.population, 'ps_induced_abortion_complication',
-                      ['none', 'incomplete', 'complete', 'haemorrhage', 'sepsis', 'injury'])
-
-        self.spontaneous_abortion_comps = BitsetHandler(self.sim.population, 'ps_spontaneous_abortion_complication',
-                      ['none', 'incomplete', 'complete', 'haemorrhage', 'sepsis'])
 
         df.loc[df.is_alive, 'ps_gestational_age_in_weeks'] = 0
         df.loc[df.is_alive, 'ps_ectopic_pregnancy'] = False
@@ -634,28 +628,19 @@ class PregnancySupervisor(Module):
             # We store the type of abortion for analysis
             self.pregnancy_disease_tracker[f'{cause}'] += 1
 
-            # We apply a probability of complications to women who miscarry later than 13 weeks
-            if cause == 'spontaneous_abortion' and df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 13:
-                if params['prob_any_complication_spontaneous_abortion'] < self.rng.random_sample():
-                    # df.at[individual_id, 'ps_induced_abortion_complication'] = 'complications'
-                    x = 'y'
-                    x = 'y'
+            # For women who miscarry after 13 weeks or induce an abortion at any gestation we apply a probability that
+            # this woman will experience complications from this pregnancy loss
+            if (cause == 'spontaneous_abortion' and df.at[individual_id, 'ps_gestational_age_in_weeks'] >= 13) or \
+                cause == 'induced_abortion':
+                if params[f'prob_any_complication_{cause}'] < self.rng.random_sample():
+                    # We categorise complications as mild, moderate or severe mapping to data from a Malawian study
+                    # (categories are used to determine treatment in Post Abortion Care)
 
-                    # We assume only incomplete spontaneous miscarriages lead to complications
-                    df.at[individual_id, 'ps_spontaneous_abortion_complication'].remove('none')
-                    df.at[individual_id, 'ps_spontaneous_abortion_complication'].append('incomplete')
-
-                    additional_complication = ['sep', 'haem', 'sep_and_haem']
-                    probabilities = [0.33, 0.33, 0.34]
-                    random_draw = self.rng.choice(additional_complication, p=probabilities)
-
-                    if random_draw == 'sep':
-                        df.at[individual_id, 'ps_spontaneous_abortion_complication'].append('sepsis')
-                    elif random_draw == 'haem':
-                        df.at[individual_id, 'ps_spontaneous_abortion_complication'].append('haemorrhage')
-                    else:
-                        df.at[individual_id, 'ps_spontaneous_abortion_complication'].append('sepsis')
-                        df.at[individual_id, 'ps_spontaneous_abortion_complication'].append('haemorrhage')
+                    # TODO: replace with LM equation taken from Kalilani-Phiri et al. paper.
+                    severity = ['mild', 'moderate', 'severe']
+                    probabilities = [0.724, 0.068, 0.208]
+                    random_draw = self.rng.choice(severity, p=probabilities)
+                    df.at[individual_id, f'ps_{cause}_complication'] = random_draw
 
                     # Determine if this woman will seek care, and schedule presentation to the health system
                     self.care_seeking_pregnancy_loss_complications(individual_id)
@@ -664,31 +649,9 @@ class PregnancySupervisor(Module):
                     self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id,
                                                                          cause=f'{cause}'),
                                             self.sim.date + DateOffset(days=3))
-
-            # We apply a probability of complications to any women who have an induced abortion
-            if cause == 'induced_abortion':
-                if params['prob_any_complication_induced_abortion'] < self.rng.random_sample():
-                    df.at[individual_id, 'ps_spontaneous_abortion_complication'] = 'complications'
-                    if self.rng.random_sample() < 0.5:
-                        df.at[individual_id, 'ps_induced_abortion_complication'].append('incomplete')
-
-
-
-                    else:
-                        df.at[individual_id, 'ps_induced_abortion_complication'].append('complete')
-
-                    # Determine if this woman will seek care, and schedule presentation to the health system
-                    self.care_seeking_pregnancy_loss_complications(individual_id)
-
-                    # Again the death event is scheduled in 3 days time to allow for treatment effects
-                    self.sim.schedule_event(EarlyPregnancyLossDeathEvent(self, individual_id,
-                                                                         cause=f'{cause}'),
-                                            self.sim.date + DateOffset(days=3))
-
             # We reset gestational age
             df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
 
-            # TODO:  care seeking
 
     def disease_progression(self, selected):
         """This function uses util.transition_states to apply a probability of transitioning from one state of
@@ -1263,6 +1226,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
+        pac_interventions = self.sim.modules['CareOfWomenDuringPregnancy'].pac_interventions
 
         if df.at[individual_id, 'is_alive']:
 
@@ -1285,6 +1249,14 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                 self.module.sim.modules['SymptomManager'].clear_symptoms(
                     person_id=individual_id,
                     disease_module=self.module)
+
+            # Here we remove treatments from a woman who has survived her post abortion complications
+            elif (self.cause == 'induced_abortion' or self.cause == 'spontaneous_abortion') and \
+                                                   df.at[individual_id, 'ac_post_abortion_care_interventions'] > 0:
+                pac_interventions.unset(individual_id, 'mva', 'd_and_c', 'misoprostol', 'analgesia', 'antibiotics',
+                                        'blood_products')
+                u = pac_interventions.uncompress()
+                assert (u.loc[individual_id] == [False, False, False, False, False, False]).all()
 
 
 class AntepartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin):
