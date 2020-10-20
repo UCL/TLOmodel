@@ -141,32 +141,52 @@ class Ncds(Module):
         # (0yrs, 1yrs, 2-4yrs)
         blank_counter = dict(zip(self.conditions, [list() for _ in self.conditions]))
         self.incident_case_tracker_blank = {
-            '0-10y': copy.deepcopy(blank_counter),
-            '11-20y': copy.deepcopy(blank_counter),
-            '21-30y': copy.deepcopy(blank_counter),
-            '31-40y': copy.deepcopy(blank_counter),
-            '41-50y': copy.deepcopy(blank_counter),
-            '51-60y': copy.deepcopy(blank_counter),
-            '61-70y': copy.deepcopy(blank_counter),
-            '71-80y': copy.deepcopy(blank_counter),
-            '81-90y': copy.deepcopy(blank_counter),
-            '91-100y': copy.deepcopy(blank_counter),
+            '0-4y': copy.deepcopy(blank_counter),
+            '5-9y': copy.deepcopy(blank_counter),
+            '10-14y': copy.deepcopy(blank_counter),
+            '15-19y': copy.deepcopy(blank_counter),
+            '20-24y': copy.deepcopy(blank_counter),
+            '25-29y': copy.deepcopy(blank_counter),
+            '30-34y': copy.deepcopy(blank_counter),
+            '35-39y': copy.deepcopy(blank_counter),
+            '40-44y': copy.deepcopy(blank_counter),
+            '45-49y': copy.deepcopy(blank_counter),
+            '50-54y': copy.deepcopy(blank_counter),
+            '55-59y': copy.deepcopy(blank_counter),
+            '60-64y': copy.deepcopy(blank_counter),
+            '65-69y': copy.deepcopy(blank_counter),
+            '70-74y': copy.deepcopy(blank_counter),
+            '75-79y': copy.deepcopy(blank_counter),
+            '80-84y': copy.deepcopy(blank_counter),
+            '85-89y': copy.deepcopy(blank_counter),
+            '90-94y': copy.deepcopy(blank_counter),
+            '95-99y': copy.deepcopy(blank_counter),
             '100+y': copy.deepcopy(blank_counter)
         }
         self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
 
         zeros_counter = dict(zip(self.conditions, [0] * len(self.conditions)))
         self.incident_case_tracker_zeros = {
-            '0-10y': copy.deepcopy(zeros_counter),
-            '11-20y': copy.deepcopy(zeros_counter),
-            '21-30y': copy.deepcopy(zeros_counter),
-            '31-40y': copy.deepcopy(zeros_counter),
-            '41-50y': copy.deepcopy(zeros_counter),
-            '51-60y': copy.deepcopy(zeros_counter),
-            '61-70y': copy.deepcopy(zeros_counter),
-            '71-80y': copy.deepcopy(zeros_counter),
-            '81-90y': copy.deepcopy(zeros_counter),
-            '91-100y': copy.deepcopy(zeros_counter),
+            '0-4y': copy.deepcopy(zeros_counter),
+            '5-9y': copy.deepcopy(blank_counter),
+            '10-14y': copy.deepcopy(blank_counter),
+            '15-19y': copy.deepcopy(zeros_counter),
+            '20-24y': copy.deepcopy(zeros_counter),
+            '25-29y': copy.deepcopy(zeros_counter),
+            '30-34y': copy.deepcopy(zeros_counter),
+            '35-39y': copy.deepcopy(zeros_counter),
+            '40-44y': copy.deepcopy(zeros_counter),
+            '45-49y': copy.deepcopy(zeros_counter),
+            '50-54y': copy.deepcopy(zeros_counter),
+            '55-59y': copy.deepcopy(zeros_counter),
+            '60-64y': copy.deepcopy(zeros_counter),
+            '65-69y': copy.deepcopy(zeros_counter),
+            '70-74y': copy.deepcopy(zeros_counter),
+            '75-79y': copy.deepcopy(zeros_counter),
+            '80-84y': copy.deepcopy(zeros_counter),
+            '85-89y': copy.deepcopy(zeros_counter),
+            '90-94y': copy.deepcopy(zeros_counter),
+            '95-99y': copy.deepcopy(zeros_counter),
             '100+y': copy.deepcopy(zeros_counter)
         }
 
@@ -436,29 +456,51 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # -------------------------------------------------------------------------------------------
             # Add this incident case to the tracker
+
             age = df.loc[idx_acquires_condition, ['age_years']]
-            if age.values[0] < 11:
-                age_grp = '0-10y'
-            elif age.values[0] >= 11 & age.values[0] < 20:
-                age_grp = '11-20y'
-            elif age.values[0] >= 21 & age.values[0] < 30:
-                age_grp = '21-30y'
-            elif age.values[0] >= 31 & age.values[0] < 40:
-                age_grp = '31-40y'
-            elif age.values[0] >= 41 & age.values[0] < 50:
-                age_grp = '41-50y'
-            elif age.values[0] >= 51 & age.values[0] < 60:
-                age_grp = '51-60y'
-            elif age.values[0] >= 61 & age.values[0] < 70:
-                age_grp = '61-70y'
-            elif age.values[0] >= 71 & age.values[0] < 80:
-                age_grp = '71-80y'
-            elif age.values[0] >= 81 & age.values[0] < 90:
-                age_grp = '81-90y'
-            elif age.values[0] >= 91 & age.values[0] < 100:
-                age_grp = '91-100y'
+            if age.values[0] < 5:
+                age_grp = '0-4y'
+            elif (age.values[0] >= 5) and (age.values[0] < 10):
+                age_grp = '5-9y'
+            elif (age.values[0] >= 10) and (age.values[0] < 15):
+                age_grp = '10-14y'
+            elif (age.values[0] >= 15) and (age.values[0] < 20):
+                age_grp = '15-19y'
+            elif (age.values[0] >= 20) and (age.values[0] < 25):
+                age_grp = '20-24y'
+            elif (age.values[0] >= 25) and (age.values[0] < 30):
+                age_grp = '25-29y'
+            elif (age.values[0] >= 30) and (age.values[0] < 35):
+                age_grp = '30-34y'
+            elif (age.values[0] >= 35) and (age.values[0] < 40):
+                age_grp = '35-39y'
+            elif (age.values[0] >= 40) and (age.values[0] < 45):
+                age_grp = '40-44y'
+            elif (age.values[0] >= 45) and (age.values[0] < 50):
+                age_grp = '45-49y'
+            elif (age.values[0] >= 50) and (age.values[0] < 55):
+                age_grp = '50-54y'
+            elif (age.values[0] >= 55) and (age.values[0] < 60):
+                age_grp = '55-59y'
+            elif (age.values[0] >= 60) and (age.values[0] < 65):
+                age_grp = '60-64y'
+            elif (age.values[0] >= 65) and (age.values[0] < 70):
+                age_grp = '65-69y'
+            elif (age.values[0] >= 70) and (age.values[0] < 75):
+                age_grp = '70-74y'
+            elif (age.values[0] >= 75) and (age.values[0] < 80):
+                age_grp = '75-79y'
+            elif (age.values[0] >= 80) and (age.values[0] < 85):
+                age_grp = '80-84y'
+            elif (age.values[0] >= 85) and (age.values[0] < 90):
+                age_grp = '85-89y'
+            elif (age.values[0] >= 90) and (age.values[0] < 95):
+                age_grp = '90-94y'
+            elif (age.values[0] >= 95) and (age.values[0] < 100):
+                age_grp = '95-99y'
             else:
                 age_grp = '100+y'
+
             self.module.incident_case_tracker[age_grp][condition].append(self.sim.date)
             # -------------------------------------------------------------------------------------------
 
