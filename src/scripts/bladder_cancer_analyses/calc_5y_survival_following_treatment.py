@@ -39,8 +39,17 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2080, 1, 1)
 popsize = 1000
 
+
+# logger looks at only demography
+log_config = {
+    "filename": "LogFile",
+    "custom_levels": {
+        "*": logging.WARNING, "tlo.methods.demography": logging.INFO
+    }
+}
+
 # Establish the simulation object and set the seed
-sim = Simulation(start_date=start_date)
+sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -56,8 +65,6 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
              )
 
-sim.seed_rngs(0)
-
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
 sim.modules['BladderCancer'].parameters['r_tis_t1_bladder_cancer_none'] = 0.00
@@ -67,19 +74,12 @@ sim.modules['BladderCancer'].parameters["init_prop_with_blood_urine_diagnosed_bl
 sim.modules['BladderCancer'].parameters["init_prop_treatment_status_bladder_cancer"] = [0.0] * 4
 sim.modules['BladderCancer'].parameters["init_prob_palliative_care"] = 0.4
 
-# Establish the logger and look at only demography
-custom_levels = {"*": logging.WARNING,  # <--
-                 "tlo.methods.demography": logging.INFO
-                 }
-logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
-
-
 # Run the simulation
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 # Read the output:
-output = parse_log_file(logfile)
+output = parse_log_file(sim.log_filepath)
 
 # %% Analyse the output:
 

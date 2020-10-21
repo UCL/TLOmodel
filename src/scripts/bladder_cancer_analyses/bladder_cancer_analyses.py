@@ -39,7 +39,8 @@ popsize = 190000
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date)
+    # seed is not set - each simulation run gets a random seed
+    sim = Simulation(start_date=start_date, log_config={"filename": "LogFile"})
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -53,12 +54,10 @@ def run_sim(service_availability):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
                  )
-    # Establish the logger
-    logfile = sim.configure_logging(filename="LogFile")
     # Run the simulation
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-    return logfile
+    return sim.log_filepath
 
 def get_summary_stats(logfile):
     output = parse_log_file(logfile)
