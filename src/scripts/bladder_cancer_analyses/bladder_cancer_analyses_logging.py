@@ -20,8 +20,6 @@ from tlo.methods import (
 # import pandas as pd
 # from matplotlib import pyplot as plt
 
-
-
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
