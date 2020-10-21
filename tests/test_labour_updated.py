@@ -2,6 +2,8 @@ import datetime
 import os
 from pathlib import Path
 
+import pytest
+
 from tlo import Date, Simulation
 from tlo.methods import (
     antenatal_care,
@@ -42,6 +44,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+@pytest.mark.group2
 def test_run():
     """This test runs a simulation with a functioning health system with full service availability and no set
     constraints"""
@@ -68,6 +71,7 @@ def test_run():
     check_dtypes(sim)
 
 
+@pytest.mark.group2
 def test_run_health_system_high_squeeze():
     """This test runs a simulation in which the contents of scheduled HSIs will not be performed because the squeeze
     factor is too high. Therefore it tests the logic in the did_not_run functions of the Labour HSIs to ensure women
@@ -101,6 +105,7 @@ def test_run_health_system_high_squeeze():
     check_dtypes(sim)
 
 
+@pytest.mark.group2
 def test_run_health_system_events_wont_run():
     """This test runs a simulation in which no scheduled HSIs will run.. Therefore it tests the logic in the
     not_available functions of the Labour HSIs to ensure women who want to deliver in a facility, but cant, due to the
