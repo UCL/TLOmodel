@@ -1,13 +1,10 @@
 import datetime
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import make_age_grp_types, parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    bladder_cancer,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -15,10 +12,14 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    bladder_cancer,
     pregnancy_supervisor,
     symptommanager,
 )
+
+# import numpy as np
+# import pandas as pd
+# from matplotlib import pyplot as plt
+
 
 
 # Where will outputs go
@@ -74,4 +75,3 @@ sim.simulate(end_date=end_date)
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)
-

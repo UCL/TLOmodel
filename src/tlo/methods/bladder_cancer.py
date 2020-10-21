@@ -22,6 +22,7 @@ from tlo.methods.symptommanager import Symptom
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class BladderCancer(Module):
     """Bladder Cancer Disease Module"""
 
@@ -65,7 +66,7 @@ class BladderCancer(Module):
         ),
         "r_tis_t1_bladder_cancer_none": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident tis_t1 bladder cancer, amongst people with no bladder cancer"
+            "probability per 3 months of incident tis_t1 bladder cancer, amongst people with no bladder cancer"
             "(for person aged 15-19 and no tobacco and no schisto_h)",
         ),
         "rr_tis_t1_bladder_cancer_none_age3049": Parameter(
@@ -85,7 +86,7 @@ class BladderCancer(Module):
         ),
         "r_t2p_bladder_cancer_tis_t1": Parameter(
             Types.REAL,
-            "probabilty per 3 months of t2+ bladder cancer, amongst people with tis_t1 bladder cancer",
+            "probability per 3 months of t2+ bladder cancer, amongst people with tis_t1 bladder cancer",
         ),
         "rr_t2p_bladder_cancer_undergone_curative_treatment": Parameter(
             Types.REAL,
@@ -93,19 +94,19 @@ class BladderCancer(Module):
             "if had curative treatment at tis_t1 bladder cancer stage",
         ),
         "r_metastatic_t2p_bladder_cancer": Parameter(
-            Types.REAL, "probabilty per 3 months of metastatic bladder cancer amongst people with t2+ bladder cancer"
+            Types.REAL, "probability per 3 months of metastatic bladder cancer amongst people with t2+ bladder cancer"
         ),
         "rr_metastatic_undergone_curative_treatment": Parameter(
             Types.REAL,
             "rate ratio for metastatic bladder cancer for people with t2+ bladder cancer "
             "if had curative treatment at t2+ bladder cancer stage",
         ),
-         "rate_palliative_care_metastatic": Parameter(
+        "rate_palliative_care_metastatic": Parameter(
             Types.REAL, "prob palliative care this 3 month period if metastatic bladder cancer"
         ),
         "r_death_bladder_cancer": Parameter(
             Types.REAL,
-            "probabilty per 3 months of death from bladder cancer amongst people with metastatic bladder cancer",
+            "probability per 3 months of death from bladder cancer amongst people with metastatic bladder cancer",
         ),
         "r_blood_urine_tis_t1_bladder_cancer": Parameter(
             Types.REAL, "probability per 3 months of blood_urine in a person with tis_t1 bladder cancer"
@@ -157,7 +158,7 @@ class BladderCancer(Module):
 
         "bc_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnsosis of the bladder cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of the bladder cancer (pd.NaT if never diagnosed)"
         ),
 
         "bc_date_treatment": Property(
@@ -228,15 +229,14 @@ class BladderCancer(Module):
             sum(p['init_prop_bladder_cancer_stage']),
             Predictor('li_tob').when(True, p['rp_bladder_cancer_tobacco']),
             # todo: add line when schisto is merged
-#           Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+            # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
                                   .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
                                   .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
                                   .when('.between(0,14)', 0.0)
         )
 
-        bc_status_any_stage = \
-            lm_init_bc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
+        bc_status_any_stage = lm_init_bc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
         # Determine the stage of the cancer for those who do have a cancer:
         if bc_status_any_stage.sum():
@@ -253,13 +253,10 @@ class BladderCancer(Module):
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of blood_urine:
         lm_init_blood_urine = LinearModel.multiplicative(
-            Predictor('bc_status')  .when("none", 0.0)
-                                    .when("tis_t1",
-                                          p['init_prop_blood_urine_bladder_cancer_by_stage'][0])
-                                    .when("t2p",
-                                          p['init_prop_blood_urine_bladder_cancer_by_stage'][1])
-                                    .when("metastatic",
-                                          p['init_prop_blood_urine_bladder_cancer_by_stage'][2])
+            Predictor('bc_status').when("none", 0.0)
+                                  .when("tis_t1", p['init_prop_blood_urine_bladder_cancer_by_stage'][0])
+                                  .when("t2p", p['init_prop_blood_urine_bladder_cancer_by_stage'][1])
+                                  .when("metastatic", p['init_prop_blood_urine_bladder_cancer_by_stage'][2])
         )
         has_blood_urine_at_init = lm_init_blood_urine.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -271,13 +268,10 @@ class BladderCancer(Module):
 
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of pelvic pain:
         lm_init_pelvic_pain = LinearModel.multiplicative(
-            Predictor('bc_status')  .when("none", 0.0)
-                                    .when("tis_t1",
-                                          p['init_prop_pelvic_pain_bladder_cancer_by_stage'][0])
-                                    .when("t2p",
-                                          p['init_prop_pelvic_pain_bladder_cancer_by_stage'][1])
-                                    .when("metastatic",
-                                          p['init_prop_pelvic_pain_bladder_cancer_by_stage'][2])
+            Predictor('bc_status').when("none", 0.0)
+                                  .when("tis_t1", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][0])
+                                  .when("t2p", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][1])
+                                  .when("metastatic", p['init_prop_pelvic_pain_bladder_cancer_by_stage'][2])
         )
         has_pelvic_pain_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
@@ -287,34 +281,30 @@ class BladderCancer(Module):
             disease_module=self
         )
 
-
         # -------------------- bc_date_diagnosis -----------
         lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor('bc_status')  .when("none", 0.0)
-                                    .when("tis_t1",
-                                          p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][0])
-                                    .when("t2p",
-                                          p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][1])
-                                    .when("metastatic",
-                                          p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][2])
+            Predictor('bc_status').when("none", 0.0)
+                                  .when("tis_t1",
+                                        p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][0])
+                                  .when("t2p",
+                                        p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][1])
+                                  .when("metastatic",
+                                        p['init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage'][2])
         )
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
         # ensure that persons who have not ever had the symptom blood_urine are diagnosed:
         ever_diagnosed.loc[~has_blood_urine_at_init] = False
 
-        # For those that have been diagnosed, set data of diagnosis to today's date
+        # For those that have been diagnosed, set date of diagnosis to today's date
         df.loc[ever_diagnosed, "bc_date_diagnosis"] = self.sim.date
 
         # -------------------- bc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor('bc_status')  .when("none", 0.0)
-                                    .when("tis_t1",
-                                          p['init_prop_treatment_status_bladder_cancer'][0])
-                                    .when("t2p",
-                                          p['init_prop_treatment_status_bladder_cancer'][1])
-                                    .when("metastatic",
-                                          p['init_prop_treatment_status_bladder_cancer'][2])
+            Predictor('bc_status').when("none", 0.0)
+                                  .when("tis_t1", p['init_prop_treatment_status_bladder_cancer'][0])
+                                  .when("t2p", p['init_prop_treatment_status_bladder_cancer'][1])
+                                  .when("metastatic", p['init_prop_treatment_status_bladder_cancer'][2])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -322,14 +312,18 @@ class BladderCancer(Module):
         treatment_initiated.loc[pd.isnull(df.bc_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-#       df.loc[treatment_initiated, "bc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "bc_status"]
+        # df.loc[treatment_initiated, "bc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "bc_status"]
         df.loc[treatment_initiated, "bc_stage_at_which_treatment_given"] = "t2p"
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "bc_date_treatment"] = df.loc[treatment_initiated, "bc_date_diagnosis"]
 
         # -------------------- bc_date_palliative_care -----------
-        in_metastatic_diagnosed = df.index[df.is_alive & (df.bc_status == 'metastatic') & ~pd.isnull(df.bc_date_diagnosis)]
+        in_metastatic_diagnosed = df.index[
+            df.is_alive &
+            (df.bc_status == 'metastatic') &
+            ~pd.isnull(df.bc_date_diagnosis)
+        ]
 
         select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
         select_for_care = in_metastatic_diagnosed[select_for_care]
@@ -368,14 +362,14 @@ class BladderCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_tis_t1_bladder_cancer_none'],
             # todo: add in when schisto is in
-     #      Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+            # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years').when('.between(30,49)', p['rp_bladder_cancer_age3049'])
                                   .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
                                   .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
                                   .when('.between(0,14)', 0.0),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
             # todo: add in when schisto module in master
-#           Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
+            # Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
             Predictor('bc_status').when('none', 1.0).otherwise(0.0)
         )
 
@@ -387,6 +381,7 @@ class BladderCancer(Module):
             Predictor('bc_status').when('tis_t1', 1.0)
                                   .otherwise(0.0)
         )
+
         lm['metastatic'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_metastatic_t2p_bladder_cancer'],
@@ -441,24 +436,26 @@ class BladderCancer(Module):
 
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
+            health_burden = self.sim.modules["HealthBurden"]
+
             # For those with cancer (any stage prior to metastatic) and never treated
-            self.daly_wts["tis_t1_t2p"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["tis_t1_t2p"] = health_burden.get_daly_weight(
                 sequlae_code=550
-                # todo: may need to consider reducing this daly weight for early (tis_t1) as these physical symptoms are unlikely
+                # todo: may need to consider reducing daly weight for early (tis_t1) as physical symptoms are unlikely
                 # "Diagnosis and primary therapy phase of bladder cancer":
-                #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
+                # "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
             # For those with cancer (any stage prior to metastatic) and has been treated
-            self.daly_wts["tis_t1_t2p_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["tis_t1_t2p_treated"] = health_burden.get_daly_weight(
                 sequlae_code=547
                 # "Controlled phase of bladder cancer,Generic uncomplicated disease":
                 # "worry and daily medication,has a chronic disease that requires medication every day and causes some
-                #   worry but minimal interference with daily activities".
+                #  worry but minimal interference with daily activities".
             )
 
             # For those in metastatic: no palliative care
-            self.daly_wts["metastatic"] = self.sim.modules["HealthBurden"].get_daly_weight(
+            self.daly_wts["metastatic"] = health_burden.get_daly_weight(
                 sequlae_code=549
                 # "Metastatic phase of esophageal cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
@@ -495,30 +492,27 @@ class BladderCancer(Module):
         pass
 
     def report_daly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past month
+        # This must send back a dataframe that reports on the HealthStates for all individuals over the past month
 
         df = self.sim.population.props  # shortcut to population properties dataframe for alive persons
 
         disability_series_for_alive_persons = pd.Series(index=df.index[df.is_alive], data=0.0)
 
-        # Assign daly_wt to those with cancer stages before metastatic and have either never been treated or are no longer
-        # in the stage in which they were treated
+        # Assign daly_wt to those with cancer stages before metastatic and have either never been treated or
+        # are no longer in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
-                (df.bc_status == "tis_t1") |
-                (df.bc_status == "t2p")
+                (df.bc_status == "tis_t1") | (df.bc_status == "t2p")
             )
         ] = self.daly_wts['tis_t1_t2p']
 
-        # Assign daly_wt to those with cancer stages before metastatic and who have been treated and who are still in the
-        # stage in which they were treated.
+        # Assign daly_wt to those with cancer stages before metastatic and who have been treated and
+        # who are still in the stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.bc_date_treatment) & (
-                    (df.bc_status == "tis_t1") |
-                    (df.bc_status == "t2p")
-                ) & (df.bc_status == df.bc_stage_at_which_treatment_given)
+                ~pd.isnull(df.bc_date_treatment) &
+                ((df.bc_status == "tis_t1") | (df.bc_status == "t2p")) &
+                (df.bc_status == df.bc_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['tis_t1_t2p_treated']
 
@@ -526,13 +520,13 @@ class BladderCancer(Module):
         disability_series_for_alive_persons.loc[
             (df.bc_status == "metastatic") &
             (pd.isnull(df.bc_date_palliative_care))
-            ] = self.daly_wts['metastatic']
+        ] = self.daly_wts['metastatic']
 
         # Assign daly_wt to those in metastatic cancer, who have had palliative care
         disability_series_for_alive_persons.loc[
             (df.bc_status == "metastatic") &
             (~pd.isnull(df.bc_date_palliative_care))
-            ] = self.daly_wts['metastatic_palliative_care']
+        ] = self.daly_wts['metastatic_palliative_care']
 
         return disability_series_for_alive_persons
 
@@ -559,15 +553,15 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = m.rng
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (bc_status) -----------------------------------
-
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
-        #  reducing progression risk during the stage at which is received.
-        had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.bc_date_treatment) & \
-            (df.bc_status == df.bc_stage_at_which_treatment_given)
+        # reducing progression risk during the stage at which is received.
+        had_treatment_during_this_stage = (
+            df.is_alive & ~pd.isnull(df.bc_date_treatment) & (df.bc_status == df.bc_stage_at_which_treatment_given)
+        )
 
-        for stage, lm in self.module.linear_models_for_progession_of_bc_status.items():
-            gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
+        for stage, lm in m.linear_models_for_progession_of_bc_status.items():
+            gets_new_stage = lm.predict(df.loc[df.is_alive],
+                                        rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
             df.loc[idx_gets_new_stage, 'bc_status'] = stage
@@ -575,34 +569,34 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING OF SYMPTOM OF blood_urine OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of blood_urine.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_blood_urine = self.module.lm_onset_blood_urine.predict(df.loc[df.is_alive], rng)
+        onset_blood_urine = m.lm_onset_blood_urine.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_blood_urine[onset_blood_urine].index.tolist(),
             symptom_string='blood_urine',
             add_or_remove='+',
-            disease_module=self.module
+            disease_module=m
         )
 
         # -------------------- UPDATING OF SYMPTOM OF PELVIC PAIN OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of pelvic pain.
         # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_pelvic_pain = self.module.lm_onset_pelvic_pain.predict(df.loc[df.is_alive], rng)
+        onset_pelvic_pain = m.lm_onset_pelvic_pain.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_pelvic_pain[onset_pelvic_pain].index.tolist(),
             symptom_string='pelvic_pain',
             add_or_remove='+',
-            disease_module=self.module
+            disease_module=m
         )
 
         # -------------------- DEATH FROM bladder CANCER ---------------------------------------
         # There is a risk of death for those in metastatic only. Death is assumed to go instantly.
         metastatic_idx = df.index[df.is_alive & (df.bc_status == "metastatic")]
         selected_to_die = metastatic_idx[
-            rng.random_sample(size=len(metastatic_idx)) < self.module.parameters['r_death_bladder_cancer']]
+            rng.random_sample(size=len(metastatic_idx)) < m.parameters['r_death_bladder_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                InstantaneousDeath(self.module, person_id, "BladderCancer"), self.sim.date
+                InstantaneousDeath(m, person_id, "BladderCancer"), self.sim.date
             )
             df.loc[selected_to_die, 'date_death_bladder_cancer'] = self.sim.date
 
@@ -655,8 +649,8 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
 
             # Check if is in metastatic:
             in_metastatic = df.at[person_id, 'bc_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made accurately.
 
+            # If diagnosis detects cancer, we assume classification as metastatic is accurate
             if not in_metastatic:
                 # start treatment:
                 hs.schedule_hsi_event(
@@ -723,8 +717,8 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
 
             # Check if is in metastatic:
             in_metastatic = df.at[person_id, 'bc_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made accurately.
 
+            # If diagnosis detects cancer, we assume classification as metastatic is accurate
             if not in_metastatic:
                 # start treatment:
                 hs.schedule_hsi_event(
@@ -753,15 +747,12 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         pass
 
 
-
-
 class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_bladderCancer_Investigation_Following_blood_urine  or pelvic pain following a diagnosis of
-    bladder Cancer using cytoscopy. It initiates the treatment of bladder Cancer.
+    Scheduled by HSI_bladderCancer_Investigation_Following_blood_urine or pelvic pain following a
+    diagnosis of bladder Cancer using cytoscopy. It initiates the treatment of bladder Cancer.
     It is only for persons with a cancer that is not in metastatic and who have been diagnosed.
     """
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -808,7 +799,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_BladderCancer_StartTreatment and itself.
+    Scheduled by HSI_BladderCancer_StartTreatment and itself.
     It is only for those who have undergone treatment for Bladder Cancer.
     If the person has developed cancer to metastatic, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
@@ -921,7 +912,6 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
 class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
-
     def __init__(self, module):
         """schedule logging to repeat every 1 month
         """
@@ -966,8 +956,4 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_bladder_cancer_since_last_log': df.date_death_bladder_cancer.between(date_lastlog, date_now).sum()
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
-
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[10].to_dict())
+        logger.info(key="summary_stats", data=out)

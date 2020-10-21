@@ -5,6 +5,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.methods import (
+    bladder_cancer,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -12,7 +13,6 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    bladder_cancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -157,7 +157,7 @@ def check_configuration_of_population(sim):
     assert (df.loc[df.bc_status == 'none', 'bc_stage_at_which_treatment_given'] == 'none').all()
 
     # check that treatment is never done for those with bc_status metastatic
-    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()   # todo- this fails but may not be relevant
+    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()  # todo- this fails but may not be relevant
     assert 0 == (df.loc[~pd.isnull(df.bc_date_treatment)].bc_stage_at_which_treatment_given == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:
@@ -167,8 +167,10 @@ def check_configuration_of_population(sim):
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
     assert set(df.index[~pd.isnull(df.bc_date_diagnosis)]).issubset(df.index[df.bc_status_any_stage])
-#   this assert below will not be true as some people have pelvic pain and not blood urine
-#   assert set(df.index[~pd.isnull(df.bc_date_diagnosis)]).issubset(sim.modules['SymptomManager'].who_has('blood_urine'))
+    # this assert below will not be true as some people have pelvic pain and not blood urine
+    # assert set(df.index[~pd.isnull(df.bc_date_diagnosis)]).issubset(
+    #     sim.modules['SymptomManager'].who_has('blood_urine')
+    # )
     assert (df.loc[~pd.isnull(df.bc_date_diagnosis)].bc_date_diagnosis <= sim.date).all()
 
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0

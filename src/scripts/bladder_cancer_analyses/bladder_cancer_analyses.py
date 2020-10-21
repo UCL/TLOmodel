@@ -8,12 +8,15 @@ NB. To see larger effects
 """
 import datetime
 from pathlib import Path
-import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
+    bladder_cancer,
     contraception,
     demography,
     enhanced_lifestyle,
@@ -21,10 +24,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    bladder_cancer,
     pregnancy_supervisor,
-    symptommanager
+    symptommanager,
 )
+
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 # date-stamp to label log files and any other outputs
@@ -59,12 +62,14 @@ def run_sim(service_availability):
     sim.simulate(end_date=end_date)
     return sim.log_filepath
 
+
 def get_summary_stats(logfile):
     output = parse_log_file(logfile)
     # 1) TOTAL COUNTS BY STAGE OVER TIME
     counts_by_stage = output['tlo.methods.bladder_cancer']['summary_stats']
     counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
     counts_by_stage = counts_by_stage.set_index('date', drop=True)
+
     # 2) NUMBERS UNDIAGNOSED-DIAGNOSED-TREATED-PALLIATIVE CARE OVER TIME (SUMMED ACROSS TYPES OF CANCER)
     def get_cols_excl_none(allcols, stub):
         # helper function to some columns with a certain prefix stub - excluding the 'none' columns (ie. those
@@ -105,6 +110,8 @@ def get_summary_stats(logfile):
         'bladder_cancer_deaths': bladder_cancer_deaths,
         'annual_count_of_dxtr': annual_count_of_dxtr
     }
+
+
 # %% Run the simulation with and without interventions being allowed
 # With interventions:
 logfile_with_healthsystem = run_sim(service_availability=['*'])
@@ -160,7 +167,7 @@ plt.ylabel('Total Deaths During Simulation')
 # plt.gca().get_legend().remove()
 plt.show()
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
-deaths={
+deaths = {
     'No_HealthSystem': sum(results_no_healthsystem['bladder_cancer_deaths']),
     'With_HealthSystem': sum(results_with_healthsystem['bladder_cancer_deaths'])
 }

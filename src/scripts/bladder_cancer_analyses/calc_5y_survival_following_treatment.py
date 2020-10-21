@@ -8,7 +8,6 @@ To this by creating a simulation with:
  * no new incidence
 ... and then examine time between date of treatment and date of death for those treated and those not treated.
 """
-
 import datetime
 from pathlib import Path
 
@@ -17,13 +16,14 @@ import pandas as pd
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
+    bladder_cancer,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     symptommanager,
-    bladder_cancer)
+)
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -111,7 +111,7 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
 # calc % of those that had not died of Bladder cancer 5 years after starting treatment (could have died of another
 # cause):
 1 - (
-    len(cohort_treated.loc[(cohort_treated['cause'] == 'BladderCancer') & (cohort_treated['days_treatment_to_death']
-                                                                               < (5*365.25))]) /
-    len(cohort_treated)
+    len(cohort_treated.loc[
+            (cohort_treated['cause'] == 'BladderCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
+            ]) / len(cohort_treated)
 )   # 0.87
