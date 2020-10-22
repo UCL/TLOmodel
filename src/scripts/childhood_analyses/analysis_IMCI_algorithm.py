@@ -54,6 +54,9 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 # Path to the resource files used by the disease and intervention methods
 resources = Path('./resources')
 
+# Path to save files and figures
+outputpath = Path("./outputs")
+
 # Used to configure health system behaviour
 service_availability = ["*"]
 
@@ -82,52 +85,67 @@ output = parse_log_file(sim.log_filepath)
 
 # ------------------------------ IMCI PNEUMONIA CLASSIFICATIONS (AS GOLD STANDARD) ------------------------------
 # ----- Model outputs -----
-pneum_classification = output['tlo.methods.dx_algorithm_child']['imci_classicications_count']
-pneum_classification['date'] = pd.to_datetime(pneum_classification['date']).dt.year
-pneum_classification = pneum_classification.set_index('date')
-
-# ----- Plotting -----
-# plt.style.use("ggplot")
-
-# Pneumonia IMCI classification
-names = list(pneum_classification.columns)
-print(names)
-ax = pneum_classification.plot.bar(rot=0)
-# plt.figure(figsize=(9, 3))
-plt.show()
-
-# save into an cvs file
-pneum_classification.to_csv(r'./outputs/pneum_classification.csv', index=False)
+# pneum_classification = output['tlo.methods.dx_algorithm_child']['imci_classicications_count']
+# pneum_classification['date'] = pd.to_datetime(pneum_classification['date']).dt.year
+# pneum_classification = pneum_classification.set_index('date')
+#
+# # ----- Plotting -----
+# # plt.style.use("ggplot")
+#
+# # Pneumonia IMCI classification
+# names = list(pneum_classification.columns)
+# print(names)
+# ax = pneum_classification.plot.bar(rot=0)
+# # plt.figure(figsize=(9, 3))
+# plt.show()
+#
+# # save into an cvs file
+# pneum_classification.to_csv(r'./outputs/pneum_classification.csv', index=False)
 
 # ------------------------------ IMCI PNEUMONIA MANAGEMENT OF SICK CHILDREN ------------------------------
 # ----- Model outputs -----
+# output of health worker classification
 hw_classification_df = output['tlo.methods.dx_algorithm_child']['hw_pneumonia_classification']
 hw_classification_df['date'] = pd.to_datetime(hw_classification_df['date']).dt.year
 hw_classification_df = hw_classification_df.set_index('date')
 
-hw_classification_flattened = \
-            [{**{'dict_key': k}, **v} for k, v in hw_classification_df.items()]
-print(hw_classification_flattened)
-
+# output of IMCI gold standard
 imci_gold_classification_df = output['tlo.methods.dx_algorithm_child']['imci_gold_standard_classification']
 imci_gold_classification_df['date'] = pd.to_datetime(imci_gold_classification_df['date']).dt.year
 imci_gold_classification_df = imci_gold_classification_df.set_index('date')
+# -----------------------------------
 
-hw_classification_mean = pd.DataFrame()
-hw_classification_mean['mean_total_common_cold'] = hw_classification_df['common_cold'].mean()
-hw_classification_mean['mean_total_non-severe_pneumonia'] = hw_classification_df['non-severe_pneumonia'].mean()
-hw_classification_mean['mean_total_severe_pneumonia'] = hw_classification_df['severe_pneumonia'].mean()
-hw_classification_mean = hw_classification_mean.reset_index()
-print(hw_classification_mean)
-# print(hw_classification_df['common_cold'].mean())
-# print(hw_classification_df)
+# ----- Format the data -----
+get_mean = hw_classification_df[['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+hw_classification_mean = pd.DataFrame(get_mean).T
+hw_classification_mean['label'] = 'health_worker_classification'
+hw_classification_mean.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
 
+get_mean = imci_gold_classification_df[['common_cold', 'non-severe_pneumonia', 'severe_pneumonia']].mean(axis=0)
+imci_gold_classification_mean = pd.DataFrame(get_mean).T
+imci_gold_classification_mean['label'] = 'imci_gold_classification'
+imci_gold_classification_mean.set_index(
+        'label',
+        drop=True,
+        inplace=True
+    )
+
+final_df = pd.concat([hw_classification_mean.T, imci_gold_classification_mean.T], axis=1)  # rotated index is now columns
+# ------------------------------------
 # ----- Plotting -----
-# Pneumonia IMCI classification as gold standard -------
-names = list(hw_classification_mean.columns)
+plt.style.use('ggplot')
+
+# Pneumonia IMCI classification by health workers -------
+names = list(final_df.columns)
 print(names)
-ax1 = hw_classification_mean.plot.bar(rot=0)
+ax1 = final_df.plot.bar(rot=0)
 # plt.figure(figsize=(9, 3))
+plt.title('Mean of health worker classifications vs IMCI gold standard of IMCI pneumonia ')
+plt.savefig(outputpath / ("total_health_worker_vs_IMCI_gold_classifications_mean_of_years" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # save into an cvs file
@@ -143,11 +161,6 @@ plt.show()
 
 # save into an cvs file
 imci_gold_classification_df.to_csv(r'./outputs/pneum_classification.csv', index=False)
-
-
-
-
-
 
 # def get_pneumonia_management_information(logfile):
 #     output = parse_log_file(logfile)

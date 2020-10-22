@@ -1012,12 +1012,8 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         imci_class_df = pd.DataFrame(imci_gold_classification_count)
         imci_class_df_transposed = imci_class_df.T
 
-        summary_to_output = {
-            'hw': hw_class_dict, 'imci': imci_class_dict
-        }
-
         logger.info(key='hw_pneumonia_classification',
-                    data=summary_to_output,
+                    data=hw_df_transposed,
                     description='health worker pneumonia classification')
 
         logger.info(key='imci_gold_standard_classification',
