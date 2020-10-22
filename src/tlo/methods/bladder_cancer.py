@@ -155,33 +155,28 @@ class BladderCancer(Module):
             "Current status of the health condition, bladder cancer",
             categories=["none", "tis_t1", "t2p", "metastatic"],
         ),
-
         "bc_date_diagnosis": Property(
             Types.DATE,
             "the date of diagnosis of the bladder cancer (pd.NaT if never diagnosed)"
         ),
-
         "bc_date_treatment": Property(
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
-
         "bc_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
             "at which it is given ",
             categories=["none", "tis_t1", "t2p", "metastatic"],
         ),
-
         "bc_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
-        "date_death_bladder_cancer": Property(
+        "bc_date_death": Property(
             Types.DATE,
             "date bc death"
         )
-
     }
 
     def read_parameters(self, data_folder):
@@ -217,7 +212,7 @@ class BladderCancer(Module):
         df.loc[df.is_alive, "bc_date_treatment"] = pd.NaT
         df.loc[df.is_alive, "bc_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "bc_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "date_death_bladder_cancer"] = pd.NaT
+        df.loc[df.is_alive, "bc_date_death"] = pd.NaT
 
         # -------------------- bc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -487,6 +482,7 @@ class BladderCancer(Module):
         df.at[child_id, "bc_date_treatment"] = pd.NaT
         df.at[child_id, "bc_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "bc_date_palliative_care"] = pd.NaT
+        df.at[child_id, "bc_date_death"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
@@ -560,11 +556,9 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         for stage, lm in m.linear_models_for_progession_of_bc_status.items():
-            gets_new_stage = lm.predict(df.loc[df.is_alive],
-                                        rng,
+            gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
-            idx_gets_new_stage = gets_new_stage[gets_new_stage].index
-            df.loc[idx_gets_new_stage, 'bc_status'] = stage
+            df.loc[gets_new_stage[gets_new_stage].index, 'bc_status'] = stage
 
         # -------------------- UPDATING OF SYMPTOM OF blood_urine OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of blood_urine.
@@ -598,7 +592,7 @@ class BladderCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(
                 InstantaneousDeath(m, person_id, "BladderCancer"), self.sim.date
             )
-            df.loc[selected_to_die, 'date_death_bladder_cancer'] = self.sim.date
+            df.loc[selected_to_die, 'bc_date_death'] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -953,7 +947,7 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'diagnosed_since_last_log': df.bc_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.bc_date_treatment.between(date_lastlog, date_now).sum(),
             'palliative_since_last_log': df.bc_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_bladder_cancer_since_last_log': df.date_death_bladder_cancer.between(date_lastlog, date_now).sum()
+            'death_bladder_cancer_since_last_log': df.bc_date_death.between(date_lastlog, date_now).sum()
         })
 
         logger.info(key="summary_stats", data=out)
