@@ -39,6 +39,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
 popsize = 190000
 
+
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
     # seed is not set - each simulation run gets a random seed
