@@ -1,3 +1,7 @@
+"""
+File to run the model once for simple checks and analysis
+"""
+
 import datetime
 from pathlib import Path
 
@@ -50,9 +54,6 @@ log_config = {
 }
 sim = Simulation(start_date=start_date, seed=4, log_config=log_config)
 
-# make a dataframe that contains the switches for which interventions are allowed or not allowed
-# during this run. NB. These must use the exact 'registered strings' that the disease modules allow
-
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              contraception.Contraception(resourcefilepath=resourcefilepath),
@@ -69,7 +70,6 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-
 
 # %% read the results
 output = parse_log_file(sim.log_filepath)

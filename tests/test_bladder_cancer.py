@@ -157,12 +157,12 @@ def check_configuration_of_population(sim):
     assert (df.loc[df.bc_status == 'none', 'bc_stage_at_which_treatment_given'] == 'none').all()
 
     # check that treatment is never done for those with bc_status metastatic
-    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()  # todo- this fails but may not be relevant
+    assert 0 == (df.bc_stage_at_which_treatment_given == 'metastatic').sum()
     assert 0 == (df.loc[~pd.isnull(df.bc_date_treatment)].bc_stage_at_which_treatment_given == 'none').sum()
 
     # check that those with symptom are a subset of those with cancer:
-    # todo: blood urine may be specific to bladder cancer but not sure - pelvic pain is not - this assert
-    # todo: wont necessarily ultimately be true
+    # NB: blood urine may be specific to bladder cancer but not sure - pelvic pain is not - this assert wont necessarily
+    #  ultimately be true
     assert set(sim.modules['SymptomManager'].who_has('blood_urine')).issubset(df.index[df.bc_status != 'none'])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
