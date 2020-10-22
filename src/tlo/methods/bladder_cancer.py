@@ -766,9 +766,13 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
+        # we don't treat if cancer is metastatic
+        if df.at[person_id, "bc_status"] == 'metastatic':
+            logger.warning(key="warning", data="Cancer is metastatic - aborting HSI_BladderCancer_StartTreatment")
+            return hs.get_blank_appt_footprint()
+
+        # Check that the person has cancer, has been diagnosed and is not on treatment
         assert not df.at[person_id, "bc_status"] == 'none'
-        assert not df.at[person_id, "bc_status"] == 'metastatic'
         assert not pd.isnull(df.at[person_id, "bc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "bc_date_treatment"])
 
