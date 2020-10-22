@@ -12,6 +12,7 @@ from tlo.methods.labour import (
 )
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
+# from tlo.methods.rti import HSI_RTI_Medical_Intervention
 import pandas as pd
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -96,6 +97,22 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     depr.do_when_suspected_depression(person_id=person_id, hsi_event=self)
             # -------------------------------
 
+            if 'injury' in symptoms:
+                if 'RTI' in self.sim.modules:
+                    from tlo.methods.rti import HSI_RTI_Medical_Intervention
+                    hsi_event = HSI_RTI_Medical_Intervention(
+                        module=self.sim.modules['RTI'],
+                        person_id=person_id,
+                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+
+
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
 
@@ -173,55 +190,11 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                            'rt_injury_7', 'rt_injury_8']
             df = self.sim.population.props
             if columns[0] in df.columns:  # Simple check to see if RTI module is registered
-                persons_injuries = df.loc[[person_id], columns]
+                # Determine what this person needs from the first emergency appointment
+                road_traffic_injuries.rti_injury_diagnosis(person_id, the_appt_footprint)
 
-                # ================================ Fractures require x-rays ============================================
-                fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, fracture_codes)
-                if len(idx) > 0:
-                    the_appt_footprint['DiagRadio'] = 1
-                # ========================= Traumatic brain injuries require ct scan ===================================
-                codes = ['133', '134', '135']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-                if len(idx) > 0:
-                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-                # ============================= Abdominal trauma requires ct scan ======================================
-                codes = ['552', '553', '554']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-                if len(idx) > 0:
-                    the_appt_footprint['Tomography'] = 1
 
-                # ============================== Spinal cord injury require x ray ======================================
-                codes = ['673', '674', '675', '676']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-                if len(idx) > 0:
-                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
 
-                # ============================== Dislocations require x ray ============================================
-                codes = ['322', '323', '722', '822']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-                if len(idx) > 0:
-                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
-
-                # --------------------------------- Soft tissue injury in neck -----------------------------------------
-                codes = ['342', '343']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-                if len(idx) > 0:
-                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
-
-                # --------------------------------- Soft tissue injury in thorax/ lung injury --------------------------
-                codes = ['441', '443', '453']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-                if len(idx) > 0:
-                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
-                    the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
-
-                # ----------------------------- Internal bleeding ------------------------------------------------------
-                codes = ['361', '363', '461', '463']
-                idx, counts = road_traffic_injuries.rti_find_and_count_injuries(persons_injuries, codes)
-                if len(idx) > 0:
-                    the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericEmergencyFirstApptAtFacilityLevel1'

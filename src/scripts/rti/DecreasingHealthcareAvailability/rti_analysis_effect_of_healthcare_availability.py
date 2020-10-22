@@ -27,22 +27,20 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 5
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 10000
+pop_size = 5000
 nsim = 5
 output_for_different_incidence = dict()
 service_availability = ["*"]
-incidence_average = []
-list_deaths_average = []
-list_tot_dalys_average = []
-incidence_reduction = np.linspace(1, 0, 10)
+capabilities_reduction = np.linspace(1, 0, 5)
+all_sim_deaths = []
+all_sim_dalys = []
 for i in range(0, nsim):
-    incidence = []
     list_deaths = []
     list_tot_dalys = []
-    for inc in incidence_reduction:
+    for capability in capabilities_reduction:
         sim = Simulation(start_date=start_date)
         # We register all modules in a single call to the register method, calling once with multiple
         # objects. This is preferred to registering each module in multiple calls because we will be
@@ -50,7 +48,8 @@ for i in range(0, nsim):
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability,
+                                      capabilities_coefficient=float(capability)),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -61,15 +60,8 @@ for i in range(0, nsim):
         sim.make_initial_population(n=pop_size)
         params = sim.modules['RTI'].parameters
         params['allowed_interventions'] = []
-        orig_inc = params['base_rate_injrti']
-        params['base_rate_injrti'] = orig_inc * inc
         sim.simulate(end_date=end_date)
         log_df = parse_log_file(logfile)
-        summary_1m = log_df['tlo.methods.rti']['summary_1m']
-        incidence_in_sim = summary_1m['incidence of rti per 100,000']
-        mean_incidence = np.mean(summary_1m['incidence of rti per 100,000'])
-        incidence.append(mean_incidence)
-
         deaths_without_med = log_df['tlo.methods.demography']['death']
         tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
         list_deaths.append(tot_death_without_med)
@@ -85,26 +77,23 @@ for i in range(0, nsim):
 
         tot_dalys = males_dalys.tolist() + females_dalys.tolist()
         list_tot_dalys.append(sum(tot_dalys))
+    all_sim_deaths.append(list_deaths)
+    all_sim_dalys.append(list_tot_dalys)
 
-    incidence_average.append(incidence)
-    list_deaths_average.append(list_deaths)
-    list_tot_dalys_average.append(list_tot_dalys)
-
-average_incidence = [float(sum(col)) / len(col) for col in zip(*incidence_average)]
-average_deaths = [float(sum(col)) / len(col) for col in zip(*list_deaths_average)]
-average_tot_dalys = [float(sum(col)) / len(col) for col in zip(*list_tot_dalys_average)]
-results_df = pd.DataFrame({
-    'incidence per 100,000': average_incidence,
-    'average deaths': average_deaths,
-    'average total DALYs': average_tot_dalys,
-})
-ax = results_df[['average deaths', 'average total DALYs']].plot(kind='bar', width=.35)
-ax2 = results_df['incidence per 100,000'].plot(secondary_y=True, ax=ax)
-ax.set_ylabel('Deaths/DALYs')
-ax2.set_ylabel('Incidence per 100,000')
-ax.set_xticklabels(labels=['0% reduction', '10% reduction',  '20% reduction', '30% reduction', '75% reduction',
-                           '100% reduction'], rotation=45)
-plt.title(f"The effect of reducing incidence on Average Deaths/DALYS"
+all_sim_deaths
+avg_tot_deaths = [float(sum(col))/len(col) for col in zip(*all_sim_deaths)]
+avg_tot_dalys = [float(sum(col))/len(col) for col in zip(*all_sim_dalys)]
+labels = []
+for capability in capabilities_reduction:
+    labels.append(str(capability))
+width = 0.3
+plt.bar(np.arange(len(avg_tot_deaths)), avg_tot_deaths, width=width)
+plt.bar(np.arange(len(avg_tot_dalys)) + width, avg_tot_dalys, width=width)
+plt.xticks(np.arange(len(avg_tot_deaths)), labels, rotation=45)
+plt.xlabel('Capability coefficients')
+plt.ylabel('Deaths/DALYs')
+plt.title(f"Average deaths and DALYs in simulations for different capability coefficients"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/ReducingIncidence/incidence_vs_deaths_DALYS.png', bbox_inches='tight')
+plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_deaths_and_dalys_per_capability_coefficient.png',
+            bbox_inches='tight')

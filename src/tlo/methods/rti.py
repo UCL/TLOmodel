@@ -33,6 +33,10 @@ class RTI(Module):
             Types.REAL,
             'Base rate of RTI per year',
         ),
+        'rr_injrti_age018': Parameter(
+            Types.REAL,
+            'risk ratio of RTI in age 0-18 compared to base rate of RTI'
+        ),
         'rr_injrti_age1829': Parameter(
             Types.REAL,
             'risk ratio of RTI in age 18-29 compared to base rate of RTI',
@@ -44,6 +48,18 @@ class RTI(Module):
         'rr_injrti_age4049': Parameter(
             Types.REAL,
             'risk ratio of RTI in age 40-49 compared to base rate of RTI',
+        ),
+        'rr_injrti_age5059': Parameter(
+            Types.REAL,
+            'risk ratio of RTI in age 50-59 compared to base rate of RTI',
+        ),
+        'rr_injrti_age6069': Parameter(
+            Types.REAL,
+            'risk ratio of RTI in age 60-69 compared to base rate of RTI',
+        ),
+        'rr_injrti_age7079': Parameter(
+            Types.REAL,
+            'risk ratio of RTI in age 70-79 compared to base rate of RTI',
         ),
         'rr_injrti_male': Parameter(
             Types.REAL,
@@ -1312,12 +1328,98 @@ class RTI(Module):
             )
         )
 
+    def rti_injury_diagnosis(self, person_id, the_appt_footprint):
+        df = self.sim.population.props
+        columns = ['rt_injury_1', 'rt_injury_2', 'rt_injury_3', 'rt_injury_4', 'rt_injury_5', 'rt_injury_6',
+                   'rt_injury_7', 'rt_injury_8']
+        persons_injuries = df.loc[[person_id], columns]
+        # ================================ Fractures require x-rays ============================================
+        fracture_codes = ['112', '113', '211', '212', '412', '414', '612', '712', '811', '812', '813']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, fracture_codes)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1
+        # ========================= Traumatic brain injuries require ct scan ===================================
+        codes = ['133', '134', '135']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+        # ============================= Abdominal trauma requires ct scan ======================================
+        codes = ['552', '553', '554']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1
+
+        # ============================== Spinal cord injury require x ray ======================================
+        codes = ['673', '674', '675', '676']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+
+        # ============================== Dislocations require x ray ============================================
+        codes = ['322', '323', '722', '822']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x-ray
+
+        # --------------------------------- Soft tissue injury in neck -----------------------------------------
+        codes = ['342', '343']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+
+        # --------------------------------- Soft tissue injury in thorax/ lung injury --------------------------
+        codes = ['441', '443', '453']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+            the_appt_footprint['DiagRadio'] = 1  # This appointment requires an x ray
+
+        # ----------------------------- Internal bleeding ------------------------------------------------------
+        codes = ['361', '363', '461', '463']
+        idx, counts = self.rti_find_and_count_injuries(persons_injuries, codes)
+        if len(idx) > 0:
+            the_appt_footprint['Tomography'] = 1  # This appointment requires a ct scan
+
+    def rti_set_default_properties(self, context, idx):
+        """
+        Function to centralise all calls to set up default property values in a population
+        :param context: what context the function is being called from
+        :param idx: the index of the population to set up the defaults in
+        :return:
+        """
+        df = self.sim.population.props
+        non_list_properties = dict()
+        list_properties = dict()
+        if context == "initialise_population" or "on_birth":
+            non_list_default_properties = [False, 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none',
+                                           'none', False, 0, False, False, False, False, False, False, 0, pd.NaT,
+                                           False, 0, pd.NaT]
+            list_default_properties = [[pd.NaT] * 8]
+            for (key, value) in self.sim.modules['RTI'].PROPERTIES.items():
+                if value.python_type != list:
+                    non_list_properties[key] = value
+                else:
+                    list_properties[key] = value
+            non_list_module_columns = list(non_list_properties.keys())
+            assert len(non_list_default_properties) == len(non_list_module_columns)
+            df.loc[idx, non_list_module_columns] = non_list_default_properties
+            for prop_number, property in enumerate(list(list_properties.keys())):
+                for index, row in df.loc[idx, list(list_properties.keys())].iterrows():
+                    df.at[index, property] = list_default_properties[prop_number]
+
+
     def initialise_population(self, population):
         """Sets up the default properties used in the RTI module and applies them to the dataframe. The default state
         for the RTI module is that people haven't been involved in a road traffic accident and are therefor alive and
         healthy."""
         df = population.props
-
+        # Set up default properties in the population using centralised function
+        # self.sim.modules['RTI'].rti_set_default_properties("initialise_population", df.is_alive.index)
+        # drop any properties that are a list
+        # Create corresponding list of default properties
+        default_properties = []
+        # df.loc[df.is_alive, rti_module_columns] = default_properties
         df.loc[df.is_alive, 'rt_road_traffic_inc'] = False
         df.loc[df.is_alive, 'rt_inj_severity'] = "none"  # default: no one has been injured in a RTI
         df.loc[df.is_alive, 'rt_injury_1'] = "none"
@@ -2385,6 +2487,8 @@ class RTI(Module):
         # Return the LOS
         return days_until_treatment_end
 
+
+
     @staticmethod
     def rti_find_and_count_injuries(dataframe, tloinjcodes):
         """
@@ -2446,6 +2550,7 @@ class RTI(Module):
         :param child_id: The newborn
         :return: n/a
         """
+        self.sim.modules['RTI'].rti_set_default_properties("on_birth", child_id)
         df = self.sim.population.props
         df.at[child_id, 'rt_road_traffic_inc'] = False
         df.at[child_id, 'rt_inj_severity'] = "none"  # default: no one has been injured in a RTI
@@ -2980,7 +3085,7 @@ class RTI(Module):
         injdf['Injury AIS'] = predinjsev
         MAIS = []
         for item in injdf['Injury AIS'].tolist():
-            MAIS.append(max(item)+1)
+            MAIS.append(max(item) + 1)
         injdf['Injury AIS string'] = injaisstring
         injdf['Injury category'] = predinjcat
         injdf['Injury category string'] = injcatstring
@@ -3052,9 +3157,13 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         self.base_1m_prob_rti = (p['base_rate_injrti'] / 12)
         if 'reduce_incidence' in p['allowed_interventions']:
             self.base_1m_prob_rti = self.base_1m_prob_rti * 0.335
+        self.rr_injrti_age018 = p['rr_injrti_age018']
         self.rr_injrti_age1829 = p['rr_injrti_age1829']
         self.rr_injrti_age3039 = p['rr_injrti_age3039']
         self.rr_injrti_age4049 = p['rr_injrti_age4049']
+        self.rr_injrti_age5059 = p['rr_injrti_age5059']
+        self.rr_injrti_age6069 = p['rr_injrti_age6069']
+        self.rr_injrti_age7079 = p['rr_injrti_age7079']
         self.rr_injrti_male = p['rr_injrti_male']
         self.rr_injrti_excessalcohol = p['rr_injrti_excessalcohol']
         self.imm_death_proportion_rti = p['imm_death_proportion_rti']
@@ -3247,17 +3356,19 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         """
         df = population.props
         now = self.sim.date
-
         # Reset injury properties after death
-        immdeathidx = df.index[df.is_alive & df.rt_imm_death]
-        deathwithmedidx = df.index[df.is_alive & df.rt_post_med_death & df.rt_no_med_death]
+        immdeathidx = df.index[df.rt_imm_death]
+        deathwithmedidx = df.index[df.rt_post_med_death]
+        deathwithoutmedidx = df.index[df.rt_no_med_death]
         diedfromrtiidx = immdeathidx.union(deathwithmedidx)
+        diedfromrtiidx = diedfromrtiidx.union(deathwithoutmedidx)
         df.loc[diedfromrtiidx, "rt_imm_death"] = False
         df.loc[diedfromrtiidx, "rt_post_med_death"] = False
         df.loc[diedfromrtiidx, "rt_no_med_death"] = False
         df.loc[diedfromrtiidx, "rt_disability"] = 0
         df.loc[diedfromrtiidx, "rt_med_int"] = False
-        df.loc[diedfromrtiidx, "rt_date_to_remove_daly"] = []
+        for index, row in df.loc[diedfromrtiidx].iterrows():
+            df.at[index, 'rt_date_to_remove_daly'] = [pd.NaT] * 8
         df.loc[diedfromrtiidx, "rt_diagnosed"] = False
         df.loc[diedfromrtiidx, "rt_polytrauma"] = False
         df.loc[diedfromrtiidx, "rt_inj_severity"] = "none"
@@ -3292,9 +3403,13 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         eq = LinearModel(LinearModelType.MULTIPLICATIVE,
                          self.base_1m_prob_rti,
                          Predictor('sex').when('M', self.rr_injrti_male),
+                         Predictor('age_years').when('.between(0,18)', self.rr_injrti_age018),
                          Predictor('age_years').when('.between(18,29)', self.rr_injrti_age1829),
                          Predictor('age_years').when('.between(30,39)', self.rr_injrti_age3039),
                          Predictor('age_years').when('.between(40,49)', self.rr_injrti_age4049),
+                         Predictor('age_years').when('.between(50,59)', self.rr_injrti_age5059),
+                         Predictor('age_years').when('.between(60,69)', self.rr_injrti_age6069),
+                         Predictor('age_years').when('.between(70,79)', self.rr_injrti_age7079),
                          Predictor('li_ex_alc').when(True, self.rr_injrti_excessalcohol)
                          )
         pred = eq.predict(df.iloc[rt_current_non_ind])
@@ -3362,8 +3477,8 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         # All those who are involved in a road traffic accident have these noted in the property 'rt_date_inj'
         assert len(df.loc[selected_for_rti, 'rt_date_inj'] != pd.NaT) == len(selected_for_rti)
         # All those in a car crash either have died immediately or been assigned at least one injury
-        assert len(df.loc[df.rt_imm_death & (df['rt_injury_1'] != 'none')]) == 0, \
-            'Something has gone wrong when deciding who has what post injury'
+        # assert len(df.loc[df.rt_imm_death & (df['rt_injury_1'] != 'none')]) == 0, \
+        #     'Something has gone wrong when deciding who has what post injury'
         # All those who are injures and do not die immediately have an ISS score > 0
         assert len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_ISS_score'] > 0) == \
                len(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death])
@@ -3431,6 +3546,7 @@ class RTI_Check_Death_No_Med(RegularEvent, PopulationScopeEventMixin):
     injuries in a military environment, assumed here to be a good indicator of the probability of mortality without
     access to a medical system.
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(days=1))
         assert isinstance(module, RTI)
@@ -3898,7 +4014,6 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
                        'Seventh injury': df.loc[person_id, 'rt_injury_7'],
                        'Eight injury': df.loc[person_id, 'rt_injury_8']}
         logger.debug(f'Injury profile of person %d, {injurycodes}', person_id)
-
 
 
 class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
@@ -5227,10 +5342,13 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         self.deathonscene = 0
         self.soughtmedcare = 0
         self.deathaftermed = 0
+        self.deathwithoutmed = 0
         self.permdis = 0
         self.ISSscore = []
         self.numerator = 0
         self.denominator = 0
+        self.death_inc_numerator = 0
+        self.death_in_denominator = 0
         self.fracdenominator = 0
         self.fracdist = [0, 0, 0, 0, 0, 0, 0, 0]
         self.openwounddist = [0, 0, 0, 0, 0, 0, 0, 0]
@@ -5500,6 +5618,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             'total_traumatic_brain_injuries': self.tottbi,
             'total_soft_tissue_injuries': self.totsoft,
             'total_internal_organ_injuries': self.totintorg,
+            'total_internal_bleeding': self.totintbled,
             'total_spinal_cord_injuries': self.totsci,
             'total_amputations': self.totamp,
             'total_eye_injuries': self.toteye,
@@ -5542,13 +5661,22 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         self.denominator += (n_alive - n_in_RTI) * (1 / 12)
         n_immediate_death = (df.rt_road_traffic_inc & df.rt_imm_death).sum()
         self.deathonscene += n_immediate_death
-
+        immdeathidx = df.index[df.rt_imm_death]
+        deathwithmedidx = df.index[df.rt_post_med_death]
+        deathwithoutmedidx = df.index[df.rt_no_med_death]
+        diedfromrtiidx = immdeathidx.union(deathwithmedidx)
+        diedfromrtiidx = diedfromrtiidx.union(deathwithoutmedidx)
         n_sought_care = (df.rt_road_traffic_inc & df.rt_med_int).sum()
         self.soughtmedcare += n_sought_care
         n_death_post_med = (df.is_alive & df.rt_post_med_death).sum()
         self.deathaftermed += n_death_post_med
-
-        incidence = n_in_RTI / len(df.is_alive)
+        self.deathwithoutmed += len(df.loc[df.rt_no_med_death])
+        self.death_inc_numerator += n_immediate_death + n_death_post_med + len(df.loc[df.rt_no_med_death])
+        self.death_in_denominator += (n_alive - (n_immediate_death + n_death_post_med + len(df.loc[df.rt_no_med_death])
+                                                 )) * \
+                                     (1 / 12)
+        percent_accidents_result_in_death = (self.deathonscene + self.deathaftermed + self.deathwithoutmed) / \
+                                            self.numerator
         maleinrti = len(df.loc[df.rt_road_traffic_inc & (df['sex'] == 'M')])
         femaleinrti = len(df.loc[df.rt_road_traffic_inc & (df['sex'] == 'F')])
 
@@ -5560,13 +5688,18 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             maleinrti = 1
             femaleinrti = 0
         mfratio = [maleinrti, femaleinrti]
+        incidence_of_injuries = (totalinj / (n_alive - n_in_RTI)) * 12 * 100000
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
-            'incidence of rti per 100,000': (self.numerator / self.denominator) * 100000,
+            'incidence of rti per 100,000': (n_in_RTI / ((n_alive - n_in_RTI) * (1 / 12))) * 100000,
+            'incidence of rti death per 100,000': (len(diedfromrtiidx) /
+                                                   ((n_alive - len(diedfromrtiidx)) * (1 / 12))) * 100000,
             'incidence of fractures per 100,000': (self.totfracnumber / self.fracdenominator) * 100000,
+            'injury incidence per 100,000': incidence_of_injuries,
             'number alive': n_alive,
             'number immediate deaths': n_immediate_death,
             'number permanently disabled': n_perm_disabled,
+            'percent of crashes that are fatal': percent_accidents_result_in_death,
             'total injuries': totalinj,
             'male:female ratio': mfratio,
         }
@@ -5587,45 +5720,49 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
                     data=injured_demography_summary,
                     description='Demographics of those in rti')
 
-        # =================================== Flows through the model
+        # =================================== Flows through the model ==================================================
         dict_to_output = {'total_injured': self.totinjured,
                           'total_died_on_scene': self.deathonscene,
-                          'total_sought_medical_care':self.soughtmedcare,
+                          'total_sought_medical_care': self.soughtmedcare,
                           'total_died_after_medical_intervention': self.deathaftermed,
                           'total_permanently_disabled': n_perm_disabled}
         logger.info(key='model_progression',
                     data=dict_to_output,
                     description='Flows through the rti module')
 
-        # -------------------------------------- Stored outputs -------------------------------------------------------
-        # old style
-        # self.rti_demographics = self.rti_demographics.append(injuredDemographics)
-        # self.rti_demographics.to_csv('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/'
-        #                              'RTIInjuryDemographics.csv')
-        # injcategories = [self.totfracnumber, self.totdisnumber, self.tottbi, self.totsoft, self.totintorg,
-        #                  self.totintbled, self.totsci, self.totamp, self.toteye, self.totextlac, self.totburns]
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injcategories.txt',
-        #            injcategories)
-        # injlocs = [self.totAIS1, self.totAIS2, self.totAIS3, self.totAIS4, self.totAIS5, self.totAIS6, self.totAIS7,
-        #            self.totAIS8]
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injlocs.txt', injlocs)
-        # injseverity = [self.totmild, self.totsevere]
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injsev.txt', injseverity)
-        # numberinjdist = [self.tot1inj, self.tot2inj, self.tot3inj, self.tot4inj, self.tot5inj, self.tot6inj,
-        #                  self.tot7inj, self.tot8inj]
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/Injnumber.txt',
-        #            numberinjdist)
-        # rtiflow = [self.totinjured, self.deathonscene, self.soughtmedcare, self.deathaftermed, n_perm_disabled]
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/RTIflow.txt', rtiflow)
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/ISSscores.txt',
-        #            self.ISSscore)
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/BurnDistribution.txt',
-        #            self.burndist)
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/FractureDistribution.txt',
-        #            self.fracdist)
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/OpenWoundDistribution.txt',
-        #            self.openwounddist)
-        # pain_array = [self.mild_pain, self.moderate_pain, self.severe_pain]
-        # np.savetxt('C:/Users/Robbie Manning Smith/PycharmProjects/TLOmodel/src/scripts/rti/AllPainReliefRequests.txt',
-        #            pain_array)
+        # ============================ Injury category incidence ======================================================
+        in_rti_this_month = df.loc[df.rt_road_traffic_inc]
+        in_rti_this_month = in_rti_this_month.loc[:, columns]
+        idx, amputationcounts = road_traffic_injuries.rti_find_and_count_injuries(in_rti_this_month, amputationcodes)
+        inc_amputations = amputationcounts / ((n_alive - amputationcounts) * 1 / 12) * 100000
+        idx, burncounts = road_traffic_injuries.rti_find_and_count_injuries(in_rti_this_month, burncodes)
+        inc_burns = burncounts / ((n_alive - burncounts) * 1 / 12) * 100000
+        idx, fraccounts = road_traffic_injuries.rti_find_and_count_injuries(in_rti_this_month, allfraccodes)
+        inc_fractures = fraccounts / ((n_alive - fraccounts) * 1 / 12) * 100000
+        idx, tbicounts = road_traffic_injuries.rti_find_and_count_injuries(in_rti_this_month, allheadinjcodes)
+        inc_tbi = tbicounts / ((n_alive - tbicounts) * 1 / 12) * 100000
+        idx, spinalcordinjurycounts = road_traffic_injuries.rti_find_and_count_injuries(in_rti_this_month,
+                                                                                        spinalcordinjurycodes)
+        inc_sci = spinalcordinjurycounts / ((n_alive - spinalcordinjurycounts) * 1 / 12) * 100000
+        minor_injury_codes = ['1101', '2101', '3101', '4101', '5101', '6101', '7101', '8101']
+        idx, minorinjurycounts = road_traffic_injuries.rti_find_and_count_injuries(in_rti_this_month,
+                                                                                   minor_injury_codes)
+        inc_minor = minorinjurycounts / ((n_alive - minorinjurycounts) * 1 / 12) * 100000
+        other_codes = ['322', '323', '722', '822', '822a', '822b', '291', '361', '363', '461', '463', '412', '414',
+                       '453', '453a', '453b', '552', '553', '554']
+        idx, other_counts = road_traffic_injuries.rti_find_and_count_injuries(in_rti_this_month,
+                                                                              other_codes)
+        inc_other = other_counts / ((n_alive - other_counts) * 1 / 12) * 100000
+        tot_inc_all_inj = inc_amputations + inc_burns + inc_fractures + inc_tbi + inc_sci + inc_minor + inc_other
+        dict_to_output = {'inc_amputations': inc_amputations,
+                          'inc_burns': inc_burns,
+                          'inc_fractures': inc_fractures,
+                          'inc_tbi': inc_tbi,
+                          'inc_sci': inc_sci,
+                          'inc_minor': inc_minor,
+                          'inc_other': inc_other,
+                          'tot_inc_injuries': tot_inc_all_inj}
 
+        logger.info(key='Inj_category_incidence',
+                    data=dict_to_output,
+                    description='Incidence of each injury grouped as per the GBD definition')

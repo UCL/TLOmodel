@@ -215,7 +215,28 @@ def test_tiny_population():
 
     check_dtypes(sim)
 
+def test_no_capabilities():
+    sim = Simulation(start_date=start_date)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=0.0,
+                                           service_availability=['*']),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 )
 
+    sim.seed_rngs(0)
+    # Note that when n=1 an error was thrown up by the enhanced_lifestyle module when calculating bmi
+    sim.make_initial_population(n=popsize)
+    params = sim.modules['RTI'].parameters
+    params['allowed_interventions'] = 'none'
+    sim.simulate(end_date=end_date)
+
+    check_dtypes(sim)
 if __name__ == '__main__':
     t0 = time.time()
     test_run()

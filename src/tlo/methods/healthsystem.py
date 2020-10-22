@@ -497,7 +497,11 @@ class HealthSystem(Module):
         )
 
         # Checks
-        assert capabilities_ex['Total_Minutes_Per_Day'].sum() == capabilities['Total_Minutes_Per_Day'].sum()
+        # This test could do with a bit of leniency as when you change the capabilities coefficient floating point
+        # errors fail the following test "assert capabilities_ex['Total_Minutes_Per_Day'].sum() ==
+        # capabilities['Total_Minutes_Per_Day'].sum()", added that leniency with np.round
+        assert np.round(capabilities_ex['Total_Minutes_Per_Day'].sum(), 5) == \
+               np.round(capabilities['Total_Minutes_Per_Day'].sum(), 5)
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
         # Updates the capabilities table with the reformatted version

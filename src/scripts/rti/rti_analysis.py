@@ -749,7 +749,7 @@ resourcefilepath = Path('./resources')
 yearsrun = 2
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-popsize = 1000
+popsize = 5000
 
 # if os.path.exists(logfile):
 #     os.remove(logfile)
