@@ -113,8 +113,8 @@ def zero_rate_of_onset_cancer(sim):
 
 def incr_rates_of_progression(sim):
     # Rates of cancer progression per 3 months:
-    sim.modules['BladderCancer'].parameters['r_t2p_bladder_cancer_tis_t1'] = 0.2
-    sim.modules['BladderCancer'].parameters['r_metastatic_t2p_bladder_cancer'] = 0.2
+    sim.modules['BladderCancer'].parameters['r_t2p_bladder_cancer_tis_t1'] = 0.05
+    sim.modules['BladderCancer'].parameters['r_metastatic_t2p_bladder_cancer'] = 0.05
     return sim
 
 
@@ -141,11 +141,13 @@ def check_dtypes(sim):
 
 
 def check_configuration_of_population(sim):
-    # get df for alive persons:
-    df = sim.population.props.loc[sim.population.props.is_alive]
+    df = sim.population.props.copy()
 
     # for convenience, define a bool for any stage of cancer
     df['bc_status_any_stage'] = df.bc_status != 'none'
+
+    # get df for alive persons:
+    df = df.loc[df.is_alive]
 
     # check that no one under twenty has cancer
     assert not df.loc[df.age_years < 15].bc_status_any_stage.any()
@@ -277,7 +279,7 @@ def test_check_progression_through_stages_is_happening():
     # check that people are being diagnosed, going onto treatment and palliative care:
     assert (df.bc_date_diagnosis > start_date).any()
     assert (df.bc_date_treatment > start_date).any()
-    assert (df.bc_stage_at_which_treatment_applied != 'none').any()
+    assert (df.bc_stage_at_which_treatment_given != 'none').any()
     assert (df.bc_date_palliative_care > start_date).any()
 
 
@@ -367,7 +369,7 @@ def test_check_progression_through_stages_is_blocked_by_treatment():
     sim.population.props.loc[
         sim.population.props.is_alive & (sim.population.props.age_years >= 15), "bc_date_treatment"] = sim.date
     sim.population.props.loc[sim.population.props.is_alive & (
-            sim.population.props.age_years >= 15), "bc_stage_at_which_treatment_applied"] = 'tis_t1'
+            sim.population.props.age_years >= 15), "bc_stage_at_which_treatment_given"] = 'tis_t1'
     check_configuration_of_population(sim)
 
     # Simulate
