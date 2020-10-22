@@ -68,7 +68,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
 sim.modules['BladderCancer'].parameters['r_tis_t1_bladder_cancer_none'] = 0.00
-sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'] = [1.0, 0.0, 0.0, 0.0]
+sim.modules['BladderCancer'].parameters['init_prop_bladder_cancer_stage'] = [1.0, 0.0, 0.0]
 sim.modules['BladderCancer'].parameters["init_prop_blood_urine_bladder_cancer_by_stage"] = [0.0] * 4
 sim.modules['BladderCancer'].parameters["init_prop_with_blood_urine_diagnosed_bladder_cancer_by_stage"] = [0.0] * 4
 sim.modules['BladderCancer'].parameters["init_prop_treatment_status_bladder_cancer"] = [0.0] * 4
@@ -88,7 +88,7 @@ df = sim.population.props
 cohort = df.iloc[1:popsize].index
 
 # get the person_ids of the original cohort who started treatment
-treated = pd.DataFrame(df.loc[df.index.isin(cohort) & ~pd.isnull(df.oc_date_treatment), 'bc_date_treatment'].copy())
+treated = pd.DataFrame(df.loc[df.index.isin(cohort) & ~pd.isnull(df.bc_date_treatment), 'bc_date_treatment'].copy())
 
 # for each person that started treatment, get their date of starting treatment
 deaths = pd.DataFrame(output['tlo.methods.demography']['death']).copy()
