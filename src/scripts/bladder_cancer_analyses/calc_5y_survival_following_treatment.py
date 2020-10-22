@@ -106,7 +106,7 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
 1 - (
     len(cohort_treated.loc[cohort_treated['days_treatment_to_death'] < (5*365.25)]) /
     len(cohort_treated)
-)  # 0.77
+)  # 0.65
 
 # calc % of those that had not died of Bladder cancer 5 years after starting treatment (could have died of another
 # cause):
@@ -114,4 +114,4 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
     len(cohort_treated.loc[
             (cohort_treated['cause'] == 'BladderCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
             ]) / len(cohort_treated)
-)   # 0.87
+)   # 0.72

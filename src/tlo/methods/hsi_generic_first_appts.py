@@ -178,31 +178,32 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     tclose=None
                 )
 
-            # If the symptoms include blood_urine, then begin investigation for Bladder Cancer:
-            if 'blood_urine' in symptoms:
-                hsi_event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
-                    module=self.sim.modules['BladderCancer'],
-                    person_id=person_id,
-                )
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            if 'BladderCancer' in self.sim.modules:
+                # If the symptoms include blood_urine, then begin investigation for Bladder Cancer:
+                if 'blood_urine' in symptoms:
+                    hsi_event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
+                        module=self.sim.modules['BladderCancer'],
+                        person_id=person_id,
+                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
-            # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
-            if 'pelvic_pain' in symptoms:
-                hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
-                    module=self.sim.modules['BladderCancer'],
-                    person_id=person_id,
-                )
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
+                if 'pelvic_pain' in symptoms:
+                    hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
+                        module=self.sim.modules['BladderCancer'],
+                        person_id=person_id,
+                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
             # ---- ROUTINE ASSESSEMENT FOR DEPRESSION ----
             if 'Depression' in self.sim.modules:
