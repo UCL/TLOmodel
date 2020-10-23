@@ -993,9 +993,14 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
         out.update({
-            'diagnosed_since_last_log': df.pc_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.pc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.pc_date_palliative_care.between(date_lastlog, date_now).sum()
+            'diagnosed_since_last_log': df.bc_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.bc_date_treatment.between(date_lastlog, date_now).sum(),
+            'palliative_since_last_log': df.bc_date_palliative_care.between(date_lastlog, date_now).sum(),
+            'death_prostate_cancer_since_last_log': df.date_death_prostate_cancer.between(date_lastlog, date_now).sum()
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
+ #      logger.info('%s|summary_stats|%s', self.sim.date, out)
+
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[10].to_dict())
