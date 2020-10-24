@@ -8,6 +8,10 @@ from tlo.methods.bladder_cancer import (
     HSI_BladderCancer_Investigation_Following_Blood_Urine,
     HSI_BladderCancer_Investigation_Following_pelvic_pain,
 )
+from tlo.methods.prostate_cancer import (
+    HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
+    HSI_ProstateCancer_Investigation_Following_Pelvic_Pain
+)
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.labour import (
@@ -196,6 +200,33 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 if 'pelvic_pain' in symptoms:
                     hsi_event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
                         module=self.sim.modules['BladderCancer'],
+                        person_id=person_id,
+                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+            if 'ProstateCancer' in self.sim.modules:
+                # If the symptoms include urinary, then begin investigation for Bladder Cancer:
+                if 'urinary' in symptoms:
+                    hsi_event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
+                        module=self.sim.modules['ProstateCancer'],
+                        person_id=person_id,
+                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        hsi_event,
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                # If the symptoms include pelvic_pain, then begin investigation for Prostate Cancer (as well as bladder cancer):
+                if 'pelvic_pain' in symptoms:
+                    hsi_event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                        module=self.sim.modules['ProstateCancer'],
                         person_id=person_id,
                     )
                     self.sim.modules['HealthSystem'].schedule_hsi_event(
