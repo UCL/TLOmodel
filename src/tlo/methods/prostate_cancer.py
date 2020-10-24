@@ -120,23 +120,11 @@ class ProstateCancer(Module):
         "rp_prostate_cancer_agege70": Parameter(
             Types.REAL, "stage-specific relative prevalence at baseline of prostate cancer for age 70+"
         ),
-        "sensitivity_of_psa_test_for_prostate_confined_prostate_ca": Parameter(
-            Types.REAL, "sensitivity of psa test for prostate confined_prostate cancer"
+        "sensitivity_of_psa_test_for_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of psa test for prostate cancer"
         ),
-        "sensitivity_of_psa_test_for_local_ln_prostate_ca": Parameter(
-            Types.REAL, "sensitivity of psa test for local lymph node involved prostate cancer"
-        ),
-        "sensitivity_of_psa_test_for_metastatic_prostate_ca": Parameter(
-            Types.REAL, "sensitivity of psa test for metastatic prostate cancer"
-        ),
-        "sensitivity_of_biopsy_for_prostate_confined_prostate_ca": Parameter(
-            Types.REAL, "sensitivity of biopsy for prostate confined prostate cancer"
-        ),
-        "sensitivity_of_biopsy_for_local_ln_prostate_ca": Parameter(
-            Types.REAL, "sensitivity of biopsy for local lymph node involved prostate cancer"
-        ),
-        "sensitivity_of_biopsy_for_metastatic_prostate_ca": Parameter(
-            Types.REAL, "sensitivity of biopsy for metastatic prostate cancer"
+        "sensitivity_of_biopsy_for_prostate_ca": Parameter(
+            Types.REAL, "sensitivity of biopsy for prostate cancer"
         ),
     }
 
@@ -409,7 +397,7 @@ class ProstateCancer(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             psa_for_prostate_cancer_given_prostate_confined=DxTest(
                 property='pc_status',
-                sensitivity=self.parameters['sensitivity_of_psa_test_for_prostate_confined_prostate_ca'],
+                sensitivity=self.parameters['sensitivity_of_psa_test_for_prostate_ca'],
                 target_categories=["prostate_confined", "local_ln", "metastatic"]
             )
         )
@@ -420,29 +408,12 @@ class ProstateCancer(Module):
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             biopsy_for_prostate_cancer_given_prostate_confined=DxTest(
                 property='pc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_prostate_confined_prostate_ca'],
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_prostate_ca'],
                 target_categories=["prostate_confined", "local_ln", "metastatic"]
             )
         )
 
-        """
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_prostate_cancer_given_local_ln_prostate_ca=DxTest(
-                property = 'pc_status',
-                sensitivity = self.parameters['sensitivity of biopsy for local lymph node involved prostate cancer'],
-                target_categories = ["prostate_confined", "local_ln", "metastatic"]
-            )
-        )
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_prostate_cancer_given_metastatic=DxTest(
-                property = 'pc_status',
-                sensitivity = self.parameters['sensitivity_of_biopsy_for_metastatic_prostate_ca'],
-                target_categories = ["prostate_confined", "local_ln", "metastatic"]
-            )
-        )
-        """
-
-        # ----- DISABILITY-WEIGHT -----
+          # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
             self.daly_wts["prostate_confined_or_local_ln_untreated"] = self.sim.modules["HealthBurden"].get_daly_weight(
@@ -728,7 +699,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         # todo: stratify by pc_status
         # Use a psa test to assess whether the person has prostate cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='psa_for_prostate_cancer_given_prostate_confined',
+            dx_tests_to_run='psa_for_prostate_cancer',
             hsi_event=self
         )
 
@@ -802,7 +773,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
         assert not df.at[person_id, "pc_status"] == 'none'
-        assert not df.at[person_id, "c_status"] == 'metastatic'
+        assert not df.at[person_id, "pc_status"] == 'metastatic'
         # todo: check this line below
         assert not pd.isnull(df.at[person_id, "pc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "pc_date_treatment"])
@@ -900,12 +871,9 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "ProstateCancer_PalliativeCare"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
