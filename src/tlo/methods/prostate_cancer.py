@@ -29,9 +29,15 @@ class ProstateCancer(Module):
         self.resourcefilepath = resourcefilepath
         self.linear_models_for_progression_of_pc_status = dict()
         self.lm_prostate_ca_onset_urinary_symptoms = None
+        self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         "init_prop_prostate_ca_stage": Parameter(
@@ -162,6 +168,10 @@ class ProstateCancer(Module):
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
+        "pc_date_death": Property(
+            Types.DATE,
+            "date pc death"
+        )
     }
 
     def read_parameters(self, data_folder):
@@ -179,7 +189,8 @@ class ProstateCancer(Module):
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='urinary',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=4.00,
+                    no_healthcareseeking_in_children=True)
         )
 
         # Register Symptom that this module will use
@@ -199,6 +210,7 @@ class ProstateCancer(Module):
         df.loc[df.is_alive, "pc_date_treatment"] = pd.NaT
         df.loc[df.is_alive, "pc_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "pc_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "pc_date_death"] = pd.NaT
 
         # -------------------- pc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -282,9 +294,9 @@ class ProstateCancer(Module):
         ever_diagnosed.loc[~has_urinary_symptoms_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
-        df.loc[ever_diagnosed, "oc_date_diagnosis"] = self.sim.date
+        df.loc[ever_diagnosed, "pc_date_diagnosis"] = self.sim.date
 
-        # -------------------- oc_date_treatment -----------
+        # -------------------- pc_date_treatment -----------
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor('pc_status')  .when("none", 0.0)
                                     .when("prostate_confined",
@@ -305,7 +317,7 @@ class ProstateCancer(Module):
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "pc_date_treatment"] = df.loc[treatment_initiated, "pc_date_diagnosis"]
 
-        # -------------------- oc_date_palliative_care -----------
+        # -------------------- pc_date_palliative_care -----------
         in_metastatic_diagnosed = df.index[df.is_alive & (df.pc_status == 'metastatic') & ~pd.isnull(df.pc_date_diagnosis)]
 
         select_for_care = self.rng.random_sample(size=len(in_metastatic_diagnosed)) < p['init_prob_palliative_care']
@@ -405,23 +417,7 @@ class ProstateCancer(Module):
             )
         )
 
-        """
-        # todo: discuss inclusion of these below
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            psa_for_prostate_cancer_given_local_ln_prostate_ca=DxTest(
-                property = 'pc_status',
-                sensitivity = self.parameters['sensitivity_of_psa_test_for_local_ln_prostate_ca'],
-                target_categories = ["prostate_confined", "local_ln", "metastatic"]
-            )
-        )
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            psa_for_prostate_cancer_given_metastatic=DxTest(
-                property = 'pc_status',
-                sensitivity = self.parameters['sensitivity_of_psa_test_for_metastatic_prostate_ca'],
-                target_categories = ["prostate_confined", "local_ln", "metastatic"]
-            )
-        )
-        """
+        # todo: consider that sensitivity depends on underlying stage
 
         # Create the diagnostic test representing the use of biopsy to diagnose prostate cancer
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
@@ -497,7 +493,7 @@ class ProstateCancer(Module):
         df.at[child_id, "pc_status"] = "none"
         df.at[child_id, "pc_date_diagnosis"] = pd.NaT
         df.at[child_id, "pc_date_treatment"] = pd.NaT
-        df.at[child_id, "pc_stage_at_which_treatment_applied"] = "none"
+        df.at[child_id, "pc_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "pc_date_palliative_care"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -524,7 +520,7 @@ class ProstateCancer(Module):
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.oc_date_treatment) & (
+                ~pd.isnull(df.pc_date_treatment) & (
                 (df.pc_status == "prostate_confined") |
                 (df.pc_status == "local_ln")
             ) & (df.pc_status == df.pc_stage_at_which_treatment_given)
@@ -534,7 +530,7 @@ class ProstateCancer(Module):
         # Assign daly_wt to those in metastatic cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
             (df.pc_status == "metastatic") &
-            (pd.isnull(df.oc_date_palliative_care))
+            (pd.isnull(df.pc_date_palliative_care))
             ] = self.daly_wts['metastatic']
 
         # Assign daly_wt to those in metastatic cancer, who have had palliative care
@@ -559,7 +555,7 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=1))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -954,7 +950,7 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 3 months
         """
-        self.repeat = 3
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
