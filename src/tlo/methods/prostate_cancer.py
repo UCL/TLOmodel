@@ -183,9 +183,6 @@ class ProstateCancer(Module):
                           sheet_name="parameter_values")
         )
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='urinary',
@@ -475,7 +472,7 @@ class ProstateCancer(Module):
             # that for those with prostate_confined_or_local_ln_untreated cancers.
 
         # ----- HSI FOR PALLIATIVE CARE -----
-        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.oc_date_palliative_care)]
+        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.pc_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PalliativeCare(module=self, person_id=person_id),
@@ -609,6 +606,7 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(
                 InstantaneousDeath(self.module, person_id, "ProstateCancer"), self.sim.date
             )
+        df.loc[selected_to_die, 'pc_date_death'] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -989,10 +987,10 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(months=self.repeat)
 
         out.update({
-            'diagnosed_since_last_log': df.bc_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.bc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.bc_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_prostate_cancer_since_last_log': df.date_death_prostate_cancer.between(date_lastlog, date_now).sum()
+            'diagnosed_since_last_log': df.pc_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.pc_date_treatment.between(date_lastlog, date_now).sum(),
+            'palliative_since_last_log': df.pc_date_palliative_care.between(date_lastlog, date_now).sum(),
+            'death_prostate_cancer_since_last_log': df.pc_date_death.between(date_lastlog, date_now).sum()
         })
 
  #      logger.info('%s|summary_stats|%s', self.sim.date, out)

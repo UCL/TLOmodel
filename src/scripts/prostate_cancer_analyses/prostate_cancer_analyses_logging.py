@@ -32,7 +32,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020,  1, 1)
-popsize = 19000
+popsize = 1000
 
 # Establish the simulation object
 log_config = {
@@ -64,7 +64,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             prostate_cancer.BladderCancer(resourcefilepath=resourcefilepath)
+             prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
              )
 
 # Run the simulation and flush the logger
