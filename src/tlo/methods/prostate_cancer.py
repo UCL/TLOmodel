@@ -395,7 +395,7 @@ class ProstateCancer(Module):
         # ----- DX TESTS -----
         # Create the diagnostic test representing the use of psa test to diagnose prostate cancer
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            psa_for_prostate_cancer_given_prostate_confined=DxTest(
+            psa_for_prostate_cancer=DxTest(
                 property='pc_status',
                 sensitivity=self.parameters['sensitivity_of_psa_test_for_prostate_ca'],
                 target_categories=["prostate_confined", "local_ln", "metastatic"]
@@ -406,7 +406,7 @@ class ProstateCancer(Module):
 
         # Create the diagnostic test representing the use of biopsy to diagnose prostate cancer
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_prostate_cancer_given_prostate_confined=DxTest(
+            biopsy_for_prostate_cancer=DxTest(
                 property='pc_status',
                 sensitivity=self.parameters['sensitivity_of_biopsy_for_prostate_ca'],
                 target_categories=["prostate_confined", "local_ln", "metastatic"]
@@ -443,7 +443,8 @@ class ProstateCancer(Module):
             # that for those with prostate_confined_or_local_ln_untreated cancers.
 
         # ----- HSI FOR PALLIATIVE CARE -----
-        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.pc_date_palliative_care)]
+        on_palliative_care_at_initiation = df.index[df.is_alive & (df.pc_status == "metastatic") &
+                                                    ~pd.isnull(df.pc_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_ProstateCancer_PalliativeCare(module=self, person_id=person_id),
@@ -620,12 +621,14 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         # todo: stratify by pc_status
         # Use a psa test to assess whether the person has prostate cancer:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='psa_for_prostate_cancer_given_prostate_confined',
+            dx_tests_to_run='psa_for_prostate_cancer',
             hsi_event=self
         )
 
-        # todo: positive psa triggers biopsy hsi and use of biopsy to diagnose prostate cancer (2 parts to diagnose)
-        # todo: and sensitivity of 1st part (psa test) dependent on underlying disease stage
+        # todo: here we want to do the biopsy if the psa test suggests possible prostate cancer and that gives the
+        # todo: diagnosis
+
+        # todo: later (and sensitivity of 1st part (psa test) dependent on underlying disease stage)
 
         if dx_result:
             # record date of diagnosis:
