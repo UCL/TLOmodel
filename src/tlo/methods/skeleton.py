@@ -32,7 +32,13 @@ class Skeleton(Module):
     *  `report_daly_values()` [If this is disease module]
 
     """
-    METADATA = {Metadata.DISEASE_MODULE}  # declare that this is a disease module (leave as empty set otherwise)
+    # Declare Metadata (this is for a typical 'Disease Module')
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -75,9 +81,6 @@ class Skeleton(Module):
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
-        If this is a disease module, register this disease module with the healthsystem:
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         :param population: the population of individuals
         """

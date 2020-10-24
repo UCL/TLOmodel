@@ -28,6 +28,9 @@ class Contraception(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    # Declare Metadata
+    METADATA = {}
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {

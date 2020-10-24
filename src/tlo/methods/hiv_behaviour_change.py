@@ -23,6 +23,9 @@ class BehaviourChange(Module):
         super().__init__(name)
         self.store = {'Time': [], 'Proportion_hiv_counselled': [], 'Number_recently_counselled': []}
 
+    # Declare Metadata
+    METADATA = {}
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {

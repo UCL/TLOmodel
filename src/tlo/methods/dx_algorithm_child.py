@@ -9,7 +9,8 @@ served by the following disease modules:
 
 
 """
-from tlo import Module
+from tlo import Module, logging
+from tlo.methods import Metadata
 from tlo.methods.diarrhoea import (
     HSI_Diarrhoea_Dysentery,
     HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
@@ -20,12 +21,18 @@ from tlo.methods.diarrhoea import (
 )
 from tlo.methods.dxmanager import DxTest
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 class DxAlgorithmChild(Module):
     """
     The module contains parameters and functions to 'diagnose(...)' children.
     These functions are called by an HSI (usually a Generic HSI)
     """
+
+    # Declare Metadata
+    METADATA = {Metadata.USES_HEALTHSYSTEM}
 
     PARAMETERS = {}
     PROPERTIES = {}
@@ -160,3 +167,70 @@ class DxAlgorithmChild(Module):
                          tclose=None
                          )
         # -----------------------------------------------------
+
+    def diagnose(self, person_id, hsi_event):
+        """
+        This will diagnose the condition of the person. It is being called from inside an HSI Event.
+
+        :param person_id: The person is to be diagnosed
+        :param hsi_event: The calling hsi_event.
+        :return: a string representing the diagnosis
+        """
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        diagnosis_str = "unknown"
+
+        # get the symptoms of the person:
+        # num_of_symptoms = sum(symptoms.apply(lambda symp: symp != set()))
+        # symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
+
+        if "fever" in self.sim.modules["SymptomManager"].has_what(person_id):
+
+            if "Malaria" in self.sim.modules:
+
+                # call the DxTest RDT to diagnose malaria
+                dx_result = hs.dx_manager.run_dx_test(
+                    dx_tests_to_run='malaria_rdt',
+                    hsi_event=hsi_event
+                )
+
+                if dx_result:
+
+                    # severe malaria
+                    if df.at[person_id, "ma_inf_type"] == "severe":
+                        diagnosis_str = "severe_malaria"
+
+                        logger.debug(key='message',
+                                     data=f'dx_algorithm_child diagnosing severe malaria for person'
+                                          f'{person_id} on date {self.sim.date}')
+
+                    # clinical malaria
+                    elif df.at[person_id, "ma_inf_type"] == "clinical":
+
+                        diagnosis_str = "clinical_malaria"
+
+                        logger.debug(key='message',
+                                     data=f'dx_algorithm_child diagnosing clinical malaria for person'
+                                          f'{person_id} on date {self.sim.date}')
+
+                    # asymptomatic malaria
+                    elif df.at[person_id, "ma_inf_type"] == "asym":
+
+                        diagnosis_str = "clinical_malaria"
+
+                        logger.debug(key='message',
+                                     data=f'dx_algorithm_child diagnosing clinical malaria for person {person_id}'
+                                          f'on date {self.sim.date}')
+
+                else:
+                    diagnosis_str = "negative_malaria_test"
+
+            else:
+                diagnosis_str = "non-malarial fever"
+
+        logger.debug(key='message',
+                     data=f'{person_id} diagnosis is {diagnosis_str}')
+
+        # return the diagnosis as a string
+        return diagnosis_str

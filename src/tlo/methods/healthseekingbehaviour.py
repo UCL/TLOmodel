@@ -13,6 +13,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstApptAtFacilityLevel1,
     HSI_GenericFirstApptAtFacilityLevel1,
@@ -32,6 +33,9 @@ class HealthSeekingBehaviour(Module):
     to if the symptom is associated with a particular effect.
 
     """
+
+    # Declare Metadata
+    METADATA = {Metadata.USES_HEALTHSYSTEM}
 
     # No parameters to declare
     PARAMETERS = {
