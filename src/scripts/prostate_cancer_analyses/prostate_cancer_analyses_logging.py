@@ -15,7 +15,7 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     labour,
-    bladder_cancer,
+    prostate_cancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -64,7 +64,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath)
+             prostate_cancer.BladderCancer(resourcefilepath=resourcefilepath)
              )
 
 # Run the simulation and flush the logger
