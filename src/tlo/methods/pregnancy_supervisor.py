@@ -8,7 +8,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography
 from tlo.methods.antenatal_care import HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact,\
-    HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAdmission
+    HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment
 from tlo.methods.symptommanager import Symptom
 from tlo.methods import Metadata
 
@@ -106,6 +106,10 @@ class PregnancySupervisor(Module):
             Types.REAL, 'probability of death for a woman experiencing acute severe pre-eclampsia'),
         'prob_antenatal_ec_death': Parameter(
             Types.REAL, 'probability of death for a woman experiencing eclampsia'),
+        'treatment_effect_severe_pre_eclampsia': Parameter(
+            Types.REAL, 'treatment effect of  treatment of severe pre-eclampsia'),
+        'treatment_effect_eclampsia': Parameter(
+            Types.REAL, 'treatment effect of treatment for eclampsia'),
         'prob_first_anc_visit_gestational_age': Parameter(
             Types.LIST, 'probability of initiation of ANC by month'),
         'prob_four_or_more_anc_visits': Parameter(
@@ -150,7 +154,12 @@ class PregnancySupervisor(Module):
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
                                                   'during a previous pregnancy'),
-        'ps_antepartum_haemorrhage': Property(Types.BOOL, 'whether this woman has developed and antepartum haemorrhage'),
+        'ps_antepartum_haemorrhage': Property(Types.CATEGORICAL, 'whether this woman has developed and antepartum '
+                                                                 'haemorrhage',
+                                              categories=['none', 'placenta_praevia', 'placental_abruption']),
+        'ps_antepartum_haemorrhage_severity': Property(Types.CATEGORICAL,'severity of this womans antepartum '
+                                                                         'haemorrhage',
+                                                       categories=['none', 'mild_moderate', 'severe']),
         'ps_premature_rupture_of_membranes': Property(Types.BOOL, 'whether this woman has experience rupture of '
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
@@ -313,11 +322,14 @@ class PregnancySupervisor(Module):
 
                 'severe_pre_eclamp_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_antenatal_spe_death']),
+                    params['prob_antenatal_spe_death'],
+                    Predictor('ac_severe_pre_eclampsia_treatment').when(True, params['treatment_effect_'
+                                                                                     'severe_pre_eclampsia'])),
 
                 'eclampsia_death': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
-                    params['prob_antenatal_ec_death']),
+                    params['prob_antenatal_ec_death'],
+                    Predictor('ac_eclampsia_treatment').when(True, params['treatment_effect_eclampsia'])),
 
                 'care_seeking_pregnancy_loss': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
@@ -360,7 +372,8 @@ class PregnancySupervisor(Module):
         df.loc[df.is_alive, 'ps_prev_pre_eclamp'] = False
         df.loc[df.is_alive, 'ps_gest_diab'] = False
         df.loc[df.is_alive, 'ps_prev_gest_diab'] = False
-        df.loc[df.is_alive, 'ps_antepartum_haemorrhage'] = False
+        df.loc[df.is_alive, 'ps_antepartum_haemorrhage'] = 'none'
+        df.loc[df.is_alive, 'ps_antepartum_haemorrhage_severity'] = 'none'
         df.loc[df.is_alive, 'ps_premature_rupture_of_membranes'] = False
         df.loc[df.is_alive, 'dummy_anc_counter'] = 0
         df.loc[df.is_alive, 'ps_will_attend_3_early_visits'] = False
@@ -399,7 +412,8 @@ class PregnancySupervisor(Module):
         df.at[child_id, 'ps_prev_pre_eclamp'] = False
         df.at[child_id, 'ps_gest_diab'] = False
         df.at[child_id, 'ps_prev_gest_diab'] = False
-        df.at[child_id, 'ps_antepartum_haemorrhage'] = False
+        df.at[child_id, 'ps_antepartum_haemorrhage'] = 'none'
+        df.at[child_id, 'ps_antepartum_haemorrhage_severity'] = 'none'
         df.at[child_id, 'ps_premature_rupture_of_membranes'] = False
         df.at[child_id, 'dummy_anc_counter'] = 0
         df.at[child_id, 'ps_will_attend_3_early_visits'] = False
@@ -559,10 +573,19 @@ class PregnancySupervisor(Module):
                                                  f'{positive_index}')
 
         if complication == 'antepartum_haem':
-            df.loc[positive_index, 'ps_antepartum_haemorrhage'] = True
-            self.pregnancy_disease_tracker['antepartum_haem'] += len(positive_index)
+            if not positive_index.empty:
+            # TODO: repalce with a linaer model
+                random_choice_cause = pd.Series(self.rng.choice(['placenta_praevia', 'placental_abruption'],
+                                                     p=[0.5, 0.5], size=len(positive_index)), index=positive_index)
 
-            # TODO: Source (praevia/abruption), severity
+                random_choice_severity = pd.Series(self.rng.choice(['mild_moderate', 'severe'], p=[0.5, 0.5],
+                                                                   size=len(positive_index)), index=positive_index)
+
+                # todo: ensure if positive index >1 that choice is truley random
+                df.loc[positive_index, 'ps_antepartum_haemorrhage'] = random_choice_cause
+                df.loc[positive_index, 'ps_antepartum_haemorrhage_severity'] = random_choice_severity
+
+                self.pregnancy_disease_tracker['antepartum_haem'] += len(positive_index)
 
             for person in positive_index:
                 # We first determine if each woman with a new onset APH will seek care and present to a facility
@@ -719,7 +742,7 @@ class PregnancySupervisor(Module):
             logger.debug(key='message', data=f'Mother {individual_id} will seek care following acute pregnancy'
                                              f'complications')
 
-            acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAdmission(
+            acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
                 self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=0,
@@ -1300,10 +1323,13 @@ class AntepartumHaemorrhageDeathEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
                 df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
 
-                df.at[individual_id, 'ps_antepartum_haemorrhage'] = False
+                df.at[individual_id, 'ps_antepartum_haemorrhage'] = 'none'
+                df.at[individual_id, 'ps_antepartum_haemorrhage_severity'] = 'none'
+
 
             else:
-                df.at[individual_id, 'ps_antepartum_haemorrhage'] = False
+                df.at[individual_id, 'ps_antepartum_haemorrhage'] = 'none'
+                df.at[individual_id, 'ps_antepartum_haemorrhage_severity'] = 'none'
 
 
 class SeverePreEclampsiaAndEclampsiaOnsetEvent(Event, IndividualScopeEventMixin):
@@ -1346,6 +1372,8 @@ class EclampsiaDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
+
+        # TODO: risk of stillbirth
 
         assert df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia'
 

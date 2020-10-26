@@ -313,7 +313,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         if 'PregnancySupervisor' in self.sim.modules:
             # -----  ECTOPIC PREGNANCY  -----
             if df.at[person_id, 'ps_ectopic_pregnancy']:
-                # todo: diagnostics?
+                # todo: diagnostics? - see notes in ANC module
                 event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
@@ -322,7 +322,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             if df.at[person_id, 'ps_spontaneous_abortion_complication'] != 'none' or df.at[person_id,
                                                                                            'ps_induced_abortion_'
                                                                                            'complication'] != 'none':
-                # todo: diagnostics?
+                # todo: diagnostics? - see notes in ANC module
                 event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
                     module=self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
                 health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)

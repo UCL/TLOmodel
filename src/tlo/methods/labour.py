@@ -2831,6 +2831,24 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
         return False
 
 
+class HSI_Labour_ElectiveCaesareanSection(HSI_Event, IndividualScopeEventMixin):
+    """."""
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+
+        self.TREATMENT_ID = 'Labour_ElectiveCaesareanSection'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        mni = self.module.mother_and_newborn_info
+        df = self.sim.population.props
+
+        # TODO: code
+        # todo: being schedule in acute APH- not really elective
+
 class HSI_Labour_ReceivesBloodTransfusion(HSI_Event, IndividualScopeEventMixin):
     """ This is HSI_Labour_ReceivesBloodTransfusionFacilityLevel1. It can be scheduled by HSI_Labour_
     PresentsForSkilledAttendanceInLabour or HSI_Labour_ReceivesCareForPostpartumPeriod
