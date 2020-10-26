@@ -9,11 +9,10 @@ HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) 
 
 
 # TODO:
-* Horizontal transmission logic! and tests!
 * MTCT -- (I) put it at birth; (II) regular polling event determine onward transmission if a new infection is given to a mother who is currently breastfeeding
-* Survival of children -- into the get_time_from_infection_to_aids helper function.
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent - currently either does)
 
+* ---
 * Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
 * Assume that any ART removes the aids_symptoms?
 * Clean up properties - most are not used
@@ -706,8 +705,8 @@ class Hiv(Module):
         df.at[person_id, "hv_date_inf"] = self.sim.date
 
         # Schedule AIDS onset events for this person
-        date_onset_aids = self.sim.date + self.module.get_time_from_infection_to_aids(person_id=person_id)
-        self.sim.schedule_event(event=HivAidsOnsetEvent(self.module, person_id), date=date_onset_aids)
+        date_onset_aids = self.sim.date + self.get_time_from_infection_to_aids(person_id=person_id)
+        self.sim.schedule_event(event=HivAidsOnsetEvent(self, person_id), date=date_onset_aids)
 
     def get_time_from_infection_to_aids(self, person_id):
         """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
@@ -744,29 +743,6 @@ class Hiv(Module):
             months_to_death = self.rng.weibull(shape) * scale * 12
             # - compute months to aids, which is somewhat shorter than the months to death
             months_to_aids = int(max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death'])))
-
-
-        # ----------------------------------- ASSIGN DEATHS FOR THOSE INFECTED  -----------------------------------
-        # if df.at[child_id, "is_alive"] and df.at[child_id, "hv_inf"]:
-        #     df.at[child_id, "hv_date_inf"] = self.sim.date
-        #
-        #     # assume all FAST PROGRESSORS, draw from exp, returns an array not a single value!!
-        #     time_death = self.rng.exponential(
-        #         scale=params["exp_rate_mort_infant_fast_progressor"], size=1
-        #     )
-        #     df.at[child_id, "hv_fast_progressor"] = True
-        #     df.at[child_id, "hv_specific_symptoms"] = "aids"
-        #
-        #     time_death = pd.to_timedelta(time_death[0] * 365.25, unit="d")
-        #     df.at[child_id, "hv_proj_date_death"] = now + time_death
-        #
-        #     # schedule the death event
-        #     death = HivDeathEvent(
-        #         self, individual_id=child_id, cause="hiv"
-        #     )  # make that death event
-        #     death_scheduled = df.at[child_id, "hv_proj_date_death"]
-        #     self.sim.schedule_event(death, death_scheduled)  # schedule the death
-
 
         return pd.DateOffset(months=months_to_aids)
 
