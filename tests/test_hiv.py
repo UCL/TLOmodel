@@ -266,6 +266,31 @@ def test_generation_of_natural_history_process_with_art_after_aids():
     assert pd.isnull(df.at[person_id, "date_of_death"])
     assert "" == df.at[person_id, "cause_of_death"]
 
+def test_mtct_at_birth():
+    """Check that:
+    * HIV infection events are created when the mother during breastfeeding
+    """
+
+    sim = get_sim()
+
+    # Manipulate MTCT rates so that transmission always occurs at/before birth
+    sim.modules['Hiv'].parameters["prob_mtct_treated"] = 1.0
+    sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 1.0
+    sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 1.0
+
+    # Do a birth from a mother that is HIV-positive:
+    df = sim.population.props
+    mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
+    df.at[mother_id, 'hv_inf'] = True
+    df.at[mother_id, 'hv_date_inf'] = sim.date
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+
+    child_id = sim.population.do_birth()
+    sim.modules['Hiv'].on_birth(mother_id, child_id)
+
+    # Check that child is now HIV-positive
+    assert sim.population.props.at[child_id, "hv_inf"]
+
 def test_mtct_during_breastfeeding():
     """Check that:
     * HIV infection events are created when the mother during breastfeeding
@@ -284,8 +309,15 @@ def test_mtct_during_breastfeeding():
     df = sim.population.props
     mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
     df.at[mother_id, 'hv_inf'] = True
+    df.at[mother_id, 'hv_date_inf'] = sim.date
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+
     child_id = sim.population.do_birth()
+    sim.modules['Demography'].on_birth(mother_id, child_id)
     sim.modules['Hiv'].on_birth(mother_id, child_id)
+
+    # Check child is not yet HIV-positive
+    assert not sim.population.props.at[child_id, "hv_inf"]
 
     # Check that there is an infection event:
     date_inf_event, inf_event = [
@@ -295,4 +327,5 @@ def test_mtct_during_breastfeeding():
     # Run the infection event
     inf_event.apply(child_id)
 
-
+    # Check child is now HIV-positive
+    assert sim.population.props.at[child_id, "hv_inf"]

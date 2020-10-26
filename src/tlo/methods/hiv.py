@@ -629,7 +629,6 @@ class Hiv(Module):
         # -- Temporary
         df.at[child_id, "tmp_breastfed"] = True
 
-
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
 
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
@@ -930,7 +929,7 @@ class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Check person is breatfed currently
+        # Check person is breastfed currently
         if not df.at[person_id, "tmp_breastfed"]:
             return
 
