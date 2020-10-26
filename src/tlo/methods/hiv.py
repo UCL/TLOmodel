@@ -12,8 +12,9 @@ HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) 
 * Horizontal transmission logic! and tests!
 * MTCT -- (I) put it at birth; (II) regular polling event determine onward transmission if a new infection is given to a mother who is currently breastfeeding
 * Survival of children -- into the get_time_from_infection_to_aids helper function.
-* Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent - currently either does)
+
+* Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
 * Assume that any ART removes the aids_symptoms?
 * Clean up properties - most are not used
 * Clean up paramerers and sort out/consolidate/remove junk in resourcefiles.
@@ -979,41 +980,43 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
 
         # ----------------------------------- HORIZONTAL TRANSMISSION -----------------------------------
-        # Count current number of alive 15-80 year-olds at risk of transmission (those infected and not VL suppressed):
-        n_infectious = len(df.loc[
-                               df.is_alive &
-                               df.age_years.between(15, 80) &
-                               df.hv_inf &
-                               (df.hv_art != "on_VL_suppressed")
-                               ])
+        def horizontal_transmission(to_sex, from_sex):
+            # Count current number of alive 15-80 year-olds at risk of transmission (those infected and not VL suppressed):
+            n_infectious = len(df.loc[
+                                   df.is_alive &
+                                   df.age_years.between(15, 80) &
+                                   df.hv_inf &
+                                   (df.hv_art != "on_VL_suppressed") &
+                                   (df.sex == from_sex)
+                                   ])
 
-        # Count current number of non-infected alive 15-80 year-olds persons:
-        susc_idx = df.loc[df.is_alive & ~df.hv_inf & df.age_years.between(15, 80)].index
-        n_susceptible = len(susc_idx)
+            # Get Susceptible (non-infected alive 15-80 year-old) persons:
+            susc_idx = df.loc[df.is_alive & ~df.hv_inf & df.age_years.between(15, 80) & (df.sex == to_sex)].index
+            n_susceptible = len(susc_idx)
 
-        # Number of new infections:
-        n_new_infections = int(np.round(params["beta"] * n_infectious * n_susceptible / (n_infectious + n_susceptible)))
-        rr_of_infection = self.module.rr_of_infection.predict(df.loc[susc_idx])
+            # Compute chance that each susceptible person becomes infected:
+            #  - relative chance of infection (acts like a scaling-factor on 'beta')
+            rr_of_infection = self.module.rr_of_infection.predict(df.loc[susc_idx])
 
-        # TODO - make sure scaling is correct for time between successive polling events
-        # TODO - make sex-specific (maybe??) (check logic overall --- the relative risk should determine number of new infections?)
+            #  - probability of infection = beta * I/N
+            p_infection = rr_of_infection * params["beta"] * (n_infectious / (n_infectious + n_susceptible))
 
-        if (n_new_infections > 0) and (sum(rr_of_infection) > 0):
-            # Distribute these new infections by persons with respect to risks of acquisition
-            # Evaluate current risk of infection:
-
-
-            new_inf_idx = self.module.rng.choice(
-                a=rr_of_infection.index,
-                replace=False,
-                p=rr_of_infection.values/sum(rr_of_infection.values),
-                size=n_new_infections
-            )
+            # New infections:
+            will_be_infected = self.module.rng.rand(len(p_infection)) < p_infection
+            idx_new_infection = will_be_infected[will_be_infected].index
 
             # Schedule the date of infection for each new infection:
-            for idx in new_inf_idx:
+            for idx in idx_new_infection:
                 date_of_infection = self.sim.date + pd.DateOffset(days=self.module.rng.randint(0, 365))
                 self.sim.schedule_event(HivInfectionEvent(self.module, idx), date_of_infection)
+
+        # Horizontal transmission: Male --> Female
+        horizontal_transmission(from_sex='M', to_sex='F')
+
+        # Horizontal transmission: Female --> Male
+        horizontal_transmission(from_sex='F', to_sex='M')
+
+
 
 # ---------------------------------------------------------------------------
 #   Natural History Events
