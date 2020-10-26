@@ -83,6 +83,9 @@ class Hiv(Module):
         # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
         "hv_proj_date_death": Property(Types.DATE, "Projected time of AIDS death if untreated"),
         "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
+
+        # -- Temporary variable for breastfeeding:
+        "tmp_breastfed": Property(Types.BOOL, "Is the person currently receiving breast milk from mother")
     }
 
     PARAMETERS = {
@@ -363,6 +366,9 @@ class Hiv(Module):
         df["hv_proj_date_death"] = pd.NaT
         df["hv_proj_date_aids"] = pd.NaT
 
+        # -- Temporary --
+        df["tmp_breastfed"] = False
+
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)        # allocate baseline prevalence
         self.initialise_baseline_tested(population)            # allocate baseline art coverage
@@ -600,7 +606,6 @@ class Hiv(Module):
         df = self.sim.population.props
 
         # Default Settings:
-
         # --- Current status
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
@@ -610,7 +615,6 @@ class Hiv(Module):
         df.at[child_id, "hv_fast_progressor"] = False
         df.at[child_id, "hv_diagnosed"] = False
         df.at[child_id, "hv_number_tests"] = 0
-
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
         df.at[child_id, "hv_date_diagnosed"] = pd.NaT
@@ -621,6 +625,10 @@ class Hiv(Module):
         # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
         df.at[child_id, "hv_proj_date_death"] = pd.NaT
         df.at[child_id, "hv_proj_date_aids"] = pd.NaT
+
+        # -- Temporary
+        df.at[child_id, "tmp_breastfed"] = True
+
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
 
@@ -652,6 +660,24 @@ class Hiv(Module):
 
         if child_infected:
             self.do_new_infection(child_id)
+
+        # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
+        # If is breastfeeding currently, determine if should schedule an MTCT-during-breastfeeding HIV infection event.
+        # NB. The event will not run if the mother has ceased to be breastfeeding by that point.
+        if (not child_infected) and df.at[child_id, "tmp_breastfed"]:
+            if df.at[mother_id, "hv_art"] == "on_VL_suppressed":
+                monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_treated"]
+            else:
+                monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_untreated"]
+
+            if monthly_prob_mtct_bf > 0.0:
+                months_to_infection = int(self.rng.exponential(1/monthly_prob_mtct_bf))
+                date_of_infection = self.sim.date + pd.DateOffset(months=months_to_infection)
+                self.sim.schedule_event(
+                    HivInfectionDuringBreastFeedingEvent(person_id=child_id, module=self),
+                    date_of_infection
+                )
+
 
     def on_hsi_alert(self, person_id, treatment_id):
         raise NotImplementedError  # TODO - redo this
@@ -889,6 +915,27 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         # Onset the infection for this person (which will schedule progression etc)
         self.module.do_new_infection(person_id)
 
+class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
+    """ This person has become infected during breastfeeding
+    * Do the infection process
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        # Check person is_alive
+        if not df.at[person_id, 'is_alive']:
+            return
+
+        # Check person is breatfed currently
+        if not df.at[person_id, "tmp_breastfed"]:
+            return
+
+        # Onset the infection for this person (which will schedule progression etc)
+        self.module.do_new_infection(person_id)
 
 class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
     """ This person has developed AIDS.

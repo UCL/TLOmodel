@@ -265,3 +265,34 @@ def test_generation_of_natural_history_process_with_art_after_aids():
     assert True is bool(df.at[person_id, "is_alive"])
     assert pd.isnull(df.at[person_id, "date_of_death"])
     assert "" == df.at[person_id, "cause_of_death"]
+
+def test_mtct_during_breastfeeding():
+    """Check that:
+    * HIV infection events are created when the mother during breastfeeding
+    """
+
+    sim = get_sim()
+
+    # Manipulate MTCT rates so that transmission always occurs following birth
+    sim.modules['Hiv'].parameters["prob_mtct_treated"] = 0.0
+    sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 0.0
+    sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 0.0
+    sim.modules['Hiv'].parameters["monthly_prob_mtct_bf_treated"] = 1.0
+    sim.modules['Hiv'].parameters["monthly_prob_mtct_bf_untreated"] = 1.0
+
+    # Do a birth from a mother that is HIV-positive:
+    df = sim.population.props
+    mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
+    df.at[mother_id, 'hv_inf'] = True
+    child_id = sim.population.do_birth()
+    sim.modules['Hiv'].on_birth(mother_id, child_id)
+
+    # Check that there is an infection event:
+    date_inf_event, inf_event = [
+        ev for ev in sim.find_events_for_person(child_id) if isinstance(ev[1], hiv.HivInfectionDuringBreastFeedingEvent)
+    ][0]
+
+    # Run the infection event
+    inf_event.apply(child_id)
+
+
