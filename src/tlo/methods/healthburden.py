@@ -28,6 +28,8 @@ class HealthBurden(Module):
         self.YearsLifeLost = None
         self.YearsLivedWithDisability = None
 
+        self.recognised_modules_names = None
+
     # Declare Metadata
     METADATA = {}
 
@@ -71,7 +73,8 @@ class HealthBurden(Module):
 
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.recognised_modules_names:
-            assert 'report_daly_values' in dir(self.sim.modules[module_name])
+            assert getattr(self.sim.modules[module_name], 'report_daly_values', None) and \
+                   callable(self.sim.modules[module_name].report_daly_values)
 
         # Launch the DALY Logger to run every month, starting with the end of month 1
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))

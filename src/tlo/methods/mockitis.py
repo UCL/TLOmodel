@@ -67,6 +67,7 @@ class Mockitis(Module):
 
     def read_parameters(self, data_folder):
         """Read in parameters and do the registration of this module and its symptoms"""
+
         p = self.parameters
 
         p['p_infection'] = 0.001
