@@ -759,154 +759,6 @@ class Hiv(Module):
         draw_number_of_months = int(np.round(self.rng.exponential(mean)))
         return pd.DateOffset(months=draw_number_of_months)
 
-
-        # # ----------------------------------- TIME OF DEATH -----------------------------------
-        # death_date = rng.weibull(
-        #     a=params["weibull_shape_mort_adult"], size=len(newly_infected_index)
-        # ) * np.exp(self.module.log_scale(df.loc[newly_infected_index, "age_years"]))
-        #
-        # death_date = pd.to_timedelta(death_date * 365.25, unit="d")
-        #
-        # death_date = pd.Series(death_date).dt.floor("S")  # remove microseconds
-        # df.loc[newly_infected_index, "hv_proj_date_death"] = (
-        #     df.loc[newly_infected_index, "hv_date_inf"] + death_date
-        # )
-        #
-        # death_dates = df.hv_proj_date_death[newly_infected_index]
-        #
-        # # schedule the death event
-        # for person in newly_infected_index:
-        #     # print('person', person)
-        #     death = HivDeathEvent(
-        #         self.module, individual_id=person, cause="hiv"
-        #     )  # make that death event
-        #     time_death = death_dates[person]
-        #     # print('time_death: ', time_death)
-        #     # print('now: ', now)
-        #     self.sim.schedule_event(death, time_death)  # schedule the death
-        #
-        # # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
-        # df.loc[newly_infected_index, "hv_proj_date_symp"] = df.loc[
-        #     newly_infected_index, "hv_proj_date_death"
-        # ] - DateOffset(days=732.5)
-        #
-        # # schedule the symptom update event for each person
-        # for person_index in newly_infected_index:
-        #     symp_event = HivSymptomaticEvent(self.module, person_index)
-        #
-        #     if df.at[person_index, "hv_proj_date_symp"] < self.sim.date:
-        #         df.at[person_index, "hv_proj_date_symp"] = self.sim.date + DateOffset(
-        #             days=1
-        #         )
-        #     # print('symp_date', df.at[person_index, 'hv_proj_date_symp'])
-        #     self.sim.schedule_event(
-        #         symp_event, df.at[person_index, "hv_proj_date_symp"]
-        #     )
-        #
-        # # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
-        # df.loc[newly_infected_index, "hv_proj_date_aids"] = df.loc[
-        #     newly_infected_index, "hv_proj_date_death"
-        # ] - DateOffset(days=365.25)
-        #
-        # # schedule the symptom update event for each person
-        # for person_index in newly_infected_index:
-        #     aids_event = HivAidsEvent(self.module, person_index)
-        #
-        #     if df.at[person_index, "hv_proj_date_aids"] < self.sim.date:
-        #         df.at[person_index, "hv_proj_date_aids"] = self.sim.date + DateOffset(
-        #             days=1
-        #         )
-        #     # print('aids_date', df.at[person_index, 'hv_proj_date_aids'])
-        #     self.sim.schedule_event(
-        #         aids_event, df.at[person_index, "hv_proj_date_aids"]
-        #     )
-        #
-
-
-
-        #
-        # # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
-        # # random draw of days 0-365
-        # random_day = rng.choice(
-        #     list(range(0, 365)),
-        #     size=len(newly_infected_index),
-        #     replace=True,
-        #     p=[(1 / 365)] * 365,
-        # )
-        # # convert days into years
-        # random_year = pd.to_timedelta(random_day, unit="d")
-        # # add to current date
-        # df.loc[newly_infected_index, "hv_date_inf"] = now + random_year
-        #
-        # # ----------------------------------- SCHEDULE INFECTION STATUS CHANGE ON INFECTION DATE ---
-        #
-        # # schedule the symptom update event for each person
-        # for person_index in newly_infected_index:
-        #     inf_event = HivInfectionEvent(self.module, person_index)
-        #     self.sim.schedule_event(inf_event, df.at[person_index, "hv_date_inf"])
-        #
-        # # ----------------------------------- TIME OF DEATH -----------------------------------
-        # death_date = rng.weibull(
-        #     a=params["weibull_shape_mort_adult"], size=len(newly_infected_index)
-        # ) * np.exp(self.module.log_scale(df.loc[newly_infected_index, "age_years"]))
-        #
-        # death_date = pd.to_timedelta(death_date * 365.25, unit="d")
-        #
-        # death_date = pd.Series(death_date).dt.floor("S")  # remove microseconds
-        # df.loc[newly_infected_index, "hv_proj_date_death"] = (
-        #     df.loc[newly_infected_index, "hv_date_inf"] + death_date
-        # )
-        #
-        # death_dates = df.hv_proj_date_death[newly_infected_index]
-        #
-        # # schedule the death event
-        # for person in newly_infected_index:
-        #     # print('person', person)
-        #     death = HivDeathEvent(
-        #         self.module, individual_id=person, cause="hiv"
-        #     )  # make that death event
-        #     time_death = death_dates[person]
-        #     # print('time_death: ', time_death)
-        #     # print('now: ', now)
-        #     self.sim.schedule_event(death, time_death)  # schedule the death
-        #
-        # # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
-        # df.loc[newly_infected_index, "hv_proj_date_symp"] = df.loc[
-        #     newly_infected_index, "hv_proj_date_death"
-        # ] - DateOffset(days=732.5)
-        #
-        # # schedule the symptom update event for each person
-        # for person_index in newly_infected_index:
-        #     symp_event = HivSymptomaticEvent(self.module, person_index)
-        #
-        #     if df.at[person_index, "hv_proj_date_symp"] < self.sim.date:
-        #         df.at[person_index, "hv_proj_date_symp"] = self.sim.date + DateOffset(
-        #             days=1
-        #         )
-        #     # print('symp_date', df.at[person_index, 'hv_proj_date_symp'])
-        #     self.sim.schedule_event(
-        #         symp_event, df.at[person_index, "hv_proj_date_symp"]
-        #     )
-        #
-        # # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
-        # df.loc[newly_infected_index, "hv_proj_date_aids"] = df.loc[
-        #     newly_infected_index, "hv_proj_date_death"
-        # ] - DateOffset(days=365.25)
-        #
-        # # schedule the symptom update event for each person
-        # for person_index in newly_infected_index:
-        #     aids_event = HivAidsEvent(self.module, person_index)
-        #
-        #     if df.at[person_index, "hv_proj_date_aids"] < self.sim.date:
-        #         df.at[person_index, "hv_proj_date_aids"] = self.sim.date + DateOffset(
-        #             days=1
-        #         )
-        #     # print('aids_date', df.at[person_index, 'hv_proj_date_aids'])
-        #     self.sim.schedule_event(
-        #         aids_event, df.at[person_index, "hv_proj_date_aids"]
-        #     )
-        #
-
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
         df = self.sim.population.props
@@ -933,7 +785,6 @@ class Hiv(Module):
 
         # Check that ART properties are as expected:
         # todo - that those those with non-null date for ART are not in the "not" category
-
 
         # Check that if person is not infected, the dates of HIV events are None/NaN/NaT
         assert df.loc[~df.hv_inf, ["hv_date_inf",
@@ -972,12 +823,15 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+        super().__init__(module, frequency=DateOffset(months=12))  # repeats every 12 months, but this can be changed
 
     def apply(self, population):
 
         df = population.props
         params = self.module.parameters
+
+        fraction_of_year_between_polls = self.frequency.months / 12
+        beta = params["beta"] * fraction_of_year_between_polls
 
         # ----------------------------------- HORIZONTAL TRANSMISSION -----------------------------------
         def horizontal_transmission(to_sex, from_sex):
@@ -999,7 +853,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             rr_of_infection = self.module.rr_of_infection.predict(df.loc[susc_idx])
 
             #  - probability of infection = beta * I/N
-            p_infection = rr_of_infection * params["beta"] * (n_infectious / (n_infectious + n_susceptible))
+            p_infection = rr_of_infection * beta * (n_infectious / (n_infectious + n_susceptible))
 
             # New infections:
             will_be_infected = self.module.rng.rand(len(p_infection)) < p_infection
@@ -1007,7 +861,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # Schedule the date of infection for each new infection:
             for idx in idx_new_infection:
-                date_of_infection = self.sim.date + pd.DateOffset(days=self.module.rng.randint(0, 365))
+                date_of_infection = self.sim.date + \
+                                    pd.DateOffset(days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls))
                 self.sim.schedule_event(HivInfectionEvent(self.module, idx), date_of_infection)
 
         # Horizontal transmission: Male --> Female
