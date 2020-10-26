@@ -19,7 +19,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager, dx_algorithm_child,
 )
-from tlo.methods.hiv import Hiv
+from tlo.methods.hiv import Hiv, HSI_Hiv_SpontaneousTest
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -329,3 +329,20 @@ def test_mtct_during_breastfeeding():
 
     # Check child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
+
+def test_hsi_spontaneoustest():
+    """Test that the spontaneous test HSI works as intended"""
+    # Get simulation and simulate for 0 days so as to complete all the initialisation steps
+    sim = get_sim()
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df = sim.population.props
+
+    # Get target person and make them HIV-negative and not ever having had a test
+    person_id = 0
+    df.at[person_id, "hv_inf"] = False
+    df.at[person_id, "hv_diagnosed"] = False
+    df.at[person_id, "hv_number_tests"] = 0
+
+    # Run the SpontaneousTest event
+    ste = HSI_Hiv_SpontaneousTest(module=sim.modules['Hiv'], person_id=person_id)
+    ste.apply(person_id=person_id, squeeze_factor=0.0)

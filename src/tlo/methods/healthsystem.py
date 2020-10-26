@@ -559,7 +559,7 @@ class HealthSystem(Module):
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
         """
-        This is depracted. Report onset of generic acute symptoms to the symptom mananger.
+        This is deprecated. Report onset of generic acute symptoms to the symptom mananger.
         HealthSeekingBehaviour module will schedule a generic hsi.
         """
         raise Exception('Do not use get_prob_seek_care().')

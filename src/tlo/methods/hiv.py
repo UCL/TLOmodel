@@ -36,6 +36,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import demography, tb, Metadata  # todo- remove dependency on TB
+from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
@@ -75,7 +76,7 @@ class Hiv(Module):
         "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
         "hv_behaviour_change": Property(Types.BOOL, "Has this person been exposed to HIV prevention counselling"),
         "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
-        "hv_diagnosed": Property(Types.BOOL, "hiv+ and tested"),
+        "hv_diagnosed": Property(Types.BOOL, "knows that they are hiv+: i.e. is hiv+ and tested as hiv+"),
         "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
 
         # --- Dates on which things have happened: # todo; work out which of these actually needed
@@ -292,9 +293,12 @@ class Hiv(Module):
         )
 
     def pre_initialise_population(self):
-        """Establish the Linear Models"""
+        """
+        * Establish the Linear Models
+        """
         p = self.parameters
 
+        # ---- LINEAR MODELS -----
         # LinearModel for the relative risk of becoming infected during the simulation
         self.rr_of_infection = LinearModel.multiplicative(
             Predictor('age_years')  .when('<15', 0.0)
@@ -342,6 +346,13 @@ class Hiv(Module):
                                             .when('<45', p["infection_to_death_weibull_shape_4044"])
                                             .when('<50', p["infection_to_death_weibull_shape_4549"])
                                             .otherwise(p["infection_to_death_weibull_shape_4549"])
+        )
+
+        # Linear model that give the probabiliy of seeking a 'Spontaneous Test' for HIV
+        # (=sum of probabilities for accessing any HIV service when not ill)
+        self.lm_spontaneous_test_12m = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            intercept=0.10   # TODO <-- * parameterise rate of spontanoues testing *
         )
 
     def initialise_population(self, population):
@@ -535,6 +546,7 @@ class Hiv(Module):
         * 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
         * 4) Schedule the AIDS onset events and AIDS death event for those infected already
         * 5) (Optionally) Schedule the event to check the configuration of all properties
+        * 6) Define the DxTests
         """
         df = sim.population.props
 
@@ -603,6 +615,22 @@ class Hiv(Module):
         # 6) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
             sim.schedule_event(HivCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1))
+
+        # 7) Define the DxTests
+        # HIV Rapid Diagnostic Test:
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        pkg_code_hiv_rapid_test = consumables.loc[
+            consumables["Intervention_Pkg"] == "HIV Testing Services",
+            "Intervention_Pkg_Code"].values[0]
+
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            hiv_rapid_test=DxTest(
+                property='hv_inf',
+                sensitivity=1.0,
+                specificity=1.0,
+                cons_req_as_footprint={'Intervention_Package_Code': {pkg_code_hiv_rapid_test: 1}, 'Item_Code': {}}
+            )
+        )
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -853,9 +881,7 @@ class Hiv(Module):
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ The HIV Regular Polling Events
     * Schedules persons becoming newly infected through horizontal transmission
-    *
-    *
-
+    * Schedules who will present for voluntary ("spontaneous") testing
     """
 
     def __init__(self, module):
@@ -906,6 +932,21 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Horizontal transmission: Female --> Male
         horizontal_transmission(from_sex='F', to_sex='M')
+
+        # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
+        prob_spontaneous_test = self.module.lm_spontaneous_test_12m.predict(df.loc) * fraction_of_year_between_polls
+        will_test = self.module.rng.rand(len(prob_spontaneous_test)) < prob_spontaneous_test
+        idx_will_test = will_test[will_test].index
+
+        for person_id in idx_will_test:
+            date_test = self.sim.date + \
+                        pd.DateOffset(days=self.module.rng.randint(0, 365 * fraction_of_year_between_polls))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Hiv_SpontaneousTest(person_id=person_id, module=self.module),
+                priority=1,
+                topen=date_test,
+                tclose=None
+            )
 
 # ---------------------------------------------------------------------------
 #   Natural History Events
@@ -1017,6 +1058,40 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
 
         # Cause the death - to happen immediately
         demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
+
+
+# ---------------------------------------------------------------------------
+#   Health System Interactions (HSI)
+# ---------------------------------------------------------------------------
+
+class HSI_Hiv_SpontaneousTest(HSI_Event, IndividualScopeEventMixin):
+    """
+    The is the SpontaneousTest HSI. Individuals may seek an HIV test at any time. Following the test, they may present
+    for uptake an HIV service - ART (if HIV-positive), VMMC (if HIV-negative and male) or PrEP (if HIV-negative and a
+    female sex worker).
+    In reality, this 'Spontaneous Test' may be a stand-alone VCT, or may be the testing that is done routinely when a
+    particular service is sought.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(
+            module, Hiv
+        )
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = "Hiv_SpontaneousTest"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = []
+
+
+    def apply(self, person_id, squeeze_factor):
+        print("Now in the Spontaneous Testing HSI")
+
+
+        #TODO if HIV-positive, footprint that is returned should be for HIV-positive
+
 
 
 # ---------------------------------------------------------------------------
