@@ -630,7 +630,6 @@ class Hiv(Module):
         df.at[child_id, "tmp_breastfed"] = True
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
-
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
         mother_infected_prior_to_pregnancy = \
             df.at[mother_id, 'hv_inf'] & (
@@ -661,21 +660,37 @@ class Hiv(Module):
             self.do_new_infection(child_id)
 
         # ----------------------------------- MTCT - DURING BREASTFEEDING --------------------------
-        # If is breastfeeding currently, determine if should schedule an MTCT-during-breastfeeding HIV infection event.
-        # NB. The event will not run if the mother has ceased to be breastfeeding by that point.
+        # If child is not infected and is being breastfed, then expose them to risk of MTCT through breastfeeding
         if (not child_infected) and df.at[child_id, "tmp_breastfed"]:
-            if df.at[mother_id, "hv_art"] == "on_VL_suppressed":
-                monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_treated"]
-            else:
-                monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_untreated"]
+            self.mtct_during_breastfeeding(mother_id, child_id)
 
-            if monthly_prob_mtct_bf > 0.0:
-                months_to_infection = int(self.rng.exponential(1/monthly_prob_mtct_bf))
-                date_of_infection = self.sim.date + pd.DateOffset(months=months_to_infection)
-                self.sim.schedule_event(
-                    HivInfectionDuringBreastFeedingEvent(person_id=child_id, module=self),
-                    date_of_infection
-                )
+
+
+    def mtct_during_breastfeeding(self, mother_id, child_id):
+        """
+        Compute risk of mother-to-child transmission and schedule HivInfectionDuringBreastFeedingEvent.
+
+        If the child is breastfeeding currently, consider the time-until-infection assuming a constantly monthly risk of
+         transmission. If the breastfeeding has ceased by the time of the scheduled infection, then it will not run.
+        (This means that this event can be run at birth or at the time of the mother's infection without the need for
+        further polling etc.)
+        """
+
+        df = self.sim.population.props
+        params = self.parameters
+
+        if df.at[mother_id, "hv_art"] == "on_VL_suppressed":
+            monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_treated"]
+        else:
+            monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_untreated"]
+
+        if monthly_prob_mtct_bf > 0.0:
+            months_to_infection = int(self.rng.exponential(1 / monthly_prob_mtct_bf))
+            date_of_infection = self.sim.date + pd.DateOffset(months=months_to_infection)
+            self.sim.schedule_event(
+                HivInfectionDuringBreastFeedingEvent(person_id=child_id, module=self),
+                date_of_infection
+            )
 
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -899,6 +914,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 class HivInfectionEvent(Event, IndividualScopeEventMixin):
     """ This person has become infected.
     * Do the infection process
+    * Check for onward transmission through MTCT if the infection is to a mother who is currently breastfeeding.
     """
 
     def __init__(self, module, person_id):
@@ -913,6 +929,14 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
 
         # Onset the infection for this person (which will schedule progression etc)
         self.module.do_new_infection(person_id)
+
+        # Consider MTCT from this person to children:
+        # - Check for onward transmission through MTCT if the infection is to a mother who is currently breastfeeding.
+        children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) & df.tmp_breastfed].index
+        # - Do the MTCT routine for each child:
+        for child_id in children_of_this_person_being_breastfed:
+            self.mtct_during_breastfeeding(person_id, child_id)
+
 
 class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
     """ This person has become infected during breastfeeding
