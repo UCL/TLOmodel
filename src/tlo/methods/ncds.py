@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import Metadata
+from tlo.methods import Metadata, demography
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.healthsystem import HSI_Event
 
@@ -137,64 +137,26 @@ class Ncds(Module):
         # save a list of the conditions that covered in this module (extracted from PROPERTIES)
         self.conditions = list(self.PROPERTIES.keys())
 
-        # dict to hold counters for the number of episodes by condition-type and age-group
-        # (0yrs, 1yrs, 2-4yrs)
-        blank_counter = dict(zip(self.conditions, [list() for _ in self.conditions]))
-        self.incident_case_tracker_blank = {
-            '0-4y': copy.deepcopy(blank_counter),
-            '5-9y': copy.deepcopy(blank_counter),
-            '10-14y': copy.deepcopy(blank_counter),
-            '15-19y': copy.deepcopy(blank_counter),
-            '20-24y': copy.deepcopy(blank_counter),
-            '25-29y': copy.deepcopy(blank_counter),
-            '30-34y': copy.deepcopy(blank_counter),
-            '35-39y': copy.deepcopy(blank_counter),
-            '40-44y': copy.deepcopy(blank_counter),
-            '45-49y': copy.deepcopy(blank_counter),
-            '50-54y': copy.deepcopy(blank_counter),
-            '55-59y': copy.deepcopy(blank_counter),
-            '60-64y': copy.deepcopy(blank_counter),
-            '65-69y': copy.deepcopy(blank_counter),
-            '70-74y': copy.deepcopy(blank_counter),
-            '75-79y': copy.deepcopy(blank_counter),
-            '80-84y': copy.deepcopy(blank_counter),
-            '85-89y': copy.deepcopy(blank_counter),
-            '90-94y': copy.deepcopy(blank_counter),
-            '95-99y': copy.deepcopy(blank_counter),
-            '100+y': copy.deepcopy(blank_counter)
-        }
-        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
-
-        zeros_counter = dict(zip(self.conditions, [0] * len(self.conditions)))
-        self.incident_case_tracker_zeros = {
-            '0-4y': copy.deepcopy(zeros_counter),
-            '5-9y': copy.deepcopy(blank_counter),
-            '10-14y': copy.deepcopy(blank_counter),
-            '15-19y': copy.deepcopy(zeros_counter),
-            '20-24y': copy.deepcopy(zeros_counter),
-            '25-29y': copy.deepcopy(zeros_counter),
-            '30-34y': copy.deepcopy(zeros_counter),
-            '35-39y': copy.deepcopy(zeros_counter),
-            '40-44y': copy.deepcopy(zeros_counter),
-            '45-49y': copy.deepcopy(zeros_counter),
-            '50-54y': copy.deepcopy(zeros_counter),
-            '55-59y': copy.deepcopy(zeros_counter),
-            '60-64y': copy.deepcopy(zeros_counter),
-            '65-69y': copy.deepcopy(zeros_counter),
-            '70-74y': copy.deepcopy(zeros_counter),
-            '75-79y': copy.deepcopy(zeros_counter),
-            '80-84y': copy.deepcopy(zeros_counter),
-            '85-89y': copy.deepcopy(zeros_counter),
-            '90-94y': copy.deepcopy(zeros_counter),
-            '95-99y': copy.deepcopy(zeros_counter),
-            '100+y': copy.deepcopy(zeros_counter)
-        }
-
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         To access files use: Path(self.resourcefilepath) / file_name
         """
+        self.age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
+
+        # dict to hold counters for the number of episodes by condition-type and age-group
+        blank_counter = dict(zip(self.conditions, [list() for _ in self.conditions]))
+        self.incident_case_tracker_blank = dict()
+        for age_range in self.age_index:
+            self.incident_case_tracker_blank[f'{age_range}'] = copy.deepcopy(blank_counter)
+
+        self.incident_case_tracker = copy.deepcopy(self.incident_case_tracker_blank)
+
+        zeros_counter = dict(zip(self.conditions, [0] * len(self.conditions)))
+        self.incident_case_tracker_zeros = dict()
+        for age_range in self.age_index:
+            self.incident_case_tracker_zeros[f'{age_range}'] = copy.deepcopy(zeros_counter)
+
         xls = pd.ExcelFile(
             Path(self.resourcefilepath / 'ResourceFile_NCDs2.xlsx')
         )
@@ -359,7 +321,8 @@ class Ncds(Module):
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
-            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove'])
+            Predictor('li_wood_burn_stove').when(True, p['rr_wood_burning_stove']),
+            Predictor('nc_hypertension').when(True, p['rr_hypertension'])
         )
 
         #self.lms_removal[condition] = LinearModel(
@@ -457,51 +420,9 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # -------------------------------------------------------------------------------------------
             # Add this incident case to the tracker
 
-            age = df.loc[idx_acquires_condition, ['age_years']]
-            if age.values[0] < 5:
-                age_grp = '0-4y'
-            elif (age.values[0] >= 5) and (age.values[0] < 10):
-                age_grp = '5-9y'
-            elif (age.values[0] >= 10) and (age.values[0] < 15):
-                age_grp = '10-14y'
-            elif (age.values[0] >= 15) and (age.values[0] < 20):
-                age_grp = '15-19y'
-            elif (age.values[0] >= 20) and (age.values[0] < 25):
-                age_grp = '20-24y'
-            elif (age.values[0] >= 25) and (age.values[0] < 30):
-                age_grp = '25-29y'
-            elif (age.values[0] >= 30) and (age.values[0] < 35):
-                age_grp = '30-34y'
-            elif (age.values[0] >= 35) and (age.values[0] < 40):
-                age_grp = '35-39y'
-            elif (age.values[0] >= 40) and (age.values[0] < 45):
-                age_grp = '40-44y'
-            elif (age.values[0] >= 45) and (age.values[0] < 50):
-                age_grp = '45-49y'
-            elif (age.values[0] >= 50) and (age.values[0] < 55):
-                age_grp = '50-54y'
-            elif (age.values[0] >= 55) and (age.values[0] < 60):
-                age_grp = '55-59y'
-            elif (age.values[0] >= 60) and (age.values[0] < 65):
-                age_grp = '60-64y'
-            elif (age.values[0] >= 65) and (age.values[0] < 70):
-                age_grp = '65-69y'
-            elif (age.values[0] >= 70) and (age.values[0] < 75):
-                age_grp = '70-74y'
-            elif (age.values[0] >= 75) and (age.values[0] < 80):
-                age_grp = '75-79y'
-            elif (age.values[0] >= 80) and (age.values[0] < 85):
-                age_grp = '80-84y'
-            elif (age.values[0] >= 85) and (age.values[0] < 90):
-                age_grp = '85-89y'
-            elif (age.values[0] >= 90) and (age.values[0] < 95):
-                age_grp = '90-94y'
-            elif (age.values[0] >= 95) and (age.values[0] < 100):
-                age_grp = '95-99y'
-            else:
-                age_grp = '100+y'
-
-            self.module.incident_case_tracker[age_grp][condition].append(self.sim.date)
+            for personal_idx in idx_acquires_condition:
+                age_range = df.loc[personal_idx, ['age_range']].age_range
+                self.module.incident_case_tracker[age_range][condition].append(self.sim.date)
             # -------------------------------------------------------------------------------------------
 
             # removal:
@@ -552,9 +473,67 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Make some summary statistics for prevalence by age/sex for each condition
         df = population.props
 
-        for condition in self.module.conditions:
-            dict_for_output = pd.DataFrame(df.loc[df.is_alive].groupby(by=['sex', 'age_range'])[condition].mean()).reset_index().to_dict()
-            logger.info(key=f'prevalence_{condition}', data=dict_for_output)
+        #for condition in self.module.conditions:
+            #dict_for_output = pd.DataFrame(df.loc[df.is_alive].groupby(by=['age_range'])[condition].mean()).reset_index().to_dict()
+            #logger.info(key=f'prevalence_{condition}', data=dict_for_output)
+
+        def proportion_of_something_in_a_groupby_ready_for_logging(df, something, groupbylist):
+            dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
+                {'something': dft[something].sum(), 'not_something': (~dft[something]).sum()}))
+            pr = dfx['something'] / dfx.sum(axis=1)
+
+            # create into a dict with keys as strings
+            pr = pr.reset_index()
+            pr['flat_index'] = ''
+            for i in range(len(pr)):
+                pr.at[i, 'flat_index'] = '__'.join([f"{col}={pr.at[i, col]}" for col in groupbylist])
+            pr = pr.set_index('flat_index', drop=True)
+            pr = pr.drop(columns=groupbylist)
+            return pr[0].to_dict()
+
+        # Prevalence of hypertension broken down by sex and age
+        logger.info(
+            key='ldl_hdl_prevalence_by_age_and_sex',
+            description='current fraction of the population that are classified as having LDL/HDL, broken down by sex and age',
+            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_ldl_hdl',
+                                                                                 ['sex', 'age_range'])}
+        )
+
+        logger.info(
+            key='chronic_inflammation_prevalence_by_age_and_sex',
+            description='current fraction of the population that are classified as having chronic inflammation, broken down by sex and age',
+            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_chronic_inflammation',
+                                                                                 ['sex', 'age_range'])}
+        )
+
+        logger.info(
+            key='diabetes_prevalence_by_age_and_sex',
+            description='current fraction of the population that are classified as having diabetes, broken down by sex and age',
+            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_diabetes',
+                                                                                 ['sex', 'age_range'])}
+        )
+
+        logger.info(
+            key='hypertension_prevalence_by_age_and_sex',
+            description='current fraction of the population that are classified as having hypertension, broken down by sex and age',
+            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_hypertension',
+                                                                                 ['sex', 'age_range'])}
+        )
+
+        logger.info(
+            key='depression_prevalence_by_age_and_sex',
+            description='current fraction of the population that are classified as having depression, broken down by sex and age',
+            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_depression',
+                                                                                 ['sex', 'age_range'])}
+        )
+
+        logger.info(
+            key='cihd_prevalence_by_age_and_sex',
+            description='current fraction of the population that are classified as having CIHD, broken down by sex and age',
+            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_chronic_ischemic_hd',
+                                                                                 ['sex', 'age_range'])}
+        )
+        # NB. logging like this as cannot do directly as a dict [logger requires key in a dict to be strings]
 
 
 
