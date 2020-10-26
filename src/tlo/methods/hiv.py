@@ -17,7 +17,7 @@ HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) 
 * Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
 * Assume that any ART removes the aids_symptoms?
 * Clean up properties - most are not used
-* Clean up paramerers and sort out/consolidate/remove junk in resourcefiles.
+* Clean up paramerers and sort out/consolidate/remove junk in resourcefiles; rename to remove concept of slow/fast progression
 * Finale -- Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
 """
 
@@ -623,7 +623,7 @@ class Hiv(Module):
         df.at[child_id, "hv_proj_date_death"] = pd.NaT
         df.at[child_id, "hv_proj_date_aids"] = pd.NaT
 
-        # ----------------------------------- MTCT - PREGNANCY -----------------------------------
+        # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
 
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
         mother_infected_prior_to_pregnancy = \
@@ -637,8 +637,8 @@ class Hiv(Module):
 
         if mother_infected_prior_to_pregnancy:
               if (df.at[mother_id, "hv_art"] == "on_VL_suppressed"):
-                #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
-                child_infected = self.rng.rand() < params["prob_mtct_treated"]
+                  #  mother has existing infection, mother ON ART and VL suppressed at time of delivery
+                  child_infected = self.rng.rand() < params["prob_mtct_treated"]
               else:
                   # mother was infected prior to prgenancy but is not on VL suppressed at time of delivery
                   child_infected = self.rng.rand() < params["prob_mtct_untreated"]
@@ -651,47 +651,11 @@ class Hiv(Module):
             # mother is not infected
             child_infected = False
 
-
-        # TODO -- triggers for natural history if child_infected etc
-        # ----------------------------------- ASSIGN DEATHS FOR THOSE INFECTED  -----------------------------------
-        # if df.at[child_id, "is_alive"] and df.at[child_id, "hv_inf"]:
-        #     df.at[child_id, "hv_date_inf"] = self.sim.date
-        #
-        #     # assume all FAST PROGRESSORS, draw from exp, returns an array not a single value!!
-        #     time_death = self.rng.exponential(
-        #         scale=params["exp_rate_mort_infant_fast_progressor"], size=1
-        #     )
-        #     df.at[child_id, "hv_fast_progressor"] = True
-        #     df.at[child_id, "hv_specific_symptoms"] = "aids"
-        #
-        #     time_death = pd.to_timedelta(time_death[0] * 365.25, unit="d")
-        #     df.at[child_id, "hv_proj_date_death"] = now + time_death
-        #
-        #     # schedule the death event
-        #     death = HivDeathEvent(
-        #         self, individual_id=child_id, cause="hiv"
-        #     )  # make that death event
-        #     death_scheduled = df.at[child_id, "hv_proj_date_death"]
-        #     self.sim.schedule_event(death, death_scheduled)  # schedule the death
-        #
-        # # ----------------------------------- PMTCT -----------------------------------
-        # # first contact is testing, then schedule treatment / prophylaxis as needed
-        # # then if child infected, schedule ART
-        # if (
-        #     df.at[child_id, "hv_mother_inf_by_birth"]
-        #     and not df.at[child_id, "hv_diagnosed"]
-        # ):
-        #     event = HSI_Hiv_InfantScreening(self, person_id=child_id)
-        #     self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #         event,
-        #         priority=1,
-        #         topen=self.sim.date,
-        #         tclose=self.sim.date + DateOffset(weeks=4),
-        #     )
+        if child_infected:
+            self.do_new_infection(child_id)
 
     def on_hsi_alert(self, person_id, treatment_id):
-        raise NotImplementedError
-        # TODO - redo this
+        raise NotImplementedError  # TODO - redo this
 
         logger.debug(
             "This is hiv, being alerted about a health system interaction "
@@ -729,25 +693,80 @@ class Hiv(Module):
         dalys.name = 'hiv'
         return dalys
 
+    def do_new_infection(self, person_id):
+        """
+        Enact that this person is infected with HIV
+        * Update their hv_inf status and hv_date_inf
+        * Schedule the AIDS onset event for this person
+        """
+        df = self.sim.population.props
+
+        # Update HIV infection status for this person
+        df.at[person_id, "hv_inf"] = True
+        df.at[person_id, "hv_date_inf"] = self.sim.date
+
+        # Schedule AIDS onset events for this person
+        date_onset_aids = self.sim.date + self.module.get_time_from_infection_to_aids(person_id=person_id)
+        self.sim.schedule_event(event=HivAidsOnsetEvent(self.module, person_id), date=date_onset_aids)
+
     def get_time_from_infection_to_aids(self, person_id):
         """Gives time between onset of infection and AIDS, returning a pd.DateOffset.
-        Assumes that this is a draw from a weibull distribution (with scale depending on age) less 18 months.
-        The parameters for the draw from the weibull disribution give a time from infection to death, and it is assumed
-         that the time from aids to death is 18 months."""
+        For those infected prior to, or at, birth:
+            * this is a draw from an exponetial distribition
+        For those infected after birth but before reaching age 5.0:
+            * this is drawn from a weibull distribution
+        For adults:
+            * this is a drawn from a weibull distribution (with scale depending on age);
 
-        #todo - this is for adults: need to do children
+        * NB. It is further assumed that the time from aids to death is 18 months.
+        """
 
-        # get the shape parameters (unit: years)
-        scale = self.scale_parameter_for_infection_to_death.predict(self.sim.population.props.loc[[person_id]]).values[0]
+        df = self.sim.population.props
+        age = df.at[person_id, 'age_exact_years']
+        p = self.parameters
 
-        # get the scale parameter (unit: years)
-        shape = self.shape_parameter_for_infection_to_death.predict(self.sim.population.props.loc[[person_id]]).values[0]
+        if age == 0.0:
+            # The person is infected prior to, or at, birth:
+            months_to_aids = int(max(0.0, self.rng.exponential(scale=p["exp_rate_mort_infant_fast_progressor"]) * 12))
+        elif age < 5.0:
+            # The person is infected after birth but before age 5.0:
+            months_to_aids = int(max(0.0,
+                                     self.rng.weibull(p["weibull_shape_mort_infant_slow_progressor"])
+                                     * p["weibull_scale_mort_infant_slow_progressor"] * 12
+                                     ))
+        else:
+            # The person is infected after age 5.0
+            # - get the shape parameters (unit: years)
+            scale = self.scale_parameter_for_infection_to_death.predict(self.sim.population.props.loc[[person_id]]).values[0]
+            # - get the scale parameter (unit: years)
+            shape = self.shape_parameter_for_infection_to_death.predict(self.sim.population.props.loc[[person_id]]).values[0]
+            # - draw from Weibull and convert to months
+            months_to_death = self.rng.weibull(shape) * scale * 12
+            # - compute months to aids, which is somewhat shorter than the months to death
+            months_to_aids = int(max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death'])))
 
-        # draw from Weibull and convert to months
-        months_to_death = self.rng.weibull(shape) * scale * 12
 
-        # compute months to aids, which is somewhat shorter than the months to death
-        months_to_aids = int(max(0.0, np.round(months_to_death - self.parameters['mean_months_between_aids_and_death'])))
+        # ----------------------------------- ASSIGN DEATHS FOR THOSE INFECTED  -----------------------------------
+        # if df.at[child_id, "is_alive"] and df.at[child_id, "hv_inf"]:
+        #     df.at[child_id, "hv_date_inf"] = self.sim.date
+        #
+        #     # assume all FAST PROGRESSORS, draw from exp, returns an array not a single value!!
+        #     time_death = self.rng.exponential(
+        #         scale=params["exp_rate_mort_infant_fast_progressor"], size=1
+        #     )
+        #     df.at[child_id, "hv_fast_progressor"] = True
+        #     df.at[child_id, "hv_specific_symptoms"] = "aids"
+        #
+        #     time_death = pd.to_timedelta(time_death[0] * 365.25, unit="d")
+        #     df.at[child_id, "hv_proj_date_death"] = now + time_death
+        #
+        #     # schedule the death event
+        #     death = HivDeathEvent(
+        #         self, individual_id=child_id, cause="hiv"
+        #     )  # make that death event
+        #     death_scheduled = df.at[child_id, "hv_proj_date_death"]
+        #     self.sim.schedule_event(death, death_scheduled)  # schedule the death
+
 
         return pd.DateOffset(months=months_to_aids)
 
@@ -872,15 +891,13 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         horizontal_transmission(from_sex='F', to_sex='M')
 
 
-
 # ---------------------------------------------------------------------------
 #   Natural History Events
 # ---------------------------------------------------------------------------
 
 class HivInfectionEvent(Event, IndividualScopeEventMixin):
     """ This person has become infected.
-    * Update their hv_inf status and hv_date_inf
-    * Schedule the AIDS onset event for this person
+    * Do the infection process
     """
 
     def __init__(self, module, person_id):
@@ -893,13 +910,9 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Update HIV infection status for this person
-        df.at[person_id, "hv_inf"] = True
-        df.at[person_id, "hv_date_inf"] = self.sim.date
+        # Onset the infection for this person (which will schedule progression etc)
+        self.module.do_new_infection(person_id)
 
-        # Schedule AIDS onset events for this person
-        date_onset_aids = self.sim.date + self.module.get_time_from_infection_to_aids(person_id=person_id)
-        self.sim.schedule_event(event=HivAidsOnsetEvent(self.module, person_id), date=date_onset_aids)
 
 class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
     """ This person has developed AIDS.
