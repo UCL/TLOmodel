@@ -17,7 +17,7 @@ from tlo.methods import (
     hiv,
     labour,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, dx_algorithm_child,
 )
 from tlo.methods.hiv import Hiv
 
@@ -51,6 +51,7 @@ def get_sim():
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
                  )
 
@@ -169,7 +170,6 @@ def test_generation_of_natural_history_process_no_art():
 
     # run the AIDS onset event for this person:
     aids_event.apply(person_id)
-    assert sim.date == df.at[person_id, 'hv_date_aids']
     assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id)
 
     # find the AIDS death event for this person
@@ -213,13 +213,12 @@ def test_generation_of_natural_history_process_with_art_before_aids():
 
     # run the AIDS onset event for this person:
     aids_event.apply(person_id)
-    assert pd.isnull(df.at[person_id, 'hv_date_aids'])
 
-    # check no AIDS onset event for this person
+    # check no AIDS death event for this person
     assert [] == [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)]
 
     # check no AIDS symptoms for this person
-    assert [] == sim.modules['SymptomManager'].has_what(person_id)
+    assert "aids_symptoms" not in sim.modules['SymptomManager'].has_what(person_id)
 
 def test_generation_of_natural_history_process_with_art_after_aids():
     """Check that:
@@ -249,7 +248,6 @@ def test_generation_of_natural_history_process_with_art_after_aids():
 
     # run the AIDS onset event for this person:
     aids_event.apply(person_id)
-    assert sim.date == df.at[person_id, 'hv_date_aids']
 
     # find the AIDS death  event for this person
     date_aids_death_event, aids_death_event = \

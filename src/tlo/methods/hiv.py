@@ -9,7 +9,7 @@ HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) 
 
 
 # TODO:
-* Horizontal transmisson logic! and tests!
+* Horizontal transmission logic! and tests!
 * MTCT -- (I) put it at birth; (II) regular polling event determine onward transmission if a new infection is given to a mother who is currently breastfeeding
 * Survival of children -- into the get_time_from_infection_to_aids helper function.
 * Sort out all the HSI for Testing, ART, PrEP, VMMC and Behav Chg.
@@ -993,14 +993,15 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Number of new infections:
         n_new_infections = int(np.round(params["beta"] * n_infectious * n_susceptible / (n_infectious + n_susceptible)))
+        rr_of_infection = self.module.rr_of_infection.predict(df.loc[susc_idx])
+
         # TODO - make sure scaling is correct for time between successive polling events
         # TODO - make sex-specific (maybe??) (check logic overall --- the relative risk should determine number of new infections?)
 
-        if n_new_infections > 0:
+        if (n_new_infections > 0) and (sum(rr_of_infection) > 0):
             # Distribute these new infections by persons with respect to risks of acquisition
             # Evaluate current risk of infection:
 
-            rr_of_infection = self.module.rr_of_infection.predict(df.loc[susc_idx])
 
             new_inf_idx = self.module.rng.choice(
                 a=rr_of_infection.index,
