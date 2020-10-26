@@ -43,7 +43,7 @@ logger.setLevel(logging.INFO)
 
 class Diarrhoea(Module):
     # Declare the pathogens that this module will simulate:
-    pathogens = {
+    pathogens = [
         'rotavirus',
         'shigella',
         'adenovirus',
@@ -54,7 +54,7 @@ class Diarrhoea(Module):
         'norovirus',
         'astrovirus',
         'tEPEC'
-    }
+    ]
 
     # Declare Metadata
     METADATA = {
@@ -652,11 +652,11 @@ class Diarrhoea(Module):
             self.prob_symptoms[pathogen] = make_symptom_probs(pathogen)
 
         # Check that each pathogen has a risk of developing each symptom
-        assert self.pathogens == set(list(self.prob_symptoms.keys()))
+        assert set(self.pathogens) == set(self.prob_symptoms.keys())
 
         assert all(
             [
-                self.symptoms == set(list(self.prob_symptoms[pathogen].keys()))
+                set(self.symptoms) == set(self.prob_symptoms[pathogen].keys())
                 for pathogen in self.prob_symptoms.keys()
             ]
         )
