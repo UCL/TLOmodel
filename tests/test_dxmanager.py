@@ -474,8 +474,8 @@ def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution(bundle)
     assert result is not None
     assert result == sim.population.props.at[person_id, 'mi_status']
     assert len(tests_tried) == 2
-    assert tests_tried[my_test1_not_available] is False
-    assert tests_tried[my_test2_is_available] is True
+    assert tests_tried['tuple_of_tests_with_first_not_available_0'] is False
+    assert tests_tried['tuple_of_tests_with_first_not_available_1'] is True
 
     # Run the tuple of tests (when the first test fails): should return a result having run test2 and not tried test1
     result, tests_tried = dx_manager.run_dx_test(
@@ -486,8 +486,8 @@ def test_create_tuple_of_dx_tests_which_fail_and_require_chain_execution(bundle)
     assert result is not None
     assert result, tests_tried == sim.population.props.at[person_id, 'mi_status']
     assert len(tests_tried) == 1
-    assert tests_tried[my_test2_is_available] is True
-    assert my_test1_not_available not in tests_tried
+    assert tests_tried['tuple_of_tests_with_first_available_0'] is True
+    assert 'tuple_of_tests_with_first_available_1' not in tests_tried
 
 
 def test_create_dx_test_and_run_with_imperfect_sensitivity(bundle):

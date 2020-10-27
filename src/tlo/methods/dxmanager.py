@@ -126,7 +126,7 @@ class DxManager:
                     break
                 else:
                     # The DxTest was not successful. Log the use of that DxTest
-                    the_dxtests_tried[test] = False
+                    the_dxtests_tried[f"{dx_test}_{i}"] = False
 
             result_dict_for_list_of_dx_tests[dx_test] = test_result
 
