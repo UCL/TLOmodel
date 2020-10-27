@@ -328,7 +328,7 @@ class Malaria(Module):
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
         # clinical
-        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_infected == now)]
+        clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_symptoms == now)]
 
         # update clinical symptoms for all new clinical infections
         self.clinical_symptoms(df, clin)
