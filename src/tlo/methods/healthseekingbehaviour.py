@@ -7,7 +7,6 @@ The write-up of these estimates is: Health-seeking behaviour estimates for adult
 """
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Types
