@@ -367,10 +367,4 @@ def test_hsi_testandrefer_and_circ():
     assert df.at[person_id, "li_is_circ"]
 
 
-
-
-
-
-
-
 # todo - test that the test and refer event is run is aids symptoms occur
