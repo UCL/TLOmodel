@@ -986,7 +986,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
         horizontal_transmission(from_sex='F', to_sex='M')
 
         # ----------------------------------- SPONTANEOUS TESTING -----------------------------------
-        prob_spontaneous_test = self.module.lm_spontaneous_test_12m.predict(df.loc) * fraction_of_year_between_polls
+        prob_spontaneous_test = self.module.lm_spontaneous_test_12m.predict(df.loc[df.is_alive]) * fraction_of_year_between_polls
         will_test = self.module.rng.rand(len(prob_spontaneous_test)) < prob_spontaneous_test
         idx_will_test = will_test[will_test].index
 
@@ -997,7 +997,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module),
                 priority=1,
                 topen=date_test,
-                tclose=None
+                tclose=self.sim.date + pd.DateOffset(months=self.frequency.months)  # (to occur before next polling)
             )
 
 # ---------------------------------------------------------------------------
@@ -1136,13 +1136,12 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_TestAndRefer"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         """Do the testing and referring to other services"""
-        # TODO: if HIV-positive, footprint that is returned should be for HIV-positive
 
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -1168,6 +1167,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             if test_result:
                 # The test_result is HIV positive
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTPositive': 1})
 
                 # Update diagnosis if the person is indeed HIV positive
                 if person['hv_inf']:
@@ -1184,6 +1184,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
             else:
                 # The test_result is HIV negative
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
 
                 # Consider if the person's risk will be reduced by behaviour change counselling
                 if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
@@ -1209,33 +1210,27 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                             priority=0
                         )
 
+        return ACTUAL_APPT_FOOTPRINT
 
 class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event - start hiv treatment
+    This is a Health System Interaction Event - start HIV treatment
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_appt_footprint["NewAdult"] = 1  # hiv-specific appt type
-
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_TreatmentInitiation"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "NewAdult": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
+        """Start ART for this person"""
+        df = self.sim.population.props
 
-        logger.debug(
-            "HSI_Hiv_StartTreatment: initiating treatment for person %d", person_id
-        )
-
+        """
         # params = self.module.parameters  # why doesn't this command work post-2011?
         params = self.sim.modules["Hiv"].parameters
         df = self.sim.population.props
@@ -1391,15 +1386,14 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 topen=self.sim.date + DateOffset(weeks=2),
                 tclose=None,
             )
+        """
 
-    def did_not_run(self):
-        pass
 
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "Circumcision"
+        self.TREATMENT_ID = "Hiv_Circumcision"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MinorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1415,7 +1409,6 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         if not (person["is_alive"] & ~person["li_is_circ"]):
             return
 
-
         # Check/log use of consumables, and do circumcision if materials available
         # NB. If materials not available, it is assummed that the procedure is not carried out for this person following
         # this particular referral.
@@ -1428,18 +1421,8 @@ class HSI_Hiv_StartPrep(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        # Get a blank footprint and then edit to define call on resources of this event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint[
-            "ConWithDCSA"
-        ] = 1  # This requires small amount of time with DCSA
-        the_appt_footprint[
-            "VCTPositive"
-        ] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Hiv_Prep"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.TREATMENT_ID = "Hiv_StartPrep"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 

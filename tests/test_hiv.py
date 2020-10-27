@@ -6,7 +6,6 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.events import IndividualScopeEventMixin
 from tlo.lm import LinearModel
 from tlo.methods import (
     contraception,
@@ -29,10 +28,6 @@ except NameError:
     resourcefilepath = 'resources'
 
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
-popsize = 1000
-
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
@@ -41,6 +36,8 @@ def check_dtypes(simulation):
 
 def get_sim():
     """get sim with the checks for configuration of properties running in the HIV module"""
+    start_date = Date(2010, 1, 1)
+    popsize = 1000
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
@@ -68,6 +65,7 @@ def get_sim():
 
 def test_basic_run_with_default_parameters():
     """Run the HIV module with check and check dtypes consistency"""
+    end_date = Date(2015, 12, 31)
 
     sim = get_sim()
     check_dtypes(sim)
@@ -353,7 +351,7 @@ def test_hsi_testandrefer_and_circ():
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
 
-    # Run the SpontaneousTest event
+    # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
