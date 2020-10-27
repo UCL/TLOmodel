@@ -7,6 +7,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
+from tlo.lm import LinearModel
 from tlo.methods import (
     contraception,
     demography,
@@ -46,7 +47,10 @@ def get_sim():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
@@ -330,15 +334,21 @@ def test_mtct_during_breastfeeding():
     # Check child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
 
-def test_hsi_spontaneoustest():
+def test_hsi_testandrefer_and_circ():
     """Test that the spontaneous test HSI works as intended"""
-    # Get simulation and simulate for 0 days so as to complete all the initialisation steps
     sim = get_sim()
+
+    # Make the chance of being referred 100%
+    sim.modules['Hiv'].lm_circ = LinearModel.multiplicative()
+
+    # Simulate for 0 days so as to complete all the initialisation steps
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
     df = sim.population.props
 
-    # Get target person and make them HIV-negative and not ever having had a test
+    # Get target person and make them HIV-negative man and not ever having had a test and not already circumcised
     person_id = 0
+    df.at[person_id, "sex"] = "M"
+    df.at[person_id, "li_is_circ"] = False
     df.at[person_id, "hv_inf"] = False
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
@@ -347,5 +357,22 @@ def test_hsi_spontaneoustest():
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
+    # Check that there is an VMMC event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_Circ)
+    ][0]
 
-# todo - test that the event is run is aids symptoms occur
+    # Run the event:
+    event.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that the person is now circumcised
+    assert df.at[person_id, "li_is_circ"]
+
+
+
+
+
+
+
+
+# todo - test that the test and refer event is run is aids symptoms occur

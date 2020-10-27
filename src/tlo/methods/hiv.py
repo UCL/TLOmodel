@@ -297,6 +297,7 @@ class Hiv(Module):
     def pre_initialise_population(self):
         """
         * Establish the Linear Models
+        *
         """
         p = self.parameters
 
@@ -364,14 +365,21 @@ class Hiv(Module):
         self.lm_art = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             0.8,
-            Predictor('hiv_inf').when(True, 1.0).otherwise(0.0)
+            Predictor('hv_inf').when(True, 1.0).otherwise(0.0)
+        )
+
+        # Linear model for changing behaviour following an HIV-negative test
+        self.lm_behavchg = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            0.5,
+            Predictor('hv_inf').when(False, 1.0).otherwise(0.0)
         )
 
         # Linear model for starting PrEP (if F/sex-workers), following when the person has tested HIV -ve:
         self.lm_prep = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             0.8,
-            Predictor('hiv_inf').when(False, 1.0).otherwise(0.0),
+            Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
             Predictor('sex').when('F', 1.0).otherwise(0.0),
             Predictor('li_is_sexworker').when(True, 1.0).otherwise(0.0)
         )
@@ -380,7 +388,7 @@ class Hiv(Module):
         self.lm_circ = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             0.5,
-            Predictor('hiv_inf').when(False, 1.0).otherwise(0.0),
+            Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
             Predictor('sex').when('M', 1.0).otherwise(0.0),
         )
 
@@ -577,6 +585,7 @@ class Hiv(Module):
         * 4) Schedule the AIDS onset events and AIDS death event for those infected already
         * 5) (Optionally) Schedule the event to check the configuration of all properties
         * 6) Define the DxTests
+        * 7) Look-up and save the codes for consumables
         """
         df = sim.population.props
 
@@ -642,11 +651,11 @@ class Hiv(Module):
                 date=date_aids_death
             )
 
-        # 6) (Optionally) Schedule the event to check the configuration of all properties
+        # 5) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
             sim.schedule_event(HivCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1))
 
-        # 7) Define the DxTests
+        # 6) Define the DxTests
         # HIV Rapid Diagnostic Test:
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
         pkg_code_hiv_rapid_test = consumables.loc[
@@ -661,6 +670,19 @@ class Hiv(Module):
                 cons_req_as_footprint={'Intervention_Package_Code': {pkg_code_hiv_rapid_test: 1}, 'Item_Code': {}}
             )
         )
+
+        # 7) Look-up and store the codes for the consumables used in the interventions.
+        self.pkg_codes_for_consumables_required = dict()
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        # Circumcison:
+        self.pkg_codes_for_consumables_required['circ'] = pd.unique(
+            consumables.loc[
+                consumables["Intervention_Pkg"] == "Male circumcision ",
+                "Intervention_Pkg_Code",
+            ]
+        )[0]
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -1096,7 +1118,9 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
 
 class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
-    The is the SpontaneousTest HSI. Individuals may seek an HIV test at any time.
+    The is the Test-and-Refer HSI. Individuals may seek an HIV test at any time. From this, they can be referred on to
+    other services.
+
     This event is scheduled in the main event poll, and when someone presents for any care through a Generic HSI.
 
     Following the test, they may or may not go on to present for uptake an HIV service: ART (if HIV-positive), VMMC (if
@@ -1111,7 +1135,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = "Hiv_SpontaneousTest"
+        self.TREATMENT_ID = "Hiv_TestAndRefer"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
@@ -1122,6 +1146,9 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         person = df.loc[person_id]
+
+        if not person['is_alive']:
+            return
 
         # If the person has previously been diagnosed do nothing do not occupy any resources
         if person['hv_diagnosed']:
@@ -1147,39 +1174,40 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     person['hv_diagnosed'] = True
 
                     # Consider if the person will be referred to start ART
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                       HSI_Hiv_StartTreatment(person_id=person_id, module=self.module),
-                        topen=self.sim.date,
-                        tclose=None,
-                        priority=0
-                    )
+                    if self.module.lm_art.predict(df.loc[[person_id]], self.module.rng):
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                           HSI_Hiv_StartTreatment(person_id=person_id, module=self.module),
+                            topen=self.sim.date,
+                            tclose=None,
+                            priority=0
+                        )
 
             else:
                 # The test_result is HIV negative
 
                 # Consider if the person's risk will be reduced by behaviour change counselling
-                person['hv_behaviour_change'] = True
+                if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
+                    person['hv_behaviour_change'] = True
 
                 # If person is a man, then consider referring to VMMC
                 if person['sex'] == 'M':
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        HSI_Hiv_Circ(person_id=person_id, module=self.module),
-                        topen=self.sim.date,
-                        tclose=None,
-                        priority=0
-                    )
+                    if self.module.lm_circ.predict(df.loc[[person_id]], self.module.rng):
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                            topen=self.sim.date,
+                            tclose=None,
+                            priority=0
+                        )
 
                 # If person is a woman and FSW, then consider referring to PrEP
                 if (person['sex'] == 'F') & (person['li_is_sexworker']):
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        HSI_Hiv_StartPrep(person_id=person_id, module=self.module),
-                        topen=self.sim.date,
-                        tclose=None,
-                        priority=0
-                    )
-
-
-
+                    if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            HSI_Hiv_StartPrep(person_id=person_id, module=self.module),
+                            topen=self.sim.date,
+                            tclose=None,
+                            priority=0
+                        )
 
 
 class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -1371,48 +1399,29 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["MinorSurg"] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = "Circumcision"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MinorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug(
-            "HSI_Circumcision_PresentsForCare: a first appointment for person %d",
-            person_id,
-        )
+        """Do the circumcision for this man"""
 
         df = self.sim.population.props  # shortcut to the dataframe
 
-        # log the consumbales being used:
-        # Get the consumables required
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "Male circumcision ",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
+        person = df.loc[person_id]
 
-        the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [],
-        }
-        is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint
-        )
+        # Do not run if the person is not alive or is already circumcised
+        if not (person["is_alive"] & ~person["li_is_circ"]):
+            return
 
-        if is_cons_available:
-            df.at[person_id, "mc_is_circumcised"] = True
-            df.at[person_id, "mc_date_circumcised"] = self.sim.date
 
-    def did_not_run(self):
-        pass
+        # Check/log use of consumables, and do circumcision if materials available
+        # NB. If materials not available, it is assummed that the procedure is not carried out for this person following
+        # this particular referral.
+        if self.get_all_consumables(pkg_codes=self.module.pkg_codes_for_consumables_required['circ']):
+            # Update circumcision state
+            df.at[person_id, "li_is_circ"] = True
 
 class HSI_Hiv_StartPrep(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
@@ -1435,10 +1444,11 @@ class HSI_Hiv_StartPrep(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug("HSI_Hiv_Prep: giving a test and PrEP for person %d", person_id)
+        """Start PrEP for this person"""
 
         df = self.sim.population.props
 
+        """
         # check if test available first
         # Get the consumables required
         consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
@@ -1529,9 +1539,7 @@ class HSI_Hiv_StartPrep(HSI_Event, IndividualScopeEventMixin):
 
         else:
             logger.debug("HSI_Hiv_Prep: testing is not available")
-
-    def did_not_run(self):
-        pass
+        """
 
 
 

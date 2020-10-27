@@ -208,6 +208,9 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
+        # Update the consumables availability
+        self.update_cons_availability()
+
     def on_birth(self, mother_id, child_id):
 
         # New child inherits the hs_dist_to_facility of the mother
@@ -977,6 +980,20 @@ class HealthSystem(Module):
 
         return list_of_events
 
+    def update_cons_availability(self):
+        """Helper function to update the consumable availability today"""
+
+        # random draws: assume that availability of the same item is independent between different facility levels
+        random_draws = self.rng.rand(
+            len(self.prob_unique_item_codes_available), len(self.prob_unique_item_codes_available.columns)
+        )
+
+        if not self.ignore_cons_constraints:
+            self.cons_item_code_availability_today = self.prob_unique_item_codes_available > random_draws
+        else:
+            # Make all true if ignoring consumables constraints
+            self.cons_item_code_availability_today = self.prob_unique_item_codes_available > 0.0
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
@@ -1009,18 +1026,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         )
 
         # 0) Determine the availability of consumables today based on their probabilities
-
-        # random draws: assume that availability of the same item is independent between different facility levels
-        random_draws = self.module.rng.rand(
-            len(self.module.prob_unique_item_codes_available), len(self.module.prob_unique_item_codes_available.columns)
-        )
-
-        # Determine the availability of the consumables today
-        if not self.module.ignore_cons_constraints:
-            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > random_draws
-        else:
-            # Make all true if ignoring consumables constraints
-            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > 0.0
+        self.module.update_cons_availability()
 
         logger.debug('----------------------------------------------------------------------')
         logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
