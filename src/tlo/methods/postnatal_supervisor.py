@@ -360,6 +360,7 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
+        pregnancy_deficiencies = self.sim.modules['PregnancySupervisor'].deficiencies_in_pregnancy
 
         # TODO: Move to pregnancy supervisor event (PregnancyAndPostnatalSupervisor) as that event already runs weekly
         # TODO: does it matter were apply risk of HTN resolution to women without HTN (opposite for anaemia)
@@ -420,7 +421,8 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_7_postnatal_women, 'ps_mild_pre_eclamp'] = False
         df.loc[week_7_postnatal_women, 'ps_severe_pre_eclamp'] = False
         df.loc[week_7_postnatal_women, 'ps_gestational_htn'] = False
-        df.loc[week_7_postnatal_women, 'ps_anaemia_in_pregnancy'] = False
+        df.loc[week_7_postnatal_women, 'ps_anaemia_in_pregnancy'] = 'none'
+        # todo: unset deficiencies
 
 
 class SecondaryPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin):
