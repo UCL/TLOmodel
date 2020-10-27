@@ -111,16 +111,18 @@ class DxManager:
         # Create the dict of test that were tried (True for worked, False for failed)
         the_dxtests_tried = dict()
 
+
         for dx_test in dx_tests_to_run:
             test_result = False
 
             # Loop through the list of DxTests that are registered under this name:
-            for test in self.dx_tests[dx_test]:
+            for i, test in enumerate(self.dx_tests[dx_test]):
                 test_result = test.apply(hsi_event, self.hs_module)
 
                 if test_result is not None:
                     # The DxTest was successful. Log the use of that DxTest
-                    the_dxtests_tried[test] = True
+                    # Logging using the the name of the DxTest and the number of the test that was tried within it
+                    the_dxtests_tried[f"{dx_test}_{i}"] = True
                     break
                 else:
                     # The DxTest was not successful. Log the use of that DxTest

@@ -19,7 +19,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager, dx_algorithm_child,
 )
-from tlo.methods.hiv import Hiv, HSI_Hiv_SpontaneousTest
+from tlo.methods.hiv import Hiv, HSI_Hiv_TestAndRefer
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -344,5 +344,8 @@ def test_hsi_spontaneoustest():
     df.at[person_id, "hv_number_tests"] = 0
 
     # Run the SpontaneousTest event
-    ste = HSI_Hiv_SpontaneousTest(module=sim.modules['Hiv'], person_id=person_id)
-    ste.apply(person_id=person_id, squeeze_factor=0.0)
+    t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+
+# todo - test that the event is run is aids symptoms occur

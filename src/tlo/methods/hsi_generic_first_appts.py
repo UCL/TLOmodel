@@ -10,6 +10,7 @@ from tlo.methods.bladder_cancer import (
 )
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import (
     HSI_Labour_PresentsForSkilledBirthAttendanceInLabour,
     HSI_Labour_ReceivesCareForPostpartumPeriod,
@@ -83,6 +84,17 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         # perhaps requests also need to occur here in case alternative treatments need to be scheduled
 
         # make sure query consumables has the generic hsi as the module requesting
+
+        # Do HIV 'automatic' testing for everyone attending care
+        if 'Hiv' in self.sim.modules:
+            self.sim.modules['Healthsystem'].schedule_hsi_event(
+                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+
+
 
         # diagnostic algorithm for child <5 yrs
         if age < 5:
@@ -363,6 +375,17 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             if 'Injuries_From_Self_Harm' in symptoms:
                 self.sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=self)
                 # TODO: Trigger surgical care for injuries.
+
+        # -----  HIV  -----
+        # Do HIV 'automatic' testing for everyone attending care
+        if 'Hiv' in self.sim.modules:
+            self.sim.modules['Healthsystem'].schedule_hsi_event(
+                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+
 
         # ------ MALARIA ------
         if "Malaria" in self.sim.modules:
