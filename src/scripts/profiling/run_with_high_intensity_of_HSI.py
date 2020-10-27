@@ -11,7 +11,6 @@ A run of the model that has a lot of HSI's being run:
 
 For use in profiling.
 """
-
 from pathlib import Path
 
 import pandas as pd
@@ -47,9 +46,9 @@ For use in profiling.
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(years=5)
+end_date = start_date + pd.DateOffset(years=2)
 
-popsize = int(20e3)
+popsize = 20_000
 
 # The resource files
 resourcefilepath = Path("./resources")
@@ -96,40 +95,42 @@ sim.register(
 # Adjust parameters so that there are lots of HSI events:
 
 # * Diarrhoea
-for param_name in sim.modules['Diarrhoea'].parameters.keys():
+diarrhoea = sim.modules["Diarrhoea"]
+depression = sim.modules["Depression"]
+os_cancer = sim.modules["OesophagealCancer"]
+
+for param in diarrhoea.parameters:
     # Increase incidence:
-    if param_name.startswith('base_inc_rate_diarrhoea_by_'):
-        sim.modules['Diarrhoea'].parameters[param_name] = \
-            [4.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]
+    if param.startswith('base_inc_rate_diarrhoea_by_'):
+        diarrhoea.parameters[param] = [4.0 * v for v in diarrhoea.parameters[param]]
 
     # Increase symptoms:
-    if param_name.startswith('proportion_AWD_by_'):
-        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-    if param_name.startswith('fever_by_'):
-        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-    if param_name.startswith('vomiting_by_'):
-        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-    if param_name.startswith('dehydration_by_'):
-        sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+    if param.startswith('proportion_AWD_by_'):
+        diarrhoea.parameters[param] = 1.0
+    if param.startswith('fever_by_'):
+        diarrhoea.parameters[param] = 1.0
+    if param.startswith('vomiting_by_'):
+        diarrhoea.parameters[param] = 1.0
+    if param.startswith('dehydration_by_'):
+        diarrhoea.parameters[param] = 1.0
 
-#   * Depression
-sim.modules['Depression'].parameters['prob_3m_selfharm_depr'] = 0.25
-sim.modules['Depression'].linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
+# * Depression
+depression.parameters['prob_3m_selfharm_depr'] = 0.25
+depression.linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
     LinearModelType.MULTIPLICATIVE,
-    sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
+    depression.parameters['prob_3m_selfharm_depr']
 )
 
 # * Oesophageal Cancer
-sim.modules['OesophagealCancer'].parameters['init_prop_oes_cancer_stage'] = [0.1] * 6
-sim.modules['OesophagealCancer'].parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
-sim.modules['OesophagealCancer'].parameters['r_stage1_high_grade_dysp'] *= 5
-sim.modules['OesophagealCancer'].parameters['r_stage2_stage1'] *= 5
-sim.modules['OesophagealCancer'].parameters['r_stage3_stage2'] *= 5
-sim.modules['OesophagealCancer'].parameters['r_stage4_stage3'] *= 5
+os_cancer.parameters['init_prop_oes_cancer_stage'] = [0.1] * 6
+os_cancer.parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
+os_cancer.parameters['r_stage1_high_grade_dysp'] *= 5
+os_cancer.parameters['r_stage2_stage1'] *= 5
+os_cancer.parameters['r_stage3_stage2'] *= 5
+os_cancer.parameters['r_stage4_stage3'] *= 5
 
 # * Malaria
 #  Set 'malaria_testing=1' in module when created
-
 
 # Run the simulation
 sim.make_initial_population(n=popsize)

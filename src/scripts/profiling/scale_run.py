@@ -3,12 +3,12 @@ A run of the model at scale using all disease modules currently included in Mast
 
 For use in profiling.
 """
-
 from pathlib import Path
 
 import pandas as pd
 
-from tlo import Date, Simulation, logging
+from tlo import Date, DateOffset, Simulation, logging
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     contraception,
     demography,
@@ -31,9 +31,9 @@ from tlo.methods import (
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(years=30)
+end_date = start_date + pd.DateOffset(years=2)
 
-popsize = int(5e5)
+popsize = 500_000
 
 # The resource files
 resourcefilepath = Path("./resources")
@@ -70,6 +70,23 @@ sim.register(
     epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
 )
 
+
 # Run the simulation
 sim.make_initial_population(n=popsize)
+
+logger = logging.getLogger('tlo.profiling')
+logger.setLevel(logging.INFO)
+
+
+class LogProgress(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self):
+        super().__init__(sim.modules["Demography"], frequency=DateOffset(months=3))
+
+    def apply(self, population):
+        df = population.props
+        logger.info(key="stats", data={"alive": df.is_alive.sum(), "total": len(df)})
+
+
+sim.schedule_event(LogProgress(), start_date)
+
 sim.simulate(end_date=end_date)
