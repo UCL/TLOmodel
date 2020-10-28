@@ -239,6 +239,9 @@ class Hiv(Module):
             Types.REAL, "proportion of hiv-positive cases on ART also on IPT"
         ),
         "tb_high_risk_distr": Parameter(Types.REAL, "high-risk districts giving IPT"),
+        "probability_of_being_retained_on_prep_every_3_months": Parameter(
+            Types.REAL, "probability that someone who has initiated on prep will attend an appointment and be on prep "
+                        "for the next 3 months, until the next appointment.")
     }
 
     def read_parameters(self, data_folder):
@@ -683,6 +686,14 @@ class Hiv(Module):
             ]
         )[0]
 
+        # PrEP:
+        self.item_code_for_prep = pd.unique(
+            consumables.loc[
+                consumables["Items"]
+                == "Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg",
+                "Item_Code",
+            ]
+        )[0]
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -1111,6 +1122,42 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Cause the death - to happen immediately
         demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
 
+class Hiv_DecisionToContinueOnPrEP(Event, IndividualScopeEventMixin):
+    """Helper event that is used to 'decide' if someone on PrEP should continue on PrEP.
+    This event is scheduled by 'HSI_Hiv_StartOrContinueOnPrep' 3 months after it is run.
+    """
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        if not person["is_alive"]:
+            return
+
+        # Check that there are on PrEP currently:
+        if not person["hv_is_on_prep"]:
+            logger.info('This event should not be running')
+
+        # Determine if this appointment is actually attended by the person who has already started on PrEP
+        if (self.module.rng.rand() < self.module.parameters['probability_of_being_retained_on_prep_every_3_months']):
+            # Continue on PrEP - and schedule an HSI for a refill appointment today
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+            )
+
+        else:
+            # Defaults to being off PrEP - reset flag and take no further action
+            df.at[person_id, "hv_is_on_prep"] = False
+
+
+
+
+
 
 # ---------------------------------------------------------------------------
 #   Health System Interactions (HSI)
@@ -1158,7 +1205,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             dx_tests_to_run='hiv_rapid_test',
             hsi_event=self
         )
-
         # Update number of tests:
         person['hv_number_tests'] += 1
 
@@ -1190,8 +1236,8 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
                     df.at[person_id, 'hv_behaviour_change'] = True
 
-                # If person is a man, then consider referring to VMMC
-                if person['sex'] == 'M':
+                # If person is a man, and not circumcised, then consider referring to VMMC
+                if (person['sex'] == 'M') & (~person['li_is_circ']):
                     if self.module.lm_circ.predict(df.loc[[person_id]], self.module.rng):
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
                             HSI_Hiv_Circ(person_id=person_id, module=self.module),
@@ -1200,11 +1246,11 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                             priority=0
                         )
 
-                # If person is a woman and FSW, then consider referring to PrEP
-                if (person['sex'] == 'F') & (person['li_is_sexworker']):
+                # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
+                if (person['sex'] == 'F') & (person['li_is_sexworker']) & (~person['hv_is_on_prep']):
                     if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_StartPrep(person_id=person_id, module=self.module),
+                            HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
                             topen=self.sim.date,
                             tclose=None,
                             priority=0
@@ -1388,7 +1434,6 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             )
         """
 
-
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1410,119 +1455,69 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
             return
 
         # Check/log use of consumables, and do circumcision if materials available
-        # NB. If materials not available, it is assummed that the procedure is not carried out for this person following
+        # NB. If materials not available, it is assumed that the procedure is not carried out for this person following
         # this particular referral.
         if self.get_all_consumables(pkg_codes=self.module.pkg_codes_for_consumables_required['circ']):
             # Update circumcision state
             df.at[person_id, "li_is_circ"] = True
 
-class HSI_Hiv_StartPrep(HSI_Event, IndividualScopeEventMixin):
+class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        self.TREATMENT_ID = "Hiv_StartPrep"
+        self.TREATMENT_ID = "Hiv_StartOrContinueOnPrep"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        """Start PrEP for this person"""
+        """Start PrEP for this person; or continue them on PrEP if they should remain on PrEP"""
 
         df = self.sim.population.props
+        person = df.loc[person_id]
 
-        """
-        # check if test available first
-        # Get the consumables required
-        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+        # Do not run if the person is not alive or is not currently a sex worker
+        if not (person["is_alive"] & person["li_is_sexworker"]):
+            return
 
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables["Intervention_Pkg"] == "HIV Testing Services",
-                "Intervention_Pkg_Code",
-            ]
-        )[0]
+        # Run an HIV test
+        test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run='hiv_rapid_test',
+            hsi_event=self
+        )
+        person['hv_number_tests'] += 1
 
-        item_code1 = pd.unique(
-            consumables.loc[
-                consumables["Items"]
-                == "Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg",
-                "Item_Code",
-            ]
-        )[0]
+        # If test is positive, flag as diagnosed and refer to ART
+        if test_result is True:
+            # label as diagnosed
+            df.at[person_id, 'hv_diagnosed'] = True
+            # Consider if the person will be referred to start ART
+            if self.module.lm_art.predict(df.loc[[person_id]], self.module.rng):
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Hiv_StartTreatment(person_id=person_id, module=self.module),
+                    topen=self.sim.date,
+                    tclose=None,
+                    priority=0
+                )
+            return self.make_appt_footprint({"Over5OPD": 1, "VCTPositive": 1})
 
-        the_cons_footprint = {
-            "Intervention_Package_Code": [{pkg_code1: 1}],
-            "Item_Code": [{item_code1: 1}],
-        }
+        # Check that PrEP is available and if it is, initiate PrEP:
+        if self.get_all_consumables(item_codes=self.module.item_code_for_prep):
+            df.at[person_id, "hv_is_on_prep"] = True
 
-        # query if consumables are available before logging their use (will depend on test results)
-        is_cons_available = self.sim.modules["HealthSystem"].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+        # Schedule 'decision about whether to continue on PrEP' for 3 months time
+        self.sim.schedule_event(
+            Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
+            self.sim.date + pd.DateOffset(months=3)
         )
 
-        # if testing is available:
-        if is_cons_available["Intervention_Package_Code"][pkg_code1]:
-            logger.debug("HSI_Hiv_Prep: testing is available")
-
-            df.at[person_id, "hv_date_tested"] = self.sim.date
-            df.at[person_id, "hv_number_tests"] = (
-                df.at[person_id, "hv_number_tests"] + 1
-            )
-
-            # if hiv+ schedule treatment
-            if df.at[person_id, "hv_inf"]:
-                df.at[person_id, "hv_diagnosed"] = True
-
-                # request treatment
-                logger.debug(
-                    "HSI_Hiv_Prep: scheduling hiv treatment for person %d on date %s",
-                    person_id,
-                    self.sim.date,
-                )
-
-                treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
-
-                # Request the health system to start treatment
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treatment, priority=1, topen=self.sim.date, tclose=None
-                )
-
-                # in this case, only the hiv test is used, so reset the cons_footprint
-                the_cons_footprint = {
-                    "Intervention_Package_Code": [{pkg_code1: 1}],
-                    "Item_Code": [],
-                }
-
-                cons_logged = self.sim.modules["HealthSystem"].request_consumables(
-                    hsi_event=self,
-                    cons_req_as_footprint=the_cons_footprint,
-                    to_log=True,
-                )
-
-                if cons_logged:
-                    logger.debug(
-                        f"HSI_Hiv_Prep: {person_id} is HIV+, requesting treatment"
-                    )
-
-            # if HIV-, check PREP available, give PREP and assume good adherence
-            else:
-                if is_cons_available["Item_Code"][item_code1]:
-                    logger.debug("HSI_Hiv_Prep: Prep is available")
-                    df.at[person_id, "hv_on_art"] = 2
-
-                    cons_logged = self.sim.modules["HealthSystem"].request_consumables(
-                        hsi_event=self,
-                        cons_req_as_footprint=the_cons_footprint,
-                        to_log=True,
-                    )
-
-                    if cons_logged:
-                        logger.debug(f"HSI_Hiv_Prep: {person_id} is HIV-, giving PrEP")
-
-        else:
-            logger.debug("HSI_Hiv_Prep: testing is not available")
-        """
+    def did_not_run(self, *args, **kwargs):
+        # If this HSI cannot run, then the person will not be on PrEP and no further appointments are made:
+        df = self.sim.population.props
+        person_id = self.target
+        df.at[person_id, "hv_is_on_prep"] = False
+        return False  # to prevent this event from being rescheduled
 
 
 

@@ -404,13 +404,14 @@ def test_hsi_testandrefer_and_prep():
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
     df = sim.population.props
 
-    # Get target person and make them HIV-negative man and not ever having had a test and not already circumcised
+    # Get target person and make them HIV-negative women FSW and not on prep currently
     person_id = 0
-    df.at[person_id, "sex"] = "M"
-    df.at[person_id, "li_is_circ"] = False
+    df.at[person_id, "sex"] = "F"
     df.at[person_id, "hv_inf"] = False
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
+    df.at[person_id, "li_is_sexworker"] = True
+    df.at[person_id, "hv_is_on_prep"] = False
 
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
@@ -418,14 +419,16 @@ def test_hsi_testandrefer_and_prep():
 
     # Check that there is an VMMC event scheduled
     date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_Circ)
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep)
     ][0]
 
     # Run the event:
     event.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # Check that the person is now circumcised
-    assert df.at[person_id, "li_is_circ"]
+    # Check that the person is now on PrEP
+    assert df.at[person_id, "hv_is_on_prep"]
+
+# test that prep carries on and then stops
 
 def test_hsi_testandrefer_and_art():
     """Test that the spontaneous test HSI works as intended"""
@@ -463,6 +466,7 @@ def test_hsi_testandrefer_and_art():
 
     # check that the person is diagnoed
 
+# test that art carries on and then stops
 
 
 # todo - test that the test and refer event is run is aids symptoms occur
