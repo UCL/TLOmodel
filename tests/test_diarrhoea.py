@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.events import IndividualScopeEventMixin
@@ -219,6 +220,7 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
 
 
+@pytest.mark.group2
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no_treatment():
     # Check that there are incident cases, treatments and deaths occurring correctly
     start_date = Date(2010, 1, 1)
@@ -289,6 +291,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     assert (dead_due_to_diarrhoea == gi_death_date_in_past).all()
 
 
+@pytest.mark.group2
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment():
     # Run with everyone getting symptoms and seeking care and perfect treatment efficacy:
     # Check that everyone is cured and no deaths;
