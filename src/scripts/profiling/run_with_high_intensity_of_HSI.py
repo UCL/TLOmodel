@@ -14,6 +14,7 @@ For use in profiling.
 from pathlib import Path
 
 import pandas as pd
+import shared
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
@@ -134,6 +135,7 @@ os_cancer.parameters['r_stage4_stage3'] *= 5
 
 # Run the simulation
 sim.make_initial_population(n=popsize)
+shared.schedule_profile_log(sim)
 sim.simulate(end_date=end_date)
 
 # Parse the log-file

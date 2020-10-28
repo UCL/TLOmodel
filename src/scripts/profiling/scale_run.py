@@ -6,9 +6,9 @@ For use in profiling.
 from pathlib import Path
 
 import pandas as pd
+import shared
 
-from tlo import Date, DateOffset, Simulation, logging
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo import Date, Simulation, logging
 from tlo.methods import (
     contraception,
     demography,
@@ -33,10 +33,10 @@ from tlo.methods import (
 start_date = Date(2010, 1, 1)
 end_date = start_date + pd.DateOffset(years=2)
 
-popsize = 500_000
+pop_size = 500_000
 
 # The resource files
-resourcefilepath = Path("./resources")
+rfp = Path("./resources")
 
 log_config = {
     "filename": "for_profiling",
@@ -49,44 +49,29 @@ sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
 # Register the appropriate modules
 sim.register(
     # Standard modules:
-    demography.Demography(resourcefilepath=resourcefilepath),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-    contraception.Contraception(resourcefilepath=resourcefilepath),
-    labour.Labour(resourcefilepath=resourcefilepath),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
-    dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=resourcefilepath),
+    demography.Demography(resourcefilepath=rfp),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
+    healthsystem.HealthSystem(resourcefilepath=rfp),
+    symptommanager.SymptomManager(resourcefilepath=rfp),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=rfp),
+    healthburden.HealthBurden(resourcefilepath=rfp),
+    contraception.Contraception(resourcefilepath=rfp),
+    labour.Labour(resourcefilepath=rfp),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
+    dx_algorithm_child.DxAlgorithmChild(resourcefilepath=rfp),
+    dx_algorithm_adult.DxAlgorithmAdult(resourcefilepath=rfp),
     #
     # Disease modules considered complete:
-    diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-    malaria.Malaria(resourcefilepath=resourcefilepath),
-    epi.Epi(resourcefilepath=resourcefilepath),
-    depression.Depression(resourcefilepath=resourcefilepath),
-    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    epilepsy.Epilepsy(resourcefilepath=resourcefilepath)
+    diarrhoea.Diarrhoea(resourcefilepath=rfp),
+    malaria.Malaria(resourcefilepath=rfp),
+    epi.Epi(resourcefilepath=rfp),
+    depression.Depression(resourcefilepath=rfp),
+    oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
+    epilepsy.Epilepsy(resourcefilepath=rfp)
 )
 
 
 # Run the simulation
-sim.make_initial_population(n=popsize)
-
-logger = logging.getLogger('tlo.profiling')
-logger.setLevel(logging.INFO)
-
-
-class LogProgress(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self):
-        super().__init__(sim.modules["Demography"], frequency=DateOffset(months=3))
-
-    def apply(self, population):
-        df = population.props
-        logger.info(key="stats", data={"alive": df.is_alive.sum(), "total": len(df)})
-
-
-sim.schedule_event(LogProgress(), start_date)
-
+sim.make_initial_population(n=pop_size)
+shared.schedule_profile_log(sim)
 sim.simulate(end_date=end_date)

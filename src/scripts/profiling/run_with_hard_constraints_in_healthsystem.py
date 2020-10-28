@@ -8,6 +8,7 @@ For use in profiling.
 from pathlib import Path
 
 import pandas as pd
+import shared
 
 from tlo import Date, Simulation, logging
 from tlo.methods import (
@@ -76,4 +77,5 @@ sim.register(
 
 # Run the simulation
 sim.make_initial_population(n=popsize)
+shared.schedule_profile_log(sim)
 sim.simulate(end_date=end_date)
