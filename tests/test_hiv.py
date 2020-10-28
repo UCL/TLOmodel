@@ -417,19 +417,55 @@ def test_hsi_testandrefer_and_prep():
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # Check that there is an VMMC event scheduled
-    date_event, event = [
+    # Check that there is an PrEP event scheduled
+    date_hsi_event, hsi_event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep)
     ][0]
 
     # Run the event:
-    event.apply(person_id=person_id, squeeze_factor=0.0)
+    hsi_event.apply(person_id=person_id, squeeze_factor=0.0)
 
     # Check that the person is now on PrEP
     assert df.at[person_id, "hv_is_on_prep"]
 
-# test that prep carries on and then stops
+    # Check that there is a 'decision' event scheduled
+    date_decision_event, decision_event = [
+        ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP)
+    ][0]
 
+    assert date_decision_event == date_hsi_event + pd.DateOffset(months=3)
+
+    # Advance simulation date to when the decision_event would run
+    sim.date = date_decision_event
+
+    # Run the decision event when probability of continuation is 1.0, and check for a further HSI
+    sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 1.0
+    decision_event.apply(person_id)
+    assert df.at[person_id, "hv_is_on_prep"]
+    date_next_hsi_event, next_hsi_event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
+    ][0]
+
+    # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
+    sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.0
+    decision_event.apply(person_id)
+    assert not df.at[person_id, "hv_is_on_prep"]
+    assert [] == [
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
+    ]
+    assert [] == [
+        ev[0] for ev in sim.find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
+    ]
+
+
+
+    # todo- check no more decision events:
+
+
+
+#ART to follow same pattern of PrEP
 def test_hsi_testandrefer_and_art():
     """Test that the spontaneous test HSI works as intended"""
     sim = get_sim()
