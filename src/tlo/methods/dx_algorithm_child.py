@@ -8,10 +8,16 @@ There should be a method here to respond to every symptom that a child could pre
 
 import pandas as pd
 from tlo import Module, Parameter, Property, Types, logging, DateOffset
+from tlo.methods import Metadata
 from tlo.events import IndividualScopeEventMixin, RegularEvent, PopulationScopeEventMixin
-from tlo.methods.diarrhoea import HSI_Diarrhoea_Treatment_PlanA, HSI_Diarrhoea_Treatment_PlanB, \
-    HSI_Diarrhoea_Treatment_PlanC, \
-    HSI_Diarrhoea_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea, HSI_Diarrhoea_Dysentery
+from tlo.methods.diarrhoea import (
+    HSI_Diarrhoea_Dysentery,
+    HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea,
+    HSI_Diarrhoea_Severe_Persistent_Diarrhoea,
+    HSI_Diarrhoea_Treatment_PlanA,
+    HSI_Diarrhoea_Treatment_PlanB,
+    HSI_Diarrhoea_Treatment_PlanC,
+)
 from tlo.methods.dxmanager import DxTest
 from tlo.methods import pneumonia
 from tlo.methods.healthsystem import HSI_Event
@@ -25,6 +31,9 @@ class DxAlgorithmChild(Module):
     The module contains parameters and functions to 'diagnose(...)' children.
     These functions are called by an HSI (usually a Generic HSI)
     """
+
+    # Declare Metadata
+    METADATA = {Metadata.USES_HEALTHSYSTEM}
 
     PARAMETERS = {
         'sensitivity_of_assessment_of_pneumonia_level_0': Parameter
