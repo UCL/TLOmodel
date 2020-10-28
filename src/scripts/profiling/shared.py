@@ -1,4 +1,5 @@
 import hashlib
+import random
 
 import pandas as pd
 
@@ -35,3 +36,10 @@ def dataframe_hash(sim: Simulation) -> str:
 def print_checksum(sim: Simulation) -> None:
     """Output checksum of dataframe to screen"""
     logger.info(key="msg", data=f"Population checksum: {dataframe_hash(sim)}")
+
+
+def save_population(sim: Simulation) -> None:
+    df: pd.DataFrame = sim.population.props
+    filename = 'profiling_population_%010x.csv' % random.randrange(16**10)
+    df.to_csv(filename)
+    logger.info(key="msg", data=f"Population CSV: {filename}")
