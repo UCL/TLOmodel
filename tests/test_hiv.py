@@ -366,5 +366,103 @@ def test_hsi_testandrefer_and_circ():
     # Check that the person is now circumcised
     assert df.at[person_id, "li_is_circ"]
 
+def test_hsi_testandrefer_and_behavchg():
+    """Test that the spontaneous test HSI works as intended"""
+    sim = get_sim()
+
+    # Make the chance of having behaviour change 100%
+    sim.modules['Hiv'].lm_behavchg = LinearModel.multiplicative()
+
+    # Simulate for 0 days so as to complete all the initialisation steps
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df = sim.population.props
+
+    # Get target person and make them HIV-negative woman who had not previously had behaviour change
+    person_id = 0
+    df.at[person_id, "sex"] = "F"
+    df.at[person_id, "hv_inf"] = False
+    df.at[person_id, "hv_diagnosed"] = False
+    df.at[person_id, "hv_number_tests"] = 0
+    df.at[person_id, "hv_behaviour_change"] = False
+
+    # Run the TestAndRefer event
+    t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that the person has now had behaviour change
+    assert df.at[person_id, "hv_behaviour_change"]
+
+
+def test_hsi_testandrefer_and_prep():
+    """Test that the spontaneous test HSI works as intended"""
+    sim = get_sim()
+
+    # Make the chance of being referred 100%
+    sim.modules['Hiv'].lm_circ = LinearModel.multiplicative()
+
+    # Simulate for 0 days so as to complete all the initialisation steps
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df = sim.population.props
+
+    # Get target person and make them HIV-negative man and not ever having had a test and not already circumcised
+    person_id = 0
+    df.at[person_id, "sex"] = "M"
+    df.at[person_id, "li_is_circ"] = False
+    df.at[person_id, "hv_inf"] = False
+    df.at[person_id, "hv_diagnosed"] = False
+    df.at[person_id, "hv_number_tests"] = 0
+
+    # Run the TestAndRefer event
+    t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that there is an VMMC event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_Circ)
+    ][0]
+
+    # Run the event:
+    event.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that the person is now circumcised
+    assert df.at[person_id, "li_is_circ"]
+
+def test_hsi_testandrefer_and_art():
+    """Test that the spontaneous test HSI works as intended"""
+    sim = get_sim()
+
+    # Make the chance of being referred 100%
+    sim.modules['Hiv'].lm_circ = LinearModel.multiplicative()
+
+    # Simulate for 0 days so as to complete all the initialisation steps
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df = sim.population.props
+
+    # Get target person and make them HIV-negative man and not ever having had a test and not already circumcised
+    person_id = 0
+    df.at[person_id, "sex"] = "M"
+    df.at[person_id, "li_is_circ"] = False
+    df.at[person_id, "hv_inf"] = False
+    df.at[person_id, "hv_diagnosed"] = False
+    df.at[person_id, "hv_number_tests"] = 0
+
+    # Run the TestAndRefer event
+    t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that there is an VMMC event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_Circ)
+    ][0]
+
+    # Run the event:
+    event.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check that the person is now circumcised
+    assert df.at[person_id, "li_is_circ"]
+
+    # check that the person is diagnoed
+
+
 
 # todo - test that the test and refer event is run is aids symptoms occur

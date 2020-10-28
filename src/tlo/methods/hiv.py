@@ -1171,7 +1171,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 # Update diagnosis if the person is indeed HIV positive
                 if person['hv_inf']:
-                    person['hv_diagnosed'] = True
+                    df.at[person_id, 'hv_diagnosed'] = True
 
                     # Consider if the person will be referred to start ART
                     if self.module.lm_art.predict(df.loc[[person_id]], self.module.rng):
@@ -1188,7 +1188,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                 # Consider if the person's risk will be reduced by behaviour change counselling
                 if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
-                    person['hv_behaviour_change'] = True
+                    df.at[person_id, 'hv_behaviour_change'] = True
 
                 # If person is a man, then consider referring to VMMC
                 if person['sex'] == 'M':
