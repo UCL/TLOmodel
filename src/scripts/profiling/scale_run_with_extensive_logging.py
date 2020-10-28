@@ -77,6 +77,7 @@ sim.register(
 sim.make_initial_population(n=popsize)
 shared.schedule_profile_log(sim)
 sim.simulate(end_date=end_date)
+shared.print_checksum(sim)
 
 # Parse the log-file
 log_df = parse_log_file(sim.log_filepath)
