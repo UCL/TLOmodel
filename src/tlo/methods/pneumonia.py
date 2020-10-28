@@ -433,6 +433,14 @@ class ALRI(Module):
             Parameter(Types.REAL,
                       'probability of additional signs/symptoms of chest pain / pleurisy from meningitis'
                       ),
+        'prob_severe_respiratory_distress_adding_from_respiratory_failure':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of severe respiratory distress from respiratory failure'
+                      ),
+        'prob_severe_respiratory_distress_adding_from_sepsis':
+            Parameter(Types.REAL,
+                      'probability of additional signs/symptoms of severe respiratory distress from sepsis'
+                      ),
         'days_between_treatment_and_cure':
             Parameter(Types.INT, 'number of days between any treatment being given in an HSI and the cure occurring.'
                       ),
@@ -488,7 +496,7 @@ class ALRI(Module):
             Property(Types.LIST,
                      'symptoms of current ALRI event',
                      categories=['fever', 'cough', 'difficult_breathing',
-                                 'fast_breathing', 'chest_indrawing', 'grunting',
+                                 'fast_breathing', 'chest_indrawing', 'grunting', 'chest_pain', 'loss_of_appetite',
                                  'cyanosis', 'severe_respiratory_distress', 'hypoxia',
                                  'danger_signs']
                      ),
@@ -570,8 +578,7 @@ class ALRI(Module):
         }
 
         # # Store the symptoms that this module will use:
-        # self.symptoms = {'fever', 'cough', 'difficult_breathing', 'fast_breathing', 'chest_indrawing', 'grunting',
-        #                  'cyanosis', 'severe_respiratory_distress', 'hypoxia', 'danger_signs', 'stridor'}
+        # self.symptoms = {'grunting', 'cyanosis', 'hypoxia', 'danger_signs', 'stridor'}
 
         # Store the symptoms that this module will use:
         self.symptoms = {
@@ -581,7 +588,8 @@ class ALRI(Module):
             'fast_breathing',
             'chest_indrawing',
             'danger_signs',
-            'chest_pain'
+            'chest_pain',
+            'loss_of_appetite',
         }
 
     def read_parameters(self, data_folder):
@@ -930,9 +938,9 @@ class ALRI(Module):
                 return {
                     'loss_of_appetite': p[f'prob_loss_of_appetite_adding_from_{complicat}']
                 }
-            if complicat in ['lung_abscess', 'empyema']:
+            if complicat in ['respiratory_failure', 'sepsis']:
                 return {
-                    'loss_of_appetite': p[f'prob_loss_of_appetite_adding_from_{complicat}'],
+                    'severe_respiratory_distress': p[f'prob_severe_respiratory_distress_adding_from_{complicat}'],
                 }
 
         for complication in ALRI.complications:

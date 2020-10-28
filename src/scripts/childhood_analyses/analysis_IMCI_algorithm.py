@@ -151,16 +151,16 @@ plt.show()
 # save into an cvs file
 hw_classification_df.to_csv(r'./outputs/pneum_classification.csv', index=False)
 
-# ----- Plotting -----
-# Pneumonia IMCI classification as gold standard -------
-names = list(imci_gold_classification_df.columns)
-print(names)
-ax2 = imci_gold_classification_df.plot.bar(rot=0)
-# plt.figure(figsize=(9, 3))
-plt.show()
-
-# save into an cvs file
-imci_gold_classification_df.to_csv(r'./outputs/pneum_classification.csv', index=False)
+# # ----- Plotting -----
+# # Pneumonia IMCI classification as gold standard -------
+# names = list(imci_gold_classification_df.columns)
+# print(names)
+# ax2 = imci_gold_classification_df.plot.bar(rot=0)
+# # plt.figure(figsize=(9, 3))
+# plt.show()
+#
+# # save into an cvs file
+# imci_gold_classification_df.to_csv(r'./outputs/pneum_classification.csv', index=False)
 
 # def get_pneumonia_management_information(logfile):
 #     output = parse_log_file(logfile)

@@ -104,6 +104,9 @@ class DxAlgorithmChild(Module):
         self.pneumonia_treatment_by_facility_level = dict()
         self.child_disease_management_information = dict()
 
+        self.severe_respiratory_symptoms = {'grunting', 'cyanosis', 'severe_respiratory_distress',
+                                            'loss_of_appetite', 'hypoxia', 'chest_pain', 'danger_signs'}
+
     def read_parameters(self, data_folder):
         p = self.parameters
 
@@ -195,6 +198,17 @@ class DxAlgorithmChild(Module):
             ),
         )
 
+        # Test for the visual inspection of 'Danger signs' for a child who is dehydrated
+        if 'Diarrhoea' in self.sim.modules:
+            self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+                danger_signs_visual_inspection=DxTest(
+                    property='gi_last_diarrhoea_dehydration',
+                    target_categories=['severe'],
+                    sensitivity=0.90,
+                    specificity=0.80
+                )
+            )
+
         # self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
         #     # sensitivities of the severity classification for IMCI-defined pneumonia at different facility levels
         #     # test the classification of pneumonia performance at the community level
@@ -226,57 +240,56 @@ class DxAlgorithmChild(Module):
         # -------------------------------------------------------------------------------------------------
         if (df.at[person_id, 'age_exact_years'] >= 1 / 6) & (df.at[person_id, 'age_exact_years'] < 5):
 
-            # FACILITY LEVEL 0 --------------------------------------------------------------------------------
-            # check those that have the iCCM classification of non-severe_pneumonia
-            # these can be treated in the community
-            # if ('fast_breathing' in list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & \
-            #     (('chest_indrawing' or 'grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'hypoxia' or
-            #       'danger_signs') not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
-            #     df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'non-severe_pneumonia'
-            if ('fast_breathing' in list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & \
-                (('chest_indrawing', 'grunting', 'cyanosis', 'severe_respiratory_distress', 'hypoxia',
-                  'danger_signs') not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
-                df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'non-severe_pneumonia'
-            if (('cough' or 'difficult_breathing') in list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & (
-                ('fast_breathing' or 'chest_indrawing' or 'grunting' or 'cyanosis' or 'severe_respiratory_distress' or
-                    'hypoxia' or 'loss_of_appetite' or 'chest_pain' or
-                 'danger_signs') not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
-                df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'common_cold'
-            if (('cough' or 'difficult_breathing' or 'fast_breathing' or 'chest_indrawing') in
-                list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & (
-                ('grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'loss_of_appetite' or 'hypoxia' or
-                 'chest_pain' or 'danger_signs') in
-                list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
-                df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'severe_pneumonia'
+            def imci_gold_classification_level_1(person_symptoms_list):
+                severe_respiratory_symptoms_list = ['grunting', 'cyanosis', 'severe_respiratory_distress',
+                                                    'loss_of_appetite', 'hypoxia', 'chest_pain', 'danger_signs']
+                pneumonia_symptoms_list = ['chest_indrawing', 'fast_breathing']
 
-            # -------------------------------------------------------------------------------------------------
-            # FACILITY LEVEL 1 AND FACILITY LEVEL 2 (OUTPATIENT) ----------------------------------------------
-            # check if the illness matches the IMCI classification of pneumonia
-            if (('fast_breathing' or 'chest_indrawing') in list(
-                df.at[person_id, 'ri_current_ALRI_symptoms'])) & \
-                (('grunting', 'cyanosis', 'severe_respiratory_distress', 'hypoxia',
-                  'danger_signs') not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
-                df.at[person_id, 'ri_IMCI_classification_as_gold'] = 'non-severe_pneumonia'
+                if 'cough' or 'difficult_breathing' in person_symptoms_list:
+                    if any(item in severe_respiratory_symptoms_list for item in person_symptoms_list):
+                        return 'severe_pneumonia'
+                    if any(item in pneumonia_symptoms_list for item in person_symptoms_list):
+                        return 'non-severe_pneumonia'
+                    for item in person_symptoms_list:
+                        if item not in (pneumonia_symptoms_list and severe_respiratory_symptoms_list):
+                            return 'common_cold'
 
-            if (('cough' or 'difficult_breathing' or 'fast_breathing' or 'chest_indrawing') in
-                list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & (
-                ('grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'loss_of_appetite' or 'hypoxia' or
-                 'chest_pain' or 'danger_signs') in
-                list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
+            imci_classification = imci_gold_classification_level_1(
+                person_symptoms_list=list(df.at[person_id, 'ri_current_ALRI_symptoms']))
+            if imci_classification == 'severe_pneumonia':
                 df.at[person_id, 'ri_IMCI_classification_as_gold'] = 'severe_pneumonia'
-
-            if (('cough' or 'difficult_breathing') in
-                list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & (
-                ('fast_breathing' or 'chest_indrawing' or 'grunting' or 'cyanosis' or 'severe_respiratory_distress' or
-                 'hypoxia' or 'loss_of_appetite' or 'chest_pain' or 'danger_signs')
-                not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
+            if imci_classification == 'non-severe_pneumonia':
+                df.at[person_id, 'ri_IMCI_classification_as_gold'] = 'non-severe_pneumonia'
+            if imci_classification == 'common_cold':
                 df.at[person_id, 'ri_IMCI_classification_as_gold'] = 'common_cold'
 
-        return df.at[person_id, 'ri_IMCI_classification_as_gold'], \
-               df.at[person_id, 'ri_iCCM_classification_as_gold']
+            # # FACILITY LEVEL 0 --------------------------------------------------------------------------------
+            # # check those that have the iCCM classification of non-severe_pneumonia
+            # # these can be treated in the community
+            # # if ('fast_breathing' in list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & \
+            # #     (('chest_indrawing' or 'grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'hypoxia' or
+            # #       'danger_signs') not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
+            # #     df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'non-severe_pneumonia'
+            # if ('fast_breathing' in list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & \
+            #     (('chest_indrawing', 'grunting', 'cyanosis', 'severe_respiratory_distress', 'hypoxia',
+            #       'danger_signs') not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
+            #     df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'non-severe_pneumonia'
+            # if (('cough' or 'difficult_breathing') in list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & (
+            #     ('fast_breathing' or 'chest_indrawing' or 'grunting' or 'cyanosis' or 'severe_respiratory_distress' or
+            #         'hypoxia' or 'loss_of_appetite' or 'chest_pain' or
+            #      'danger_signs') not in list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
+            #     df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'common_cold'
+            # if (('cough' or 'difficult_breathing' or 'fast_breathing' or 'chest_indrawing') in
+            #     list(df.at[person_id, 'ri_current_ALRI_symptoms'])) & (
+            #     ('grunting' or 'cyanosis' or 'severe_respiratory_distress' or 'loss_of_appetite' or 'hypoxia' or
+            #      'chest_pain' or 'danger_signs') in
+            #     list(df.at[person_id, 'ri_current_ALRI_symptoms'])):
+            #     df.at[person_id, 'ri_iCCM_classification_as_gold'] = 'severe_pneumonia'
 
-            # -------------------------------------------------------------------------------------------------
-            # FACILITY LEVEL 2 --------------------------------------------------------------------------------
+        # -------------------------------------------------------------------------------------------------
+        # FACILITY LEVEL 1 AND FACILITY LEVEL 2 (OUTPATIENT) ----------------------------------------------
+        # -------------------------------------------------------------------------------------------------
+        # FACILITY LEVEL 2 --------------------------------------------------------------------------------
 
     def do_when_facility_level_0(self, person_id, hsi_event):
         # Create some short-cuts:
@@ -400,7 +413,7 @@ class DxAlgorithmChild(Module):
         if not(df.at[person_id, 'age_exact_years'] >= 1 / 6) & (df.at[person_id, 'age_exact_years'] < 5):
             return
 
-        self.imnci_as_gold_standard(person_id=person_id)
+        # self.imnci_as_gold_standard(person_id=person_id)
         pneum_management_level1 = dict()
 
         # ---------------------- FOR COUGH OR DIFFICULT BREATHING -------------------------------------
@@ -585,28 +598,28 @@ class DxAlgorithmChild(Module):
     def do_when_diarrhoea(self, person_id, hsi_event):
         """
         This routine is called when Diarrhoea is reported.
-
         It diagnoses the condition of the child and schedules HSI Events appropriate to the condition.
-
         See this report https://apps.who.int/iris/bitstream/handle/10665/104772/9789241506823_Chartbook_eng.pdf
         (page 3).
         NB:
             * Provisions for cholera are not included
             * The danger signs are classified collectively and are based on the result of a DxTest representing the
-                ability of the clinician to correctly determine the true value of the property 'gi_current_severe_dehydration'
+              ability of the clinician to correctly determine the true value of the
+              property 'gi_current_severe_dehydration'
         """
         # Create some short-cuts:
         schedule_hsi = self.sim.modules['HealthSystem'].schedule_hsi_event
         df = self.sim.population.props
-        run_dx_test = lambda test: self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run=test,
-            hsi_event=hsi_event
-        )
+
+        def run_dx_test(test):
+            return self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run=test, hsi_event=hsi_event)
+
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
 
         # Gather information that can be reported:
         # 1) Get duration of diarrhoea to date
         duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
+        assert duration_in_days >= 0
 
         # 2) Get type of diarrhoea
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'
@@ -620,51 +633,62 @@ class DxAlgorithmChild(Module):
 
         # Apply the algorithms:
         # --------   Classify Extent of Dehydration   ---------
-        if dehydration and danger_signs:
-            # 'Severe_Dehydration'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanC(person_id=person_id, module=self),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        elif not dehydration and not danger_signs:
-            # Treatment Plan A for uncomplicated diarrhoea
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanA(person_id=person_id, module=self),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        elif dehydration and not danger_signs:  # TODO: add - and not other severe classsification
-            # Treatment Plan B for some dehydration diarrhoea
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id, module=self),
+        if not dehydration:
+            # Those who do NOT have DEHYDRATION
+
+            # Treatment Plan A for uncomplicated diarrhoea (no dehydration and no danger signs)
+            schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanA(person_id=person_id,
+                                                                 module=self.sim.modules['Diarrhoea']),
                          priority=0,
                          topen=self.sim.date,
                          tclose=None
                          )
 
-        # ----------------------------------------------------
+            if duration_in_days >= 14:
+                # 'Non_Severe_Persistent_Diarrhoea'
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(person_id=person_id,
+                                                                                     module=self.sim.modules[
+                                                                                         'Diarrhoea']),
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
 
-        # --------   Classify Type of Diarrhoea   -----------
-        if (duration_in_days >= 14) and dehydration:
-            # 'Severe_Persistent_Diarrhoea'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Persistent_Diarrhoea(person_id=person_id, module=self),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        elif (duration_in_days >= 14) and not dehydration:
-            # 'Non_Severe_Persistent_Diarrhoea'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(person_id=person_id, module=self),
-                         priority=0,
-                         topen=self.sim.date,
-                         tclose=None
-                         )
-        # -----------------------------------------------------
+        else:
+            # Those who do have DEHYDRATION
+
+            # Given that there is dehydration - schedule an HSI if the duration of diarrhoea has been long
+            if duration_in_days >= 14:
+                # 'Severe_Persistent_Diarrhoea'
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Severe_Persistent_Diarrhoea(person_id=person_id,
+                                                                                 module=self.sim.modules['Diarrhoea']),
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
+
+            if not danger_signs:
+                # Treatment Plan B for some dehydration diarrhoea but not danger signs
+                # TODO:add "...and not other severe classification from other disease modules (measles, pneumonia, etc)"
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanB(person_id=person_id,
+                                                                     module=self.sim.modules['Diarrhoea']),
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
+            else:
+                # Danger sign for 'Severe_Dehydration'
+                schedule_hsi(hsi_event=HSI_Diarrhoea_Treatment_PlanC(person_id=person_id,
+                                                                     module=self.sim.modules['Diarrhoea']),
+                             priority=0,
+                             topen=self.sim.date,
+                             tclose=None
+                             )
 
         # --------  Classify Whether Dysentery or Not  --------
         if blood_in_stool:
             # 'Dysentery'
-            schedule_hsi(hsi_event=HSI_Diarrhoea_Dysentery(person_id=person_id, module=self),
+            schedule_hsi(hsi_event=HSI_Diarrhoea_Dysentery(person_id=person_id, module=self.sim.modules['Diarrhoea']),
                          priority=0,
                          topen=self.sim.date,
                          tclose=None
@@ -817,6 +841,7 @@ class HSI_IMCI_Severe_Pneumonia_Treatment_level_1(HSI_Event, IndividualScopeEven
 
         self.TREATMENT_ID = 'IMCI_Severe_Pneumonia_Treatment_level_1'
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['IPAdmission'] = 1
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ALERT_OTHER_DISEASES = []
@@ -986,29 +1011,34 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     description='Summary of IMCI classification')
 
         # log IMCI pneumonia management received -----------------------------------
-        management_info_flattened = \
-            [{**{'dict_key': k}, **v} for k, v in self.module.child_disease_management_information.items()]
-        management_info_flattened_df = pd.DataFrame(management_info_flattened)
-        management_info_flattened_df.drop(columns='dict_key', inplace=True)
-
-        # make a df with children with alri status as the columns -----
-        index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        # management_info_flattened = \
+        #     [{**{'dict_key': k}, **v} for k, v in self.module.child_disease_management_information.items()]
+        # management_info_flattened_df = pd.DataFrame(management_info_flattened)
+        # management_info_flattened_df.drop(columns='dict_key', inplace=True)
+        #
+        # # make a df with children with alri status as the columns -----
+        # index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
 
         # df_alri_management_info = pd.DataFrame(data=management_info_flattened_df,
         #                                        index=index_alri_status_true)
                                                # columns=list(management_info_flattened_df.keys()))
 
+        # Check on one child dataframe
+        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        individual_child = df.loc[[index_children_with_alri[0]]]
+        print(individual_child)
+
+        # health worker classification -----
         health_worker_classification_count = \
             df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
-        hw_class_dict = health_worker_classification_count.to_dict()
 
         hw_df = pd.DataFrame(health_worker_classification_count)
         hw_df_transposed = hw_df.T
         print(hw_df_transposed)
 
+        # IMCI pneumonia as gold standard -----
         imci_gold_classification_count = \
             df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_IMCI_classification_as_gold').size()
-        imci_class_dict = imci_gold_classification_count.to_dict()
         imci_class_df = pd.DataFrame(imci_gold_classification_count)
         imci_class_df_transposed = imci_class_df.T
 
@@ -1022,3 +1052,5 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # logger.info('%s|person_id|%s',
         #             self.sim.date)
+
+

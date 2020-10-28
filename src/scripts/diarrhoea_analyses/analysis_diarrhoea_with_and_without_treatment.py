@@ -23,6 +23,7 @@ from tlo.methods import (
     labour,
     pregnancy_supervisor,
     symptommanager,
+    pneumonia
 )
 
 # %%
@@ -45,7 +46,7 @@ output_files = dict()
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 2)
-popsize = 5000
+popsize = 500
 
 for label, service_avail in scenarios.items():
     log_config = {'filename': 'LogFile'}
@@ -62,6 +63,7 @@ for label, service_avail in scenarios.items():
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 pneumonia.ALRI(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
                  )
