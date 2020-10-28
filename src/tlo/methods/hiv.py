@@ -64,30 +64,27 @@ class Hiv(Module):
 
     PROPERTIES = {
         # --- Core Properties
-        "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV "
-                                       "(NB. AIDS status is determined by prescence of the AIDS Symptom."),
-        "hv_art": Property(Types.CATEGORICAL,
-                            "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
-                            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]
-                            ),
-        'hv_is_on_prep': Property(Types.BOOL, 'Whether or not the person is currently taking and receiving a protective '
-                                              'effect from Pre-Exposure Prophylaxsis.'),
-        "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
+        "hv_inf": Property(Types.BOOL, "Is person currently infected with HIV (NB. AIDS status is determined by prescence of the AIDS Symptom."),
+        "hv_art": Property(Types.CATEGORICAL,"ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
+            categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
+        'hv_is_on_prep': Property( Types.BOOL, 'Whether or not the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxsis.'),
         "hv_behaviour_change": Property(Types.BOOL, "Has this person been exposed to HIV prevention counselling following a negative HIV test result"),
-        "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
         "hv_diagnosed": Property(Types.BOOL, "knows that they are hiv+: i.e. is hiv+ and tested as hiv+"),
         "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
 
-        # --- Dates on which things have happened: # todo; work out which of these actually needed
-        "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
-        "hv_date_diagnosed": Property(Types.DATE, "date on which HIV was diagnosed"),
-        "hv_date_art_start": Property(Types.DATE, "date ART started"),
-        "hv_date_cotrim": Property(Types.DATE, "date cotrimoxazole started"),
-        "hv_date_last_viral_load": Property(Types.DATE, "date last viral load test"),
+        # "hv_on_cotrim": Property(Types.BOOL, "on cotrimoxazole"),
+        # "hv_fast_progressor": Property(Types.BOOL, "Is this person a fast progressor (if  there infected as an infant"),
 
-        # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
-        "hv_proj_date_death": Property(Types.DATE, "Projected time of AIDS death if untreated"),
-        "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
+        # # --- Dates on which things have happened: # todo; work out which of these actually needed
+        "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
+        # "hv_date_diagnosed": Property(Types.DATE, "date on which HIV was diagnosed"),
+        # "hv_date_art_start": Property(Types.DATE, "date ART started"),
+        # "hv_date_cotrim": Property(Types.DATE, "date cotrimoxazole started"),
+        # "hv_date_last_viral_load": Property(Types.DATE, "date last viral load test"),
+
+        # # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
+        # "hv_proj_date_death": Property(Types.DATE, "Projected time of AIDS death if untreated"),
+        # "hv_proj_date_aids": Property(Types.DATE, "Date develops AIDS"),
 
         # -- Temporary variable for breastfeeding:
         "tmp_breastfed": Property(Types.BOOL, "Is the person currently receiving breast milk from mother")
@@ -396,7 +393,6 @@ class Hiv(Module):
             Predictor('sex').when('M', 1.0).otherwise(0.0),
         )
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -407,22 +403,23 @@ class Hiv(Module):
         df["hv_inf"] = False
         df["hv_art"].values[:] = "not"
         df["hv_is_on_prep"] = False
-        df["hv_on_cotrim"] = False
         df["hv_behaviour_change"] = False
-        df["hv_fast_progressor"] = False
         df["hv_diagnosed"] = False
         df["hv_number_tests"] = 0
 
+        # df["hv_on_cotrim"] = False
+        # df["hv_fast_progressor"] = False
+
         # --- Dates on which things have happened
         df["hv_date_inf"] = pd.NaT
-        df["hv_date_diagnosed"] = pd.NaT
-        df["hv_date_art_start"] = pd.NaT
-        df["hv_date_cotrim"] = pd.NaT
-        df["hv_date_last_viral_load"] = pd.NaT
-
-        # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
-        df["hv_proj_date_death"] = pd.NaT
-        df["hv_proj_date_aids"] = pd.NaT
+        # df["hv_date_diagnosed"] = pd.NaT
+        # df["hv_date_art_start"] = pd.NaT
+        # df["hv_date_cotrim"] = pd.NaT
+        # df["hv_date_last_viral_load"] = pd.NaT
+        #
+        # # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
+        # df["hv_proj_date_death"] = pd.NaT
+        # df["hv_proj_date_aids"] = pd.NaT
 
         # -- Temporary --
         df["tmp_breastfed"] = False
@@ -520,7 +517,7 @@ class Hiv(Module):
 
         # person assumed to be diagnosed if they have had a test and are currently HIV positive:
         df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), "hv_diagnosed"] = True
-        df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), "hv_date_diagnosed"] = now
+        # df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), "hv_date_diagnosed"] = now
 
     def initialise_baseline_art(self, population):
         """ assign initial art coverage levels
@@ -574,12 +571,12 @@ class Hiv(Module):
         assert not (df.loc[art_idx, "hv_art"] == "not").any()
 
         # assume that all persons currently on ART started on thre current date
-        df.loc[art_idx, "hv_date_art_start"] = self.sim.date
+        # df.loc[art_idx, "hv_date_art_start"] = self.sim.date
 
         # for logical consistency, ensure that all persons on ART have been tested and diagnosed
         df.loc[art_idx, "hv_number_tests"] = 1
         df.loc[art_idx, "hv_diagnosed"] = True
-        df.loc[art_idx, "hv_date_diagnosed"] = self.sim.date
+        # df.loc[art_idx, "hv_date_diagnosed"] = self.sim.date
 
     def initialise_simulation(self, sim):
         """
@@ -721,21 +718,23 @@ class Hiv(Module):
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
         df.at[child_id, "hv_is_on_prep"] = False
-        df.at[child_id, "hv_on_cotrim"] = False
         df.at[child_id, "hv_behaviour_change"] = False
-        df.at[child_id, "hv_fast_progressor"] = False
         df.at[child_id, "hv_diagnosed"] = False
         df.at[child_id, "hv_number_tests"] = 0
+
+        # df.at[child_id, "hv_on_cotrim"] = False
+        # df.at[child_id, "hv_fast_progressor"] = False
+
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
-        df.at[child_id, "hv_date_diagnosed"] = pd.NaT
-        df.at[child_id, "hv_date_art_start"] = pd.NaT
-        df.at[child_id, "hv_date_cotrim"] = pd.NaT
-        df.at[child_id, "hv_date_last_viral_load"] = pd.NaT
+        # df.at[child_id, "hv_date_diagnosed"] = pd.NaT
+        # df.at[child_id, "hv_date_art_start"] = pd.NaT
+        # df.at[child_id, "hv_date_cotrim"] = pd.NaT
+        # df.at[child_id, "hv_date_last_viral_load"] = pd.NaT
 
         # -- Stores of dates on which things are scheduled to occur in the future  #todo is this needed?
-        df.at[child_id, "hv_proj_date_death"] = pd.NaT
-        df.at[child_id, "hv_proj_date_aids"] = pd.NaT
+        # df.at[child_id, "hv_proj_date_death"] = pd.NaT
+        # df.at[child_id, "hv_proj_date_aids"] = pd.NaT
 
         # -- Temporary
         df.at[child_id, "tmp_breastfed"] = True
@@ -913,39 +912,43 @@ class Hiv(Module):
         # Check that core properties of current status are never None/NaN/NaT
         assert not df.hv_inf.isna().any()
         assert not df.hv_art.isna().any()
-        assert not df.hv_on_cotrim.isna().any()
         assert not df.hv_behaviour_change.isna().any()
-        assert not df.hv_fast_progressor.isna().any()
         assert not df.hv_diagnosed.isna().any()
         assert not df.hv_number_tests.isna().any()
 
+        # assert not df.hv_on_cotrim.isna().any()
+        # assert not df.hv_fast_progressor.isna().any()
+
         # Check that the core HIV properties are 'nested' in the way expected.
-        assert is_subset(col_for_set=df.hv_inf, col_for_subset=(df.hv_art != "not"))
-        assert is_subset(col_for_set=df.hv_inf, col_for_subset=df.hv_on_cotrim)
         assert is_subset(col_for_set=df.hv_inf, col_for_subset=df.hv_diagnosed)
         assert is_subset(col_for_set=df.hv_diagnosed, col_for_subset=(df.hv_art != "not"))
-        assert is_subset(col_for_set=df.hv_diagnosed, col_for_subset=df.hv_on_cotrim)
+
+        # assert is_subset(col_for_set=df.hv_inf, col_for_subset=df.hv_on_cotrim)
+        # assert is_subset(col_for_set=df.hv_diagnosed, col_for_subset=df.hv_on_cotrim)
 
         # Check that ART properties are as expected:
         # todo - that those those with non-null date for ART are not in the "not" category
 
         # Check that if person is not infected, the dates of HIV events are None/NaN/NaT
-        assert df.loc[~df.hv_inf, ["hv_date_inf",
-                                   "hv_date_diagnosed",
-                                   "hv_date_art_start",
-                                   "hv_date_cotrim",
-                                   "hv_date_last_viral_load",
-                                   "hv_proj_date_death",
-                                   "hv_proj_date_aids"]].isna().all().all()
+        assert df.loc[~df.hv_inf, "hv_date_inf"].isna().all()
+
+        # assert df.loc[~df.hv_inf, ["hv_date_inf",
+        #                            "hv_date_diagnosed",
+        #                            # "hv_date_art_start",
+        #                            # "hv_date_cotrim",
+        #                            # "hv_date_last_viral_load",
+        #                            # "hv_proj_date_death",
+        #                            "hv_proj_date_aids"]].isna().all().all()
+
 
         # Check that dates consistent for those infected with HIV
         assert not df.loc[df.hv_inf].hv_date_inf.isna().any()
-        assert not df.loc[df.hv_diagnosed].hv_date_diagnosed.isna().any()
+        # assert not df.loc[df.hv_diagnosed].hv_date_diagnosed.isna().any()
         assert (df.loc[df.hv_inf].hv_date_inf >= df.loc[df.hv_inf].date_of_birth).all()
-        assert (df.loc[df.hv_inf & df.hv_diagnosed].hv_date_diagnosed >= df.loc[
-            df.hv_inf & df.hv_diagnosed].hv_date_inf).all()
-        assert (df.loc[df.hv_inf & (df.hv_art != "not")].hv_date_art_start >= df.loc[
-            df.hv_inf & (df.hv_art != "not")].hv_date_diagnosed).all()
+        # assert (df.loc[df.hv_inf & df.hv_diagnosed].hv_date_diagnosed >= df.loc[
+        #     df.hv_inf & df.hv_diagnosed].hv_date_inf).all()
+        # assert (df.loc[df.hv_inf & (df.hv_art != "not")].hv_date_art_start >= df.loc[
+        #     df.hv_inf & (df.hv_art != "not")].hv_date_diagnosed).all()
         # assert (df.loc[df.hv_inf & (df.hv_art != "not")].hv_date_last_viral_load >= df.loc[df.hv_inf & (df.hv_art != "not")].hv_date_art_start).all()
 
         # Check alignment between AIDS Symptoms and status and infection
@@ -1252,7 +1255,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self
         )
         # Update number of tests:
-        person['hv_number_tests'] += 1
+        df.at[person_id, 'hv_number_tests'] += 1
 
         # Offer services as needed:
         if not np.isnan(test_result):
@@ -1500,7 +1503,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
-        self.get_all_consumables(item_codes=self.module.item_code_for_art(item_codes=self.item_code_for_viral_load))
+        _ = self.get_all_consumables(item_codes=self.module.item_code_for_viral_load)
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_all_consumables(item_codes=self.module.item_code_for_art)
@@ -1621,7 +1624,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         art_adult_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years >= 15)])
         art_cov_vs_adult = art_adult_vs / plhiv_adult if plhiv_adult > 0 else 0
 
-
         # proportions of children (0-14) living with HIV on treatment:
         art_children = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years < 15)])
         art_cov_children = art_children / plhiv_children if plhiv_adult > 0 else 0
@@ -1646,20 +1648,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     }
                     )
 
-        # todo - **** prep, vmmc
-
-
-# ---------------------------------------------------------------------------
-#   Debugging / Checking Events
-# ---------------------------------------------------------------------------
-
-class HivCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
-
-    def apply(self, population):
-        self.module.check_config_of_properties()
-
+        # todo - **** prep, vmmc, etc
 
 # ---------------------------------------------------------------------------
 #   Helper functions for analysing outputs
@@ -1692,6 +1681,17 @@ def unpack_raw_output_dict(raw_dict):
     x['age_group'] = set_age_group(x['age_group'])
     return x
 
+
+# ---------------------------------------------------------------------------
+#   Debugging / Checking Events
+# ---------------------------------------------------------------------------
+
+class HivCheckPropertiesEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
+
+    def apply(self, population):
+        self.module.check_config_of_properties()
 
 
 

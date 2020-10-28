@@ -365,6 +365,7 @@ def test_hsi_testandrefer_and_circ():
 
     # Check that the person is now circumcised
     assert df.at[person_id, "li_is_circ"]
+    assert df.at[person_id, "hv_number_tests"] > 0
 
 def test_hsi_testandrefer_and_behavchg():
     """Test that the HSI for testing and behaviour change works as intended"""
@@ -391,6 +392,7 @@ def test_hsi_testandrefer_and_behavchg():
 
     # Check that the person has now had behaviour change
     assert df.at[person_id, "hv_behaviour_change"]
+    assert df.at[person_id, "hv_number_tests"] > 0
 
 def test_hsi_testandrefer_and_prep():
     """Test that the HSI for testing and referral to PrEP works as intended"""
@@ -426,6 +428,7 @@ def test_hsi_testandrefer_and_prep():
 
     # Check that the person is now on PrEP
     assert df.at[person_id, "hv_is_on_prep"]
+    assert df.at[person_id, "hv_number_tests"] > 0
 
     # Check that there is a 'decision' event scheduled
     date_decision_event, decision_event = [
@@ -492,8 +495,10 @@ def test_hsi_testandrefer_and_art():
     # Run the event:
     hsi_event.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # Check that the person is now on ART
+    # Check that the person is now on ART and diagnosed
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
+    assert df.at[person_id, "hv_diagnosed"]
+    assert df.at[person_id, "hv_number_tests"] > 0
 
     # Check that there is a 'decision' event scheduled
     date_decision_event, decision_event = [
@@ -525,7 +530,6 @@ def test_hsi_testandrefer_and_art():
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
     ]
-
 
 
 # todo - test that the test and refer event is run is aids symptoms occur
