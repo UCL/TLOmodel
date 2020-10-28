@@ -37,7 +37,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 1, 1)
-popsize = 20000
+popsize = 500
 
 log_config = {
     'filename': 'LogFile',

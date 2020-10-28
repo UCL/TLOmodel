@@ -998,68 +998,70 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
     def apply(self, population):
-        df = self.sim.population.props
 
-        # imci_pneumonia_classification_count = \
-        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
-        # print(imci_pneumonia_classification_count)
+        pass
+        # df = self.sim.population.props
+        #
+        # # imci_pneumonia_classification_count = \
+        # #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
+        # # print(imci_pneumonia_classification_count)
+        # #
+        # # logger.info(key='imci_classicications_count',
+        # #             data=imci_pneumonia_classification_count,
+        # #             description='Summary of IMCI classification')
+        #
+        # # log the IMCI classifications (Gold-standard)
+        # dict_to_output = {}
+        # dict_to_output.update({
+        #     f'total_{k}': v for k, v in df.ri_health_worker_IMCI_classification.value_counts().items()
+        # })
+        # print(dict_to_output)
         #
         # logger.info(key='imci_classicications_count',
-        #             data=imci_pneumonia_classification_count,
+        #             data=dict_to_output,
         #             description='Summary of IMCI classification')
-
-        # log the IMCI classifications (Gold-standard)
-        dict_to_output = {}
-        dict_to_output.update({
-            f'total_{k}': v for k, v in df.ri_health_worker_IMCI_classification.value_counts().items()
-        })
-        print(dict_to_output)
-
-        logger.info(key='imci_classicications_count',
-                    data=dict_to_output,
-                    description='Summary of IMCI classification')
-
-        # log IMCI pneumonia management received -----------------------------------
-        # management_info_flattened = \
-        #     [{**{'dict_key': k}, **v} for k, v in self.module.child_disease_management_information.items()]
-        # management_info_flattened_df = pd.DataFrame(management_info_flattened)
-        # management_info_flattened_df.drop(columns='dict_key', inplace=True)
         #
-        # # make a df with children with alri status as the columns -----
-        # index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
-
-        # df_alri_management_info = pd.DataFrame(data=management_info_flattened_df,
-        #                                        index=index_alri_status_true)
-                                               # columns=list(management_info_flattened_df.keys()))
-
-        # Check on one child dataframe
-        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
-        individual_child = df.loc[[index_children_with_alri[0]]]
-        print(individual_child)
-
-        # health worker classification -----
-        health_worker_classification_count = \
-            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
-
-        hw_df = pd.DataFrame(health_worker_classification_count)
-        hw_df_transposed = hw_df.T
-        print(hw_df_transposed)
-
-        # IMCI pneumonia as gold standard -----
-        imci_gold_classification_count = \
-            df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_IMCI_classification_as_gold').size()
-        imci_class_df = pd.DataFrame(imci_gold_classification_count)
-        imci_class_df_transposed = imci_class_df.T
-
-        logger.info(key='hw_pneumonia_classification',
-                    data=hw_df_transposed,
-                    description='health worker pneumonia classification')
-
-        logger.info(key='imci_gold_standard_classification',
-                    data=imci_class_df_transposed,
-                    description='IMCI pneumonia classification')
-
-        # logger.info('%s|person_id|%s',
-        #             self.sim.date)
-
+        # # log IMCI pneumonia management received -----------------------------------
+        # # management_info_flattened = \
+        # #     [{**{'dict_key': k}, **v} for k, v in self.module.child_disease_management_information.items()]
+        # # management_info_flattened_df = pd.DataFrame(management_info_flattened)
+        # # management_info_flattened_df.drop(columns='dict_key', inplace=True)
+        # #
+        # # # make a df with children with alri status as the columns -----
+        # # index_alri_status_true = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        #
+        # # df_alri_management_info = pd.DataFrame(data=management_info_flattened_df,
+        # #                                        index=index_alri_status_true)
+        #                                        # columns=list(management_info_flattened_df.keys()))
+        #
+        # # Check on one child dataframe
+        # index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        # individual_child = df.loc[[index_children_with_alri[0]]]
+        # print(individual_child)
+        #
+        # # health worker classification -----
+        # health_worker_classification_count = \
+        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_health_worker_IMCI_classification').size()
+        #
+        # hw_df = pd.DataFrame(health_worker_classification_count)
+        # hw_df_transposed = hw_df.T
+        # print(hw_df_transposed)
+        #
+        # # IMCI pneumonia as gold standard -----
+        # imci_gold_classification_count = \
+        #     df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_IMCI_classification_as_gold').size()
+        # imci_class_df = pd.DataFrame(imci_gold_classification_count)
+        # imci_class_df_transposed = imci_class_df.T
+        #
+        # logger.info(key='hw_pneumonia_classification',
+        #             data=hw_df_transposed,
+        #             description='health worker pneumonia classification')
+        #
+        # logger.info(key='imci_gold_standard_classification',
+        #             data=imci_class_df_transposed,
+        #             description='IMCI pneumonia classification')
+        #
+        # # logger.info('%s|person_id|%s',
+        # #             self.sim.date)
+        #
 

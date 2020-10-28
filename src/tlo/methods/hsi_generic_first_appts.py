@@ -246,9 +246,9 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
     #                     treatment_hsi, priority=1, topen=self.sim.date, tclose=None
     #                 )
     #
-    # def did_not_run(self):
-    #     logger.debug(key='message',
-    #                  data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
+    def did_not_run(self):
+        logger.debug(key='message',
+                     data='HSI_GenericFirstApptAtFacilityLevel1: did not run')
 
 # ---------------------------------------------------------------------------------------------------------
 #    HSI_GenericFirstApptAtFacilityLevel0
