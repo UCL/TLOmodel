@@ -333,7 +333,7 @@ def test_mtct_during_breastfeeding():
     assert sim.population.props.at[child_id, "hv_inf"]
 
 def test_hsi_testandrefer_and_circ():
-    """Test that the spontaneous test HSI works as intended"""
+    """Test that the HSI for testing and referral to circumcision works as intended"""
     sim = get_sim()
 
     # Make the chance of being referred 100%
@@ -367,7 +367,7 @@ def test_hsi_testandrefer_and_circ():
     assert df.at[person_id, "li_is_circ"]
 
 def test_hsi_testandrefer_and_behavchg():
-    """Test that the spontaneous test HSI works as intended"""
+    """Test that the HSI for testing and behaviour change works as intended"""
     sim = get_sim()
 
     # Make the chance of having behaviour change 100%
@@ -392,9 +392,8 @@ def test_hsi_testandrefer_and_behavchg():
     # Check that the person has now had behaviour change
     assert df.at[person_id, "hv_behaviour_change"]
 
-
 def test_hsi_testandrefer_and_prep():
-    """Test that the spontaneous test HSI works as intended"""
+    """Test that the HSI for testing and referral to PrEP works as intended"""
     sim = get_sim()
 
     # Make the chance of being referred 100%
@@ -463,25 +462,21 @@ def test_hsi_testandrefer_and_prep():
 
     # todo- check no more decision events:
 
-
-
-#ART to follow same pattern of PrEP
 def test_hsi_testandrefer_and_art():
-    """Test that the spontaneous test HSI works as intended"""
+    """Test that the HSI for testing and referral to ART works as intended"""
     sim = get_sim()
 
-    # Make the chance of being referred 100%
-    sim.modules['Hiv'].lm_circ = LinearModel.multiplicative()
+    # Make the chance of being referred to ART following testing is 100%
+    sim.modules['Hiv'].lm_art = LinearModel.multiplicative()
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
     df = sim.population.props
 
-    # Get target person and make them HIV-negative man and not ever having had a test and not already circumcised
+    # Get target person and make them HIV-positive but not previously diagnosed
     person_id = 0
-    df.at[person_id, "sex"] = "M"
-    df.at[person_id, "li_is_circ"] = False
-    df.at[person_id, "hv_inf"] = False
+    df.at[person_id, "sex"] = "F"
+    df.at[person_id, "hv_inf"] = True
     df.at[person_id, "hv_diagnosed"] = False
     df.at[person_id, "hv_number_tests"] = 0
 
@@ -489,20 +484,48 @@ def test_hsi_testandrefer_and_art():
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # Check that there is an VMMC event scheduled
-    date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_Circ)
+    # Check that there is an ART HSI event scheduled
+    date_hsi_event, hsi_event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment)
     ][0]
 
     # Run the event:
-    event.apply(person_id=person_id, squeeze_factor=0.0)
+    hsi_event.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # Check that the person is now circumcised
-    assert df.at[person_id, "li_is_circ"]
+    # Check that the person is now on ART
+    assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
 
-    # check that the person is diagnoed
+    # Check that there is a 'decision' event scheduled
+    date_decision_event, decision_event = [
+        ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.Hiv_DecisionToContinueTreatment)
+    ][0]
 
-# test that art carries on and then stops
+    assert date_decision_event == date_hsi_event + pd.DateOffset(months=6)
+
+    # Advance simulation date to when the decision_event would run
+    sim.date = date_decision_event
+
+    # Run the decision event when probability of continuation is 1.0, and check for a further HSI
+    sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 1.0
+    decision_event.apply(person_id)
+    assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
+    date_next_hsi_event, next_hsi_event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
+    ][0]
+
+    # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
+    sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.0
+    decision_event.apply(person_id)
+    assert df.at[person_id, "hv_art"] not in ["on_VL_suppressed", "on_not_VL_suppressed"]
+    assert [] == [
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
+    ]
+    assert [] == [
+        ev[0] for ev in sim.find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
+    ]
+
 
 
 # todo - test that the test and refer event is run is aids symptoms occur
