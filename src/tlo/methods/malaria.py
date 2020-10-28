@@ -308,6 +308,7 @@ class Malaria(Module):
         alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
         now_severe = _draw_incidence_for("monthly_prob_sev", alive_infected_clinical)
         df.loc[now_severe, "ma_inf_type"] = "severe"
+        df.loc[now_severe, "ma_date_symptoms"] = now
 
         alive_now_infected_pregnant = alive_infected_clinical & (df.ma_date_infected == now) & df.is_pregnant
         df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
@@ -315,7 +316,7 @@ class Malaria(Module):
         # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
         # schedule self-cure if no treatment, no self-cure from severe malaria
 
-        # asymptomatic
+        # asymptomatic (can't reuse now_infected, because some asym might have become clinical)
         asym = df.is_alive & (df.ma_inf_type == "asym") & (df.ma_date_infected == now)
 
         for person in df.index[asym]:
@@ -327,7 +328,7 @@ class Malaria(Module):
             self.sim.schedule_event(cure, (self.sim.date + random_days))
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
-        # clinical
+        # clinical - can't use now_clinical, because some clinical may have become severe
         clin = df.index[df.is_alive & (df.ma_inf_type == "clinical") & (df.ma_date_symptoms == now)]
 
         # update clinical symptoms for all new clinical infections
@@ -351,7 +352,7 @@ class Malaria(Module):
         # ----------------------------------- SEVERE MALARIA SYMPTOMS -----------------------------------
 
         # SEVERE CASES
-        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
+        severe = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_symptoms == now)
         children = severe & (df.age_exact_years < 5)
         adult = severe & (df.age_exact_years >= 5)
 
@@ -364,9 +365,8 @@ class Malaria(Module):
         # Assign time of infections across the month
 
         # the cfr applies to all severe malaria
-        targets = df.is_alive & (df.ma_inf_type == "severe") & (df.ma_date_infected == now)
-        random_draw = rng.random_sample(size=targets.sum())
-        death = df.index[targets][random_draw < (p["cfr"] * p["mortality_adjust"])]
+        random_draw = rng.random_sample(size=severe.sum())
+        death = df.index[severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
             logger.debug(key='message',
