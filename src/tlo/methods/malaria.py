@@ -22,7 +22,7 @@ logger.setLevel(logging.INFO)
 
 
 class Malaria(Module):
-    def __init__(self, name=None, resourcefilepath=None, testing=None, itn=None):
+    def __init__(self, name=None, resourcefilepath=None, testing=0, itn=0):
         """Create instance of Malaria module
 
         :param name: Name of this module (optional, defaults to name of class)
@@ -33,15 +33,8 @@ class Malaria(Module):
         super().__init__(name)
         self.resourcefilepath = Path(resourcefilepath)
 
-        if testing is not None:
-            self.testing = testing  # calibrate value to match treatment coverage
-        else:
-            self.testing = 0  # default to no testing
-
-        if itn is not None:
-            self.itn = itn  # projected ITN values from 2020
-        else:
-            self.itn = 0  # default to no ITN
+        self.testing = testing  # calibrate value to match treatment coverage
+        self.itn = itn  # projected ITN values from 2020
 
         logger.info(key='message', data=f'Malaria infection event running with projected ITN {self.itn}')
 
