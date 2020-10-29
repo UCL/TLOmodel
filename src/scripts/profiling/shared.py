@@ -41,5 +41,5 @@ def print_checksum(sim: Simulation) -> None:
 def save_population(sim: Simulation) -> None:
     df: pd.DataFrame = sim.population.props
     filename = 'profiling_population_%010x.csv' % random.randrange(16**10)
-    df.to_csv(filename)
+    df.to_csv(filename, na_rep='null')
     logger.info(key="msg", data=f"Population CSV: {filename}")
