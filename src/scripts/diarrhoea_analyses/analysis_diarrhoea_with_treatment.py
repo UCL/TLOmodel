@@ -36,8 +36,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
-popsize = 500
+end_date = Date(2020, 1, 1)
+popsize = 20000
 
 log_config = {
     'filename': 'LogFile',
@@ -159,11 +159,11 @@ calibration_incidence_rate_2_to_4_year_olds = {
 }
 
 # Produce a set of line plot comparing to the calibration data
-fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True)
+fig, axes = plt.subplots(ncols=2, nrows=5, sharey=True, figsize=(10, 20))
 for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
     ax = fig.axes[ax_num]
     inc_rate['0y'][pathogen].plot(ax=ax, label='Model output')
-    ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],
+    ax.hlines(y=calibration_incidence_rate_0_year_olds[pathogen],  # axhlines is to plot horizontal lines at each y
               xmin=min(inc_rate['0y'].index),
               xmax=max(inc_rate['0y'].index),
               label='calibrating_data'
@@ -172,6 +172,8 @@ for ax_num, pathogen in enumerate(sim.modules['Diarrhoea'].pathogens):
     ax.set_xlabel("Year")
     ax.set_ylabel("Incidence Rate")
     ax.legend()
+plt.title('Incidence Rate among <1 year old')
+plt.savefig(outputpath / ("Diarrhoea_inc_rate_by_pathogen_0_year_olds" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
 # Produce a bar plot for means of incidence rate during the simulation:
@@ -224,9 +226,18 @@ plt.show()
 # per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/
 # http://ghdx.healthdata.org/gbd-results-tool?params=gbd-api-2017-permalink/9dd202e225b13cc2df7557a5759a0aca
 
+# http://ghdx.healthdata.org/gbd-results-tool
 calibration_death_rate_per_year_under_5s = {
-    '2010': 148 / 100000,   # CI: 111-190
-    '2017': 93 / 100000     # CI: 61-135
+    2010: 193.68 / 100000,
+    2011: 188.13 / 100000,
+    2012: 166.88 / 100000,
+    2013: 147.95 / 100000,
+    2014: 137.38 / 100000,
+    2015: 132.82 / 100000,
+    2016: 125.80 / 100000,
+    2017: 122.06 / 100000,
+    2018: 113.38 / 100000,
+    2019: 103.60 / 100000
 }
 
 all_deaths = output['tlo.methods.demography']['death']
@@ -250,15 +261,45 @@ deaths = deaths.pivot(values='count', columns='age_grp', index='year')
 # Death Rate = death count (by year, by age-group) / person-years
 death_rate = deaths.div(py)
 
+list_tuples = sorted(calibration_death_rate_per_year_under_5s.items())
+x, y = zip(*list_tuples)  # unpack a list of pairs into two tuples
+data_df = pd.DataFrame.from_dict(data=calibration_death_rate_per_year_under_5s, orient='index', columns=['GBD_data'])
+data_df = data_df.rename_axis('year')
+print(data_df)
 # produce plot comparison in 2010 (<5s):
-death_rate_comparison = pd.Series(
-    data={
-        'data': calibration_death_rate_per_year_under_5s['2010'],
-        'model': death_rate.loc[2010].sum()
-    }
-)
+death_rate['under_5'] = death_rate.sum(axis=1)
+death_rate = death_rate.drop(['0y', '1y', '2-4y'], axis=1)
+death_rate = death_rate.rename_axis('year')
 
-death_rate_comparison.plot.bar()
-plt.title('Death Rate to Diarrhoea in Under 5s')
-plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
+death_dict = death_rate.T.to_dict('list')
+print(death_dict)
+list_tuples1 = sorted(death_dict.items())
+x1, y1 = zip(*list_tuples1)
+
+joint_df = pd.concat([data_df, death_rate], axis=1)
+
+# plot death rate comparison
+plt.plot(x, y, color='tab:red', label='GBD_data')
+plt.plot(x1, y1, color='tab:blue', label='Model output')
+plt.xlabel('Year')
+plt.ylabel('Death rate')
+axes = plt.gca()
+axes.set_ylim(ymin=0)
+# plt.legend('GBD data', 'Model output')
+plt.title('Death rate from 2020 and 2019 - GBD data vs model output')
+plt.savefig(outputpath / ("Diarrhoea_death_rate_GBD_vs_model" + datestamp + ".pdf"), format='pdf')
 plt.show()
+
+# fig, ax1 = plt.subplots()
+# ax1.set_xlabel('Year')
+# ax1.set_ylabel('Death rate')
+# ax1.plot(x, y, color='tab:red', marker="^", label='GBD_data')
+# ax1.plot(x1, y1, color='tab:blue', marker="o", label='model_output')
+#
+# plt.show()
+
+#
+# death_rate_comparison.plot.bar()
+# plt.title('Death Rate to Diarrhoea in Under 5s')
+# plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
+# plt.show()
