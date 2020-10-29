@@ -8,8 +8,6 @@ Overview:
 HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) --> AIDS Death Event
 Testing is spontaneously taken-up and can lead to accessing intervention services; ART, VMMC, PrEP
 
-
-
 # TODO:
 * ART initiation --
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent - currently either does)
@@ -239,7 +237,17 @@ class Hiv(Module):
         "probability_of_being_retained_on_art_every_6_months": Parameter(
             Types.REAL, "probability that someone who has initiated on treatment will attend an appointment and be on "
                         "treatment for next 6 months, until the next appointment."
-        )
+        ),
+        "prob_spontaneous_test_12m": Parameter(
+            Types.REAL, "probability that a person will seek HIV testing per 12 month period."),
+        "prob_start_art_after_hiv_test": Parameter(
+            Types.REAL, "probability that a person will start treatment, if HIV-positive, following testing"),
+        "prob_behav_chg_after_hiv_test": Parameter(
+            Types.REAL, "probability that a person will change risk behaviours, if HIV-negative, following testing"),
+        "prob_prep_for_fsw_after_hiv_test": Parameter(
+            Types.REAL, "probability that a FSW will start PrEP, if HIV-negative, following testing"),
+        "prob_circ_after_hiv_test": Parameter(
+            Types.REAL, "probability that a male will be circumcised, if HIV-negative, following testing"),
     }
 
     def read_parameters(self, data_folder):
@@ -355,31 +363,30 @@ class Hiv(Module):
         # -- Linear Models for the Uptake of Services
         # Linear model that give the probabiliy of seeking a 'Spontaneous' Test for HIV
         # (=sum of probabilities for accessing any HIV service when not ill)
-        # TODO <-- move all rates into parameters in resourcefile
 
         self.lm_spontaneous_test_12m = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=0.10
+            intercept=p["prob_spontaneous_test_12m"]
         )
 
-        # Linear model for starting ART, following when the person has been diagnosed:
+        # Linear model if the person will start ART, following when the person has been diagnosed:
         self.lm_art = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0.8,
+            p["prob_start_art_after_hiv_test"],
             Predictor('hv_inf').when(True, 1.0).otherwise(0.0)
         )
 
         # Linear model for changing behaviour following an HIV-negative test
         self.lm_behavchg = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0.5,
+            p["prob_behav_chg_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0)
         )
 
         # Linear model for starting PrEP (if F/sex-workers), following when the person has tested HIV -ve:
         self.lm_prep = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0.8,
+            p["prob_prep_for_fsw_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
             Predictor('sex').when('F', 1.0).otherwise(0.0),
             Predictor('li_is_sexworker').when(True, 1.0).otherwise(0.0)
@@ -388,7 +395,7 @@ class Hiv(Module):
         # Linear model for circumcision (if M) following when the person has been diagnosed:
         self.lm_circ = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            0.5,
+            p["prob_circ_after_hiv_test"],
             Predictor('hv_inf').when(False, 1.0).otherwise(0.0),
             Predictor('sex').when('M', 1.0).otherwise(0.0),
         )
@@ -705,7 +712,6 @@ class Hiv(Module):
                 consumables["Intervention_Pkg"] == "Viral Load", "Intervention_Pkg_Code"
             ]
         )[0]
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
