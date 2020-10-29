@@ -71,7 +71,7 @@ sim.simulate(end_date=end_date)
 # read the results
 output = parse_log_file(sim.log_filepath)
 
-# ANALYSES: BASELINE HIV PREVALENCE
+#%% : BASELINE HIV PREVALENCE
 # adults:
 adult_prev_and_inc_over_time = output['tlo.methods.hiv']['summary_inc_and_prev_for_adults_and_children_and_fsw'][['date', 'hiv_prev_adult', 'hiv_adult_inc']]
 adult_prev_and_inc_over_time = adult_prev_and_inc_over_time.set_index('date')
@@ -96,15 +96,40 @@ plt.title('HIV Prevalence and Incidence in Sex Workers (15-49)')
 plt.savefig(outputpath / ("HIV_fsw_prev_over_time" + datestamp + ".pdf"), format='pdf')
 plt.show()
 
-# PROGRAM COVERAGE
-# todo Testing
+#%% PROGRAM COVERAGE
+cov_over_time = output['tlo.methods.hiv']['hiv_program_coverage']
+cov_over_time = cov_over_time.set_index('date')
 
-# todo ART # 90-90-90
+# ART ("90-90-90")
 
-# todo Circumcision
+# Adults:
+dx = cov_over_time['dx_adult']
+art_among_dx = cov_over_time['art_coverage_adult'] / dx
+vs_among_art = cov_over_time['art_coverage_adult_VL_suppression']
+pd.concat({'diagnosed': dx,
+           'art_among_diagnosed': art_among_dx,
+           'vs_among_those_on_art': vs_among_art
+           }, axis=1).plot()
+plt.title('ART Cascade for Adults (15+)')
+plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
+plt.show()
 
-# todo PrEP
+# Circumcision
+cov_over_time.plot(y='prop_men_circ')
+plt.title('Proportion of Men (15+) That Are Circumcised')
+plt.savefig(outputpath / ("HIV_porp_men_circ" + datestamp + ".pdf"), format='pdf')
+plt.show()
 
+# PrEP
+cov_over_time.plot(y='prop_fsw_on_prep')
+plt.title('Proportion of FSW That Are On PrEP')
+plt.savefig(outputpath / ("HIV_prop_fsw_prep" + datestamp + ".pdf"), format='pdf')
+plt.show()
 
+# Behaviour Change
+cov_over_time.plot(y='prop_adults_exposed_to_behav_intv')
+plt.title('Proportion of Adults (15+) Exposed to Behaviour Change Intervention')
+plt.savefig(outputpath / ("HIV_prop_behav_chg" + datestamp + ".pdf"), format='pdf')
+plt.show()
 
 

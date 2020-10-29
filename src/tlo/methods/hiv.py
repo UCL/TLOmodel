@@ -1055,7 +1055,7 @@ class HivInfectionEvent(Event, IndividualScopeEventMixin):
         children_of_this_person_being_breastfed = df.loc[(df.mother_id == person_id) & df.tmp_breastfed].index
         # - Do the MTCT routine for each child:
         for child_id in children_of_this_person_being_breastfed:
-            self.mtct_during_breastfeeding(person_id, child_id)
+            self.module.mtct_during_breastfeeding(person_id, child_id)
 
 class HivInfectionDuringBreastFeedingEvent(Event, IndividualScopeEventMixin):
     """ This person will become infected during breastfeeding
@@ -1421,39 +1421,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             self.sim.date + pd.DateOffset(months=6)
         )
 
-        """
-        Consider whether IPT is needed at this time
-
-        # ----------------------------------- SCHEDULE IPT START -----------------------------------
-        district = df.at[person_id, "district_of_residence"]
-
-        if (
-            (district in params["tb_high_risk_distr"].values)
-            & (self.sim.date.year > 2012)
-            & (self.sim.modules["Hiv"].rng.rand() < params["hiv_art_ipt"])
-        ):
-
-            if (
-                not df.at[person_id, "hv_on_art"] == 0
-                and not (df.at[person_id, "tb_inf"].startswith("active"))
-                and (
-                    self.sim.modules["Hiv"].rng.random_sample(size=1)
-                    < params["hiv_art_ipt"]
-                )
-            ):
-                logger.debug(
-                    "HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s",
-                    person_id,
-                    now,
-                )
-
-                ipt_start = tb.HSI_Tb_IptHiv(self.module, person_id=person_id)
-
-                # Request the health system to have this follow-up appointment
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    ipt_start, priority=1, topen=now, tclose=None
-                )
-            """
 
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
@@ -1497,7 +1464,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=1
             )
 
-
     def do_at_continuation(self, person_id):
         """Things to do when the person is already on ART"""
 
@@ -1517,7 +1483,42 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=1
             )
 
+    def consider_tb(self, person_id):
+        # todo - TB treatment when person starts ART:
+        pass
+        """
+        Consider whether IPT is needed at this time
 
+        # ----------------------------------- SCHEDULE IPT START -----------------------------------
+        district = df.at[person_id, "district_of_residence"]
+
+        if (
+            (district in params["tb_high_risk_distr"].values)
+            & (self.sim.date.year > 2012)
+            & (self.sim.modules["Hiv"].rng.rand() < params["hiv_art_ipt"])
+        ):
+
+            if (
+                not df.at[person_id, "hv_on_art"] == 0
+                and not (df.at[person_id, "tb_inf"].startswith("active"))
+                and (
+                    self.sim.modules["Hiv"].rng.random_sample(size=1)
+                    < params["hiv_art_ipt"]
+                )
+            ):
+                logger.debug(
+                    "HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s",
+                    person_id,
+                    now,
+                )
+
+                ipt_start = tb.HSI_Tb_IptHiv(self.module, person_id=person_id)
+
+                # Request the health system to have this follow-up appointment
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    ipt_start, priority=1, topen=now, tclose=None
+                )
+            """
 
 # ---------------------------------------------------------------------------
 #   Logging
@@ -1616,13 +1617,19 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
         plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
 
+        # proportion of adults (15+) living with HIV that are diagnosed:
+        dx_adult = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_adult
+
+        # proportion of children (15+) living with HIV that are diagnosed:
+        dx_children = len(df.loc[df.is_alive & df.hv_inf & df.hv_diagnosed & (df.age_years >= 15)]) / plhiv_children
+
         # proportions of adults (15+) living with HIV on treatment:
         art_adult = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years >= 15)])
         art_cov_adult = art_adult / plhiv_adult if plhiv_adult > 0 else 0
 
-        # proportion of adults (15+) living with HIV on treatment and with VL suppression
+        # proportion of adults (15+) on treatment that have good VL suppression
         art_adult_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years >= 15)])
-        art_cov_vs_adult = art_adult_vs / plhiv_adult if plhiv_adult > 0 else 0
+        art_cov_vs_adult = art_adult_vs / art_adult if art_adult > 0 else 0
 
         # proportions of children (0-14) living with HIV on treatment:
         art_children = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art != "not") & (df.age_years < 15)])
@@ -1630,25 +1637,42 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # proportion of children (0-14) living with HIV on treatment and with VL suppression
         art_children_vs = len(df.loc[df.is_alive & df.hv_inf & (df.hv_art == "on_VL_suppressed") & (df.age_years < 15)])
-        art_cov_vs_children = art_children_vs / plhiv_children if plhiv_adult > 0 else 0
+        art_cov_vs_children = art_children_vs / art_children if art_children > 0 else 0
+
+        # ------------------------------------ BEHAVIOUR CHANGE ------------------------------------
 
         # proportion of adults (15+) exposed to behaviour change intervention
         prop_adults_exposed_to_behav_intv = len(
             df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
         ) / len(df[df.is_alive & (df.age_years >= 15)])
 
+        # ------------------------------------ PREP AMONG FSW ------------------------------------
+        prop_fsw_on_prep = len(
+            df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15) & df.hv_is_on_prep]
+        ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
+
+        # ------------------------------------ MALE CIRCUMCISION ------------------------------------
+        # NB. Among adult men
+        prop_men_circ = len(
+            df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15) & df.li_is_circ]
+        ) / len(df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15) & df.li_is_circ])
+
+
         logger.info(key='hiv_program_coverage',
                     description='Coverage of interventions for HIV among adult (15+) and children (0-14s)',
                     data={
+                        "dx_adult": dx_adult,
+                        "dx_childen": dx_children,
                         "art_coverage_adult": art_cov_adult,
                         "art_coverage_adult_VL_suppression": art_cov_vs_adult,
                         "art_coverage_child": art_cov_children,
                         "art_coverage_child_VL_suppression": art_cov_vs_children,
-                        "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv
+                        "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
+                        "prop_fsw_on_prep": prop_fsw_on_prep,
+                        "prop_men_circ": prop_men_circ
                     }
                     )
 
-        # todo - **** prep, vmmc, etc
 
 # ---------------------------------------------------------------------------
 #   Helper functions for analysing outputs

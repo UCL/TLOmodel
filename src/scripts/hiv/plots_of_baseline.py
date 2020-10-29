@@ -1,5 +1,5 @@
-"""Create a large population to simulate and compare HIV prevalence at the start of the simulation with calibrating
-data"""
+"""Create a large population and compare HIV prevalence at the start of the simulation with calibrating
+data. """
 import datetime
 from pathlib import Path
 
@@ -59,9 +59,6 @@ for sex in ['F', 'M']:
     n_hiv = df.loc[df.sex == sex].groupby(by=['age_range'])['hv_inf'].sum()
     n_pop = df.loc[df.sex == sex].groupby(by=['age_range'])['hv_inf'].count()
     log_prev_by_age_and_sex[sex] = (n_hiv / n_pop).to_dict()
-
-
-
 # %% Create plots, using the same processing approach as when the model prevalence comes from the log
 
 # Get model outputs of HIV prevalence by age and sex in the year 2010

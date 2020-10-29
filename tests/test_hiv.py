@@ -332,6 +332,8 @@ def test_mtct_during_breastfeeding():
     # Check child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
 
+# todo - test_mtct_from_mother_to_child
+
 def test_hsi_testandrefer_and_circ():
     """Test that the HSI for testing and referral to circumcision works as intended"""
     sim = get_sim()
@@ -530,6 +532,5 @@ def test_hsi_testandrefer_and_art():
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
     ]
-
 
 # todo - test that the test and refer event is run is aids symptoms occur
