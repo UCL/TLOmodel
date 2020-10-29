@@ -448,7 +448,7 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         # strip out those who do not have this symptom being caused by this disease_module
         for person_id in people_to_resolve:
             if self.symptom_string not in self.module.has_what(person_id, disease_module=self.disease_module):
-                people_to_resolve = people_to_resolve.remove(person_id)
+                people_to_resolve.remove(person_id)
 
         # run the chg_symptom function
         if people_to_resolve:
