@@ -9,6 +9,7 @@ from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
+from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
 from tlo.methods.labour import HSI_Labour_ElectiveCaesareanSection
 from tlo.methods.tb import HSI_TbScreening
@@ -111,6 +112,8 @@ class CareOfWomenDuringPregnancy(Module):
             Types.REAL, 'sensitivity of a blood test to detect raised blood glucose'),
         'specificity_blood_test_glucose': Parameter(
             Types.REAL, 'specificity of a blood test to detect raised blood glucose'),
+        'effect_of_ifa_for_resolving_anaemia': Parameter(
+            Types.REAL, 'treatment effectiveness of starting iron and folic acid on resolving anaemai'),
         'treatment_effect_blood_transfusion_anaemia': Parameter(
             Types.REAL, 'treatment effectiveness of blood transfusion for anaemia in pregnancy'),
         'effect_of_iron_replacement_for_resolving_anaemia': Parameter(
@@ -174,8 +177,18 @@ class CareOfWomenDuringPregnancy(Module):
             Types.BOOL, 'Whether this woman has received treatment for severe pre-eclampsia'),
         'ac_eclampsia_treatment': Property(
             Types.BOOL, 'Whether this woman has received treatment for eclampsia'),
-
+        'ac_received_abx_for_prom': Property(
+            Types.BOOL, 'Whether this woman has received antibiotics as treatment for premature rupture of membranes'),
+        'ac_received_steroids_for_pprom': Property(
+            Types.BOOL, 'Whether this woman has received steroids as treatment for premature prelabour '
+                        'rupture of membranes'),
+        'ac_received_abx_for_chorioamnionitis': Property(
+            Types.BOOL, 'Whether this woman has received antibiotics as treatment for chorioamnionitis '
+                        'rupture of membranes'),
+        'ac_admitted_for_immediate_delivery': Property(
+            Types.BOOL, 'Whether this woman has been admitted to labour ward for delivery due to complications'),
     }
+
 
     def read_parameters(self, data_folder):
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
@@ -210,6 +223,10 @@ class CareOfWomenDuringPregnancy(Module):
         df.loc[df.is_alive, 'ac_ectopic_pregnancy_treated'] = False
         df.loc[df.is_alive, 'ac_severe_pre_eclampsia_treatment'] = False
         df.loc[df.is_alive, 'ac_eclampsia_treatment'] = False
+        df.loc[df.is_alive, 'ac_received_abx_for_prom'] = False
+        df.loc[df.is_alive, 'ac_received_steroids_for_pprom'] = False
+        df.loc[df.is_alive, 'ac_received_abx_for_chorioamnionitis'] = False
+        df.loc[df.is_alive, 'ac_admitted_for_immediate_delivery'] = False
 
         self.pac_interventions = BitsetHandler(self.sim.population, 'ac_post_abortion_care_interventions',
                                  ['mva', 'd_and_c', 'misoprostol', 'analgesia', 'antibiotics', 'blood_products'])
@@ -298,6 +315,10 @@ class CareOfWomenDuringPregnancy(Module):
         df.at[child_id, 'ac_ectopic_pregnancy_treated'] = False
         df.at[child_id, 'ac_severe_pre_eclampsia_treatment'] = False
         df.at[child_id, 'ac_eclampsia_treatment'] = False
+        df.at[child_id, 'ac_received_abx_for_prom'] = False
+        df.at[child_id, 'ac_received_steroids_for_pprom'] = False
+        df.at[child_id, 'ac_received_abx_for_chorioamnionitis'] = False
+        df.at[child_id, 'ac_admitted_for_immediate_delivery'] = False
 
         # Run a check at birth to make sure no women exceed 8 visits, which shouldn't occur through this logic
         assert df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] < 9
@@ -1388,7 +1409,7 @@ class CareOfWomenDuringPregnancy(Module):
         if mother.ps_antepartum_haemorrhage == 'placenta_praevia' and \
             mother.ps_antepartum_haemorrhage_severity == \
             'mild_moderate' and mother.ps_gestational_age_in_weeks >= 28:
-            days_untill_safe_for_cs = (37 * 7) - (mother.ps_gestational_age_in_weeks * 7)
+            days_untill_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
             #inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
             #    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
@@ -1407,6 +1428,119 @@ class CareOfWomenDuringPregnancy(Module):
                                                                        DateOffset(days=days_untill_safe_for_cs))
 
             # todo: steriods of GA < 34 weeks
+
+    def antibiotics_for_prom(self, individual_id, hsi_event):
+        df = self.sim.population.props
+
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        item_code_benpen = pd.unique(
+            consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
+                            'Item_Code'])[0]
+        item_code_wfi = pd.unique(
+            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code_gloves = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+        consumables_abx_for_prom = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_benpen: 4, item_code_wfi: 1, item_code_needle: 1,
+                          item_code_gloves: 1,}}
+
+        # todo: consumables for whole inpatient stay?
+
+        # Then query if these consumables are available during this HSI
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_abx_for_prom,
+            to_log=False)
+
+        if outcome_of_request_for_consumables:
+            df.at[individual_id, 'ac_received_abx_for_prom'] = True
+
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_abx_for_prom,
+                to_log=True)
+
+    def steroids_following_pprom(self, individual_id, hsi_event):
+        df = self.sim.population.props
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        item_code_steroids_prem_dexamethasone = pd.unique(
+            consumables.loc[consumables['Items'] == 'Dexamethasone 5mg/ml, 5ml_each_CMST', 'Item_Code'])[0]
+        item_code_steroids_prem_betamethasone = pd.unique(
+         consumables.loc[consumables['Items'] == 'Betamethasone, 12 mg injection', 'Item_Code'])[0]
+        item_code_wfi = pd.unique(
+            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code_gloves = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+        consumables_abx_for_prom = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_steroids_prem_dexamethasone: 1, item_code_steroids_prem_betamethasone:1,
+                          item_code_wfi: 1, item_code_needle: 1,
+                          item_code_gloves: 1, }}
+
+        # todo: block second administration of steriods in labour module?
+
+        # Then query if these consumables are available during this HSI
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_abx_for_prom,
+            to_log=False)
+
+        if outcome_of_request_for_consumables:
+            df.at[individual_id, 'ac_received_steroids_post_pprom'] = True
+
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_abx_for_prom,
+                to_log=True)
+
+    def antibiotics_for_chorioamnionitis(self, individual_id, hsi_event):
+        df = self.sim.population.props
+
+        consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+
+        item_code_benpen = pd.unique(
+            consumables.loc[consumables['Items'] == 'Benzathine benzylpenicillin, powder for injection, 2.4 million IU',
+                            'Item_Code'])[0]
+        item_code_genta = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gentamycin, injection, 40 mg/ml in 2 ml vial',
+                            'Item_Code'])[0]  # TODO: dose?
+        item_code_wfi = pd.unique(
+            consumables.loc[consumables['Items'] == 'Water for injection, 10ml_Each_CMST', 'Item_Code'])[0]
+        item_code_needle = pd.unique(
+            consumables.loc[consumables['Items'] == 'Syringe, needle + swab', 'Item_Code'])[0]
+        item_code_gloves = pd.unique(
+            consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+
+        consumables_abx_for_chorio = {
+            'Intervention_Package_Code': {},
+            'Item_Code': {item_code_benpen: 4, item_code_genta: 1, item_code_wfi: 1, item_code_needle: 1,
+                          item_code_gloves: 1}}
+
+        # todo: consumables for whole inpatient stay?
+
+        # Then query if these consumables are available during this HSI
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=hsi_event,
+            cons_req_as_footprint=consumables_abx_for_chorio,
+            to_log=False)
+
+        if outcome_of_request_for_consumables:
+            df.at[individual_id, 'ac_received_abx_for_chorioamnionitis'] = True
+
+            self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=hsi_event,
+                cons_req_as_footprint=consumables_abx_for_chorio,
+                to_log=True)
+
 
 class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
     """ This is the  HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact. It will be scheduled by the
@@ -2173,6 +2307,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
                                          'with this configuration')
 
 
+
 class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, IndividualScopeEventMixin):
     """"""
     def __init__(self, module, person_id):
@@ -2201,6 +2336,7 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
         # TODO - Severe pre-eclampsia - blood pressure, urine dip, immediate treatment admit (for delivery plan)
         # TODO - APH - ultrasound?, bloods (hb), immediate treatment admit
         # TODO - Infection/sepsis - BP, temp etc, admit
+        # TODO- PROM, examination/patient report
 
         # TODO: store diagnosis/cause and send to inpatient event- cause variable used to give treatment etc
 
@@ -2231,6 +2367,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        params = self.module.parameters
 
         if mother.is_alive:
             logger.debug(key='message', data=f'Mother {person_id} has been admited for treatment of a complication of '
@@ -2291,6 +2428,63 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # TODO: deworming/schisto treatment
                 # TODO: capture number of inpatient days by severity
                 # TODO: comment out non EHP interventions?
+
+        #  ----------------------------- Treatment of Premature Rupture of Membranes-----------------------------------
+            # Here we manage treatment for women who have sought care for PROM but are not yet septic or in labour
+            if mother.ps_premature_rupture_of_membranes and ~mother.ps_chorioamnionitis:
+
+                # Antibiotics are delivered to reduce risk of chorioamnionitis
+                self.module.antibiotics_for_prom(person_id, self)
+
+                # For women who are close to term, they are admitted to labour ward immediately and labour is induced
+                if mother.ps_gestational_age_in_weeks > 34:
+                    df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
+                    self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                            self.sim.date)
+                    # todo: increase risk of IP sepsis due to prom/reduced due to abx?
+
+                # Women who are preterm are given steroids to improve fetal lung development as risk of preterm labour
+                # is increased
+                elif mother.ps_gestational_age_in_weeks < 35:
+                    self.module.steroids_following_pprom(person_id, self)
+
+                    # These women will remain inpatients until GA of 34 weeks and delivery can occur safely
+                    # We calculate their risk of developing chorioamnionitis as an inpatient, post anitbiotic
+                    # treatment
+                    days_until_induction = (34*7) - (mother.ps_gestational_age_in_weeks * 7)
+
+                    risk_of_chorioamnionitis = params['ps_linear_equations']['chorioamnionitis'].predict(
+                        df.loc[[person_id]])[person_id]
+
+                    # For women who develop chorioamnionitis delivery is indicated to reduce risk of poor fetal/maternal
+                    # outcomes
+                    if self.module.rng.random_sample() < risk_of_chorioamnionitis:
+                        df.at[person_id, 'ps_chorioamnionitis'] = True
+                        df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
+                        self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                                self.sim.date)
+
+                    # For women who do not show signs of infection, we calculate their risk of going into pre-term
+                    # labour prior to induction at 34 weeks
+                    else:
+                        risk_of_early_labour = 0.3   # todo: parameter/lm
+                        # These women are then admitted to labour ward for delivery
+                        if self.module.rng.random_sample() < risk_of_early_labour:
+                            days_when_labour_onsets = self.module.rng.randint(0, days_until_induction)
+                            df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
+                            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                                    (self.sim.date + DateOffset(days=days_when_labour_onsets)))
+                        else:
+                            # Otherwise we assume these women wont go into labour before induction and we schedule
+                            # their future delivery at 34 weeks
+                            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                                   (self.sim.date + DateOffset(days=days_until_induction)))
+
+            # Treatment of women with PROM who are currently septic
+            if mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis:
+                self.module.antibiotics_for_chorioamnionitis(person_id, self)
+                self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                        self.sim.date)
 
         #  --------------------------------- Treatment of Antepartum Haemorrhage -------------------------------------
             # If abruption > 28 weeks --> CS

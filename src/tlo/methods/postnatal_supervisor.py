@@ -468,6 +468,8 @@ class LatePostpartumSepsisOnsetEvent(Event, IndividualScopeEventMixin):
 
         assert df.at[individual_id, 'la_is_postpartum']
 
+        # todo mimic new sepsis modelling in labour!
+
         if df.at[individual_id, 'is_alive']:
             df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
             self.module.postnatal_tracker['postnatal_sepsis'] += 1

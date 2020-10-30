@@ -137,6 +137,22 @@ class Labour (Module):
             Types.REAL, 'probability of an antepartum haemorrhage during labour'),
         'rr_aph_pl_ol': Parameter(
             Types.REAL, 'relative risk of antepartum haemorrhage following obstructed labour'),
+        'prob_chorioamnionitis_ip': Parameter(
+            Types.REAL, 'probability of chorioamnionitis infection during labour'),
+        'prob_other_maternal_infection_ip': Parameter(
+            Types.REAL, 'probability of other obsteric infection in labour'),
+        'severity_infection': Parameter(
+            Types.LIST, 'probability of a womans ip infection being mild, sepsis or severe sepsis'),
+        'prob_endometritis_pp': Parameter(
+            Types.REAL, 'probability of endometritis infection following labour'),
+        'prob_skin_soft_tissue_inf_pp': Parameter(
+            Types.REAL, 'probability of a skin or soft tissue infection following labour'),
+        'prob_urinary_tract_inf_pp': Parameter(
+            Types.REAL, 'probability of a urinary tract infection following labour'),
+        'prob_other_maternal_infection_pp': Parameter(
+            Types.REAL, 'probability of other obstetric infections following labour'),
+        'severity_infection_pp': Parameter(
+            Types.LIST, 'probability of a womans pp infection being mild, sepsis or severe sepsis'),
         'prob_ip_sepsis': Parameter(
             Types.REAL, 'probability of sepsis in labour'),
         'rr_ip_sepsis_pl_ol': Parameter(
@@ -161,6 +177,8 @@ class Labour (Module):
             Types.REAL, 'case fatality rate for severe pre eclampsia during labour'),
         'cfr_sepsis': Parameter(
             Types.REAL, 'case fatality rate for sepsis during labour'),
+        'severe_sepsis_cfr_multiplier': Parameter(
+            Types.REAL, 'multiplier applied to CFR for women who are severely septic'),
         'cfr_uterine_rupture': Parameter(
             Types.REAL, 'case fatality rate for uterine rupture in labour'),
         'prob_still_birth_obstructed_labour': Parameter(
@@ -435,6 +453,16 @@ class Labour (Module):
                                                    'delivery'),
         'la_uterine_rupture_disab': Property(Types.BOOL, 'disability associated with uterine rupture'),
         'la_uterine_rupture_treatment': Property(Types.BOOL, 'whether this womans uterine rupture has been treated'),
+        'la_maternal_ip_infection': Property(Types.CATEGORICAL, 'type of infection during labour',
+                                             categories=['none', 'chorioamnionitis', 'other_maternal_infection']),
+        'la_maternal_ip_infection_severity': Property(Types.CATEGORICAL, 'severity of infection during labour',
+                                                        categories=['none', 'mild', 'sepsis', 'severe_sepsis']),
+        'la_maternal_pp_infection': Property(Types.CATEGORICAL, 'type of infection following labour',
+                                             categories=['none', 'endometritis', 'urinary_tract_inf',
+                                                         'skin_soft_tissue_inf',
+                                                         'other_maternal_infection']),
+        'la_maternal_pp_infection_severity': Property(Types.CATEGORICAL, 'severity of infection during labour',
+                                                      categories=['none', 'mild', 'sepsis', 'severe_sepsis']),
         'la_sepsis': Property(Types.BOOL, 'whether the woman has developed sepsis associated with in this delivery'),
         'la_sepsis_postpartum': Property(Types.BOOL, 'whether the woman has developed sepsis following delivery'),
         'la_sepsis_disab': Property(Types.BOOL, 'disability associated with maternal sepsis'),
@@ -548,20 +576,49 @@ class Labour (Module):
                                  params['obstructed_labour_delayed_treatment_effect_sb'])
             ),
 
+            'chorioamnionitis_ip': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_chorioamnionitis_ip']),
+
+            'other_maternal_infection_ip': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_other_maternal_infection_ip']),
+
+            'endometritis_pp': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_endometritis_pp']),
+
+            'skin_soft_tissue_inf_pp': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_skin_soft_tissue_inf_pp']),
+
+            'urinary_tract_inf_pp': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_urinary_tract_inf_pp']),
+
+            'other_maternal_infection_pp': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_other_maternal_infection_pp']),
+
             'sepsis_ip': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_ip_sepsis'],
                 # Predictor('la_obstructed_labour').when(True, params['rr_ip_sepsis_pl_ol']),
-            ),
+                Predictor('ps_chorioamnionitis').when(True, 1.5),   # TODO: placeholder
+                Predictor('ac_received_abx_for_prom').when(True, 0.5)),  # TODO: placeholder
+
+            # TODO: LINK WITH PROM/ CHORIOAMNIONITIS/ TREAMTNET EFFECT ETC
 
             'sepsis_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['cfr_sepsis'],
+                Predictor('la_maternal_ip_infection_severity').when('severe_sepsis',
+                                                                    params['severe_sepsis_cfr_multiplier']),
                 Predictor().when('la_sepsis_treatment & __attended_delivery__',
                                  params['sepsis_prompt_treatment_effect_md']),
                 Predictor().when('la_sepsis_treatment & ~__attended_delivery__',
-                                 params['sepsis_delayed_treatment_effect_md'])
-            ),
+                                 params['sepsis_delayed_treatment_effect_md']),
+                Predictor('ac_received_abx_for_chorioamnionitis').when(True, 0.5)),  # TODO: placeholder
 
             'sepsis_pp': LinearModel(
                 LinearModelType.LOGISTIC,
@@ -776,6 +833,10 @@ class Labour (Module):
         df.loc[df.is_alive, 'la_uterine_rupture'] = False
         df.loc[df.is_alive, 'la_uterine_rupture_disab'] = False
         df.loc[df.is_alive, 'la_uterine_rupture_treatment'] = False
+        df.loc[df.is_alive, 'la_maternal_ip_infection'] = 'none'
+        df.loc[df.is_alive, 'la_maternal_ip_infection_severity'] = 'none'
+        df.loc[df.is_alive, 'la_maternal_pp_infection'] = 'none'
+        df.loc[df.is_alive, 'la_maternal_pp_infection_severity'] = 'none'
         df.loc[df.is_alive, 'la_sepsis'] = False
         df.loc[df.is_alive, 'la_sepsis_postpartum'] = False
         df.loc[df.is_alive, 'la_sepsis_disab'] = False
@@ -817,10 +878,13 @@ class Labour (Module):
                                'hospital_birth': 0, 'caesarean_section': 0, 'early_preterm': 0,
                                'late_preterm': 0, 'post_term': 0, 'term': 0}
 
-        self.possible_intrapartum_complications = ['obstructed_labour', 'antepartum_haem', 'sepsis',
-                                                   'uterine_rupture', 'eclampsia', 'severe_pre_eclamp']
+        self.possible_intrapartum_complications = ['obstructed_labour', 'antepartum_haem', 'chorioamnionitis',
+                                                   'other_maternal_infection', 'uterine_rupture', 'sepsis',
+                                                   'eclampsia', 'severe_pre_eclamp']
 
-        self.possible_postpartum_complications = ['sepsis', 'postpartum_haem', 'postpartum_haem_secondary',
+        self.possible_postpartum_complications = ['sepsis', 'endometritis', 'skin_soft_tissue_inf', 'urinary_tract_inf',
+                                                  'other_maternal_infection', 'postpartum_haem',
+                                                  'postpartum_haem_secondary',
                                                   'eclampsia', 'severe_pre_eclamp']
 
         # =======================Register dx_tests for complications during labour/postpartum=======================
@@ -917,6 +981,10 @@ class Labour (Module):
         df.at[child_id, 'la_uterine_rupture'] = False
         df.at[child_id, 'la_uterine_rupture_disab'] = False
         df.at[child_id, 'la_uterine_rupture_treatment'] = False
+        df.at[child_id, 'la_maternal_ip_infection'] = 'none'
+        df.at[child_id, 'la_maternal_ip_infection_severity'] = 'none'
+        df.at[child_id, 'la_maternal_pp_infection'] = 'none'
+        df.at[child_id, 'la_maternal_pp_infection_severity'] = 'none'
         df.at[child_id, 'la_sepsis'] = False
         df.at[child_id, 'la_sepsis_postpartum'] = False
         df.at[child_id, 'la_sepsis_disab'] = False
@@ -1110,12 +1178,25 @@ class Labour (Module):
 
         assert mni[individual_id]['delivery_setting'] != 'none'
         assert complication in self.possible_intrapartum_complications
-
+        print('starting complication is', complication)
         if self.predict(params['la_labour_equations'][f'{complication}_ip'], individual_id):
             # If the woman will experience a complication we make changes to the data frame and store the complication
             # in a tracker
-            df.at[individual_id, f'la_{complication}'] = True
-            self.labour_tracker[f'{complication}'] += 1
+
+            if complication == 'chorioamnionitis' or complication == 'other_maternal_infection':
+                print(complication)
+                df.at[individual_id, 'la_maternal_ip_infection'] = complication
+                potential_severity = ['mild', 'sepsis', 'severe_sepsis']
+                df.at[individual_id, 'la_maternal_ip_infection_severity'] = \
+                    self.rng.choice(potential_severity, p=params['severity_infection'])
+                df.at[individual_id, 'la_sepsis_disab'] = True
+
+                # TODO: should risk of severe sepsis/sepsis be stratified by risk? if so, use LM
+                # todo: risk of severity may differ between infection types
+
+            else:
+                df.at[individual_id, f'la_{complication}'] = True
+                self.labour_tracker[f'{complication}'] += 1
 
             if complication == 'antepartum_haem':
                 # Severity of bleeding is assigned if a woman is experience an antepartum haemorrhage to map to DALY
@@ -1150,9 +1231,44 @@ class Labour (Module):
             # during the first 42 days following birth, this complication will onset. This draw is probability weighted
             # as both complications are most likely to occur immediately after, or close after, birth
 
-            # TODO: wouldnt AMTSL only prevent PPH 2ndry to uterine atony, a lot of secondary pph is retained products.
+            if complication == 'endometritis' or 'skin_soft_tissue_inf' or 'urinary_tract_inf' or 'other_maternal_' \
+                                                                                                  'infection':
+                day_of_onset = int(self.rng.choice(postnatal_days, size=1,
+                                                   p=params['daily_risk_of_postnatal_sepsis_onset']))
+                # TODO: this should vary by site of infection?
+
+                if day_of_onset < 2:
+                    df.at[individual_id, 'la_maternal_pp_infection'] = complication
+                    potential_severity = ['mild', 'sepsis', 'severe_sepsis']
+                    df.at[individual_id, 'la_maternal_pp_infection_severity'] = \
+                        self.rng.choice(potential_severity, p=params['severity_infection_pp'])
+                    if df.at[individual_id, 'la_maternal_pp_infection_severity'] != 'mild':
+                        df.at[individual_id, 'la_sepsis_pp_disab'] = True
+
+                elif day_of_onset > 1:
+                    self.sim.schedule_event(postnatal_supervisor.LatePostpartumSepsisOnsetEvent
+                                            (self.sim.modules['PostnatalSupervisor'], individual_id),
+                                            self.sim.date + DateOffset(days=day_of_onset))
+
+                # todo: see notes above
+
+                # A similar pattern is then followed for sepsis
+        #        if complication == 'sepsis':
+        #            day_of_onset = int(self.rng.choice(postnatal_days, size=1,
+        #                                               p=params['daily_risk_of_postnatal_sepsis_onset']))
+        #            if day_of_onset < 2:
+        #                df.at[individual_id, f'la_{complication}_postpartum'] = True
+        #                self.labour_tracker[f'{complication}_postpartum'] += 1
+        #                df.at[individual_id, f'la_{complication}_disab'] = True
+
+        #            elif day_of_onset > 1:
+        #                self.sim.schedule_event(postnatal_supervisor.LatePostpartumSepsisOnsetEvent
+        #                                        (self.sim.modules['PostnatalSupervisor'], individual_id),
+        #                                        self.sim.date + DateOffset(days=day_of_onset))
 
             if complication == 'postpartum_haem':
+                # TODO: wouldnt AMTSL only prevent PPH 2ndry to uterine atony, a lot of secondary pph is retained
+                #  products.
                 df.at[individual_id, f'la_{complication}'] = True
                 self.labour_tracker[f'{complication}'] += 1
                 mni[individual_id]['source_pph'] = self.rng.choice(['uterine_atony', 'retained_placenta'],
@@ -1174,20 +1290,6 @@ class Labour (Module):
                 self.sim.schedule_event(postnatal_supervisor.SecondaryPostpartumHaemorrhageOnsetEvent
                                         (self.sim.modules['PostnatalSupervisor'], individual_id), self.sim.date +
                                         DateOffset(days=day_of_onset))
-
-            # A similar pattern is then followed for sepsis
-            if complication == 'sepsis':
-                    day_of_onset = int(self.rng.choice(postnatal_days, size=1,
-                                                   p=params['daily_risk_of_postnatal_sepsis_onset']))
-                    if day_of_onset < 2:
-                        df.at[individual_id, f'la_{complication}_postpartum'] = True
-                        self.labour_tracker[f'{complication}_postpartum'] += 1
-                        df.at[individual_id, f'la_{complication}_disab'] = True
-
-                    elif day_of_onset > 1:
-                        self.sim.schedule_event(postnatal_supervisor.LatePostpartumSepsisOnsetEvent
-                                                (self.sim.modules['PostnatalSupervisor'], individual_id),
-                                                self.sim.date + DateOffset(days=day_of_onset))
 
     def progression_of_hypertensive_disorders(self, individual_id):
         """"""
@@ -1264,7 +1366,8 @@ class Labour (Module):
         assert cause in self.possible_postpartum_complications
 
         if self.predict(params['la_labour_equations'][f'{cause}_pp_death'], individual_id):
-            logger.debug(key='message',data=f'{cause} has contributed to person {individual_id} death following labour')
+            logger.debug(key='message',
+                         data=f'{cause} has contributed to person {individual_id} death following labour')
 
             self.labour_tracker[f'{cause}_death'] += 1
             mni[individual_id]['death_postpartum'] = True
@@ -1805,8 +1908,15 @@ class Labour (Module):
         if df.at[individual_id, 'la_postpartum_haem']:
             self.set_maternal_death_status_postpartum(individual_id, cause='postpartum_haem')
 
-        if df.at[individual_id, 'la_sepsis_postpartum']:
+        if df.at[individual_id, 'la_maternal_pp_infection'] != 'none' and df.at[individual_id,
+                                                                                'la_maternal_' \
+                                                                                'infection_severity_pp'] == 'sepsis' or\
+                                                                                                            'severe_' \
+                                                                                                            'sepsis':
             self.set_maternal_death_status_postpartum(individual_id, cause='sepsis')
+
+    #    if df.at[individual_id, 'la_sepsis_postpartum']:
+    #        self.set_maternal_death_status_postpartum(individual_id, cause='sepsis')
 
         if mni[individual_id]['death_postpartum']:
             self.labour_tracker['maternal_death'] += 1
@@ -1861,6 +1971,13 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
         person = df.loc[individual_id]
+
+        if person.is_alive and person.is_pregnant and person.la_due_date_current_pregnancy != self.sim.date and \
+            person.ac_admitted_for_immediate_delivery:
+            logger.debug(key='message', data=f'person {individual_id} has just reached LabourOnsetEvent on '
+                                             f'{self.sim.date}, Whilst this is not their due date- they have been '
+                                             f'admitted for delivery and will now progress into the labour event')
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = self.sim.date
 
         # We exclude women who may have been previously pregnant/had their due date has been moved by an intervention
         # and should no longer be in labour today
@@ -1952,25 +2069,35 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                             f'{labour_state} on date {self.sim.date}')
 
             # ===================================== CARE SEEKING AND DELIVERY SETTING ==============
-            # Here we calculate this womans predicted risk of home birth and health centre birth
-            pred_hb_delivery = params['la_labour_equations']['probability_delivery_at_home'].predict(
-                df.loc[[individual_id]])[individual_id]
-            pred_hc_delivery = params['la_labour_equations']['probability_delivery_health_centre'].predict(
-                df.loc[[individual_id]])[individual_id]
+            # Only women who are in spotaneous labour, assumed to be in the community, can seek care
 
-            # The denominator is calculated
-            denom = 1 + pred_hb_delivery + pred_hc_delivery
+            if ~df.at[individual_id, 'ac_admitted_for_immediate_delivery']:
 
-            # Followed by the probability of each of the three outcomes - home birth, health centre birth or hospital
-            # birth
-            prob_hb = pred_hb_delivery / denom
-            prob_hc = pred_hc_delivery / denom
-            prob_hp = 1 / denom
+                # Here we calculate this womans predicted risk of home birth and health centre birth
+                pred_hb_delivery = params['la_labour_equations']['probability_delivery_at_home'].predict(
+                    df.loc[[individual_id]])[individual_id]
+                pred_hc_delivery = params['la_labour_equations']['probability_delivery_health_centre'].predict(
+                    df.loc[[individual_id]])[individual_id]
 
-            # And a probability weighted random draw is used to determine where the woman will deliver
-            facility_types = ['home_birth', 'health_centre', 'hospital']
-            probabilities = [prob_hb, prob_hc, prob_hp]
-            mni[individual_id]['delivery_setting'] = self.module.rng.choice(facility_types, p=probabilities)
+                # The denominator is calculated
+                denom = 1 + pred_hb_delivery + pred_hc_delivery
+
+                # Followed by the probability of each of the three outcomes - home birth, health centre birth or
+                # hospital birth
+                prob_hb = pred_hb_delivery / denom
+                prob_hc = pred_hc_delivery / denom
+                prob_hp = 1 / denom
+
+                # And a probability weighted random draw is used to determine where the woman will deliver
+                facility_types = ['home_birth', 'health_centre', 'hospital']
+                probabilities = [prob_hb, prob_hc, prob_hp]
+                mni[individual_id]['delivery_setting'] = self.module.rng.choice(facility_types, p=probabilities)
+
+            else:
+                # We assume all women with complications will deliver in a hospital
+                mni[individual_id]['delivery_setting'] = 'hospital'
+                # TODO: Here we need to decide if this woman will be induced or have emergency CS? (OR IN
+                #  ANTENATAL EVENT) - CURRENTLY ALL WOMEN ARE JUST DELIVERING VAGINALLY
 
             # Check all women's 'delivery setting' is set
             assert mni[individual_id]['delivery_setting'] is not None
@@ -2058,8 +2185,23 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
 
             self.module.progression_of_hypertensive_disorders(individual_id)
 
-            for complication in ['obstructed_labour', 'antepartum_haem', 'sepsis', 'uterine_rupture']:
-                self.module.set_intrapartum_complications(individual_id, complication=complication)
+            # Women may start labour with chorioamnionitis due to PROM in the community, we track this as a complication
+            # of labour to apply risk of death
+            if df.at[individual_id, 'ps_chorioamnionitis']:
+
+                df.at[individual_id, 'la_maternal_ip_infection'] = 'chorioamnionitis'
+                potential_severity = ['mild', 'sepsis', 'severe_sepsis']
+                df.at[individual_id, 'la_maternal_ip_infection_severity'] = \
+                    self.module.rng.choice(potential_severity, p=params['severity_infection'])
+                df.at[individual_id, 'la_sepsis_disab'] = True
+
+                for complication in ['obstructed_labour', 'antepartum_haem', 'other_maternal_infection',
+                                     'uterine_rupture']:
+                    self.module.set_intrapartum_complications(individual_id, complication=complication)
+            else:
+                for complication in ['obstructed_labour', 'antepartum_haem', 'chorioamnionitis',
+                                     'other_maternal_infection', 'uterine_rupture']:
+                    self.module.set_intrapartum_complications(individual_id, complication=complication)
 
             # ==============================  CARE SEEKING FOLLOWING COMPLICATIONS =================
             # We use a logistic regression equation, stored in the linear model, to determine if women will seek care
@@ -2069,7 +2211,8 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
             if not mni[individual_id]['squeeze_to_high_for_hsi']:
                 if (individual.la_obstructed_labour or
                         individual.la_antepartum_haem or
-                        individual.la_sepsis or
+                        #individual.la_sepsis or
+                        (individual.la_maternal_ip_infection != 'none') or  # TODO:assume any severity = % careseeking
                         individual.ps_htn_disorders == 'eclampsia' or
                         individual.ps_htn_disorders == 'severe_pre_eclamp' or
                         individual.la_uterine_rupture):
@@ -2293,8 +2436,12 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'la_antepartum_haem']:
             self.module.set_maternal_death_status_intrapartum(individual_id, cause='antepartum_haem')
 
-        if df.at[individual_id, 'la_sepsis']:
+        if (df.at[individual_id, 'la_maternal_ip_infection'] != 'none') and \
+            (df.at[individual_id,'la_maternal_ip_infection_severity'] =='sepsis' or 'severe_sepsis'):
             self.module.set_maternal_death_status_intrapartum(individual_id, cause='sepsis')
+
+    #    if df.at[individual_id, 'la_sepsis']:
+    #        self.module.set_maternal_death_status_intrapartum(individual_id, cause='sepsis')
 
         if df.at[individual_id, 'la_uterine_rupture']:
             self.module.set_maternal_death_status_intrapartum(individual_id, cause='uterine_rupture')
@@ -2440,9 +2587,21 @@ class HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(HSI_Event, Individual
         # complications (effect of prophylaxis is included in the linear model for relevant complications)
 
         if not mni[person_id]['sought_care_for_complication']:
-            [self.module.set_intrapartum_complications(person_id, complication=complication)
-                for complication in
-                ['obstructed_labour', 'antepartum_haem', 'sepsis']]
+            if df.at[person_id, 'ps_chorioamnionitis']:
+
+                df.at[person_id, 'la_maternal_ip_infection'] = 'chorioamnionitis'
+                potential_severity = ['mild', 'sepsis', 'severe_sepsis']
+                df.at[person_id, 'la_maternal_ip_infection_severity'] = \
+                    self.module.rng.choice(potential_severity, p=params['severity_infection'])
+                df.at[person_id, 'la_sepsis_disab'] = True
+
+                for complication in ['obstructed_labour', 'antepartum_haem', 'other_maternal_infection']:
+                    self.module.set_intrapartum_complications(person_id, complication=complication)
+            else:
+                for complication in ['obstructed_labour', 'antepartum_haem', 'chorioamnionitis',
+                                     'other_maternal_infection']:
+                    self.module.set_intrapartum_complications(person_id, complication=complication)
+
             self.module.progression_of_hypertensive_disorders(person_id)
 
         # n.b. we do not apply the risk of uterine rupture due to the causal link between obstructed labour and
