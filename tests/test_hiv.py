@@ -342,18 +342,17 @@ def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
 
     sim = get_sim()
 
-    # Manipulate MTCT rates so that transmission always occurs following birth
+    # Manipulate MTCT rates so that transmission always occurs during bf is the mother is HIV-pos
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 0.0
     sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 0.0
     sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 0.0
     sim.modules['Hiv'].parameters["monthly_prob_mtct_bf_treated"] = 1.0
     sim.modules['Hiv'].parameters["monthly_prob_mtct_bf_untreated"] = 1.0
 
-    # Do a birth from a mother that is HIV-positive:
+    # Do a birth from a mother that is HIV-negative:
     df = sim.population.props
     mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
-    df.at[mother_id, 'hv_inf'] = True
-    df.at[mother_id, 'hv_date_inf'] = sim.date
+    df.at[mother_id, 'hv_inf'] = False
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
     child_id = sim.population.do_birth()
@@ -363,16 +362,19 @@ def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
     # Check child is not yet HIV-positive
     assert not sim.population.props.at[child_id, "hv_inf"]
 
-    # Check that there is an infection event:
-    date_inf_event, inf_event = [
+    # Check that there is no infection event for the child:
+    assert 0 == len([
         ev for ev in sim.find_events_for_person(child_id) if isinstance(ev[1], hiv.HivInfectionDuringBreastFeedingEvent)
-    ][0]
+    ])
 
-    # Run the infection event
-    inf_event.apply(child_id)
+    # Let the mother become infected
+    inf_event = hiv.HivInfectionEvent(person_id=mother_id, module=sim.modules['Hiv'])
+    inf_event.apply(mother_id)
 
-    # Check child is now HIV-positive
-    assert sim.population.props.at[child_id, "hv_inf"]
+    # Check that there is now an infection event scheduled for the child
+    assert 1 == len([
+        ev for ev in sim.find_events_for_person(child_id) if isinstance(ev[1], hiv.HivInfectionDuringBreastFeedingEvent)
+    ])
 
 def test_test_and_refer_event_scheduled_by_main_event_poll():
     """Check that the main event poll causes there to be event of the HSI_TestAndRefer"""
@@ -658,7 +660,3 @@ def test_hsi_testandrefer_and_art():
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
     ]
-
-
-
-

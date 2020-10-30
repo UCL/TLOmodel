@@ -67,12 +67,8 @@ def run_sim(scenario):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # %% Create plots:
-
-    # read the results
-    output = parse_log_file(sim.log_filepath)
-
-    return output
+    # Return the parsed_log-file
+    return parse_log_file(sim.log_filepath)
 
 
 #%% Define the scenarios:
