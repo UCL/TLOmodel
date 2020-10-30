@@ -52,13 +52,13 @@ def check_configuration_of_properties(sim):
     df = sim.population.props
 
     # Those that have never had diarrhoea, should have not_applicable/null values for all the other properties:
-    assert (df.loc[~df['gi_ever_had_diarrhoea'], [
+    assert (df.loc[~df.gi_ever_had_diarrhoea & ~df.date_of_birth.isna(), [
         'gi_last_diarrhoea_pathogen',
         'gi_last_diarrhoea_type',
         'gi_last_diarrhoea_dehydration']
     ] == 'not_applicable').all().all()
 
-    assert pd.isnull(df.loc[~df['gi_ever_had_diarrhoea'], [
+    assert pd.isnull(df.loc[~df.date_of_birth.isna() & ~df['gi_ever_had_diarrhoea'], [
         'gi_last_diarrhoea_date_of_onset',
         'gi_last_diarrhoea_duration',
         'gi_last_diarrhoea_recovered_date',
