@@ -286,7 +286,7 @@ plt.ylabel('Death rate')
 axes = plt.gca()
 axes.set_ylim(ymin=0)
 # plt.legend('GBD data', 'Model output')
-plt.title('Death rate from 2020 and 2019 - GBD data vs model output')
+plt.title('Death rate from 2010 and 2019 - GBD data vs model output')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_GBD_vs_model" + datestamp + ".pdf"), format='pdf')
 plt.show()
 

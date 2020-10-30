@@ -9,7 +9,18 @@ from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import contraception, demography
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    labour,
+    pregnancy_supervisor,
+    symptommanager,
+)
+
 from tlo.util import create_age_range_lookup
 
 # Where will output go - by default, wherever this script is run
@@ -23,6 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # assume Python console is started in the top-leve TLOModel directory
 # resourcefilepath = Path("./resources")
 resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+resources = "./resources"
+
 
 # %% Run the Simulation
 
@@ -38,8 +51,17 @@ log_config = {'filename': logfile,
 sim = Simulation(start_date=start_date, seed=1, log_config=log_config)
 
 # run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(
+        demography.Demography(resourcefilepath=resources),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+        healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resources),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+        healthburden.HealthBurden(resourcefilepath=resources),
+        contraception.Contraception(resourcefilepath=resources),
+        labour.Labour(resourcefilepath=resources),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    )
 
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
