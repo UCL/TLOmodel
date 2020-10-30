@@ -17,9 +17,10 @@ from tlo.methods import (
     hiv,
     labour,
     pregnancy_supervisor,
-    symptommanager, dx_algorithm_child,
+    symptommanager, dx_algorithm_child, hsi_generic_first_appts,
 )
-from tlo.methods.hiv import Hiv, HSI_Hiv_TestAndRefer
+from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
+from tlo.methods.hiv import Hiv, HSI_Hiv_TestAndRefer, HivAidsOnsetEvent
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -334,8 +335,6 @@ def test_mtct_during_breastfeeding():
     # Check child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
 
-
-
 def test_test_and_refer_event_scheduled_by_main_event_poll():
     """Check that the main event poll causes there to be event of the HSI_TestAndRefer"""
 
@@ -359,6 +358,68 @@ def test_test_and_refer_event_scheduled_by_main_event_poll():
     assert num_not_diagnosed == len(dates_of_tr_events)
     assert all([(sim.date <= d <= (sim.date + pd.DateOffset(months=12))) for d in dates_of_tr_events])
 
+def test_aids_symptoms_lead_to_treatment_being_initiated():
+    """Check that if aids-symptoms onset then treatment can be initiated (even without spontaneous testing)"""
+
+    # Set up simulation object in custom way:
+    start_date = Date(2010, 1, 1)
+    popsize = 1000
+    sim = Simulation(start_date=start_date, seed=0)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     ignore_cons_constraints=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                               # force symptoms to lead to health care seeking:
+                                                               force_any_symptom_to_lead_to_healthcareseeking=True),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True)
+                 )
+
+    # Let there be a 0% probability of TestAndRefer events being scheduled
+    sim.modules['Hiv'].parameters['prob_spontaneous_test_12m'] = 0.0
+
+    # Make the population and simulate for 0 days to get everything initialised:
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df = sim.population.props
+
+    # Make no-one have HIV and clear the event queues:
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []
+    sim.event_queue.queue = []
+    df.hv_inf = False
+    df.hv_art = "not"
+    df.hv_is_on_prep = False
+    df.hv_behaviour_change = False
+    df.hv_diagnosed = False
+    df.hv_number_tests = 0
+
+    # Let one person have HIV and let AIDS be onset for that one person
+    person_id = 0
+    df.at[person_id, 'hv_inf'] = True
+    aids_event = HivAidsOnsetEvent(person_id=person_id, module=sim.modules['Hiv'])
+    aids_event.apply(person_id)
+
+    # Confirm that they have aids symptoms and an AIDS death schedule
+    assert 'aids_symptoms' in sim.modules['SymptomManager'].has_what(person_id)
+    assert 1 == len([ev[0] for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)])
+
+    # Run the health-seeking poll and run the GenericFirstAppt That is Created
+    hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
+    hsp.apply(sim.population)
+    ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1)][0]
+    ge.apply(ge.target, squeeze_factor=0.0)
+
+    # Check that the person has a TestAndReferEvent scheduled
+    assert 1 == len([ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)])
 
 def test_hsi_testandrefer_and_circ():
     """Test that the HSI for testing and referral to circumcision works as intended"""
@@ -561,4 +622,4 @@ def test_hsi_testandrefer_and_art():
 
 # todo - test_mtct_from_mother_to_child
 
-# todo - test that the test and refer event is run is aids symptoms occur
+

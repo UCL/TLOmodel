@@ -1118,7 +1118,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # Schedule AidsDeath
         date_of_aids_death = self.sim.date + self.module.get_time_from_aids_to_death()
-        self.sim.schedule_event(event=(HivAidsDeathEvent(self.module, person_id)), date=date_of_aids_death)
+        self.sim.schedule_event(event=HivAidsDeathEvent(person_id=person_id, module=self.module), date=date_of_aids_death)
 
 class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     """
