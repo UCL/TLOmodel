@@ -2,11 +2,10 @@
 This picks up results that are created using 'run_scenarios.py'
 """
 
-
-
 import pickle
 from pathlib import Path
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Where will outputs be found
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -24,7 +23,6 @@ outputs = X['outputs']
 
 
 #%% Make summary plots:
-
 
 # Extract summary metrics from each run
 cov_circ = pd.DataFrame()
@@ -60,22 +58,29 @@ for scenario_name in ScenarioSet:
 
 
 epi_prev.plot()
+plt.title("Prevalence of HIV Among Adults (15+)")
 plt.show()
 
 epi_inc.plot()
+plt.title("Incidence of HIV Among Adults (15+)")
 plt.show()
 
 cov_art.plot()
+plt.title("Proportion of PLHIV Adults (15+) on Treatment")
 plt.show()
 
 cov_diagnosed.plot()
+plt.title("Proportion of PLHIV Adults (15+) Diagnosed")
 plt.show()
 
 cov_circ.plot()
+plt.title("Proportion of Adults (15+) Men Circumcised")
 plt.show()
 
 cov_prep.plot()
+plt.title("Proportion of Female Sex Workers On PrEP")
 plt.show()
 
 cov_behavchg.plot()
+plt.title("Proportion of Adults with Reduced HIV Risk Behaviours")
 plt.show()

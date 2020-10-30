@@ -379,7 +379,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
         # -----  HIV  -----
         # Do HIV 'automatic' testing for everyone attending care
         if 'Hiv' in self.sim.modules:
-            self.sim.modules['Healthsystem'].schedule_hsi_event(
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
                 topen=self.sim.date,
                 tclose=None,
