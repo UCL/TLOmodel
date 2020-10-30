@@ -1,4 +1,6 @@
 """The Person and Population classes."""
+import math
+
 import pandas as pd
 
 from tlo import logging
@@ -42,7 +44,7 @@ class Population:
         if append_size is None:
             # approximation based on runs to increase capacity of dataframe ~twice a year
             # TODO: profile adjustment of this and more clever calculation
-            append_size = int(initial_size * 0.02)
+            append_size = math.ceil(initial_size * 0.02)
 
         assert append_size > 0, "Number of rows to append when growing must be greater than 0"
 
