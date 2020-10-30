@@ -9,17 +9,15 @@ HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) 
 Testing is spontaneously taken-up and can lead to accessing intervention services; ART, VMMC, PrEP
 
 # TODO:
-* ART initiation --
+* Finally -- Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent - currently either does)
 * Assume that any ART removes the aids_symptoms? does this depend on VL status??
 * What to happen with stock-outs
 * note that if consumables not available for several days, could then have several appointments.
-
-* ---
 * Peadiatric ART and cotrim
 * Clean up properties - most are not used
-* Clean up paramerers and sort out/consolidate/remove junk in resourcefiles; rename to remove concept of slow/fast progression
-* Finale -- Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
+* Clean up parameters and sort out/consolidate/remove junk in resourcefiles; rename to remove concept of slow/fast progression
+* Comment on TB so that it is skeletal for this merge
 """
 
 import datetime
