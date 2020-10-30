@@ -58,6 +58,8 @@ def get_sim():
 
     # Edit the efficacy of PrEP to be perfect (for the purpose of these tests)
     sim.modules['Hiv'].parameters['proportion_reduction_in_risk_of_hiv_aq_if_on_prep'] = 1.0
+    # Let there be a 100% probability of TestAndRefer events being scheduled
+    sim.modules['Hiv'].parameters['prob_spontaneous_test_12m'] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -332,7 +334,31 @@ def test_mtct_during_breastfeeding():
     # Check child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
 
-# todo - test_mtct_from_mother_to_child
+
+
+def test_test_and_refer_event_scheduled_by_main_event_poll():
+    """Check that the main event poll causes there to be event of the HSI_TestAndRefer"""
+
+    sim = get_sim()
+
+    # Simulate for 0 days so as to complete all the initialisation steps
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    df = sim.population.props
+
+    # Control the number of people for whom there should be a TestAndReferEvent (parameter for prob of testing is 100%)
+    num_not_diagnosed = sum(~df.hv_diagnosed & df.is_alive)
+
+    # Run a polling event
+    pollevent = hiv.HivRegularPollingEvent(module=sim.modules['Hiv'])
+    pollevent.apply(sim.population)
+
+    # Check number and dates of TestAndRefer events in the HSI Event Queue
+    dates_of_tr_events = [
+        ev[1] for ev in sim.modules['HealthSystem'].HSI_EVENT_QUEUE if isinstance(ev[4], hiv.HSI_Hiv_TestAndRefer)
+    ]
+    assert num_not_diagnosed == len(dates_of_tr_events)
+    assert all([(sim.date <= d <= (sim.date + pd.DateOffset(months=12))) for d in dates_of_tr_events])
+
 
 def test_hsi_testandrefer_and_circ():
     """Test that the HSI for testing and referral to circumcision works as intended"""
@@ -532,5 +558,7 @@ def test_hsi_testandrefer_and_art():
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
     ]
+
+# todo - test_mtct_from_mother_to_child
 
 # todo - test that the test and refer event is run is aids symptoms occur

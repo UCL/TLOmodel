@@ -100,7 +100,7 @@ plt.show()
 cov_over_time = output['tlo.methods.hiv']['hiv_program_coverage']
 cov_over_time = cov_over_time.set_index('date')
 
-# ART ("90-90-90")
+# ART ("90-90-90") Plot:
 
 # Adults:
 dx = cov_over_time['dx_adult']

@@ -361,12 +361,13 @@ class Hiv(Module):
         )
 
         # -- Linear Models for the Uptake of Services
-        # Linear model that give the probabiliy of seeking a 'Spontaneous' Test for HIV
-        # (=sum of probabilities for accessing any HIV service when not ill)
+        # Linear model that give the probability of seeking a 'Spontaneous' Test for HIV
+        # (= sum of probabilities for accessing any HIV service when not ill)
 
         self.lm_spontaneous_test_12m = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            intercept=p["prob_spontaneous_test_12m"]
+            p["prob_spontaneous_test_12m"],
+            Predictor('hv_diagnosed').when(True, 0.0).otherwise(1.0)
         )
 
         # Linear model if the person will start ART, following when the person has been diagnosed:
