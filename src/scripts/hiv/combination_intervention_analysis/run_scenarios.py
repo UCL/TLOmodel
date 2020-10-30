@@ -30,7 +30,6 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 results_filename = outputpath / 'combination_intervention_results.pickle'
 
 
-
 #%% Define the simulation run:
 def run_sim(scenario):
 
@@ -41,8 +40,8 @@ def run_sim(scenario):
     resourcefilepath = Path("./resources")
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 1, 1)
-    popsize = 100
+    end_date = Date(2030, 1, 1)
+    popsize = 50000
 
     # Establish the simulation object
     log_config = {
@@ -84,19 +83,19 @@ def run_sim(scenario):
 
 #%% Define the scenarios:
 ScenarioSet = {
-    # "no_intv": {
-    #     "prob_spontaneous_test_12m": 0,
-    #     "prob_start_art_after_hiv_test": 0,
-    #     "prob_behav_chg_after_hiv_test": 0,
-    #     "prob_prep_for_fsw_after_hiv_test": 0,
-    #     "prob_circ_after_hiv_test": 0},
-    #
-    # "behav_chg_only": {
-    #     "prob_spontaneous_test_12m": 0.2,
-    #     "prob_start_art_after_hiv_test": 0,
-    #     "prob_behav_chg_after_hiv_test": 0.5,
-    #     "prob_prep_for_fsw_after_hiv_test": 0,
-    #     "prob_circ_after_hiv_test": 0},
+    "no_intv": {
+        "prob_spontaneous_test_12m": 0,
+        "prob_start_art_after_hiv_test": 0,
+        "prob_behav_chg_after_hiv_test": 0,
+        "prob_prep_for_fsw_after_hiv_test": 0,
+        "prob_circ_after_hiv_test": 0},
+
+    "behav_chg_only": {
+        "prob_spontaneous_test_12m": 0.2,
+        "prob_start_art_after_hiv_test": 0,
+        "prob_behav_chg_after_hiv_test": 0.5,
+        "prob_prep_for_fsw_after_hiv_test": 0,
+        "prob_circ_after_hiv_test": 0},
 
     "behav_chg_and_circ": {
         "prob_spontaneous_test_12m": 0.2,
@@ -105,19 +104,19 @@ ScenarioSet = {
         "prob_prep_for_fsw_after_hiv_test": 0,
         "prob_circ_after_hiv_test": 0.8},
 
-    # "behav_chg_and_circ_and_art": {
-    #     "prob_spontaneous_test_12m": 0.2,
-    #     "prob_start_art_after_hiv_test": 0.8,
-    #     "prob_behav_chg_after_hiv_test": 0.5,
-    #     "prob_prep_for_fsw_after_hiv_test": 0,
-    #     "prob_circ_after_hiv_test": 0.8},
-    #
-    # "behav_chg_and_circ_and_art_and_prep": {
-    #     "prob_spontaneous_test_12m": 0.2,
-    #     "prob_start_art_after_hiv_test": 0.8,
-    #     "prob_behav_chg_after_hiv_test": 0.5,
-    #     "prob_prep_for_fsw_after_hiv_test": 0.6,
-    #     "prob_circ_after_hiv_test": 0.8}
+    "behav_chg_and_circ_and_art": {
+        "prob_spontaneous_test_12m": 0.2,
+        "prob_start_art_after_hiv_test": 0.8,
+        "prob_behav_chg_after_hiv_test": 0.5,
+        "prob_prep_for_fsw_after_hiv_test": 0,
+        "prob_circ_after_hiv_test": 0.8},
+
+    "behav_chg_and_circ_and_art_and_prep": {
+        "prob_spontaneous_test_12m": 0.2,
+        "prob_start_art_after_hiv_test": 0.8,
+        "prob_behav_chg_after_hiv_test": 0.5,
+        "prob_prep_for_fsw_after_hiv_test": 0.6,
+        "prob_circ_after_hiv_test": 0.8}
 }
 
 
