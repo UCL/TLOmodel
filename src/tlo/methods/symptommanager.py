@@ -116,7 +116,8 @@ class Symptom:
 
 
 class DuplicateSymptomWithNonIdenticalPropertiesError(Exception):
-    print("A symptom with this name has been registered already but with different properties")
+    def __init(self, symptom):
+        print(f"A symptom with this name has been registered already but with different properties: {symptom}")
     pass
 
 
@@ -202,7 +203,7 @@ class SymptomManager(Module):
                 self.all_registered_symptoms.add(symptom)
                 self.symptom_names.add(symptom.name)
             elif symptom not in self.all_registered_symptoms:
-                raise DuplicateSymptomWithNonIdenticalPropertiesError
+                raise DuplicateSymptomWithNonIdenticalPropertiesError(symptom)
 
     def pre_initialise_population(self):
         """Define the properties for each symptom"""

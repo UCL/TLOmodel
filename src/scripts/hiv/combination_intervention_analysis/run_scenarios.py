@@ -1,6 +1,8 @@
 """Run simulations to demonstrate the impact of HIV interventions in combination.
-This can be run remotely on Azure
+This can be run remotely on Azure.
+It creates the file:
 """
+
 import datetime
 from pathlib import Path
 
@@ -19,13 +21,18 @@ from tlo.methods import (
     hiv,
     labour,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, dx_algorithm_child,
 )
+
+
+# Where will outputs go
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+results_filename = outputpath / 'combination_intervention_results.pickle'
+
+
 
 #%% Define the simulation run:
 def run_sim(scenario):
-    # Where will outputs go
-    outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
     # date-stamp to label log files and any other outputs
     datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -34,8 +41,8 @@ def run_sim(scenario):
     resourcefilepath = Path("./resources")
 
     start_date = Date(2010, 1, 1)
-    end_date = Date(2020, 1, 1)
-    popsize = 10000
+    end_date = Date(2011, 1, 1)
+    popsize = 100
 
     # Establish the simulation object
     log_config = {
@@ -56,6 +63,7 @@ def run_sim(scenario):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath)
@@ -119,7 +127,10 @@ for scenario in ScenarioSet:
     outputs[scenario] = run_sim(ScenarioSet[scenario])
 
 #%% Save the results
-with open('data.pickle', 'wb') as f:
-    pickle.dump(outputs, f, pickle.HIGHEST_PROTOCOL)
+with open(results_filename, 'wb') as f:
+    pickle.dump({
+        'ScenarioSet': ScenarioSet,
+        'outputs': outputs}
+        , f, pickle.HIGHEST_PROTOCOL)
 
 

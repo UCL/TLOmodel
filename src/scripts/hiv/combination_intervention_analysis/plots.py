@@ -2,15 +2,29 @@
 This picks up results that are created using 'run_scenarios.py'
 """
 
+
+
+import pickle
+from pathlib import Path
+import matplotlib.pyplot as plt
+
+# Where will outputs be found
+outputpath = Path("./outputs")  # folder for convenience of storing outputs
+results_filename = outputpath / 'combination_intervention_results.pickle'
+
+
 #%% Load the results
-# with open('data.pickle', 'rb') as f:
-#     # The protocol version used is detected automatically, so we do not
-#     # have to specify it.
-#     output_loaded_from_pickle = pickle.load(f)
+with open(results_filename, 'rb') as f:
+    # The protocol version used is detected automatically, so we do not
+    # have to specify it.
+    X = pickle.load(f)
+
+ScenarioSet = X['ScenarioSet']
+outputs = X['outputs']
 
 
 #%% Make summary plots:
-import matplotlib.pyplot as plt
+
 
 # Extract summary metrics from each run
 cov_circ = pd.DataFrame()

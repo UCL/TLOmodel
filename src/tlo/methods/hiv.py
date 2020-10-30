@@ -1582,7 +1582,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                (df.sex == "F") &
                                df.age_years.between(15, 49)
                            ])
-        prev_hiv_fsw = 0 if n_fsw > 0 else \
+        prev_hiv_fsw = 0 if n_fsw == 0 else \
             len(df.loc[
                      df.is_alive &
                      df.hv_inf &
@@ -1650,7 +1650,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         ) / len(df[df.is_alive & (df.age_years >= 15)])
 
         # ------------------------------------ PREP AMONG FSW ------------------------------------
-        prop_fsw_on_prep = len(
+        prop_fsw_on_prep = 0 if n_fsw == 0 else len(
             df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15) & df.hv_is_on_prep]
         ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
 
