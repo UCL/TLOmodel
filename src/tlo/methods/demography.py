@@ -174,7 +174,6 @@ class Demography(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
-        p = self.parameters
         rng = self.rng
 
         fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
