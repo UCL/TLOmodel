@@ -42,7 +42,7 @@ class Population:
         if append_size is None:
             # approximation based on runs to increase capacity of dataframe ~twice a year
             # TODO: profile adjustment of this and more clever calculation
-            append_size = int(initial_size * 0.01)
+            append_size = int(initial_size * 0.02)
 
         assert append_size > 0, "Number of rows to append when growing must be greater than 0"
 
@@ -81,6 +81,7 @@ class Population:
             # we need to add some rows
             self.props = self.props.append(self.new_rows, ignore_index=True, sort=False)
             self.props.index.name = 'person'
+            logger.info(key="info", data=f"Increased capacity of population dataframe to {len(self.props)}")
 
         new_index = self.next_person_id
         self.next_person_id += 1
