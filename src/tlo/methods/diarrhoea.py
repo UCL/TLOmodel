@@ -1083,6 +1083,9 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
     It does the following:
         * Sets the date of recovery to today's date
         * Resolves all symptoms caused by diarrhoea
+
+    NB. This is the event that would be called if another module has caused the symptom of diarrhoea and care is sought.
+
     """
 
     def __init__(self, module, person_id):
@@ -1096,17 +1099,19 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # Confirm that this is event is occurring during a current episode of diarrhoea
-        assert (
+        if not (
             (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
             self.sim.date <=
             (df.at[person_id, 'gi_end_of_last_episode'])
-        )
+        ):
+            # If not, then the event has been caused by another cause of diarrhoea (which may has resolved by now)
+            return
 
         # Cure should not happen if the person has already recovered
         if df.at[person_id, 'gi_last_diarrhoea_recovered_date'] <= self.sim.date:
             return
 
-        # This event should only run after the person has received a treatment during this episode
+        # If cure should go ahead, check that it is after when the person has received a treatment during this episode
         assert (
             (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
             (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
