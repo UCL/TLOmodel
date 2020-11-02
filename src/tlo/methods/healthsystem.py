@@ -1237,8 +1237,6 @@ class HSI_Event:
 
     def did_not_run(self, *args, **kwargs):
         """Called when this event is due but it is not run. Return False to prevent the event being rescheduled.
-
-        Must be implemented by subclasses.
         """
         logger.debug(key="debug", data=f"{self.__class__.__name__}: did not run.")
         pass
