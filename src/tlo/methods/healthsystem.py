@@ -1246,7 +1246,8 @@ class HSI_Event:
         """Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
          parameter service_availability.
         """
-        logger.debug(key="debug", data=f"{self.__class__.__name__}: was not available.")
+        logger.debug(key="debug", data=f"{self.__class__.__name__}: was not admitted to the HSI queue because the "
+                                       f"service is not available.")
         pass
 
     def post_apply_hook(self):
