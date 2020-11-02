@@ -1658,7 +1658,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # NB. Among adult men
         prop_men_circ = len(
             df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15) & df.li_is_circ]
-        ) / len(df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15) & df.li_is_circ])
+        ) / len(df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)])
 
 
         logger.info(key='hiv_program_coverage',
