@@ -9,6 +9,7 @@ HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) 
 Testing is spontaneously taken-up and can lead to accessing intervention services; ART, VMMC, PrEP
 
 # TODO:
+* testing at ANC
 * put in a probability that treatment begins if has aids_symptoms vs if no aids_symptoms
 * Finally -- Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent - currently either does)
