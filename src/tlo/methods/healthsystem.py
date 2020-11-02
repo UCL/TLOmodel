@@ -1240,12 +1240,14 @@ class HSI_Event:
 
         Must be implemented by subclasses.
         """
-        raise NotImplementedError
+        logger.debug(key="debug", data=f"{self.__class__.__name__}: did not run.")
+        pass
 
     def not_available(self):
         """Called when this event is passed to schedule_hsi_event when the TREATMENT_ID is not permitted by the
          parameter service_availability.
         """
+        logger.debug(key="debug", data=f"{self.__class__.__name__}: was not available.")
         pass
 
     def post_apply_hook(self):
