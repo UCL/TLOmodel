@@ -530,7 +530,7 @@ def test_hsi_testandrefer_and_prep():
     sim = get_sim()
 
     # Make the chance of being referred 100%
-    sim.modules['Hiv'].lm_circ = LinearModel.multiplicative()
+    sim.modules['Hiv'].lm_prep = LinearModel.multiplicative()
 
     # Simulate for 0 days so as to complete all the initialisation steps
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -591,8 +591,6 @@ def test_hsi_testandrefer_and_prep():
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
     ]
-
-
 
     # todo- check no more decision events:
 

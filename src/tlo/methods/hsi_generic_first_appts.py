@@ -386,7 +386,6 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
                 priority=0
             )
 
-
         # ------ MALARIA ------
         if "Malaria" in self.sim.modules:
 
