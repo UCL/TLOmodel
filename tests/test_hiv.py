@@ -177,7 +177,7 @@ def test_generation_of_natural_history_process_no_art():
 
     # find the AIDS onset event for this person
     date_aids_event, aids_event = \
-    [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
+        [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
     assert date_aids_event > sim.date
 
     # run the AIDS onset event for this person:
@@ -186,7 +186,7 @@ def test_generation_of_natural_history_process_no_art():
 
     # find the AIDS death event for this person
     date_aids_death_event, aids_death_event = \
-    [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
+        [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
     assert date_aids_death_event > sim.date
 
     # run the AIDS death event for this person:
@@ -503,8 +503,7 @@ def test_art_is_initiated_for_infants():
     # Check that child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
 
-    assert False
-
+    assert False  # todo - sticking this is to make sure it gets done!!! ;-)
 
 
 def test_hsi_testandrefer_and_circ():
@@ -629,8 +628,8 @@ def test_hsi_testandrefer_and_prep():
     ][0]
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
-    sim.modules[
-        'HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
+    # - First, clear the queue to avoid being confused by results of the check done just above.
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.0
     decision_event.apply(person_id)
     assert not df.at[person_id, "hv_is_on_prep"]
@@ -702,8 +701,8 @@ def test_hsi_testandrefer_and_art():
     ][0]
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
-    sim.modules[
-        'HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
+    # First, clear the queue to avoid being confused by results of the check done just above.
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_art"] not in ["on_VL_suppressed", "on_not_VL_suppressed"]

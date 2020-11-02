@@ -1269,7 +1269,7 @@ class HSI_Event:
     def get_all_consumables(self, item_codes=None, pkg_codes=None):
         """Helper function to allow for getting and checking of entire set of consumables.
         It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
-         are available. It avoids the use of consumables 'footprints'. cons_item_code_availability_today"""
+         are available. It avoids the need to create consumables 'footprints' and interpret the results."""
 
         # Turn the input arguments into the usual consumables footprint:
 

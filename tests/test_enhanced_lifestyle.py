@@ -51,6 +51,7 @@ def __check_properties(df):
 def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
 
+
 def test_initial_population(simulation):
     df = simulation.population.props
     __check_properties(df)
@@ -70,12 +71,6 @@ def test_dypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
