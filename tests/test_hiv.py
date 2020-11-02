@@ -481,9 +481,30 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
 
 
 def test_art_is_initiated_for_infants():
-    """Check that infant infected start ART"""
-    # todo
+    """Check that infant infected at birth, and tested, diagnosed and start ART"""
+
+    sim = get_sim()
+
+    # Manipulate MTCT rates so that transmission always occurs at/before birth
+    sim.modules['Hiv'].parameters["prob_mtct_treated"] = 1.0
+    sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 1.0
+    sim.modules['Hiv'].parameters["prob_mtct_incident_preg"] = 1.0
+
+    # Do a birth from a mother that is HIV-positive:
+    df = sim.population.props
+    mother_id = df.loc[df.is_alive & (df.sex == "F")].index[0]
+    df.at[mother_id, 'hv_inf'] = True
+    df.at[mother_id, 'hv_date_inf'] = sim.date
+    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+
+    child_id = sim.population.do_birth()
+    sim.modules['Hiv'].on_birth(mother_id, child_id)
+
+    # Check that child is now HIV-positive
+    assert sim.population.props.at[child_id, "hv_inf"]
+
     assert False
+
 
 
 def test_hsi_testandrefer_and_circ():

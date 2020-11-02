@@ -1459,7 +1459,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # Formulation for children
             drugs_available = self.get_all_consumables(
                 item_codes=self.module.cons_footprint_for_infant_art['Item_Code'],
-                package_codes=self.module.cons_footprint_for_infant_art['Package_Code']
+                pkg_codes=self.module.cons_footprint_for_infant_art['Intervention_Package_Code']
             )
         else:
             # Formulation for adults
