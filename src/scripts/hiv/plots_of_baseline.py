@@ -3,10 +3,10 @@ data. """
 import datetime
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.methods import (
     contraception,
     demography,
@@ -19,9 +19,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-
-import matplotlib.pyplot as plt
-from tlo.methods.hiv import unpack_raw_output_dict, map_to_age_group, set_age_group
+from tlo.methods.hiv import map_to_age_group, set_age_group, unpack_raw_output_dict
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -76,7 +74,9 @@ data2010['age_group'] = map_to_age_group(data['age_from'])
 data2010 = pd.DataFrame(data2010.groupby(by=['sex', 'age_group'])['prev ', 'pop_size'].sum()).reset_index()
 data2010['prev_data'] = data2010['prev '] / data2010['pop_size']
 
-prev_by_age_and_sex = prev_by_age_and_sex.merge(data2010[['sex', 'age_group', 'prev_data']], left_on=['sex', 'age_group'], right_on=['sex', 'age_group'])
+prev_by_age_and_sex = prev_by_age_and_sex.merge(data2010[['sex', 'age_group', 'prev_data']],
+                                                left_on=['sex', 'age_group'],
+                                                right_on=['sex', 'age_group'])
 prev_by_age_and_sex['age_group'] = set_age_group(prev_by_age_and_sex['age_group'])
 
 # Create multi-index (using groupby) for sex/age and plot:
@@ -85,5 +85,3 @@ prev_by_age_and_sex.plot.bar()
 plt.title('HIV Prevalence in 2010')
 plt.savefig(outputpath / ("HIV_prevalence_in_2010" + datestamp + ".pdf"), format='pdf')
 plt.show()
-
-

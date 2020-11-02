@@ -4,6 +4,7 @@ This picks up results that are created using 'run_scenarios.py'
 
 import pickle
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -12,7 +13,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 results_filename = outputpath / 'combination_intervention_results.pickle'
 
 
-#%% Load the results
+# %% Load the results
 with open(results_filename, 'rb') as f:
     # The protocol version used is detected automatically, so we do not
     # have to specify it.
@@ -22,7 +23,7 @@ ScenarioSet = X['ScenarioSet']
 outputs = X['outputs']
 
 
-#%% Make summary plots:
+# %% Make summary plots:
 
 # Extract summary metrics from each run
 cov_circ = pd.DataFrame()

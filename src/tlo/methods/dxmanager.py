@@ -111,7 +111,6 @@ class DxManager:
         # Create the dict of test that were tried (True for worked, False for failed)
         the_dxtests_tried = dict()
 
-
         for dx_test in dx_tests_to_run:
             test_result = False
 

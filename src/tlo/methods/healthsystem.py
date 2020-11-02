@@ -23,25 +23,28 @@ class HealthSystem(Module):
     """
 
     PARAMETERS = {
-        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
+        'Officer_Types': Parameter(
+            Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
         'Daily_Capabilities': Parameter(
             Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
         ),
-        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
+        'Appt_Types_Table': Parameter(
+            Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
         'Appt_Time_Table': Parameter(
             Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
         ),
         'ApptType_By_FacLevel': Parameter(
             Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
         ),
-        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
+        'Master_Facilities_List': Parameter(
+            Types.DATA_FRAME, 'Listing of all health facilities.'),
         'Facilities_For_Each_District': Parameter(
-            Types.DATA_FRAME,
-            'Mapping between a district and all of the health facilities to which its \
-                      population have access.',
-        ),
-        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
-        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+            Types.DATA_FRAME, 'Mapping between a district and all of the health facilities to which its population have'
+                              ' access.'),
+        'Consumables': Parameter(
+            Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
+        'Consumables_Cost_List': Parameter(
+            Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
     }
 
     PROPERTIES = {

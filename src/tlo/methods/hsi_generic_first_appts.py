@@ -94,8 +94,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                 priority=0
             )
 
-
-
         # diagnostic algorithm for child <5 yrs
         if age < 5:
             # ----------------------------------- CHILD <5 -----------------------------------

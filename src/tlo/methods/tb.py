@@ -3,17 +3,21 @@ The TB Module is under development. Here the contents of the module are commente
 included because this version should replace what is currently in Master.
 """
 
+from tlo import Module, logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+"""
 import os
 
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, hiv
 from tlo.methods.healthsystem import HSI_Event
+"""
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 class Tb(Module):
     """ Set up the baseline population with TB prevalence
@@ -978,7 +982,8 @@ class Tb(Module):
 #             for i in df.index[idx]:
 #                 fast[i] = rng.rand() < params["prop_fast_progressor"]
 #
-#             # need to scale the prob of progressing to active so overall pop prob of progression = params['prog_active']
+#             # need to scale the prob of progressing to active so overall pop prob of
+#             #  progression = params['prog_active']
 #             # mean / scale = scaling factor
 #             # don't include children here
 #             mean = sum(prob_prog[df.is_alive & df.age_years.between(15, 100)]) / len(

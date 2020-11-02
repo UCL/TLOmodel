@@ -3,17 +3,15 @@ This can be run remotely on Azure.
 It creates the file:
 """
 
-import datetime
-from pathlib import Path
-
-import pandas as pd
 import pickle
+from pathlib import Path
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -21,20 +19,16 @@ from tlo.methods import (
     hiv,
     labour,
     pregnancy_supervisor,
-    symptommanager, dx_algorithm_child,
+    symptommanager,
 )
-
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 results_filename = outputpath / 'combination_intervention_results.pickle'
 
 
-#%% Define the simulation run:
+# %% Define the simulation run:
 def run_sim(scenario):
-
-    # date-stamp to label log files and any other outputs
-    datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
     # The resource files
     resourcefilepath = Path("./resources")
@@ -81,7 +75,7 @@ def run_sim(scenario):
     return parse_log_file(sim.log_filepath)
 
 
-#%% Define the scenarios:
+# %% Define the scenarios:
 ScenarioSet = {
     "no_intv": {
         "prob_spontaneous_test_12m": 0,
@@ -120,16 +114,15 @@ ScenarioSet = {
 }
 
 
-#%% Run the scenarios:
+# %% Run the scenarios:
 outputs = dict()
 for scenario in ScenarioSet:
     outputs[scenario] = run_sim(ScenarioSet[scenario])
 
-#%% Save the results
+# %% Save the results
 with open(results_filename, 'wb') as f:
     pickle.dump({
         'ScenarioSet': ScenarioSet,
-        'outputs': outputs}
-        , f, pickle.HIGHEST_PROTOCOL)
-
-
+        'outputs': outputs},
+        f, pickle.HIGHEST_PROTOCOL
+    )

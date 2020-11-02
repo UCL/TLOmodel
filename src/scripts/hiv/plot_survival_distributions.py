@@ -4,10 +4,10 @@
 import datetime
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
@@ -21,10 +21,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-import matplotlib.pyplot as plt
-from tlo.methods.hiv import unpack_raw_output_dict, map_to_age_group
-
-from tlo.util import create_age_range_lookup
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -82,6 +78,7 @@ def get_survival_time_in_days(age_years):
         sim.modules['Hiv'].get_time_from_aids_to_death()
     # return net survival time in days
     return (date_of_death - sim.date).days
+
 
 ages = [15, 20, 25, 30, 35, 40, 45, 50]
 nreps = 1000

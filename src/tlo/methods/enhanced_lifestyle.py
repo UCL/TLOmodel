@@ -19,7 +19,6 @@ logger.setLevel(logging.INFO)
 # todo: module is coded.
 
 
-
 class Lifestyle(Module):
     """
     Lifestyle module provides properties that are used by all disease modules if they are affected
@@ -766,7 +765,7 @@ class Lifestyle(Module):
             df.is_alive &
             (df.sex == 'F') &
             ~df.li_is_sexworker &
-            df.age_years.between(15,49) &
+            df.age_years.between(15, 49) &
             (df.li_mar_stat != 2)
             ].index
 
@@ -774,7 +773,7 @@ class Lifestyle(Module):
         target_n_sw = int(np.round(len(df.loc[
                                            df.is_alive &
                                            (df.sex == 'F') &
-                                           df.age_years.between(15,49)
+                                           df.age_years.between(15, 49)
                                            ].index) * params["proportion_female_sex_workers"]
                                    ))
         deficit = target_n_sw - n_sw
@@ -787,7 +786,6 @@ class Lifestyle(Module):
                 will_start_sw_idx = eligible_idx
             # make is_sexworker for selected women:
             df.loc[will_start_sw_idx, 'li_is_sexworker'] = True
-
 
     def compute_bmi_proportions_of_interest(self):
         """This is called by the logger and computes summary statistics about the bmi"""
@@ -1241,6 +1239,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # --- FSW ---
         self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
 
+
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
 
@@ -1293,14 +1292,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             key='proportion_1549_women_sexworker',
             data=[(
                      len(df.loc[df.is_alive &
-                       (df.li_is_sexworker == True) &
-                       (df.sex == "F") &
-                       df.age_years.between(15, 49)
-                       ]) /
-                     len(df.loc[
-                             df.is_alive &
-                             (df.sex == "F") &
-                             df.age_years.between(15, 49)
-                             ])
+                                df.li_is_sexworker &
+                                (df.sex == "F") &
+                                df.age_years.between(15, 49)]
+                         ) /
+                     len(df.loc[df.is_alive &
+                                (df.sex == "F") &
+                                df.age_years.between(15, 49)]
+                         )
             )]
         )

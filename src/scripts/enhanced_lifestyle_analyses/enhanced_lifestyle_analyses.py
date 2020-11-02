@@ -1,19 +1,14 @@
 # %% Import Statements
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    contraception,
     demography,
     enhanced_lifestyle,
-    healthseekingbehaviour,
-    healthsystem,
-    labour,
-    pregnancy_supervisor,
-    symptommanager,
 )
 
-import pandas as pd
-import matplotlib.pyplot as plt
 
 def run():
     # To reproduce the results, you need to set the seed for the Simulation instance. The Simulation
@@ -47,9 +42,6 @@ def run():
     # Path to the resource files used by the disease and intervention methods
     resources = "./resources"
 
-    # Used to configure health system behaviour
-    service_availability = ["*"]
-
     # We register all modules in a single call to the register method, calling once with multiple
     # objects. This is preferred to registering each module in multiple calls because we will be
     # able to handle dependencies if modules are registered together
@@ -69,8 +61,10 @@ sim = run()
 # %% read the results
 output = parse_log_file(sim.log_filepath)
 
+
 def extract_formatted_series(df):
     return pd.Series(index=pd.to_datetime(df['date']), data=df.iloc[:, 1].values)
+
 
 # Examine Proportion Men Circumcised:
 circ = extract_formatted_series(output['tlo.methods.enhanced_lifestyle']['prop_adult_men_circumcised'])

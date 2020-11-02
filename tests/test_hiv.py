@@ -10,17 +10,18 @@ from tlo.lm import LinearModel
 from tlo.methods import (
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
     hiv,
+    hsi_generic_first_appts,
     labour,
     pregnancy_supervisor,
-    symptommanager, dx_algorithm_child, hsi_generic_first_appts,
+    symptommanager,
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
-from tlo.methods.hiv import Hiv, HSI_Hiv_TestAndRefer, HivAidsOnsetEvent
+from tlo.methods.hiv import HivAidsOnsetEvent, HSI_Hiv_TestAndRefer
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -34,6 +35,7 @@ def check_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
 
 def get_sim():
     """get sim with the checks for configuration of properties running in the HIV module"""
@@ -78,6 +80,7 @@ def test_basic_run_with_default_parameters():
     # confirm configuration of properties at the end of the simulation:
     sim.modules['Hiv'].check_config_of_properties()
 
+
 def test_initialisation():
     """check that the natural history plays out as expected for those that are infected at the beginning of the sim"""
 
@@ -106,6 +109,7 @@ def test_initialisation():
         next_event_date, next_event_obj = events_for_this_person[0]
         assert isinstance(next_event_obj, hiv.HivAidsDeathEvent)
         assert next_event_date >= sim.date
+
 
 def test_generation_of_new_infection():
     """Check that the generation of new infections is as expected.
@@ -149,6 +153,7 @@ def test_generation_of_new_infection():
     pollevent.apply(sim.population)
     assert any_hiv_infection_event_in_queue()
 
+
 def test_generation_of_natural_history_process_no_art():
     """Check that:
     * New infections leads to a scheduled AIDS event
@@ -171,7 +176,8 @@ def test_generation_of_natural_history_process_no_art():
     assert sim.date == df.at[person_id, 'hv_date_inf']
 
     # find the AIDS onset event for this person
-    date_aids_event, aids_event = [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
+    date_aids_event, aids_event = \
+    [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
     assert date_aids_event > sim.date
 
     # run the AIDS onset event for this person:
@@ -179,7 +185,8 @@ def test_generation_of_natural_history_process_no_art():
     assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id)
 
     # find the AIDS death event for this person
-    date_aids_death_event, aids_death_event = [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
+    date_aids_death_event, aids_death_event = \
+    [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
     assert date_aids_death_event > sim.date
 
     # run the AIDS death event for this person:
@@ -189,6 +196,7 @@ def test_generation_of_natural_history_process_no_art():
     assert False is bool(df.at[person_id, "is_alive"])
     assert sim.date == df.at[person_id, "date_of_death"]
     assert "AIDS" == df.at[person_id, "cause_of_death"]
+
 
 def test_generation_of_natural_history_process_with_art_before_aids():
     """Check that:
@@ -211,7 +219,7 @@ def test_generation_of_natural_history_process_with_art_before_aids():
 
     # find the AIDS onset event for this person
     date_aids_event, aids_event = \
-    [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
+        [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
     assert date_aids_event > sim.date
 
     # Put person on ART with VL suppression prior to AIDS onset
@@ -225,6 +233,7 @@ def test_generation_of_natural_history_process_with_art_before_aids():
 
     # check no AIDS symptoms for this person
     assert "aids_symptoms" not in sim.modules['SymptomManager'].has_what(person_id)
+
 
 def test_generation_of_natural_history_process_with_art_after_aids():
     """Check that:
@@ -249,7 +258,7 @@ def test_generation_of_natural_history_process_with_art_after_aids():
 
     # find the AIDS onset event for this person
     date_aids_event, aids_event = \
-    [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
+        [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsOnsetEvent)][0]
     assert date_aids_event > sim.date
 
     # run the AIDS onset event for this person:
@@ -257,7 +266,7 @@ def test_generation_of_natural_history_process_with_art_after_aids():
 
     # find the AIDS death  event for this person
     date_aids_death_event, aids_death_event = \
-    [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
+        [ev for ev in sim.find_events_for_person(person_id) if isinstance(ev[1], hiv.HivAidsDeathEvent)][0]
     assert date_aids_death_event > sim.date
     assert "aids_symptoms" in sim.modules['SymptomManager'].has_what(person_id)
 
@@ -271,6 +280,7 @@ def test_generation_of_natural_history_process_with_art_after_aids():
     assert True is bool(df.at[person_id, "is_alive"])
     assert pd.isnull(df.at[person_id, "date_of_death"])
     assert "" == df.at[person_id, "cause_of_death"]
+
 
 def test_mtct_at_birth():
     """Check that:
@@ -296,6 +306,7 @@ def test_mtct_at_birth():
 
     # Check that child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
+
 
 def test_mtct_during_breastfeeding_if_mother_infected_already():
     """Check that:
@@ -335,6 +346,7 @@ def test_mtct_during_breastfeeding_if_mother_infected_already():
 
     # Check child is now HIV-positive
     assert sim.population.props.at[child_id, "hv_inf"]
+
 
 def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
     """Check that:
@@ -377,6 +389,7 @@ def test_mtct_during_breastfeeding_if_mother_infected_during_breastfeeding():
         ev for ev in sim.find_events_for_person(child_id) if isinstance(ev[1], hiv.HivInfectionDuringBreastFeedingEvent)
     ])
 
+
 def test_test_and_refer_event_scheduled_by_main_event_poll():
     """Check that the main event poll causes there to be event of the HSI_TestAndRefer"""
 
@@ -399,6 +412,7 @@ def test_test_and_refer_event_scheduled_by_main_event_poll():
     ]
     assert num_not_diagnosed == len(dates_of_tr_events)
     assert all([(sim.date <= d <= (sim.date + pd.DateOffset(months=12))) for d in dates_of_tr_events])
+
 
 def test_aids_symptoms_lead_to_treatment_being_initiated():
     """Check that if aids-symptoms onset then treatment can be initiated (even without spontaneous testing)"""
@@ -457,16 +471,20 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
     # Run the health-seeking poll and run the GenericFirstAppt That is Created
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
     hsp.apply(sim.population)
-    ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1)][0]
+    ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel1)][0]
     ge.apply(ge.target, squeeze_factor=0.0)
 
     # Check that the person has a TestAndReferEvent scheduled
-    assert 1 == len([ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)])
+    assert 1 == len([ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+                     isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)])
+
 
 def test_art_is_initiated_for_infants():
     """Check that infant infected start ART"""
     # todo
     assert False
+
 
 def test_hsi_testandrefer_and_circ():
     """Test that the HSI for testing and referral to circumcision works as intended"""
@@ -493,7 +511,8 @@ def test_hsi_testandrefer_and_circ():
 
     # Check that there is an VMMC event scheduled
     date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_Circ)
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_Circ)
     ][0]
 
     # Run the event:
@@ -502,6 +521,7 @@ def test_hsi_testandrefer_and_circ():
     # Check that the person is now circumcised
     assert df.at[person_id, "li_is_circ"]
     assert df.at[person_id, "hv_number_tests"] > 0
+
 
 def test_hsi_testandrefer_and_behavchg():
     """Test that the HSI for testing and behaviour change works as intended"""
@@ -530,6 +550,7 @@ def test_hsi_testandrefer_and_behavchg():
     assert df.at[person_id, "hv_behaviour_change"]
     assert df.at[person_id, "hv_number_tests"] > 0
 
+
 def test_hsi_testandrefer_and_prep():
     """Test that the HSI for testing and referral to PrEP works as intended"""
     sim = get_sim()
@@ -556,7 +577,8 @@ def test_hsi_testandrefer_and_prep():
 
     # Check that there is an PrEP event scheduled
     date_hsi_event, hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep)
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep)
     ][0]
 
     # Run the event:
@@ -581,16 +603,19 @@ def test_hsi_testandrefer_and_prep():
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_is_on_prep"]
     date_next_hsi_event, next_hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
     ][0]
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
-    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
+    sim.modules[
+        'HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.0
     decision_event.apply(person_id)
     assert not df.at[person_id, "hv_is_on_prep"]
     assert [] == [
-        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
     ]
     assert [] == [
         ev[0] for ev in sim.find_events_for_person(person_id) if
@@ -598,6 +623,7 @@ def test_hsi_testandrefer_and_prep():
     ]
 
     # todo- check no more decision events:
+
 
 def test_hsi_testandrefer_and_art():
     """Test that the HSI for testing and referral to ART works as intended"""
@@ -623,7 +649,8 @@ def test_hsi_testandrefer_and_art():
 
     # Check that there is an ART HSI event scheduled
     date_hsi_event, hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment)
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment)
     ][0]
 
     # Run the event:
@@ -649,16 +676,19 @@ def test_hsi_testandrefer_and_art():
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
     date_next_hsi_event, next_hsi_event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
     ][0]
 
     # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
-    sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
+    sim.modules[
+        'HealthSystem'].HSI_EVENT_QUEUE.clear()  # clear the queue to avoid being confused by results of the check done just above.
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_art"] not in ["on_VL_suppressed", "on_not_VL_suppressed"]
     assert [] == [
-        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
+        ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
     ]
     assert [] == [
         ev[0] for ev in sim.find_events_for_person(person_id) if
