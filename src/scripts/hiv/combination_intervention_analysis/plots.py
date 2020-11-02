@@ -73,7 +73,6 @@ cov_diagnosed.plot()
 plt.title("Proportion of PLHIV Adults (15+) Diagnosed")
 plt.show()
 
-# todo - error
 cov_circ.plot()
 plt.title("Proportion of Adults (15+) Men Circumcised")
 plt.show()

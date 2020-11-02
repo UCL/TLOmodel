@@ -9,6 +9,7 @@ HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) 
 Testing is spontaneously taken-up and can lead to accessing intervention services; ART, VMMC, PrEP
 
 # TODO:
+* put in a probability that treatment begins if has aids_symptoms vs if no aids_symptoms
 * Finally -- Demonstrate some runs with/without ART; Combo prevention bringing reduction in prevalence/incidence.
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent - currently either does)
 * Assume that any ART removes the aids_symptoms? does this depend on VL status??
@@ -1659,7 +1660,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_men_circ = len(
             df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15) & df.li_is_circ]
         ) / len(df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)])
-
 
         logger.info(key='hiv_program_coverage',
                     description='Coverage of interventions for HIV among adult (15+) and children (0-14s)',
