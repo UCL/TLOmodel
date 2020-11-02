@@ -1236,13 +1236,14 @@ class HSI_Event:
         raise NotImplementedError
 
     def did_not_run(self, *args, **kwargs):
-        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled.
+        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+        to allow the rescheduling.
         """
         logger.debug(key="debug", data=f"{self.__class__.__name__}: did not run.")
-        pass
+        return True
 
     def not_available(self):
-        """Called when this event is passed to schedule_hsi_event when the TREATMENT_ID is not permitted by the
+        """Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
          parameter service_availability.
         """
         logger.debug(key="debug", data=f"{self.__class__.__name__}: was not available.")
