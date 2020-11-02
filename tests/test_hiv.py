@@ -66,6 +66,7 @@ def get_sim():
     sim.make_initial_population(n=popsize)
     return sim
 
+
 def test_basic_run_with_default_parameters():
     """Run the HIV module with check and check dtypes consistency"""
     end_date = Date(2015, 12, 31)
