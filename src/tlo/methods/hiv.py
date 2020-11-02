@@ -692,7 +692,10 @@ class Hiv(Module):
         )[0]
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual
+        """
+        * Initialise our properties for a newborn individual;
+        * schedule testing;
+        * schedule infection during breastfeeding
         """
         params = self.parameters
         df = self.sim.population.props
@@ -711,6 +714,16 @@ class Hiv(Module):
 
         # -- Temporary
         df.at[child_id, "tmp_breastfed"] = True
+
+        # ----- Schedule routine HIV test for those born to mothers that are HIV-positive (a time of giving birth)
+        # TODO: this to be subsumed into post-natal care
+        if df[mother_id, 'hv_inf']:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self),
+                topen=self.sim.date + pd.DateOffset(months=1),
+                tclose=self.sim.date + pd.DateOffset(months=2),
+                priority=1
+            )
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY

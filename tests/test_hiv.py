@@ -463,6 +463,11 @@ def test_aids_symptoms_lead_to_treatment_being_initiated():
     # Check that the person has a TestAndReferEvent scheduled
     assert 1 == len([ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)])
 
+def test_art_is_initiated_for_infants():
+    """Check that infant infected start ART"""
+    # todo
+    assert False
+
 def test_hsi_testandrefer_and_circ():
     """Test that the HSI for testing and referral to circumcision works as intended"""
     sim = get_sim()
