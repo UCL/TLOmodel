@@ -1239,7 +1239,7 @@ class HSI_Event:
          parameter service_availability.
         """
         logger.debug(key="message", data=f"{self.__class__.__name__}: was not admitted to the HSI queue because the "
-                                       f"service is not available.")
+                                         f"service is not available.")
         pass
 
     def post_apply_hook(self):
