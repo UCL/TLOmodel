@@ -285,13 +285,13 @@ def extract_bases(class_name, class_obj, spacer=""):
     if len(parents) > 0:
         str = f"{spacer}**Base classes:**\n\n"
         numbase = 1
-        #str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
+        # str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
         str += f"{spacer}{parents[0]}\n\n"
         for p in parents[1:]:
-            #import pdb; pdb.set_trace()
-            #print(f"**DEBUG: multiple parents for class {class_name}")
+            # import pdb; pdb.set_trace()
+            # print(f"**DEBUG: multiple parents for class {class_name}")
             numbase += 1
-            #str += f"{spacer}Base class #{numbase}: {p}\n\n"
+            # str += f"{spacer}Base class #{numbase}: {p}\n\n"
             str += f"{spacer}{p}\n\n"
     else:
         str = ""
@@ -338,7 +338,7 @@ def get_base_string(class_name, class_obj, base_obj):
     if name in [class_name, "object"]:
         return ""
 
-    link = get_link(fqn, base_obj)
+    # link = get_link(fqn, base_obj)
 
     # We want the final HTML to be like:
     # Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module"
@@ -355,8 +355,8 @@ def get_base_string(class_name, class_obj, base_obj):
     # :class: `tlo.events.Event`
     # or :py:class: `tlo.events.Event`
     # to fix the "broken" link issue on Travis (#204)
-    ###mystr = "`" + fqn + " " + link + "`_"
-    mystr = ":class:`" + fqn +"`"
+    # was: mystr = "`" + fqn + " " + link + "`_"
+    mystr = ":class:`" + fqn + "`"
     # print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
 
