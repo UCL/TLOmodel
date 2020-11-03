@@ -497,7 +497,7 @@ class HealthSystem(Module):
         )
 
         # Checks
-        assert capabilities_ex['Total_Minutes_Per_Day'].sum() == capabilities['Total_Minutes_Per_Day'].sum()
+        assert abs(capabilities_ex['Total_Minutes_Per_Day'].sum() - capabilities['Total_Minutes_Per_Day'].sum()) < 1e-7
         assert len(capabilities_ex) == len(facility_ids) * len(officer_type_codes)
 
         # Updates the capabilities table with the reformatted version

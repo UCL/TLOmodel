@@ -9,6 +9,9 @@ served by the following disease modules:
 
 
 """
+
+import numpy as np
+
 from tlo import Module, logging
 from tlo.methods import Metadata
 from tlo.methods.diarrhoea import (
@@ -92,7 +95,10 @@ class DxAlgorithmChild(Module):
         # Gather information that can be reported:
         # 1) Get duration of diarrhoea to date
         duration_in_days = (self.sim.date - df.at[person_id, 'gi_last_diarrhoea_date_of_onset']).days
-        assert duration_in_days >= 0
+        if np.isnan(duration_in_days):
+            # The dirarrhoe has been caused by something other than the the diarrhoea module, so this property is not
+            # know. Set the duration to 0 days:
+            duration_in_days = 0
 
         # 2) Get type of diarrhoea
         blood_in_stool = df.at[person_id, 'gi_last_diarrhoea_type'] == 'bloody'

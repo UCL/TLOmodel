@@ -199,15 +199,15 @@ class SymptomManager(Module):
 
         for symptom in symptoms_to_register:
             if symptom.name not in self.symptom_names:
-                self.all_registered_symptoms = self.all_registered_symptoms.union({symptom})
-                self.symptom_names = self.symptom_names.union({symptom.name})
+                self.all_registered_symptoms.add(symptom)
+                self.symptom_names.add(symptom.name)
             elif symptom not in self.all_registered_symptoms:
                 raise DuplicateSymptomWithNonIdenticalPropertiesError
 
     def pre_initialise_population(self):
         """Define the properties for each symptom"""
         SymptomManager.PROPERTIES = dict()
-        for symptom_name in self.symptom_names:
+        for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
             SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.INT, f'Presence of symptom {symptom_name}')
 
@@ -448,7 +448,7 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         # strip out those who do not have this symptom being caused by this disease_module
         for person_id in people_to_resolve:
             if self.symptom_string not in self.module.has_what(person_id, disease_module=self.disease_module):
-                people_to_resolve = people_to_resolve.remove(person_id)
+                people_to_resolve.remove(person_id)
 
         # run the chg_symptom function
         if people_to_resolve:
