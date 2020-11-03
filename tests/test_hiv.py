@@ -302,6 +302,7 @@ def test_mtct_at_birth():
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
     child_id = sim.population.do_birth()
+    sim.modules['Demography'].on_birth(mother_id, child_id)
     sim.modules['Hiv'].on_birth(mother_id, child_id)
 
     # Check that child is now HIV-positive
@@ -485,6 +486,9 @@ def test_art_is_initiated_for_infants():
 
     sim = get_sim()
 
+    # Simulate for 0 days so as to complete all the initialisation steps
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
     # Manipulate MTCT rates so that transmission always occurs at/before birth
     sim.modules['Hiv'].parameters["prob_mtct_treated"] = 1.0
     sim.modules['Hiv'].parameters["prob_mtct_untreated"] = 1.0
@@ -498,12 +502,34 @@ def test_art_is_initiated_for_infants():
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
 
     child_id = sim.population.do_birth()
+    sim.modules['Demography'].on_birth(mother_id, child_id)
     sim.modules['Hiv'].on_birth(mother_id, child_id)
 
-    # Check that child is now HIV-positive
+    # Check that child is now HIV-positive but not diagnosed
     assert sim.population.props.at[child_id, "hv_inf"]
+    assert not sim.population.props.at[child_id, "hv_diagnosed"]
 
-    assert False  # todo - sticking this is to make sure it gets done!!! ;-)
+    # Check that the child has a TestAndRefer event schedule
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
+    ][0]
+    assert date_event == sim.date + pd.DateOffset(months=1)
+
+    # Run the TestAndRefer event for the child
+    rtn = event.apply(person_id=child_id, squeeze_factor=0.0)
+
+    # check that the event returned a footprint for a VCTPositive
+    assert rtn == event.make_appt_footprint({'VCTPositive': 1.0})
+
+    # check that child is now diagnosed
+    assert sim.population.props.at[child_id, "hv_diagnosed"]
+
+    # Check that the child has an art initiation event scheduled
+    assert 1 == len([
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(child_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment)
+    ])
 
 
 def test_hsi_testandrefer_and_circ():
@@ -627,22 +653,21 @@ def test_hsi_testandrefer_and_prep():
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
     ][0]
 
-    # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
+    # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI or
+    # "decision" events
     # - First, clear the queue to avoid being confused by results of the check done just above.
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_prep_every_3_months"] = 0.0
     decision_event.apply(person_id)
     assert not df.at[person_id, "hv_is_on_prep"]
-    assert [] == [
+    assert 0 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueOnPrep) & (ev[0] >= date_decision_event))
-    ]
-    assert [] == [
+    ])
+    assert 0 == len([
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
-    ]
-
-    assert False # todo- check no more decision events:
+    ])
 
 
 def test_hsi_testandrefer_and_art():

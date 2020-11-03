@@ -775,7 +775,7 @@ class Hiv(Module):
 
         # ----- Schedule routine HIV test for those born to mothers that are HIV-positive (a time of giving birth)
         # TODO: this to be subsumed into post-natal care
-        if df[mother_id, 'hv_inf']:
+        if df.at[mother_id, 'hv_inf']:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_Hiv_TestAndRefer(person_id=child_id, module=self),
                 topen=self.sim.date + pd.DateOffset(months=1),
