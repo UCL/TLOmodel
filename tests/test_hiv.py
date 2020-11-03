@@ -642,7 +642,7 @@ def test_hsi_testandrefer_and_prep():
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
     ]
 
-    # todo- check no more decision events:
+    assert False # todo- check no more decision events:
 
 
 def test_hsi_testandrefer_and_art():
