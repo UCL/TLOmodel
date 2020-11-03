@@ -71,7 +71,7 @@ def test_basic_run():
                  ncds.Ncds(resourcefilepath=resourcefilepath)
                  )
 
-    sim.make_initial_population(n=2000)
+    sim.make_initial_population(n=5000)
     sim.simulate(end_date=Date(year=2015, month=1, day=1))
 
     routine_checks(sim)
