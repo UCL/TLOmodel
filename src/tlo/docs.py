@@ -313,8 +313,7 @@ def get_base_string(class_name, class_obj, base_obj):
     :param base_obj: the object representation of the *base* class,
                      e.g. <class 'tlo.core.Module'> or <class 'object'>
                      or <class 'tlo.methods.mockitis.Mockitis'>
-    :return: string with hyperlink,
-             e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_
+    :return: string as hyperlink
     '''
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
