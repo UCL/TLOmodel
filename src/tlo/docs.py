@@ -22,7 +22,7 @@ def get_package_name(dirpath):
     runt = runt.replace("/", ".")  # e.g. logging.sublog
     # print(f"now runt is {runt}")
     if runt:
-        package_name = "tlo." + runt
+        package_name = f"tlo.{runt}"
     else:
         package_name = "tlo"
     return package_name
@@ -115,7 +115,7 @@ def get_fully_qualified_name(filename, context):
     if context == "":
         return parts[0]
     else:
-        fqname = context + "." + parts[0]
+        fqname = f"{context}.{parts[0]}"
         return fqname
 
 
@@ -355,7 +355,7 @@ def get_base_string(class_name, class_obj, base_obj):
     # or :py:class: `tlo.events.Event`
     # to fix the "broken" link issue on Travis (#204)
     # was: mystr = "`" + fqn + " " + link + "`_"
-    mystr = ":class:`" + fqn + "`"
+    mystr = f":class:`{fqn}`"
     # print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
 
