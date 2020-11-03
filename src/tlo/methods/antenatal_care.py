@@ -10,7 +10,7 @@ from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.labour import LabourOnsetEvent
-from tlo.methods.hiv import HSI_Hiv_PresentsForCareWithSymptoms
+# from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import HSI_Labour_ElectiveCaesareanSection
 from tlo.methods.tb import HSI_TbScreening
 from tlo.util import BitsetHandler
@@ -810,12 +810,12 @@ class CareOfWomenDuringPregnancy(Module):
         # TODO: Also check with tara if treatment in pregnancy is the same (or does the HIV code already allow for
         #  this?)
         if 'hiv' in self.sim.modules.keys():
-            hiv_testing = HSI_Hiv_PresentsForCareWithSymptoms(
-                module=self.sim.modules['hiv'], person_id=person_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(hiv_testing, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0
+                )
         else:
             logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
                                                'testing will not happen in antenatal care')
