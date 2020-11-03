@@ -5,7 +5,7 @@ The joint NCDs model by Tim Hallett and Britta Jewell, October 2020
 from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.methods import Metadata, demography
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.healthsystem import HSI_Event
@@ -95,6 +95,8 @@ class Ncds(Module):
         'rr_chronic_ischemic_heart_disease': Parameter(Types.REAL, 'rr if currently has chronic ischemic heart disease'),
         'rr_stroke': Parameter(Types.REAL, 'rr if currently has stroke'),
         'rr_cancers': Parameter(Types.REAL, 'rr if currently has cancers'),
+        'rr_stroke_if_cihd': Parameter(Types.REAL, 'rr of having stroke if currently has chronic ischemic heart disease'),
+        'baseline_annual_probability_stroke': Parameter(Types.REAL, 'baseline annual probability of having a stroke')
     }
 
     # Note that all properties must have a two letter prefix that identifies them to this module.
@@ -123,6 +125,7 @@ class Ncds(Module):
         'nc_cancers': Property(Types.BOOL, 'Whether or not someone currently has cancers'),
         #'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
         #'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
+        'nc_ever_stroke': Property(Types.BOOL, 'Whether or not someone has ever had a stroke'),
     }
 
     # TODO: we will have to later gather from the others what the symptoms are in each state - for now leave blank
@@ -136,6 +139,10 @@ class Ncds(Module):
 
         # save a list of the conditions that covered in this module (extracted from PROPERTIES)
         self.conditions = list(self.PROPERTIES.keys())
+        self.conditions.remove('nc_ever_stroke')
+
+        # save a list of the events that are covered in this module (created manually for now)
+        self.events = ['nc_ever_stroke']
 
 
     def read_parameters(self, data_folder):
@@ -197,13 +204,22 @@ class Ncds(Module):
         sim.schedule_event(Ncds_MainPollingEvent(self, self.parameters['interval_between_polls']), sim.date)
         sim.schedule_event(Ncds_LoggingEvent(self), sim.date)
 
+        # Create Tracker for the number of Stroke events
+        self.eventsTracker = {'StrokeEvents': 0}
+
         # Build the LinearModel for onset/removal of each condition
         self.lms_onset = dict()
         self.lms_removal = dict()
 
+        # Build the LinearModel for occurrence of events
+        self.event_occurrence = dict()
+
         for condition in self.conditions:
             self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
             #self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
+
+        for event in self.events:
+            self.event_occurrence[event] = self.build_linear_model_events(event, self.parameters['interval_between_polls'])
 
 
     def build_linear_model(self, condition, interval_between_polls):
@@ -216,56 +232,10 @@ class Ncds(Module):
         # read in parameters from resource file
         # ResourceFile_NCDs2.xlsx = simplified version with no removal of conditions
 
-        if condition == 'nc_ldl_hdl':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                            sheet_name="nc_ldl_hdl")
-            )
-        elif condition == 'nc_chronic_inflammation':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_chronic_inflammation")
-            )
-        elif condition == 'nc_diabetes':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_diabetes")
-            )
-        elif condition == 'nc_hypertension':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_hypertension")
-            )
-        elif condition == 'nc_depression':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_depression")
-            )
-        elif condition == 'nc_chronic_lower_back_pain':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_chronic_lower_back_pain")
-            )
-        elif condition == 'nc_chronic_kidney_disease':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_chronic_kidney_disease")
-            )
-        elif condition == 'nc_chronic_ischemic_hd':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_chronic_ischemic_hd")
-            )
-        elif condition == 'nc_stroke':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_stroke")
-            )
-        elif condition == 'nc_cancers':
-            self.load_parameters_from_dataframe(
-                pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
-                              sheet_name="nc_cancers")
-            )
+        self.load_parameters_from_dataframe(
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                          sheet_name=f"{condition}")
+        )
 
         p = self.parameters
         p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
@@ -297,27 +267,27 @@ class Ncds(Module):
                 .otherwise(p['rr_100']),
             Predictor('li_urban').when(True, p['rr_urban']),
             Predictor('li_wealth').when('==1', p['rr_wealth_1'])
-                .when('==2', p['rr_wealth_2'])
-                .when('==3', p['rr_wealth_3'])
-                .when('==4', p['rr_wealth_4'])
-                .when('==5', p['rr_wealth_5']),
+                .when('2', p['rr_wealth_2'])
+                .when('3', p['rr_wealth_3'])
+                .when('4', p['rr_wealth_4'])
+                .when('5', p['rr_wealth_5']),
             Predictor('li_bmi').when('==1', p['rr_bmi_1'])
-                .when('==2', p['rr_bmi_2'])
-                .when('==3', p['rr_bmi_3'])
-                .when('==4', p['rr_bmi_4'])
-                .when('==5', p['rr_bmi_5']),
+                .when('2', p['rr_bmi_2'])
+                .when('3', p['rr_bmi_3'])
+                .when('4', p['rr_bmi_4'])
+                .when('5', p['rr_bmi_5']),
             Predictor('li_low_ex').when(True, p['rr_low_exercise']),
             Predictor('li_high_salt').when(True, p['rr_high_salt']),
             Predictor('li_high_sugar').when(True, p['rr_high_sugar']),
             Predictor('li_tob').when(True, p['rr_tobacco']),
             Predictor('li_ex_alc').when(True, p['rr_alcohol']),
-            Predictor('li_mar_stat').when('==1', p['rr_marital_status_1'])
-                .when('==2', p['rr_marital_status_2'])
-                .when('==3', p['rr_marital_status_3']),
+            Predictor('li_mar_stat').when('1', p['rr_marital_status_1'])
+                .when('2', p['rr_marital_status_2'])
+                .when('3', p['rr_marital_status_3']),
             Predictor('li_in_ed').when(True, p['rr_in_education']),
             Predictor('li_ed_lev').when('==1', p['rr_current_education_level_1'])
-                .when('==2', p['rr_current_education_level_2'])
-                .when('==3', p['rr_current_education_level_3']),
+                .when('2', p['rr_current_education_level_2'])
+                .when('3', p['rr_current_education_level_3']),
             Predictor('li_unimproved_sanitation').when(True, p['rr_unimproved_sanitation']),
             Predictor('li_no_access_handwashing').when(True, p['rr_no_access_handwashing']),
             Predictor('li_no_clean_drinking_water').when(True, p['rr_no_clean_drinking_water']),
@@ -333,7 +303,24 @@ class Ncds(Module):
 
         return self.lms_onset[condition]
 
+    def build_linear_model_events(self, event, interval_between_polls):
 
+        self.load_parameters_from_dataframe(
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
+                          sheet_name="nc_stroke")
+        )
+
+        p = self.parameters
+        p['baseline_annual_probability_stroke'] = p['baseline_annual_probability_stroke'] * (
+                interval_between_polls / 12)
+
+        self.event_occurrence[event] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            self.parameters['baseline_annual_probability_stroke'],
+            Predictor('nc_chronic_ischemic_hd').when(True, p['rr_stroke_if_cihd'])
+        )
+
+        return self.event_occurrence[event]
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -430,9 +417,39 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 # self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
                                                                 # ],
                                                          # self.module.rng), condition] = False
+        for event in self.module.events:
 
+            eligible_population_for_event = df.is_alive
+            has_event = self.module.event_occurrence[event].predict(df.loc[df.is_alive], rng,
+                                                                    eligible_population_for_event=eligible_population_for_event)
+            idx_has_event = has_event[has_event].index
 
+            for person_id in idx_has_event:
+                self.sim.schedule_event(NcdStrokeEvent(self.module, person_id),
+                                        self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
 
+class NcdStrokeEvent(Event, IndividualScopeEventMixin):
+    """
+    This is a Stroke event. It has been scheduled to occur by the Ncds_MainPollingEvent.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        if not self.sim.population.props.at[person_id, 'is_alive']:
+            return
+
+        self.module.eventsTracker['StrokeEvents'] += 1
+        self.sim.population.props.at[person_id, 'nc_ever_stroke'] = True
+
+        ## Add the outward symptom to the SymptomManager. This will result in emergency care being sought
+        #self.sim.modules['SymptomManager'].change_symptom(
+        #    person_id=person_id,
+        #    disease_module=self.module,
+        #    add_or_remove='+',
+        #    symptom_string='Injuries_From_Self_Harm'
+        #)
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
@@ -472,10 +489,6 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Make some summary statistics for prevalence by age/sex for each condition
         df = population.props
-
-        #for condition in self.module.conditions:
-            #dict_for_output = pd.DataFrame(df.loc[df.is_alive].groupby(by=['age_range'])[condition].mean()).reset_index().to_dict()
-            #logger.info(key=f'prevalence_{condition}', data=dict_for_output)
 
         def proportion_of_something_in_a_groupby_ready_for_logging(df, something, groupbylist):
             dfx = df.groupby(groupbylist).apply(lambda dft: pd.Series(
