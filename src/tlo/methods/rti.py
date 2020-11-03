@@ -1405,9 +1405,11 @@ class RTI(Module):
             assert len(non_list_default_properties) == len(non_list_module_columns)
             df.loc[idx, non_list_module_columns] = non_list_default_properties
             for prop_number, property in enumerate(list(list_properties.keys())):
-                for index, row in df.loc[idx, list(list_properties.keys())].iterrows():
-                    df.at[index, property] = list_default_properties[prop_number]
-
+                if type(idx) is not list:
+                    df.at[idx, property] = list_default_properties[prop_number]
+                else:
+                    for index, row in df.loc[idx, list(list_properties.keys())].iterrows():
+                        df.at[index, property] = list_default_properties[prop_number]
 
     def initialise_population(self, population):
         """Sets up the default properties used in the RTI module and applies them to the dataframe. The default state
@@ -1458,6 +1460,9 @@ class RTI(Module):
         Finally, we also schedule a logging event, which records the relevant information regarding road traffic
         injuries in the last month.
         """
+        # Begin logging the RTI events
+        event = RTI_Logging_Event(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin modelling road traffic injuries
         event = RTI_Event(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
@@ -1466,9 +1471,6 @@ class RTI(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
         # Begin checking whether those with untreated injuries die
         event = RTI_Check_Death_No_Med(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=0))
-        # Begin logging the RTI events
-        event = RTI_Logging_Event(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
     def rti_do_when_diagnosed(self, person_id):
@@ -2487,8 +2489,6 @@ class RTI(Module):
         # Return the LOS
         return days_until_treatment_end
 
-
-
     @staticmethod
     def rti_find_and_count_injuries(dataframe, tloinjcodes):
         """
@@ -2542,6 +2542,21 @@ class RTI(Module):
                 injury_cols = person_injuries.columns[(person_injuries.values == code).any(0)].tolist()
                 # Reset the treated injury code to "none"
                 df.loc[person_id, injury_cols] = "none"
+                # Reset symptoms
+                if df.loc[person_id, 'sy_injury'] != 0:
+                    self.sim.modules['SymptomManager'].change_symptom(
+                        person_id=person_id,
+                        disease_module=self.sim.modules['RTI'],
+                        add_or_remove='-',
+                        symptom_string='injury',
+                    )
+                if df.loc[person_id, 'sy_severe_trauma'] != 0:
+                    self.sim.modules['SymptomManager'].change_symptom(
+                        person_id=person_id,
+                        disease_module=self.sim.modules['RTI'],
+                        add_or_remove='-',
+                        symptom_string='severe_trauma',
+                    )
 
     def on_birth(self, mother_id, child_id):
         """
@@ -2550,7 +2565,7 @@ class RTI(Module):
         :param child_id: The newborn
         :return: n/a
         """
-        self.sim.modules['RTI'].rti_set_default_properties("on_birth", child_id)
+        # self.sim.modules['RTI'].rti_set_default_properties("on_birth", child_id)
         df = self.sim.population.props
         df.at[child_id, 'rt_road_traffic_inc'] = False
         df.at[child_id, 'rt_inj_severity'] = "none"  # default: no one has been injured in a RTI
@@ -3387,6 +3402,8 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         df['rt_road_traffic_inc'] = False
         # reset whether they have sought care this month
         df['rt_diagnosed'] = False
+        # reset whether they have been given care this month
+        df['rt_med_int'] = False
         df.loc[df.is_alive, 'rt_post_med_death'] = False
         df.loc[df.is_alive, 'rt_no_med_death'] = False
 
@@ -3507,25 +3524,40 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         # Condition to be sent to the health care system: 1) They must be alive 2) They must have been involved in a
         # road traffic accident 3) they must have not died immediately in the accident 4) they must not have been to an
         # A and E department previously and been diagnosed
-        condition_to_be_sent_to_HSI = df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & \
-                                      (df.rt_date_inj == now) & (df.rt_injury_1 != "none")
-        assert sum(df.loc[condition_to_be_sent_to_HSI, 'rt_injury_1'] != "none") == \
-               len(df.loc[condition_to_be_sent_to_HSI])
-        idx = df.index[condition_to_be_sent_to_HSI]
+        condition_to_be_sent_to_em = df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & \
+                                     (df.rt_date_inj == now) & (df.rt_injury_1 != "none") & \
+                                     (df.rt_ISS_score >= 9)
+        condition_to_be_sent_to_begin_non_emergency = df.is_alive & df.rt_road_traffic_inc & \
+                                                      ~df.rt_diagnosed & ~df.rt_imm_death & \
+                                                      (df.rt_date_inj == now) & (df.rt_injury_1 != "none") & \
+                                                      (df.rt_ISS_score < 9)
+        assert sum(df.loc[condition_to_be_sent_to_em, 'rt_injury_1'] != "none") == \
+               len(df.loc[condition_to_be_sent_to_em])
+        assert sum(df.loc[condition_to_be_sent_to_begin_non_emergency, 'rt_injury_1'] != "none") == \
+               len(df.loc[condition_to_be_sent_to_begin_non_emergency])
+
+        em_idx = df.index[condition_to_be_sent_to_em]
+        non_em_idx = df.index[condition_to_be_sent_to_begin_non_emergency]
         # ===================================== Assign symptoms ========================================================
         # Currently this is just a generic severe_trauma symptom to get those with injuries into the health system,
         # in the future it will be better to have a more sophisticated symptom system
-        for person_id in idx:
-            self.sim.modules['SymptomManager'].change_symptom(
-                person_id=person_id,
-                disease_module=self.module,
-                add_or_remove='+',
-                symptom_string='severe_trauma',
-            )
-
+        # First step to integrating better health seeking behaviour. I am going to assign the severe_trauma symptom
+        # to those with mild injuries
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=em_idx.tolist(),
+            disease_module=self.module,
+            add_or_remove='+',
+            symptom_string='severe_trauma',
+        )
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=non_em_idx.tolist(),
+            disease_module=self.module,
+            add_or_remove='+',
+            symptom_string='injury',
+        )
         # ================================ Generic first appointment ===================================================
 
-        for person_id_to_start_treatment in idx:
+        for person_id_to_start_treatment in em_idx:
             if df.loc[person_id_to_start_treatment, 'rt_diagnosed'] is False:
                 event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=self.module,
                                                                       person_id=person_id_to_start_treatment)
@@ -3613,7 +3645,7 @@ class RTI_Recovery_Event(RegularEvent, PopulationScopeEventMixin):
                     road_traffic_injuries.rti_alter_daly_post_treatment(person, code_to_remove)
                     # Check whether all their injuries are healed so the injury properties can be reset
                     if df.loc[person, 'rt_date_to_remove_daly'] == default_recovery:
-                        df.loc[person, 'rt_med_int'] = False
+                        # df.loc[person, 'rt_med_int'] = False
                         df.loc[person, 'rt_inj_severity'] = "none"
 
 
@@ -4760,6 +4792,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
 
         relevant_codes = np.intersect1d(persons_injuries.values[0][idx_for_untreated_injuries],
                                         surgically_treated_codes)
+        assert len(relevant_codes) > 0, persons_injuries.values[0]
         code = rng.choice(relevant_codes)
         self.treated_code = code
         # ------------------------ Track permanent disabilities with treatment ----------------------------------------
@@ -5668,7 +5701,7 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         diedfromrtiidx = diedfromrtiidx.union(deathwithoutmedidx)
         n_sought_care = (df.rt_road_traffic_inc & df.rt_med_int).sum()
         self.soughtmedcare += n_sought_care
-        n_death_post_med = (df.is_alive & df.rt_post_med_death).sum()
+        n_death_post_med = df.rt_post_med_death.sum()
         self.deathaftermed += n_death_post_med
         self.deathwithoutmed += len(df.loc[df.rt_no_med_death])
         self.death_inc_numerator += n_immediate_death + n_death_post_med + len(df.loc[df.rt_no_med_death])
@@ -5689,19 +5722,41 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
             femaleinrti = 0
         mfratio = [maleinrti, femaleinrti]
         incidence_of_injuries = (totalinj / (n_alive - n_in_RTI)) * 12 * 100000
+        if (n_in_RTI - len(df.loc[df.rt_imm_death])) > 0:
+            percent_sought_care = n_sought_care / (n_in_RTI - len(df.loc[df.rt_imm_death]))
+        else:
+            percent_sought_care = 0
+
+        if n_sought_care > 0:
+            percent_died_post_care = n_death_post_med / n_sought_care
+        else:
+            percent_died_post_care = 0
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
             'incidence of rti per 100,000': (n_in_RTI / ((n_alive - n_in_RTI) * (1 / 12))) * 100000,
             'incidence of rti death per 100,000': (len(diedfromrtiidx) /
                                                    ((n_alive - len(diedfromrtiidx)) * (1 / 12))) * 100000,
+            'incidence of death post med per 100,000': (len(df.loc[df.rt_post_med_death]) /
+                                                        ((n_alive -
+                                                          len(df.loc[df.rt_post_med_death])) * (1 / 12))) * 100000,
+            'incidence of prehospital death per 100,000': (len(df.loc[df.rt_imm_death]) /
+                                                           ((n_alive -
+                                                             len(df.loc[df.rt_imm_death])) * (1 / 12))) * 100000,
+            'incidence of death without med per 100,000': (len(df.loc[df.rt_no_med_death]) /
+                                                           ((n_alive -
+                                                             len(df.loc[df.rt_no_med_death])) * (1 / 12))) * 100000,
             'incidence of fractures per 100,000': (self.totfracnumber / self.fracdenominator) * 100000,
             'injury incidence per 100,000': incidence_of_injuries,
             'number alive': n_alive,
             'number immediate deaths': n_immediate_death,
+            'number deaths post med': n_death_post_med,
+            'number deaths without med': len(df.loc[df.rt_no_med_death]),
             'number permanently disabled': n_perm_disabled,
             'percent of crashes that are fatal': percent_accidents_result_in_death,
             'total injuries': totalinj,
             'male:female ratio': mfratio,
+            'percent sought healthcare': percent_sought_care,
+            'percentage died after med': percent_died_post_care
         }
         logger.info(key='summary_1m',
                     data=dict_to_output,
@@ -5711,10 +5766,18 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         injuredDemographics = df.loc[df.rt_road_traffic_inc]
 
         injuredDemographics = injuredDemographics.loc[:, columnsOfInterest]
+        try:
+            percent_related_to_alcohol = len(injuredDemographics.loc[injuredDemographics.li_ex_alc]) / \
+                                         len(injuredDemographics)
+        except ZeroDivisionError:
+            percent_related_to_alcohol = 0
         injured_demography_summary = {
             'males_in_rti': injuredDemographics['sex'].value_counts()['M'],
             'females_in_rti': injuredDemographics['sex'].value_counts()['F'],
-            'age': injuredDemographics['age_years'].values.tolist()
+            'age': injuredDemographics['age_years'].values.tolist(),
+            'male_age': injuredDemographics.loc[injuredDemographics['sex'] == 'M', 'age_years'].values.tolist(),
+            'female_age': injuredDemographics.loc[injuredDemographics['sex'] == 'F', 'age_years'].values.tolist(),
+            'percent_related_to_alcohol': percent_related_to_alcohol,
         }
         logger.info(key='rti_demography',
                     data=injured_demography_summary,

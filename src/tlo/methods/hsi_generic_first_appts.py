@@ -42,7 +42,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         # Confirm that this appointment has been created by the HealthSeekingBehaviour module
         assert module is self.sim.modules['HealthSeekingBehaviour']
-
+        # Get symptoms of person
+        symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         # Work out if this is for a child or an adult
         is_child = self.sim.population.props.at[person_id, 'age_years'] < 5.0
 
@@ -51,6 +52,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             the_appt_footprint = self.make_appt_footprint({'Under5OPD': 1})  # Child out-patient appointment
         else:
             the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})   # Adult out-patient appointment
+
+        if 'injury' in symptoms:
+            if 'RTI' in self.sim.modules:
+                # change the appointment footprint for general injuries if diagnostic equipment is needed
+                self.sim.modules['RTI'].rti_injury_diagnosis(person_id, the_appt_footprint)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'GenericFirstApptAtFacilityLevel1'
@@ -99,17 +105,11 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
             if 'injury' in symptoms:
                 if 'RTI' in self.sim.modules:
-                    from tlo.methods.rti import HSI_RTI_Medical_Intervention
-                    hsi_event = HSI_RTI_Medical_Intervention(
-                        module=self.sim.modules['RTI'],
-                        person_id=person_id,
-                    )
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(
-                        hsi_event,
-                        priority=0,
-                        topen=self.sim.date,
-                        tclose=None
-                    )
+                    df = self.sim.population.props
+                    road_traffic_injuries = self.sim.modules['RTI']
+                    df.loc[person_id, 'rt_diagnosed'] = True
+                    road_traffic_injuries.rti_do_when_diagnosed(person_id=person_id)
+
 
 
 

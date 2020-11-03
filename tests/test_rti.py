@@ -49,6 +49,36 @@ def simulation():
 
     return sim
 
+def test_with_more_modules():
+    sim = Simulation(start_date=start_date)
+
+    # Register the core modules
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 depression.Depression(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
+                 labour.Labour(resourcefilepath=resourcefilepath),
+                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 )
+
+    sim.seed_rngs(0)
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    params = sim.modules['RTI'].parameters
+    params['allowed_interventions'] = 'none'
+    sim.simulate(end_date=end_date)
+
+    check_dtypes(sim)
 
 def test_run():
     """This test runs a simulation with a functioning health system with full service availability and no set
@@ -80,7 +110,7 @@ def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
+    assert (df.dtypes == orig.dtypes).all(), ['where dtypes are not the same:', df.dtypes != orig.dtypes]
 
 
 def test_run_health_system_high_squeeze():
@@ -136,37 +166,6 @@ def test_run_health_system_events_wont_run():
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
-
-def test_with_more_modules():
-    sim = Simulation(start_date=start_date)
-
-    # Register the core modules
-    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-                 rti.RTI(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 depression.Depression(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath),
-                 epilepsy.Epilepsy(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 )
-
-    sim.seed_rngs(0)
-
-    # Run the simulation
-    sim.make_initial_population(n=popsize)
-    params = sim.modules['RTI'].parameters
-    params['allowed_interventions'] = 'none'
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
 
 
 def test_sim_high_incidence():
@@ -231,6 +230,27 @@ def test_no_capabilities():
 
     sim.seed_rngs(0)
     # Note that when n=1 an error was thrown up by the enhanced_lifestyle module when calculating bmi
+    sim.make_initial_population(n=popsize)
+    params = sim.modules['RTI'].parameters
+    params['allowed_interventions'] = 'none'
+    sim.simulate(end_date=end_date)
+
+    check_dtypes(sim)
+
+def test_health_system_disabled():
+    sim = Simulation(start_date=start_date)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 rti.RTI(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 )
+
+    sim.seed_rngs(0)
+
     sim.make_initial_population(n=popsize)
     params = sim.modules['RTI'].parameters
     params['allowed_interventions'] = 'none'

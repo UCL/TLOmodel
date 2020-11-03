@@ -27,10 +27,10 @@ log_config = {
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
 resourcefilepath = Path('./resources')
 # Establish the simulation object
-yearsrun = 5
+yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 10000
+pop_size = 50000
 nsim = 5
 output_for_different_incidence = dict()
 service_availability = ["*"]
@@ -38,11 +38,16 @@ incidence_average = []
 list_deaths_average = []
 list_tot_dalys_average = []
 incidence_reduction = np.linspace(1, 0, 10)
+scenarios = {'None': 1,
+             'Speed limit enforcement': (1 - 0.06),  # https://www.bmj.com/content/bmj/344/bmj.e612.full.pdf
+             'Drink driving legistlature enforcement': (1 - 0.15),
+             }
 for i in range(0, nsim):
     incidence = []
     list_deaths = []
     list_tot_dalys = []
-    for inc in incidence_reduction:
+    incidences = []
+    for scenario_reduction in scenarios.values():
         sim = Simulation(start_date=start_date)
         # We register all modules in a single call to the register method, calling once with multiple
         # objects. This is preferred to registering each module in multiple calls because we will be
@@ -62,7 +67,8 @@ for i in range(0, nsim):
         params = sim.modules['RTI'].parameters
         params['allowed_interventions'] = []
         orig_inc = params['base_rate_injrti']
-        params['base_rate_injrti'] = orig_inc * inc
+        params['base_rate_injrti'] = orig_inc * scenario_reduction
+        incidences.append(params['base_rate_injrti'])
         sim.simulate(end_date=end_date)
         log_df = parse_log_file(logfile)
         summary_1m = log_df['tlo.methods.rti']['summary_1m']
@@ -102,9 +108,9 @@ ax = results_df[['average deaths', 'average total DALYs']].plot(kind='bar', widt
 ax2 = results_df['incidence per 100,000'].plot(secondary_y=True, ax=ax)
 ax.set_ylabel('Deaths/DALYs')
 ax2.set_ylabel('Incidence per 100,000')
-ax.set_xticklabels(labels=['0% reduction', '10% reduction',  '20% reduction', '30% reduction', '75% reduction',
-                           '100% reduction'], rotation=45)
+ax.set_xticklabels(labels=scenarios.keys(), rotation=45)
 plt.title(f"The effect of reducing incidence on Average Deaths/DALYS"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.savefig('outputs/ReducingIncidence/incidence_vs_deaths_DALYS.png', bbox_inches='tight')
+print(incidences)

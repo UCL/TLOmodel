@@ -337,15 +337,25 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 50000
-nsim = 20
+pop_size = 10000
+nsim = 2
+save_figures = False
 output_for_different_incidence = dict()
 service_availability = ['*']
 sim_age_range = []
+sim_male_age_range = []
+sim_female_age_range = []
 females = []
 males = []
+list_number_of_crashes = []
+number_of_deaths_pre_hospital = []
+number_of_deaths_in_hospital = []
+number_of_deaths_no_med = []
 incidences_of_rti = []
 incidences_of_death = []
+incidences_of_death_pre_hospital = []
+incidences_of_death_post_med = []
+incidences_of_death_no_med = []
 incidences_of_injuries = []
 ps_of_imm_death = []
 ps_of_death_post_med = []
@@ -367,6 +377,9 @@ inc_sci = []
 inc_minor = []
 inc_other = []
 tot_inc_injuries = []
+percents_attributable_to_alcohol = []
+percent_sought_healthcare = []
+percent_died_after_med = []
 for i in range(0, nsim):
     age_range = []
     sim = Simulation(start_date=start_date)
@@ -387,44 +400,77 @@ for i in range(0, nsim):
     sim.make_initial_population(n=pop_size)
     params = sim.modules['RTI'].parameters
     params['allowed_interventions'] = []
-    params['base_rate_injrti'] = params['base_rate_injrti'] * 12.5
-    params['head_prob_skin_wound'] = 0.25909 + (params['head_prob_fracture'] - 0.04) / 2
-    params['head_prob_TBI'] = 0.69086 + (params['head_prob_fracture'] - 0.04) / 2
-    params['head_prob_fracture'] = 0.04
-    orig = params['rr_injrti_male']
-    params['imm_death_proportion_rti'] = 0.1
-    params['rr_injrti_male'] = 1.1
-    params['rr_injrti_age018'] = 1.2
-    params['rr_injrti_age1829'] = 1.4
-    params['rr_injrti_age3039'] = 1.4
-    params['rr_injrti_age4049'] = 1.15
-    params['rr_injrti_age5059'] = 1.15
-    params['rr_injrti_age6069'] = 1.15
-    params['rr_injrti_age7079'] = 1.15
+    # params['base_rate_injrti'] = params['base_rate_injrti'] * 12.5
+    # params['head_prob_skin_wound'] = 0.25909 + (params['head_prob_fracture'] - 0.04) / 2
+    # params['head_prob_TBI'] = 0.69086 + (params['head_prob_fracture'] - 0.04) / 2
+    # params['head_prob_fracture'] = 0.04
+    # orig = params['rr_injrti_male']
+    params['imm_death_proportion_rti'] = 0.06
+    # params['rr_injrti_male'] = 1.1
+    # params['rr_injrti_age018'] = 1.2
+    # params['rr_injrti_age1829'] = 1.4
+    # params['rr_injrti_age3039'] = 1.4
+    # params['rr_injrti_age4049'] = 1.15
+    # params['rr_injrti_age5059'] = 1.15
+    # params['rr_injrti_age6069'] = 1.15
+    # params['rr_injrti_age7079'] = 1.15
 
     sim.simulate(end_date=end_date)
     log_df = parse_log_file(logfile)
     demog = log_df['tlo.methods.rti']['rti_demography']
     males.append(sum(demog['males_in_rti']))
     females.append(sum(demog['females_in_rti']))
+    list_number_of_crashes.append(sum(demog['males_in_rti']) + sum(demog['females_in_rti']))
+    number_of_deaths_pre_hospital.append(
+        log_df['tlo.methods.rti']['summary_1m']['number immediate deaths'].sum())
+    number_of_deaths_in_hospital.append(
+        log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum())
+    number_of_deaths_no_med.append(
+        log_df['tlo.methods.rti']['summary_1m']['number deaths without med'].sum())
+    percent_sought_healthcare.append(
+        log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist()
+    )
+    percent_died_after_med.append(
+        log_df['tlo.methods.rti']['summary_1m']['percentage died after med'].tolist()
+    )
     this_sim_ages = demog['age'].tolist()
+    this_sim_male_ages = demog['male_age'].tolist()
+    this_sim_female_ages = demog['female_age'].tolist()
+    percents_attributable_to_alcohol.append(demog['percent_related_to_alcohol'].tolist())
     incidences_of_rti.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti per 100,000'].tolist())
     number_of_injuries_in_sim.append(sum(log_df['tlo.methods.rti']['summary_1m']['total injuries']))
     incidences_of_death.append(log_df['tlo.methods.rti']['summary_1m']['incidence of rti death per 100,000'].tolist())
+    incidences_of_death_pre_hospital.append(
+        log_df['tlo.methods.rti']['summary_1m']['incidence of prehospital death per 100,000'].tolist()
+    )
+    incidences_of_death_post_med.append(
+        log_df['tlo.methods.rti']['summary_1m']['incidence of death post med per 100,000'].tolist()
+    )
+    incidences_of_death_no_med.append(
+        log_df['tlo.methods.rti']['summary_1m']['incidence of death without med per 100,000'].tolist()
+    )
     incidences_of_injuries.append(log_df['tlo.methods.rti']['summary_1m']['injury incidence per 100,000'].tolist())
     deaths_df = log_df['tlo.methods.demography']['death']
     rti_deaths = len(deaths_df.loc[deaths_df['cause'] != 'Other'])
     try:
         ps_of_imm_death.append(len(deaths_df.loc[deaths_df['cause'] == 'RTI_imm_death']) / rti_deaths)
         ps_of_death_post_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_death_with_med']) / rti_deaths)
+        ps_of_death_without_med.append(len(deaths_df[deaths_df['cause'] == 'RTI_death_without_med']) / rti_deaths)
     except ZeroDivisionError:
         ps_of_imm_death.append(0)
         ps_of_death_post_med.append(0)
+        ps_of_death_without_med.append(0)
     number_of_crashes = sum(log_df['tlo.methods.rti']['summary_1m']['number involved in a rti'])
     percent_of_fatal_crashes.append(rti_deaths / number_of_crashes)
     for elem in this_sim_ages:
         for item in elem:
             sim_age_range.append(item)
+    for elem in this_sim_male_ages:
+        for item in elem:
+            sim_male_age_range.append(item)
+    for elem in this_sim_female_ages:
+        for item in elem:
+            sim_female_age_range.append(item)
     mild_injuries_in_run = log_df['tlo.methods.rti']['injury_severity']['total_mild_injuries'].iloc[-1]
     severe_injuries_in_run = log_df['tlo.methods.rti']['injury_severity']['total_severe_injuries'].iloc[-1]
     perc_mild.append(mild_injuries_in_run / (mild_injuries_in_run + severe_injuries_in_run))
@@ -449,31 +495,88 @@ for i in range(0, nsim):
     inc_other.append(injury_category_incidence['inc_other'].tolist())
     tot_inc_injuries.append(injury_category_incidence['tot_inc_injuries'].tolist())
 
-zero_to_five = len([i for i in sim_age_range if i < 6])
-six_to_ten = len([i for i in sim_age_range if 6 <= i < 11])
-eleven_to_fifteen = len([i for i in sim_age_range if 11 <= i < 16])
-sixteen_to_twenty = len([i for i in sim_age_range if 16 <= i < 21])
-twenty1_to_twenty5 = len([i for i in sim_age_range if 21 <= i < 26])
-twenty6_to_thirty = len([i for i in sim_age_range if 26 <= i < 31])
-thirty1_to_thirty5 = len([i for i in sim_age_range if 31 <= i < 36])
-thirty6_to_forty = len([i for i in sim_age_range if 36 <= i < 41])
-forty1_to_forty5 = len([i for i in sim_age_range if 41 <= i < 46])
-forty6_to_fifty = len([i for i in sim_age_range if 46 <= i < 51])
-fifty1_to_fifty5 = len([i for i in sim_age_range if 51 <= i < 56])
-fifty6_to_sixty = len([i for i in sim_age_range if 56 <= i < 61])
-sixty1_to_sixty5 = len([i for i in sim_age_range if 61 <= i < 66])
-sixty6_to_seventy = len([i for i in sim_age_range if 66 <= i < 71])
-seventy1_to_seventy5 = len([i for i in sim_age_range if 71 <= i < 76])
-seventy6_to_eighty = len([i for i in sim_age_range if 76 <= i < 81])
-eighty1_to_eighty5 = len([i for i in sim_age_range if 81 <= i < 86])
-eighty6_to_ninety = len([i for i in sim_age_range if 86 <= i < 91])
-ninety_plus = len([i for i in sim_age_range if 90 < i])
-height_for_bar_plot = [zero_to_five, six_to_ten, eleven_to_fifteen, sixteen_to_twenty, twenty1_to_twenty5,
-                       twenty6_to_thirty, thirty1_to_thirty5, thirty6_to_forty, forty1_to_forty5, forty6_to_fifty,
-                       fifty1_to_fifty5, fifty6_to_sixty, sixty1_to_sixty5, sixty6_to_seventy, seventy1_to_seventy5,
-                       seventy6_to_eighty, eighty1_to_eighty5, eighty6_to_ninety, ninety_plus]
+print('percent attributable to alcohol', percents_attributable_to_alcohol)
+
+
+def age_breakdown(age_array):
+    # Breakdown the age data into boundaries 0-5, 6-10, 11-15, 16-20 etc...
+    zero_to_five = len([i for i in age_array if i < 6])
+    six_to_ten = len([i for i in age_array if 6 <= i < 11])
+    eleven_to_fifteen = len([i for i in age_array if 11 <= i < 16])
+    sixteen_to_twenty = len([i for i in age_array if 16 <= i < 21])
+    twenty1_to_twenty5 = len([i for i in age_array if 21 <= i < 26])
+    twenty6_to_thirty = len([i for i in age_array if 26 <= i < 31])
+    thirty1_to_thirty5 = len([i for i in age_array if 31 <= i < 36])
+    thirty6_to_forty = len([i for i in age_array if 36 <= i < 41])
+    forty1_to_forty5 = len([i for i in age_array if 41 <= i < 46])
+    forty6_to_fifty = len([i for i in age_array if 46 <= i < 51])
+    fifty1_to_fifty5 = len([i for i in age_array if 51 <= i < 56])
+    fifty6_to_sixty = len([i for i in age_array if 56 <= i < 61])
+    sixty1_to_sixty5 = len([i for i in age_array if 61 <= i < 66])
+    sixty6_to_seventy = len([i for i in age_array if 66 <= i < 71])
+    seventy1_to_seventy5 = len([i for i in age_array if 71 <= i < 76])
+    seventy6_to_eighty = len([i for i in age_array if 76 <= i < 81])
+    eighty1_to_eighty5 = len([i for i in age_array if 81 <= i < 86])
+    eighty6_to_ninety = len([i for i in age_array if 86 <= i < 91])
+    ninety_plus = len([i for i in age_array if 90 < i])
+    return [zero_to_five, six_to_ten, eleven_to_fifteen, sixteen_to_twenty, twenty1_to_twenty5, twenty6_to_thirty, \
+            thirty1_to_thirty5, thirty6_to_forty, forty1_to_forty5, forty6_to_fifty, fifty1_to_fifty5, fifty6_to_sixty, \
+            sixty1_to_sixty5, sixty6_to_seventy, seventy1_to_seventy5, seventy6_to_eighty, eighty1_to_eighty5, \
+            eighty6_to_ninety, ninety_plus]
+
+
+# plot the percentage of those who sought health care
+per_sim_average_health_seeking = [np.mean(i) for i in percent_sought_healthcare]
+overall_average_health_seeking_behaviour = np.mean(per_sim_average_health_seeking)
+plt.pie([overall_average_health_seeking_behaviour, 1 - overall_average_health_seeking_behaviour],
+        explode=None, labels=['Sought care', "Didn't seek care"], colors=['lightsteelblue', 'lightsalmon'],
+        autopct='%1.1f%%')
+plt.title(f"Average percentage of those with road traffic injuries who sought health care"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.savefig('outputs/Demographics_of_RTI/Percent_Sought_Healthcare.png', bbox_inches='tight')
+plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percent_Sought_Healthcare.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the percentage of death post med
+per_sim_average_post_med_death = [np.mean(i) for i in percent_died_after_med]
+overall_average_post_med_death = np.mean(per_sim_average_post_med_death)
+plt.pie([overall_average_post_med_death, 1 - overall_average_post_med_death],
+        explode=None, labels=['Non-fatal', "Fatal"], colors=['lightsteelblue', 'lightsalmon'],
+        autopct='%1.1f%%')
+plt.title(f"Average percent survival of those with road traffic injuries who sought health care"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+plt.savefig('outputs/Demographics_of_RTI/Percent_Survival_Healthcare.png', bbox_inches='tight')
+plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percent_Sought_Healthcare.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot health outcomes for road traffic injuries
+total_n_crashes = sum(list_number_of_crashes)
+total_n_hospital_deaths = sum(number_of_deaths_in_hospital)
+total_n_prehospital_deaths = sum(number_of_deaths_pre_hospital)
+total_n_no_hospital_deaths = sum(number_of_deaths_no_med)
+total_survived = total_n_crashes - total_n_hospital_deaths - total_n_prehospital_deaths - total_n_no_hospital_deaths
+plt.pie([total_survived, total_n_prehospital_deaths, total_n_hospital_deaths, total_n_no_hospital_deaths], explode=None,
+        labels=['Non-fatal', 'Pre-hospital mortality', 'In-hospital mortality', 'No-hospital mortality'],
+        colors=['lightsteelblue', 'lightsalmon', 'wheat', 'darkcyan'], autopct='%1.1f%%')
+plt.title(f"Outcomes for road traffic injuries in the model"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Outcome_Of_Crashes.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot age demographics of those in RTI by percentage
+height_for_bar_plot = age_breakdown(sim_age_range)
 height_for_bar_plot = np.divide(height_for_bar_plot, sum(height_for_bar_plot))
-print(height_for_bar_plot, sum(height_for_bar_plot))
 labels = ['0-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40',
           '41-45', '46-50', '51-55', '56-60', '61-65', '66-70', '71-75', '76-80',
           '81-85', '86-90', '90+']
@@ -484,15 +587,91 @@ plt.xlabel('Age')
 plt.title(f"Age demographics of those with RTIs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Age_demographics.png', bbox_inches='tight')
-plt.clf()
-plt.close()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Age_demographics_percentage.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot age demographics of those in rti by number
+height_for_bar_plot = age_breakdown(sim_age_range)
+labels = ['0-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40',
+          '41-45', '46-50', '51-55', '56-60', '61-65', '66-70', '71-75', '76-80',
+          '81-85', '86-90', '90+']
+plt.bar(np.arange(len(height_for_bar_plot)), height_for_bar_plot, color='lightsteelblue')
+plt.xticks(np.arange(len(height_for_bar_plot)), labels, rotation=45)
+plt.ylabel('Number')
+plt.xlabel('Age')
+plt.title(f"Age demographics of those with RTIs"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Age_demographics_number.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot age/gender demographics of those in rti by number
+height_for_males_bar_plot = age_breakdown(sim_male_age_range)
+height_for_female_bar_plot = age_breakdown(sim_female_age_range)
+labels = ['0-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40',
+          '41-45', '46-50', '51-55', '56-60', '61-65', '66-70', '71-75', '76-80',
+          '81-85', '86-90', '90+']
+labels.reverse()
+height_for_males_bar_plot.reverse()
+height_for_female_bar_plot.reverse()
+plt.barh(labels, height_for_males_bar_plot, alpha=0.5, label='Males', color='lightsteelblue')
+plt.barh(labels, np.multiply(height_for_female_bar_plot, -1), alpha=0.5, label='Females', color='lightsalmon')
+locs, labels = plt.xticks()
+plt.xticks(locs, np.sqrt(locs ** 2), fontsize=8)
+plt.title(f"Sum total of number of road traffic injuries"
+          f"\n"
+          f"by age and sex."
+          f"\n"
+          f"Population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}"
+          )
+plt.xlabel('Number')
+plt.yticks(fontsize=7)
+plt.legend()
+plt.tight_layout()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Age_Gender_Demographics_number.png')
+    plt.clf()
+else:
+    plt.clf()
+labels = ['0-5', '6-10', '11-15', '16-20', '21-25', '26-30', '31-35', '36-40',
+          '41-45', '46-50', '51-55', '56-60', '61-65', '66-70', '71-75', '76-80',
+          '81-85', '86-90', '90+']
+labels.reverse()
+# Plot age/gender demographics of those in rti by percent
+height_for_males_bar_plot = np.divide(height_for_males_bar_plot, sum(height_for_males_bar_plot))
+if sum(height_for_female_bar_plot) > 0:
+    height_for_female_bar_plot = np.divide(height_for_female_bar_plot, sum(height_for_female_bar_plot))
+else:
+    height_for_female_bar_plot = np.zeros(len(height_for_female_bar_plot))
+plt.barh(labels, height_for_males_bar_plot, alpha=0.5, label='Males', color='lightsteelblue')
+plt.barh(labels, np.multiply(height_for_female_bar_plot, -1), alpha=0.5, label='Females', color='lightsalmon')
+locs, labels = plt.xticks()
+plt.xticks(locs, np.round(np.sqrt(locs ** 2), 2), fontsize=8)
+plt.title(f"Percentage of road traffic injuries"
+          f"\n"
+          f"by age and sex in all simulations."
+          f"\n"
+          f"Population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}"
+          )
+plt.xlabel('Number')
+plt.yticks(fontsize=7)
+plt.legend()
+plt.tight_layout()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Age_Gender_Demographics_percentage.png')
+    plt.clf()
+else:
+    plt.clf()
 
 total_injuries = [i + j for i, j in zip(males, females)]
 male_perc = np.divide(males, total_injuries)
 femal_perc = np.divide(females, total_injuries)
 n = np.arange(2)
-data = [np.mean(male_perc), np.mean(femal_perc)]
+data = [np.round(np.mean(male_perc), 3), np.round(np.mean(femal_perc), 3)]
 plt.bar(np.arange(2), data, yerr=[np.std(male_perc), np.std(femal_perc)], color='lightsteelblue')
 for i in range(len(data)):
     plt.annotate(str(data[i]), xy=(n[i], data[i]), ha='center', va='bottom')
@@ -502,8 +681,25 @@ plt.xlabel('Gender')
 plt.title(f"Gender demographics of those with RTIs"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Gender_demographics.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Gender_demographics.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the percentage of crashes attributable to alcohol
+means_of_sim = [np.mean(i) for i in percents_attributable_to_alcohol]
+mean_of_means = np.mean(means_of_sim)
+plt.pie([mean_of_means, 1 - mean_of_means], explode=None, labels=['Alcohol related', 'Non-alcohol related'],
+        colors=['lightsteelblue', 'lightsalmon'], autopct='%1.1f%%')
+plt.title(f"Average percentage of RTIs attributable to Alcohol"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Alcohol_demographics.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# plot the incidence of RTI and death from RTI
 average_incidence = [float(sum(col)) / len(col) for col in zip(*incidences_of_rti)]
 std_incidence = [np.std(i) for i in zip(*incidences_of_rti)]
 inc_upper = [inc + (1.96 * std) / nsim for inc, std in zip(average_incidence, std_incidence)]
@@ -518,37 +714,74 @@ overall_av_inc_sim = np.mean(average_incidence)
 overall_av_death_inc_sim = np.mean(average_deaths)
 overall_av_inc_injuries = np.mean(average_injury_incidence)
 time = log_df['tlo.methods.rti']['summary_1m']['date']
-plt.plot(time, average_incidence, color='blue', label='Incidence of RTI', zorder=2)
-plt.fill_between(time.tolist(), inc_upper, inc_lower, alpha=0.5, color='blue', label='95% C.I., RTI inc.', zorder=1)
-plt.plot(time, average_deaths, color='red', label='Incidence of death '
-                                                  '\n'
-                                                  'due to RTI', zorder=2)
-plt.fill_between(time.tolist(), death_upper, death_lower, alpha=0.5, color='red', label='95% C.I. inc death', zorder=1)
+plt.plot(time, average_incidence, color='lightsteelblue', label='Incidence of RTI', zorder=2)
+plt.fill_between(time.tolist(), inc_upper, inc_lower, alpha=0.5, color='lightsteelblue', label='95% C.I., RTI inc.',
+                 zorder=1)
+plt.plot(time, average_deaths, color='lightsalmon', label='Incidence of death '
+                                                          '\n'
+                                                          'due to RTI', zorder=2)
+plt.fill_between(time.tolist(), death_upper, death_lower, alpha=0.5, color='lightsalmon',
+                 label='95% C.I. inc death', zorder=1)
 # plt.plot(time, average_injury_incidence, color='green', label='Incidence of RTI injury')
 plt.hlines(overall_av_inc_sim, time.iloc[0], time.iloc[-1], label=f"Average incidence of "
                                                                   f"\n"
                                                                   f"RTI = {np.round(overall_av_inc_sim, 2)}",
-           color='blue', linestyles='--')
+           color='lightsteelblue', linestyles='--')
 plt.hlines(overall_av_death_inc_sim, time.iloc[0], time.iloc[-1], label=f"Average incidence of "
                                                                         f"\n"
                                                                         f"death = "
                                                                         f"{np.round(overall_av_death_inc_sim, 2)}",
-           color='red', linestyles='--')
+           color='lightsalmon', linestyles='--')
 plt.xlabel('Simulation time')
 plt.ylabel('Incidence per 100,000')
 plt.legend(loc='upper center', bbox_to_anchor=(1.1, 0.8), shadow=True, ncol=1)
 plt.title(f"Average incidence of RTIs and deaths due to RTI"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Incidence_and_deaths.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Incidence_and_deaths.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+# Plot the incidences of death showing the specific causes:
+average_deaths_no_med = [float(sum(col)) / len(col) for col in zip(*incidences_of_death_no_med)]
+std_deaths_no_med = [np.std(j) for j in zip(*incidences_of_death_no_med)]
+death_no_med_upper = [inc + (1.96 * std) / nsim for inc, std in zip(average_deaths_no_med, std_deaths_no_med)]
+death_no_med_lower = [inc - (1.96 * std) / nsim for inc, std in zip(average_deaths_no_med, std_deaths_no_med)]
+overall_av_death_no_med = np.mean(average_deaths_no_med)
+average_deaths_with_med = [float(sum(col)) / len(col) for col in zip(*incidences_of_death_post_med)]
+std_deaths_with_med = [np.std(j) for j in zip(*incidences_of_death_post_med)]
+death_upper_with_med = [inc + (1.96 * std) / nsim for inc, std in zip(average_deaths_with_med, std_deaths_with_med)]
+death_lower_with_med = [inc - (1.96 * std) / nsim for inc, std in zip(average_deaths_with_med, std_deaths_with_med)]
+overall_av_death_with_med = np.mean(average_deaths_with_med)
+average_deaths_pre_hospital = [float(sum(col)) / len(col) for col in zip(*incidences_of_death_pre_hospital)]
+std_deaths_with_pre_hospital = [np.std(j) for j in zip(*incidences_of_death_pre_hospital)]
+death_upper_with_pre_hospital = \
+    [inc + (1.96 * std) / nsim for inc, std in zip(average_deaths_pre_hospital, std_deaths_with_pre_hospital)]
+death_lower_with_pre_hospital = \
+    [inc - (1.96 * std) / nsim for inc, std in zip(average_deaths_pre_hospital, std_deaths_with_pre_hospital)]
+overall_av_death_pre_hospital = np.mean(average_deaths_pre_hospital)
+plt.bar(np.arange(4), [overall_av_death_inc_sim, overall_av_death_pre_hospital, overall_av_death_with_med,
+                       overall_av_death_no_med], color='lightsteelblue')
+plt.xticks(np.arange(4), ['Overall \n incidence \n of \n deaths', 'Incidence \n of \n pre-hospital \n deaths',
+                          'Incidence \n of \n deaths \n with \n treatment', 'Incidence \n of \n deaths\n'
+                                                                            'without \n treatment'])
+plt.ylabel('Incidence per 100,000')
+plt.title(f"Average incidence of deaths due to RTI"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Incidence_of_rti_deaths.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 print(percent_of_fatal_crashes)
 mean_fatal_crashes_of_all_sim = np.mean(percent_of_fatal_crashes)
 std_fatal_crashes = np.std(percent_of_fatal_crashes)
 non_fatal_crashes_of_all_sim = [i - j for i, j in zip(np.ones(len(percent_of_fatal_crashes)), percent_of_fatal_crashes)]
 mean_non_fatal = np.mean(non_fatal_crashes_of_all_sim)
 std_non_fatal_crashes = np.std(non_fatal_crashes_of_all_sim)
-data = [mean_fatal_crashes_of_all_sim, mean_non_fatal]
+data = [np.round(mean_fatal_crashes_of_all_sim, 3), np.round(mean_non_fatal, 3)]
 n = np.arange(2)
 plt.bar(n, data, yerr=[std_fatal_crashes, std_non_fatal_crashes], color='lightsteelblue')
 for i in range(len(data)):
@@ -557,21 +790,26 @@ plt.xticks(np.arange(2), ['fatal', 'non-fatal'])
 plt.title(f"Average percentage of those with RTI who perished"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Percentage_of_deaths.png', bbox_inches='tight')
-
-plt.clf()
-colours = ['lightsteelblue', 'lightsalmon']
-plt.pie([np.mean(ps_of_imm_death), 1 - np.mean(ps_of_imm_death)], labels=['Death on scene', 'Death post med'],
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percentage_of_deaths.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+colours = ['lightsteelblue', 'lightsalmon', 'gold']
+plt.pie([np.mean(ps_of_imm_death), np.mean(ps_of_death_post_med), np.mean(ps_of_death_without_med)],
+        labels=['Death on scene', 'Death post med', 'Death without med'],
         autopct='%1.1f%%', startangle=90, colors=colours)
 plt.title(f"Average cause of death breakdown in RTI"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.axis('equal')
-
-plt.savefig('outputs/Demographics_of_RTI/Percentage_cause_of_deaths.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percentage_cause_of_deaths.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 n = np.arange(2)
-data = [np.mean(perc_mild), np.mean(perc_severe)]
+data = [np.round(np.mean(perc_mild), 3), np.round(np.mean(perc_severe), 3)]
 plt.bar(n, data, yerr=[np.std(perc_mild), np.std(perc_severe)], color='lightsteelblue')
 for i in range(len(data)):
     plt.annotate(str(data[i]), xy=(n[i], data[i]), ha='center', va='bottom')
@@ -579,9 +817,11 @@ plt.xticks(np.arange(2), labels=['Mild injuries', 'Severe injuries'])
 plt.title(f"Average road traffic injury severity distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-
-plt.savefig('outputs/Demographics_of_RTI/Percentage_mild_severe_injuries.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Percentage_mild_severe_injuries.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # Plot the distribution of the ISS scores
 scores, counts = np.unique(iss_scores, return_counts=True)
 plt.bar(scores, counts / sum(counts), width=0.8, color='lightsteelblue')
@@ -591,8 +831,11 @@ plt.title(f"Average road traffic injury ISS score distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.xlim([0, 75])
-plt.savefig('outputs/Demographics_of_RTI/Average_ISS_scores.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_ISS_scores.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # Plot the distribution of the number of injured body regions
 average_number_of_body_regions_injured = [float(sum(col)) / len(col) for col in zip(*number_of_injured_body_locations)]
 plt.bar(np.arange(8), np.divide(average_number_of_body_regions_injured, sum(average_number_of_body_regions_injured)),
@@ -603,8 +846,11 @@ plt.ylabel('Percentage')
 plt.title(f"Average injured body region distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Average_injured_body_region_distribution.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_injured_body_region_distribution.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # plot the injury location data
 average_inj_loc = [float(sum(col)) / len(col) for col in zip(*inj_loc_data)]
 plt.bar(np.arange(8), np.divide(average_inj_loc, sum(average_inj_loc)), color='lightsteelblue')
@@ -614,8 +860,11 @@ plt.ylabel('Percentage')
 plt.title(f"Average injury location distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Average_injury_location_distribution.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_injury_location_distribution.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # Plot the injury category data
 average_inj_cat = [float(sum(col)) / len(col) for col in zip(*inj_cat_data)]
 plt.bar(np.arange(len(average_inj_cat)), np.divide(average_inj_cat, sum(average_inj_cat)), color='lightsteelblue')
@@ -626,8 +875,11 @@ plt.ylabel('Percentage')
 plt.title(f"Average injury category distribution"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Average_injury_category_distribution.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_injury_category_distribution.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # Plot the incidence of injuries as per the GBD definitions
 average_inc_amputations = [float(sum(col)) / len(col) for col in zip(*inc_amputations)]
 mean_inc_amp = np.mean(average_inc_amputations)
@@ -674,12 +926,15 @@ plt.bar(np.arange(len(model_category_incidences)) + width, gbd_category_incidenc
 plt.title(f"Average injury incidence compared to GBD data"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.ylabel('Incidence per 100,000 per year')
+plt.ylabel('Incidence per 100,000 person years')
 labels = ['Amputations', 'Burns', 'Fractures', 'TBI', 'SCI', 'Minor', 'Other', 'Total']
 plt.xticks(np.arange(len(model_category_incidences)) + width / 2, labels, rotation=45)
 plt.legend()
-plt.savefig('outputs/Demographics_of_RTI/Average_injury_incidence_per_100000_bar.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_injury_incidence_per_100000_bar.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 # plt.plot(injury_category_incidence['date'], average_inc_amputations, color='red', label='Amputations')
 plt.hlines(mean_inc_amp, injury_category_incidence['date'].iloc[0], injury_category_incidence['date'].iloc[-1],
            color='red', label=f"Average incidence amputation = {mean_inc_amp}")
@@ -710,8 +965,11 @@ plt.title(f"Average injury incidence by GBD categories"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
 plt.legend()
-plt.savefig('outputs/Demographics_of_RTI/Average_injury_incidence_per_100000.png', bbox_inches='tight')
-plt.clf()
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Average_injury_incidence_per_100000.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
 
 params_dict = dict()
 params_dict.update({'base_rate_injrti': params['base_rate_injrti'],
