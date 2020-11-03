@@ -5,9 +5,14 @@ from os import walk
 
 
 def get_package_name(dirpath):
-    # e.g. if dirpath = "./src/tlo/logging/sublog"
-    # we want "tlo.logging.sublog" returned
-    # and if dirpath = "./src/tlo", we want just "tlo" returned
+    '''
+    Given a file path to a TLO package, return the name in dot form.
+
+    :param dirpath: the path to the package,
+           e.g. (1) "./src/tlo/logging/sublog" or (2) "./src/tlo"
+    :return: string of package name in dot form,
+           e.g. (1) "tlo.logging.sublog" or (2) "tlo"
+    '''
     TLO = "/tlo/"
     if TLO not in dirpath:
         raise ValueError(f"Sorry, {TLO} isn't in dirpath ({dirpath})")
@@ -24,14 +29,17 @@ def get_package_name(dirpath):
 
 
 def generate_module_dict(topdir):
-    # Given a root directory topdir, iterates recursively
-    # over top dir and the files and subdirectories within it.
-    # Returns a dictionary with each key = path to a directory
-    # (i.e. to topdir or one of its nested subdirectories), and
-    # value = list of Python .py files in that directory.
-    # :param topdir: root directory to traverse downwards from, iteratively.
-    # :returns: dict with key = a directory,
-    # value = list of Python files in dir `key`.
+    '''
+    Given a root directory topdir, iterates recursively
+    over top dir and the files and subdirectories within it.
+    Returns a dictionary with each key = path to a directory
+    (i.e. to topdir or one of its nested subdirectories), and
+    value = list of Python .py files in that directory.
+
+    :param topdir: root directory to traverse downwards from, iteratively.
+    :returns: dict with key = a directory,
+              value = list of Python files in dir `key`.
+    '''
     data = {}  # key = path to dir, value = list of .py files
 
     for (dirpath, dirnames, filenames) in walk(topdir):
@@ -62,10 +70,10 @@ def get_classes_in_module(fqn, module_obj):
     [class name, class object, line number]
 
     :param fqn: Fully-qualified name of the module,
-    e.g. "tlo.methods.mockitis"
+                e.g. "tlo.methods.mockitis"
     :param module_obj: an object representing this module
     :param return: list of entries, each of the form:
-    [class name, class object, line number]
+                [class name, class object, line number]
     '''
     classes = []
     module_info = inspect.getmembers(module_obj)  # Gets everything
@@ -247,12 +255,13 @@ def extract_bases(class_name, class_obj, spacer=""):
     '''
     Document which classes this class inherits from,
     except for the object class or this class itself.
+
     :param class_name: name of the class (e.g. Mockitis) for which we want the
-    bases
+                       bases
     :param class_obj: object with information about this class
     :param spacer: string to use as whitespace padding.
     :return: string of base(s) for this class (if any), with links to their
-    docs.
+             docs.
     '''
     # This next line gets the base classes including "object" class,
     # and also the class_name class itself:
@@ -276,10 +285,14 @@ def extract_bases(class_name, class_obj, spacer=""):
     if len(parents) > 0:
         str = f"{spacer}**Base classes:**\n\n"
         numbase = 1
-        str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
+        #str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
+        str += f"{spacer}{parents[0]}\n\n"
         for p in parents[1:]:
+            #import pdb; pdb.set_trace()
+            #print(f"**DEBUG: multiple parents for class {class_name}")
             numbase += 1
-            str += f"{spacer}Base class #{numbase}: {p}\n\n"
+            #str += f"{spacer}Base class #{numbase}: {p}\n\n"
+            str += f"{spacer}{p}\n\n"
     else:
         str = ""
 
@@ -295,13 +308,13 @@ def get_base_string(class_name, class_obj, base_obj):
     Unless it is the root 'object' class, or the name of the class itself.
 
     :param class_name: the name of the class (e.g. "Mockitis")
-    for which obj is a base,
+                       for which obj is a base,
     :param class_obj: object representing the class
     :param base_obj: the object representation of the *base* class,
-    e.g. <class 'tlo.core.Module'> or <class 'object'>
-    or <class 'tlo.methods.mockitis.Mockitis'>
+                     e.g. <class 'tlo.core.Module'> or <class 'object'>
+                     or <class 'tlo.methods.mockitis.Mockitis'>
     :return: string with hyperlink,
-    e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_
+             e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_
     '''
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
@@ -337,7 +350,13 @@ def get_base_string(class_name, class_obj, base_obj):
     # the link to its documentation.
     # e.g. the string might be:
     # "tlo.core.Module <./tlo.core.html#tlo.core.Module>_"
-    mystr = "`" + fqn + " " + link + "`_"
+    #
+    # 3rd November 2020 - Asif suggests it should be more like:
+    # :class: `tlo.events.Event`
+    # or :py:class: `tlo.events.Event`
+    # to fix the "broken" link issue on Travis (#204)
+    ###mystr = "`" + fqn + " " + link + "`_"
+    mystr = ":class:`" + fqn +"`"
     # print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
 
@@ -345,11 +364,12 @@ def get_base_string(class_name, class_obj, base_obj):
 def get_link(base_fqn, base_obj):
     '''Given a name like Mockitis and a base_string like
     tlo.core.Module, create a link to the latter's doc page.
+
     :param base_fqn: fully-qualified name of the base class,
-    e.g. tlo.core.Module
+                     e.g. tlo.core.Module
     :param base_obj: the object representing the base class
     :return: a string with the link to the base class's place in the generated
-     documentation.
+             documentation.
     '''
     # Example of module_defining_class: <module 'tlo.core' from '/Users/...
     module_defining_class = str(inspect.getmodule(base_obj))
@@ -376,8 +396,10 @@ def get_link(base_fqn, base_obj):
 def create_table(mydict):
     '''
     Dynamically create a table of arbitrary length
-    from PROPERTIES and PARAMETERS dictionaries.
-    `mydict` is the dictionary object.
+    from a PROPERTIES or PARAMETERS dictionary.
+
+    :param mydict: the dictionary object.
+    :return: A list of strings, used for output.
 
     NB Do not change the positioning of items in the
     f-strings below, or things will break!
