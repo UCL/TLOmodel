@@ -98,11 +98,7 @@ def test_extract_bases():
     # [class name, class object, line number]
     offspring = classes[-1]
     name, obj = offspring[0:2]
-    expected = """**Base classes:**
-
-:class:`tests.test_docs_data.tlo.a.Father`
-
-:class:`tests.test_docs_data.tlo.a.Mother`"""
+    expected = "Bases: :class:`tests.test_docs_data.tlo.a.Father`, :class:`tests.test_docs_data.tlo.a.Mother`"
     assert expected == extract_bases(name, obj).strip()
 
 

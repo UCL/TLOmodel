@@ -283,22 +283,12 @@ def extract_bases(class_name, class_obj, spacer=""):
             parents.append(this_base_string)
 
     if len(parents) > 0:
-        str = f"{spacer}**Base classes:**\n\n"
-        numbase = 1
-        # str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
-        str += f"{spacer}{parents[0]}\n\n"
-        for p in parents[1:]:
-            # import pdb; pdb.set_trace()
-            # print(f"**DEBUG: multiple parents for class {class_name}")
-            numbase += 1
-            # str += f"{spacer}Base class #{numbase}: {p}\n\n"
-            str += f"{spacer}{p}\n\n"
+        out = f"{spacer}Bases: {', '.join(parents)}\n"
     else:
-        str = ""
+        out = ""
 
     # print(f"DEBUG: extract_bases: str = {str}")
-
-    return str
+    return out
 
 
 def get_base_string(class_name, class_obj, base_obj):
