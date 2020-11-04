@@ -11,16 +11,15 @@ Testing is spontaneously taken-up and can lead to accessing intervention service
 * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
 
 # TODO before PR
-* isort and flake8
-* last tests - see test script
 * calibration plots
+* line 1480
 
 ---
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent -
 currently either does)
 * Assume that any ART removes the aids_symptoms? does this depend on VL status??
 * What to happen with stock-outs
-* note that if consumables not available for several days, could then have several appointments.
+* Note that if consumables not available for several days, could then have several appointments.
 """
 
 import os
@@ -1474,7 +1473,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             dx_tests_to_run='hiv_rapid_test',
             hsi_event=self
         )
-        df.at['hv_number_tests'] += 1
+        df.at[person_id, 'hv_number_tests'] += 1
 
         if not test_result:
             return  # todo - this return will not end the HSI
@@ -1577,8 +1576,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ SUMMARIES ------------------------------------
         # adult prevalence
-        adult_prev = (
+        adult_prev_15plus = (
             len(df[df.hv_inf & df.is_alive & (df.age_years >= 15)])
+            / len(df[df.is_alive & (df.age_years >= 15)])
+        )
+
+        adult_prev_1549 = (
+            len(df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)])
             / len(df[df.is_alive & (df.age_years >= 15)])
         )
 
@@ -1588,16 +1592,26 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             / len(df[df.is_alive & (df.age_years < 15)])
         )
 
-        # incidence in the period since the last log for 15-49 year-olds (denominator is approximate)
-        n_new_infections_adult = len(
+        # incidence in the period since the last log for 15+ and 15-49 year-olds (denominator is approximate)
+        n_new_infections_adult_15plus = len(
             df.loc[
                 (df.age_years >= 15)
                 & df.is_alive
                 & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
                 ]
         )
-        denom_adults = len(df[df.is_alive & ~df.hv_inf & (df.age_years >= 15)])
-        adult_inc = n_new_infections_adult / denom_adults
+        denom_adults_15plus = len(df[df.is_alive & ~df.hv_inf & (df.age_years >= 15)])
+        adult_inc_15plus = n_new_infections_adult_15plus / denom_adults_15plus
+
+        n_new_infections_adult_1549 = len(
+            df.loc[
+                df.age_years.between(15, 49)
+                & df.is_alive
+                & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))
+                ]
+        )
+        denom_adults_1549 = len(df[df.is_alive & ~df.hv_inf & df.age_years.between(15, 49)])
+        adult_inc_1549 = n_new_infections_adult_1549 / denom_adults_1549
 
         # incidence in the period since the last log for 0-14 year-olds (denominator is approximate)
         n_new_infections_children = len(
@@ -1627,11 +1641,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     ]) / n_fsw
 
         logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
-                    description='Summary of HIV among adult (15+) and children (0-14s) and female sex workers (15-49)',
+                    description='Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers (15-49)',
                     data={
-                        "hiv_prev_adult": adult_prev,
+                        "hiv_prev_adult_15plus": adult_prev_15plus,
+                        "hiv_prev_adult_1549": adult_prev_1549,
                         "hiv_prev_child": child_prev,
-                        "hiv_adult_inc": adult_inc,
+                        "hiv_adult_inc_15plus": adult_inc_15plus,
+                        "hiv_adult_inc_1549": adult_inc_1549,
                         "hiv_child_inc": child_inc,
                         "hiv_prev_fsw": prev_hiv_fsw
                     }
