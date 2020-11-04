@@ -3,13 +3,24 @@ The HIV Module
 
 Overview:
 HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) --> AIDS Death Event
-Testing is spontaneously taken-up and can lead to accessing intervention services; ART, VMMC, PrEP
+Testing is spontaneously taken-up and can lead to accessing intervention services (ART, VMMC, PrEP).
+AIDS symptoms can also lead to care-seeking and there is routine testing for HIV at all non-emergency Generic HSI
+ events.
+Persons can be on ART -
+    - with viral suppression: when the person with not develop AIDS, or if they have already, it is relieved and they
+        will not die of AIDS; and the person is not infectious
+    - without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.
 
-# Things to note
-* Need to incorporate testing for HIV at first ANC appointment (as it does in generic HSI)
-* Need to incorporate testing for infants born to HIV-positive mothers (currently done in on_birth here).
-* Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
-* Calibration has not been done: most things look OK - except HIV-AIDS deaths
+Maintenance on ART and PrEP is re-asssed at periodic 'Decision Events', at which is it is determined if the person will
+ attend the "next" HSI for continuation of the service; and if not, they are removed from that service.
+
+If PrEP is not available due to limitations in the HealthSystem, the person defaults to not being on PrEP.
+
+# Things to note:
+    * Need to incorporate testing for HIV at first ANC appointment (as it does in generic HSI)
+    * Need to incorporate testing for infants born to HIV-positive mothers (currently done in on_birth here).
+    * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
+    * Calibration has not been done: most things look OK - except HIV-AIDS deaths
 
 # ****************
 # TODO before PR
@@ -167,51 +178,51 @@ class Hiv(Module):
         "infection_to_death_weibull_shape_1519": Parameter(Types.REAL,
                                                            "Shape parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 15-19"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_shape_2024": Parameter(Types.REAL,
                                                            "Shape parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 20-24"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_shape_2529": Parameter(Types.REAL,
                                                            "Shape parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 25-29"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_shape_3034": Parameter(Types.REAL,
                                                            "Shape parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 30-34"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_shape_3539": Parameter(Types.REAL,
                                                            "Shape parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 35-39"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_shape_4044": Parameter(Types.REAL,
                                                            "Shape parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 40-44"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_shape_4549": Parameter(Types.REAL,
                                                            "Shape parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 45-49"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_scale_1519": Parameter(Types.REAL,
                                                            "Scale parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 15-19"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_scale_2024": Parameter(Types.REAL,
                                                            "Scale parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 20-24"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_scale_2529": Parameter(Types.REAL,
                                                            "Scale parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 25-29"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_scale_3034": Parameter(Types.REAL,
                                                            "Scale parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 30-34"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_scale_3539": Parameter(Types.REAL,
                                                            "Scale parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 35-39"
-                                                           " years"),
+                                                           " years (units: years)"),
         "infection_to_death_weibull_scale_4044": Parameter(Types.REAL,
                                                            "Scale parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 40-44"
@@ -219,7 +230,10 @@ class Hiv(Module):
         "infection_to_death_weibull_scale_4549": Parameter(Types.REAL,
                                                            "Scale parameters for the weibill distribution describing"
                                                            " time between infection and death for those aged 45-49"
-                                                           " years"),
+                                                           " years (units: years)"),
+        "art_default_to_aids_mean_years": Parameter(Types.REAL,
+                                              "Mean years between when a person (any change) stops being on treatment "
+                                              "to when AIDS is onset (if the abscence of resuming treatment)."),
 
         # natural history - survival (children)
         "mean_survival_for_infants_infected_prior_to_birth": Parameter(
@@ -925,6 +939,23 @@ class Hiv(Module):
         draw_number_of_months = int(np.round(self.rng.exponential(mean)))
         return pd.DateOffset(months=draw_number_of_months)
 
+    def stops_treatmemnt(self, person_id):
+        """Helper function that is called when someone stops being on ART.
+        Sets the flag for ART status and schedules a new AIDSEvent"""
+
+        df = self.sim.population.props
+
+        # Set that the person is no longer on ART
+        df.at[person_id, "hv_art"] = "not"
+
+        # Schedule a new AIDS onset event
+        months_to_aids = int(np.floor(
+            self.module.rng.exponential(scale=self.parameters["art_default_to_aids_mean_years"]) / 12.0))
+        self.sim.schedule_event(event=HivAidsOnsetEvent(person_id=person_id, module=self),
+                                data=self.sim.date + pd.DateOffset(months=months_to_aids)
+                                )
+
+
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
         df = self.sim.population.props
@@ -951,10 +982,10 @@ class Hiv(Module):
         assert not df.loc[df.hv_inf].hv_date_inf.isna().any()
         assert (df.loc[df.hv_inf].hv_date_inf >= df.loc[df.hv_inf].date_of_birth).all()
 
-        # Check alignment between AIDS Symptoms and status and infection
-        assert set(self.sim.modules['SymptomManager'].who_has('aids_symptoms')).issubset(
-            df.loc[df.is_alive & df.hv_inf].index)
-
+        # Check alignment between AIDS Symptoms and status and infection and ART status
+        has_aids_symptoms = set(self.sim.modules['SymptomManager'].who_has('aids_symptoms'))
+        assert has_aids_symptoms.issubset(df.loc[df.is_alive & df.hv_inf].index)
+        assert 0 == len(has_aids_symptoms.intersection(df.loc[df.is_alive & (df.hv_art == "on_VL_suppressed")].index))
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event
@@ -1104,7 +1135,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Do nothing if person is now on ART and VL suppressed
+        # Do nothing if person is now on ART and VL suppressed (non-VL suppressed has no effect)
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return
 
@@ -1137,7 +1168,7 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Do nothing if person is now on ART and VL suppressed
+        # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             # todo - reconsider if the VL_suppression should block the death or if this should happen through VL
             #  suppression removing the AIDS symptoms
@@ -1218,8 +1249,8 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             )
 
         else:
-            # Defaults to being off Treatment - reset flag and take no further action
-            df.at[person_id, "hv_art"] = "not"
+            # Defaults to being off Treatment
+            self.module.stops_treatment(person_id)
 
 
 # ---------------------------------------------------------------------------
@@ -1409,18 +1440,23 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         if self.get_all_consumables(item_codes=self.module.item_code_for_prep):
             df.at[person_id, "hv_is_on_prep"] = True
 
-        # Schedule 'decision about whether to continue on PrEP' for 3 months time
-        self.sim.schedule_event(
-            Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
-            self.sim.date + pd.DateOffset(months=3)
-        )
+            # Schedule 'decision about whether to continue on PrEP' for 3 months time
+            self.sim.schedule_event(
+                Hiv_DecisionToContinueOnPrEP(person_id=person_id, module=self.module),
+                self.sim.date + pd.DateOffset(months=3)
+            )
+
+        else:
+            # The person will default and not be on PrEP
+            df.at[person_id, "hv_is_on_prep"] = False
+
 
     def did_not_run(self, *args, **kwargs):
         # If this HSI cannot run, then the person will not be on PrEP and no further appointments are made:
         df = self.sim.population.props
         person_id = self.target
         df.at[person_id, "hv_is_on_prep"] = False
-        return False  # to prevent this event from being rescheduled
+        return False  # to prevent this event from being rescheduled if it not possible on the first occassion.
 
 
 class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -1428,10 +1464,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)
 
-        self.TREATMENT_ID = "Hiv_TreatmentInitiation"
+        self.TREATMENT_ID = "Hiv_Treatment_InitiationOrContinuation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "NewAdult": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
+
+        self.counter_for_did_not_run = 0
 
     def apply(self, person_id, squeeze_factor):
         """This is a Health System Interaction Event - start or continue HIV treatment for 6 more months"""
@@ -1442,41 +1480,32 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             return
 
         if person["hv_art"] == "not":
-            self.do_at_initiation(person_id)
+            is_now_on_art = self.do_at_initiation(person_id)
         else:
-            self.do_at_continuation(person_id)
+            is_now_on_art = self.do_at_continuation(person_id)
 
-        # Schedule 'decision about whether to continue on PrEP' for 6 months time
-        self.sim.schedule_event(
-            Hiv_DecisionToContinueTreatment(person_id=person_id, module=self.module),
-            self.sim.date + pd.DateOffset(months=6)
-        )
-
-    def get_drugs(self, age_of_person):
-        """Helper function to get the ART according to the age of the person being treated"""
-        if age_of_person < 5.0:
-            # Formulation for children
-            drugs_available = self.get_all_consumables(footprint=self.module.cons_footprint_for_infant_art)
-        else:
-            # Formulation for adults
-            drugs_available = self.get_all_consumables(item_codes=self.module.item_code_for_art)
-
-        return drugs_available
+        # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment for 6
+        # months later
+        if is_now_on_art:
+            self.sim.schedule_event(
+                Hiv_DecisionToContinueTreatment(person_id=person_id, module=self.module),
+                self.sim.date + pd.DateOffset(months=6)
+            )
 
     def do_at_initiation(self, person_id):
         """Things to do when this the first appointment ART"""
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Do a confirmatory test and do not run if negative
-        test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run='hiv_rapid_test',
-            hsi_event=self
-        )
-        df.at[person_id, 'hv_number_tests'] += 1
-
-        if not test_result:
-            return  # todo - this return will not end the HSI
+        # # Do a confirmatory test and do not run if negative
+        # test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+        #     dx_tests_to_run='hiv_rapid_test',
+        #     hsi_event=self
+        # )
+        # df.at[person_id, 'hv_number_tests'] += 1
+        #
+        # if not test_result:
+        #     return False
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person['age_years'])
@@ -1492,9 +1521,23 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     prob_vs = self.module.parameters["vls_f"]
 
             if self.module.rng.rand() < prob_vs:
+                # Set the flag to show that the person is now VL suppressed. This will prevent the Onset of AIDS, or an
+                # AIDS death if AIDS has already onset.
                 df.at[person_id, "hv_art"] = "on_VL_suppressed"
+
+                # Remove the symptom of 'aids_symptoms'
+                if "aids_symptoms" in self.sim.modules['SymptomManager'].has_what(
+                    person_id=person_id, disease_module=self.module):
+                    self.sim.modules['SymptomManager'].change_symptom(
+                        person_id=person_id,
+                        symptom_string="aids_symptoms",
+                        add_or_remove='-',
+                        disease_module=self.module
+                    )
+
             else:
                 df.at[person_id, "hv_art"] = "on_not_VL_suppressed"
+                return False
 
         else:
             # If drugs not available, schedule a new appointment:
@@ -1530,6 +1573,18 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=1
             )
 
+    def get_drugs(self, age_of_person):
+        """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
+        whether drugs were available"""
+        if age_of_person < 5.0:
+            # Formulation for children
+            drugs_available = self.get_all_consumables(footprint=self.module.cons_footprint_for_infant_art)
+        else:
+            # Formulation for adults
+            drugs_available = self.get_all_consumables(item_codes=self.module.item_code_for_art)
+
+        return drugs_available
+
     def consider_tb(self, person_id):
         # todo - TB treatment when person starts ART - complete when TB module is completed.
         pass
@@ -1556,6 +1611,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
             """
 
+    def did_not_run(self, *args, **kwargs):
+        """This is called each time the HSI is 'tried' to be run but cannot be due to health-system constraints"""
+
+        if self.counter_for_did_not_run > 0:
+
+        self.counter_for_did_not_run += 1
 
 # ---------------------------------------------------------------------------
 #   Logging

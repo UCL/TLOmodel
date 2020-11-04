@@ -708,10 +708,11 @@ def test_hsi_testandrefer_and_art():
     # Run the event:
     hsi_event.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # Check that the person is now on ART and diagnosed
+    # Check that the person is now on ART and diagnosed and does not have symptoms of aids
     assert df.at[person_id, "hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]
     assert df.at[person_id, "hv_diagnosed"]
     assert df.at[person_id, "hv_number_tests"] > 0
+    assert "aids_symptoms" not in sim.modules['SymptomManager'].has_what(person_id=person_id)
 
     # Check that there is a 'decision' event scheduled
     date_decision_event, decision_event = [
@@ -732,17 +733,32 @@ def test_hsi_testandrefer_and_art():
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
     ][0]
 
-    # Run the decision event when probability of continuation is 0, and check that PrEP is off and no further HSI
+    # Check stops being on ART if "decides" to stop ->
+    # Run the decision event when probability of continuation is 0, and check that Treatment is off and no further HSI
     # First, clear the queue to avoid being confused by results of the check done just above.
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.0
     decision_event.apply(person_id)
-    assert df.at[person_id, "hv_art"] not in ["on_VL_suppressed", "on_not_VL_suppressed"]
+    assert df.at[person_id, "hv_art"] == "not"
     assert 0 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
     ])
     assert 0 == len([
         ev[0] for ev in sim.find_events_for_person(person_id) if
-        (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
+        (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnTreatment) & (ev[0] > date_decision_event))
     ])
+
+    # check that there is at least one AIDS event scheduled:
+    assert 0 < len([
+        ev[0] for ev in sim.find_events_for_person(person_id) if
+        (isinstance(ev[1], hiv.HivAidsOnsetEvent) & (ev[0] >= date_decision_event))
+    ])
+
+
+
+
+
+# todo - if stop arts by decision
+# todo - if stop art through HSI never being able to be run
+# todo - what happens during stock-out
