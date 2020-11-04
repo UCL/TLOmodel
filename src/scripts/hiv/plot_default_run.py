@@ -1,5 +1,6 @@
 """Run a simulation with no HSI and plot the prevalence and incidence and program coverage trajectories"""
 import datetime
+import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     contraception,
     demography,
+    dx_algorithm_child,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
@@ -17,10 +19,8 @@ from tlo.methods import (
     hiv,
     labour,
     pregnancy_supervisor,
-    symptommanager, dx_algorithm_child,
+    symptommanager,
 )
-
-import pickle
 
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs

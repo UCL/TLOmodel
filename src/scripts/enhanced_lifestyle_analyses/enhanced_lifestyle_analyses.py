@@ -4,10 +4,7 @@ import pandas as pd
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    demography,
-    enhanced_lifestyle,
-)
+from tlo.methods import demography, enhanced_lifestyle
 
 
 def run():

@@ -11,16 +11,15 @@ Testing is spontaneously taken-up and can lead to accessing intervention service
 * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
 * Calibration has not been done: most things look OK - except HIV-AIDS deaths
 
+# ****************
 # TODO before PR
-* calibration plots
 * line 1480
-
----
 * Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent -
 currently either does)
 * Assume that any ART removes the aids_symptoms? does this depend on VL status??
 * What to happen with stock-outs
 * Note that if consumables not available for several days, could then have several appointments.
+# ****************
 """
 
 import os

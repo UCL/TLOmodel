@@ -21,7 +21,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-
 # Where will outputs go
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
