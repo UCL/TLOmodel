@@ -17,7 +17,7 @@ from tlo.methods import (
     hiv,
     labour,
     pregnancy_supervisor,
-    symptommanager,
+    symptommanager, dx_algorithm_child,
 )
 
 import pickle
@@ -56,6 +56,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+             dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
              hiv.Hiv(resourcefilepath=resourcefilepath)
@@ -74,13 +75,11 @@ with open(outputpath / 'default_run.pickle', 'wb') as f:
     pickle.dump(output, f, pickle.HIGHEST_PROTOCOL)
 
 
-
 # %% Get ready to create plots:
 
 # load the results
 with open(outputpath / 'default_run.pickle', 'rb') as f:
     output = pickle.load(f)
-
 
 # load the calibration data
 data = pd.read_excel(resourcefilepath / 'ResourceFile_HIV.xlsx', sheet_name='calibration_from_aids_info')
@@ -88,6 +87,8 @@ data.index = pd.to_datetime(data['year'], format='%Y')
 data = data.drop(columns=['year'])
 
 # %% Function to make standard plot to compare model and data
+
+
 def make_plot(
     model=None,
     data_mid=None,
@@ -106,15 +107,14 @@ def make_plot(
         ax.plot(data_mid.index, data_mid.values, '-')
     if (data_low is not None) and (data_high is not None):
         ax.fill_between(data_low.index,
-                    data_low,
-                    data_high,
-                    alpha=0.2)
+                        data_low,
+                        data_high,
+                        alpha=0.2)
     plt.title(title_str)
     plt.legend(['Model', 'Data'])
     plt.gca().set_ylim(bottom=0)
     plt.savefig(outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
     plt.show()
-
 
 
 # %% : PREVALENCE AND INCIDENCE PLOTS
@@ -158,6 +158,39 @@ make_plot(
 make_plot(
     title_str="HIV Prevalence among Female Sex Workers (%)",
     model=prev_and_inc_over_time['hiv_prev_fsw'] * 100,
+)
+
+# %% : AIDS DEATHS
+deaths = output['tlo.methods.demography']['death'].copy()
+deaths = deaths.set_index('date')
+# limit to deaths among aged 15+
+to_drop = ((deaths.age < 15) | (deaths.cause != 'AIDS'))
+aids_deaths = deaths.drop(index=to_drop[to_drop].index)
+
+# count by year:
+aids_deaths['year'] = aids_deaths.index.year
+tot_aids_deaths = aids_deaths.groupby(by=['year']).size()
+
+# person-years among those aged 15+ (irrespective of HIV status)
+py_ = output['tlo.methods.demography']['person_years']
+years = pd.to_datetime(py_['date']).dt.year
+py = pd.Series(index=years)
+for year in years:
+    tot_py = (
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['M']).apply(pd.Series) +
+        (py_.loc[pd.to_datetime(py_['date']).dt.year == year]['F']).apply(pd.Series)
+    ).transpose()
+    py[year] = tot_py[tot_py.index.astype(int) >= 15].sum().values[0]
+
+aids_death_rate = tot_aids_deaths / py
+aids_death_rate.index = pd.to_datetime(aids_death_rate.index, format='%Y')
+# (NB. this assumes that the data mortality rate is for irrespective of HIV status)
+make_plot(
+    title_str='Mortality to HIV-AIDS per 100k capita',
+    model=aids_death_rate * 100_000,
+    data_mid=data['mort_rate100k'],
+    data_low=data['mort_rate100k_lower'],
+    data_high=data['mort_rate100k_upper']
 )
 
 

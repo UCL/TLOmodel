@@ -68,7 +68,7 @@ for sex in ['F', 'M']:
 prev_by_age_and_sex.rename(columns={'value': 'prev_model'}, inplace=True)
 
 # Load and merge-in the data prevalence for the year 2010
-data = pd.read_csv(resourcefilepath / "ResourceFile_HIV_prevalence.csv")
+data = pd.read_excel(resourcefilepath / "ResourceFile_HIV.xlsx", sheet_name="hiv_prevalence")
 data2010 = data.loc[data.year == 2010].copy()
 data2010['age_group'] = map_to_age_group(data['age_from'])
 data2010 = pd.DataFrame(data2010.groupby(by=['sex', 'age_group'])['prev ', 'pop_size'].sum()).reset_index()

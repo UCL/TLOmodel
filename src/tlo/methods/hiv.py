@@ -9,6 +9,7 @@ Testing is spontaneously taken-up and can lead to accessing intervention service
 * Need to incorporate testing for HIV at first ANC appointment (as it does in generic HSI)
 * Need to incorporate testing for infants born to HIV-positive mothers (currently done in on_birth here).
 * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
+* Calibration has not been done: most things look OK - except HIV-AIDS deaths
 
 # TODO before PR
 * calibration plots
@@ -1641,7 +1642,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     ]) / n_fsw
 
         logger.info(key='summary_inc_and_prev_for_adults_and_children_and_fsw',
-                    description='Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers (15-49)',
+                    description='Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers'
+                                ' (15-49)',
                     data={
                         "hiv_prev_adult_15plus": adult_prev_15plus,
                         "hiv_prev_adult_1549": adult_prev_1549,
