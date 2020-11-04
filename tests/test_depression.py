@@ -237,7 +237,7 @@ def test_hsi_functions_no_medication_available(tmpdir):
     cons = output['tlo.methods.healthsystem']['Consumables']
     cons_available = cons['Available'].apply(pd.Series)
     cons_available.columns = cons_available.columns.astype(int)  # new-style log output only allows strings as keys
-    assert not (cons['Available'].apply(pd.Series)[item_code]).any()
+    assert not (cons_available[item_code]).any()
 
 
 def test_hsi_functions_no_healthsystem_capability(tmpdir):
