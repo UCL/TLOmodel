@@ -1,4 +1,4 @@
-"""Test for for the HIV Module."""
+"""Test for for the HIV Module"""
 
 import os
 from pathlib import Path
@@ -674,6 +674,9 @@ def test_hsi_testandrefer_and_art():
     """Test that the HSI for testing and referral to ART works as intended"""
     sim = get_sim()
 
+    # Simulate for 0 days so as to complete all the initialisation steps
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
     # Make the chance of being referred to ART following testing is 100%
     sim.modules['Hiv'].lm_art = LinearModel.multiplicative()
 
@@ -690,7 +693,11 @@ def test_hsi_testandrefer_and_art():
 
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
-    t.apply(person_id=person_id, squeeze_factor=0.0)
+    rtn = t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # check that the footprint is updated to be that of a positive person and that the person is diagnosed
+    assert rtn == t.make_appt_footprint({'VCTPositive': 1.0})
+    assert df.at[person_id, 'hv_diagnosed']
 
     # Check that there is an ART HSI event scheduled
     date_hsi_event, hsi_event = [
@@ -731,11 +738,11 @@ def test_hsi_testandrefer_and_art():
     sim.modules["Hiv"].parameters["probability_of_being_retained_on_art_every_6_months"] = 0.0
     decision_event.apply(person_id)
     assert df.at[person_id, "hv_art"] not in ["on_VL_suppressed", "on_not_VL_suppressed"]
-    assert [] == [
+    assert 0 == len([
         ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.HSI_Hiv_StartOrContinueTreatment) & (ev[0] >= date_decision_event))
-    ]
-    assert [] == [
+    ])
+    assert 0 == len([
         ev[0] for ev in sim.find_events_for_person(person_id) if
         (isinstance(ev[1], hiv.Hiv_DecisionToContinueOnPrEP) & (ev[0] > date_decision_event))
-    ]
+    ])

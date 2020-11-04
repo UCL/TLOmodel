@@ -1,3 +1,6 @@
+"""
+This file to be updated in full when TB module is completed.
+
 import datetime
 import time
 from pathlib import Path
@@ -14,12 +17,11 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     hiv,
-    malecircumcision,
     symptommanager,
     tb,
 )
 
-# TODO: this sim includes symptom manager. Include dx_algorithm once it is updated by Tim
+#  ?? this sim includes symptom manager. Include dx_algorithm once it is updated by Tim
 
 start_time = time.time()
 
@@ -64,7 +66,6 @@ sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.Tb(resourcefilepath=resourcefilepath))
-sim.register(malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath))
 
 # Sets all modules to WARNING threshold, then alters hiv and tb to INFO
 custom_levels = {
@@ -359,3 +360,4 @@ plt.show()
 # deaths_df['year'] = deaths_df['date'].dt.year
 # d_gp = deaths_df.groupby(['year', 'cause']).size().unstack().fillna(0)
 # d_gp.to_csv(r'Z:Thanzi la Onse\HIV\Model_original\deaths_new.csv', header=True)
+"""

@@ -1457,10 +1457,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         """Helper function to get the ART according to the age of the person being treated"""
         if age_of_person < 5.0:
             # Formulation for children
-            drugs_available = self.get_all_consumables(
-                item_codes=self.module.cons_footprint_for_infant_art['Item_Code'],
-                pkg_codes=self.module.cons_footprint_for_infant_art['Intervention_Package_Code']
-            )
+            drugs_available = self.get_all_consumables(footprint=self.module.cons_footprint_for_infant_art)
         else:
             # Formulation for adults
             drugs_available = self.get_all_consumables(item_codes=self.module.item_code_for_art)
@@ -1509,6 +1506,9 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=1
             )
 
+        # Consider if TB treatment should start
+        self.consider_tb(person_id)
+
     def do_at_continuation(self, person_id):
         """Things to do when the person is already on ART"""
 
@@ -1532,39 +1532,28 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             )
 
     def consider_tb(self, person_id):
-        # todo - TB treatment when person starts ART:
+        # todo - TB treatment when person starts ART - complete when TB module is completed.
         pass
         """
-        Consider whether IPT is needed at this time
+        Consider whether IPT is needed at this time. This is run only when treatment is initiated.
 
-        # ----------------------------------- SCHEDULE IPT START -----------------------------------
-        district = df.at[person_id, "district_of_residence"]
-
-        if (
-            (district in params["tb_high_risk_distr"].values)
-            & (self.sim.date.year > 2012)
-            & (self.sim.modules["Hiv"].rng.rand() < params["hiv_art_ipt"])
-        ):
+        # if 'Tb' in self.sim.modules:
+            district = df.at[person_id, "district_of_residence"]
+            eligible = df.at[person_id, "tb_inf"].startswith("active")
 
             if (
-                not df.at[person_id, "hv_on_art"] == 0
-                and not (df.at[person_id, "tb_inf"].startswith("active"))
-                and (
-                    self.sim.modules["Hiv"].rng.random_sample(size=1)
-                    < params["hiv_art_ipt"]
-                )
+                (district in params["tb_high_risk_distr"].values)
+                & (self.sim.date.year > 2012)
+                & eligible
+                & (self.module.rng.rand() < params["???"])
             ):
-                logger.debug(
-                    "HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s",
-                    person_id,
-                    now,
-                )
 
-                ipt_start = tb.HSI_Tb_IptHiv(self.module, person_id=person_id)
-
-                # Request the health system to have this follow-up appointment
+                # Schedule the TB treatment event:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    ipt_start, priority=1, topen=now, tclose=None
+                    tb.HSI_Tb_IptHiv(self.module['Tb'], person_id=person_id),
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None
                 )
             """
 
