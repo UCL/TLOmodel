@@ -1474,7 +1474,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             dx_tests_to_run='hiv_rapid_test',
             hsi_event=self
         )
-        person['hv_number_tests'] += 1
+        df.at['hv_number_tests'] += 1
 
         if not test_result:
             return  # todo - this return will not end the HSI
