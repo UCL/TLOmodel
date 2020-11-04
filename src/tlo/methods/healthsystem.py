@@ -117,10 +117,12 @@ class HealthSystem(Module):
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run = list()
 
-        logger.info('----------------------------------------------------------------------')
-        logger.info("Setting up the Health System With the Following Service Availability:")
-        logger.info(self.service_availability)
-        logger.info('----------------------------------------------------------------------')
+        logger.info(key="message",
+                    data=f"----------------------------------------------------------------------"
+                         f"Setting up the Health System With the Following Service Availability: "
+                         f"{self.service_availability}"
+                         f"----------------------------------------------------------------------"
+                    )
 
         # Create the Diagnostic Test Manager to store and manage all Diagnostic Test
         self.dx_manager = DxManager(self)
@@ -237,9 +239,9 @@ class HealthSystem(Module):
         """
 
         logger.debug(
-            'HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
-            hsi_event.TREATMENT_ID,
-            hsi_event.target,
+            key='message',
+            data=f"HealthSystem.schedule_event >> "
+                 f"Logging a request for an HSI: {hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
         )
 
         assert isinstance(hsi_event, HSI_Event)
@@ -361,7 +363,9 @@ class HealthSystem(Module):
             footprint_is_possible = (len(footprint) > 0) & (
                 caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
-                logger.warning("The expected footprint is not possible with the configuration of officers.")
+                logger.warning(key="message",
+                               data=f"The expected footprint is not possible with the configuration of officers: "
+                                    f"{hsi_event.TREATMENT_ID}.")
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -387,9 +391,9 @@ class HealthSystem(Module):
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
 
             logger.debug(
-                'HealthSystem.schedule_event>>HSI has been added to the queue: %s for person: %s',
-                hsi_event.TREATMENT_ID,
-                hsi_event.target,
+                key="message",
+                data=f"HealthSystem.schedule_event >> "
+                     f"HSI has been added to the queue: {hsi_event.TREATMENT_ID} for person: {hsi_event.target}"
             )
 
         else:
@@ -403,9 +407,9 @@ class HealthSystem(Module):
                 pass
 
             logger.debug(
-                '%s| A request was made for a service but it was not included in the service_availability list: %s',
-                self.sim.date,
-                hsi_event.TREATMENT_ID,
+                key="message",
+                data=f"A request was made for a service but it was not included in the service_availability list:"
+                     f" {hsi_event.TREATMENT_ID}"
             )
 
     def check_appt_footprint_format(self, appt_footprint):
@@ -764,7 +768,9 @@ class HealthSystem(Module):
             log_consumables['Total_Cost'] = total_cost
             log_consumables['Person_ID'] = the_person_id
 
-            logger.info('%s|Consumables|%s', self.sim.date, log_consumables)
+            logger.info(key='Consumables',
+                        data=log_consumables,
+                        description="record of each request for consumables")
 
         # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
         # Iterate through the packages that were requested
@@ -914,7 +920,9 @@ class HealthSystem(Module):
 
         log_info['did_run'] = did_run
 
-        logger.info('%s|HSI_Event|%s', self.sim.date, log_info)
+        logger.info(key="HSI_Event",
+                    data=log_info,
+                    description="record of each HSI event")
 
         if self.store_hsi_events_that_have_run:
             self.store_of_hsi_events_that_have_run.append(log_info)
@@ -951,19 +959,13 @@ class HealthSystem(Module):
         summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
         summary['Fraction_Time_Used'].replace([np.inf, -np.inf, np.nan], 0.0, inplace=True)
 
-        # Put out to the logger
-        logger.debug('-------------------------------------------------')
-        logger.debug('Current State of Health Facilities Appts:')
-        print_table = summary.to_string().splitlines()
-        for line in print_table:
-            logger.debug(line)
-        logger.debug('-------------------------------------------------')
-
         log_capacity = dict()
         log_capacity['Frac_Time_Used_Overall'] = fraction_time_used_across_all_facilities
         log_capacity['Frac_Time_Used_By_Facility_ID'] = summary['Fraction_Time_Used'].to_dict()
 
-        logger.info('%s|Capacity|%s', self.sim.date, log_capacity)
+        logger.info(key='Capacity',
+                    data=log_capacity,
+                    description='daily summary of utilisation and capacity of health system resources')
 
     def find_events_for_person(self, person_id: int):
         """Find the events in the HSI_EVENT_QUEUE for a particular person.
@@ -1023,18 +1025,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
-
-        logger.debug(
-            'HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s', self.sim.date
-        )
-
         # 0) Determine the availability of consumables today based on their probabilities
         self.module.update_cons_availability()
-
-        logger.debug('----------------------------------------------------------------------')
-        logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
-        logger.debug(self.module.HSI_EVENT_QUEUE)
-        logger.debug('----------------------------------------------------------------------')
 
         # Create hold-over list (will become a heapq).
         # This will hold events that cannot occur today before they are added back to the heapq
@@ -1059,8 +1051,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             event = next_event_tuple[4]
 
             if self.sim.date > next_event_tuple[3]:
-                # The event has expired (after tclose), do nothing more
-                pass
+                # The event has expired (after tclose) having never been run. Call the 'never_ran' function
+                event.never_ran()
 
             elif (type(event.target) is not tlo.population.Population) \
                     and (not self.sim.population.props.at[event.target, 'is_alive']):
@@ -1245,16 +1237,23 @@ class HSI_Event:
         raise NotImplementedError
 
     def did_not_run(self, *args, **kwargs):
-        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled.
-
-        Must be implemented by subclasses.
+        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
+        to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.
         """
-        raise NotImplementedError
+        logger.debug(key="message", data=f"{self.__class__.__name__}: did not run.")
+        return True
+
+    def never_ran(self):
+        """Called when this event is was entered to the HSI Event Queue, but was never run.
+        """
+        logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
     def not_available(self):
-        """Called when this event is passed to schedule_hsi_event when the TREATMENT_ID is not permitted by the
+        """Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
          parameter service_availability.
         """
+        logger.debug(key="message", data=f"{self.__class__.__name__}: was not admitted to the HSI queue because the "
+                                         f"service is not available.")
         pass
 
     def post_apply_hook(self):
