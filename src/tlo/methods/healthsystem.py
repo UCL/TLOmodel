@@ -1042,8 +1042,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             event = next_event_tuple[4]
 
             if self.sim.date > next_event_tuple[3]:
-                # The event has expired (after tclose), do nothing more
-                pass
+                # The event has expired (after tclose) having never been run. Call the 'never_ran' function
+                event.never_ran()
 
             elif (type(event.target) is not tlo.population.Population) \
                     and (not self.sim.population.props.at[event.target, 'is_alive']):
@@ -1229,10 +1229,15 @@ class HSI_Event:
 
     def did_not_run(self, *args, **kwargs):
         """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-        to allow the rescheduling.
+        to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.
         """
         logger.debug(key="message", data=f"{self.__class__.__name__}: did not run.")
         return True
+
+    def never_ran(self):
+        """Called when this event is was entered to the HSI Event Queue, but was never run.
+        """
+        logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
     def not_available(self):
         """Called when this event is passed to schedule_hsi_event but the TREATMENT_ID is not permitted by the
