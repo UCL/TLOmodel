@@ -165,11 +165,11 @@ deaths = output['tlo.methods.demography']['death'].copy()
 deaths = deaths.set_index('date')
 # limit to deaths among aged 15+
 to_drop = ((deaths.age < 15) | (deaths.cause != 'AIDS'))
-aids_deaths = deaths.drop(index=to_drop[to_drop].index)
+deaths = deaths.drop(index=to_drop[to_drop].index)
 
 # count by year:
-aids_deaths['year'] = aids_deaths.index.year
-tot_aids_deaths = aids_deaths.groupby(by=['year']).size()
+deaths['year'] = deaths.index.year
+tot_aids_deaths = deaths.groupby(by=['year']).size()
 
 # person-years among those aged 15+ (irrespective of HIV status)
 py_ = output['tlo.methods.demography']['person_years']
