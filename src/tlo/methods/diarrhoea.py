@@ -1005,25 +1005,22 @@ class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
         # Do nothing if the recovery is not expected for today
         # (Because the person has already recovered, through being cured).
-        if not (self.sim.date == df.at[person_id, 'gi_last_diarrhoea_recovered_date']):
+        if not (self.sim.date == person.gi_last_diarrhoea_recovered_date):
             return
 
         # Confirm that this is event is occurring during a current episode of diarrhoea
-        assert (
-            (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-            self.sim.date <=
-            (df.at[person_id, 'gi_end_of_last_episode'])
-        )
+        assert person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode
 
         # Check that the person is not scheduled to die in this episode
-        assert pd.isnull(df.at[person_id, 'gi_last_diarrhoea_death_date'])
+        assert pd.isnull(person.gi_last_diarrhoea_death_date)
 
         # Resolve all the symptoms immediately
         df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
