@@ -11,8 +11,12 @@ Persons can be on ART -
         will not die of AIDS; and the person is not infectious
     - without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.
 
-Maintenance on ART and PrEP is re-asssed at periodic 'Decision Events', at which is it is determined if the person will
- attend the "next" HSI for continuation of the service; and if not, they are removed from that service.
+Maintenance on ART and PrEP is re-assesed at periodic 'Decision Events', at which is it is determined if the person will
+ attend the "next" HSI for continuation of the service; and if not, they are removed from that service and "stop
+  treatment". If a stock-out or non-available health system resources prevent treatment continuation, the person
+  "stops treatment". Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a
+  person has developed AIDS, starts treatment and then defaults from treatment, their 'original' AIDS Death Event will
+  still occur.
 
 If PrEP is not available due to limitations in the HealthSystem, the person defaults to not being on PrEP.
 
@@ -1188,9 +1192,6 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
             return
-
-        # todo - and add comment: Confirm that the person has the symptoms of AIDS if they don't have VL suppression
-        assert 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # Cause the death to happen immediately
         demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
