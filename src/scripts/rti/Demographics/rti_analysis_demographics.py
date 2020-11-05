@@ -17,6 +17,46 @@ import pandas as pd
 from scipy import stats
 
 # # ======================================= Create outputs for GBD DATA ===============================================
+data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+gbd_death_data = data.loc[data['measure'] == 'Deaths']
+gbd_in_rti_data = data.loc[data['measure'] == 'Incidence']
+gbd_death_data = gbd_death_data.sort_values(by='year')
+gbd_in_rti_data = gbd_in_rti_data.sort_values(by='year')
+gbd_death_number = gbd_death_data.loc[gbd_death_data['metric'] == 'Number']
+gbd_rti_number = gbd_in_rti_data.loc[gbd_in_rti_data['metric'] == 'Number']
+plt.subplot(2, 1, 1)
+plt.plot(gbd_rti_number['year'], gbd_rti_number['val'], 'lightsteelblue', label='Number of RTIs')
+plt.fill_between(gbd_rti_number['year'], gbd_rti_number['upper'], gbd_rti_number['lower'], color='lightsteelblue',
+                 alpha=0.5, label='95% C.I.')
+plt.legend()
+plt.xlabel('Years')
+plt.ylabel('Number')
+plt.title('Number of RTIs in Malawi, GBD estimates')
+plt.subplot(2, 1, 2)
+plt.plot(gbd_death_number['year'], gbd_death_number['val'], 'lightsalmon', label='Deaths')
+
+plt.fill_between(gbd_death_number['year'], gbd_death_number['upper'], gbd_death_number['lower'], color='lightsalmon',
+                 alpha=0.5, label='95% C.I.')
+plt.legend()
+plt.xlabel('Years')
+plt.ylabel('Number')
+plt.title('Number of RTI deaths in Malawi, GBD estimates')
+left  = 0.125  # the left side of the subplots of the figure
+right = 0.9    # the right side of the subplots of the figure
+bottom = 0.1   # the bottom of the subplots of the figure
+top = 0.9      # the top of the subplots of the figure
+wspace = 0.2   # the amount of width reserved for blank space between subplots
+hspace = 0.45   # the amount of height reserved for white space between subplots
+plt.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=0.2, hspace=hspace)
+plt.savefig('outputs/Demographics_of_RTI/GBD_RTI_number_of_rtis_and_deaths.png', bbox_inches='tight')
+plt.clf()
+per_injury_fatal_ratio = np.divide(gbd_death_number['val'].tolist(), gbd_rti_number['val'].tolist())
+plt.plot(gbd_death_number['year'], per_injury_fatal_ratio, 'lightsteelblue')
+plt.xlabel('Year')
+plt.ylabel('Percent')
+plt.title('Number of deaths per-injury in Malawi, GBD estimates')
+plt.savefig('outputs/Demographics_of_RTI/GBD_percent_fatal_injuries.png', bbox_inches='tight')
+plt.clf()
 # gbd_gender_data = pd.read_csv('resources/ResourceFile_RTI_GBD_gender_data.csv')
 # global_males = gbd_gender_data.loc[(gbd_gender_data['location'] == 'Global') & (gbd_gender_data['sex'] == 'Male')]
 # global_males_in_rti = global_males['val'].sum()
@@ -337,9 +377,9 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 10000
-nsim = 2
-save_figures = False
+pop_size = 50000
+nsim = 10
+save_figures = True
 output_for_different_incidence = dict()
 service_availability = ['*']
 sim_age_range = []
@@ -380,6 +420,7 @@ tot_inc_injuries = []
 percents_attributable_to_alcohol = []
 percent_sought_healthcare = []
 percent_died_after_med = []
+per_injury_fatal = []
 for i in range(0, nsim):
     age_range = []
     sim = Simulation(start_date=start_date)
@@ -400,7 +441,7 @@ for i in range(0, nsim):
     sim.make_initial_population(n=pop_size)
     params = sim.modules['RTI'].parameters
     params['allowed_interventions'] = []
-    # params['base_rate_injrti'] = params['base_rate_injrti'] * 12.5
+    params['base_rate_injrti'] = params['base_rate_injrti'] * 1.34
     # params['head_prob_skin_wound'] = 0.25909 + (params['head_prob_fracture'] - 0.04) / 2
     # params['head_prob_TBI'] = 0.69086 + (params['head_prob_fracture'] - 0.04) / 2
     # params['head_prob_fracture'] = 0.04
@@ -428,11 +469,18 @@ for i in range(0, nsim):
     number_of_deaths_no_med.append(
         log_df['tlo.methods.rti']['summary_1m']['number deaths without med'].sum())
     percent_sought_healthcare.append(
-        log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist()
+        [i for i in log_df['tlo.methods.rti']['summary_1m']['percent sought healthcare'].tolist() if i !=
+         'none_injured']
     )
     percent_died_after_med.append(
-        log_df['tlo.methods.rti']['summary_1m']['percentage died after med'].tolist()
+        log_df['tlo.methods.rti']['summary_1m']['number deaths post med'].sum() /
+        log_df['tlo.methods.rti']['model_progression']['total_sought_medical_care'].iloc[-1]
     )
+    per_injury_fatal.append(
+        len(log_df['tlo.methods.demography']['death'].loc[
+            log_df['tlo.methods.demography']['death']['cause'].isin(['RTI_death_without_med', 'RTI_death_with_med'])]) /
+        np.multiply(log_df['tlo.methods.rti']['number_of_injuries'].drop('date', axis=1).iloc[-1].tolist(),
+                    [1, 2, 3, 4, 5, 6, 7, 8]).sum())
     this_sim_ages = demog['age'].tolist()
     this_sim_male_ages = demog['male_age'].tolist()
     this_sim_female_ages = demog['female_age'].tolist()
@@ -525,6 +573,29 @@ def age_breakdown(age_array):
             eighty6_to_ninety, ninety_plus]
 
 
+# Plot the per injury fatality produced by the model and compare to the gbd data
+data = pd.read_csv('resources/ResourceFile_RTI_GBD_Number_And_Incidence_Data.csv')
+gbd_death_data = data.loc[data['measure'] == 'Deaths']
+gbd_in_rti_data = data.loc[data['measure'] == 'Incidence']
+gbd_death_data = gbd_death_data.sort_values(by='year')
+gbd_in_rti_data = gbd_in_rti_data.sort_values(by='year')
+gbd_death_number = gbd_death_data.loc[gbd_death_data['metric'] == 'Number']
+gbd_rti_number = gbd_in_rti_data.loc[gbd_in_rti_data['metric'] == 'Number']
+gbd_percent_fatal_ratio = gbd_death_number['val'].sum() / gbd_rti_number['val'].sum()
+model_percent_fatal_ratio = np.mean(per_injury_fatal)
+plt.bar(np.arange(2), [model_percent_fatal_ratio, gbd_percent_fatal_ratio],
+        color=['lightsteelblue', 'lightsalmon'])
+plt.xticks(np.arange(2), ['Model per injury \n death percentage', 'GBD per injury \n death percentage'])
+plt.ylabel('Percent')
+plt.title(f"Per injury fatality ratio, model compared to GBD"
+          f"\n"
+          f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
+if save_figures is True:
+    plt.savefig('outputs/Demographics_of_RTI/Per_injury_fatality.png', bbox_inches='tight')
+    plt.clf()
+else:
+    plt.clf()
+
 # plot the percentage of those who sought health care
 per_sim_average_health_seeking = [np.mean(i) for i in percent_sought_healthcare]
 overall_average_health_seeking_behaviour = np.mean(per_sim_average_health_seeking)
@@ -534,26 +605,21 @@ plt.pie([overall_average_health_seeking_behaviour, 1 - overall_average_health_se
 plt.title(f"Average percentage of those with road traffic injuries who sought health care"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Percent_Sought_Healthcare.png', bbox_inches='tight')
-plt.clf()
 if save_figures is True:
     plt.savefig('outputs/Demographics_of_RTI/Percent_Sought_Healthcare.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()
 # Plot the percentage of death post med
-per_sim_average_post_med_death = [np.mean(i) for i in percent_died_after_med]
-overall_average_post_med_death = np.mean(per_sim_average_post_med_death)
+overall_average_post_med_death = np.mean(percent_died_after_med)
 plt.pie([overall_average_post_med_death, 1 - overall_average_post_med_death],
-        explode=None, labels=['Non-fatal', "Fatal"], colors=['lightsteelblue', 'lightsalmon'],
+        explode=None, labels=['Fatal', "Non-fatal"], colors=['lightsteelblue', 'lightsalmon'],
         autopct='%1.1f%%')
-plt.title(f"Average percent survival of those with road traffic injuries who sought health care"
+plt.title(f"Average percent survival outcome of those with road traffic injuries who sought health care"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/Demographics_of_RTI/Percent_Survival_Healthcare.png', bbox_inches='tight')
-plt.clf()
 if save_figures is True:
-    plt.savefig('outputs/Demographics_of_RTI/Percent_Sought_Healthcare.png', bbox_inches='tight')
+    plt.savefig('outputs/Demographics_of_RTI/Percent_Survival_Healthcare.png', bbox_inches='tight')
     plt.clf()
 else:
     plt.clf()

@@ -802,6 +802,11 @@ class RTI(Module):
             Types.LIST,
             'Mapping parameter of injury code 822 to the various injuries associated with the code'
         ),
+        'rt_emergency_care_ISS_score_cut_off': Parameter(
+            Types.INT,
+            'A parameter to determine which level of injury severity corresponds to the emergency health care seeking '
+            'symptom and which to the non-emergency generic injury symptom'
+        ),
     }
 
     PROPERTIES = {
@@ -3363,6 +3368,7 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
             'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
         self.daly_wt_burns_less_than_20_percent_body_area_without_treatment = p[
             'daly_wt_burns_less_than_20_percent_body_area_with_treatment']
+        self.rt_emergency_care_ISS_score_cut_off = p['rt_emergency_care_ISS_score_cut_off']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -3514,7 +3520,7 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         assert sum(df.loc[df.rt_road_traffic_inc & ~df.rt_imm_death & (df.rt_date_inj == now), 'rt_inj_severity']
                    != 'none') == len(selected_for_rti_inj.index)
         # Find those with polytrauma and update the rt_polytrauma property so they have polytrauma
-        polytrauma_idx = selected_for_rti_inj.index[selected_for_rti_inj['Polytrauma'] is True]
+        polytrauma_idx = selected_for_rti_inj.loc[selected_for_rti_inj.Polytrauma].index
         df.loc[polytrauma_idx, 'rt_polytrauma'] = True
 
         # =+=+=+=+=+=+=+=+=+=+=+=+=+=+ Injury specific updates =+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
@@ -3526,11 +3532,11 @@ class RTI_Event(RegularEvent, PopulationScopeEventMixin):
         # A and E department previously and been diagnosed
         condition_to_be_sent_to_em = df.is_alive & df.rt_road_traffic_inc & ~df.rt_diagnosed & ~df.rt_imm_death & \
                                      (df.rt_date_inj == now) & (df.rt_injury_1 != "none") & \
-                                     (df.rt_ISS_score >= 9)
+                                     (df.rt_ISS_score >= self.rt_emergency_care_ISS_score_cut_off)
         condition_to_be_sent_to_begin_non_emergency = df.is_alive & df.rt_road_traffic_inc & \
                                                       ~df.rt_diagnosed & ~df.rt_imm_death & \
                                                       (df.rt_date_inj == now) & (df.rt_injury_1 != "none") & \
-                                                      (df.rt_ISS_score < 9)
+                                                      (df.rt_ISS_score < self.rt_emergency_care_ISS_score_cut_off)
         assert sum(df.loc[condition_to_be_sent_to_em, 'rt_injury_1'] != "none") == \
                len(df.loc[condition_to_be_sent_to_em])
         assert sum(df.loc[condition_to_be_sent_to_begin_non_emergency, 'rt_injury_1'] != "none") == \
@@ -5725,12 +5731,12 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         if (n_in_RTI - len(df.loc[df.rt_imm_death])) > 0:
             percent_sought_care = n_sought_care / (n_in_RTI - len(df.loc[df.rt_imm_death]))
         else:
-            percent_sought_care = 0
+            percent_sought_care = 'none_injured'
 
         if n_sought_care > 0:
             percent_died_post_care = n_death_post_med / n_sought_care
         else:
-            percent_died_post_care = 0
+            percent_died_post_care = 'none_injured'
         dict_to_output = {
             'number involved in a rti': n_in_RTI,
             'incidence of rti per 100,000': (n_in_RTI / ((n_alive - n_in_RTI) * (1 / 12))) * 100000,
