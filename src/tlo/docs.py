@@ -22,7 +22,7 @@ def get_package_name(dirpath):
     runt = runt.replace("/", ".")  # e.g. logging.sublog
     # print(f"now runt is {runt}")
     if runt:
-        package_name = "tlo." + runt
+        package_name = f"tlo.{runt}"
     else:
         package_name = "tlo"
     return package_name
@@ -115,7 +115,7 @@ def get_fully_qualified_name(filename, context):
     if context == "":
         return parts[0]
     else:
-        fqname = context + "." + parts[0]
+        fqname = f"{context}.{parts[0]}"
         return fqname
 
 
@@ -283,18 +283,12 @@ def extract_bases(class_name, class_obj, spacer=""):
             parents.append(this_base_string)
 
     if len(parents) > 0:
-        str = f"{spacer}**Base classes:**\n\n"
-        numbase = 1
-        str += f"{spacer}Base class #{numbase}: {parents[0]}\n\n"
-        for p in parents[1:]:
-            numbase += 1
-            str += f"{spacer}Base class #{numbase}: {p}\n\n"
+        out = f"{spacer}Bases: {', '.join(parents)}\n"
     else:
-        str = ""
+        out = ""
 
     # print(f"DEBUG: extract_bases: str = {str}")
-
-    return str
+    return out
 
 
 def get_base_string(class_name, class_obj, base_obj):
@@ -309,8 +303,7 @@ def get_base_string(class_name, class_obj, base_obj):
     :param base_obj: the object representation of the *base* class,
                      e.g. <class 'tlo.core.Module'> or <class 'object'>
                      or <class 'tlo.methods.mockitis.Mockitis'>
-    :return: string with hyperlink,
-             e.g. `tlo.core.Module <./tlo.core.html#tlo.core.Module>`_
+    :return: string as hyperlink
     '''
     # Extract fully-qualified name of base (e.g. "tlo.core.Module")
     # from its object representation (e.g. "<class 'tlo.core.Module'>")
@@ -334,7 +327,7 @@ def get_base_string(class_name, class_obj, base_obj):
     if name in [class_name, "object"]:
         return ""
 
-    link = get_link(fqn, base_obj)
+    # link = get_link(fqn, base_obj)
 
     # We want the final HTML to be like:
     # Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module"
@@ -346,7 +339,13 @@ def get_base_string(class_name, class_obj, base_obj):
     # the link to its documentation.
     # e.g. the string might be:
     # "tlo.core.Module <./tlo.core.html#tlo.core.Module>_"
-    mystr = "`" + fqn + " " + link + "`_"
+    #
+    # 3rd November 2020 - Asif suggests it should be more like:
+    # :class: `tlo.events.Event`
+    # or :py:class: `tlo.events.Event`
+    # to fix the "broken" link issue on Travis (#204)
+    # was: mystr = "`" + fqn + " " + link + "`_"
+    mystr = f":class:`{fqn}`"
     # print(f"DEBUG: get_base_string(): {mystr}")
     return mystr
 
