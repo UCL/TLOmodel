@@ -22,7 +22,11 @@ from tlo.methods import (
 )
 from tlo.methods.healthseekingbehaviour import HealthSeekingBehaviourPoll
 from tlo.methods.healthsystem import HealthSystemScheduler
-from tlo.methods.hiv import HivAidsOnsetEvent, HSI_Hiv_TestAndRefer, HSI_Hiv_StartOrContinueTreatment
+from tlo.methods.hiv import (
+    HivAidsOnsetEvent,
+    HSI_Hiv_StartOrContinueTreatment,
+    HSI_Hiv_TestAndRefer,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'

@@ -233,9 +233,18 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         """
-        Do any action that is neccessary when the health system interaction is not run.
+        Do any action that is necessary each time when the health system interaction is not run.
         This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities.
         Return False to cause this HSI event not to be rescheduled and to therefore never be run.
         (Returning nothing or True will cause this event to be rescheduled for the next day.)
+        """
+        pass
+
+    def never_ran(self):
+        """
+        Do any action that is neccessary when it is clear that the HSI event will never be run. This will occur if it
+        has not run and the simulation date has passed the date 'tclose' by which the event was scheduled to have
+        occurred.
+        Do not return anything.
         """
         pass
