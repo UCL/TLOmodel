@@ -513,6 +513,7 @@ class Diarrhoea(Module):
 
         self.risk_of_death_diarrhoea = None
         self.mean_duration_in_days_of_diarrhoea = None
+        self.mean_duration_in_days_of_diarrhoea_lookup = None
         self.prob_diarrhoea_is_watery = None
 
         # Store the symptoms that this module will use:
@@ -695,6 +696,19 @@ class Diarrhoea(Module):
                                                    .when('tEPEC', p['mean_days_duration_with_tEPEC'])
         )
 
+        self.mean_duration_in_days_of_diarrhoea_lookup = {
+            'rotavirus': p['mean_days_duration_with_rotavirus'],
+            'shigella': p['mean_days_duration_with_shigella'],
+            'adenovirus': p['mean_days_duration_with_adenovirus'],
+            'cryptosporidium': p['mean_days_duration_with_cryptosporidium'],
+            'campylobacter': p['mean_days_duration_with_campylobacter'],
+            'ST-ETEC': p['mean_days_duration_with_ST-ETEC'],
+            'sapovirus': p['mean_days_duration_with_sapovirus'],
+            'norovirus': p['mean_days_duration_with_norovirus'],
+            'astrovirus': p['mean_days_duration_with_astrovirus'],
+            'tEPEC': p['mean_days_duration_with_tEPEC'],
+        }
+
         # --------------------------------------------------------------------------------------------
         # Create the linear model for the probability that the diarrhoea is 'watery' (rather than 'bloody')
         self.prob_diarrhoea_is_watery = LinearModel(
@@ -865,104 +879,117 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
        (either DiarrhoeaNaturalRecoveryEvent or DiarrhoeaDeathEvent)}
      * Updates a counter for incident cases
     """
+    AGE_GROUPS = {0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}
+
     def __init__(self, module, person_id, pathogen):
         super().__init__(module, person_id=person_id)
         self.pathogen = pathogen
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
+        m = self.module
+        p = m.parameters
+        rng = m.rng
+
+        person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
         # ----------------------- Determine duration for this episode ----------------------
-        mean_duration = self.module.mean_duration_in_days_of_diarrhoea.predict(df.loc[[person_id]]).values[0]
-        duration_in_days_of_episode = int(
-            max(self.module.parameters['min_days_duration_of_episode'],
-                mean_duration + self.module.rng.randint(
-                    -self.module.parameters['range_in_days_duration_of_episode'] / 2,
-                    self.module.parameters['range_in_days_duration_of_episode'] / 2
-                )
-                )
-        )
-        date_of_outcome = self.module.sim.date + DateOffset(days=duration_in_days_of_episode)
+        mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen]
+        half_range = p['range_in_days_duration_of_episode'] / 2
+        mean_duration = mean_duration + rng.randint(-half_range, half_range)
+        duration_in_days_of_episode = int(max(p['min_days_duration_of_episode'], mean_duration))
 
-        # Update properties in the dataframe:
-        df.at[person_id, 'gi_ever_had_diarrhoea'] = True
-        df.at[person_id, 'gi_last_diarrhoea_pathogen'] = self.pathogen
-        df.at[person_id, 'gi_last_diarrhoea_date_of_onset'] = self.sim.date
-        df.at[person_id, 'gi_last_diarrhoea_duration'] = duration_in_days_of_episode
-        df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = pd.NaT
+        date_of_outcome = self.sim.date + DateOffset(days=duration_in_days_of_episode)
+
+        # Collect the updated properties of this person
+        props_new = {
+            'gi_ever_had_diarrhoea': True,
+            'gi_last_diarrhoea_pathogen': self.pathogen,
+            'gi_last_diarrhoea_date_of_onset': self.sim.date,
+            'gi_last_diarrhoea_duration': duration_in_days_of_episode,
+            'gi_last_diarrhoea_treatment_date': pd.NaT,
+            'gi_last_diarrhoea_type': 'watery',
+            'gi_last_diarrhoea_dehydration': 'none',
+            'gi_last_diarrhoea_recovered_date': pd.NaT,
+            'gi_last_diarrhoea_death_date': pd.NaT
+        }
 
         # ----------------------- Determine symptoms for this episode ----------------------
-        possible_symptoms_for_this_pathogen = self.module.prob_symptoms[self.pathogen]
-        symptoms_for_this_person = list()
+        possible_symptoms_for_this_pathogen = m.prob_symptoms[self.pathogen]
         for symptom, prob in possible_symptoms_for_this_pathogen.items():
-            if self.module.rng.rand() < prob:
-                self.module.sim.modules['SymptomManager'].change_symptom(
+            if rng.random_sample() < prob:
+                self.sim.modules['SymptomManager'].change_symptom(
                     person_id=person_id,
                     symptom_string=symptom,
                     add_or_remove='+',
                     disease_module=self.module
                 )
-                symptoms_for_this_person.append(symptom)
-
-        if 'bloody_stool' in symptoms_for_this_person:
-            df.at[person_id, 'gi_last_diarrhoea_type'] = 'bloody'
-        else:
-            df.at[person_id, 'gi_last_diarrhoea_type'] = 'watery'
-
-        if 'dehydration' in symptoms_for_this_person:
-            df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'some'
-        else:
-            df.at[person_id, 'gi_last_diarrhoea_dehydration'] = 'none'
+                if symptom == 'bloody_stool':
+                    props_new['gi_last_diarrhoea_type'] = 'bloody'
+                elif symptom == 'dehydration':
+                    props_new['gi_last_diarrhoea_dehydration'] = 'some'
 
         # ----------------------- Determine the progress to severe dehydration for this episode ----------------------
         # Progress to severe dehydration may or may not happen. If it does, it occurs some number of days before
         # the resolution of the episode. It does not affect the risk of death or anything else in the natural history -
         # - it can just be considered to be a marker of the how close the individual is to the episode ending (which may
         # or may not result in death).
-        if df.at[person_id, 'gi_last_diarrhoea_dehydration'] == 'some':
-            if self.module.rng.rand() < self.module.parameters['probability_of_severe_dehydration_if_some_dehydration']:
+        if props_new['gi_last_diarrhoea_dehydration'] == 'some':
+            if rng.random_sample() < p['probability_of_severe_dehydration_if_some_dehydration']:
                 # schedule the onset of severe dehydration:
-                date_of_onset_severe_dehydration = max(self.sim.date, date_of_outcome - DateOffset(
-                    days=self.module.rng.randint(0, self.module.parameters[
-                        'max_number_of_days_for_onset_of_severe_dehydration_before_end_of_episode'])))
+                days = rng.randint(0, p['max_number_of_days_for_onset_of_severe_dehydration_before_end_of_episode'])
+                date_of_onset_severe_dehydration = max(self.sim.date, date_of_outcome - DateOffset(days=days))
                 self.sim.schedule_event(
-                    event=DiarrhoeaSevereDehydrationEvent(self.module, person_id),
+                    event=DiarrhoeaSevereDehydrationEvent(m, person_id),
                     date=date_of_onset_severe_dehydration,
                 )
 
         # ----------------------- Determine outcome (recovery or death) of this episode ----------------------
         # Determine if episode will result in death
-        dies = self.module.risk_of_death_diarrhoea.predict(df.loc[[person_id]], self.module.rng)
-        if dies:
-            df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = pd.NaT
-            df.at[person_id, 'gi_last_diarrhoea_death_date'] = date_of_outcome
-            self.sim.schedule_event(DiarrhoeaDeathEvent(self.module, person_id),
-                                    date_of_outcome)
+        prob_death = 1.0
+        if person['age_exact_years'] >= 4:
+            prob_death = 0
         else:
-            df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = date_of_outcome
-            df.at[person_id, 'gi_last_diarrhoea_death_date'] = pd.NaT
-            self.sim.schedule_event(DiarrhoeaNaturalRecoveryEvent(self.module, person_id),
-                                    date_of_outcome)
+            if person['gi_last_diarrhoea_type'] == 'watery':
+                prob_death *= p['case_fatality_rate_AWD']
+            if person['gi_last_diarrhoea_type'] == 'bloody':
+                prob_death *= p['case_fatality_rate_dysentery']
+            if person['gi_last_diarrhoea_duration'] > 13:
+                prob_death *= p['rr_diarr_death_if_duration_longer_than_13_days']
+            if person['gi_last_diarrhoea_dehydration'] == 'some':
+                prob_death *= p['rr_diarr_death_dehydration']
+            if 1 <= person['age_exact_years'] < 2:
+                prob_death *= p['rr_diarr_death_age12to23mo']
+            elif 2 <= person['age_exact_years'] < 4:
+                prob_death *= p['rr_diarr_death_age24to59mo']
+            if person['tmp_hv_inf']:
+                prob_death *= p['rr_diarrhoea_HIV']
+            if person['tmp_malnutrition']:
+                prob_death *= p['rr_diarrhoea_SAM']
+
+        if rng.random_sample() < prob_death:
+            props_new['gi_last_diarrhoea_death_date'] = date_of_outcome
+            self.sim.schedule_event(DiarrhoeaDeathEvent(m, person_id), date_of_outcome)
+        else:
+            props_new['gi_last_diarrhoea_recovered_date'] = date_of_outcome
+            self.sim.schedule_event(DiarrhoeaNaturalRecoveryEvent(m, person_id), date_of_outcome)
 
         # Record 'episode end' data. This the date when this episode ends. It is the last possible data that any HSI
         # could affect this episode.
-        df.at[person_id, 'gi_end_of_last_episode'] = date_of_outcome + DateOffset(
-            days=self.module.parameters['days_between_treatment_and_cure']
-        )
+        props_new['gi_end_of_last_episode'] = date_of_outcome + DateOffset(days=p['days_between_treatment_and_cure'])
 
         # -------------------------------------------------------------------------------------------
         # Add this incident case to the tracker
-        age = df.loc[person_id, ['age_years']]
-        if age.values[0] < 5:
-            age_grp = age.map({0: '0y', 1: '1y', 2: '2-4y', 3: '2-4y', 4: '2-4y'}).values[0]
-        else:
-            age_grp = '5+y'
-        self.module.incident_case_tracker[age_grp][self.pathogen].append(self.sim.date)
+        age_group = DiarrhoeaIncidentCase.AGE_GROUPS.get(person.age_years, '5+y')
+        m.incident_case_tracker[age_group][self.pathogen].append(self.sim.date)
         # -------------------------------------------------------------------------------------------
+
+        # Update the entry in the population dataframe
+        df.loc[person_id, props_new.keys()] = props_new.values()
 
 
 class DiarrhoeaNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
