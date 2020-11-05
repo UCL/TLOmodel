@@ -14,6 +14,8 @@ from tlo.methods.dxmanager import DxManager
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# TODO: should the 'disable_and_reject_all' mode lead to the never_ran of the HSI being run..??
+
 
 class HealthSystem(Module):
     """
