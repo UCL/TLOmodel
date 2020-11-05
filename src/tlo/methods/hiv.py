@@ -22,15 +22,6 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
     * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
     * Calibration has not been done: most things look OK - except HIV-AIDS deaths
 
-# ****************
-# TODO before PR
-* line 1480
-* Decide the relationship between AIDS and VL suppression (which blocks the AIDSOnsetEvent and AIDSDeathEvent -
-currently either does)
-* Assume that any ART removes the aids_symptoms? does this depend on VL status??
-* What to happen with stock-outs
-* Note that if consumables not available for several days, could then have several appointments.
-# ****************
 """
 
 import os
@@ -981,6 +972,10 @@ class Hiv(Module):
         """check that the properties are currently configured correctly"""
         df = self.sim.population.props
 
+        # basic check types of columns and dtypes
+        orig = self.sim.population.new_row
+        assert (df.dtypes == orig.dtypes).all()
+
         def is_subset(col_for_set, col_for_subset):
             # Confirms that the series of col_for_subset is true only for a subset of the series for col_for_set
             return set(col_for_subset.loc[col_for_subset].index).issubset(col_for_set.loc[col_for_set].index)
@@ -1177,7 +1172,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
 class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
     """
-    Causes someone to die of AIDS
+    Causes someone to die of AIDS, if they are not VL suppressed on ART.
     """
 
     def __init__(self, module, person_id):
@@ -1192,14 +1187,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
 
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         if df.at[person_id, "hv_art"] == "on_VL_suppressed":
-            # todo - reconsider if the VL_suppression should block the death or if this should happen through VL
-            #  suppression removing the AIDS symptoms
             return
 
-        # Confirm that the person has the symptoms of AIDS
+        # todo - and add comment: Confirm that the person has the symptoms of AIDS if they don't have VL suppression
         assert 'aids_symptoms' in self.sim.modules['SymptomManager'].has_what(person_id)
 
-        # Cause the death - to happen immediately
+        # Cause the death to happen immediately
         demography.InstantaneousDeath(self.module, individual_id=person_id, cause="AIDS").apply(person_id)
 
 
