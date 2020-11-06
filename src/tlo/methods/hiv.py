@@ -1616,7 +1616,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if self.counter_for_did_not_run > 0:
 
-        self.counter_for_did_not_run += 1
+            self.counter_for_did_not_run += 1
 
 # ---------------------------------------------------------------------------
 #   Logging
