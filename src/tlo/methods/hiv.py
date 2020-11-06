@@ -999,7 +999,8 @@ class Hiv(Module):
         # Check alignment between AIDS Symptoms and status and infection and ART status
         has_aids_symptoms = set(self.sim.modules['SymptomManager'].who_has('aids_symptoms'))
         assert has_aids_symptoms.issubset(df_alive.loc[df_alive.is_alive & df_alive.hv_inf].index)
-        assert 0 == len(has_aids_symptoms.intersection(df_alive.loc[df_alive.is_alive & (df_alive.hv_art == "on_VL_suppressed")].index))
+        assert 0 == len(has_aids_symptoms.intersection(df_alive.loc[df_alive.is_alive & (
+            df_alive.hv_art == "on_VL_suppressed")].index))
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event
