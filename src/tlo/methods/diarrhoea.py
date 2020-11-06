@@ -900,8 +900,8 @@ class DiarrhoeaIncidentCase(Event, IndividualScopeEventMixin):
         # ----------------------- Determine duration for this episode ----------------------
         mean_duration = m.mean_duration_in_days_of_diarrhoea_lookup[self.pathogen]
         half_range = p['range_in_days_duration_of_episode'] / 2
-        mean_duration = mean_duration + rng.randint(-half_range, half_range)
-        duration_in_days_of_episode = int(max(p['min_days_duration_of_episode'], mean_duration))
+        actual_duration = mean_duration + rng.randint(-half_range, half_range)
+        duration_in_days_of_episode = int(max(p['min_days_duration_of_episode'], actual_duration))
 
         date_of_outcome = self.sim.date + DateOffset(days=duration_in_days_of_episode)
 
