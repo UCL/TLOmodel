@@ -23,6 +23,7 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 # Things to note:
     * Need to incorporate testing for HIV at first ANC appointment (as it does in generic HSI)
     * Need to incorporate testing for infants born to HIV-positive mothers (currently done in on_birth here).
+    * Need to incorporate cotrim for infants born to HIV-positive mothers (not done here)
     * Cotrimoxazole is not included - either in effect of consumption of the drug (because the effect is not known).
     * Calibration has not been done: most things look OK - except HIV-AIDS deaths
 
@@ -525,12 +526,10 @@ class Hiv(Module):
             & (df.age_years >= 15)
             ]
 
-        # we don't know date tested, assume date = now
         df.loc[test_index_male | test_index_female, "hv_number_tests"] = 1
 
         # person assumed to be diagnosed if they have had a test and are currently HIV positive:
         df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), "hv_diagnosed"] = True
-        # df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), "hv_date_diagnosed"] = now
 
     def initialise_baseline_art(self, population):
         """ assign initial art coverage levels
@@ -553,7 +552,6 @@ class Hiv(Module):
 
         prob_art = prob_art.fillna(0)
 
-        # no testing rates for children so assign ever_tested=True if allocated treatment
         art_idx = prob_art.index[
             (self.rng.rand(len(prob_art)) < prob_art)
             & df.is_alive
@@ -584,13 +582,9 @@ class Hiv(Module):
         # check that everyone on ART is labelled as such
         assert not (df.loc[art_idx, "hv_art"] == "not").any()
 
-        # assume that all persons currently on ART started on thre current date
-        # df.loc[art_idx, "hv_date_art_start"] = self.sim.date
-
         # for logical consistency, ensure that all persons on ART have been tested and diagnosed
         df.loc[art_idx, "hv_number_tests"] = 1
         df.loc[art_idx, "hv_diagnosed"] = True
-        # df.loc[art_idx, "hv_date_diagnosed"] = self.sim.date
 
     def initialise_simulation(self, sim):
         """
@@ -974,38 +968,38 @@ class Hiv(Module):
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
-        df = self.sim.population.props
+        df_alive = self.sim.population.props.loc[self.sim.population.props.is_alive]
 
         # basic check types of columns and dtypes
         orig = self.sim.population.new_row
-        assert (df.dtypes == orig.dtypes).all()
+        assert (self.sim.population.props.dtypes == orig.dtypes).all()
 
         def is_subset(col_for_set, col_for_subset):
             # Confirms that the series of col_for_subset is true only for a subset of the series for col_for_set
             return set(col_for_subset.loc[col_for_subset].index).issubset(col_for_set.loc[col_for_set].index)
 
         # Check that core properties of current status are never None/NaN/NaT
-        assert not df.hv_inf.isna().any()
-        assert not df.hv_art.isna().any()
-        assert not df.hv_behaviour_change.isna().any()
-        assert not df.hv_diagnosed.isna().any()
-        assert not df.hv_number_tests.isna().any()
+        assert not df_alive.hv_inf.isna().any()
+        assert not df_alive.hv_art.isna().any()
+        assert not df_alive.hv_behaviour_change.isna().any()
+        assert not df_alive.hv_diagnosed.isna().any()
+        assert not df_alive.hv_number_tests.isna().any()
 
         # Check that the core HIV properties are 'nested' in the way expected.
-        assert is_subset(col_for_set=df.hv_inf, col_for_subset=df.hv_diagnosed)
-        assert is_subset(col_for_set=df.hv_diagnosed, col_for_subset=(df.hv_art != "not"))
+        assert is_subset(col_for_set=df_alive.hv_inf, col_for_subset=df_alive.hv_diagnosed)
+        assert is_subset(col_for_set=df_alive.hv_diagnosed, col_for_subset=(df_alive.hv_art != "not"))
 
         # Check that if person is not infected, the dates of HIV events are None/NaN/NaT
-        assert df.loc[~df.hv_inf, "hv_date_inf"].isna().all()
+        assert df_alive.loc[~df_alive.hv_inf, "hv_date_inf"].isna().all()
 
         # Check that dates consistent for those infected with HIV
-        assert not df.loc[df.hv_inf].hv_date_inf.isna().any()
-        assert (df.loc[df.hv_inf].hv_date_inf >= df.loc[df.hv_inf].date_of_birth).all()
+        assert not df_alive.loc[df_alive.hv_inf].hv_date_inf.isna().any()
+        assert (df_alive.loc[df_alive.hv_inf].hv_date_inf >= df_alive.loc[df_alive.hv_inf].date_of_birth).all()
 
         # Check alignment between AIDS Symptoms and status and infection and ART status
         has_aids_symptoms = set(self.sim.modules['SymptomManager'].who_has('aids_symptoms'))
-        assert has_aids_symptoms.issubset(df.loc[df.is_alive & df.hv_inf].index)
-        assert 0 == len(has_aids_symptoms.intersection(df.loc[df.is_alive & (df.hv_art == "on_VL_suppressed")].index))
+        assert has_aids_symptoms.issubset(df_alive.loc[df_alive.is_alive & df_alive.hv_inf].index)
+        assert 0 == len(has_aids_symptoms.intersection(df_alive.loc[df_alive.is_alive & (df_alive.hv_art == "on_VL_suppressed")].index))
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event
