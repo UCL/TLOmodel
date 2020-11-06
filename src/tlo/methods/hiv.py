@@ -2,7 +2,7 @@
 The HIV Module
 
 Overview:
-HIV infection ---> AIDS onset Event (defined by the presence of those symptoms) --> AIDS Death Event
+HIV infection ---> AIDS onset Event (defined by the presence of AIDS symptoms) --> AIDS Death Event
 Testing is spontaneously taken-up and can lead to accessing intervention services (ART, VMMC, PrEP).
 AIDS symptoms can also lead to care-seeking and there is routine testing for HIV at all non-emergency Generic HSI
  events.
@@ -11,9 +11,9 @@ Persons can be on ART -
         will not die of AIDS; and the person is not infectious
     - without viral suppression: when there is no benefit in avoiding AIDS and infectiousness is unchanged.
 
-Maintenance on ART and PrEP is re-assesed at periodic 'Decision Events', at which is it is determined if the person will
- attend the "next" HSI for continuation of the service; and if not, they are removed from that service and "stop
-  treatment". If a stock-out or non-available health system resources prevent treatment continuation, the person
+Maintenance on ART and PrEP is re-assessed at periodic 'Decision Events', at which is it is determined if the person
+  will attend the "next" HSI for continuation of the service; and if not, they are removed from that service and "stop
+  treatment". If a stock-out or non-availability of health system resources prevent treatment continuation, the person
   "stops treatment". Stopping treatment leads to a new AIDS Event being scheduled. Persons can restart treatment. If a
   person has developed AIDS, starts treatment and then defaults from treatment, their 'original' AIDS Death Event will
   still occur.
