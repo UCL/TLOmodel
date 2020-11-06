@@ -1281,13 +1281,24 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     Following the test, they may or may not go on to present for uptake an HIV service: ART (if HIV-positive), VMMC (if
     HIV-negative and male) or PrEP (if HIV-negative and a female sex worker).
 
+    If this event is called within another HSI, it may be desirable to limit the functionality of the HSI: do this
+    using the arguments:
+        * do_not_refer_if_neg=False : if the person is HIV-neg they will not be referred to VMMC or PrEP
+        * suppress_footprint=True : the HSI will not have any footprint
+
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, do_not_refer_if_neg=False, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(
             module, Hiv
         )
+
+        assert isinstance(do_not_refer_if_neg, bool)
+        self.do_not_refer_if_neg = do_not_refer_if_neg
+
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "Hiv_TestAndRefer"
@@ -1350,34 +1361,41 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                 # The test_result is HIV negative
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
 
-                # Consider if the person's risk will be reduced by behaviour change counselling
-                if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
-                    df.at[person_id, 'hv_behaviour_change'] = True
+                if not self.do_not_refer_if_neg:
+                    # The test was negative: make referrals to other services:
 
-                # If person is a man, and not circumcised, then consider referring to VMMC
-                if (person['sex'] == 'M') & (~person['li_is_circ']):
-                    if self.module.lm_circ.predict(df.loc[[person_id]], self.module.rng):
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_Circ(person_id=person_id, module=self.module),
-                            topen=self.sim.date,
-                            tclose=None,
-                            priority=0
-                        )
+                    # Consider if the person's risk will be reduced by behaviour change counselling
+                    if self.module.lm_behavchg.predict(df.loc[[person_id]], self.module.rng):
+                        df.at[person_id, 'hv_behaviour_change'] = True
 
-                # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
-                if (person['sex'] == 'F') & (person['li_is_sexworker']) & (~person['hv_is_on_prep']):
-                    if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
-                            topen=self.sim.date,
-                            tclose=None,
-                            priority=0
-                        )
+                    # If person is a man, and not circumcised, then consider referring to VMMC
+                    if (person['sex'] == 'M') & (~person['li_is_circ']):
+                        if self.module.lm_circ.predict(df.loc[[person_id]], self.module.rng):
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                HSI_Hiv_Circ(person_id=person_id, module=self.module),
+                                topen=self.sim.date,
+                                tclose=None,
+                                priority=0
+                            )
+
+                    # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
+                    if (person['sex'] == 'F') & (person['li_is_sexworker']) & (~person['hv_is_on_prep']):
+                        if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                                HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
+                                topen=self.sim.date,
+                                tclose=None,
+                                priority=0
+                            )
         else:
-            # Test was not possible, so do nothing
+            # Test was not possible, so do nothing:
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({'VCTNegative': 1})
 
-        return ACTUAL_APPT_FOOTPRINT
+        # Return the footprint. If it should be suppressed, return a blank footprint.
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+            return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
