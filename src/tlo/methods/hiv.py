@@ -672,11 +672,11 @@ class Hiv(Module):
             consumables["Intervention_Pkg"] == "HIV Testing Services",
             "Intervention_Pkg_Code"].values[0]
 
+        # NB. The rapid test is assumed to be 100% specific and sensitive. This is used to guarantee that all persons
+        #  that start ART are truly HIV-pos.
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
             hiv_rapid_test=DxTest(
                 property='hv_inf',
-                sensitivity=1.0,
-                specificity=1.0,
                 cons_req_as_footprint={'Intervention_Package_Code': {pkg_code_hiv_rapid_test: 1}, 'Item_Code': {}}
             )
         )
@@ -1493,7 +1493,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         assert person["hv_diagnosed"]
 
         if art_status_at_beginning_of_hsi == "not":
-            # Do a confirmatory test and do not run the rest of the event if negative
+            # Do a confirmatory test and do not run the rest of the event if negative.
+            # NB. It is assumed that the sensitivity and specificiy of the raoid test is perfect.
             test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                 dx_tests_to_run='hiv_rapid_test',
                 hsi_event=self
@@ -1501,6 +1502,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_number_tests'] += 1
             if not test_result:
                 return self.make_appt_footprint({"Over5OPD": 1})
+
+            assert person["hv_inf"]  # after the test results, it can be guaranteed that the person is HIV-pos.
 
             # Try to initiate the person onto ART:
             drugs_were_available = self.do_at_initiation(person_id)
