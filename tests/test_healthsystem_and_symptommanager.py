@@ -547,7 +547,7 @@ def test_use_of_helper_function_get_all_consumables():
         def initialise_population(self, population):
             pass
 
-        def initialie_simulation(self, sim):
+        def initialise_simulation(self, sim):
             pass
 
     # Create simulation with the healthsystem and DummyModule
@@ -620,3 +620,73 @@ def test_use_of_helper_function_get_all_consumables():
     assert True is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_is_available)
     assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available, pkg_codes=pkg_code_is_available)
     assert False is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_not_available)
+
+def test_speeding_up_get_consumables_as_individual_items():
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = 0
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Create simulation with the healthsystem and DummyModule
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+
+    hs = sim.modules['HealthSystem']
+    hsi_event = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
+
+    # refresh availabilities of consumables to all available:
+    hs.cons_item_code_availability_today = hs.prob_unique_item_codes_available > 0.0
+
+    # create a very complicated footprint:
+    consumables = hs.parameters['Consumables']
+    pkg_code = \
+        pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
+                            'Intervention_Pkg_Code'])[0]
+
+    cons_req_as_footprint = {
+        'Intervention_Package_Code': {pkg_code: 2, 3:1, 5:1},
+        'Item_Code': {99: 2, 98: 4, 97: 6}
+    }
+
+    # run functions with depend on the internal storage of all the consumables
+    hs.check_consumables_footprint_format(cons_req_as_footprint=cons_req_as_footprint)
+    rtn = hs.get_consumables_as_individual_items(cons_footprint=cons_req_as_footprint)
+
+    # check that the result it the same as the original code
+    assert rtn.equals(pd.read_csv('./resources/cons_as_individual_items.csv'))
+
+    import time
+    start = time.time()
+    # run the whole "request_consumables" routine many times to capture a time that it takes:
+    for i in range(1000):
+        _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event)
+    end = time.time()
+    print(f"Elapsed time: {end - start}")  # with original code: elapsed time = 13.770344972610474
+
+
