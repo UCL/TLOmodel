@@ -49,7 +49,7 @@ For use in profiling.
 start_date = Date(2010, 1, 1)
 end_date = start_date + pd.DateOffset(years=2)
 
-popsize = 20_000
+popsize = 500_000
 
 # The resource files
 resourcefilepath = Path("./resources")
