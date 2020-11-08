@@ -769,37 +769,13 @@ class HealthSystem(Module):
 
         # 1) Unpack the consumables footprint into the individual items
         items_req = self.get_consumables_as_individual_items(cons_req_as_footprint)
-        n_items_req = len(items_req)
 
         # 2) Determine if these are available at the relevant facility level
         select_col = f'Available_Facility_Level_{the_facility_level}'
         available = self.cons_item_code_availability_today.loc[items_req.index, select_col]
-        # item_codes_available = available[available].index
-
-        # todo - clean this up
-        # availability = pd.DataFrame(data={'Available': self.cons_item_code_availability_today[select_col].copy()})
-        # items_req = items_req.merge(availability, left_on='Item_Code', right_index=True, how='left')
-        # assert len(items_req) == n_items_req
 
         # 3) Enter the the log (logs each item)
-        # Do a groupby for the different consumables (there could be repeats of individual items which need /
-        # to be summed)
         if to_log:
-            # items_req_to_log = pd.DataFrame(items_req.groupby('Item_Code').sum())
-            # items_req_to_log['Available'] = items_req_to_log['Available'] > 0  # restore to bool after sum in grouby()
-
-            # Get the the cost of the each consumable item (could not do this merge until after model run)
-            consumable_costs = self.parameters['Consumables_Cost_List']
-
-            # Compute total cost (limiting to those items which were available)
-            # costs = consumable_costs.loc[items_req.index] * items_req[items_req.index]
-
-            # # Compute total cost (limiting to those items which were available)
-            # total_cost = (
-            #     items_req_to_log.loc[items_req_to_log['Available'], ['Quantity_Of_Item', 'Unit_Cost']]
-            #     .prod(axis=1).sum()
-            # )
-
             # Log Consumables that are provided
             log_consumables = dict()
             log_consumables['TREATMENT_ID'] = the_treatment_id
@@ -833,7 +809,7 @@ class HealthSystem(Module):
             for item_code in cons_req_as_footprint['Item_Code'].keys():
                 items_availability[item_code] = available[item_code]
 
-        # compile output todo- log whether the item was available or not
+        # compile output
         output = dict()
         output['Intervention_Package_Code'] = packages_availability
         output['Item_Code'] = items_availability
@@ -859,32 +835,34 @@ class HealthSystem(Module):
         # check basic formatting
         assert 'Intervention_Package_Code' in cons_req_as_footprint
         assert 'Item_Code' in cons_req_as_footprint
-        assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
-        assert isinstance(cons_req_as_footprint['Item_Code'], dict)
+        # assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
+        # assert isinstance(cons_req_as_footprint['Item_Code'], dict)
 
-        # check that consumables being required are in the database:
-        consumables = self.parameters['Consumables']
+        # Check that consumables being required are in the database
 
         # Check packages
+        all_pkgs = self.df_mapping_pkg_code_to_intv_code.index.values
         for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
-            assert pkg_code in consumables['Intervention_Pkg_Code'].values
-            assert isinstance(pkg_quant, int)
+            assert pkg_code in all_pkgs
+            assert pkg_code != -99
+            # assert isinstance(pkg_quant, int)
             assert pkg_quant > 0
 
         # Check items
+        all_items = pd.unique(self.df_mapping_pkg_code_to_intv_code['Item_Code'])
         for itm_code, itm_quant in cons_req_as_footprint['Item_Code'].items():
-            assert itm_code in consumables['Item_Code'].values
-            assert isinstance(itm_quant, int)
+            assert itm_code in all_items
+            # assert isinstance(itm_quant, int)
             assert itm_quant > 0
 
     def get_consumables_as_individual_items(self, cons_footprint):
         """
-        This will look at the CONS_FOOTPRINT of an HSI Event and return a dataframe with the individual items that
-        are used, collecting these from across the packages and the individual items that are specified.
-        A column indicates the package from which the item come from and shows NaN if the item is requested individually
+        This will look at the CONS_FOOTPRINT and return a pd.Series with the individual items (index)
+         and the quantity needed (value).
         """
 
-        #todo - comments and labelling
+        # todo - should all be done in a dict, or a list with repeats?
+
         # Unpack package_code (repeat package code if the package is required multiple times)
         pkgs = list()
         for k, v in cons_footprint['Intervention_Package_Code'].items():
@@ -894,86 +872,12 @@ class HealthSystem(Module):
         # Get the corresponding item codes and flip in to a series with index of Item_Code
         x = self.df_mapping_pkg_code_to_intv_code.loc[pkgs].set_index('Item_Code')['Expected_Units_Per_Case']
 
-        # Add in individual consumables
+        # Add in individual consumables in one go as a pd.Series
         x = x.append(pd.Series(cons_footprint['Item_Code']))
 
         # Return de-duplicated Series (index=Item_Code, value=quantity)
         return x.groupby(x.index).sum()
 
-
-        #
-        #
-        #
-        #
-        # # Add in the item_codes for individual items:
-        #
-        #
-        # pd.DataFrame.from_dict(cons_footprint['Item_Code'].items())
-        #
-        #
-        # items = list()
-        # # unpackage packages
-        # for k, v in cons_footprint['Intervention_Package_Code'].items():
-        #     for i in range(v):
-        #         self.df_mapping_pkg_code_to_intv_code.loc[pkgs]
-        #
-        #
-        #
-        #
-        #
-        # # DICT METHOD
-        # # Unpack package
-        # individual_consumables = []
-        # for pkg in cons_footprint['Intervention_Package_Code']:
-        #     items = self.dict_mapping_pkg_code_to_intv_code[pkg]
-        #     quantity = cons_footprint['Intervention_Package_Code'][pkg]
-        #     individual_consumables.append(dict(zip(items, len(items) * [quantity])))
-        #
-        #
-        #
-        #
-        # # ORIIGAL
-        # # Shortcut to the input cons_footprint
-        # cons = cons_footprint
-        #
-        # # Load the data on consumables
-        # consumables = self.parameters['Consumables']
-        #
-        # individual_consumables = []
-        # # Get the individual items in each package:
-        # for (package_code, quantity_of_packages) in cons['Intervention_Package_Code'].items():
-        #     items = consumables.loc[
-        #         consumables['Intervention_Pkg_Code'] == package_code, ['Item_Code', 'Expected_Units_Per_Case']
-        #     ].to_dict(orient='records')
-        #     for item in items:
-        #         item['Quantity_Of_Item'] = item['Expected_Units_Per_Case'] * quantity_of_packages
-        #         item['Package_Code'] = package_code
-        #         individual_consumables.append(item)
-        #
-        # # Add in any additional items that have been specified separately:
-        # for (item_code, quantity_of_item) in cons['Item_Code'].items():
-        #     item = {
-        #         'Item_Code': item_code,
-        #         'Package_Code': np.nan,
-        #         'Quantity_Of_Item': quantity_of_item,
-        #         'Expected_Units_Per_Case': np.nan,
-        #     }
-        #     individual_consumables.append(item)
-        #
-        # consumables_as_individual_items = pd.DataFrame.from_dict(individual_consumables)
-        #
-        # try:
-        #     consumables_as_individual_items = consumables_as_individual_items.drop('Expected_Units_Per_Case', axis=1)
-        # except KeyError:
-        #     # No data from cons['Intervention_Package_Code'] or cons['Item_Code']
-        #     raise ValueError("No packages or individual items requested")
-        #
-        # # confirm that Item_Code is returned as an int, Package_Code and Expected_Units_Per_Case as float
-        # # NB. package_code is held as float as may as np.nan's in and known issuse that pandas cannot handle this
-        # #       Non-null package_code must be coerced to int before use.
-        # consumables_as_individual_items['Item_Code'] = consumables_as_individual_items['Item_Code'].astype(int)
-
-        return consumables_as_individual_items
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """

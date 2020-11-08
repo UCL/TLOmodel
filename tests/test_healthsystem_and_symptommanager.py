@@ -670,26 +670,45 @@ def test_speeding_up_get_consumables_as_individual_items():
                             'Intervention_Pkg_Code'])[0]
 
     cons_req_as_footprint = {
-        'Intervention_Package_Code': {pkg_code: 2, 3:1, 5:1},
+        'Intervention_Package_Code': {pkg_code: 2, 3: 1, 5: 1},
         'Item_Code': {99: 2, 98: 4, 97: 6}
     }
 
     # run functions with depend on the internal storage of all the consumables
     hs.check_consumables_footprint_format(cons_req_as_footprint=cons_req_as_footprint)
     rtn = hs.get_consumables_as_individual_items(cons_footprint=cons_req_as_footprint)
-
     # check that the result it the same as the original code
     assert rtn.eq(
         pd.read_csv('./resources/cons_as_individual_items.csv').set_index('Item_Code')['Quantity_Of_Item']
     ).all()
 
+    # Check it all works with footprints with different configurations
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {},
+        'Item_Code': {}},
+        hsi_event=hsi_event
+    )
+
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {1: 10},
+        'Item_Code': {}},
+        hsi_event=hsi_event
+    )
+
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {},
+        'Item_Code': {1: 10}},
+        hsi_event=hsi_event
+    )
+
+    # Time it!
     import time
     start = time.time()
     # run the whole "request_consumables" routine many times to capture a time that it takes:
     for i in range(1000):
-        _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event)
+        _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event, to_log=False)
     end = time.time()
     print(f"Elapsed time: {end - start}")
                                                 # with original code: elapsed time = 13.770344972610474
                                                 # first version edit: elapsed time = 5.978830099105835
-
+                                                # second version edit: elapsed time = 5.255127191543579
