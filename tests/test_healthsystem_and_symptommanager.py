@@ -679,7 +679,9 @@ def test_speeding_up_get_consumables_as_individual_items():
     rtn = hs.get_consumables_as_individual_items(cons_footprint=cons_req_as_footprint)
 
     # check that the result it the same as the original code
-    assert rtn.equals(pd.read_csv('./resources/cons_as_individual_items.csv'))
+    assert rtn.eq(
+        pd.read_csv('./resources/cons_as_individual_items.csv').set_index('Item_Code')['Quantity_Of_Item']
+    ).all()
 
     import time
     start = time.time()
@@ -687,6 +689,7 @@ def test_speeding_up_get_consumables_as_individual_items():
     for i in range(1000):
         _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event)
     end = time.time()
-    print(f"Elapsed time: {end - start}")  # with original code: elapsed time = 13.770344972610474
-
+    print(f"Elapsed time: {end - start}")
+                                                # with original code: elapsed time = 13.770344972610474
+                                                # first version edit: elapsed time = 5.978830099105835
 
