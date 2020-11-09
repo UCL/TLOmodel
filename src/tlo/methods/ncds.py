@@ -7,10 +7,12 @@ from pathlib import Path
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.methods import Metadata, demography
+import tlo.methods.demography as de
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.healthsystem import HSI_Event
 
 import pandas as pd
+import numpy as np
 import copy
 
 # ---------------------------------------------------------------------------------------------------------
@@ -466,6 +468,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         self.date_last_run = self.sim.date
+        self.AGE_RANGE_LOOKUP = de.Demography.AGE_RANGE_LOOKUP
         assert isinstance(module, Ncds)
 
     def apply(self, population):
@@ -486,6 +489,18 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Reset the counters and the date_last_run
         self.module.incident_case_tracker = copy.deepcopy(self.module.incident_case_tracker_blank)
         self.date_last_run = self.sim.date
+
+        # Output the person-years lived by single year of age in the past year
+        #py = self.module.calc_py_lived_in_last_year()
+        #logger.info(key='person_years', data=py.to_dict())
+
+        df = self.sim.population.props
+        delta = pd.DateOffset(years=1)
+        for cond in self.module.conditions:
+
+            kwargs = {'arg': f'{cond}'}
+            py = de.Demography.calc_py_lived_in_last_year(self, delta, **kwargs)
+            logger.info(key=f'person_years_{cond}', data=py.to_dict())
 
         # Make some summary statistics for prevalence by age/sex for each condition
         df = population.props
