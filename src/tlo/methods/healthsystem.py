@@ -153,24 +153,20 @@ class HealthSystem(Module):
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
 
-        # Read and process the consumables file
-        self.read_and_process_consumables_file()
+        # Read in ResourceFile_Consumables and then process it to create the data structures needed
+        # NB. Modules can use this to look-up what consumables they need.
+        self.parameters['Consumables'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv')
+        self.process_consumables_file()
 
-    def read_and_process_consumables_file(self):
-        """Helper function for reading-in and processing the consumables file
-        * Read in the ResourceFile_Consumables
+    def process_consumables_file(self):
+        """Helper function for processing the consumables data (stored as self.parameters['Consumables'])
         * Creates ```parameters['Consumables']```
         * Creates ```df_mapping_pkg_code_to_intv_code```
         * Creates ```prob_item_code_available```
         * Creates ```parameters['Consumables_Cost_List]```
         """
-        # Read in ResourceFile_Consumables
-        raw = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv')
-
-        # -------------------------------------------------------------------------------------------------
-        # Store ```self.parameters['Consumables']``` as a copy of the full file
-        # Modules can use this to look-up what consumables they need.
-        self.parameters['Consumables'] = raw
+        # Load the 'raw' ResourceFile_Consumabes that is loaded in to self.parameters['Consumables']
+        raw = self.parameters['Consumables']
 
         # -------------------------------------------------------------------------------------------------
         # Create a pd.DataFrame that maps pkg code (as index) to item code:
@@ -722,8 +718,9 @@ class HealthSystem(Module):
         """
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Check the format of the cons_req_as_footprint:
-        self.check_consumables_footprint_format(cons_req_as_footprint)
+        # Could check the format of the cons_req_as_footprint
+        # It is removed as this is a time-consuming check that is rarely required
+        # self.check_consumables_footprint_format(cons_req_as_footprint)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # If the healthsystem module is disabled, return True for all consumables without checking or logging
@@ -753,35 +750,28 @@ class HealthSystem(Module):
 
         # Logging:
         if to_log:
-            # Log Consumables that are provided and those not available
+            treatment_id = hsi_event.TREATMENT_ID
             # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
-            if len(cons_req_as_footprint['Item_Code']) > 0:
-                logger.info(key='Items_Available',
-                            data=str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
-                                      if available['Item_Code'][k]}
-                                     ),
-                            description="record of each consumable item that is provided"
-                            )
-                logger.info(key='Items_NotAvailable',
-                            data=str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
-                                      if not available['Item_Code'][k]}
-                                     ),
-                            description="record of each consumable item that is requested but not available"
-                            )
-
-            if len(cons_req_as_footprint['Intervention_Package_Code']) > 0:
-                logger.info(key='Packages_Available',
-                            data=str({k: v for k, v in cons_req_as_footprint['Intervention_Package_Code'].items()
-                                      if available['Intervention_Package_Code'][k]}
-                                     ),
-                            description="record of each consumable package that is provided"
-                            )
-                logger.info(key='Packages_NotAvailable',
-                            data=str({k: v for k, v in cons_req_as_footprint['Intervention_Package_Code'].items()
-                                      if not available['Intervention_Package_Code'][k]}
-                                     ),
-                            description="record of each consumable package that is requested but not available"
-                            )
+            logger.info(key='Consumables',
+                        data={
+                            'TREATMENT_ID': treatment_id,
+                            'Item_Available': str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
+                                                   if available['Item_Code'][k]}
+                                                  ),
+                            'Item_NotAvailable': str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
+                                                      if not available['Item_Code'][k]}
+                                                     ),
+                            'Package_Available': str({k: v for k, v in
+                                                      cons_req_as_footprint['Intervention_Package_Code'].items()
+                                                      if available['Intervention_Package_Code'][k]}
+                                                     ),
+                            'Package_NotAvailable': str({k: v for k, v in
+                                                         cons_req_as_footprint['Intervention_Package_Code'].items()
+                                                         if not available['Intervention_Package_Code'][k]}
+                                                        )
+                        },
+                        description="record of each consumable item that is requested by in an HSI"
+                        )
 
         # return the result of the check on availability
         return available
@@ -803,27 +793,28 @@ class HealthSystem(Module):
         #     }
 
         # check basic formatting
-        assert 'Intervention_Package_Code' in cons_req_as_footprint
-        assert 'Item_Code' in cons_req_as_footprint
-        assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
-        assert isinstance(cons_req_as_footprint['Item_Code'], dict)
+        format_error_str = 'The consumable_footprint is not in the right format. ' \
+                           'See check_consumables_footprint_format.'
+        assert type(cons_req_as_footprint) is dict
+        assert 'Intervention_Package_Code' in cons_req_as_footprint, format_error_str
+        assert 'Item_Code' in cons_req_as_footprint, format_error_str
+        assert type(cons_req_as_footprint['Intervention_Package_Code']) is dict, format_error_str
+        assert type(cons_req_as_footprint['Item_Code']) is dict, format_error_str
 
         # Check that consumables being required are in the database
 
         # Check packages
         all_pkgs = self.df_mapping_pkg_code_to_intv_code.index.values
         for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
-            assert pkg_code in all_pkgs
-            assert pkg_code != -99
-            assert isinstance(pkg_quant, int)
-            assert pkg_quant > 0
+            assert pkg_code in all_pkgs, f'Intervention_Package_Code {pkg_code} not recognised'
+            assert pkg_code != -99, 'Intervention_Package_Code cannot be -99'
+            assert pkg_quant > 0, format_error_str
 
         # Check items
         all_items = pd.unique(self.df_mapping_pkg_code_to_intv_code['Item_Code'])
         for itm_code, itm_quant in cons_req_as_footprint['Item_Code'].items():
-            assert itm_code in all_items
-            # assert isinstance(itm_quant, int)
-            assert itm_quant > 0
+            assert itm_code in all_items, f'Item_Code {itm_code} not recognised'
+            assert itm_quant > 0, format_error_str
 
     def get_consumables_as_individual_items(self, cons_req_as_footprint):
         """

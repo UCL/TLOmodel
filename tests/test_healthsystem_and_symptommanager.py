@@ -164,12 +164,10 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
     # Check that at least some consumables requests fail due to lack of availability
-    all_req_granted = list()
-    for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
-        all_req_granted.append(all([response for response in line.values()]))
-    assert not all(all_req_granted)
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'])
 
-    # Check that some mockitis cured occured (though health system)
+    # Check that some mockitis cured occurred (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
 
 
@@ -436,9 +434,11 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     # read the results
     output = parse_log_file(sim.log_filepath)
 
-    # Do the checks for the consumables: all requests granted
-    for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
-        assert all([response for response in line.values()])
+    # Do the checks for the consumables: all requests granted and nothing in NotAvailable
+    assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_NotAvailable'] if v != '{}'])
+    assert 0 == len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_NotAvailable'] if v != '{}'])
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Item_Available'] if v != '{}'])
+    assert 0 < len([v for v in output['tlo.methods.healthsystem']['Consumables']['Package_Available'] if v != '{}'])
 
     # Check that some mockitis cured occured (though health system)
     assert any(sim.population.props['mi_status'] == 'P')
@@ -580,6 +580,11 @@ def test_use_of_helper_function_get_all_consumables():
     lookup.loc[item_code_not_available[1:3], 'Intervention_Pkg_Code'] = pkg_code_not_available[1]
     lookup.loc[[item_code_is_available[3], item_code_not_available[3]], 'Intervention_Pkg_Code'] = \
         pkg_code_not_available[2]
+
+    # Process consumables file (after the edits made above) and update availability ready for calling:
+    hs = sim.modules['HealthSystem']
+    hs.process_consumables_file()
+    hs.determine_availability_of_consumables_today()
 
     # Create a dummy HSI event:
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
