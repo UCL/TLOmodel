@@ -742,9 +742,14 @@ class Hiv(Module):
                 consumables["Items"] == "Adult First line 1A d4T-based", "Item_Code"
             ]
         )[0]
+        item_code_for_art2 = pd.unique(
+            consumables.loc[
+                consumables["Items"] == "Cotrimoxizole, 960mg pppy", "Item_Code"
+            ]
+        )[0]  # NB spelling error in consumables file "Cotrimoxizole"
         self.footprints_for_consumables_required['art_adult'] = {
             "Intervention_Package_Code": {},
-            "Item_Code": {item_code_for_art: 1}
+            "Item_Code": {item_code_for_art: 1, item_code_for_art2: 1}
         }
 
         # ART for children:
