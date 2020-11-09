@@ -818,3 +818,8 @@ def test_bed_days():
 
     hs.impose_beddays_footprint(hsi_bd)
 
+    # todo - check imposition works
+
+    # todo - check gating works
+
+
