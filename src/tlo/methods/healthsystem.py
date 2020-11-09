@@ -299,7 +299,7 @@ class HealthSystem(Module):
 
             # Correct formatted BEDDAYS_FOOTPRINT
             assert 'BEDDAYS_FOOTPRINT' in dir(hsi_event)
-            self.check_beddays_footrpint_format(hsi_event.beddays)
+            self.check_beddays_footrpint_format(hsi_event.BEDDAYS_FOOTPRINT)
 
             # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
             # (Integer specificying the facility level at which HSI_Event must occur)
@@ -1219,7 +1219,7 @@ class HSI_Event:
         # Defaults for the HSI information:
         self.TREATMENT_ID = ''
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ACCEPTED_FACILITY_LEVEL = None
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
 

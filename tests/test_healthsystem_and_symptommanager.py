@@ -742,3 +742,70 @@ def test_speeding_up_request_consumables():
     print(f"Elapsed time for 1000 X get_consumables_as_individual_items: {end - start}")
     # with looping through dict: elapsed time = 2.2378311157226562
     # with pandas manipulations: 16.766106843948364
+
+def test_bed_days():
+    """Check all the basic functionality about beddays footprints and capacity management by the healthsystem"""
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event with No Bed-days specified
+    class HSI_Dummy_NoBedDaysSpec(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = 1
+            self.ALERT_OTHER_DISEASES = []
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Create a dummy HSI with both-types of Bed Day specified
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = 1
+            self.ALERT_OTHER_DISEASES = []
+            self.BEDDAYS_FOOTPRINT = {'ICU': 5, 'NICU': 10}
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+
+    # Create simulation with the healthsystem and DummyModule
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date)
+    hs = sim.modules['HealthSystem']
+
+    # Check that defaulting worked and that the format checking works
+    hsi_nobd = HSI_Dummy_NoBedDaysSpec(module=sim.modules['DummyModule'], person_id=0)
+    hs.check_beddays_footrpint_format(hsi_nobd.BEDDAYS_FOOTPRINT)
+    hs.schedule_hsi_event(hsi_event=hsi_nobd, topen=sim.date, tclose=sim.date+pd.DateOffset(days=1), priority=0)
+
+    # Check that function to make footprints works as expected:
+    {'ICU': 0, 'NICU': 0} == hsi_nobd.make_beddays_footprint({})
+    {'ICU': 2, 'NICU': 0} == hsi_nobd.make_beddays_footprint({'ICU': 2})
+    {'ICU': 0, 'NICU': 2} == hsi_nobd.make_beddays_footprint({'NICU': 2})
+
+    # Check that can schedule an HSI with a bed-day footprint
+    hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
+    hs.check_beddays_footrpint_format(hsi_bd.BEDDAYS_FOOTPRINT)
+    hs.schedule_hsi_event(hsi_event=hsi_bd, topen=sim.date, tclose=sim.date+pd.DateOffset(days=1), priority=0)
