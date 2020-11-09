@@ -1818,6 +1818,15 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=prev_by_age_and_sex,
                     description='Prevalence of HIV split by age and sex')
 
+        # ------------------------------------ TESTING ------------------------------------
+
+        # proportion of adult population ever having HIV test
+        testing_by_sex = {}
+        for sex in ['F', 'M']:
+            n_tested = len(df.loc[(df.sex == sex) & (df.hv_number_tests > 0) & (df.age_years >= 15)])
+            n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
+            testing_by_sex[sex] = (n_tested / n_pop).to_dict()
+
         # ------------------------------------ TREATMENT ------------------------------------
         plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
         plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
@@ -1865,6 +1874,8 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='hiv_program_coverage',
                     description='Coverage of interventions for HIV among adult (15+) and children (0-14s)',
                     data={
+                        "prop_tested_male": testing_by_sex['M'],
+                        "prop_tested_female": testing_by_sex['F'],
                         "dx_adult": dx_adult,
                         "dx_childen": dx_children,
                         "art_coverage_adult": art_cov_adult,
