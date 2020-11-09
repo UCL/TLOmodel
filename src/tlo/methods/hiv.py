@@ -503,36 +503,9 @@ class Hiv(Module):
         hv_date_inf = pd.Series(self.sim.date - pd.to_timedelta(years_ago_inf, unit="y"))
         df.loc[infec, "hv_date_inf"] = hv_date_inf.clip(lower=df.date_of_birth)
 
-    def initialise_baseline_tested(self, population):
-        """ assign initial hiv testing levels, only for adults
-        """
-        df = population.props
-
-        # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.rng.random_sample(size=len(df))
-
-        # probability of baseline population ever testing for HIV
-        test_index_male = df.index[
-            (random_draw < self.parameters["testing_coverage_male"])
-            & df.is_alive
-            & (df.sex == "M")
-            & (df.age_years >= 15)
-            ]
-
-        test_index_female = df.index[
-            (random_draw < self.parameters["testing_coverage_female"])
-            & df.is_alive
-            & (df.sex == "F")
-            & (df.age_years >= 15)
-            ]
-
-        df.loc[test_index_male | test_index_female, "hv_number_tests"] = 1
-
-        # person assumed to be diagnosed if they have had a test and are currently HIV positive:
-        df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), "hv_diagnosed"] = True
-
     def initialise_baseline_art(self, population):
         """ assign initial art coverage levels
+        also assign hiv test properties if allocated ART
         """
         df = population.props
 
@@ -585,6 +558,57 @@ class Hiv(Module):
         # for logical consistency, ensure that all persons on ART have been tested and diagnosed
         df.loc[art_idx, "hv_number_tests"] = 1
         df.loc[art_idx, "hv_diagnosed"] = True
+
+    def initialise_baseline_tested(self, population):
+        """ assign initial hiv testing levels, only for adults
+        all who have been allocated ART will already have property hv_number_tests=1
+        use the hiv testing coverage levels to assign any remaining hiv tests
+        """
+        df = population.props
+
+        # get a list of random numbers between 0 and 1 for the whole population
+        random_draw = self.rng.random_sample(size=len(df))
+        test_index_male, test_index_female = [], []  # create empty lists
+
+        # check current testing coverage MALES
+        hiv_test_m = len(df[df.is_alive & (df.hv_number_tests > 0) & (df.sex == 'M') & (df.age_years >= 15)])
+        male_pop = len(df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)])
+        hiv_test_coverage_m = hiv_test_m / male_pop
+
+        hiv_test_deficit_m = self.parameters['testing_coverage_male'] - hiv_test_coverage_m
+
+        # if hiv_test_deficit_m is negative or 0, don't assign any further tests
+        if hiv_test_deficit_m > 0:
+            # assign more tests to fill testing coverage deficit
+            test_index_male = df.index[
+                (random_draw < hiv_test_deficit_m)
+                & df.is_alive
+                & (df.sex == 'M')
+                & (df.age_years >= 15)
+                ]
+
+        # check current testing coverage FEMALES
+        hiv_test_f = len(df[df.is_alive & (df.hv_number_tests > 0) & (df.sex == 'F') & (df.age_years >= 15)])
+        female_pop = len(df[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)])
+        hiv_test_coverage_f = hiv_test_f / female_pop
+
+        hiv_test_deficit_f = self.parameters['testing_coverage_female'] - hiv_test_coverage_f
+
+        # if hiv_test_deficit_f is negative or 0, don't assign any further tests
+        if hiv_test_deficit_f > 0:
+            # assign more tests to fill testing coverage deficit
+            test_index_female = df.index[
+                (random_draw < hiv_test_deficit_f)
+                & df.is_alive
+                & (df.sex == 'F')
+                & (df.age_years >= 15)
+                ]
+
+        # assign hiv tests to males and females
+        df.loc[test_index_male | test_index_female, 'hv_number_tests'] = 1
+
+        # person assumed to be diagnosed if they have had a test and are currently HIV positive:
+        df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), 'hv_diagnosed'] = True
 
     def initialise_simulation(self, sim):
         """
