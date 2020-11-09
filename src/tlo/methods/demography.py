@@ -202,12 +202,17 @@ class Demography(Module):
                   'mother_age': df.at[mother_id, 'age_years']}
         )
 
-    def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1)):
+    def calc_py_lived_in_last_year(self, delta=pd.DateOffset(years=1), **kwargs):
         """
         This is a helper method to compute the person-years that were lived in the previous year by age.
         It outputs a pd.DataFrame with the index being single year of age, 0 to 99.
         """
         df = self.sim.population.props
+
+        if len(kwargs) != 0:
+            cond = kwargs.get('arg')
+            mask = (df.is_alive & ~df[f'{cond}'])
+            df = df[mask]
 
         # get everyone who was alive during the previous year
         one_year_ago = self.sim.date - delta
