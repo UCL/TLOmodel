@@ -792,7 +792,7 @@ def test_bed_days():
         DummyModule()
     )
     sim.make_initial_population(n=100)
-    sim.simulate(end_date=start_date)
+    sim.end_date = start_date + pd.DateOffset(days=100)
     hs = sim.modules['HealthSystem']
 
     # Check that defaulting worked and that the format checking works
@@ -809,3 +809,12 @@ def test_bed_days():
     hsi_bd = HSI_Dummy(module=sim.modules['DummyModule'], person_id=0)
     hs.check_beddays_footrpint_format(hsi_bd.BEDDAYS_FOOTPRINT)
     hs.schedule_hsi_event(hsi_event=hsi_bd, topen=sim.date, tclose=sim.date+pd.DateOffset(days=1), priority=0)
+
+    # Check that footprint can be correctly recorded
+    # - store copy of the original tracker
+    hs.initialise_beddays_tracker()
+    import copy
+    orig = copy.deepcopy(hs.bed_tracker)
+
+    hs.impose_beddays_footprint(hsi_bd)
+

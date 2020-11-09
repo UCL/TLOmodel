@@ -40,6 +40,7 @@ class HealthSystem(Module):
             'Mapping between a district and all of the health facilities to which its \
                       population have access.',
         ),
+        'BedCapacity': Parameter(Types.DATA_FRAME, 'Bed-days capacity by facility'),
         'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
         'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
     }
@@ -92,10 +93,14 @@ class HealthSystem(Module):
             assert type(service_availability) is list
             self.service_availability = service_availability
 
-        # Check that the capabilities coefficident is correct
+        # Check that the capabilities coefficient is correct
         assert capabilities_coefficient >= 0
         assert type(capabilities_coefficient) is float
         self.capabilities_coefficient = capabilities_coefficient
+
+        # Define the types of bed that exist. The order give the sequences of bed that are used
+        # (e.g. ICU days occur first and then NICU days)
+        self.bed_types = ['ICU', 'NICU']
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -152,6 +157,11 @@ class HealthSystem(Module):
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
+
+        # Read in in-patient capacity
+        self.parameters['BedCapacity'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Bed_Capacity.csv'
+                                                     ).iloc[:, 1:].set_index('Facility_Name')
+        assert all([f"Beds_{bed_type}" in self.parameters['BedCapacity'].columns for bed_type in self.bed_types])
 
         # Read in ResourceFile_Consumables and then process it to create the data structures needed
         # NB. Modules can use this to look-up what consumables they need.
@@ -231,6 +241,9 @@ class HealthSystem(Module):
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
+
+        # Initialise the bed-days-tracker:
+        self.initialise_beddays_tracker()
 
     def on_birth(self, mother_id, child_id):
 
@@ -879,11 +892,9 @@ class HealthSystem(Module):
     def check_beddays_footrpint_format(self, beddays_footprint):
         """Check that the format of the beddays footprint is correct"""
         assert type(beddays_footprint) is dict
-        assert 2 == len(beddays_footprint)
-        assert 'ICU' in beddays_footprint
-        assert 'NICU' in beddays_footprint
+        assert len(self.bed_types) == len(beddays_footprint)
+        assert all([(bed_type in beddays_footprint) for bed_type in self.bed_types])
         assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
-
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
@@ -987,6 +998,59 @@ class HealthSystem(Module):
                     list_of_events.append((date, event))
 
         return list_of_events
+
+    def initialise_beddays_tracker(self):
+        """Initialise the bed days tracker.
+        Create a dataframe for each type of beds that give the total number of beds available in each facility (rows)
+        by the date during the simulation (columns).
+
+        The bed_tracker gives the number of beds available in each facility on each day. It is decremented by 1 for each
+        person occupying a bed for one day.
+
+        This assumes that bed capacity is held constant throughout the simulation; but it could be changed through
+        modifications here.
+
+        """
+        self.bed_tracker = dict()
+
+        for bed_type in self.bed_types:
+            df = pd.DataFrame(index=self.parameters['BedCapacity'].index,
+                              columns=pd.date_range(self.sim.start_date, self.sim.end_date, freq='D'),
+                              data=1.0)
+            df = df.mul(self.parameters['BedCapacity'][f'Beds_{bed_type}'], axis=0)
+            assert not df.isna().any().any()
+            self.bed_tracker[bed_type] = df
+
+    def impose_beddays_footprint(self, hsi_event):
+        """Cause to be reflected in the bed_tracker than an hsi_event is being run that will cause bed to be
+        occupied.
+        If multiple bed types are required, then it is assumed that these run in the sequence given in ```bed_types```.
+
+        """
+        tracker = self.bed_tracker
+        footprint = hsi_event.BEDDAYS_FOOTPRINT
+        start_allbeds = self.sim.date
+        end_allbeds = self.sim.date + pd.DateOffset(days=sum(footprint.values()) - 1)
+
+        fac = 'National Hospital'
+
+        start_this_bed = start_allbeds
+        for bed_type in self.bed_types:
+
+            end_this_bed = start_this_bed + pd.DateOffset(days=footprint[bed_type] - 1)
+
+            # print(f"{bed_type}: {start_this_bed}-{end_this_bed}")
+
+            # Remove one available bed from the tracker:
+            tracker[bed_type].loc[fac, start_this_bed:end_this_bed] -= 1
+
+            # get ready for next bed:
+            start_this_bed = end_this_bed + pd.DateOffset(days=1)
+
+        # check that dates work
+        assert (start_this_bed - pd.DateOffset(days=1)) == end_allbeds
+
+
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
