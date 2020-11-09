@@ -200,7 +200,6 @@ cov_over_time = cov_over_time.set_index('date')
 
 # Treatment Cascade ("90-90-90") Plot for Adults
 dx = cov_over_time['dx_adult']
-tested = cov_over_time['prop_tested_adult']
 art_among_dx = cov_over_time['art_coverage_adult'] / dx
 vs_among_art = cov_over_time['art_coverage_adult_VL_suppression']
 pd.concat({'diagnosed': dx,
@@ -214,10 +213,8 @@ plt.show()
 # Per capita testing rates - data from MoH quarterly reports
 make_plot(
     title_str="Per capita testing rates for adults (15+)",
-    model=cov_over_time["art_coverage_adult"] * 100,
-    data_mid=data["percent15plus_on_art"],
-    data_low=data["percent15plus_on_art_lower"],
-    data_high=data["percent15plus_on_art_upper"]
+    model=cov_over_time["prop_tested_adult"],
+    data_mid=data["adult_tests_per_capita"]
 )
 
 # Percent on ART
