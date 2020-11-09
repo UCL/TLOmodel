@@ -52,13 +52,13 @@ def check_configuration_of_properties(sim):
     df = sim.population.props
 
     # Those that have never had diarrhoea, should have not_applicable/null values for all the other properties:
-    assert (df.loc[~df['gi_ever_had_diarrhoea'], [
+    assert (df.loc[~df.gi_ever_had_diarrhoea & ~df.date_of_birth.isna(), [
         'gi_last_diarrhoea_pathogen',
         'gi_last_diarrhoea_type',
         'gi_last_diarrhoea_dehydration']
     ] == 'not_applicable').all().all()
 
-    assert pd.isnull(df.loc[~df['gi_ever_had_diarrhoea'], [
+    assert pd.isnull(df.loc[~df.date_of_birth.isna() & ~df['gi_ever_had_diarrhoea'], [
         'gi_last_diarrhoea_date_of_onset',
         'gi_last_diarrhoea_duration',
         'gi_last_diarrhoea_recovered_date',
@@ -205,19 +205,19 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     check_dtypes(sim)
     check_configuration_of_properties(sim)
 
-    df = sim.population.props
+    df_alive = sim.population.props.loc[sim.population.props.is_alive]
 
     # Check for zero-level of diarrhoea
-    assert 0 == df.gi_ever_had_diarrhoea.sum()
-    assert (df['gi_last_diarrhoea_pathogen'] == 'not_applicable').all()
-    assert (df['gi_last_diarrhoea_type'] == 'not_applicable').all()
-    assert (df['gi_last_diarrhoea_dehydration'] == 'not_applicable').all()
+    assert 0 == df_alive.gi_ever_had_diarrhoea.sum()
+    assert (df_alive['gi_last_diarrhoea_pathogen'] == 'not_applicable').all()
+    assert (df_alive['gi_last_diarrhoea_type'] == 'not_applicable').all()
+    assert (df_alive['gi_last_diarrhoea_dehydration'] == 'not_applicable').all()
 
     # Check for zero level of recovery
-    assert pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
+    assert pd.isnull(df_alive['gi_last_diarrhoea_recovered_date']).all()
 
     # Check for zero level of death
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
+    assert not df_alive.cause_of_death.loc[~df_alive.is_alive].str.startswith('Diarrhoea').any()
 
 
 @pytest.mark.group2

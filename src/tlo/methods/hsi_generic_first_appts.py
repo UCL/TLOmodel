@@ -80,15 +80,20 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
         age = df.at[person_id, "age_years"]
         # NOTES: this section is repeated from the malaria.HSI_Malaria_rdt
-        # requests for comsumables occur inside the HSI_treatment events
+        # requests for consumables occur inside the HSI_treatment events
         # perhaps requests also need to occur here in case alternative treatments need to be scheduled
 
         # make sure query consumables has the generic hsi as the module requesting
 
-        # Do HIV 'automatic' testing for everyone attending care
+        # Do HIV 'automatic' testing for everyone attending care:
+        #  - suppress the footprint (as it done as part of another appointment)
+        #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
         if 'Hiv' in self.sim.modules:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+                HSI_Hiv_TestAndRefer(person_id=person_id,
+                                     module=self.sim.modules['Hiv'],
+                                     suppress_footprint=True,
+                                     do_not_refer_if_neg=True),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0
