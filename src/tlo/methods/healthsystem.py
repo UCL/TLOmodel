@@ -203,7 +203,6 @@ class HealthSystem(Module):
             raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
         )
 
-
     def initialise_population(self, population):
         df = population.props
 
@@ -741,19 +740,13 @@ class HealthSystem(Module):
                 }
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # 0) Get information about the hsi_event
-        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-        the_treatment_id = hsi_event.TREATMENT_ID
-        the_person_id = hsi_event.target
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Determine availability of each item and package:
-        select_col = f'Available_Facility_Level_{the_facility_level}'
+        select_col = f'Available_Facility_Level_{hsi_event.ACCEPTED_FACILITY_LEVEL}'
         available = {
-            'Intervention_Package_Code': self.cons_available_today['Intervention_Package_Code']
-                .loc[cons_req_as_footprint['Intervention_Package_Code'].keys(), select_col].to_dict(),
-            'Item_Code': self.cons_available_today['Item_Code']
-                .loc[cons_req_as_footprint['Item_Code'].keys(), select_col].to_dict()
+            'Intervention_Package_Code': self.cons_available_today['Intervention_Package_Code'].loc[
+                cons_req_as_footprint['Intervention_Package_Code'].keys(), select_col].to_dict(),
+            'Item_Code': self.cons_available_today['Item_Code'].loc[
+                cons_req_as_footprint['Item_Code'].keys(), select_col].to_dict()
         }
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -761,6 +754,7 @@ class HealthSystem(Module):
         # Logging:
         if to_log:
             # Log Consumables that are provided and those not available
+            # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
             if len(cons_req_as_footprint['Item_Code']) > 0:
                 logger.info(key='Items_Available',
                             data=str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
@@ -978,8 +972,6 @@ class HealthSystem(Module):
                     list_of_events.append((date, event))
 
         return list_of_events
-
-
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):

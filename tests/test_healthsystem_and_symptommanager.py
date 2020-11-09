@@ -621,6 +621,7 @@ def test_use_of_helper_function_get_all_consumables():
     assert False is hsi_event.get_all_consumables(item_codes=item_code_not_available, pkg_codes=pkg_code_is_available)
     assert False is hsi_event.get_all_consumables(item_codes=item_code_is_available, pkg_codes=pkg_code_not_available)
 
+
 def test_speeding_up_request_consumables():
 
     class DummyModule(Module):
@@ -677,24 +678,24 @@ def test_speeding_up_request_consumables():
     # test running request_consumables
     _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event)
 
-    # # Check it all works with footprints with different configurations
-    # _ = hs.request_consumables(cons_req_as_footprint={
-    #     'Intervention_Package_Code': {},
-    #     'Item_Code': {}},
-    #     hsi_event=hsi_event
-    # )
-    #
-    # _ = hs.request_consumables(cons_req_as_footprint={
-    #     'Intervention_Package_Code': {1: 10},
-    #     'Item_Code': {}},
-    #     hsi_event=hsi_event
-    # )
-    #
-    # _ = hs.request_consumables(cons_req_as_footprint={
-    #     'Intervention_Package_Code': {},
-    #     'Item_Code': {1: 10}},
-    #     hsi_event=hsi_event
-    # )
+    # Check it all works with footprints with different configurations
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {},
+        'Item_Code': {}},
+        hsi_event=hsi_event
+    )
+
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {1: 10},
+        'Item_Code': {}},
+        hsi_event=hsi_event
+    )
+
+    _ = hs.request_consumables(cons_req_as_footprint={
+        'Intervention_Package_Code': {},
+        'Item_Code': {1: 10}},
+        hsi_event=hsi_event
+    )
 
     # Time it!
     import time
@@ -708,23 +709,20 @@ def test_speeding_up_request_consumables():
         _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event, to_log=False)
     end = time.time()
     print(f"Elapsed time for 1000 X request_consumables (no logging): {end - start}")
-                                                # with original code: elapsed time = 13.770344972610474
-                                                # first version edit: elapsed time = 5.978830099105835
-                                                # second version edit: elapsed time = 5.255127191543579
-                                                # third version edit: elapsed time = 20.793461084365845
-                                                # fourth version (with pre-computing): 1.0886831283569336
-                                                # fifth version (allowing asserts): 1.1119129657745361
-
+    # with original code: elapsed time = 13.770344972610474
+    # first version edit: elapsed time = 5.978830099105835
+    # second version edit: elapsed time = 5.255127191543579
+    # third version edit: elapsed time = 20.793461084365845
+    # fourth version (with pre-computing): 1.0886831283569336
+    # fifth version (allowing asserts): 1.1119129657745361
 
     # - with logging
     for i in range(1000):
         _ = hs.request_consumables(cons_req_as_footprint=cons_req_as_footprint, hsi_event=hsi_event, to_log=True)
     end = time.time()
     print(f"Elapsed time for 1000 X request_consumables (with logging): {end - start}")
-                                                # with original code: elapsed time = 13.770344972610474
-                                                # fifth version (allowing asserts): 2.5592801570892334
-
-
+    # with original code: elapsed time = 13.770344972610474
+    # fifth version (allowing asserts): 2.5592801570892334
 
     # check functionality of helper function getting consumables as individual items
     rtn = hs.get_consumables_as_individual_items(cons_req_as_footprint=cons_req_as_footprint)
@@ -737,5 +735,5 @@ def test_speeding_up_request_consumables():
         _ = hs.get_consumables_as_individual_items(cons_req_as_footprint=cons_req_as_footprint)
     end = time.time()
     print(f"Elapsed time for 1000 X get_consumables_as_individual_items: {end - start}")
-                                                # with looping through dict: elapsed time = 2.2378311157226562
-                                                # with pandas manipulations: 16.766106843948364
+    # with looping through dict: elapsed time = 2.2378311157226562
+    # with pandas manipulations: 16.766106843948364
