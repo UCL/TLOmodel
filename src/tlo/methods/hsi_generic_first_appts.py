@@ -11,8 +11,8 @@ from tlo.methods.bladder_cancer import (
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.labour import (
-    HSI_Labour_PresentsForSkilledBirthAttendanceInLabour,
-    HSI_Labour_ReceivesCareForPostpartumPeriod,
+    HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour,
+    HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour,
 )
 from tlo.methods.antenatal_care import (
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -366,7 +366,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             if person_id in labour_list:
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
                         & (mni[person_id]['sought_care_labour_phase'] == 'intrapartum'):
-                    event = HSI_Labour_PresentsForSkilledBirthAttendanceInLabour(
+                    event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
@@ -374,7 +374,7 @@ class HSI_GenericEmergencyFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEv
             # -----  COMPLICATION AFTER BIRTH  -----
                 if df.at[person_id, 'la_currently_in_labour'] & (mni[person_id]['sought_care_for_complication']) \
                         & (mni[person_id]['sought_care_labour_phase'] == 'postpartum'):
-                    event = HSI_Labour_ReceivesCareForPostpartumPeriod(
+                    event = HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(
                         module=self.sim.modules['Labour'], person_id=person_id,
                         facility_level_of_this_hsi=int(self.module.rng.choice([1, 2])))
                     health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)

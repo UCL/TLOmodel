@@ -10,6 +10,7 @@ from tlo.methods import demography
 from tlo.methods import Metadata
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.dxmanager import DxTest
+from tlo.util import BitsetHandler
 
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,9 @@ class PostnatalSupervisor(Module):
             Types.REAL, 'Treatment effect for neonatal sepsis'),
         'weekly_prob_postnatal_death': Parameter(
             Types.REAL, 'Weekly risk of postnatal death'),
+        'severity_late_infection_pn': Parameter(
+            Types.LIST, 'probability of mild infection, sepsis or severe sepsis in the later postnatal period'),
+
     }
 
     PROPERTIES = {
@@ -75,7 +79,11 @@ class PostnatalSupervisor(Module):
                                                           'sepsis'),
         'pn_sepsis_late_postpartum_treatment': Property(Types.BOOL, 'Whether this woman has received treatment for '
                                                                     'postpartum sepsis'),
-        'pn_vesicovaginal_fistula': Property(Types.BOOL, 'Whether this woman has developed an obstetric fistula '
+        'pn_maternal_pp_infection': Property(Types.INT, 'bitset column for infection'),
+        'pn_maternal_infection_severity': Property(Types.CATEGORICAL, 'severity of infection during in the '
+                                                                      'postnatal period',
+                                                categories=['none', 'mild', 'sepsis', 'severe_sepsis']),
+        'pn_obstetric_fistula': Property(Types.BOOL, 'Whether this woman has developed an obstetric fistula '
                                                          'following childbirth'),
         'pn_sepsis_late_neonatal': Property(Types.BOOL, 'Whether this neonate has developed late neonatal sepsis '
                                                         'following discharge'),
@@ -147,12 +155,16 @@ class PostnatalSupervisor(Module):
         df.loc[df.is_alive, 'pn_postpartum_haem_secondary_severity'] = 'none'
         df.loc[df.is_alive, 'pn_sepsis_late_postpartum'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_postpartum_treatment'] = False
-        df.loc[df.is_alive, 'pn_vesicovaginal_fistula'] = False
+        # df.loc[df.is_alive, 'pn_maternal_infection'] = 'none'
+        df.loc[df.is_alive, 'pn_maternal_infection_severity'] = 'none'
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal'] = False
         df.loc[df.is_alive, 'pn_sepsis_late_neonatal_treatment'] = False
         df.loc[df.is_alive, 'pn_anaemia_in_postpartum_period'] = False
         df.loc[df.is_alive, 'pn_obstetric_fistula'] = False
 
+        self.postpartum_infections_late = BitsetHandler(self.sim.population, 'pn_maternal_pp_infection',
+                                               ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
+                                                'other_maternal_infection'])
     def initialise_simulation(self, sim):
         sim.schedule_event(PostnatalSupervisorEvent(self),
                            sim.date + DateOffset(days=0))
@@ -196,6 +208,8 @@ class PostnatalSupervisor(Module):
         df.at[child_id, 'pn_postpartum_haem_secondary_severity'] = 'none'
         df.at[child_id, 'pn_sepsis_late_postpartum'] = False
         df.at[child_id, 'pn_sepsis_late_postpartum_treatment'] = False
+        # df.at[child_id, 'pn_maternal_infection'] = 'none'
+        df.at[child_id, 'pn_maternal_infection_severity'] = 'none'
         df.at[child_id, 'pn_obstetric_fistula'] = False
         df.at[child_id, 'pn_sepsis_late_neonatal'] = False
         df.at[child_id, 'pn_sepsis_late_neonatal_treatment'] = False
@@ -261,6 +275,14 @@ class PostnatalSupervisor(Module):
                                                       cause='postnatal death')
                 self.sim.schedule_event(death, self.sim.date)
 
+    def set_postpartum_infection(self, individual_id, infection):
+        lab_params= self.sim.modules['Labour'].parameters
+        df = self.sim.population.props
+
+        # TODO: is it ok to use same equations from labour (and assume theyre correct)
+        if lab_params['la_labour_equations'][f'{infection}_pp'].predict(
+            df.loc[[individual_id]])[individual_id] < self.rng.random_sample():
+            self.postpartum_infections_late.set(individual_id, infection)
 
     def maternal_postnatal_care_contact_intervention_bundle(self, individual_id, hsi_event):
         """This function is called by each of the postnatal care visits. Currently it the interventions include
@@ -417,11 +439,10 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[week_7_postnatal_women, 'la_is_postpartum'] = False
 
         df.loc[week_7_postnatal_women, 'ps_htn_disorders'] = 'none'
-        df.loc[week_7_postnatal_women, 'ps_gestational_htn'] = False
-        df.loc[week_7_postnatal_women, 'ps_mild_pre_eclamp'] = False
-        df.loc[week_7_postnatal_women, 'ps_severe_pre_eclamp'] = False
-        df.loc[week_7_postnatal_women, 'ps_gestational_htn'] = False
         df.loc[week_7_postnatal_women, 'ps_anaemia_in_pregnancy'] = 'none'
+        df.loc[week_7_postnatal_women, 'pn_maternal_infection_severity'] = 'none'
+        self.module.postpartum_infections_late.unset(week_7_postnatal_women,'endometritis', 'urinary_tract_inf',
+                                                     'skin_soft_tissue_inf', 'other_maternal_infection')
         # todo: unset deficiencies
 
 
@@ -440,6 +461,8 @@ class SecondaryPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin)
         assert df.at[individual_id, 'la_is_postpartum']
 
         if df.at[individual_id, 'is_alive']:
+            logger.debug(key='message', data=f'mother {individual_id} has developed secondary PPH')
+
             df.at[individual_id, 'pn_postpartum_haem_secondary'] = True
             self.module.postnatal_tracker['secondary_pph'] += 1
 
@@ -455,7 +478,7 @@ class SecondaryPostpartumHaemorrhageOnsetEvent(Event, IndividualScopeEventMixin)
                                     (self.sim.date + pd.Timedelta(days=4)))
 
 
-class LatePostpartumSepsisOnsetEvent(Event, IndividualScopeEventMixin):
+class LatePostpartumInfectionOnsetEvent(Event, IndividualScopeEventMixin):
     """This is LatePostpartumSepsisOnsetEvent. It is scheduled from the Labour module for women who will
     develop a postpartum sepsis during the postpartum period, after discharge. Currently this event makes changes to the
      dataframe and schedules the LatePostpartumDeathEvent. It is unfinished."""
@@ -465,17 +488,31 @@ class LatePostpartumSepsisOnsetEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
+        params = self.module.parameters
+        # todo: is having postpartum infection as two properties confusing
 
         assert df.at[individual_id, 'la_is_postpartum']
 
-        # todo mimic new sepsis modelling in labour!
-
         if df.at[individual_id, 'is_alive']:
-            df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
-            self.module.postnatal_tracker['postnatal_sepsis'] += 1
+            logger.debug(key='message', data=f'mother {individual_id} has developed maternal sepsis')
 
-            self.sim.schedule_event(LatePostpartumDeathEvent(self.module, individual_id, cause='sepsis'),
-                                    (self.sim.date + pd.Timedelta(days=4)))
+            for infection in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf', 'other_maternal_infection']:
+                self.module.set_postpartum_infection(individual_id, infection=infection)
+
+            if self.module.postpartum_infections_late.has_any(
+                [individual_id], 'endometritis', 'urinary_tract_inf','skin_soft_tissue_inf', 'other_maternal_infection',
+                first=True):
+
+                potential_severity = ['mild', 'sepsis', 'severe_sepsis']
+                df.at[individual_id, 'pn_maternal_infection_severity'] = \
+                    self.module.rng.choice(potential_severity, p=params['severity_late_infection_pn'])
+
+            # todo: disability
+                if df.at[individual_id, 'pn_maternal_infection_severity'] != 'mild':
+                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = True
+                    self.module.postnatal_tracker['postnatal_sepsis'] += 1
+                    self.sim.schedule_event(LatePostpartumDeathEvent(self.module, individual_id, cause='sepsis'),
+                                        (self.sim.date + pd.Timedelta(days=4)))
 
 
 class LateNeonatalSepsisOnsetEvent(Event, IndividualScopeEventMixin):
@@ -490,6 +527,8 @@ class LateNeonatalSepsisOnsetEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         if df.at[individual_id, 'is_alive']:
+            logger.debug(key='message', data=f'neonate {individual_id} has developed neonatal sepsis')
+
             df.at[individual_id, 'pn_sepsis_late_neonatal'] = True
             self.module.postnatal_tracker['late_neonatal_sepsis'] += 1
 
@@ -512,7 +551,8 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
 
         if df.at[individual_id, 'is_alive']:
-
+            logger.debug(key='message', data=f'mother {individual_id} has reached late postpartum death event')
+            print(individual_id, self.cause)
             if self.cause == 'pph':
                 assert df.at[individual_id, 'pn_postpartum_haem_secondary']
                 assert df.at[individual_id, 'pn_postpartum_haem_secondary_severity'] is not 'none'
@@ -534,7 +574,12 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     df.at[individual_id, 'pn_postpartum_haem_secondary_severity'] = 'none'
 
             if self.cause == 'sepsis':
-                assert df.at[individual_id, 'pn_sepsis_late_postpartum']
+            #    assert df.at[individual_id, 'pn_sepsis_late_postpartum']
+                print(df.at[individual_id,'pn_maternal_infection_severity'])
+                assert ((self.module.postpartum_infections_late.has_any(
+                    [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
+                    'other_maternal_infection', first=True)) and df.at[individual_id,
+                                                                       'pn_maternal_infection_severity'] != 'mild')
 
                 risk_of_death = params['pn_linear_equations']['postnatal_sepsis_death'].predict(df.loc[[
                     individual_id]])[individual_id]
@@ -549,8 +594,8 @@ class LatePostpartumDeathEvent(Event, IndividualScopeEventMixin):
                     self.module.postnatal_tracker['postnatal_death'] += 1
                     self.module.postnatal_tracker['sepsis_death'] += 1
 
-                else:
-                    df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
+            #    else:
+            #         df.at[individual_id, 'pn_sepsis_late_postpartum'] = False
 
             if self.cause == 'neonatal_sepsis':
                 assert df.at[individual_id, 'pn_sepsis_late_neonatal']

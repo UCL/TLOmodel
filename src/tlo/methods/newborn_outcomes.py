@@ -424,7 +424,7 @@ class NewbornOutcomes(Module):
         tetra_cycline_given = nci[person_id]['tetra_eye_d']
         # TODO: edit the LM equation for these variables so that catagorical ps_htn_disorders is used
         #
-        gestational_htn = df.at[mother_id, 'ps_gestational_htn']
+        #gestational_htn = df.at[mother_id, 'ps_gestational_htn']
         #mild_pre_eclampsia = df.at[mother_id, 'ps_htn_disorders'] == 'mild_pre_eclamp'
         #severe_pre_eclampsia = df.at[mother_id, 'ps_severe_pre_eclamp']
         steroid_status = mni[mother_id]['corticosteroids_given']
@@ -1062,7 +1062,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
                 # TODO: Discuss with Tara
 
                 # ----------------------------------- ARV PROPHYLAXIS ------------------------------------------------
-                # TODO: Discuss with Tara
+                # TODO: Discuss with Tara SEE MASTER NOTES (arvs, scheduling testing etc etc)
 
             # =================================  COMPLICATION RISKS ===================================================
             # Following the administration of prophylaxis we determine if this neonate has developed

@@ -804,21 +804,25 @@ class CareOfWomenDuringPregnancy(Module):
     def hiv_testing(self, hsi_event):
         """This function schedules HIV testing for women during ANC"""
         person_id = hsi_event.target
+        pass
 
         # todo: should the code for the screening process just live in this function or ok to schedule as additional
         #  HSI?
         # TODO: Also check with tara if treatment in pregnancy is the same (or does the HIV code already allow for
         #  this?)
-        if 'hiv' in self.sim.modules.keys():
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0
-                )
-        else:
-            logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
-                                               'testing will not happen in antenatal care')
+
+        # TODO: await for new HIV code in master for this to work properly
+
+    #    if 'hiv' in self.sim.modules.keys():
+    #        self.sim.modules['HealthSystem'].schedule_hsi_event(
+    #            HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
+    #            topen=self.sim.date,
+    #            tclose=None,
+    #            priority=0
+    #            )
+    #    else:
+    #        logger.warning(key='message', data='HIV module is not registered in this simulation run and therefore HIV '
+    #                                           'testing will not happen in antenatal care')
 
     def iptp_administration(self, hsi_event):
         """ This functions manages the administration of Intermittent preventative treatment for the prevention of

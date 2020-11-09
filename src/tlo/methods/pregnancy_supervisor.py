@@ -418,7 +418,6 @@ class PregnancySupervisor(Module):
 
         df.at[child_id, 'ps_gestational_age_in_weeks'] = 0
         df.at[child_id, 'ps_ectopic_pregnancy'] = False
-        df.at[child_id, 'ps_post_abortion_complications'] = False
         df.at[child_id, 'ps_multiple_pregnancy'] = False
         df.at[child_id, 'ps_anaemia_in_pregnancy'] = 'none'
         df.at[child_id, 'ps_will_attend_four_or_more_anc'] = False
