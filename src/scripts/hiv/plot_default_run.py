@@ -1,4 +1,4 @@
-"""Run a simulation with no HSI and plot the prevalence and incidence and program coverage trajectories"""
+"""Run a simulation with no HSI constraints and plot the prevalence and incidence and program coverage trajectories"""
 import datetime
 import pickle
 from pathlib import Path
@@ -200,6 +200,7 @@ cov_over_time = cov_over_time.set_index('date')
 
 # Treatment Cascade ("90-90-90") Plot for Adults
 dx = cov_over_time['dx_adult']
+tested = cov_over_time['prop_tested_adult']
 art_among_dx = cov_over_time['art_coverage_adult'] / dx
 vs_among_art = cov_over_time['art_coverage_adult_VL_suppression']
 pd.concat({'diagnosed': dx,
@@ -209,6 +210,15 @@ pd.concat({'diagnosed': dx,
 plt.title('ART Cascade for Adults (15+)')
 plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
 plt.show()
+
+# Per capita testing rates - data from MoH quarterly reports
+make_plot(
+    title_str="Per capita testing rates for adults (15+)",
+    model=cov_over_time["art_coverage_adult"] * 100,
+    data_mid=data["percent15plus_on_art"],
+    data_low=data["percent15plus_on_art_lower"],
+    data_high=data["percent15plus_on_art_upper"]
+)
 
 # Percent on ART
 make_plot(

@@ -83,6 +83,7 @@ class Hiv(Module):
                                         "negative HIV test result"),
         "hv_diagnosed": Property(Types.BOOL, "knows that they are hiv+: i.e. is hiv+ and tested as hiv+"),
         "hv_number_tests": Property(Types.INT, "number of hiv tests ever taken"),
+        "hv_last_test_date": Property(Types.DATE, "date of last hiv test"),
 
         # # --- Dates on which things have happened:
         "hv_date_inf": Property(Types.DATE, "Date infected with hiv"),
@@ -436,6 +437,7 @@ class Hiv(Module):
 
         # --- Dates on which things have happened
         df["hv_date_inf"] = pd.NaT
+        df["hv_last_test_date"] = pd.NaT
 
         # -- Temporary --
         df["tmp_breastfed"] = False
@@ -557,6 +559,7 @@ class Hiv(Module):
 
         # for logical consistency, ensure that all persons on ART have been tested and diagnosed
         df.loc[art_idx, "hv_number_tests"] = 1
+        df.loc[art_idx, "hv_last_test_date"] = self.sim.date
         df.loc[art_idx, "hv_diagnosed"] = True
 
     def initialise_baseline_tested(self, population):
@@ -606,6 +609,7 @@ class Hiv(Module):
 
         # assign hiv tests to males and females
         df.loc[test_index_male | test_index_female, 'hv_number_tests'] = 1
+        df.loc[test_index_male | test_index_female, 'hv_last_test_date'] = self.sim.date
 
         # person assumed to be diagnosed if they have had a test and are currently HIV positive:
         df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), 'hv_diagnosed'] = True
@@ -821,6 +825,7 @@ class Hiv(Module):
 
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
+        df.at[child_id, "hv_last_test_date"] = pd.NaT
 
         # -- Temporary
         df.at[child_id, "tmp_breastfed"] = True
@@ -1362,6 +1367,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # Update number of tests:
         df.at[person_id, 'hv_number_tests'] += 1
+        df.at[person_id, 'hv_last_test_date'] = self.sim.date
 
         if test_result is not None:
             # Offer services as needed:
@@ -1481,6 +1487,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self
         )
         person['hv_number_tests'] += 1
+        person['hv_last_test_date'] = self.sim.date
 
         # If test is positive, flag as diagnosed and refer to ART
         if test_result is True:
@@ -1548,6 +1555,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=self
             )
             df.at[person_id, 'hv_number_tests'] += 1
+            df.at[person_id, 'hv_last_test_date'] = self.sim.date
+
             if not test_result:
                 return self.make_appt_footprint({"Over5OPD": 1})
 
@@ -1820,12 +1829,19 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ TESTING ------------------------------------
 
-        # proportion of adult population ever having HIV test
+        # proportion of adult population tested in past year
+        n_tested = len(df.loc[df.is_alive & (df.hv_number_tests > 0) & (df.age_years >= 15) &
+                              df.hv_last_test_date > (now - DateOffset(months=self.repeat))])
+        n_pop = len(df.loc[df.is_alive & (df.age_years >= 15)])
+        tested = (n_tested / n_pop)
+
+        # proportion of adult population tested in past year by sex
         testing_by_sex = {}
         for sex in ['F', 'M']:
-            n_tested = len(df.loc[(df.sex == sex) & (df.hv_number_tests > 0) & (df.age_years >= 15)])
+            n_tested = len(df.loc[(df.sex == sex) & (df.hv_number_tests > 0) & (df.age_years >= 15) &
+                              df.hv_last_test_date > (now - DateOffset(months=self.repeat))])
             n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
-            testing_by_sex[sex] = (n_tested / n_pop).to_dict()
+            testing_by_sex[sex] = (n_tested / n_pop)
 
         # ------------------------------------ TREATMENT ------------------------------------
         plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
@@ -1874,8 +1890,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(key='hiv_program_coverage',
                     description='Coverage of interventions for HIV among adult (15+) and children (0-14s)',
                     data={
-                        "prop_tested_male": testing_by_sex['M'],
-                        "prop_tested_female": testing_by_sex['F'],
+                        "prop_tested_adult": tested,
+                        "prop_tested_adult_male": testing_by_sex['M'],
+                        "prop_tested_adult_female": testing_by_sex['F'],
                         "dx_adult": dx_adult,
                         "dx_childen": dx_children,
                         "art_coverage_adult": art_cov_adult,
