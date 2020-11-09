@@ -287,7 +287,8 @@ class HealthSystem(Module):
 
         else:
             # This is an individual-scoped HSI event.
-            # It must have APPT, CONS, ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
+            # It must have defined TREATMENT_ID, EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT, ACCEPTED_FACILITY_LEVELS
+            # and ALERT_OTHER_DISEASES.
 
             # Correctly formatted footprint
             assert 'TREATMENT_ID' in dir(hsi_event)
@@ -295,6 +296,10 @@ class HealthSystem(Module):
             # Correct formated EXPECTED_APPT_FOOTPRINT
             assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
             self.check_appt_footprint_format(hsi_event.EXPECTED_APPT_FOOTPRINT)
+
+            # Correct formatted BEDDAYS_FOOTPRINT
+            assert 'BEDDAYS_FOOTPRINT' in dir(hsi_event)
+            self.check_beddays_footrpint_format(hsi_event.beddays)
 
             # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
             # (Integer specificying the facility level at which HSI_Event must occur)
@@ -861,6 +866,25 @@ class HealthSystem(Module):
             "Intervention_Package_Code": pkgs
         }
 
+    def get_blank_beddays_footprint(self):
+        """
+        Helper function to generate a blank footprint for the bed-days required by an HSI
+        :return: a footprint of the correct format, specifying no bed days
+        """
+        return {
+            'ICU': 0,
+            'NICU': 0
+        }
+
+    def check_beddays_footrpint_format(self, beddays_footprint):
+        """Check that the format of the beddays footprint is correct"""
+        assert type(beddays_footprint) is dict
+        assert 2 == len(beddays_footprint)
+        assert 'ICU' in beddays_footprint
+        assert 'NICU' in beddays_footprint
+        assert all([((v >= 0) and (type(v) is int)) for v in beddays_footprint.values()])
+
+
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
         This will write to the log with a record that this HSI event has occured.
@@ -1191,6 +1215,14 @@ class HSI_Event:
         self.module = module
         self.sim = module.sim
         self.target = None  # Overwritten by the mixin
+
+        # Defaults for the HSI information:
+        self.TREATMENT_ID = ''
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ALERT_OTHER_DISEASES = []
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
@@ -1279,12 +1311,27 @@ class HSI_Event:
         footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
         # do checks
-        assert isinstance(dict_of_appts, dict)
+        assert type(dict_of_appts) is dict
         assert all([(k in footprint.keys()) for k in dict_of_appts.keys()])
-        assert all([isinstance(v, (float, int)) for v in dict_of_appts.values()])
+        assert all([type(v) in (float, int) for v in dict_of_appts.values()])
 
         # make footprint (defaulting to zero where a type of appointment is not specified)
         for k, v in dict_of_appts.items():
+            footprint[k] = v
+
+        return footprint
+
+    def make_beddays_footprint(self, dict_of_beddays):
+        # get blank footprint
+        footprint = self.sim.modules['HealthSystem'].get_blank_beddays_footprint()
+
+        # do checks
+        assert type(dict_of_beddays) is dict
+        assert all([(k in footprint.keys()) for k in dict_of_beddays.keys()])
+        assert all([type(v) in (float, int) for v in dict_of_beddays.values()])
+
+        # make footprint (defaulting to zero where a type of bed-days is not specified)
+        for k, v in dict_of_beddays.items():
             footprint[k] = v
 
         return footprint
@@ -1297,6 +1344,7 @@ class HSIEventWrapper(Event):
     be passed to the main simulation scheduler.
     When this event is run (by the simulation scheduler) it runs the HSI event with squeeze_factor=0.0
     """
+
     def __init__(self, hsi_event, *args, **kwargs):
         super().__init__(hsi_event.module, *args, **kwargs)
         self.hsi_event = hsi_event
