@@ -100,9 +100,6 @@ class HealthSystem(Module):
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
 
-        # Define the dataframe that determines the availability of consumables on a daily basis
-        self.cons_item_code_availability_today = pd.DataFrame()
-
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
@@ -231,6 +228,9 @@ class HealthSystem(Module):
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not (self.disable or self.disable_and_reject_all):
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
+
+        # Update consumables available today:
+        self.determine_availability_of_consumables_today()
 
     def on_birth(self, mother_id, child_id):
 
@@ -1233,7 +1233,7 @@ class HSI_Event:
     def get_all_consumables(self, item_codes=None, pkg_codes=None):
         """Helper function to allow for getting and checking of entire set of consumables.
         It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
-         are available. It avoids the use of consumables 'footprints'. cons_item_code_availability_today"""
+         are available. It avoids the use of consumables 'footprints'."""
 
         # Turn the input arguments into the usual consumables footprint:
 
