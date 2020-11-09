@@ -609,7 +609,8 @@ class Hiv(Module):
 
         # assign hiv tests to males and females
         df.loc[test_index_male | test_index_female, 'hv_number_tests'] = 1
-        df.loc[test_index_male | test_index_female, 'hv_last_test_date'] = self.sim.date
+        # dummy date for date last hiv test (before sim start), otherwise see big spike in testing 01-01-2010
+        df.loc[test_index_male | test_index_female, 'hv_last_test_date'] = self.sim.date - pd.DateOffset(years=3)
 
         # person assumed to be diagnosed if they have had a test and are currently HIV positive:
         df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), 'hv_diagnosed'] = True
@@ -1831,7 +1832,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # proportion of adult population tested in past year
         n_tested = len(df.loc[df.is_alive & (df.hv_number_tests > 0) & (df.age_years >= 15) &
-                              df.hv_last_test_date > (now - DateOffset(months=self.repeat))])
+                              (df.hv_last_test_date > (now - DateOffset(months=self.repeat)))])
         n_pop = len(df.loc[df.is_alive & (df.age_years >= 15)])
         tested = (n_tested / n_pop)
 
@@ -1839,7 +1840,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         testing_by_sex = {}
         for sex in ['F', 'M']:
             n_tested = len(df.loc[(df.sex == sex) & (df.hv_number_tests > 0) & (df.age_years >= 15) &
-                              df.hv_last_test_date > (now - DateOffset(months=self.repeat))])
+                                  (df.hv_last_test_date > (now - DateOffset(months=self.repeat)))])
             n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
             testing_by_sex[sex] = (n_tested / n_pop)
 
