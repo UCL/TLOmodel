@@ -688,7 +688,7 @@ def test_run_each_of_the_HSI():
 
     # update the availability of consumables, such that all are available:
     sim.modules['HealthSystem'].cons_item_code_availability_today = \
-        sim.modules['HealthSystem'].prob_unique_item_codes_available > 0.0
+        sim.modules['HealthSystem'].prob_item_codes_available > 0.0
 
     list_of_hsi = [
         'HSI_Diarrhoea_Treatment_PlanA',

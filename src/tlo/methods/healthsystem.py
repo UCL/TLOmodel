@@ -153,7 +153,6 @@ class HealthSystem(Module):
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
 
-
         # Read and process the consumables file
         self.read_and_process_consumables_file()
 
@@ -161,61 +160,48 @@ class HealthSystem(Module):
         """Helper function for reading-in and processing the consumables file
         * Read in the ResourceFile_Consumables
         * Creates ```parameters['Consumables']```
+        * Creates ```df_mapping_pkg_code_to_intv_code```
+        * Creates ```prob_item_code_available```
         * Creates ```parameters['Consumables_Cost_List]```
-        * Creates ```prob_unique_item_codes_available```
-
         """
         # Read in ResourceFile_Consumables
         raw = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv')
 
-        # Store ```self.parameters['Consumables']``` as a copy of the full file: provided to give legacy support
+        # -------------------------------------------------------------------------------------------------
+        # Store ```self.parameters['Consumables']``` as a copy of the full file
+        # Modules can use this to look-up what consumables they need.
         self.parameters['Consumables'] = raw
 
-        # Create a dict data structure that maps the item code that are included in each pkg code
-        x = raw[['Intervention_Pkg_Code', 'Item_Code']]
-        x['Item_Code'] = x['Item_Code'].astype(str)
-        y = x.groupby(
-            by='Intervention_Pkg_Code')['Item_Code'].apply(lambda x: ','.join(x))
-        y = y.drop(index=-99)
-        y = y.to_dict()
-        for i in y:
-            y[i] = list(map(int, y[i].split(',')))
-        self.dict_mapping_pkg_code_to_intv_code = y
-
-        # Create a pandas data-structure that maps pkg code (as index) to item code:
+        # -------------------------------------------------------------------------------------------------
+        # Create a pd.DataFrame that maps pkg code (as index) to item code:
+        # This is used to quickly look-up which items are required in each package
         df = raw[['Intervention_Pkg_Code', 'Item_Code', 'Expected_Units_Per_Case']]
         df = df.set_index('Intervention_Pkg_Code')
         self.df_mapping_pkg_code_to_intv_code = df
 
-        # Create multi-index to contain everything
-        # mm = raw.drop(columns=['Unnamed: 0', 'Intervention_Cat', 'Intervention_Pkg', 'Items'])
+        # -------------------------------------------------------------------------------------------------
+        # Make ```prob_item_codes_available```
+        # This is a data-frame that organise the probabilities of individual consumables items being available
+        # (by the item codes)
+        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(raw['Item_Code'])})
 
+        # merge in probabilities of being available
+        filter_col = [col for col in raw if col.startswith('Available_Facility_Level_')]
+        filter_col.append('Item_Code')
+        prob_item_codes_available = unique_item_codes.merge(
+            raw.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
+        )
+        assert len(prob_item_codes_available) == len(unique_item_codes)
 
+        # set the index as the Item_Code and save
+        self.prob_item_codes_available = prob_item_codes_available.set_index('Item_Code', drop=True)
 
+        # -------------------------------------------------------------------------------------------------
         # Create ```parameters['Consumables_Cost_List]```
         # This is a pd.Series, with index item_code, giving the cost of each item.
         self.parameters['Consumables_Cost_List'] = pd.Series(
             raw[['Item_Code', 'Unit_Cost']].drop_duplicates().set_index('Item_Code')['Unit_Cost']
         )
-
-        # Make ```prob_unique_item_codes_available```
-        # This is a data-frame that organise the probabilities of individual consumables items being available
-        # (by the unique item codes)
-        cons = raw
-        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(cons['Item_Code'])})
-
-        # merge in probabilities of being available
-        filter_col = [col for col in cons if col.startswith('Available_Facility_Level_')]
-        filter_col.append('Item_Code')
-        prob_unique_item_codes_available = unique_item_codes.merge(
-            cons.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
-        )
-        assert len(prob_unique_item_codes_available) == len(unique_item_codes)
-
-        # set the index as the Item_Code
-        prob_unique_item_codes_available.set_index('Item_Code', drop=True, inplace=True)
-
-        self.prob_unique_item_codes_available = prob_unique_item_codes_available
 
 
     def initialise_population(self, population):
@@ -593,7 +579,7 @@ class HealthSystem(Module):
             * the codes within each list must be unique and valid codes; quantities must be integer values >0
 
             e.g.
-            cons_footprint = {
+            cons_req_as_footprint = {
                         'Intervention_Package_Code': {my_pkg_code: 1},
                         'Item_Code': {my_item_code: 10, another_item_code: 1}
             }
@@ -737,89 +723,79 @@ class HealthSystem(Module):
         """
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # 0) Check the format of the cons_req_as_footprint:
+        # Check the format of the cons_req_as_footprint:
         self.check_consumables_footprint_format(cons_req_as_footprint)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # If the healthsystem module is disabled, return True for all consumables without checking or logging
         if self.disable:
-            # If the healthsystem module is disabled, return True for all consuambles
-            # without checking or logging.
-            packages_availability = dict()
-            if not cons_req_as_footprint['Intervention_Package_Code'] == {}:
-                for pkg_code in cons_req_as_footprint['Intervention_Package_Code'].keys():
-                    packages_availability[pkg_code] = True
+            return {
+                'Intervention_Package_Code': dict(zip(
+                    cons_req_as_footprint['Intervention_Package_Code'].keys(),
+                    [True] * len(cons_req_as_footprint['Intervention_Package_Code'].keys()
+                                 ))),
+                'Item_Code': dict(zip(
+                    cons_req_as_footprint['Item_Code'].keys(),
+                    [True] * len(cons_req_as_footprint['Item_Code'].keys()
+                                 )))
+                }
 
-            # Iterate through the individual items that were requested
-            items_availability = dict()
-            if not cons_req_as_footprint['Item_Code'] == {}:
-                for itm_code in cons_req_as_footprint['Item_Code'].keys():
-                    items_availability[itm_code] = True
-
-            # compile output
-            output = dict()
-            output['Intervention_Package_Code'] = packages_availability
-            output['Item_Code'] = items_availability
-            return output
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
         # 0) Get information about the hsi_event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
         the_treatment_id = hsi_event.TREATMENT_ID
         the_person_id = hsi_event.target
 
-        # 1) Unpack the consumables footprint into the individual items
-        items_req = self.get_consumables_as_individual_items(cons_req_as_footprint)
-
-        # 2) Determine if these are available at the relevant facility level
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Determine availability of each item and package:
         select_col = f'Available_Facility_Level_{the_facility_level}'
-        available = self.cons_item_code_availability_today.loc[items_req.index, select_col]
+        available = {
+            'Intervention_Package_Code': self.cons_available_today['Intervention_Package_Code']
+                .loc[cons_req_as_footprint['Intervention_Package_Code'].keys(), select_col].to_dict(),
+            'Item_Code': self.cons_available_today['Item_Code']
+                .loc[cons_req_as_footprint['Item_Code'].keys(), select_col].to_dict()
+        }
 
-        # 3) Enter the the log (logs each item)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        # Logging:
         if to_log:
-            # Log Consumables that are provided
-            log_consumables = dict()
-            log_consumables['TREATMENT_ID'] = the_treatment_id
-            log_consumables['Person_ID'] = the_person_id
-            log_consumables['Consumables'] = items_req[available].to_dict()
-            logger.info(key='Consumables',
-                        data=log_consumables,
-                        description="record of each consumable item that is provided")
+            # Log Consumables that are provided and those not available
+            if len(cons_req_as_footprint['Item_Code']) > 0:
+                logger.info(key='Items_Available',
+                            data=str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
+                                      if available['Item_Code'][k]}
+                                     ),
+                            description="record of each consumable item that is provided"
+                            )
+                logger.info(key='Items_NotAvailable',
+                            data=str({k: v for k, v in cons_req_as_footprint['Item_Code'].items()
+                                      if not available['Item_Code'][k]}
+                                     ),
+                            description="record of each consumable item that is requested but not available"
+                            )
 
-            # Log Consumables that are requested but not provided
-            log_consumables = dict()
-            log_consumables['TREATMENT_ID'] = the_treatment_id
-            log_consumables['Person_ID'] = the_person_id
-            log_consumables['Consumables'] = items_req[~available].to_dict()
-            logger.info(key='Consumables',
-                        data=log_consumables,
-                        description="record of each consumable item that is requested but not provided")
+            if len(cons_req_as_footprint['Intervention_Package_Code']) > 0:
+                logger.info(key='Packages_Available',
+                            data=str({k: v for k, v in cons_req_as_footprint['Intervention_Package_Code'].items()
+                                      if available['Intervention_Package_Code'][k]}
+                                     ),
+                            description="record of each consumable package that is provided"
+                            )
+                logger.info(key='Packages_NotAvailable',
+                            data=str({k: v for k, v in cons_req_as_footprint['Intervention_Package_Code'].items()
+                                      if not available['Intervention_Package_Code'][k]}
+                                     ),
+                            description="record of each consumable package that is requested but not available"
+                            )
 
-        # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
-        # Iterate through the packages that were requested
-        packages_availability = dict()
-        if not cons_req_as_footprint['Intervention_Package_Code'] == {}:
-            for package_code in cons_req_as_footprint['Intervention_Package_Code'].keys():
-                packages_availability[package_code] = available[
-                    self.df_mapping_pkg_code_to_intv_code.loc[[package_code], 'Item_Code'].values
-                ].all()
-
-        # Iterate through the individual items that were requested
-        items_availability = dict()
-        if not cons_req_as_footprint['Item_Code'] == {}:
-            for item_code in cons_req_as_footprint['Item_Code'].keys():
-                items_availability[item_code] = available[item_code]
-
-        # compile output
-        output = dict()
-        output['Intervention_Package_Code'] = packages_availability
-        output['Item_Code'] = items_availability
-
-        return output
+        # return the result of the check on availability
+        return available
 
     def check_consumables_footprint_format(self, cons_req_as_footprint):
         """
-        This function runs some check on the cons_footprint to ensure its in the right format
-        :param cons_footprint:
+        This function runs some check on the cons_req_as_footprint to ensure its in the right format
+        :param cons_req_as_footprint:
         :return:
         """
         # Format is as follows:
@@ -827,7 +803,7 @@ class HealthSystem(Module):
         #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
         #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
         #     e.g.
-        #     cons_footprint = {
+        #     cons_req_as_footprint = {
         #                 'Intervention_Package_Code': {my_pkg_code: 1},
         #                 'Item_Code': {my_item_code: 10}, {another_item_code: 1}
         #     }
@@ -835,8 +811,8 @@ class HealthSystem(Module):
         # check basic formatting
         assert 'Intervention_Package_Code' in cons_req_as_footprint
         assert 'Item_Code' in cons_req_as_footprint
-        # assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
-        # assert isinstance(cons_req_as_footprint['Item_Code'], dict)
+        assert isinstance(cons_req_as_footprint['Intervention_Package_Code'], dict)
+        assert isinstance(cons_req_as_footprint['Item_Code'], dict)
 
         # Check that consumables being required are in the database
 
@@ -845,7 +821,7 @@ class HealthSystem(Module):
         for pkg_code, pkg_quant in cons_req_as_footprint['Intervention_Package_Code'].items():
             assert pkg_code in all_pkgs
             assert pkg_code != -99
-            # assert isinstance(pkg_quant, int)
+            assert isinstance(pkg_quant, int)
             assert pkg_quant > 0
 
         # Check items
@@ -855,17 +831,15 @@ class HealthSystem(Module):
             # assert isinstance(itm_quant, int)
             assert itm_quant > 0
 
-    def get_consumables_as_individual_items(self, cons_footprint):
+    def get_consumables_as_individual_items(self, cons_req_as_footprint):
         """
-        This will look at the CONS_FOOTPRINT and return a pd.Series with the individual items (index)
-         and the quantity needed (value).
+        Helper function to decompose a ```cons_req_as_footprint``` and return a pd.Series with the individual items
+        (as the index) and the quantity needed (as the value).
         """
-
-        # todo - should all be done in a dict, or a list with repeats?
 
         # Unpack package_code (repeat package code if the package is required multiple times)
         pkgs = list()
-        for k, v in cons_footprint['Intervention_Package_Code'].items():
+        for k, v in cons_req_as_footprint['Intervention_Package_Code'].items():
             for i in range(v):
                 pkgs.append(k)
 
@@ -873,11 +847,34 @@ class HealthSystem(Module):
         x = self.df_mapping_pkg_code_to_intv_code.loc[pkgs].set_index('Item_Code')['Expected_Units_Per_Case']
 
         # Add in individual consumables in one go as a pd.Series
-        x = x.append(pd.Series(cons_footprint['Item_Code']))
+        x = x.append(pd.Series(cons_req_as_footprint['Item_Code']))
 
         # Return de-duplicated Series (index=Item_Code, value=quantity)
         return x.groupby(x.index).sum()
 
+    def determine_availability_of_consumables_today(self):
+        """Helper function to determine availability of all items and packages"""
+
+        # Determine the availability of the consumables *items* today
+        if not self.ignore_cons_constraints:
+            # Random draws: assume that availability of the same item is independent between different facility levels
+            random_draws = self.rng.rand(
+                len(self.prob_item_codes_available), len(self.prob_item_codes_available.columns)
+            )
+            items = self.prob_item_codes_available > random_draws
+        else:
+            # Make all true if ignoring consumables constraints
+            items = self.prob_item_codes_available > 0.0
+
+        # Determine the availability of packages today
+        # (packages are made-up of the individual items: if one item is not available, the package is not available)
+        pkgs = self.df_mapping_pkg_code_to_intv_code.merge(items, left_on='Item_Code', right_index=True)
+        pkgs = pkgs.groupby(level=0)[pkgs.columns[pkgs.columns.str.startswith('Available_Facility_Level')]].all()
+
+        self.cons_available_today = {
+            "Item_Code": items,
+            "Intervention_Package_Code": pkgs
+        }
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
@@ -983,6 +980,8 @@ class HealthSystem(Module):
         return list_of_events
 
 
+
+
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This is the HealthSystemScheduler. It is an event that occurs every day, inspects the calls on the healthsystem
@@ -1009,18 +1008,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         # 0) Determine the availability of consumables today based on their probabilities
-
-        # random draws: assume that availability of the same item is independent between different facility levels
-        random_draws = self.module.rng.rand(
-            len(self.module.prob_unique_item_codes_available), len(self.module.prob_unique_item_codes_available.columns)
-        )
-
-        # Determine the availability of the consumables today
-        if not self.module.ignore_cons_constraints:
-            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > random_draws
-        else:
-            # Make all true if ignoring consumables constraints
-            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > 0.0
+        self.module.determine_availability_of_consumables_today()
 
         # Create hold-over list (will become a heapq).
         # This will hold events that cannot occur today before they are added back to the heapq
