@@ -186,6 +186,20 @@ def get_class_output_string(classinfo):
                             "report_daly_values", "run", "did_not_run",
                             "SYMPTOMS", ]
 
+    # For classes which inherit from HSI_Event, we do not wish to generate docs
+    # for the functions which they inherit UNLESS they have produced a new
+    # docstring in the child class.
+    # Even if HSI_Event's function body is simply "pass", we add it to the
+    # list of inherited exclusions.
+    # TODO Should __init__ be in this list?
+    # NB Some of the following aren't implemented in HSI_Event, and must be
+    # implemented in its children; put these in hsi_event_not_implemented list.
+    hsi_event_inherited_exclusions = ["__init__", "not_available",
+                                      "post_apply_hook", "run",
+                                      "get_all_consumables",
+                                      "make_appt_footprint", ]
+    hsi_event_not_implemented = ["apply", "did_not_run", ]
+
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
