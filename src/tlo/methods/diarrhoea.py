@@ -1136,14 +1136,12 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # If cure should go ahead, check that it is after when the person has received a treatment during this episode
-        try:
-            assert (
-                (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-                (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
-                self.sim.date
-            )
-        except AssertionError:
-            print('eh?')
+        assert (
+            (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
+            (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
+            self.sim.date
+        )
+
 
         # Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date
