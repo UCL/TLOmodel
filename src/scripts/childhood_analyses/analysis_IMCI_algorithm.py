@@ -34,7 +34,7 @@ log_config = {
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        # "tlo.methods.pneumonia": logging.INFO,
+        "tlo.methods.pneumonia": logging.INFO,
         "tlo.methods.dx_algorithm_child": logging.INFO
     }
 }
@@ -44,8 +44,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-pop_size = 100
+end_date = Date(2012, 1, 1)
+pop_size = 50000
 
 # This creates the Simulation instance for this run. Because we've passed the `seed` and
 # `log_config` arguments, these will override the default behaviour.
@@ -54,8 +54,7 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 # Path to the resource files used by the disease and intervention methods
 resources = Path('./resources')
 
-# Path to save files and figures
-outputpath = Path("./outputs")
+outputpath = Path('./outputs')
 
 # Used to configure health system behaviour
 service_availability = ["*"]
@@ -141,7 +140,6 @@ plt.style.use('ggplot')
 
 # Pneumonia IMCI classification by health workers -------
 names = list(final_df.columns)
-print(names)
 ax1 = final_df.plot.bar(rot=0)
 # plt.figure(figsize=(9, 3))
 plt.title('Mean of health worker classifications vs IMCI gold standard of IMCI pneumonia ')

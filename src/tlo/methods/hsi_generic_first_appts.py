@@ -91,12 +91,12 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             logger.debug(key='message',
                          data='Run the ICMI algorithm for this child [dx_algorithm_child]')
 
-            # # This will direct to the DxAlgorithmChild where IMCI occurs at each facility level
-            # self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
+            # This will direct to the DxAlgorithmChild where IMCI occurs at each facility level
+            self.sim.modules['DxAlgorithmChild'].do_when_facility_level_1(person_id=person_id, hsi_event=self)
 
-            # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
-            if 'diarrhoea' in symptoms:
-                self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
+            # # If one of the symptoms is diarrhoea, then run the diarrhoea for a child routine:
+            # if 'diarrhoea' in symptoms:
+            #     self.sim.modules['DxAlgorithmChild'].do_when_diarrhoea(person_id=person_id, hsi_event=self)
 
     #         # Run DxAlgorithmChild to get additional diagnoses:
     #         diagnosis = self.sim.modules["DxAlgorithmChild"].diagnose(

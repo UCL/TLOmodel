@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import contraception, demography, diarrhoea, pneumonia, healthsystem, enhanced_lifestyle, \
+from tlo.methods import contraception, demography, pneumonia, healthsystem, enhanced_lifestyle, \
     symptommanager, healthburden, healthseekingbehaviour, dx_algorithm_child, labour, pregnancy_supervisor
 
 # %%
