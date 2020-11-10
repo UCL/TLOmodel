@@ -1130,8 +1130,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     or ((self.module.mode_appt_constraints == 2) and (squeeze_factor == 0.0))
                 )
 
-                # Mode 0: All HSI Event run
-                # Mode 1: All Run
+                # Mode 0: All HSI Event run, with no squeeze
+                # Mode 1: All Run With Squeeze
                 # Mode 2: Only if squeeze <1
 
                 if ok_to_run:

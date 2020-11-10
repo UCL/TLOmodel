@@ -49,7 +49,7 @@ For use in profiling.
 start_date = Date(2010, 1, 1)
 end_date = start_date + pd.DateOffset(years=2)
 
-popsize = 500_000
+popsize = 20_000
 
 # The resource files
 resourcefilepath = Path("./resources")
@@ -71,7 +71,8 @@ sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                              mode_appt_constraints=0
+                              mode_appt_constraints=0,
+                              store_hsi_events_that_have_run=True
                               ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                   spurious_symptoms=True),

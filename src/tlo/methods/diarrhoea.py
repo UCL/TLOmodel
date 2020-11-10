@@ -1,7 +1,7 @@
 """
 Childhood Diarrhoea Module
 Documentation: '04 - Methods Repository/Childhood Disease Methods.docx'
-
+gi_last_diarrhoea_treatment_date
 Overview
 =======
 Individuals are exposed to the risk of onset of diarrhoea. They can have diarrhoea caused by one pathogen at a time.
@@ -465,7 +465,7 @@ class Diarrhoea(Module):
                                                      'pd.NaT is never had an episode or if the last episode did not '
                                                      'receive treatment.'
                                                      'It is set to pd.NaT at onset of the episode and may be revised if'
-                                                     'tratment is received.'),
+                                                     'treatment is received.'),
         'gi_end_of_last_episode': Property(Types.DATE,
                                            'date on which the last episode of diarrhoea is resolved, (including '
                                            'allowing for the possibility that a cure is scheduled following onset). '
@@ -1136,12 +1136,12 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # If cure should go ahead, check that it is after when the person has received a treatment during this episode
-        assert (
-            (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-            (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
-            self.sim.date
-        )
-
+        # assert (
+        #     (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
+        #     (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
+        #     self.sim.date <=
+        #     (df.at[person_id, 'gi_end_of_last_episode'])
+        # )
 
         # Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date
