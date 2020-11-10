@@ -34,7 +34,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 10000
+popsize = 50000
 
 # Establish the simulation object
 log_config = {
@@ -48,7 +48,7 @@ log_config = {
 }
 
 # Register the appropriate modules
-sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
+sim = Simulation(start_date=start_date, seed=100, log_config=log_config)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              contraception.Contraception(resourcefilepath=resourcefilepath),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
