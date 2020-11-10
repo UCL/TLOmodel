@@ -730,11 +730,6 @@ def test_speeding_up_request_consumables():
     # fifth version (allowing asserts): 2.5592801570892334
 
     # check functionality of helper function getting consumables as individual items
-    rtn = hs.get_consumables_as_individual_items(cons_req_as_footprint=cons_req_as_footprint)
-    assert rtn.eq(
-        pd.read_csv('./resources/cons_as_individual_items.csv').set_index('Item_Code')['Quantity_Of_Item']
-    ).all()
-
     start = time.time()
     for i in range(1000):
         _ = hs.get_consumables_as_individual_items(cons_req_as_footprint=cons_req_as_footprint)
