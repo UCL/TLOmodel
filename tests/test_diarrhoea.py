@@ -208,16 +208,16 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     df = sim.population.props
 
     # Check for zero-level of diarrhoea
-    assert 0 == df.gi_ever_had_diarrhoea.sum()
-    assert (df['gi_last_diarrhoea_pathogen'] == 'not_applicable').all()
-    assert (df['gi_last_diarrhoea_type'] == 'not_applicable').all()
-    assert (df['gi_last_diarrhoea_dehydration'] == 'not_applicable').all()
+    assert 0 == df.loc[df.is_alive].gi_ever_had_diarrhoea.sum()
+    assert (df.loc[df.is_alive, 'gi_last_diarrhoea_pathogen'] == 'not_applicable').all()
+    assert (df.loc[df.is_alive, 'gi_last_diarrhoea_type'] == 'not_applicable').all()
+    assert (df.loc[df.is_alive, 'gi_last_diarrhoea_dehydration'] == 'not_applicable').all()
 
     # Check for zero level of recovery
-    assert pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
+    assert pd.isnull(df.loc[df.is_alive, 'gi_last_diarrhoea_recovered_date']).all()
 
     # Check for zero level of death
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
+    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('Diarrhoea').any()
 
 
 @pytest.mark.group2
