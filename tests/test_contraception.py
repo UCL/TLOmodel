@@ -42,9 +42,9 @@ def simulation():
 
 
 def __check_properties(df):
-    assert not ((df.sex == 'M') & (df.co_contraception != 'not_using')).any()
-    assert not ((df.age_years < 15) & (df.co_contraception != 'not_using')).any()
-    assert not ((df.sex == 'M') & df.is_pregnant).any()
+    assert not ((~df.date_of_birth.isna()) & (df.sex == 'M') & (df.co_contraception != 'not_using')).any()
+    assert not ((~df.date_of_birth.isna()) & (df.age_years < 15) & (df.co_contraception != 'not_using')).any()
+    assert not ((~df.date_of_birth.isna()) & (df.sex == 'M') & df.is_pregnant).any()
 
 
 def test_make_initial_population(simulation):
