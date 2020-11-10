@@ -481,9 +481,11 @@ def test_run_in_with_hs_disabled(tmpdir):
     output = parse_log_file(sim.log_filepath)
 
     # Do the checks
-    assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
+    assert 'HSI_Event' not in output['tlo.methods.healthsystem']  # HealthSystem no logging
+    assert 'Consumables' not in output['tlo.methods.healthsystem']  # HealthSystem no logging
+    assert 'Capacity' not in output['tlo.methods.healthsystem']  # HealthSystem no logging
     assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occurred (through HS)
-    assert any(sim.population.props['mi_status'] == 'P')  # At least some mockitis cure occured (though HS)
+    assert any(sim.population.props['mi_status'] == 'P')  # At least some mockitis cure have occurred (though HS)
 
     # Check for hsi_wrappers in the main event queue
     list_of_ev_name = [ev[2] for ev in sim.event_queue.queue]
