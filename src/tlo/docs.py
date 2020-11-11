@@ -174,15 +174,17 @@ def get_class_output_string(classinfo):
     is_child_of_HSI_Event = False
     is_child_of_Module = False
 
-    (base_str, bases) = extract_bases(class_name, class_obj, spacer)
+    (base_str, base_objects) = extract_bases(class_name, class_obj, spacer)
 
-    for mybase in bases:
+    hsi_event_base_object = None
+    module_base_object = None
+    for mybase in base_objects:
         if mybase.__name__ == "HSI_Event":
             is_child_of_HSI_Event = True
-            break;
-        if mybase.__name__ == "Module":
+            hsi_event_base_object = mybase
+        elif mybase.__name__ == "Module":
             is_child_of_Module = True
-            break;
+            module_base_object = mybase
 
     # The matching mybase is used below - so we need to make
     # sure it has only matched one of the criteria in the loop above:
@@ -218,7 +220,7 @@ def get_class_output_string(classinfo):
                                       "get_all_consumables",
                                       "make_appt_footprint", "never_ran",
                                       "did_not_run",]
-    hsi_event_not_implemented = ["apply",  ]  # Not needed ?
+    # hsi_event_not_implemented = ["apply",  ]  # Not needed ?
 
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
@@ -276,15 +278,35 @@ def get_class_output_string(classinfo):
             # str += mystr
 
             if is_child_of_HSI_Event and name in hsi_event_inherited_exclusions:
+                # Here, we assume mybase is an HSI_Event object.
+                # That assumes it can't be a Module object (see above).
+
+                if "HSI_Mockitis_PresentsForCareWithSevereSymptoms" in class_name and "did_not_run" in name:
+                    import pdb; pdb.set_trace()  # for some reason this isn't being hit.
+
                 # We only want to display a doc string if it's
                 # adding new information to the child class's
                 # version of the function. So we need to compare with
                 # HSI_Event's doc string for this function
+                # Example docstring in base class
+                # (e.g. for function did_not_run()):
+                # mybase.did_not_run.__doc__
+                # import pdb; pdb.set_trace()
+                base_data = inspect.getmembers(mybase)
                 #import pdb; pdb.set_trace()
-                base_doc = mybase.__name__.__doc__
-                child_doc = obj.__doc__
-                if base_doc == child_doc:  # Same docstring for both functions
+                #for some_tuple in base_data:
+                for some_name, some_obj in base_data:
+                    #(some_name, some_obj) = some_tuple
+                    if some_name == name:
+                        base_func_doc = some_obj.__doc__
+                        break
+                #base_func_doc = # mybase.__name__ is 'HSI_Event'
+                child_func_doc = obj.__doc__
+
+                if base_func_doc == child_func_doc:  # Same docstring for both functions
                     break  # continue  ## break?
+                if child_func_doc is None:  # Empty docstring in child function
+                    break
                 #import pdb; pdb.set_trace()
 
             str += f"{spacer}.. automethod:: {name}\n\n"
@@ -334,7 +356,7 @@ def extract_bases(class_name, class_obj, spacer=""):
         this_base_string = get_base_string(class_name, class_obj, b)
         if this_base_string is not (None or ""):
             parents.append(this_base_string)
-        if "object" not in str(b):
+        if ("object" not in str(b) and class_name not in str(b)):
             relevant_bases.append(b)
 
     if len(parents) > 0:
