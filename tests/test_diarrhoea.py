@@ -83,8 +83,13 @@ def check_configuration_of_properties(sim):
     # Those for whom the death date has past should be dead
     assert not df.loc[df.gi_ever_had_diarrhoea & (df['gi_last_diarrhoea_death_date'] < sim.date), 'is_alive'].any()
 
-    # Check that those in a current episode have symptoms but not others (among those who are alive)
-    has_symptoms = set(sim.modules['SymptomManager'].who_has('diarrhoea'))
+    # Check that those in a current episode have symptoms of diarrhoea [caused by the diarrhoea module]
+    #  but not others (among those who are alive)
+    has_symptoms_of_diar = set(sim.modules['SymptomManager'].who_has('diarrhoea'))
+    has_symptoms = set([p for p in has_symptoms_of_diar if
+                        'Diarrhoea' in sim.modules['SymptomManager'].causes_of(p, 'diarrhoea')
+                        ])
+
     in_current_episode_before_recovery = \
         df.is_alive & \
         df.gi_ever_had_diarrhoea & \
@@ -299,8 +304,8 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         # Run with everyone getting symptoms and seeking care and perfect treatment efficacy:
         # Check that everyone is cured and no deaths;
         start_date = Date(2010, 1, 1)
-        end_date = Date(2015, 12, 31)
-        popsize = 2000
+        end_date = Date(2010, 12, 31)  # reduce run time because with spurious_symptoms=True, things get slow
+        popsize = 4000
 
         sim = Simulation(start_date=start_date, seed=0)
 
