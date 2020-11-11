@@ -71,8 +71,7 @@ sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                              mode_appt_constraints=0,
-                              store_hsi_events_that_have_run=True
+                              mode_appt_constraints=0
                               ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
                                   spurious_symptoms=True),

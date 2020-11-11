@@ -919,6 +919,7 @@ class HealthSystem(Module):
                     description="record of each HSI event")
 
         if self.store_hsi_events_that_have_run:
+            log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
 
     def log_current_capabilities(self, current_capabilities, all_calls_today):

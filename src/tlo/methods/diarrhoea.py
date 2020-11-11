@@ -581,6 +581,7 @@ class Diarrhoea(Module):
         * Schedules the main polling event
         * Schedules the main logging event
         * Establishes the linear models and other data structures using the parameters that have been read-in
+        * Store the consumables that are required in each of the HSI
         """
 
         # Schedule the main polling event (to first occur immediately)
@@ -725,7 +726,10 @@ class Diarrhoea(Module):
                                                    .when('astrovirus', p['proportion_AWD_by_astrovirus'])
                                                    .when('tEPEC', p['proportion_AWD_by_tEPEC'])
         )
+
         # --------------------------------------------------------------------------------------------
+        # Look-up and store the consumables that are required for each HSI
+        self.look_up_consumables()
 
     def on_birth(self, mother_id, child_id):
         """
@@ -781,6 +785,121 @@ class Diarrhoea(Module):
         daly_values_by_pathogen = dummies_for_pathogen.mul(total_daly_values, axis=0)
 
         return daly_values_by_pathogen
+
+    def look_up_consumables(self):
+        """Look up and store the consumables used in each of the HSI."""
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code_ors = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
+                                'Intervention_Pkg_Code'])[0]
+
+        pkg_code_severe_diarrhea = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
+                                'Intervention_Pkg_Code'])[0]
+
+        item_code_zinc_tablet = \
+            pd.unique(
+                consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg',
+                                'Item_Code'])[0]
+
+        pkg_code_zinc_children_Under6Months = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 0-6 months',
+                                'Intervention_Pkg_Code'])[0]
+
+        pkg_code_zinc_children_6MonthsPlus = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 6-59 months',
+                                'Intervention_Pkg_Code'])[0]
+
+        pkg_code_antibioitcs = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for treatment of dysentery',
+                                'Intervention_Pkg_Code'])[0]
+
+        item_code_cipro = pd.unique(
+            consumables.loc[consumables['Items'] == 'Ciprofloxacin 250mg_100_CMST',
+                            'Item_Code'])[0]
+
+        # -- Assemble the footprints for each HSI:
+        self.consumables_used_in_hsi = dict()
+
+        # -- HSI_Diarrhoea_Treatment_PlanA
+        self.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanA'] = {
+            'Intervention_Package_Code': {pkg_code_ors: 1},
+            'Item_Code': {}
+        }
+
+        # -- HSI_Diarrhoea_Treatment_PlanB
+        self.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanB'] = {
+            'Intervention_Package_Code': {pkg_code_ors: 1},
+            'Item_Code': {}
+        }
+
+        # -- HSI_Diarrhoea_Treatment_PlanC
+        self.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanC'] = {
+            'Intervention_Package_Code': {pkg_code_severe_diarrhea: 1},
+            'Item_Code': {}
+        }
+
+        self.consumables_used_in_hsi['HSI_Diarrhoea_Severe_Persistent_Diarrhoea'] = {
+            'Intervention_Package_Code': {pkg_code_ors: 1},
+            'Item_Code': {}
+        }
+
+        self.consumables_used_in_hsi['HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_Under6mo'] = {
+            'Intervention_Package_Code': {pkg_code_zinc_children_Under6Months: 1},
+            'Item_Code': {item_code_zinc_tablet: 5}
+        }
+
+        self.consumables_used_in_hsi['HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_6moPlus'] = {
+            'Intervention_Package_Code': {pkg_code_zinc_children_6MonthsPlus: 1},
+            'Item_Code': {item_code_zinc_tablet: 5}
+        }
+
+        self.consumables_used_in_hsi['HSI_Diarrhoea_Dysentery'] = {
+            'Intervention_Package_Code': {pkg_code_antibioitcs: 1},
+            'Item_Code': {item_code_cipro: 6}
+        }
+
+    def do_treatment(self, person_id, prob_of_cure):
+        """Helper function that enacts the effects of a treatment to diarrhoea caused by a pathogen.
+        It will only do something if the diarrhoea is caused by a pathogen (this module). It will not allow any effect
+         if the diarrhoea is caused by another module.
+
+        * Log the treatment date
+        * Prevents this episode of diarrhoea from causing a death
+        * Schedules the cure event, at which symptoms are alleviated.
+
+        """
+        df = self.sim.population.props
+        person = df.loc[person_id]
+
+        if not person.is_alive:
+            return
+
+        # Do nothing if the diarrhoea has not been caused by a pathogen
+        if not (
+            (person.gi_last_diarrhoea_pathogen != 'not_applicable') &
+            (person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode)
+        ):
+            return
+
+        # Log that the treatment is provided:
+        df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
+
+        # Determine if the treatment is effective
+        if prob_of_cure > self.rng.rand():
+            # If treatment is successful: cancel death and schedule cure event
+            self.cancel_death_date(person_id)
+            self.sim.schedule_event(DiarrhoeaCureEvent(self, person_id),
+                                    self.sim.date + DateOffset(
+                                        days=self.parameters['days_between_treatment_and_cure']
+                                    ))
 
     def cancel_death_date(self, person_id):
         """
@@ -1136,12 +1255,12 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
             return
 
         # If cure should go ahead, check that it is after when the person has received a treatment during this episode
-        # assert (
-        #     (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-        #     (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
-        #     self.sim.date <=
-        #     (df.at[person_id, 'gi_end_of_last_episode'])
-        # )
+        assert (
+            (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
+            (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
+            self.sim.date <=
+            (df.at[person_id, 'gi_end_of_last_episode'])
+        )
 
         # Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery
         df.at[person_id, 'gi_last_diarrhoea_recovered_date'] = self.sim.date
@@ -1195,6 +1314,8 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
     """
     This is a treatment for uncomplicated diarrhoea administered at outpatient setting through IMCI.
     "PLAN A": for children no dehydration
+
+    NB. This will be called when a child presents with Diarrhoea that is caused by another module/Symptom Manager.
     """
 
     def __init__(self, module, person_id):
@@ -1211,41 +1332,31 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug', data='Provide Treatment Plan A for uncomplicated Diarrhoea')
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
-        df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
 
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
         # Get consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
-                                'Intervention_Pkg_Code'])[0]
+        cons_footprint = self.module.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanA']
         # give the mother 2 packets of ORS
         # give zinc (2 mo up to 5 years) - <6 mo 1/2 tablet (10mg) for 10 days, >6 mo 1 tab (20mg) for 10 days
         # follow up in 5 days if not improving
         # continue feeding
 
-        the_consumables_needed = {
-            'Intervention_Package_Code': {pkg_code: 1},
-            'Item_Code': {}
-        }
+        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
+        cons_available = all(
+            rtn_from_health_system['Intervention_Package_Code'].values()
+        ) and all(
+            rtn_from_health_system['Item_Code'].values()
+        )
+        # todo use self.get_all_consumables when this is updated in master
 
-        # Request the treatment
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
-
-        if is_cons_available['Intervention_Package_Code'][pkg_code]:
-            if (
-                self.module.rng.rand() < self.module.parameters['prob_of_cure_given_Treatment_PlanA']
-            ):
-                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
-                self.module.cancel_death_date(person_id)
-                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                        self.sim.date + DateOffset(
-                                            days=self.module.parameters['days_between_treatment_and_cure']
-                                        ))
+        if cons_available:
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters['prob_of_cure_given_Treatment_PlanA']
+            )
 
 
 class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
@@ -1277,33 +1388,22 @@ class HSI_Diarrhoea_Treatment_PlanB(HSI_Event, IndividualScopeEventMixin):
             return
 
         # Get consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
-                                'Intervention_Pkg_Code'])[0]
-        # Give ORS for the first 4 hours and reassess.
+        cons_footprint = self.module.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanB']
+        # Give ORS for the first 4 hours and reassess. todo - this is not happening curently
 
-        the_consumables_needed = {
-            'Intervention_Package_Code': {pkg_code: 1},
-            'Item_Code': {}
-        }
+        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
+        cons_available = all(
+            rtn_from_health_system['Intervention_Package_Code'].values()
+        ) and all(
+            rtn_from_health_system['Item_Code'].values()
+        )
+        # todo use self.get_all_consumables when this is updated in master
 
-        # Request the treatment
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
-
-        if is_cons_available['Intervention_Package_Code'][pkg_code]:
-            logger.debug(key='debug',
-                         data=f'HSI_Diarrhoea_Dysentery: uncomplicated diarrhoea treatment for child {person_id}')
-            if (
-                self.module.rng.rand() < self.module.parameters['prob_of_cure_given_Treatment_PlanB']
-            ):
-                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
-                self.module.cancel_death_date(person_id)
-                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                        self.sim.date + DateOffset(
-                                            days=self.module.parameters['days_between_treatment_and_cure']))
+        if cons_available:
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters['prob_of_cure_given_Treatment_PlanB']
+            )
 
 
 class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
@@ -1335,34 +1435,22 @@ class HSI_Diarrhoea_Treatment_PlanC(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Get consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
-                            'Intervention_Pkg_Code'])[0]
+        cons_footprint = self.module.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanC']
 
-        the_consumables_needed = {
-            'Intervention_Package_Code': {pkg_code: 1},
-            'Item_Code': {}
-        }
+        # Request the treatment
+        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
+        cons_available = all(
+            rtn_from_health_system['Intervention_Package_Code'].values()
+        ) and all(
+            rtn_from_health_system['Item_Code'].values()
+        )
+        # todo use self.get_all_consumables when this is updated in master
 
-        # Outcome of the request for treatment
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_consumables_needed)
-
-        if is_cons_available['Intervention_Package_Code'][pkg_code]:
-            logger.debug(
-                key='debug',
-                data=f'HSI_Diarrhoea_Dysentery: giving dysentery treatment for child {person_id}')
-            if (
-                self.module.rng.rand() < self.module.parameters['prob_of_cure_given_Treatment_PlanC']
-            ):
-                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
-                self.module.cancel_death_date(person_id)
-                # schedule cure date
-                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                        self.sim.date + DateOffset(
-                                            days=self.module.parameters['days_between_treatment_and_cure']))
+        if cons_available:
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters['prob_of_cure_given_Treatment_PlanC']
+            )
 
 
 class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
@@ -1385,40 +1473,30 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
 
-        df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
 
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
-        # Get consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
-                                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': {pkg_code: 1},
-            'Item_Code': {}
-        }
+        # Get consumables
         # if bloody stool and fever in persistent diarroea - give Nalidixic Acid 50mg/kg divided in 4 doses per day for
         # 5 days if malnourished give cotrimoxazole 24mg/kg every 12 hours for 5 days and supplemental feeding and
         # supplements
+        cons_footprint = self.module.consumables_used_in_hsi['HSI_Diarrhoea_Severe_Persistent_Diarrhoea']
 
-        # Request the treatment
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint)
+        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
+        cons_available = all(
+            rtn_from_health_system['Intervention_Package_Code'].values()
+        ) and all(
+            rtn_from_health_system['Item_Code'].values()
+        )
+        # todo use self.get_all_consumables when this is updated in master
 
-        if is_cons_available['Intervention_Package_Code'][pkg_code]:
-            if (
-                self.module.rng.rand() < self.module.parameters[
-                    'prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea']
-            ):
-                self.module.cancel_death_date(person_id)
-                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
-                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                        self.sim.date + DateOffset(
-                                            days=self.module.parameters['days_between_treatment_and_cure']))
+        if cons_available:
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea']
+            )
 
 
 class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventMixin):
@@ -1443,58 +1521,32 @@ class HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEv
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
 
-        df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
 
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
-        # Get consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        if person.age_exact_years < 0.5:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_Under6mo']
+        else:
+            cons_footprint = self.module.consumables_used_in_hsi[
+                'HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_6moPlus']
 
-        if df.at[person_id, 'age_exact_years'] <= 0.5:
-            pkg_code = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 0-6 months',
-                                'Intervention_Pkg_Code'])[0]
-            item_code = pd.unique(
-                consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg', 'Item_Code'])[0]
-            the_consumables_needed = {
-                'Intervention_Package_Code': {pkg_code: 1},
-                'Item_Code': {item_code: 5}
-            }
-            # Request the treatment
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_consumables_needed)
-            if is_cons_available['Intervention_Package_Code'][pkg_code]:
-                if (
-                    self.module.rng.rand() < self.module.parameters[
-                        'prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
-                ):
-                    self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                            self.sim.date + DateOffset(
-                                                days=self.module.parameters['days_between_treatment_and_cure']))
+        # Request the treatment
+        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
+        cons_available = all(
+            rtn_from_health_system['Intervention_Package_Code'].values()
+        ) and all(
+            rtn_from_health_system['Item_Code'].values()
+        )
+        # todo use self.get_all_consumables when this is updated in master
 
-        elif df.at[person_id, 'age_exact_years'] <= 5.0:
-            pkg_code = pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 6-59 months',
-                                'Intervention_Pkg_Code'])[0]
-            item_code = pd.unique(consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg', 'Item_Code'])[0]
-            the_consumables = {
-                'Intervention_Package_Code': {pkg_code: 1},
-                'Item_Code': {item_code: 5}
-            }
-            # Request the treatment
-            is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_consumables)
-            if is_cons_available['Intervention_Package_Code'][pkg_code]:
-                if (
-                    self.module.rng.rand() < self.module.parameters[
-                        'prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
-                ):
-                    self.module.cancel_death_date(person_id)
-                    df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
-                    self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                            self.sim.date + DateOffset(
-                                                days=self.module.parameters['days_between_treatment_and_cure']))
+        if cons_available:
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea']
+            )
 
 
 class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
@@ -1515,42 +1567,28 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
 
-        df = self.sim.population.props
+        person = self.sim.population.props.loc[person_id]
 
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
-        # Get consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for treatment of dysentery',
-                                'Intervention_Pkg_Code'])[0]
-        item_code_cipro = pd.unique(
-            consumables.loc[consumables['Items'] == 'Ciprofloxacin 250mg_100_CMST', 'Item_Code'])[0]
+        cons_footprint = self.module.consumables_used_in_hsi['HSI_Diarrhoea_Dysentery']
 
+        # Get consumables required
         # <6 mo - 250mg 1/2 tab x2 daily for 3 days
         # >6 mo upto 5 yo - 250mg 1 tab x2 daily for 3 days
         # follow up in 3 days # todo - there are not follow-up events currently
 
-        the_cons_footprint = {
-            'Intervention_Package_Code': {pkg_code: 1},
-            'Item_Code': {item_code_cipro: 6}
-        }
+        rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, cons_footprint)
+        cons_available = all(
+            rtn_from_health_system['Intervention_Package_Code'].values()
+        ) and all(
+            rtn_from_health_system['Item_Code'].values()
+        )
+        # todo use self.get_all_consumables when this is updated in master
 
-        # Request the treatment
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint)
-
-        if is_cons_available['Intervention_Package_Code'][pkg_code]:
-            logger.debug(
-                key='debug',
-                data=f'HSI_Diarrhoea_Dysentery: giving dysentery treatment for child {person_id}')
-            if (
-                self.module.rng.rand() < self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Dysentery']
-            ):
-                self.module.cancel_death_date(person_id)
-                df.at[person_id, 'gi_last_diarrhoea_treatment_date'] = self.sim.date
-                self.sim.schedule_event(DiarrhoeaCureEvent(self.module, person_id),
-                                        self.sim.date + DateOffset(
-                                            days=self.module.parameters['days_between_treatment_and_cure']))
+        if cons_available:
+            self.module.do_treatment(
+                person_id=person_id,
+                prob_of_cure=self.module.parameters['prob_of_cure_given_HSI_Diarrhoea_Dysentery']
+            )
