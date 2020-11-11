@@ -171,8 +171,26 @@ def get_class_output_string(classinfo):
 
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
+    is_child_of_HSI_Event = False
+    is_child_of_Module = False
 
-    str += extract_bases(class_name, class_obj, spacer)
+    (base_str, bases) = extract_bases(class_name, class_obj, spacer)
+
+    for mybase in bases:
+        if mybase.__name__ == "HSI_Event":
+            is_child_of_HSI_Event = True
+            break;
+        if mybase.__name__ == "Module":
+            is_child_of_Module = True
+            break;
+
+    # The matching mybase is used below - so we need to make
+    # sure it has only matched one of the criteria in the loop above:
+    if is_child_of_Module and is_child_of_HSI_Event:
+        # I don't think this will ever happen, but if it does...
+        import pdb; pdb.set_trace()
+
+    str += base_str
     str += "\n\n"
 
     # Asif says we should probably not exclude __init__ in the following,
@@ -180,11 +198,12 @@ def get_class_output_string(classinfo):
     general_exclusions = ["__class__", "__dict__", "__module__",
                           "__slots__", "__weakref__", ]
 
-    inherited_exclusions = ["initialise_population", "initialise_simulation",
-                            "on_birth", "read_parameters", "apply",
-                            "post_apply_hook", "on_hsi_alert",
-                            "report_daly_values", "run", "did_not_run",
-                            "SYMPTOMS", ]
+    module_inherited_exclusions = ["initialise_population",
+                                   "initialise_simulation",
+                                   "on_birth", "read_parameters", "apply",
+                                   "post_apply_hook", "on_hsi_alert",
+                                   "report_daly_values", "run", "did_not_run",
+                                   "SYMPTOMS", ]
 
     # For classes which inherit from HSI_Event, we do not wish to generate docs
     # for the functions which they inherit UNLESS they have produced a new
@@ -197,8 +216,9 @@ def get_class_output_string(classinfo):
     hsi_event_inherited_exclusions = ["__init__", "not_available",
                                       "post_apply_hook", "run",
                                       "get_all_consumables",
-                                      "make_appt_footprint", ]
-    hsi_event_not_implemented = ["apply", "did_not_run", ]
+                                      "make_appt_footprint", "never_ran",
+                                      "did_not_run",]
+    hsi_event_not_implemented = ["apply",  ]  # Not needed ?
 
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
@@ -212,13 +232,18 @@ def get_class_output_string(classinfo):
         # __delattr__ = <slot wrapper '__delattr__' of 'object' objects>
         # Skip over things inherited from object class or Module class
         object_description = f"{obj}"
-        if ("of 'object' objects" in object_description
+
+        #if "HSI_Event" in object_description:
+        #    import pdb; pdb.set_trace()
+
+        if (is_child_of_Module and
+            ("of 'object' objects" in object_description
                 or "built-in method" in object_description
                 or "function Module." in object_description
                 or "of 'Module' objects" in object_description
                 or name in general_exclusions
-                or name in inherited_exclusions
-                or object_description == 'None'):
+                or name in module_inherited_exclusions
+                or object_description == 'None')):
             continue
 
         # if name == "__doc__" and obj is not None:
@@ -249,6 +274,19 @@ def get_class_output_string(classinfo):
             #    if the_name == "__doc__":
             #        mystr += f"\n\n{the_object} \n\n"
             # str += mystr
+
+            if is_child_of_HSI_Event and name in hsi_event_inherited_exclusions:
+                # We only want to display a doc string if it's
+                # adding new information to the child class's
+                # version of the function. So we need to compare with
+                # HSI_Event's doc string for this function
+                #import pdb; pdb.set_trace()
+                base_doc = mybase.__name__.__doc__
+                child_doc = obj.__doc__
+                if base_doc == child_doc:  # Same docstring for both functions
+                    break  # continue  ## break?
+                #import pdb; pdb.set_trace()
+
             str += f"{spacer}.. automethod:: {name}\n\n"
             continue
         #    if "population" in class_name:
@@ -274,8 +312,8 @@ def extract_bases(class_name, class_obj, spacer=""):
                        bases
     :param class_obj: object with information about this class
     :param spacer: string to use as whitespace padding.
-    :return: string of base(s) for this class (if any), with links to their
-             docs.
+    :return: Tuple with 1. string of base(s) for this class (if any), with links to their
+             docs. 2. the list of base class objects
     '''
     # This next line gets the base classes including "object" class,
     # and also the class_name class itself:
@@ -288,6 +326,7 @@ def extract_bases(class_name, class_obj, spacer=""):
     # print(f"classtree = {classtree}")
 
     parents = []
+    relevant_bases = []
 
     for b in bases:
         # Example of this_base_string:
@@ -295,6 +334,8 @@ def extract_bases(class_name, class_obj, spacer=""):
         this_base_string = get_base_string(class_name, class_obj, b)
         if this_base_string is not (None or ""):
             parents.append(this_base_string)
+        if "object" not in str(b):
+            relevant_bases.append(b)
 
     if len(parents) > 0:
         out = f"{spacer}Bases: {', '.join(parents)}\n"
@@ -302,7 +343,7 @@ def extract_bases(class_name, class_obj, spacer=""):
         out = ""
 
     # print(f"DEBUG: extract_bases: str = {str}")
-    return out
+    return (out, relevant_bases)
 
 
 def get_base_string(class_name, class_obj, base_obj):
