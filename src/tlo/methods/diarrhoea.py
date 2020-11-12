@@ -492,6 +492,8 @@ class Diarrhoea(Module):
         # dict to hold the DALY weights
         self.daly_wts = dict()
 
+        self.consumables_used_in_hsi = dict()
+
         # dict to hold counters for the number of episodes of diarrhoea by pathogen-type and age-group
         # (0yrs, 1yrs, 2-4yrs)
         blank_counter = dict(zip(self.pathogens, [list() for _ in self.pathogens]))
@@ -789,82 +791,42 @@ class Diarrhoea(Module):
     def look_up_consumables(self):
         """Look up and store the consumables used in each of the HSI."""
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        def get_code(package=None, item=None):
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            if package is not None:
+                condition = consumables['Intervention_Pkg'] == package
+                column = 'Intervention_Pkg_Code'
+            else:
+                condition = consumables['Items'] == item
+                column = 'Item_Code'
+            return pd.unique(consumables.loc[condition, column])[0]
 
-        pkg_code_ors = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'ORS',
-                                'Intervention_Pkg_Code'])[0]
+        def add_consumable(_event, _package, _item):
+            self.consumables_used_in_hsi[_event] = {
+                'Intervention_Package_Code': _package,
+                'Item_Code': _item
+            }
 
-        pkg_code_severe_diarrhea = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Treatment of severe diarrhea',
-                                'Intervention_Pkg_Code'])[0]
-
-        item_code_zinc_tablet = \
-            pd.unique(
-                consumables.loc[consumables['Items'] == 'Zinc, tablet, 20 mg',
-                                'Item_Code'])[0]
-
-        pkg_code_zinc_children_Under6Months = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 0-6 months',
-                                'Intervention_Pkg_Code'])[0]
-
-        pkg_code_zinc_children_6MonthsPlus = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Zinc for Children 6-59 months',
-                                'Intervention_Pkg_Code'])[0]
-
-        pkg_code_antibioitcs = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Antibiotics for treatment of dysentery',
-                                'Intervention_Pkg_Code'])[0]
-
-        item_code_cipro = pd.unique(
-            consumables.loc[consumables['Items'] == 'Ciprofloxacin 250mg_100_CMST',
-                            'Item_Code'])[0]
+        ors_code = get_code(package='ORS')
+        severe_diarrhoea_code = get_code(package='Treatment of severe diarrhea')
+        zinc_tablet_code = get_code(item='Zinc, tablet, 20 mg')
+        zinc_under_6m_code = get_code(package='Zinc for Children 0-6 months')
+        zinc_over_6m_code = get_code(package='Zinc for Children 6-59 months')
+        antibiotics_code = get_code(package='Antibiotics for treatment of dysentery')
+        cipro_code = get_code(item='Ciprofloxacin 250mg_100_CMST')
 
         # -- Assemble the footprints for each HSI:
-        self.consumables_used_in_hsi = dict()
-
-        # -- HSI_Diarrhoea_Treatment_PlanA
-        self.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanA'] = {
-            'Intervention_Package_Code': {pkg_code_ors: 1},
-            'Item_Code': {}
-        }
-
-        # -- HSI_Diarrhoea_Treatment_PlanB
-        self.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanB'] = {
-            'Intervention_Package_Code': {pkg_code_ors: 1},
-            'Item_Code': {}
-        }
-
-        # -- HSI_Diarrhoea_Treatment_PlanC
-        self.consumables_used_in_hsi['HSI_Diarrhoea_Treatment_PlanC'] = {
-            'Intervention_Package_Code': {pkg_code_severe_diarrhea: 1},
-            'Item_Code': {}
-        }
-
-        self.consumables_used_in_hsi['HSI_Diarrhoea_Severe_Persistent_Diarrhoea'] = {
-            'Intervention_Package_Code': {pkg_code_ors: 1},
-            'Item_Code': {}
-        }
-
-        self.consumables_used_in_hsi['HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_Under6mo'] = {
-            'Intervention_Package_Code': {pkg_code_zinc_children_Under6Months: 1},
-            'Item_Code': {item_code_zinc_tablet: 5}
-        }
-
-        self.consumables_used_in_hsi['HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_6moPlus'] = {
-            'Intervention_Package_Code': {pkg_code_zinc_children_6MonthsPlus: 1},
-            'Item_Code': {item_code_zinc_tablet: 5}
-        }
-
-        self.consumables_used_in_hsi['HSI_Diarrhoea_Dysentery'] = {
-            'Intervention_Package_Code': {pkg_code_antibioitcs: 1},
-            'Item_Code': {item_code_cipro: 6}
-        }
+        add_consumable('HSI_Diarrhoea_Treatment_PlanA', {ors_code: 1}, {})
+        add_consumable('HSI_Diarrhoea_Treatment_PlanB', {ors_code: 1}, {})
+        add_consumable('HSI_Diarrhoea_Treatment_PlanC', {severe_diarrhoea_code: 1}, {})
+        add_consumable('HSI_Diarrhoea_Severe_Persistent_Diarrhoea', {ors_code: 1}, {})
+        add_consumable('HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_Under6mo',
+                       {zinc_under_6m_code: 1},
+                       {zinc_tablet_code: 5})
+        add_consumable('HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea_6moPlus',
+                       {zinc_over_6m_code: 1},
+                       {zinc_tablet_code: 5})
+        add_consumable('HSI_Diarrhoea_Dysentery', {antibiotics_code: 1}, {cipro_code: 6})
 
     def do_treatment(self, person_id, prob_of_cure):
         """Helper function that enacts the effects of a treatment to diarrhoea caused by a pathogen.
