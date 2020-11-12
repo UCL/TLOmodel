@@ -1291,9 +1291,9 @@ class HSI_Diarrhoea_Treatment_PlanA(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='debug', data='Provide Treatment Plan A for uncomplicated Diarrhoea')
 
         # Stop the person from dying of Diarrhoea (if they were going to die)
-        person = self.sim.population.props.loc[person_id]
+        df = self.sim.population.props
 
-        if not person.is_alive:
+        if not df.at[person_id, 'is_alive']:
             return
 
         # Get consumables required
@@ -1432,9 +1432,9 @@ class HSI_Diarrhoea_Severe_Persistent_Diarrhoea(HSI_Event, IndividualScopeEventM
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
 
-        person = self.sim.population.props.loc[person_id]
+        df = self.sim.population.props
 
-        if not person.is_alive:
+        if not df.at[person_id, 'is_alive']:
             return
 
         # Get consumables
@@ -1526,9 +1526,9 @@ class HSI_Diarrhoea_Dysentery(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug', data='Provide the treatment for Diarrhoea')
 
-        person = self.sim.population.props.loc[person_id]
+        df = self.sim.population.props
 
-        if not person.is_alive:
+        if not df.at[person_id, 'is_alive']:
             return
 
         cons_footprint = self.module.consumables_used_in_hsi['HSI_Diarrhoea_Dysentery']
