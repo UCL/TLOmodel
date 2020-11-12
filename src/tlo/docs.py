@@ -186,8 +186,7 @@ def get_class_output_string(classinfo):
             is_child_of_Module = True
             module_base_object = mybase
 
-    # The matching mybase is used below - so we need to make
-    # sure it has only matched one of the criteria in the loop above:
+    # Make sure it has only matched one of the criteria in the loop above:
     if is_child_of_Module and is_child_of_HSI_Event:
         # I don't think this will ever happen, but if it does...
         import pdb; pdb.set_trace()
@@ -269,50 +268,16 @@ def get_class_output_string(classinfo):
         #
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
-            # mystr = f"\n\n**Function {name}():**\n"
-            # mydat = inspect.getmembers(obj)
-            # for the_name, the_object in mydat:
-            # print(f"{the_name}: {the_object}")
-            #    if the_name == "__doc__":
-            #        mystr += f"\n\n{the_object} \n\n"
-            # str += mystr
 
             if is_child_of_HSI_Event and name in hsi_event_inherited_exclusions:
-                # Here, we assume mybase is an HSI_Event object.
-                # That assumes it can't be a Module object (see above).
+                #print(f"DEBUG*** {name}, {class_name}")
 
-                if "HSI_Mockitis_PresentsForCareWithSevereSymptoms" in class_name and "did_not_run" in name:
-                    import pdb; pdb.set_trace()  # for some reason this isn't being hit.
+                if skip_child_doc(hsi_event_base_object, obj, name):
+                    continue
 
-                # We only want to display a doc string if it's
-                # adding new information to the child class's
-                # version of the function. So we need to compare with
-                # HSI_Event's doc string for this function
-                # Example docstring in base class
-                # (e.g. for function did_not_run()):
-                # mybase.did_not_run.__doc__
-                # import pdb; pdb.set_trace()
-                base_data = inspect.getmembers(mybase)
-                #import pdb; pdb.set_trace()
-                #for some_tuple in base_data:
-                for some_name, some_obj in base_data:
-                    #(some_name, some_obj) = some_tuple
-                    if some_name == name:
-                        base_func_doc = some_obj.__doc__
-                        break
-                #base_func_doc = # mybase.__name__ is 'HSI_Event'
-                child_func_doc = obj.__doc__
-
-                if base_func_doc == child_func_doc:  # Same docstring for both functions
-                    break  # continue  ## break?
-                if child_func_doc is None:  # Empty docstring in child function
-                    break
-                #import pdb; pdb.set_trace()
-
+            # Document this function if necessary:
             str += f"{spacer}.. automethod:: {name}\n\n"
             continue
-        #    if "population" in class_name:
-        #        import pdb; pdb.set_trace()
 
         # Anything else?
         # str += f"{name} : {obj}\n\n"
@@ -323,6 +288,39 @@ def get_class_output_string(classinfo):
     str += "\n\n\n"
 
     return str
+
+
+def skip_child_doc(base_obj, func_obj, func_name):
+    '''
+    Does the child function docstring match that of the parent's?
+
+    :param base_obj: an object instance of the base class
+    :func_obj: the child class function object
+    :func_name: the name of the function concerned.
+    :return: True if both present and identical, else False.
+
+    We only want to document the child class's function if its
+    docstring is present and different to the parent's, i.e. False.
+    We return True when we don't want the child class's function docstring
+    included in the docs we generate.
+    '''
+    if func_obj is None:
+        return True  # Probably better to raise an error if either object is None
+
+    func_doc_string = func_obj.__doc__
+    if func_doc_string in ["", None]:
+        return True
+
+    # Iterate over the base class object.
+    base_data = inspect.getmembers(base_obj)
+    for datum in base_data:  # Each datum is [name, object]
+        base_func_name = datum[0]
+        if base_func_name is func_name:
+            base_func_obj = datum[1]
+            if  base_func_obj.__doc__ == func_doc_string:
+                return True
+
+    return False
 
 
 def extract_bases(class_name, class_obj, spacer=""):
