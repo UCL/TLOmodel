@@ -1198,30 +1198,27 @@ class DiarrhoeaCureEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        person = df.loc[person_id]
 
         # The event should not run if the person is not currently alive
-        if not df.at[person_id, 'is_alive']:
+        if not person.is_alive:
             return
 
         # Confirm that this is event is occurring during a current episode of diarrhoea
-        if not (
-            (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-            self.sim.date <=
-            (df.at[person_id, 'gi_end_of_last_episode'])
-        ):
+        if not (person.gi_last_diarrhoea_date_of_onset <= self.sim.date <= person.gi_end_of_last_episode):
             # If not, then the event has been caused by another cause of diarrhoea (which may has resolved by now)
             return
 
         # Cure should not happen if the person has already recovered
-        if df.at[person_id, 'gi_last_diarrhoea_recovered_date'] <= self.sim.date:
+        if person.gi_last_diarrhoea_recovered_date <= self.sim.date:
             return
 
         # If cure should go ahead, check that it is after when the person has received a treatment during this episode
         assert (
-            (df.at[person_id, 'gi_last_diarrhoea_date_of_onset']) <=
-            (df.at[person_id, 'gi_last_diarrhoea_treatment_date']) <=
+            person.gi_last_diarrhoea_date_of_onset <=
+            person.gi_last_diarrhoea_treatment_date <=
             self.sim.date <=
-            (df.at[person_id, 'gi_end_of_last_episode'])
+            person.gi_end_of_last_episode
         )
 
         # Stop the person from dying of Diarrhoea (if they were going to die) and record date of recovery
