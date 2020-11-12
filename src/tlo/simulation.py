@@ -200,7 +200,6 @@ class Simulation:
             if date >= end_date:
                 self.date = end_date
                 break
-
             self.fire_single_event(event, date)
 
         # The simulation has ended. Call 'on_simulation_end' method at the end of simulation (if a module has it)
