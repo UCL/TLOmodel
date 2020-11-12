@@ -72,7 +72,7 @@ def get_classes_in_module(fqn, module_obj):
     :param fqn: Fully-qualified name of the module,
                 e.g. "tlo.methods.mockitis"
     :param module_obj: an object representing this module
-    :param return: list of entries, each of the form:
+    :return: list of entries, each of the form:
                 [class name, class object, line number]
     '''
     classes = []
