@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 import pytest
-
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo import Date, Simulation, logging
 from tlo.methods import (
     antenatal_care,
@@ -35,6 +35,11 @@ log_config = {
         "tlo.methods.postnatal_supervisor": logging.DEBUG,
     }
 }
+
+
+def test_complex_lm_equations():
+    pass
+# TODO: CREATE A SERIES OF TESTS TO CHECK THE OUTPUTS OF THE MORE COMPLEX LINEAR MODELS (PPH/SEPSIS)
 
 # The resource files
 try:
@@ -78,8 +83,17 @@ def test_run():
 
 
     sim.make_initial_population(n=popsize)
+
+    def test_complex_lm_equations():
+        params_labour = sim.modules['Labour'].parameters
+
+
+
+
+        pass
+
+
     params_ps = sim.modules['PregnancySupervisor'].parameters
-    params_labour = sim.modules['Labour'].parameters
 
     #params_ps['prob_gest_htn_per_month'] = 1
     #params_ps['prob_pre_eclampsia_per_month'] = 1

@@ -94,56 +94,29 @@ class Labour (Module):
                         'post term '),
         'odds_early_ptb': Parameter(
             Types.REAL, 'probability of a woman going into preterm labour between 28-33 weeks gestation'),
-        'or_early_ptb_age<20': Parameter(
-            Types.REAL, 'relative risk of early preterm labour for women younger than 20'),
-        'or_early_ptb_prev_ptb': Parameter(
-            Types.REAL, 'relative risk of early preterm labour for women who have previously delivered preterm'),
         'odds_late_ptb': Parameter(
             Types.REAL, 'probability of a woman going into preterm labour between 33-36 weeks gestation'),
-        'or_late_ptb_prev_ptb': Parameter(
-            Types.REAL, 'relative risk of preterm labour for women younger than 20'),
         'odds_post_term_labour': Parameter(
             Types.REAL, 'odds of a woman entering labour at >42 weeks gestation'),
         'rrr_ptl_bmi_more25': Parameter(
             Types.REAL, 'relative risk ratio of post term labour for a woman with a BMI of > 25'),
-        'rrr_ptl_not_married': Parameter(
-            Types.REAL, 'relative risk ratio of post term labour for a woman who isnt married'),
         'prob_pl_ol': Parameter(
             Types.REAL, 'effect of an increase in wealth level in the linear regression equation predicating womens '
                         'parity at 2010 base line'),
-        'rr_PL_OL_nuliparity': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they are nuliparous'),
-        'rr_PL_OL_para_more3': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a parity of greater'
-                        'than 2'),
-        'rr_PL_OL_bmi_less18': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a BMI of less than '
-                        '18'),
-        'rr_PL_OL_bmi_more25': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a BMI of > 25'),
-        'rr_PL_OL_age_less20': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her age is less'
-                        'than 20 years'),
-        'prob_cephalopeliv_dis': Parameter(
+        'prob_cephalopelvic_dis': Parameter(
             Types.REAL, 'an individuals probability of experiencing CPD'),
         'prob_malpresentation': Parameter(
             Types.REAL, 'an individuals probability of experiencing malpresentation'),
         'prob_malposition': Parameter(
             Types.REAL, 'an individuals probability of experiencing malposition'),
-        'odds_ip_eclampsia': Parameter(
-            Types.REAL, 'odds of an eclamptic seizure during labour'),
-        'or_ip_eclampsia_30_34': Parameter(
-            Types.REAL, 'odds ratio of eclampsia for women ages between 30 and 34'),
-        'or_ip_eclampsia_35': Parameter(
-            Types.REAL, 'odds ratio of eclampsia for women ages older than 35'),
-        'or_ip_eclampsia_nullip': Parameter(
-            Types.REAL, 'odds ratio of eclampsia for women who have not previously delivered a child'),
-        'or_ip_eclampsia_gest_diab': Parameter(
-            Types.REAL, 'odds ratio of eclampsia for women who has gestational diabetes'),
+        'rr_obstruction_cpd': Parameter(
+            Types.REAL, 'risk of obstruction in a woman with CPD'),
+        'rr_obstruction_malpos': Parameter(
+            Types.REAL, 'risk of obstruction in a woman with malposition'),
+        'rr_obstruction_malpres': Parameter(
+            Types.REAL, 'risk of obstruction in a woman with malpresentation'),
         'prob_aph': Parameter(
             Types.REAL, 'probability of an antepartum haemorrhage during labour'),
-        'rr_aph_pl_ol': Parameter(
-            Types.REAL, 'relative risk of antepartum haemorrhage following obstructed labour'),
         'prob_chorioamnionitis_ip': Parameter(
             Types.REAL, 'probability of chorioamnionitis infection during labour'),
         'prob_other_maternal_infection_ip': Parameter(
@@ -162,8 +135,10 @@ class Labour (Module):
             Types.LIST, 'probability of a womans pp infection being mild, sepsis or severe sepsis'),
         'prob_ip_sepsis': Parameter(
             Types.REAL, 'probability of sepsis in labour'),
-        'rr_ip_sepsis_pl_ol': Parameter(
-            Types.REAL, 'relative risk of developing sepsis following obstructed labour'),
+        'rr_sepsis_chorioamnionitis': Parameter(
+            Types.REAL, 'risk of sepsis following chorioamnionitis infection'),
+        'rr_sepsis_other_maternal_infection_ip': Parameter(
+            Types.REAL, 'risk of sepsis following other intrapartum infection'),
         'odds_uterine_rupture': Parameter(
             Types.REAL, 'probability of a uterine rupture during labour'),
         'or_ur_grand_multip': Parameter(
@@ -236,24 +211,16 @@ class Labour (Module):
             Types.REAL, 'risk of pph after experiencing retained placenta'),
         'rr_pph_other_causes': Parameter(
             Types.REAL, 'risk of pph after experiencing otehr pph causes'),
-        'prob_pph_secondary': Parameter(
-            Types.REAL, 'probability of a woman developing a secondary postpartum hemorrhage (post 48hrs) '),
         'odds_pp_sepsis': Parameter(
             Types.REAL, 'odds of a woman developing sepsis following delivery'),
-        'or_pp_sepsis_rural': Parameter(
-            Types.REAL, 'odds ratio of a woman developing sepsis following delivery if she is from a rural setting'),
-        'or_pp_sepsis_no_edu': Parameter(
-            Types.REAL, 'odds ratio of a woman developing sepsis following delivery if she has no formal education'),
-        'or_pp_sepsis_primary_edu': Parameter(
-            Types.REAL, 'odds ratio of a woman developing sepsis following delivery if she has primary education'),
-        'or_pp_sepsis_avd': Parameter(
-            Types.REAL, 'odds ratio of a woman developing sepsis following delivery if she delivered with instrumental '
-                        'assistance'),
-        'or_pp_sepsis_cs': Parameter(
-            Types.REAL, 'odds ratio of a woman developing sepsis following delivery if she delivered via caesarean '
-                        'section'),
-        'or_pp_sepsis_prom': Parameter(
-            Types.REAL, 'odds ratio of a woman developing sepsis following premature rupture of membranes '),
+        'rr_sepsis_endometritis': Parameter(
+            Types.REAL, 'risk of sepsis following endometritis'),
+        'rr_sepsis_urinary_tract_inf': Parameter(
+            Types.REAL, 'risk of sepsis following urinary tract infection'),
+        'rr_sepsis_skin_soft_tissue_inf': Parameter(
+            Types.REAL, 'risk of sepsis following skin or soft tissue infection'),
+        'rr_sepsis_other_maternal_infection_pp': Parameter(
+            Types.REAL, 'risk of sepsis following other maternal postpartum infection'),
         'cfr_pp_pph': Parameter(
             Types.REAL, 'case fatality rate for postpartum haemorrhage'),
         'rr_pph_death_anaemia': Parameter(
@@ -262,10 +229,6 @@ class Labour (Module):
             Types.REAL, 'case fatality rate for eclampsia following delivery'),
         'cfr_pp_sepsis': Parameter(
             Types.REAL, 'case fatality rate for sepsis following delivery'),
-        'prob_neonatal_sepsis': Parameter(
-            Types.REAL, 'baseline probability of a child developing sepsis following birth'),
-        'prob_neonatal_birth_asphyxia': Parameter(
-            Types.REAL, 'baseline probability of a child developing neonatal encephalopathy following delivery'),
         'days_of_postnatal_period': Parameter(
             Types.LIST, 'list of each day in the postnatal period- used for a weighted random draw'),
         'daily_risk_of_pph_onset': Parameter(
@@ -360,7 +323,6 @@ class Labour (Module):
             Types.REAL, 'probability repairing a ruptured uterus surgically'),
         'prob_successful_assisted_vaginal_delivery': Parameter(
             Types.REAL, 'probability of successful assisted vaginal delivery'),
-
         'squeeze_factor_threshold_delivery_attendance': Parameter(
             Types.REAL, 'dummy squeeze factor threshold after which delivery will not be attended '),
         'sensitivity_of_assessment_of_obstructed_labour_hc': Parameter(
@@ -482,6 +444,7 @@ class Labour (Module):
                                                         categories=['none', 'mild', 'sepsis', 'severe_sepsis']),
 
         'la_maternal_pp_infection': Property(Types.INT, 'bitset column holding list of postpartum infections'),
+        # todo: this could be a list in MNI
         'la_maternal_pp_infection_severity': Property(Types.CATEGORICAL, 'severity of infection during labour',
                                                       categories=['none', 'mild', 'sepsis', 'severe_sepsis']),
         'la_sepsis_disab': Property(Types.BOOL, 'disability associated with maternal sepsis'),
@@ -495,6 +458,7 @@ class Labour (Module):
         'la_postpartum_haem': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this'
                                                    'delivery'),
         'la_postpartum_haem_cause': Property(Types.INT, 'bitset column holding causes of postpartum haemorrhage'),
+        # todo: this could be a list in MNI
         'la_postpartum_haem_treatment': Property(Types.BOOL, 'If this woman has received treatment for '
                                                              'postpartum haemorrhage'),
         'la_maternal_haem_non_severe_disab': Property(Types.BOOL, 'disability associated with non severe maternal '
@@ -557,32 +521,25 @@ class Labour (Module):
             'early_preterm_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['odds_early_ptb'],
-                # Predictor('age_years').when('.between(15,19)', params['or_early_ptb_age<20']),
-                # Predictor('la_has_previously_delivered_preterm').when(True, params['or_early_ptb_prev_ptb']),
             ),
 
             'late_preterm_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['odds_late_ptb'],
-                # Predictor('la_has_previously_delivered_preterm').when(True, params['or_late_ptb_prev_ptb']),
             ),
 
             'post_term_birth': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['odds_post_term_labour']
                 # Predictor('li_bmi').when('>24', params['rrr_ptl_bmi_more25']),
-                # Predictor('li_mar_stat').when('1', params['rrr_ptl_not_married'])
-                #                        .when('3', params['rrr_ptl_not_married']),
             ),
 
             'obstructed_labour_ip': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_pl_ol']
-                # Predictor('la_parity').when('0', params['rr_PL_OL_nuliparity']),
-                # Predictor('la_parity').when('>2', params['rr_PL_OL_para_more3']),
-                # Predictor('li_bmi').when('<18', params['rr_PL_OL_bmi_less18']),
-                # Predictor('li_bmi').when('>24', params['rr_PL_OL_bmi_more25']),
-                # Predictor('age_years').when('<20', params['rr_PL_OL_age_less20']),
+                1,
+                Predictor('cpd', external=True).when(True, params['rr_obstruction_cpd']),
+                Predictor('malposition', external=True).when(True, params['rr_obstruction_malpos']),
+                Predictor('malpresentation', external=True).when(True, params['rr_obstruction_malpres']),
             ),
 
             'obstructed_labour_stillbirth': LinearModel(
@@ -622,10 +579,16 @@ class Labour (Module):
 
             'sepsis_ip': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['prob_ip_sepsis'],
-                # Predictor('la_obstructed_labour').when(True, params['rr_ip_sepsis_pl_ol']),
-                Predictor('ps_chorioamnionitis').when(True, 1.5),   # TODO: placeholder
-                Predictor('ac_received_abx_for_prom').when(True, 0.5)),  # TODO: placeholder
+                1,  # todo: ???
+                Predictor('ps_chorioamnionitis').when(True, 1.5),  # TODO: placeholder
+                Predictor('ac_received_abx_for_prom').when(True, 0.5),  # TODO: placeholder
+
+                Predictor('la_maternal_ip_infection').apply(
+                    lambda x: params['rr_sepsis_chorioamnionitis']
+                    if x & self.intrapartum_infections.element_repr('chorioamnionitis') else 1),
+                Predictor('la_maternal_ip_infection').apply(
+                    lambda x: params['rr_sepsis_other_maternal_infection_ip']
+                    if x & self.intrapartum_infections.element_repr('other_maternal_infection') else 1)),
 
             # TODO: LINK WITH PROM/ CHORIOAMNIONITIS/ TREAMTNET EFFECT ETC
 
@@ -642,19 +605,27 @@ class Labour (Module):
 
             'sepsis_pp': LinearModel(
                 LinearModelType.LOGISTIC,
-                params['odds_pp_sepsis'],
+                1,  # todo: ???
+                Predictor('la_maternal_pp_infection').apply(
+                    lambda x: params['rr_sepsis_endometritis']
+                    if x & self.postpartum_infections.element_repr('endometritis') else 1),
+                Predictor('la_maternal_pp_infection').apply(
+                    lambda x: params['rr_sepsis_urinary_tract_inf']
+                    if x & self.postpartum_infections.element_repr('urinary_tract_inf') else 1),
+                Predictor('la_maternal_pp_infection').apply(
+                    lambda x: params['rr_sepsis_skin_soft_tissue_inf']
+                    if x & self.postpartum_infections.element_repr('skin_soft_tissue_inf') else 1),
+                Predictor('la_maternal_pp_infection').apply(
+                    lambda x: params['rr_sepsis_other_maternal_infection_pp']
+                    if x & self.postpartum_infections.element_repr('rr_sepsis_other_maternal_infection') else 1),
+
+
                 Predictor('received_clean_delivery', external=True).when(True,
                                                                          params['rr_maternal_sepsis_clean_delivery']),
                 Predictor('received_abx_for_prom', external=True).when(True,
                                                                        params['rr_sepsis_post_abx_prom']),
                 Predictor('received_abx_for_pprom', external=True).when(True,
                                                                         params['rr_sepsis_post_abx_pprom'])
-                # Predictor('li_urban').when(False, params['or_pp_sepsis_rural']),
-                # Predictor('li_ed_lev').when('1', params['or_pp_sepsis_no_edu']),
-                # Predictor('li_ed_lev').when('2', params['or_pp_sepsis_primary_edu']),
-                # Predictor('delivery_type', external=True).when('instrumental', params['or_pp_sepsis_avd'])
-                #                                         .when('caesarean_section', params['or_pp_sepsis_cs']),
-                # Predictor('ps_premature_rupture_of_membranes').when(True, params['or_pp_sepsis_prom']),
             ),
 
             'sepsis_pp_death': LinearModel(
@@ -707,7 +678,6 @@ class Labour (Module):
             'antepartum_haem_ip': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 params['prob_aph']
-                # Predictor('la_obstructed_labour').when(True, params['rr_aph_pl_ol']),
             ),
 
 
@@ -752,13 +722,8 @@ class Labour (Module):
                 Predictor('la_postpartum_haem_cause').apply(
                     lambda x: params['rr_pph_other_causes']
                     if x & self.cause_of_primary_pph.element_repr('other_pph_cause') else 1),
-                #Predictor('received_amtsl', external=True).when(True, params['rr_pph_amtsl']),
-                # Predictor('la_obstructed_labour').when(True, params['rr_pph_pl_ol']),
             ),
 
-            'postpartum_haem_secondary_pp': LinearModel(
-                LinearModelType.MULTIPLICATIVE,
-                params['prob_pph_secondary']),
 
             'postpartum_haem_pp_death': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -1198,6 +1163,21 @@ class Labour (Module):
         referral_timing_surgery = mni[person_id]['referred_for_surgery']
         referral_timing_caesarean = mni[person_id]['referred_for_cs']
 
+        if 'cephalopelvic_dis' in mni[person_id]['obstructed_labour_cause']:
+            cpd = True
+        else:
+            cpd = False
+
+        if 'malposition' in mni[person_id]['obstructed_labour_cause']:
+            malposition = True
+        else:
+            malposition = False
+
+        if 'malpresentation' in mni[person_id]['obstructed_labour_cause']:
+            malpresentation = True
+        else:
+            malpresentation = False
+
         return self.rng.random_sample() < eq.predict(person,
                                                      received_clean_delivery=received_clean_delivery,
                                                      received_abx_for_prom=received_abx_for_prom,
@@ -1208,7 +1188,10 @@ class Labour (Module):
                                                      received_blood_transfusion=has_rbt,
                                                      referral_timing_surgery=referral_timing_surgery,
                                                      attended_delivery=attended_delivery,
-                                                     referral_timing_caesarean=referral_timing_caesarean)[person_id]
+                                                     referral_timing_caesarean=referral_timing_caesarean,
+                                                     cpd=cpd,
+                                                     malpresentation=malpresentation,
+                                                     malposition=malposition)[person_id]
 
     def set_intrapartum_complications(self, individual_id, complication):
         """Uses the result of a linear equation to determine the probability of a complication occuring during
