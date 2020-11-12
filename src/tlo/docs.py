@@ -177,19 +177,21 @@ def get_class_output_string(classinfo):
     (base_str, base_objects) = extract_bases(class_name, class_obj, spacer)
 
     hsi_event_base_object = None
-    module_base_object = None
+    # module_base_object = None
     for mybase in base_objects:
         if mybase.__name__ == "HSI_Event":
             is_child_of_HSI_Event = True
             hsi_event_base_object = mybase
         elif mybase.__name__ == "Module":
             is_child_of_Module = True
-            module_base_object = mybase
+            # module_base_object = mybase
 
     # Make sure it has only matched one of the criteria in the loop above:
     if is_child_of_Module and is_child_of_HSI_Event:
         # I don't think this will ever happen, but if it does...
-        import pdb; pdb.set_trace()
+        import pdb
+        pdb.set_trace()
+        # Maybe raising an assertion would be better?
 
     str += base_str
     str += "\n\n"
@@ -212,14 +214,20 @@ def get_class_output_string(classinfo):
     # Even if HSI_Event's function body is simply "pass", we add it to the
     # list of inherited exclusions.
     # TODO Should __init__ be in this list?
-    # NB Some of the following aren't implemented in HSI_Event, and must be
-    # implemented in its children; put these in hsi_event_not_implemented list.
-    hsi_event_inherited_exclusions = ["__init__", "not_available",
-                                      "post_apply_hook", "run",
-                                      "get_all_consumables",
-                                      "make_appt_footprint", "never_ran",
-                                      "did_not_run",]
+    hsi_event_inherited_functions = ["__init__", "not_available",
+                                     "post_apply_hook", "run",
+                                     "get_all_consumables",
+                                     "make_appt_footprint", "never_ran",
+                                     "did_not_run", ]
+
     # hsi_event_not_implemented = ["apply",  ]  # Not needed ?
+
+    # Asif: I think it's mandatory to a subclass of HSI Event to have an
+    # apply() implementation, so I think that should always be displayed
+    # actually. To encourage people to add a sensible docstring for that
+    # method. The other [post_apply_hook(), which just has pass as its
+    # implementation in the parent] is optional, so should only be
+    # displayed if it's actually overridden
 
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
@@ -233,9 +241,6 @@ def get_class_output_string(classinfo):
         # __delattr__ = <slot wrapper '__delattr__' of 'object' objects>
         # Skip over things inherited from object class or Module class
         object_description = f"{obj}"
-
-        #if "HSI_Event" in object_description:
-        #    import pdb; pdb.set_trace()
 
         if (is_child_of_Module and
             ("of 'object' objects" in object_description
@@ -269,8 +274,8 @@ def get_class_output_string(classinfo):
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
 
-            if is_child_of_HSI_Event and name in hsi_event_inherited_exclusions:
-                #print(f"DEBUG*** {name}, {class_name}")
+            if is_child_of_HSI_Event and name in hsi_event_inherited_functions:
+                # print(f"DEBUG*** {name}, {class_name}")
 
                 if skip_child_doc(hsi_event_base_object, obj, name):
                     continue
@@ -295,17 +300,22 @@ def skip_child_doc(base_obj, func_obj, func_name):
     Does the child function docstring match that of the parent's?
 
     :param base_obj: an object instance of the base class
-    :func_obj: the child class function object
-    :func_name: the name of the function concerned.
+    :param func_obj: the child class function object
+    :param func_name: the name of the function concerned.
     :return: True if both present and identical, else False.
 
     We only want to document the child class's function if its
     docstring is present and different to the parent's, i.e. False.
     We return True when we don't want the child class's function docstring
     included in the docs we generate.
+
+    Obviously, if the child function has a docstring, but the
+    parent's function doesn't, we shouldn't skip.
     '''
-    if func_obj is None:
-        return True  # Probably better to raise an error if either object is None
+    # if func_obj is None:
+    #     return True
+    assert base_obj is not None
+    assert func_obj is not None
 
     func_doc_string = func_obj.__doc__
     if func_doc_string in ["", None]:
@@ -314,10 +324,10 @@ def skip_child_doc(base_obj, func_obj, func_name):
     # Iterate over the base class object.
     base_data = inspect.getmembers(base_obj)
     for datum in base_data:  # Each datum is [name, object]
-        base_func_name = datum[0]
-        if base_func_name is func_name:
+        base_name = datum[0]
+        if base_name is func_name:
             base_func_obj = datum[1]
-            if  base_func_obj.__doc__ == func_doc_string:
+            if base_func_obj.__doc__ == func_doc_string:
                 return True
 
     return False
@@ -332,8 +342,8 @@ def extract_bases(class_name, class_obj, spacer=""):
                        bases
     :param class_obj: object with information about this class
     :param spacer: string to use as whitespace padding.
-    :return: Tuple with 1. string of base(s) for this class (if any), with links to their
-             docs. 2. the list of base class objects
+    :return: Tuple with (1) string of base(s) for this class (if any), with
+             links to their docs. (2) the list of base class objects
     '''
     # This next line gets the base classes including "object" class,
     # and also the class_name class itself:
