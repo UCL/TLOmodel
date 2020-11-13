@@ -22,6 +22,7 @@ import copy
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class Ncds(Module):
     """
     One line summary goes here...
@@ -35,10 +36,10 @@ class Ncds(Module):
         Metadata.USES_HEALTHBURDEN
     }
 
-
     PARAMETERS = {
         'interval_between_polls': Parameter(Types.INT, 'months between the main polling event'),
-        'baseline_annual_probability': Parameter(Types.REAL, 'baseline annual probability of acquiring/losing condition'),
+        'baseline_annual_probability': Parameter(Types.REAL,
+                                                 'baseline annual probability of acquiring/losing condition'),
         'rr_male': Parameter(Types.REAL, 'rr if male'),
         'rr_0_4': Parameter(Types.REAL, 'rr if 0-4'),
         'rr_5_9': Parameter(Types.REAL, 'rr if 5-9'),
@@ -94,10 +95,12 @@ class Ncds(Module):
         'rr_hypertension': Parameter(Types.REAL, 'rr if currently has hypertension'),
         'rr_depression': Parameter(Types.REAL, 'rr if currently has depression'),
         'rr_chronic_kidney_disease': Parameter(Types.REAL, 'rr if currently has chronic kidney disease'),
-        'rr_chronic_ischemic_heart_disease': Parameter(Types.REAL, 'rr if currently has chronic ischemic heart disease'),
+        'rr_chronic_ischemic_heart_disease': Parameter(Types.REAL,
+                                                       'rr if currently has chronic ischemic heart disease'),
         'rr_stroke': Parameter(Types.REAL, 'rr if currently has stroke'),
         'rr_cancers': Parameter(Types.REAL, 'rr if currently has cancers'),
-        'rr_stroke_if_cihd': Parameter(Types.REAL, 'rr of having stroke if currently has chronic ischemic heart disease'),
+        'rr_stroke_if_cihd': Parameter(Types.REAL,
+                                       'rr of having stroke if currently has chronic ischemic heart disease'),
         'baseline_annual_probability_stroke': Parameter(Types.REAL, 'baseline annual probability of having a stroke')
     }
 
@@ -110,23 +113,26 @@ class Ncds(Module):
         'nc_diabetes': Property(Types.BOOL, 'Whether or not someone currently has diabetes'),
         'nc_hypertension': Property(Types.BOOL, 'Whether or not someone currently has hypertension'),
         'nc_depression': Property(Types.BOOL, 'Whether or not someone currently has depression'),
-        #'nc_muscoskeletal': Property(Types.BOOL, 'Whether or not someone currently has muscoskeletal conditions'),
-        #'nc_frailty': Property(Types.BOOL, 'Whether or not someone currently has frailty'),
-        'nc_chronic_lower_back_pain': Property(Types.BOOL, 'Whether or not someone currently has chronic lower back pain'),
-        #'nc_arthritis': Property(Types.BOOL, 'Whether or not someone currently has arthritis'),
-        #'nc_vision_disorders': Property(Types.BOOL, 'Whether or not someone currently has vision disorders'),
-        #'nc_chronic_liver_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic liver disease'),
-        'nc_chronic_kidney_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic kidney disease'),
-        'nc_chronic_ischemic_hd': Property(Types.BOOL, 'Whether or not someone currently has chronic ischemic heart disease'),
-        #'nc_lower_extremity_disease': Property(Types.BOOL, 'Whether or not someone currently has lower extremity disease'),
-        #'nc_dementia': Property(Types.BOOL, 'Whether or not someone currently has dementia'),
-        #'nc_bladder_cancer': Property(Types.BOOL, 'Whether or not someone currently has bladder cancer'),
-        #'nc_oesophageal_cancer': Property(Types.BOOL, 'Whether or not someone currently has oesophageal cancer'),
-        #'nc_breast_cancer': Property(Types.BOOL, 'Whether or not someone currently has breast cancer'),
-        #'nc_prostate_cancer': Property(Types.BOOL, 'Whether or not someone currently has prostate cancer'),
+        # 'nc_muscoskeletal': Property(Types.BOOL, 'Whether or not someone currently has muscoskeletal conditions'),
+        # 'nc_frailty': Property(Types.BOOL, 'Whether or not someone currently has frailty'),
+        'nc_chronic_lower_back_pain': Property(Types.BOOL,
+                                               'Whether or not someone currently has chronic lower back pain'),
+        # 'nc_arthritis': Property(Types.BOOL, 'Whether or not someone currently has arthritis'),
+        # 'nc_vision_disorders': Property(Types.BOOL, 'Whether or not someone currently has vision disorders'),
+        # 'nc_chronic_liver_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic liver disease'),
+        'nc_chronic_kidney_disease': Property(Types.BOOL,
+                                              'Whether or not someone currently has chronic kidney disease'),
+        'nc_chronic_ischemic_hd': Property(Types.BOOL,
+                                           'Whether or not someone currently has chronic ischemic heart disease'),
+        # 'nc_lower_extremity_disease': Property(Types.BOOL, 'Whether or not someone currently has lower extremity disease'),
+        # 'nc_dementia': Property(Types.BOOL, 'Whether or not someone currently has dementia'),
+        # 'nc_bladder_cancer': Property(Types.BOOL, 'Whether or not someone currently has bladder cancer'),
+        # 'nc_oesophageal_cancer': Property(Types.BOOL, 'Whether or not someone currently has oesophageal cancer'),
+        # 'nc_breast_cancer': Property(Types.BOOL, 'Whether or not someone currently has breast cancer'),
+        # 'nc_prostate_cancer': Property(Types.BOOL, 'Whether or not someone currently has prostate cancer'),
         'nc_cancers': Property(Types.BOOL, 'Whether or not someone currently has cancers'),
-        #'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
-        #'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
+        # 'nc_chronic_respiratory_disease': Property(Types.BOOL, 'Whether or not someone currently has chronic respiratory disease'),
+        # 'nc_other_infections': Property(Types.BOOL, 'Whether or not someone currently has other infections'),
         'nc_ever_stroke': Property(Types.BOOL, 'Whether or not someone has ever had a stroke'),
     }
 
@@ -145,7 +151,6 @@ class Ncds(Module):
 
         # save a list of the events that are covered in this module (created manually for now)
         self.events = ['nc_ever_stroke']
-
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -181,10 +186,8 @@ class Ncds(Module):
         for condition in self.conditions:
             self.params_dict[condition] = read_excel_sheet(pd.read_excel(xls, condition))
 
-
         # Set the interval (in months) between the polls
         self.parameters['interval_between_polls'] = 3
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -193,9 +196,11 @@ class Ncds(Module):
         #  this through fitting. For now, let there be no conditions for anyone
 
         df = population.props
+        # HAND MANIPULATION OF DF TO INCREASE PROPORTION OF THOSE WITH HIGH-SALT DIET
+        df['li_high_salt'].replace({True: False}, inplace=True)
+
         for condition in self.conditions:
             df[condition] = False
-
 
     def initialise_simulation(self, sim):
         """Schedule:
@@ -218,11 +223,11 @@ class Ncds(Module):
 
         for condition in self.conditions:
             self.lms_onset[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
-            #self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
+            # self.lms_removal[condition] = self.build_linear_model(condition, self.parameters['interval_between_polls'])
 
         for event in self.events:
-            self.event_occurrence[event] = self.build_linear_model_events(event, self.parameters['interval_between_polls'])
-
+            self.event_occurrence[event] = self.build_linear_model_events(event,
+                                                                          self.parameters['interval_between_polls'])
 
     def build_linear_model(self, condition, interval_between_polls):
         """
@@ -297,11 +302,11 @@ class Ncds(Module):
             Predictor('nc_hypertension').when(True, p['rr_hypertension'])
         )
 
-        #self.lms_removal[condition] = LinearModel(
-            #LinearModelType.MULTIPLICATIVE,
-            #self.parameters['baseline_prob_ldl_hdl'],
-            #Predictor().when('(sex=="M")', p['rr_male'])
-        #)
+        # self.lms_removal[condition] = LinearModel(
+        # LinearModelType.MULTIPLICATIVE,
+        # self.parameters['baseline_prob_ldl_hdl'],
+        # Predictor().when('(sex=="M")', p['rr_male'])
+        # )
 
         return self.lms_onset[condition]
 
@@ -314,7 +319,7 @@ class Ncds(Module):
 
         p = self.parameters
         p['baseline_annual_probability_stroke'] = p['baseline_annual_probability_stroke'] * (
-                interval_between_polls / 12)
+            interval_between_polls / 12)
 
         self.event_occurrence[event] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
@@ -335,10 +340,9 @@ class Ncds(Module):
         for condition in self.conditions:
             df.at[child_id, condition] = False
 
-
     def report_daly_values(self):
         """Report DALY values to the HealthBurden module"""
-        #This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
@@ -416,9 +420,9 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
             # removal:
             # df.loc[
-                # self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
-                                                                # ],
-                                                         # self.module.rng), condition] = False
+            # self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
+            # ],
+            # self.module.rng), condition] = False
         for event in self.module.events:
 
             eligible_population_for_event = df.is_alive
@@ -429,6 +433,7 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             for person_id in idx_has_event:
                 self.sim.schedule_event(NcdStrokeEvent(self.module, person_id),
                                         self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+
 
 class NcdStrokeEvent(Event, IndividualScopeEventMixin):
     """
@@ -446,12 +451,13 @@ class NcdStrokeEvent(Event, IndividualScopeEventMixin):
         self.sim.population.props.at[person_id, 'nc_ever_stroke'] = True
 
         ## Add the outward symptom to the SymptomManager. This will result in emergency care being sought
-        #self.sim.modules['SymptomManager'].change_symptom(
+        # self.sim.modules['SymptomManager'].change_symptom(
         #    person_id=person_id,
         #    disease_module=self.module,
         #    add_or_remove='+',
         #    symptom_string='Injuries_From_Self_Harm'
-        #)
+        # )
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
@@ -491,13 +497,12 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
         # Output the person-years lived by single year of age in the past year
-        #py = self.module.calc_py_lived_in_last_year()
-        #logger.info(key='person_years', data=py.to_dict())
+        # py = self.module.calc_py_lived_in_last_year()
+        # logger.info(key='person_years', data=py.to_dict())
 
         df = self.sim.population.props
         delta = pd.DateOffset(years=1)
         for cond in self.module.conditions:
-
             kwargs = {'arg': f'{cond}'}
             py = de.Demography.calc_py_lived_in_last_year(self, delta, **kwargs)
             logger.info(key=f'person_years_{cond}', data=py.to_dict())
@@ -561,8 +566,81 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_chronic_ischemic_hd',
                                                                                  ['sex', 'age_range'])}
         )
+
+        hypertension_prev = {
+            'prevalence': len(df[df.nc_hypertension & df.is_alive & (df.age_years.between(15, 89))]) / len(
+                df[df.is_alive & (df.age_years.between(15, 89))])}
+
+        logger.info(
+            key='hypertension_prevalence',
+            description='current fraction of the population that are classified as having depression',
+            data=hypertension_prev
+        )
+
+        depression_prev = {
+            'prevalence': len(df[df.nc_depression & df.is_alive & (df.age_years.between(15, 89))]) / len(
+                df[df.is_alive & (df.age_years.between(15, 89))])}
+
+        logger.info(
+            key='depression_prevalence',
+            description='current fraction of the population that are classified as having depression',
+            data=depression_prev
+        )
+
+        cihd_prev = {
+            'prevalence': len(df[df.nc_chronic_ischemic_hd & df.is_alive & (df.age_years.between(15, 89))]) / len(
+                df[df.is_alive & (df.age_years.between(15, 89))])}
+
+        logger.info(
+            key='cihd_prevalence',
+            description='current fraction of the population that are classified as having CIHD',
+            data=cihd_prev
+        )
+
+        # prevalence of multi-morbidities
+
+        n_conditions_0 = (df.is_alive & (df.age_years.between(15, 89)) & (~df.nc_hypertension & ~df.nc_depression &
+                                                                          ~df.nc_chronic_ischemic_hd))
+        n_conditions_1a = (df.is_alive & (df.age_years.between(15, 89)) & (df.nc_hypertension & ~df.nc_depression &
+                                                                          ~df.nc_chronic_ischemic_hd))
+        n_conditions_1b = (df.is_alive & (df.age_years.between(15, 89)) & (~df.nc_hypertension & df.nc_depression & ~df.nc_chronic_ischemic_hd))
+        n_conditions_1c = (df.is_alive & (df.age_years.between(15, 89)) & (~df.nc_hypertension & ~df.nc_depression & df.nc_chronic_ischemic_hd)
+                          )
+        n_conditions_2a = (df.is_alive & (df.age_years.between(15, 89)) & (df.nc_hypertension & df.nc_depression &
+                                                                           ~df.nc_chronic_ischemic_hd))
+        n_conditions_2b = (df.is_alive & (df.age_years.between(15, 89)) & (df.nc_hypertension & ~df.nc_depression & df.nc_chronic_ischemic_hd))
+        n_conditions_2c = (df.is_alive & (df.age_years.between(15, 89)) & (~df.nc_hypertension & df.nc_depression & df.nc_chronic_ischemic_hd)
+                          )
+        n_conditions_3 = (df.is_alive & (df.age_years.between(15, 89)) & (df.nc_hypertension & df.nc_depression &
+                                                                           df.nc_chronic_ischemic_hd))
+
+        mm_0 = len(
+                df[n_conditions_0])
+        mm_1a = len(
+                df[n_conditions_1a])
+        mm_1b = len(
+            df[n_conditions_1b])
+        mm_1c = len(
+            df[n_conditions_1c])
+        mm_2a = len(
+            df[n_conditions_2a])
+        mm_2b = len(
+            df[n_conditions_2b])
+        mm_2c = len(
+            df[n_conditions_2c])
+        mm_3 = len(
+            df[n_conditions_3])
+        denom = len(df[(df.is_alive & (df.age_years.between(15, 89)))])
+
+        multi_morbidity_summary = {
+            'mm_prev_0': mm_0 / denom,
+            'mm_prev_1': (mm_1a + mm_1b + mm_1c) / denom,
+            'mm_prev_2': (mm_2a + mm_2b + mm_2c) / denom,
+            'mm_prev_3': mm_3 / denom
+        }
+
+        logger.info(key='mm_prevalence',
+                    data=multi_morbidity_summary,
+                    description='annual summary of multi-morbidities')
+
         # NB. logging like this as cannot do directly as a dict [logger requires key in a dict to be strings]
-
-
-
-        # TODO: @Britta - need to do incidence do, by age. I think the counter approach in Diarrhoea would work
