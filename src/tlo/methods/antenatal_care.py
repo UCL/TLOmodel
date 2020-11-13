@@ -2313,7 +2313,6 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
                                          'with this configuration')
 
 
-
 class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, IndividualScopeEventMixin):
     """"""
     def __init__(self, module, person_id):
@@ -2465,8 +2464,10 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     # We calculate their risk of developing chorioamnionitis as an inpatient, post anitbiotic
                     # treatment
                     days_until_induction = (34*7) - (mother.ps_gestational_age_in_weeks * 7)
+                    int(days_until_induction)
 
-                    risk_of_chorioamnionitis = params['ps_linear_equations']['chorioamnionitis'].predict(
+                    preg_sup_param = self.sim.modules['PregnancySupervisor'].parameters
+                    risk_of_chorioamnionitis = preg_sup_param['ps_linear_equations']['chorioamnionitis'].predict(
                         df.loc[[person_id]])[person_id]
 
                     # For women who develop chorioamnionitis delivery is indicated to reduce risk of poor fetal/maternal

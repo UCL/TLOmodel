@@ -243,6 +243,7 @@ class PregnancySupervisor(Module):
                 'early_onset_labour': LinearModel(
                     LinearModelType.MULTIPLICATIVE,
                     params['baseline_prob_early_labour_onset']),
+                # TODO: PROM occurring in the month needs to modify risk here
 
                 #  'abortion_complication_severity': LinearModel(
                 #    LinearModelType.MULTIPLICATIVE,
@@ -561,10 +562,15 @@ class PregnancySupervisor(Module):
         # ------------------------------------------- MULTIPLES -------------------------------------------------------
         if complication == 'multiples':
             df.loc[positive_index, 'ps_multiple_pregnancy'] = True
+            if not positive_index.empty:
+                logger.debug(key='message', data=f'The following women are pregnant with multiples, {positive_index}')
 
         # --------------------------------------- PLACENTA PRAEVIA ----------------------------------------------------
         if complication == 'placenta_praevia':
             df.loc[positive_index, 'ps_placenta_praevia'] = True
+            if not positive_index.empty:
+                logger.debug(key='message', data=f'The following womens pregnancy is complicated by placenta praevia '
+                                                 f'{positive_index}')
 
         # --------------------------------------- ABORTION/MISCARRIAGE-------------------------------------------------
         # Women who experience pregnancy loss pass through the abortion function
@@ -573,7 +579,8 @@ class PregnancySupervisor(Module):
                 # TODO: this actually probably doesnt need to be its own function as its only called once
                 self.abortion(person, complication)
             if not positive_index.empty:
-                logger.debug(key='message', data=f'The following women have experience an abortion {positive_index}')
+                logger.debug(key='message', data=f'The following women have experience a {complication}, '
+                                                 f'{positive_index}')
 
         # ----------------------------------- MICRONUTRIENT DEFICIENCIES ----------------------------------------------
         if complication == 'deficiencies':
@@ -591,6 +598,7 @@ class PregnancySupervisor(Module):
                         risk_iron_def = params['prob_iron_def_per_month']
                     if self.rng.random_sample() < risk_iron_def:
                         self.deficiencies_in_pregnancy.set(person, 'iron')
+                        logger.debug(key='message', data=f'{person} has become iron deficient')
 
                 if not self.deficiencies_in_pregnancy.has_any([person], 'folate', first=True):
                     if df.at[person, 'ac_receiving_iron_folic_acid']:
@@ -599,10 +607,12 @@ class PregnancySupervisor(Module):
                         risk_folate_def = params['prob_folate_def_per_month']
                     if self.rng.random_sample() < risk_folate_def:
                         self.deficiencies_in_pregnancy.set(person, 'folate')
+                        logger.debug(key='message', data=f'{person} has become folate deficient')
 
                 if not self.deficiencies_in_pregnancy.has_any([person], 'b12', first=True):
                     if self.rng.random_sample() < params['prob_b12_def_per_month']:
                         self.deficiencies_in_pregnancy.set(person, 'b12')
+                        logger.debug(key='message', data=f'{person} has become B12 deficient')
 
         # -------------------------------------------- ANAEMIA  -----------------------------------------------------
         # Women with new onset anaemia have that property set
@@ -663,11 +673,17 @@ class PregnancySupervisor(Module):
         # ------------------------------------- PLACENTAL ABRUPTION  --------------------------------------------------
         if complication == 'placental_abruption':
             df.loc[positive_index, 'ps_placental_abruption'] = True
+            if not positive_index.empty:
+                logger.debug(key='message', data=f'The following women have developed placental abruption,'
+                                                 f'{positive_index}')
+
             # todo: this should cause some kind of emergency care seeking/response?
 
         # ------------------------------------- ANTEPARTUM HAEMORRHAGE  -----------------------------------------------
         if complication == 'antepartum_haem':
             if not positive_index.empty:
+                logger.debug(key='message', data=f'The following women are experiencing an antepartum haemorrhage,'
+                                                 f'{positive_index}')
                 for person in positive_index:
                     random_choice_severity = self.rng.choice(['mild_moderate', 'severe'], p=[0.5, 0.5])
 
@@ -681,6 +697,7 @@ class PregnancySupervisor(Module):
                     self.pregnancy_disease_tracker['antepartum_haem'] += len(positive_index)
 
         # ------------------------------------- ANTEPARTUM DEATH  ----------------------------------------------------
+        # TODO: possibly remove (ALTHOUGH MAY BE USEFUL FOR INDIRECT CAUSES OF DEATH ONLY)
         # This function is also used to calculate and apply risk of death and stillbirth to women each month
         if complication == 'antenatal_death':
             self.pregnancy_disease_tracker['antenatal_death'] += len(positive_index)
@@ -706,6 +723,10 @@ class PregnancySupervisor(Module):
                                                  f' stillbirth,{positive_index}')
 
     def preterm_labour_onset(self, df_slice, month):
+        """This function applies the a risk of early labour onset during months 5, 6, 7 and 8. Risk is determined via
+        the linear model considering a womans risk factors and pre-ceding events that may lead to preterm labour like
+        PROM. Women who go into labour early are passed to the labour module, no additional antenatal complications are
+        applied."""
         params = self.parameters
         df = self.sim.population.props
 
@@ -715,6 +736,10 @@ class PregnancySupervisor(Module):
         temp_df = pd.concat([result, random_draw], axis=1)
         temp_df.columns = ['result', 'random_draw']
         preterm_labour = temp_df.index[temp_df.random_draw < temp_df.result]
+
+        if not preterm_labour.empty:
+            logger.debug(key='message', data=f'The following women will go into preterm labour at some point before the '
+                                             f'next month of their pregnancy: {preterm_labour}')
 
         # To avoid clustering of labour onset each month we randomly select a number of days in the future that this
         # woman will go into early labour, before the next month occurs
@@ -836,6 +861,10 @@ class PregnancySupervisor(Module):
                 df.at[person, 'ps_emergency_event'] = True
 
     def care_seeking_pregnancy_emergency(self, df_slice):
+        """This function determines if women who are experiencing a pregnancy emergency
+        (PROM, APH, Severe pre-eclampsia/eclampsia) will seek care for treatment. Women who dont seek care have a risk
+        of additional complications/death applied in this function also"""
+
         params = self.parameters
         df = self.sim.population.props
 
@@ -860,7 +889,15 @@ class PregnancySupervisor(Module):
 
         if not non_care_seekers.empty:
             logger.debug(key='message', data=f'The following women will not seek care after experiencing a pregnancy '
-                                             f'emergency: {non_care_seekers.index}')
+                                             f'emergency: {non_care_seekers}')
+
+            # TODO: apply risk of death to APH, ECLAMPSIA, SEVERE PRE-ECLAMPSIA
+            # TODO: apply risk of stillbirth to survivors
+            # TODO: reset eclampsia to severe PE, reset APH?
+            # TODO: apply risk of infection to prom? (then if infection another round of care seeking/death)
+
+            # aph_women = df.loc[non_care_seekers, 'ps_antepartum_haemorrhage']
+            # ec_women = (df.loc[non_care_seekers, 'ps_htn_disorder'] == 'eclampsia')
 
     def care_seeking_pregnancy_loss_complications(self, individual_id):
         df = self.sim.population.props
@@ -1127,9 +1164,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # still birth
         month_6_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
                              ~df.la_currently_in_labour]
-        # todo: remove
-        self.module.pregnancy_disease_tracker['women_at_6_months'] += len(month_6_df)
-
         self.module.set_pregnancy_complications(month_6_df, 'antenatal_stillbirth')
 
         month_6_preg_continues_no_stillbirth = df.loc[df.is_pregnant & df.is_alive &
@@ -1176,19 +1210,19 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # From month six we apply a risk of antenatal bleeding to all women
         self.module.set_pregnancy_complications(month_6_preg_continues_df, 'antepartum_haem')
 
+        # PRETERM LABOUR ONSET
+        month_6_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27)]
+        self.module.preterm_labour_onset(month_6_all_women_df, 6)
+
+        #  !!!!!!!!!!!!!!!!!!!!CARE SEEKING FOR EMERGENCIES (FOR WOMEN NOT GOING INTO EARLY LABOUR) !!!!!!!!!!!!!
+        month_6_not_preterm_labour_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 27) &
+                                               ~df.la_currently_in_labour & df.ps_emergency_event]
+        self.module.care_seeking_pregnancy_emergency(month_6_not_preterm_labour_df)
+
         # death
-        month_6_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
-                                   ~df.la_currently_in_labour]
+        # month_6_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
+        #                           ~df.la_currently_in_labour]
         # self.module.set_pregnancy_complications(month_6_all_women_df, 'antenatal_death')
-
-        # Schedule emergency event for acute complications...
-        month_emergency_event = df.loc[
-            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 22) &
-            df.ps_emergency_event & ~df.la_currently_in_labour]
-
-        if not month_emergency_event.empty:
-            for person in month_emergency_event.index:
-                self.sim.schedule_event(PregnancyEmergencyEvent(self.module, person), self.sim.date)
 
         # =========================== MONTH 7 RISK APPLICATION =======================================================
         # still birth
@@ -1237,22 +1271,21 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.set_pregnancy_complications(month_7_preg_continues_df, 'placental_abruption')
 
         # Antepartum haemorrhage
-        # From month six we apply a risk of antenatal bleeding to all women
         self.module.set_pregnancy_complications(month_7_preg_continues_df, 'antepartum_haem')
 
+        # PRETERM LABOUR ONSET
+        month_7_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31)]
+        self.module.preterm_labour_onset(month_7_all_women_df, 7)
+
+        #  !!!!!!!!!!!!!!!!!!!!CARE SEEKING FOR EMERGENCIES (FOR WOMEN NOT GOING INTO EARLY LABOUR) !!!!!!!!!!!!!
+        month_7_not_preterm_labour_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
+                                               ~df.la_currently_in_labour & df.ps_emergency_event]
+        self.module.care_seeking_pregnancy_emergency(month_7_not_preterm_labour_df)
+
         # death
-        month_7_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
-                                   ~df.la_currently_in_labour]
+        # month_7_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
+        #                          ~df.la_currently_in_labour]
         # self.module.set_pregnancy_complications(month_7_all_women_df, 'antenatal_death')
-
-        # Schedule emergency event for acute complications...
-        month_emergency_event = df.loc[
-            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 31) &
-            df.ps_emergency_event & ~df.la_currently_in_labour]
-
-        if not month_emergency_event.empty:
-            for person in month_emergency_event.index:
-                self.sim.schedule_event(PregnancyEmergencyEvent(self.module, person), self.sim.date)
 
         # =========================== MONTH 8 RISK APPLICATION ========================================================
         # still birth
@@ -1301,22 +1334,21 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.set_pregnancy_complications(month_8_preg_continues_df, 'placental_abruption')
 
         # Antepartum haemorrhage
-        # From month six we apply a risk of antenatal bleeding to all women
         self.module.set_pregnancy_complications(month_8_preg_continues_df, 'antepartum_haem')
 
+        # PRETERM LABOUR ONSET
+        month_8_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35)]
+        self.module.preterm_labour_onset(month_8_all_women_df, 8)
+
+        #  !!!!!!!!!!!!!!!!!!!!CARE SEEKING FOR EMERGENCIES (FOR WOMEN NOT GOING INTO EARLY LABOUR) !!!!!!!!!!!!!
+        month_8_not_preterm_labour_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
+                                               ~df.la_currently_in_labour & df.ps_emergency_event]
+        self.module.care_seeking_pregnancy_emergency(month_8_not_preterm_labour_df)
+
         # death
-        month_8_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
-                                   ~df.la_currently_in_labour]
+        # month_8_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
+        #                           ~df.la_currently_in_labour]
         # self.module.set_pregnancy_complications(month_8_all_women_df, 'antenatal_death')
-
-        # Schedule emergency event for acute complications...
-        month_emergency_event = df.loc[
-            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 35) &
-            df.ps_emergency_event & ~df.la_currently_in_labour]
-
-        if not month_emergency_event.empty:
-            for person in month_emergency_event.index:
-                self.sim.schedule_event(PregnancyEmergencyEvent(self.module, person), self.sim.date)
 
         # =========================== MONTH 9 RISK APPLICATION ========================================================
         # still birth
@@ -1368,19 +1400,15 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # From month six we apply a risk of antenatal bleeding to all women
         self.module.set_pregnancy_complications(month_9_preg_continues_df, 'antepartum_haem')
 
+        # Care seeking for emergencies
+        month_9_not_in_labour_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
+                                               ~df.la_currently_in_labour & df.ps_emergency_event]
+        self.module.care_seeking_pregnancy_emergency(month_9_not_in_labour_df)
+
         # death
-        month_9_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
-                                   ~df.la_currently_in_labour]
+        # month_9_all_women_df = df.loc[df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
+        #                            ~df.la_currently_in_labour]
         # self.module.set_pregnancy_complications(month_9_all_women_df, 'antenatal_death')
-
-        # Schedule emergency event for acute complications...
-        month_emergency_event = df.loc[
-            ~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age_in_weeks == 40) &
-            df.ps_emergency_event & ~df.la_currently_in_labour]
-
-        if not month_emergency_event.empty:
-            for person in month_emergency_event.index:
-                self.sim.schedule_event(PregnancyEmergencyEvent(self.module, person), self.sim.date)
 
         # =========================== WEEK 41 RISK APPLICATION ========================================================
         # Risk of still birth increases significantly in women who carry pregnancies beyond term
@@ -1508,123 +1536,6 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
                                         'blood_products')
                 u = pac_interventions.uncompress()
                 assert (u.loc[individual_id] == [False, False, False, False, False, False]).all()
-
-
-class PregnancyEmergencyEvent(Event, IndividualScopeEventMixin):
-    """"""
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        mother = df.loc[individual_id]
-
-        assert mother.ps_emergency_event
-        df.at[individual_id, 'ps_emergency_event'] = False
-
-        if mother.is_alive and mother.is_pregnant and ~mother.la_currently_in_labour:
-
-            # TODO: care seeking for eclampsia, severe pre-eclampsia, aph, and prom all assumed to be the same...
-
-            # Check if this woman will seek care for her pregnancy emergency
-            if self.module.rng.random_sample() < \
-                params['ps_linear_equations']['care_seeking_pregnancy_complication'].predict(
-                    df.loc[[individual_id]])[individual_id]:
-
-                logger.debug(key='message', data=f'Mother {individual_id} will seek care following acute pregnancy'
-                                                 f'complications')
-
-                acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
-                    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
-            else:
-                logger.debug(key='message', data=f'Mother {individual_id} will not seek care following acute pregnancy'
-                                                 f'complications')
-
-                # CURRENTLY ONLY NON CARE SEEKERS FOR PROM GO TO THIS EVENT
-                if mother.ps_premature_rupture_of_membranes:
-                    self.sim.schedule_event(PrematureRuptureOfMembranesOutcomesEvent(self.module, individual_id),
-                                            self.sim.date + DateOffset(days=7))
-
-            # TODO: SHOULD THIS BE CONDITIONED ON TREATMENT (JUST APPLY RISK OF DEATH NOW TO WOMEN WHO DONT SEEK CARE)
-            if mother.ps_htn_disorders == 'eclampsia' or mother.ps_antepartum_haemorrhage:
-                self.sim.schedule_event(PregnancyDeathEvent(self.module, individual_id),
-                                        self.sim.date + DateOffset(days=3))
-
-
-class PrematureRuptureOfMembranesOutcomesEvent(Event, IndividualScopeEventMixin):
-    """"""
-
-    def __init__(self, module, individual_id):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        mother = df.loc[individual_id]
-
-        if mother.is_alive and mother.is_pregnant and ~mother.la_currently_in_labour:
-            assert mother.ps_premature_rupture_of_membranes
-
-            # For women who did not seek care following PROM we apply a risk of chorioamnionitis infection and a risk of
-            # labour onset
-            risk_of_chorioamnionitis = params['ps_linear_equations']['chorioamnionitis'].predict(
-                    df.loc[[individual_id]])[individual_id]
-
-            if self.module.rng.random_sample() < risk_of_chorioamnionitis:
-                df.at[individual_id, 'ps_chorioamnionitis'] = True
-
-            risk_of_labour = params['risk_of_labour_onset_post_prom']
-
-            if self.module.rng.random_sample() < risk_of_labour:
-                # If a woman's labour onsets due to PROM, she is passed to the labour module where care seeking will be
-                # determined. Likelihood of intrapartum sepsis is modified by chorioamnionitis infection
-                df.at[individual_id, 'la_due_date_current_pregnancy'] = self.sim.date
-                self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], individual_id),
-                                        self.sim.date)
-
-            elif df.at[individual_id, 'ps_chorioamnionitis']:
-                # If she has developed an infection, but hasn't gone into labour, we apply another probability of care
-                # seeking
-                if self.module.rng.random_sample() < \
-                    params['ps_linear_equations']['care_seeking_pregnancy_complication'].predict(
-                        df.loc[[individual_id]])[individual_id]:
-                    logger.debug(key='message', data=f'Mother {individual_id} will seek care following acute pregnancy'
-                                                     f'complications')
-
-                    acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
-                        self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=0,
-                                                                        topen=self.sim.date,
-                                                                        tclose=self.sim.date + DateOffset(days=1))
-
-                else:
-                    # If the woman doesn't seek care, we apply a risk of death and still birth due to infection
-                    risk_of_death = 0.1  # todo: place holder
-                    if self.module.rng.random_sample() < risk_of_death:
-                        self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                              cause='chorioamnionitis '),
-                                                self.sim.date)
-                    else:
-                        risk_of_still_birth = 0.1  # todo: place holder
-                        if self.module.rng.random_sample() < risk_of_still_birth:
-                            logger.debug(key='message',
-                                         data=f'person {individual_id} has experience an antepartum stillbirth on '
-                                         f'date {self.sim.date}')
-
-                            self.module.pregnancy_disease_tracker['antenatal_stillbirth'] += 1
-
-                            df.at[individual_id, 'ps_antepartum_still_birth'] = True
-                            df.at[individual_id, 'ps_previous_stillbirth'] = True
-                            df.at[individual_id, 'is_pregnant'] = False
-                            df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
-                            df.at[individual_id, 'ps_gestational_age_in_weeks'] = 0
 
 
 class PregnancyDeathEvent(Event, IndividualScopeEventMixin):
