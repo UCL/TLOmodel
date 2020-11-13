@@ -638,6 +638,9 @@ def test_hsi_testandrefer_and_prep():
     df.at[person_id, "li_is_sexworker"] = True
     df.at[person_id, "hv_is_on_prep"] = False
 
+    # change PrEP start date so will occur from 01-01-2010
+    sim.modules['Hiv'].parameters["prep_start_date"] = 2010
+
     # Run the TestAndRefer event
     t = HSI_Hiv_TestAndRefer(module=sim.modules['Hiv'], person_id=person_id)
     t.apply(person_id=person_id, squeeze_factor=0.0)

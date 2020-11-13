@@ -34,7 +34,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 50000
+popsize = 1000
 
 # Establish the simulation object
 log_config = {
@@ -213,7 +213,7 @@ plt.show()
 # Per capita testing rates - data from MoH quarterly reports
 make_plot(
     title_str="Per capita testing rates for adults (15+)",
-    model=cov_over_time["prop_tested_adult"],
+    model=cov_over_time["per_capita_testing_rate"],
     data_mid=data["adult_tests_per_capita"]
 )
 

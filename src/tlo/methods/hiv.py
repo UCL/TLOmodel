@@ -59,6 +59,8 @@ class Hiv(Module):
         assert isinstance(run_with_checks, bool)
         self.run_with_checks = run_with_checks
 
+        self.stored_test_numbers = []  # create empty list for storing hiv test numbers
+
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
@@ -275,7 +277,9 @@ class Hiv(Module):
         "vls_f": Parameter(
             Types.REAL, "rates of viral load suppression males"),
         "vls_child": Parameter(
-            Types.REAL, "rates of viral load suppression in children 0-14 years")
+            Types.REAL, "rates of viral load suppression in children 0-14 years"),
+        "prep_start_date": Parameter(
+            Types.REAL, "year from which PrEP is available")
     }
 
     def read_parameters(self, data_folder):
@@ -444,8 +448,8 @@ class Hiv(Module):
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
-        self.initialise_baseline_tested(population)  # allocate baseline art coverage
         self.initialise_baseline_art(population)  # allocate baseline art coverage
+        self.initialise_baseline_tested(population)  # allocate baseline art coverage
 
     def initialise_baseline_prevalence(self, population):
         """
@@ -568,49 +572,31 @@ class Hiv(Module):
         use the hiv testing coverage levels to assign any remaining hiv tests
         """
         df = population.props
+        p = self.parameters
 
-        # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.rng.random_sample(size=len(df))
-        test_index_male, test_index_female = [], []  # create empty lists
+        testing_dict = {'F': p['testing_coverage_female'], 'M': p['testing_coverage_male']}
 
-        # check current testing coverage MALES
-        hiv_test_m = len(df[df.is_alive & (df.hv_number_tests > 0) & (df.sex == 'M') & (df.age_years >= 15)])
-        male_pop = len(df[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)])
-        hiv_test_coverage_m = hiv_test_m / male_pop
+        # test_index = {}
+        for sex in ['F', 'M']:
+            hiv_test = len(df[df.is_alive & (df.hv_number_tests > 0) & (df.sex == sex) & (df.age_years >= 15)])
+            pop = len(df[df.is_alive & (df.sex == sex) & (df.age_years >= 15)])
+            hiv_test_coverage = hiv_test / pop
+            hiv_test_deficit = testing_dict[sex] - hiv_test_coverage
 
-        hiv_test_deficit_m = self.parameters['testing_coverage_male'] - hiv_test_coverage_m
+            if hiv_test_deficit > 0:
+                # assign more tests to fill testing coverage deficit
+                test_index = df.index[
+                    (random_draw < hiv_test_deficit)
+                    & df.is_alive
+                    & (df.sex == sex)
+                    & (df.age_years >= 15)
+                    ]
 
-        # if hiv_test_deficit_m is negative or 0, don't assign any further tests
-        if hiv_test_deficit_m > 0:
-            # assign more tests to fill testing coverage deficit
-            test_index_male = df.index[
-                (random_draw < hiv_test_deficit_m)
-                & df.is_alive
-                & (df.sex == 'M')
-                & (df.age_years >= 15)
-                ]
-
-        # check current testing coverage FEMALES
-        hiv_test_f = len(df[df.is_alive & (df.hv_number_tests > 0) & (df.sex == 'F') & (df.age_years >= 15)])
-        female_pop = len(df[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)])
-        hiv_test_coverage_f = hiv_test_f / female_pop
-
-        hiv_test_deficit_f = self.parameters['testing_coverage_female'] - hiv_test_coverage_f
-
-        # if hiv_test_deficit_f is negative or 0, don't assign any further tests
-        if hiv_test_deficit_f > 0:
-            # assign more tests to fill testing coverage deficit
-            test_index_female = df.index[
-                (random_draw < hiv_test_deficit_f)
-                & df.is_alive
-                & (df.sex == 'F')
-                & (df.age_years >= 15)
-                ]
-
-        # assign hiv tests to males and females
-        df.loc[test_index_male | test_index_female, 'hv_number_tests'] = 1
-        # dummy date for date last hiv test (before sim start), otherwise see big spike in testing 01-01-2010
-        df.loc[test_index_male | test_index_female, 'hv_last_test_date'] = self.sim.date - pd.DateOffset(years=3)
+                # assign hiv tests to males and females
+                df.loc[test_index, 'hv_number_tests'] = 1
+                # dummy date for date last hiv test (before sim start), otherwise see big spike in testing 01-01-2010
+                df.loc[test_index, 'hv_last_test_date'] = self.sim.date - pd.DateOffset(years=3)
 
         # person assumed to be diagnosed if they have had a test and are currently HIV positive:
         df.loc[((df.hv_number_tests > 0) & df.is_alive & df.hv_inf), 'hv_diagnosed'] = True
@@ -1000,6 +986,38 @@ class Hiv(Module):
 
         # Set that the person is no longer on ART
         df.at[person_id, "hv_art"] = "not"
+
+    def per_capita_testing_rate(self):
+        """ this calculates the numbers of hiv tests performed in each time period
+        it looks at the cumulative number of tests ever performed and subtracts the
+        number calculated at the last time point
+        values are converted to per capita testing rates
+        this function is called by the logger and can be called at any frequency
+        """
+
+        df = self.sim.population.props
+
+        # get number of tests performed in last time period
+        if self.sim.date.year == 2010:
+            number_tests_new = df.hv_number_tests.sum()
+            previous_test_numbers = 0
+
+        else:
+            previous_test_numbers = self.stored_test_numbers[-1]
+
+            # calculate number of tests now performed - cumulative, include those who have died
+            number_tests_new = df.hv_number_tests.sum()
+
+        self.stored_test_numbers.append(number_tests_new)
+
+        # number of tests performed in last time period
+        number_tests_in_last_period = number_tests_new - previous_test_numbers
+
+        # per-capita testing rate
+        per_capita_testing = number_tests_in_last_period / len(df[df.is_alive])
+
+        # return updated value for time-period
+        return per_capita_testing
 
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
@@ -1417,7 +1435,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
                     # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
                     # available 2018 onwards
                     if (person['sex'] == 'F') & (person['li_is_sexworker']) & (~person['hv_is_on_prep']) & \
-                        (self.sim.date.year >= 2018):
+                        (self.sim.date.year >= self.module.parameters['prep_start_date']):
                         if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
@@ -1846,6 +1864,9 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
             testing_by_sex[sex] = (n_tested / n_pop)
 
+        # per_capita_testing_rate: number of tests administered divided by population
+        current_testing_rate = self.module.per_capita_testing_rate()
+
         # ------------------------------------ TREATMENT ------------------------------------
         plhiv_adult = len(df.loc[df.is_alive & df.hv_inf & (df.age_years >= 15)])
         plhiv_children = len(df.loc[df.is_alive & df.hv_inf & (df.age_years < 15)])
@@ -1896,6 +1917,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         "prop_tested_adult": tested,
                         "prop_tested_adult_male": testing_by_sex['M'],
                         "prop_tested_adult_female": testing_by_sex['F'],
+                        "per_capita_testing_rate": current_testing_rate,
                         "dx_adult": dx_adult,
                         "dx_childen": dx_children,
                         "art_coverage_adult": art_cov_adult,
