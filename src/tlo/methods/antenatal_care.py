@@ -187,6 +187,8 @@ class CareOfWomenDuringPregnancy(Module):
                         'rupture of membranes'),
         'ac_admitted_for_immediate_delivery': Property(
             Types.BOOL, 'Whether this woman has been admitted to labour ward for delivery due to complications'),
+        'ac_inpatient': Property(
+            Types.BOOL, 'Whether this woman is currently an inpatient on the antenatal ward'),
     }
 
 
@@ -1390,7 +1392,8 @@ class CareOfWomenDuringPregnancy(Module):
         mother = df.loc[individual_id]
 
         # If abruption > 28 weeks --> CS
-        if mother.ps_antepartum_haemorrhage == 'placental_abruption' and mother.ps_gestational_age_in_weeks >= 28:
+        if mother.ps_antepartum_haemorrhage and mother.ps_placental_abruption and mother.ps_gestational_age_in_weeks \
+                                                                                  >= 28:
             elective_section = HSI_Labour_ElectiveCaesareanSection(
                 self.sim.modules['Labour'], person_id=individual_id)
 
@@ -1401,8 +1404,8 @@ class CareOfWomenDuringPregnancy(Module):
             pass
             # todo: what would happen here? would they just do a CS anyway? baby survival non-exsistent?
 
-        if mother.ps_antepartum_haemorrhage == 'placenta_praevia' and mother.ps_antepartum_haemorrhage_severity == \
-            'severe' and mother.ps_gestational_age_in_weeks >= 28:
+        if mother.ps_antepartum_haemorrhage and mother.ps_placenta_praevia and \
+        mother.ps_antepartum_haemorrhage_severity == 'severe' and mother.ps_gestational_age_in_weeks >= 28:
             elective_section = HSI_Labour_ElectiveCaesareanSection(
                 self.sim.modules['Labour'], person_id=individual_id)
 
@@ -1410,9 +1413,8 @@ class CareOfWomenDuringPregnancy(Module):
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
-        if mother.ps_antepartum_haemorrhage == 'placenta_praevia' and \
-            mother.ps_antepartum_haemorrhage_severity == \
-            'mild_moderate' and mother.ps_gestational_age_in_weeks >= 28:
+        if mother.ps_antepartum_haemorrhage and mother.ps_placenta_praevia and \
+          mother.ps_antepartum_haemorrhage_severity == 'mild_moderate' and mother.ps_gestational_age_in_weeks >= 28:
             days_untill_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
             #inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
@@ -2344,10 +2346,12 @@ class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, Indi
 
         # TODO: store diagnosis/cause and send to inpatient event- cause variable used to give treatment etc
 
-        admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-            self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
+        if df.at[person_id, 'is_alive'] and ~df.at[person_id, 'la_currently_in_labour']:
+            df.at[person_id, 'ac_inpatient'] = True
+            admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
+                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
 
-        self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(days=1))
 
@@ -2373,8 +2377,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         mother = df.loc[person_id]
         params = self.module.parameters
 
-        if mother.is_alive:
-            logger.debug(key='message', data=f'Mother {person_id} has been admited for treatment of a complication of '
+        if mother.is_alive and ~mother.la_currently_in_labour:
+            logger.debug(key='message', data=f'Mother {person_id} has been admitted for treatment of a complication of '
                                              f'her pregnancy ')
 
         #  --------------------------------- Treatment of Maternal Anaemia -------------------------------------------
@@ -2387,12 +2391,14 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # If the test is not carried out, no treatment is provided and the woman is discharged
                 if fbc_result == 'no_test':
                     logger.debug(key='message', data=f'No FBC given due to resource constraints')
+                    df.at[person_id, 'ac_inpatient'] = False
 
                 # If the result returns none, anaemia has not been detected via an FBC and the woman is discharged
                 # without treatment
                 elif fbc_result == 'none':
                     logger.debug(key='message', data=f'Mother {person_id} has not had anaemia detected via an FBC and '
                                                      f'will be discharged')
+                    df.at[person_id, 'ac_inpatient'] = False
 
                 # If the FBC detected non severe anaemia (Hb >7) she is treated
                 elif fbc_result == 'non_severe':
@@ -2413,6 +2419,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=28))
+                    df.at[person_id, 'ac_inpatient'] = False
 
                 elif fbc_result == 'severe':
                     # In the case of severe anaemia (Hb <7) a woman receives a blood transfusion in addition to other
@@ -2427,11 +2434,13 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     self.sim.modules['HealthSystem'].schedule_hsi_event(outpatient_checkup, priority=0,
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset(days=28))
+                    df.at[person_id, 'ac_inpatient'] = False
 
                 # TODO: check malaria and HIV status and refer for treatment?
                 # TODO: deworming/schisto treatment
                 # TODO: capture number of inpatient days by severity
                 # TODO: comment out non EHP interventions?
+                # TODO: reset df.at[person_id, 'ac_inpatient'] after the correct number of days
 
         #  ----------------------------- Treatment of Premature Rupture of Membranes-----------------------------------
             # Here we manage treatment for women who have sought care for PROM but are not yet septic or in labour
@@ -2492,7 +2501,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         #  --------------------------------- Treatment of Antepartum Haemorrhage -------------------------------------
             # If abruption > 28 weeks --> CS
-            if mother.ps_antepartum_haemorrhage != 'none':
+            if mother.ps_antepartum_haemorrhage:
                 self.module.treatment_of_antepartum_haemorrhage(person_id)
 
         # ---------------------------------- Treatment of Severe Pre-eclampsia ---------------------------------------
@@ -2526,7 +2535,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientFollowUp(HSI_Event, Indi
         #  ------------------------------------- Follow up Hb testing -------------------------------------------------
         # TODO: prevent double referral if attend ANC inbetween treatment and follow up and become anaemic again
 
-        if mother.is_alive:
+        if mother.is_alive and ~mother.la_currently_in_labour:
             if mother.ps_anaemia_in_pregnancy != 'none':
                 fbc_result = self.module.full_blood_count_testing(self)
                 if fbc_result == 'no_test':
