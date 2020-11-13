@@ -165,6 +165,8 @@ class DxAlgorithmChild(Module):
                              )
 
         # --------  Classify Whether Dysentery or Not  --------
+        # TODO: note that the 'work' inside this is never used because the cure is completed by one of the other HSI
+        #  and so this HSI returns prematurely.
         if blood_in_stool:
             # 'Dysentery'
             schedule_hsi(hsi_event=HSI_Diarrhoea_Dysentery(person_id=person_id, module=self.sim.modules['Diarrhoea']),

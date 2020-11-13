@@ -919,6 +919,7 @@ class HealthSystem(Module):
                     description="record of each HSI event")
 
         if self.store_hsi_events_that_have_run:
+            log_info['date'] = self.sim.date
             self.store_of_hsi_events_that_have_run.append(log_info)
 
     def log_current_capabilities(self, current_capabilities, all_calls_today):
@@ -1130,8 +1131,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     or ((self.module.mode_appt_constraints == 2) and (squeeze_factor == 0.0))
                 )
 
-                # Mode 0: All HSI Event run
-                # Mode 1: All Run
+                # Mode 0: All HSI Event run, with no squeeze
+                # Mode 1: All Run With Squeeze
                 # Mode 2: Only if squeeze <1
 
                 if ok_to_run:
