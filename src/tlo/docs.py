@@ -176,12 +176,12 @@ def get_class_output_string(classinfo):
 
     (base_str, base_objects) = extract_bases(class_name, class_obj, spacer)
 
-    hsi_event_base_object = None
+    # hsi_event_base_object = None
     # module_base_object = None
     for mybase in base_objects:
         if mybase.__name__ == "HSI_Event":
             is_child_of_HSI_Event = True
-            hsi_event_base_object = mybase
+            # hsi_event_base_object = mybase
         elif mybase.__name__ == "Module":
             is_child_of_Module = True
             # module_base_object = mybase
@@ -201,12 +201,12 @@ def get_class_output_string(classinfo):
     general_exclusions = ["__class__", "__dict__", "__module__",
                           "__slots__", "__weakref__", ]
 
-    module_inherited_exclusions = ["initialise_population",
-                                   "initialise_simulation",
-                                   "on_birth", "read_parameters", "apply",
-                                   "post_apply_hook", "on_hsi_alert",
-                                   "report_daly_values", "run", "did_not_run",
-                                   "SYMPTOMS", ]
+    module_inherited_funcs = ["initialise_population",
+                              "initialise_simulation",
+                              "on_birth", "read_parameters", "apply",
+                              "post_apply_hook", "on_hsi_alert",
+                              "report_daly_values", "run", "did_not_run",
+                              "SYMPTOMS", ]
 
     # For classes which inherit from HSI_Event, we do not wish to generate docs
     # for the functions which they inherit UNLESS they have produced a new
@@ -214,11 +214,11 @@ def get_class_output_string(classinfo):
     # Even if HSI_Event's function body is simply "pass", we add it to the
     # list of inherited exclusions.
     # TODO Should __init__ be in this list?
-    hsi_event_inherited_functions = ["__init__", "not_available",
-                                     "post_apply_hook", "run",
-                                     "get_all_consumables",
-                                     "make_appt_footprint", "never_ran",
-                                     "did_not_run", ]
+    hsi_event_inherited_funcs = ["__init__", "not_available",
+                                 "post_apply_hook", "run",
+                                 "get_all_consumables",
+                                 "make_appt_footprint", "never_ran",
+                                 "did_not_run", ]
 
     # hsi_event_not_implemented = ["apply",  ]  # Not needed ?
 
@@ -248,7 +248,7 @@ def get_class_output_string(classinfo):
                 or "function Module." in object_description
                 or "of 'Module' objects" in object_description
                 or name in general_exclusions
-                or name in module_inherited_exclusions
+                # or name in module_inherited_functions
                 or object_description == 'None')):
             continue
 
@@ -274,11 +274,19 @@ def get_class_output_string(classinfo):
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
 
-            if is_child_of_HSI_Event and name in hsi_event_inherited_functions:
-                # print(f"DEBUG*** {name}, {class_name}")
-
-                if skip_child_doc(hsi_event_base_object, obj, name):
+            # We want to replace skip_if_child_doc_same() with new function
+            # which checks to see child class has implemented its own version
+            # of a function, and display the docstring, EVEN IF the docstring
+            # is just the one it inherits from parent (src.tlo.events.Event
+            # and src.tlo.healthsystem.HSI_Event)
+            #
+            if (is_child_of_Module and name in module_inherited_funcs):
+                if not child_overrides_function("Module", obj, name):
                     continue
+            else:
+                if (is_child_of_HSI_Event and name in hsi_event_inherited_funcs):
+                    if not child_overrides_function("HSI_Event", obj, name):
+                        continue
 
             # Document this function if necessary:
             str += f"{spacer}.. automethod:: {name}\n\n"
@@ -295,7 +303,35 @@ def get_class_output_string(classinfo):
     return str
 
 
-def skip_child_doc(base_obj, func_obj, func_name):
+def child_overrides_function(parent_class_name, func_obj, func_name):
+    '''
+    If the child class overrides a parent's function, we want
+    to know about it and document it - even if there is not
+    a docstring in the child or it just uses the parent's
+    docstring
+
+    Example of an inherited (but not overridden) function:
+     obj = <function HSI_Event.make_appt_footprint at 0x10cdb30d0>
+     i.e. it has the parent class's name.
+
+    Example of an overridden function:
+     obj = <function
+            HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.never_ran
+            at 0x10cdb4620>
+     and obj.__name__ = 'never_ran', obj.__class__ = <class 'function'>
+     So we want to display doc strings (if any) for overridden func only -
+     this has the child class's name, not the parent's.
+    '''
+    func_str = str(func_obj)
+    if func_name in func_str:
+        if parent_class_name in func_str:
+            return False
+        else:
+            return True
+    return False
+
+
+def skip_if_child_doc_same(base_obj, func_obj, func_name):
     '''
     Does the child function docstring match that of the parent's?
 
