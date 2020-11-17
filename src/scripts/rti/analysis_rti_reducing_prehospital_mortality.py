@@ -14,7 +14,11 @@ from tlo.methods import (
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-
+# =============================== Analysis description ========================================================
+# What I am doing here is artificially reducing the proportion of pre-hospital mortality, increasing the number of
+# people funneled into the injured sub-population, who will have to subsequently have to seek health care. At the moment
+# I have only included a range of reduction of pre-hospital mortality, but when I get around to focusing on this, I will
+# model a reasonable level of pre-hospital mortality reduction.
 log_config = {
     "filename": "rti_health_system_comparison",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
@@ -30,17 +34,19 @@ resourcefilepath = Path('./resources')
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-pop_size = 5000
+pop_size = 500
 nsim = 5
 output_for_different_incidence = dict()
 service_availability = ["*"]
-capabilities_reduction = np.linspace(1, 0, 5)
-all_sim_deaths = []
-all_sim_dalys = []
+list_deaths_average = []
+list_tot_dalys_average = []
+prehosital_mortality_reduction = np.linspace(1, 0, 5)
+params = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_RTI.xlsx', sheet_name='parameter_values')
+orig_prehospital_mortality = float(params.loc[params.parameter_name == 'imm_death_proportion_rti', 'value'].values)
 for i in range(0, nsim):
     list_deaths = []
     list_tot_dalys = []
-    for capability in capabilities_reduction:
+    for reduction in prehosital_mortality_reduction:
         sim = Simulation(start_date=start_date)
         # We register all modules in a single call to the register method, calling once with multiple
         # objects. This is preferred to registering each module in multiple calls because we will be
@@ -48,8 +54,7 @@ for i in range(0, nsim):
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability,
-                                      capabilities_coefficient=float(capability)),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability),
             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -59,12 +64,17 @@ for i in range(0, nsim):
         # create and run the simulation
         sim.make_initial_population(n=pop_size)
         params = sim.modules['RTI'].parameters
+        # Set the parameters used for this sim
         params['allowed_interventions'] = []
+        params['imm_death_proportion_rti'] = orig_prehospital_mortality * reduction
+        # Run the simulation
         sim.simulate(end_date=end_date)
         log_df = parse_log_file(logfile)
+        # Get the deaths and DALYs from the sim
         deaths_without_med = log_df['tlo.methods.demography']['death']
         tot_death_without_med = len(deaths_without_med.loc[(deaths_without_med['cause'] != 'Other')])
         list_deaths.append(tot_death_without_med)
+        # Get the DALYs from the sim
         dalys_df = log_df['tlo.methods.healthburden']['DALYS']
         males_data = dalys_df.loc[dalys_df['sex'] == 'M']
         YLL_males_data = males_data.filter(like='YLL_RTI').columns
@@ -74,26 +84,25 @@ for i in range(0, nsim):
         YLL_females_data = females_data.filter(like='YLL_RTI').columns
         females_dalys = females_data[YLL_females_data].sum(axis=1) + \
                         females_data['YLD_RTI_rt_disability']
-
         tot_dalys = males_dalys.tolist() + females_dalys.tolist()
         list_tot_dalys.append(sum(tot_dalys))
-    all_sim_deaths.append(list_deaths)
-    all_sim_dalys.append(list_tot_dalys)
+    # Store the deaths and DALYs from the sim
+    list_deaths_average.append(list_deaths)
+    list_tot_dalys_average.append(list_tot_dalys)
 
-all_sim_deaths
-avg_tot_deaths = [float(sum(col))/len(col) for col in zip(*all_sim_deaths)]
-avg_tot_dalys = [float(sum(col))/len(col) for col in zip(*all_sim_dalys)]
-labels = []
-for capability in capabilities_reduction:
-    labels.append(str(capability))
-width = 0.3
-plt.bar(np.arange(len(avg_tot_deaths)), avg_tot_deaths, width=width)
-plt.bar(np.arange(len(avg_tot_dalys)) + width, avg_tot_dalys, width=width)
-plt.xticks(np.arange(len(avg_tot_deaths)), labels, rotation=45)
-plt.xlabel('Capability coefficients')
+# Get the average deaths per reduction of pre-hospital mortality
+average_deaths = [float(sum(col)) / len(col) for col in zip(*list_deaths_average)]
+# Get the average DALYs per reduction of pre-hospital mortality
+average_tot_dalys = [float(sum(col)) / len(col) for col in zip(*list_tot_dalys_average)]
+# Create the xtick labels
+xtick_labels = [f"{np.round(1 - reduction, 2)}%" for reduction in prehosital_mortality_reduction]
+# Create a dataframe of the results
+plt.bar(np.arange(len(average_deaths)), average_deaths, color='lightsteelblue', width=0.25, label='Deaths')
+plt.bar(np.arange(len(average_deaths)) + 0.25, average_tot_dalys, color='lightsalmon', width=0.25, label='DALYs')
 plt.ylabel('Deaths/DALYs')
-plt.title(f"Average deaths and DALYs in simulations for different capability coefficients"
+plt.xticks(np.arange(len(average_deaths)), xtick_labels, rotation=45)
+plt.title(f"The effect of reducing pre-hospital mortality on average Deaths/DALYS"
           f"\n"
           f"population size: {pop_size}, years modelled: {yearsrun}, number of runs: {nsim}")
-plt.savefig('outputs/CapabilityAnalysis/compare_mean_total_deaths_and_dalys_per_capability_coefficient.png',
-            bbox_inches='tight')
+plt.savefig('outputs/PrehospitalMortality/PrehospitalMortality_vs_deaths_DALYS.png', bbox_inches='tight')
+
