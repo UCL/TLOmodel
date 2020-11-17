@@ -103,10 +103,10 @@ class HealthBurden(Module):
         dalys = dalys.reset_index()
 
         # 2) Go line-by-line and dump to the log
-        for line_num in range(len(dalys)):
+        for index, row in dalys.iterrows():
             logger.info(
                 key='dalys',
-                data=dalys.loc[line_num].to_dict(),
+                data=row.to_dict(),
                 description='dataframe of dalys, broken down by year, sex, age-group'
             )
 
