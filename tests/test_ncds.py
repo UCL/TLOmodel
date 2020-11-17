@@ -40,8 +40,6 @@ def routine_checks(sim):
     # check that someone has had onset of each condition
 
     df = sim.population.props
-    assert df.nc_ldl_hdl.any()
-    assert df.nc_chronic_inflammation.any()
     assert df.nc_diabetes.any()
     assert df.nc_hypertension.any()
     assert df.nc_depression.any()
@@ -49,6 +47,10 @@ def routine_checks(sim):
     assert df.nc_chronic_kidney_disease.any()
     assert df.nc_chronic_ischemic_hd.any()
     assert df.nc_cancers.any()
+
+    # check that someone has had onset of each event
+
+    assert df.nc_ever_stroke.any()
 
     pass
 
