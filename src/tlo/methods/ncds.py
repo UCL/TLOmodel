@@ -7,6 +7,7 @@ from pathlib import Path
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.methods import Metadata, demography
+from tlo.methods.demography import InstantaneousDeath
 import tlo.methods.demography as de
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods.healthsystem import HSI_Event
@@ -101,15 +102,21 @@ class Ncds(Module):
         'rr_cancers': Parameter(Types.REAL, 'rr if currently has cancers'),
         'rr_stroke_if_cihd': Parameter(Types.REAL,
                                        'rr of having stroke if currently has chronic ischemic heart disease'),
-        'baseline_annual_probability_stroke': Parameter(Types.REAL, 'baseline annual probability of having a stroke')
+        'baseline_annual_probability_stroke': Parameter(Types.REAL, 'baseline annual probability of having a stroke'),
+        'r_death_nc_hypertension': Parameter(Types.REAL, 'baseline annual probability of dying if has hypertension'),
+        'r_death_nc_diabetes': Parameter(Types.REAL, 'baseline annual probability of dying if has diabetes'),
+        'r_death_nc_depression': Parameter(Types.REAL, 'baseline annual probability of dying if has depression'),
+        'r_death_nc_chronic_lower_back_pain': Parameter(Types.REAL, 'baseline annual probability of dying if has chronic lower back pain'),
+        'r_death_nc_chronic_kidney_disease': Parameter(Types.REAL, 'baseline annual probability of dying if has CKD'),
+        'r_death_nc_chronic_ischemic_hd': Parameter(Types.REAL, 'baseline annual probability of dying if has CIHD'),
+        'r_death_nc_cancers': Parameter(Types.REAL, 'baseline annual probability of dying if has cancers'),
+        'r_death_stroke': Parameter(Types.REAL, 'baseline annual probability of dying if has ever had a stroke')
     }
 
     # Note that all properties must have a two letter prefix that identifies them to this module.
 
     PROPERTIES = {
         # These are all the states:
-        'nc_ldl_hdl': Property(Types.BOOL, 'Whether or not someone currently has LDL/HDL'),
-        'nc_chronic_inflammation': Property(Types.BOOL, 'Whether or not someone currently has chronic inflammation'),
         'nc_diabetes': Property(Types.BOOL, 'Whether or not someone currently has diabetes'),
         'nc_hypertension': Property(Types.BOOL, 'Whether or not someone currently has hypertension'),
         'nc_depression': Property(Types.BOOL, 'Whether or not someone currently has depression'),
@@ -197,7 +204,7 @@ class Ncds(Module):
 
         df = population.props
         # HAND MANIPULATION OF DF TO INCREASE PROPORTION OF THOSE WITH HIGH-SALT DIET
-        df['li_high_salt'].replace({True: False}, inplace=True)
+        #df['li_high_salt'].replace({True: False}, inplace=True)
 
         for condition in self.conditions:
             df[condition] = False
@@ -423,6 +430,35 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             # self.module.lms_removal[condition].predict(df.loc[df.is_alive & df[condition]
             # ],
             # self.module.rng), condition] = False
+
+            # -------------------- DEATH FROM NCD CONDITION ---------------------------------------
+            # There is a risk of death for those who have an NCD condition. Death is assumed to happen instantly.
+
+            if condition == "nc_hypertension":
+                condition_name = "Hypertension"
+            elif condition == "nc_diabetes":
+                condition_name = "Diabetes"
+            elif condition == "nc_depression":
+                condition_name = "Depression"
+            elif condition == "nc_chronic_lower_back_pain":
+                condition_name = "ChronicLowerBackPain"
+            elif condition == "nc_chronic_ischemic_hd":
+                condition_name = "ChronicIschemicHD"
+            elif condition == "nc_chronic_kidney_disease":
+                condition_name = "ChronicKidneyDisease"
+            elif condition == "nc_cancers":
+                condition_name = "Cancers"
+
+            condition_idx = df.index[df.is_alive & (df[f'{condition}'])]
+            selected_to_die = condition_idx[
+                rng.random_sample(size=len(condition_idx)) < self.module.parameters[f'r_death_{condition}']]
+
+            for person_id in selected_to_die:
+                self.sim.schedule_event(
+                    InstantaneousDeath(self.module, person_id, f"{condition_name}"), self.sim.date
+                )
+
+        # Determine occurrence of events
         for event in self.module.events:
 
             eligible_population_for_event = df.is_alive
@@ -433,6 +469,8 @@ class Ncds_MainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             for person_id in idx_has_event:
                 self.sim.schedule_event(NcdStrokeEvent(self.module, person_id),
                                         self.sim.date + DateOffset(days=self.module.rng.randint(0, 90)))
+
+
 
 
 class NcdStrokeEvent(Event, IndividualScopeEventMixin):
@@ -455,7 +493,7 @@ class NcdStrokeEvent(Event, IndividualScopeEventMixin):
         #    person_id=person_id,
         #    disease_module=self.module,
         #    add_or_remove='+',
-        #    symptom_string='Injuries_From_Self_Harm'
+        #    symptom_string='Damage_From_Stroke'
         # )
 
 
@@ -524,20 +562,7 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
             pr = pr.drop(columns=groupbylist)
             return pr[0].to_dict()
 
-        # Prevalence of hypertension broken down by sex and age
-        logger.info(
-            key='ldl_hdl_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having LDL/HDL, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_ldl_hdl',
-                                                                                 ['sex', 'age_range'])}
-        )
-
-        logger.info(
-            key='chronic_inflammation_prevalence_by_age_and_sex',
-            description='current fraction of the population that are classified as having chronic inflammation, broken down by sex and age',
-            data={'data': proportion_of_something_in_a_groupby_ready_for_logging(df, 'nc_chronic_inflammation',
-                                                                                 ['sex', 'age_range'])}
-        )
+        # Prevalence of conditions broken down by sex and age
 
         logger.info(
             key='diabetes_prevalence_by_age_and_sex',
