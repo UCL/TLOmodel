@@ -435,7 +435,7 @@ class NewbornOutcomes(Module):
                                                            tetra_cycline_given=tetra_cycline_given,
                                                            #mother_gestational_htn=gestational_htn,
                                                            #mother_mild_pre_eclamp=mild_pre_eclampsia,
-                                                          # mother_severe_pre_eclamp=severe_pre_eclampsia,
+                                                           # mother_severe_pre_eclamp=severe_pre_eclampsia,
                                                            received_corticosteroids=steroid_status,
                                                            attended_birth=birth_attendance
                                                            )[person_id]

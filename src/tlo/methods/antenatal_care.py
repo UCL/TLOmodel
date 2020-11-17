@@ -465,7 +465,7 @@ class CareOfWomenDuringPregnancy(Module):
         # Urine dipstick for protein...
         # Next we apply a probability that the HCW will perform a urine dipstick
         if self.rng.random_sample() < params['prob_urine_dipstick'] and \
-            outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick]:
+          outcome_of_request_for_consumables['Item_Code'][item_code_urine_dipstick]:
 
             # Severity of proteinuria as determined by the result of the dipstick (i.e. protein +, protein ++,
             # protein +++) is part of the diagnositc criteria for pre-eclampsia
@@ -1405,7 +1405,7 @@ class CareOfWomenDuringPregnancy(Module):
             # todo: what would happen here? would they just do a CS anyway? baby survival non-exsistent?
 
         if mother.ps_antepartum_haemorrhage and mother.ps_placenta_praevia and \
-        mother.ps_antepartum_haemorrhage_severity == 'severe' and mother.ps_gestational_age_in_weeks >= 28:
+          mother.ps_antepartum_haemorrhage_severity == 'severe' and mother.ps_gestational_age_in_weeks >= 28:
             elective_section = HSI_Labour_ElectiveCaesareanSection(
                 self.sim.modules['Labour'], person_id=individual_id)
 
@@ -1414,16 +1414,12 @@ class CareOfWomenDuringPregnancy(Module):
                                                                 tclose=self.sim.date + DateOffset(days=1))
 
         if mother.ps_antepartum_haemorrhage and mother.ps_placenta_praevia and \
-          mother.ps_antepartum_haemorrhage_severity == 'mild_moderate' and mother.ps_gestational_age_in_weeks >= 28:
-            days_untill_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
+          mother.ps_antepartum_haemorrhage_severity == 'mild_moderate':
 
-            #inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-            #    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
-
-            #self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient, priority=0,
-            #                                                    topen=self.sim.date,
-            #                                                    tclose=self.sim.date +
-            #                                                    DateOffset(days=days_untill_safe_for_cs))
+            if 37 > mother.ps_gestational_age_in_weeks >= 28:
+                days_until_safe_for_cs = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
+            elif mother.ps_gestational_age_in_weeks >=37:
+                days_until_safe_for_cs = 1
 
             elective_section = HSI_Labour_ElectiveCaesareanSection(
                 self.sim.modules['Labour'], person_id=individual_id)
@@ -1431,8 +1427,15 @@ class CareOfWomenDuringPregnancy(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(elective_section, priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date +
-                                                                       DateOffset(days=days_untill_safe_for_cs))
+                                                                       DateOffset(days=days_until_safe_for_cs))
 
+            # inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
+            #    self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
+
+            # self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient, priority=0,
+            #                                                    topen=self.sim.date,
+            #                                                    tclose=self.sim.date +
+            #                                                    DateOffset(days=days_untill_safe_for_cs))
             # todo: steriods of GA < 34 weeks
 
     def antibiotics_for_prom(self, individual_id, hsi_event):
@@ -1566,16 +1569,16 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit, '
-                                         f'person {person_id} has presented for the first antenatal care visit of their'
-                                         f'pregnancy on date {self.sim.date} at gestation'
-                                         f' {df.at[person_id, "ps_gestational_age_in_weeks"]}')
-
         # We condition this event on the woman being alive, pregnant, not currently in labour and not previously
         # attending an ANC visit
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and df.at[person_id,
                                                                   'ac_total_anc_visits_current_pregnancy'] == 0:
+            logger.debug(key='message',
+                         data=f'This is HSI_CareOfWomenDuringPregnancy_PresentsForFirstAntenatalCareVisit, '
+                         f'person {person_id} has presented for the first antenatal care visit of their'
+                         f'pregnancy on date {self.sim.date} at gestation'
+                         f' {df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             # We add a visit to a rolling total of ANC visits in this pregnancy
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
@@ -1640,8 +1643,8 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
                 # todo: for now, these women just wont have another visit
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
 
@@ -1677,14 +1680,14 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit, '
-                                         f'person {person_id} has presented for the second antenatal care visit of '
-                                         f'their pregnancy on date {self.sim.date} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
-
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 1:
+
+            logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit, '
+                                             f'person {person_id} has presented for the second antenatal care visit of '
+                                             f'their pregnancy on date {self.sim.date} at gestation '
+                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2
@@ -1744,8 +1747,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 pass
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -1775,14 +1778,14 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact, '
-                                         f'person {person_id} has presented for the third antenatal care visit of '
-                                         f'their pregnancy on date {self.sim.date} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
-
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and ~df.at[person_id,
                                                                                        'la_currently_in_labour'] and \
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 2:
+
+            logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact, '
+            f'person {person_id} has presented for the third antenatal care visit of '
+            f'their pregnancy on date {self.sim.date} at gestation '
+            f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3
@@ -1837,8 +1840,8 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 pass
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
             # todo: remove
             if df.at[person_id, 'ps_gestational_age_in_weeks'] < 30 and df.at[person_id,
@@ -1852,8 +1855,8 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         pass
 
     def not_available(self):
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact: cannot not run with '
-                                         'this configuration')
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact: cannot not run '
+                                         'with this configuration')
 
 
 class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
@@ -1877,14 +1880,15 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact, '
-                                         f'person {person_id} has presented for the fourth antenatal care visit of '
-                                         f'their pregnancy on date {self.sim.date} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 3:
+
+            logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact, '
+            f'person {person_id} has presented for the fourth antenatal care visit of '
+            f'their pregnancy on date {self.sim.date} at gestation '
+            f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4
@@ -1926,8 +1930,8 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 pass
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -1957,14 +1961,14 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact, '
-                                         f'person {person_id} has presented for the fifth antenatal care visit of '
-                                         f'their pregnancy on date {self.sim.date} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
-
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 4:
+
+            logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact, '
+                                             f'person {person_id} has presented for the fifth antenatal care visit of '
+                                             f'their pregnancy on date {self.sim.date} at gestation '
+                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 5
@@ -1999,8 +2003,8 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 pass
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -2035,14 +2039,14 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact, '
-                                         f'person {person_id} has presented for the sixth antenatal care visit of '
-                                         f'their pregnancy on date {self.sim.date} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
-
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 5:
+
+            logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact, '
+                                             f'person {person_id} has presented for the sixth antenatal care visit of '
+                                             f'their pregnancy on date {self.sim.date} at gestation '
+                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 6
@@ -2067,8 +2071,8 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 pass
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -2099,14 +2103,14 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact, '
-                                         f'person {person_id} has presented for the seventh antenatal care visit of '
-                                         f'their pregnancy on date {self.sim.date} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
-
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 6:
+
+            logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact, '
+                                             f'person {person_id} has presented for the seventh antenatal care visit of '
+                                             f'their pregnancy on date {self.sim.date} at gestation '
+                                             f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 7
@@ -2124,8 +2128,8 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             elif df.at[person_id, 'ps_gestational_age_in_weeks'] >= 40:
                 pass
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -2158,14 +2162,14 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact, '
-                                         f'person {person_id} has presented for the eighth antenatal care visit of '
-                                         f'their pregnancy on date {self.sim.date} at gestation '
-                                         f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
-
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'is_pregnant'] and \
             ~df.at[person_id, 'la_currently_in_labour'] and \
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 7:
+
+            logger.debug(key='message', data=f'This is HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact, '
+            f'person {person_id} has presented for the eighth antenatal care visit of '
+            f'their pregnancy on date {self.sim.date} at gestation '
+            f'{df.at[person_id, "ps_gestational_age_in_weeks"]}')
 
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
             assert df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] == 8
@@ -2174,8 +2178,8 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
             self.module.interventions_delivered_at_every_contact(hsi_event=self)
             self.module.calcium_supplementation(hsi_event=self)
 
-            if df.at[person_id, 'ac_to_be_admitted']:
-                self.module.schedule_admission(person_id)
+        #    if df.at[person_id, 'ac_to_be_admitted']:
+        #        self.module.schedule_admission(person_id)
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
         return actual_appt_footprint
@@ -2376,7 +2380,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         mother = df.loc[person_id]
         params = self.module.parameters
 
-        if mother.is_alive and ~mother.la_currently_in_labour:
+        # TODO: Antihypertensive, antidiabetics
+        # TODO: ensure ac_inpatient = False on dx from inpatient services
+
+        if mother.is_alive and mother.is_pregnant and ~mother.la_currently_in_labour:
+            df.at[person_id, 'ac_inpatient'] = True
+
             logger.debug(key='message', data=f'Mother {person_id} has been admitted for treatment of a complication of '
                                              f'her pregnancy ')
 
@@ -2442,7 +2451,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 # TODO: reset df.at[person_id, 'ac_inpatient'] after the correct number of days
 
         #  ----------------------------- Treatment of Premature Rupture of Membranes-----------------------------------
-            # Here we manage treatment for women who have sought care for PROM but are not yet septic or in labour
+            # Here we manage treatment for women who have sought care for PROM but are not yet septic
             if mother.ps_premature_rupture_of_membranes and ~mother.ps_chorioamnionitis:
 
                 # Antibiotics are delivered to reduce risk of chorioamnionitis
@@ -2461,10 +2470,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                     self.module.steroids_following_pprom(person_id, self)
 
                     # These women will remain inpatients until GA of 34 weeks and delivery can occur safely
-                    # We calculate their risk of developing chorioamnionitis as an inpatient, post anitbiotic
+                    # We calculate their risk of developing chorioamnionitis as an inpatient, post antibiotic
                     # treatment
-                    days_until_induction = (34*7) - (mother.ps_gestational_age_in_weeks * 7)
-                    int(days_until_induction)
+                    days_until_induction = int((34*7) - (mother.ps_gestational_age_in_weeks * 7))
 
                     preg_sup_param = self.sim.modules['PregnancySupervisor'].parameters
                     risk_of_chorioamnionitis = preg_sup_param['ps_linear_equations']['chorioamnionitis'].predict(
@@ -2478,21 +2486,9 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                         self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
                                                 self.sim.date)
 
-                    # For women who do not show signs of infection, we calculate their risk of going into pre-term
-                    # labour prior to induction at 34 weeks
                     else:
-                        risk_of_early_labour = 0.3   # todo: parameter/lm
-                        # These women are then admitted to labour ward for delivery
-                        if self.module.rng.random_sample() < risk_of_early_labour:
-                            days_when_labour_onsets = self.module.rng.randint(0, days_until_induction)
-                            df.at[person_id, 'ac_admitted_for_immediate_delivery'] = True
-                            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
-                                                    (self.sim.date + DateOffset(days=days_when_labour_onsets)))
-                        else:
-                            # Otherwise we assume these women wont go into labour before induction and we schedule
-                            # their future delivery at 34 weeks
-                            self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
-                                                   (self.sim.date + DateOffset(days=days_until_induction)))
+                        self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
+                                                (self.sim.date + DateOffset(days=days_until_induction)))
 
             # Treatment of women with PROM who are currently septic
             if mother.ps_premature_rupture_of_membranes and mother.ps_chorioamnionitis:
@@ -2502,14 +2498,15 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         #  --------------------------------- Treatment of Antepartum Haemorrhage -------------------------------------
             # If abruption > 28 weeks --> CS
-            if mother.ps_antepartum_haemorrhage:
-                self.module.treatment_of_antepartum_haemorrhage(person_id)
+        #    if mother.ps_antepartum_haemorrhage:
+        #        self.module.treatment_of_antepartum_haemorrhage(person_id)
 
         # ---------------------------------- Treatment of Severe Pre-eclampsia ---------------------------------------
             if mother.ps_htn_disorders == 'severe_pre_eclamp' or mother.ps_htn_disorders == 'eclampsia':
                 cause = mother.ps_htn_disorders
                 self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id, cause, self)
                 self.module.initiate_anti_hypertensive_treatment(person_id, self)
+                df.at[person_id, 'ac_inpatient'] = False
                 # TODO: deliver
 
 
