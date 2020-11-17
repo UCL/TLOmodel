@@ -94,9 +94,15 @@ autodoc_default_options = {
     # source code, rather than alphabetically:
     'member-order': 'bysource',
 
+    #'add_module_names': False,
+
     # List below what you don't want to see documented:
     'exclude-members': '__dict__, name, rng, sim'  ##, read_parameters',
 }
+
+# Stop displaying fully-qualified domain names of classes.
+# e.g. rather than "class A.B.C", just say "class C".
+add_module_names = False
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
