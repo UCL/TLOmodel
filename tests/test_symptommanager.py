@@ -224,9 +224,7 @@ def test_baby_born_has_no_symptoms():
 
 
 def test_auto_onset_symptom():
-    """Test to check that symptons that are delayed in onset work as expected.
-    This is in response to a bug reported whereby:
-        *
+    """Test to check that symptoms that are delayed in onset work as expected.
     """
     # Generate a simulation:
     sim = Simulation(start_date=start_date, seed=0)
