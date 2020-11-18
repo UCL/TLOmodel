@@ -34,8 +34,8 @@ results_filename = outputpath / 'long_run.pickle'
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(months=8)
-pop_size = 1000
+end_date = start_date + pd.DateOffset(years=10)
+pop_size = 100_000
 
 # The resource files
 rfp = Path("./resources")
