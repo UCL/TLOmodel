@@ -30,12 +30,12 @@ from tlo.methods import (
 
 # Define output path
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / 'combination_intervention_results.pickle'
+results_filename = outputpath / 'long_run.pickle'
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(years=2)
-pop_size = 5000
+end_date = start_date + pd.DateOffset(months=8)
+pop_size = 1000
 
 # The resource files
 rfp = Path("./resources")
@@ -45,9 +45,9 @@ log_config = {
     "directory": "./outputs",
     "custom_levels": {
         "*": logging.WARNING,
-        "Hiv": logging.INFO,
-        "HealthBurden": logging.INFO,
-        "Demography": logging.INFO
+        "tlo.methods.healthsystem": logging.INFO,
+        "tlo.methods.healthburden": logging.INFO,
+        "tlo.methods.demography": logging.INFO
     }
 }
 
@@ -59,7 +59,7 @@ sim.register(
     demography.Demography(resourcefilepath=rfp),
     enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
     healthsystem.HealthSystem(resourcefilepath=rfp),
-    symptommanager.SymptomManager(resourcefilepath=rfp),
+    symptommanager.SymptomManager(resourcefilepath=rfp, spurious_symptoms=True),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=rfp),
     healthburden.HealthBurden(resourcefilepath=rfp),
     contraception.Contraception(resourcefilepath=rfp),
