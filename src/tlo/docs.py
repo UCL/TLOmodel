@@ -171,28 +171,22 @@ def get_class_output_string(classinfo):
 
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
-    is_descendent_of_Event = False
-    is_descendent_of_HSI_Event = False
+    # is_descendent_of_Event = False
+    # is_descendent_of_HSI_Event = False
     is_descendent_of_Module = False
 
     (base_str, base_objects) = extract_bases(class_name, class_obj, spacer)
 
-    # hsi_event_base_object = None
-    # module_base_object = None
-    #if "ChronicSyndromeEvent" in class_name:
-    #    import pdb;
-    #    pdb.set_trace()
-
     count = 0
     for mybase in base_objects:
         if mybase.__name__ == "HSI_Event":
-            is_descendent_of_HSI_Event = True
+            # is_descendent_of_HSI_Event = True
             count += 1
         elif mybase.__name__ == "Module":
             is_descendent_of_Module = True
             count += 1
         elif mybase.__name__ == "Event":
-            is_descendent_of_Event = True
+            # is_descendent_of_Event = True
             count += 1
 
     # Make sure it has only matched one of the criteria in the loop above:
@@ -205,33 +199,9 @@ def get_class_output_string(classinfo):
     str += base_str
     str += "\n\n"
 
-    # Asif says we should probably not exclude __init__ in the following,
-    # because some disease classes have custom arguments:
+    # We don't want these to appear in our documentation:
     general_exclusions = ["__class__", "__dict__", "__module__",
                           "__slots__", "__weakref__", ]
-
-    module_inherited_funcs = ["initialise_population",
-                              "initialise_simulation",
-                              "on_birth", "read_parameters", "apply",
-                              "post_apply_hook", "on_hsi_alert",
-                              "report_daly_values", "run", "did_not_run",
-                              "SYMPTOMS", ]
-
-    event_inherited_funcs = ["__init__", "post_apply_hook", "run"]
-
-    # For classes which inherit from HSI_Event, we do not wish to generate docs
-    # for the functions which they inherit UNLESS they have produced a new
-    # docstring in the child class.
-    # Even if HSI_Event's function body is simply "pass", we add it to the
-    # list of inherited exclusions.
-    # TODO Should __init__ be in this list?
-    hsi_event_inherited_funcs = ["__init__", "not_available",
-                                 "post_apply_hook", "run",
-                                 "get_all_consumables",
-                                 "make_appt_footprint", "never_ran",
-                                 "did_not_run", ]
-
-    # hsi_event_not_implemented = ["apply",  ]  # Not needed ?
 
     # Asif: I think it's mandatory to a subclass of HSI Event to have an
     # apply() implementation, so I think that should always be displayed
@@ -243,6 +213,8 @@ def get_class_output_string(classinfo):
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
+
+    func_objects_to_document = which_functions_to_print(class_obj)
 
     for name, obj in classdat:
         # We only want to document things defined in this class itself,
@@ -256,7 +228,7 @@ def get_class_output_string(classinfo):
         if (is_descendent_of_Module and
             ("of 'object' objects" in object_description
                 or "built-in method" in object_description
-                or "function Module." in object_description
+                # or "function Module." in object_description
                 or "of 'Module' objects" in object_description
                 or name in general_exclusions
                 # or name in module_inherited_functions
@@ -281,16 +253,17 @@ def get_class_output_string(classinfo):
 
         # Interrogate the object. It's something else, maybe a
         # function which hasn't been filtered out.
-        #
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
 
-            if (is_descendent_of_Module and name in module_inherited_funcs)\
-                or (is_descendent_of_Event and name in event_inherited_funcs)\
-                or (is_descendent_of_HSI_Event and name in
-                    hsi_event_inherited_funcs):
-                if not descendent_overrides_function(base_objects, obj):
-                    continue
+            if not func_objects_to_document:
+                print(f"**DEBUG: no func_objects_to_document in class"
+                      f"{class_name}")
+                continue
+
+            if obj not in func_objects_to_document:
+                print(f"**DEBUG: skipping {obj} of class {class_name}")
+                continue
 
             # Document this function if necessary:
             str += f"{spacer}.. automethod:: {name}\n\n"
@@ -307,101 +280,58 @@ def get_class_output_string(classinfo):
     return str
 
 
-def descendent_overrides_function(ancestor_class_objects, func_obj):
-    '''
-    Does a descendent class override an ancestor class's function?
+def which_functions_to_print(clazz):
+    """
+    Which functions do we want to print?
 
-    :param ancestor_class_objects: list of class objects which are
-        ancestors of the current class
-    :param func_obj: the function object inherited in the descendent class
-                    (which may, or may not, be overridden)
-    :return: returns True if descendent overrides the function, else False.
+    :param clazz: class object under consideration
+    :return: returns a list of function objects we want to print
 
-    If the descendent class overrides an ancestor's function, we want
-    to know about it and document it - even if there is not
-    a docstring in the descendent or it just uses the ancestor's
-    docstring
+    Written by Asif
+    """
+    # get all the functions in this class
+    class_functions = dict(inspect.getmembers(clazz,
+                                              predicate=inspect.isfunction))
 
-    Given the ancestor class is "HSI_Event" and the current_class_name is
-    "HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment":
+    ok_to_print = []
 
-    1. Example of an inherited (but not overridden) function:
-       obj = <function HSI_Event.make_appt_footprint at 0x10cdb30d0>
-       i.e. it has the ancestor class's name.
+    # for each function in this class
+    for func_name, func_obj in class_functions.items():
+        should_i_print = True
 
-    2. Example of an overridden function:
-      obj = <function
-            HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.never_ran
-            at 0x10cdb4620>
-      and obj.__name__ = 'never_ran', obj.__class__ = <class 'function'>
+        # for each base class of this class
+        for baseclass in clazz.__mro__:
+            # skip over the class we're checking
+            if baseclass != clazz:
+                # get the functions of the base class
+                functions_base_class = dict(
+                    inspect.getmembers(baseclass,
+                                       predicate=inspect.isfunction))
 
-     So we want to display doc strings (if any) for overridden func only -
-     this has the descendent class's name, not the ancestor's.
-    '''
-    func_str = str(func_obj)
+                # if there is a function with the same name as base class
+                if func_name in functions_base_class:
+                    # if the function object is the same
+                    # as one defined in a base class
+                    if func_obj == functions_base_class[func_name]:
+                        print(f'{func_name} in subclass is same as function in'
+                              f'{baseclass.__name__} (not overridden)')
+                        should_i_print = False
+                        break
+                    else:
+                        print(f'{func_name} in subclass is not the same '
+                              f'as one in baseclass {baseclass.__name__}')
+                else:
+                    print(f'{func_name} is not in '
+                          f'baseclass {baseclass.__name__}')
 
-    # Typical overridden func_str:
-    # '<function ChronicSyndromeEvent.__init__ at 0x10f59f268>'
-    #
-    # Typical inherited, but not overridden, func_str:
-    # <function Event.post_apply_hook at 0x108e527b8>
-    # in a *descendent class* of Event
-    this_class = None
-    #this_func = None
-    parts = func_str.split()
-    class_and_func = parts[1]  # e.g. 'ChronicSyndromeEvent.__init__'
-    if class_and_func:
-        this_class, _ = class_and_func.split('.')
+        if should_i_print:
+            print(f'\t✓✓✓ {func_name} is implemented in the subclass - print ')
+            ok_to_print.append(func_obj)
+        else:
+            print(f'\txxx {func_name} has been inherited from a subclass'
+                  f'- do not print')
 
-    assert this_class is not None,\
-                      f"this_class is None; func_str is {func_str}"
-
-    for aco in ancestor_class_objects:
-         aco_str = str(aco)  # e.g. "<class 'tlo.events.RegularEvent'>"
-         x = aco_str.split("'")
-         ancestor = x[1]  # e.g. 'tlo.events.RegularEvent'
-         if this_class in ancestor:
-             return False
-
-    return True
-
-
-def skip_if_child_doc_same(base_obj, func_obj, func_name):
-    '''
-    Does the child function docstring match that of the parent's?
-
-    :param base_obj: an object instance of the base class
-    :param func_obj: the child class function object
-    :param func_name: the name of the function concerned.
-    :return: True if both present and identical, else False.
-
-    We only want to document the child class's function if its
-    docstring is present and different to the parent's, i.e. False.
-    We return True when we don't want the child class's function docstring
-    included in the docs we generate.
-
-    Obviously, if the child function has a docstring, but the
-    parent's function doesn't, we shouldn't skip.
-    '''
-    # if func_obj is None:
-    #     return True
-    assert base_obj is not None
-    assert func_obj is not None
-
-    func_doc_string = func_obj.__doc__
-    if func_doc_string in ["", None]:
-        return True
-
-    # Iterate over the base class object.
-    base_data = inspect.getmembers(base_obj)
-    for datum in base_data:  # Each datum is [name, object]
-        base_name = datum[0]
-        if base_name is func_name:
-            base_func_obj = datum[1]
-            if base_func_obj.__doc__ == func_doc_string:
-                return True
-
-    return False
+    return ok_to_print
 
 
 def extract_bases(class_name, class_obj, spacer=""):
