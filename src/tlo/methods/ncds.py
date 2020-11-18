@@ -541,8 +541,10 @@ class Ncds_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         delta = pd.DateOffset(years=1)
         for cond in self.module.conditions:
-            kwargs = {'arg': f'{cond}'}
-            py = de.Demography.calc_py_lived_in_last_year(self, delta, **kwargs)
+            # mask is a Series restricting dataframe to individuals who do not have the condition, which is passed to
+            # demography module to calculate person-years lived without the condition
+            mask = (df.is_alive & ~df[f'{cond}'])
+            py = de.Demography.calc_py_lived_in_last_year(self, delta, mask)
             logger.info(key=f'person_years_{cond}', data=py.to_dict())
 
         # Make some summary statistics for prevalence by age/sex for each condition
