@@ -17,8 +17,12 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-from tlo.methods.symptommanager import DuplicateSymptomWithNonIdenticalPropertiesError, Symptom, \
-    SymptomManager_AutoOnsetEvent, SymptomManager_AutoResolveEvent
+from tlo.methods.symptommanager import (
+    DuplicateSymptomWithNonIdenticalPropertiesError,
+    Symptom,
+    SymptomManager_AutoOnsetEvent,
+    SymptomManager_AutoResolveEvent,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
