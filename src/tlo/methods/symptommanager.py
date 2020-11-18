@@ -298,6 +298,7 @@ class SymptomManager(Module):
                                                              disease_module=disease_module,
                                                              duration_in_days=duration_in_days)
             self.sim.schedule_event(event=auto_onset_event, date=date_of_onset)
+            return
 
         # Make the operation:
         if add_or_remove == '+':

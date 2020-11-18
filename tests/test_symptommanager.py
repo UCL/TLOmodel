@@ -17,7 +17,8 @@ from tlo.methods import (
     pregnancy_supervisor,
     symptommanager,
 )
-from tlo.methods.symptommanager import DuplicateSymptomWithNonIdenticalPropertiesError, Symptom
+from tlo.methods.symptommanager import DuplicateSymptomWithNonIdenticalPropertiesError, Symptom, \
+    SymptomManager_AutoOnsetEvent, SymptomManager_AutoResolveEvent
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -220,3 +221,70 @@ def test_baby_born_has_no_symptoms():
 
     # check that the new person does not have symptoms:
     assert [] == sim.modules['SymptomManager'].has_what(person_id)
+
+
+def test_auto_onset_symptom():
+    """Test to check that symptons that are delayed in onset work as expected.
+    This is in response to a bug reported whereby:
+        *
+    """
+    # Generate a simulation:
+    sim = Simulation(start_date=start_date, seed=0)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 mockitis.Mockitis()
+                 )
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=0))
+    sim.event_queue.queue = []
+
+    sm = sim.modules['SymptomManager']
+
+    # Select a person and make them alive and no symptoms
+    person_id = 0
+    sim.population.props.loc[person_id, 'is_alive'] = True
+    assert 0 == len(sm.has_what(person_id))
+
+    def get_events_in_sim():
+        return [ev for ev in sim.event_queue.queue if (person_id in ev[2].person_id)]
+    assert 0 == len(get_events_in_sim())
+
+    # The symptom:
+    symptom_string = 'weird_sense_of_deja_vu'
+    duration_in_days = 10
+    date_of_onset = sim.date + DateOffset(days=5)
+
+    # Mockitis to schedule the onset of a symptom for a date in the future
+    sm.change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_string,
+        add_or_remove='+',
+        duration_in_days=duration_in_days,
+        date_of_onset=date_of_onset,
+        disease_module=sim.modules['Mockitis']
+    )
+
+    # check that the symptom is not imposed
+    assert 0 == len(sm.has_what(person_id))
+
+    # get the future events for this person (should be just the auto-onset event)
+    assert 1 == len(get_events_in_sim())
+    onset = get_events_in_sim()[0]
+
+    assert onset[0] == date_of_onset
+    assert isinstance(onset[2], SymptomManager_AutoOnsetEvent)
+
+    # run the events and check for the changing of symptoms
+    sim.date = date_of_onset
+    onset[2].apply(sim.population)
+    assert symptom_string in sm.has_what(person_id)
+
+    # get the future events for this person (should now include the auto-resolve event)
+    assert 2 == len(get_events_in_sim())
+    resolve = get_events_in_sim()[1]
+
+    assert resolve[0] == date_of_onset + DateOffset(days=duration_in_days)
+    assert isinstance(resolve[2], SymptomManager_AutoResolveEvent)
+
+    resolve[2].apply(sim.population)
+    assert 0 == len(sm.has_what(person_id))
