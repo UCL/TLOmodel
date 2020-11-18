@@ -52,13 +52,13 @@ def check_configuration_of_properties(sim):
     df = sim.population.props
 
     # Those that have never had diarrhoea, should have not_applicable/null values for all the other properties:
-    assert (df.loc[~df['gi_ever_had_diarrhoea'], [
+    assert (df.loc[~df.gi_ever_had_diarrhoea & ~df.date_of_birth.isna(), [
         'gi_last_diarrhoea_pathogen',
         'gi_last_diarrhoea_type',
         'gi_last_diarrhoea_dehydration']
     ] == 'not_applicable').all().all()
 
-    assert pd.isnull(df.loc[~df['gi_ever_had_diarrhoea'], [
+    assert pd.isnull(df.loc[~df.date_of_birth.isna() & ~df['gi_ever_had_diarrhoea'], [
         'gi_last_diarrhoea_date_of_onset',
         'gi_last_diarrhoea_duration',
         'gi_last_diarrhoea_recovered_date',
@@ -83,8 +83,13 @@ def check_configuration_of_properties(sim):
     # Those for whom the death date has past should be dead
     assert not df.loc[df.gi_ever_had_diarrhoea & (df['gi_last_diarrhoea_death_date'] < sim.date), 'is_alive'].any()
 
-    # Check that those in a current episode have symptoms but not others (among those who are alive)
-    has_symptoms = set(sim.modules['SymptomManager'].who_has('diarrhoea'))
+    # Check that those in a current episode have symptoms of diarrhoea [caused by the diarrhoea module]
+    #  but not others (among those who are alive)
+    has_symptoms_of_diar = set(sim.modules['SymptomManager'].who_has('diarrhoea'))
+    has_symptoms = set([p for p in has_symptoms_of_diar if
+                        'Diarrhoea' in sim.modules['SymptomManager'].causes_of(p, 'diarrhoea')
+                        ])
+
     in_current_episode_before_recovery = \
         df.is_alive & \
         df.gi_ever_had_diarrhoea & \
@@ -208,16 +213,16 @@ def test_basic_run_of_diarrhoea_module_with_zero_incidence():
     df = sim.population.props
 
     # Check for zero-level of diarrhoea
-    assert 0 == df.gi_ever_had_diarrhoea.sum()
-    assert (df['gi_last_diarrhoea_pathogen'] == 'not_applicable').all()
-    assert (df['gi_last_diarrhoea_type'] == 'not_applicable').all()
-    assert (df['gi_last_diarrhoea_dehydration'] == 'not_applicable').all()
+    assert 0 == df.loc[df.is_alive].gi_ever_had_diarrhoea.sum()
+    assert (df.loc[df.is_alive, 'gi_last_diarrhoea_pathogen'] == 'not_applicable').all()
+    assert (df.loc[df.is_alive, 'gi_last_diarrhoea_type'] == 'not_applicable').all()
+    assert (df.loc[df.is_alive, 'gi_last_diarrhoea_dehydration'] == 'not_applicable').all()
 
     # Check for zero level of recovery
-    assert pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
+    assert pd.isnull(df.loc[df.is_alive, 'gi_last_diarrhoea_recovered_date']).all()
 
     # Check for zero level of death
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
+    assert not df.loc[~df.is_alive & ~pd.isnull(df.date_of_birth), 'cause_of_death'].str.startswith('Diarrhoea').any()
 
 
 @pytest.mark.group2
@@ -293,112 +298,123 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
 
 @pytest.mark.group2
 def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_with_perfect_treatment():
-    # Run with everyone getting symptoms and seeking care and perfect treatment efficacy:
-    # Check that everyone is cured and no deaths;
-    start_date = Date(2010, 1, 1)
-    end_date = Date(2015, 12, 31)
-    popsize = 2000
+    """Run with high incidence and perfect treatment, with and without spurious symptoms of diarrhoea being generated"""
 
-    sim = Simulation(start_date=start_date, seed=0)
+    def run(spurious_symptoms):
+        # Run with everyone getting symptoms and seeking care and perfect treatment efficacy:
+        # Check that everyone is cured and no deaths;
+        start_date = Date(2010, 1, 1)
+        end_date = Date(2010, 12, 31)  # reduce run time because with spurious_symptoms=True, things get slow
+        popsize = 4000
 
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(
-                     resourcefilepath=resourcefilepath,
-                     disable=True
-                 ),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(
-                     resourcefilepath=resourcefilepath,
-                     force_any_symptom_to_lead_to_healthcareseeking=True  # every symptom leads to healthcare seeking
-                 ),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
-                 )
+        sim = Simulation(start_date=start_date, seed=0)
 
-    for param_name in sim.modules['Diarrhoea'].parameters.keys():
-        # Increase incidence:
-        if param_name.startswith('base_inc_rate_diarrhoea_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = \
-                [4.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]
+        # Register the appropriate modules
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     contraception.Contraception(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         disable=True
+                     ),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
+                                                   spurious_symptoms=spurious_symptoms),
+                     healthseekingbehaviour.HealthSeekingBehaviour(
+                         resourcefilepath=resourcefilepath,
+                         force_any_symptom_to_lead_to_healthcareseeking=True
+                         # every symptom leads to healthcare seeking
+                     ),
+                     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+                     labour.Labour(resourcefilepath=resourcefilepath),
+                     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+                     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
+                     dx_algorithm_child.DxAlgorithmChild(resourcefilepath=resourcefilepath)
+                     )
 
-        # Increase symptoms so that everyone gets symptoms:
-        if param_name.startswith('proportion_AWD_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('fever_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('vomiting_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
-        if param_name.startswith('dehydration_by_'):
-            sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+        for param_name in sim.modules['Diarrhoea'].parameters.keys():
+            # Increase incidence:
+            if param_name.startswith('base_inc_rate_diarrhoea_by_'):
+                sim.modules['Diarrhoea'].parameters[param_name] = \
+                    [4.0 * v for v in sim.modules['Diarrhoea'].parameters[param_name]]
 
-    # Increase death:
-    sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.5
-    sim.modules['Diarrhoea'].parameters['case_fatality_rate_dysentery'] = 0.5
+            # Increase symptoms so that everyone gets symptoms:
+            if param_name.startswith('proportion_AWD_by_'):
+                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+            if param_name.startswith('fever_by_'):
+                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+            if param_name.startswith('vomiting_by_'):
+                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
+            if param_name.startswith('dehydration_by_'):
+                sim.modules['Diarrhoea'].parameters[param_name] = 1.0
 
-    # Apply perfect efficacy for treatments:
-    sim.modules['Diarrhoea'].parameters['days_onset_severe_dehydration_before_death'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanA'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanB'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanC'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea'] = 1.0
-    sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Dysentery'] = 1.0
+        # Increase death:
+        sim.modules['Diarrhoea'].parameters['case_fatality_rate_AWD'] = 0.5
+        sim.modules['Diarrhoea'].parameters['case_fatality_rate_dysentery'] = 0.5
 
-    # Make long duration so as to allow time for healthcare seeking
-    sim.modules['Diarrhoea'].parameters['min_days_duration_of_episode'] = 3
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_rotavirus'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_shigella'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_adenovirus'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_cryptosporidium'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_campylobacter'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_ST-ETEC'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_sapovirus'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_norovirus'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_astrovirus'] = 12
-    sim.modules['Diarrhoea'].parameters['mean_days_duration_with_tEPEC'] = 12
+        # Apply perfect efficacy for treatments:
+        sim.modules['Diarrhoea'].parameters['days_onset_severe_dehydration_before_death'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanA'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanB'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_Treatment_PlanC'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Severe_Persistent_Diarrhoea'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Non_Severe_Persistent_Diarrhoea'] = 1.0
+        sim.modules['Diarrhoea'].parameters['prob_of_cure_given_HSI_Diarrhoea_Dysentery'] = 1.0
 
-    sim.make_initial_population(n=popsize)
-    check_configuration_of_properties(sim)
+        # Make long duration so as to allow time for healthcare seeking
+        sim.modules['Diarrhoea'].parameters['min_days_duration_of_episode'] = 3
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_rotavirus'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_shigella'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_adenovirus'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_cryptosporidium'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_campylobacter'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_ST-ETEC'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_sapovirus'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_norovirus'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_astrovirus'] = 12
+        sim.modules['Diarrhoea'].parameters['mean_days_duration_with_tEPEC'] = 12
 
-    sim.simulate(end_date=end_date)
+        sim.make_initial_population(n=popsize)
+        check_configuration_of_properties(sim)
 
-    check_dtypes(sim)
-    check_configuration_of_properties(sim)
+        sim.simulate(end_date=end_date)
 
-    df = sim.population.props
+        check_dtypes(sim)
+        check_configuration_of_properties(sim)
 
-    # Check for non-zero-level of diarrhoea
-    assert 0 < df.gi_ever_had_diarrhoea.sum()
-    assert (df['gi_last_diarrhoea_pathogen'] != 'none').any()
-    assert (df['gi_last_diarrhoea_type'] != 'none').any()
-    assert (df['gi_last_diarrhoea_dehydration'] != 'none').any()
+        df = sim.population.props
 
-    # Check for non-zero level of recovery
-    assert not pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
+        # Check for non-zero-level of diarrhoea
+        assert 0 < df.gi_ever_had_diarrhoea.sum()
+        assert (df['gi_last_diarrhoea_pathogen'] != 'none').any()
+        assert (df['gi_last_diarrhoea_type'] != 'none').any()
+        assert (df['gi_last_diarrhoea_dehydration'] != 'none').any()
 
-    # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided and
-    # no one died of the Diarrhoea. (Limited to those whose last onset diarrhoea was one month ago to give time for
-    # outcomes to have occurred).
-    had_diarrhoea_a_month_ago = df.gi_ever_had_diarrhoea & (
-        df.gi_last_diarrhoea_date_of_onset < (sim.date - pd.DateOffset(months=1))
-    )
-    got_treatment = ~pd.isnull(
-        df.loc[had_diarrhoea_a_month_ago, 'gi_last_diarrhoea_treatment_date']
-    )
-    recovered_naturally = ~pd.isnull(
-        df.loc[had_diarrhoea_a_month_ago & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
-               'gi_last_diarrhoea_recovered_date']
-    )
-    assert (got_treatment | recovered_naturally).all()
+        # Check for non-zero level of recovery
+        assert not pd.isnull(df['gi_last_diarrhoea_recovered_date']).all()
 
-    # check that there have not been any deaths caused by Diarrhoea
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
+        # Check that all of those who got diarrhoea got treatment or recovered naturally before treatment was provided
+        # and no one died of the Diarrhoea. (Limited to those whose last onset diarrhoea was one month ago to give time
+        # for outcomes to have occurred).
+        had_diarrhoea_a_month_ago = df.gi_ever_had_diarrhoea & (
+            df.gi_last_diarrhoea_date_of_onset < (sim.date - pd.DateOffset(months=1))
+        )
+        got_treatment = ~pd.isnull(
+            df.loc[had_diarrhoea_a_month_ago, 'gi_last_diarrhoea_treatment_date']
+        )
+        recovered_naturally = ~pd.isnull(
+            df.loc[had_diarrhoea_a_month_ago & pd.isnull(df['gi_last_diarrhoea_treatment_date']),
+                   'gi_last_diarrhoea_recovered_date']
+        )
+        assert (got_treatment | recovered_naturally).all()
+
+        # check that there have not been any deaths caused by Diarrhoea
+        assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Diarrhoea').any()
+
+    # run without spurious symptoms
+    run(spurious_symptoms=False)
+
+    # run with spurious symptoms
+    run(spurious_symptoms=True)
 
 
 def test_dx_algorithm_for_diarrhoea_outcomes():
@@ -688,7 +704,7 @@ def test_run_each_of_the_HSI():
 
     # update the availability of consumables, such that all are available:
     sim.modules['HealthSystem'].cons_item_code_availability_today = \
-        sim.modules['HealthSystem'].prob_unique_item_codes_available > 0.0
+        sim.modules['HealthSystem'].prob_item_codes_available > 0.0
 
     list_of_hsi = [
         'HSI_Diarrhoea_Treatment_PlanA',
