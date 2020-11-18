@@ -14,6 +14,8 @@ from tlo.methods.dxmanager import DxManager
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# TODO: should the 'disable_and_reject_all' mode lead to the never_ran of the HSI being run..??
+
 
 class HealthSystem(Module):
     """
@@ -23,25 +25,28 @@ class HealthSystem(Module):
     """
 
     PARAMETERS = {
-        'Officer_Types': Parameter(Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
+        'Officer_Types': Parameter(
+            Types.DATA_FRAME, 'The names of the types of health workers ("officers")'),
         'Daily_Capabilities': Parameter(
             Types.DATA_FRAME, 'The capabilities by facility and officer type available each day'
         ),
-        'Appt_Types_Table': Parameter(Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
+        'Appt_Types_Table': Parameter(
+            Types.DATA_FRAME, 'The names of the type of appointments with the health system'),
         'Appt_Time_Table': Parameter(
             Types.DATA_FRAME, 'The time taken for each appointment, according to officer and facility type.'
         ),
         'ApptType_By_FacLevel': Parameter(
             Types.DATA_FRAME, 'Indicates whether an appointment type can occur at a facility level.'
         ),
-        'Master_Facilities_List': Parameter(Types.DATA_FRAME, 'Listing of all health facilities.'),
+        'Master_Facilities_List': Parameter(
+            Types.DATA_FRAME, 'Listing of all health facilities.'),
         'Facilities_For_Each_District': Parameter(
-            Types.DATA_FRAME,
-            'Mapping between a district and all of the health facilities to which its \
-                      population have access.',
-        ),
-        'Consumables': Parameter(Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
-        'Consumables_Cost_List': Parameter(Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
+            Types.DATA_FRAME, 'Mapping between a district and all of the health facilities to which its population have'
+                              ' access.'),
+        'Consumables': Parameter(
+            Types.DATA_FRAME, 'List of consumables used in each intervention and their costs.'),
+        'Consumables_Cost_List': Parameter(
+            Types.DATA_FRAME, 'List of each consumable item and it' 's cost'),
     }
 
     PROPERTIES = {
@@ -585,7 +590,7 @@ class HealthSystem(Module):
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
         """
-        This is depracted. Report onset of generic acute symptoms to the symptom mananger.
+        This is deprecated. Report onset of generic acute symptoms to the symptom mananger.
         HealthSeekingBehaviour module will schedule a generic hsi.
         """
         raise Exception('Do not use get_prob_seek_care().')
@@ -1231,39 +1236,46 @@ class HSI_Event:
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
 
-    def get_all_consumables(self, item_codes=None, pkg_codes=None):
+    def get_all_consumables(self, item_codes=None, pkg_codes=None, footprint=None):
         """Helper function to allow for getting and checking of entire set of consumables.
         It accepts a footprint, or an item_code, or a package_code, and returns True/False for whether all the items
-         are available. It avoids the use of consumables 'footprints'."""
+         are available. It avoids the need to create consumables 'footprints' and interpret the results."""
 
-        # Turn the input arguments into the usual consumables footprint:
+        # If a footprint has been provided, check that nothing else is provided and that  it is of the right format:
+        if footprint is not None:
+            assert item_codes is None, "cannot specify item_codes and footprint"
+            assert pkg_codes is None, "cannot specify pkg_codes and footprint"
+            self.sim.modules['HealthSystem'].check_consumables_footprint_format(footprint)
 
-        # Item Codes provided:
-        if item_codes is not None:
-            if not isinstance(item_codes, list):
-                item_codes = [item_codes]
-            # turn into 'consumable footprint':
-            footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
         else:
-            footprint_items = {}
+            # ... Otherwise, Turn the input arguments into the usual consumables footprint:
+            # Item Codes provided:
+            if item_codes is not None:
+                if not isinstance(item_codes, list):
+                    item_codes = [item_codes]
+                # turn into 'consumable footprint':
+                footprint_items = dict(zip(item_codes, [1]*len(item_codes)))
+            else:
+                footprint_items = {}
 
-        # Package Codes provided:
-        if pkg_codes is not None:
-            if not isinstance(pkg_codes, list):
-                pkg_codes = [pkg_codes]
-            footprint_pkgs = dict(zip(pkg_codes, [1]*len(pkg_codes)))
-        else:
-            footprint_pkgs = {}
+            # Package Codes provided:
+            if pkg_codes is not None:
+                if not isinstance(pkg_codes, list):
+                    pkg_codes = [pkg_codes]
+                footprint_pkgs = dict(zip(pkg_codes, [1]*len(pkg_codes)))
+            else:
+                footprint_pkgs = {}
 
-        # Make the total footprint
-        footprint = {
-            'Item_Code': footprint_items,
-            'Intervention_Package_Code': footprint_pkgs,
-        }
+            # Make the total footprint
+            footprint = {
+                'Item_Code': footprint_items,
+                'Intervention_Package_Code': footprint_pkgs,
+            }
 
         # Check availability of consumables
         rtn_from_health_system = self.sim.modules['HealthSystem'].request_consumables(self, footprint)
 
+        # Check if each and every part of the footprint is available
         all_available = all(
             rtn_from_health_system['Intervention_Package_Code'].values()
         ) and all(
