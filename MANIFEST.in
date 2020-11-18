@@ -19,6 +19,6 @@ recursive-include requirements *.txt
 recursive-include requirements Makefile
 
 recursive-exclude resources *
+recursive-exclude .ci *
 
 global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/**
-
