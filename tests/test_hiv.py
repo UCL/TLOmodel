@@ -75,8 +75,11 @@ def adjust_availability_of_consumables_for_hiv(sim, available=True):
     all_item_codes = set()
     for f in sim.modules['Hiv'].footprints_for_consumables_required.values():
         all_item_codes = all_item_codes.union(
-            sim.modules['HealthSystem'].get_consumables_as_individual_items(f)['Item_Code'].values)
-    sim.modules['HealthSystem'].cons_item_code_availability_today.loc[all_item_codes] = available
+            sim.modules['HealthSystem'].get_consumables_as_individual_items(f).index)
+
+    sim.modules['HealthSystem'].prob_item_codes_available.loc[all_item_codes] = 1.0 if available else 0.0
+
+    sim.modules['HealthSystem'].determine_availability_of_consumables_today()
     return sim
 
 

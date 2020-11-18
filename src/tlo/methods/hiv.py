@@ -1434,8 +1434,12 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
 
                     # If person is a woman and FSW, and not currently on PrEP then consider referring to PrEP
                     # available 2018 onwards
-                    if (person['sex'] == 'F') & (person['li_is_sexworker']) & (~person['hv_is_on_prep']) & \
-                        (self.sim.date.year >= self.module.parameters['prep_start_year']):
+                    if (
+                        (person['sex'] == 'F') &
+                        person['li_is_sexworker'] &
+                        ~person['hv_is_on_prep'] &
+                        (self.sim.date.year >= self.module.parameters['prep_start_year'])
+                    ):
                         if self.module.lm_prep.predict(df.loc[[person_id]], self.module.rng):
                             self.sim.modules['HealthSystem'].schedule_hsi_event(
                                 HSI_Hiv_StartOrContinueOnPrep(person_id=person_id, module=self.module),
