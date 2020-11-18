@@ -183,20 +183,20 @@ def get_class_output_string(classinfo):
     #    import pdb;
     #    pdb.set_trace()
 
+    count = 0
     for mybase in base_objects:
         if mybase.__name__ == "HSI_Event":
             is_descendent_of_HSI_Event = True
-            # hsi_event_base_object = mybase
+            count += 1
         elif mybase.__name__ == "Module":
             is_descendent_of_Module = True
-            # module_base_object = mybase
+            count += 1
         elif mybase.__name__ == "Event":
             is_descendent_of_Event = True
+            count += 1
 
     # Make sure it has only matched one of the criteria in the loop above:
-    if is_descendent_of_Module and is_descendent_of_HSI_Event\
-        or is_descendent_of_Event and is_descendent_of_HSI_Event\
-        or is_descendent_of_Event and is_descendent_of_Module:
+    if count > 1:
         # I don't think this will ever happen, but if it does...
         import pdb
         pdb.set_trace()
@@ -285,23 +285,12 @@ def get_class_output_string(classinfo):
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
 
-            # We want to replace skip_if_child_doc_same() with new function
-            # which checks to see child class has implemented its own version
-            # of a function, and display the docstring, EVEN IF the docstring
-            # is just the one it inherits from parent (src.tlo.events.Event
-            # and src.tlo.healthsystem.HSI_Event)
-            #
-
-            if (is_descendent_of_Module and name in module_inherited_funcs):
-                if not child_overrides_function(class_name, base_objects, obj, name):
+            if (is_descendent_of_Module and name in module_inherited_funcs)\
+                or (is_descendent_of_Event and name in event_inherited_funcs)\
+                or (is_descendent_of_HSI_Event and name in
+                    hsi_event_inherited_funcs):
+                if not descendent_overrides_function(base_objects, obj):
                     continue
-            elif (is_descendent_of_Event and name in event_inherited_funcs):
-                if not child_overrides_function(class_name, base_objects, obj, name):
-                    continue
-            else:
-                if (is_descendent_of_HSI_Event and name in hsi_event_inherited_funcs):
-                    if not child_overrides_function(class_name, base_objects, obj, name):
-                        continue
 
             # Document this function if necessary:
             str += f"{spacer}.. automethod:: {name}\n\n"
@@ -318,28 +307,27 @@ def get_class_output_string(classinfo):
     return str
 
 
-def child_overrides_function(current_class_name, ancestor_class_objects, func_obj, func_name):
+def descendent_overrides_function(ancestor_class_objects, func_obj):
     '''
-    Does a child class override a parent class's function?
+    Does a descendent class override an ancestor class's function?
 
-    :param current_class_name: child class name, e.g. "ChronicSyndromeEvent"
-    :param
-    :param func_obj: the function object inherited in the child class
+    :param ancestor_class_objects: list of class objects which are
+        ancestors of the current class
+    :param func_obj: the function object inherited in the descendent class
                     (which may, or may not, be overridden)
-    :param func_name: the name of the function, e.g. '__init__'
-    :return: returns True if child overrides the function, else False.
+    :return: returns True if descendent overrides the function, else False.
 
-    If the child class overrides a parent's function, we want
+    If the descendent class overrides an ancestor's function, we want
     to know about it and document it - even if there is not
-    a docstring in the child or it just uses the parent's
+    a docstring in the descendent or it just uses the ancestor's
     docstring
 
-    Given the parent_class_name is "HSI_Event" and the current_class_name is
+    Given the ancestor class is "HSI_Event" and the current_class_name is
     "HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment":
 
     1. Example of an inherited (but not overridden) function:
        obj = <function HSI_Event.make_appt_footprint at 0x10cdb30d0>
-       i.e. it has the parent class's name.
+       i.e. it has the ancestor class's name.
 
     2. Example of an overridden function:
       obj = <function
@@ -348,7 +336,7 @@ def child_overrides_function(current_class_name, ancestor_class_objects, func_ob
       and obj.__name__ = 'never_ran', obj.__class__ = <class 'function'>
 
      So we want to display doc strings (if any) for overridden func only -
-     this has the child class's name, not the parent's.
+     this has the descendent class's name, not the ancestor's.
     '''
     func_str = str(func_obj)
 
@@ -357,26 +345,23 @@ def child_overrides_function(current_class_name, ancestor_class_objects, func_ob
     #
     # Typical inherited, but not overridden, func_str:
     # <function Event.post_apply_hook at 0x108e527b8>
-    # in a *child class* of Event
+    # in a *descendent class* of Event
     this_class = None
-    this_func = None
+    #this_func = None
     parts = func_str.split()
     class_and_func = parts[1]  # e.g. 'ChronicSyndromeEvent.__init__'
     if class_and_func:
-        this_class, this_func = class_and_func.split('.')
+        this_class, _ = class_and_func.split('.')
 
     assert this_class is not None,\
                       f"this_class is None; func_str is {func_str}"
 
-    #if current_class_name == "ChronicSyndromeEvent":  # and func_name == "__init__":
-    #    import pdb; pdb.set_trace()
-
     for aco in ancestor_class_objects:
-        aco_str = str(aco)  # e.g. "<class 'tlo.events.RegularEvent'>"
-        x = aco_str.split("'")
-        ancestor = x[1]  # e.g. 'tlo.events.RegularEvent'
-        if this_class in ancestor:
-            return False
+         aco_str = str(aco)  # e.g. "<class 'tlo.events.RegularEvent'>"
+         x = aco_str.split("'")
+         ancestor = x[1]  # e.g. 'tlo.events.RegularEvent'
+         if this_class in ancestor:
+             return False
 
     return True
 
