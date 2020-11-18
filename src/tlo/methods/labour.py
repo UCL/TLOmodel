@@ -1292,23 +1292,7 @@ class Labour (Module):
             # birth (< 2 days) or in the later postpartum period (2-42 days)
             if complication == 'endometritis' or complication == 'skin_soft_tissue_inf' or \
                complication == 'urinary_tract_inf' or complication == 'other_maternal_infection':
-
-                postnatal_days = params['days_of_postnatal_period']
-                day_of_onset = int(self.rng.choice(postnatal_days, size=1,
-                                                   p=params['daily_risk_of_postnatal_sepsis_onset']))
-
-                if day_of_onset < 2:
-                    self.postpartum_infections.set(individual_id, complication)
-
-                elif day_of_onset > 1:
-                    # For infections that will onset in the future they are scheduled in the event that calls this
-                    # function using these properties of the MNI dictionary
-                    mni[individual_id]['delayed_pp_infection'] = True
-                    mni[individual_id]['onset_of_delayed_inf'] = day_of_onset
-
-                    # TODO: another property convention issue
-                    self.sim.modules['PostnatalSupervisor'].postpartum_infections_late.set(
-                        individual_id, complication)
+                self.postpartum_infections.set(individual_id, complication)
 
             if complication == 'sepsis_pp':
 
@@ -1467,43 +1451,47 @@ class Labour (Module):
                                              f'{individual_id} on date {self.sim.date} who died due to postpartum '
                                              f'complications')
 
-        # As all woman pass through this function we use this opportunity to reset all relevant variables following
-        # delivery
-        # TODO: property convention
+        if ~mni[individual_id]['death_postpartum']:
+            # TODO: property convention
+            df.at[individual_id, 'la_currently_in_labour'] = False
+            self.intrapartum_infections.unset(
+                [individual_id], 'chorioamnionitis', 'other_maternal_infection')
+            self.postpartum_infections.unset(
+                [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf', 'other_maternal_infection')
+            df.at[individual_id, 'la_postpartum_haem'] = False
+            df.at[individual_id, 'la_obstructed_labour'] = False
+            df.at[individual_id, 'la_antepartum_haem'] = False
+            df.at[individual_id, 'la_uterine_rupture'] = False
 
-        df.at[individual_id, 'la_currently_in_labour'] = False
-        self.intrapartum_infections.unset(
-            [individual_id], 'chorioamnionitis', 'other_maternal_infection')
-        self.postpartum_infections.unset(
-            [individual_id], 'endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf', 'other_maternal_infection')
-        df.at[individual_id, 'la_postpartum_haem'] = False
-        df.at[individual_id, 'la_obstructed_labour'] = False
-        df.at[individual_id, 'la_antepartum_haem'] = False
-        df.at[individual_id, 'la_uterine_rupture'] = False
+            df.at[individual_id, 'ps_placental_abruption'] = False
+            df.at[individual_id, 'ps_placenta_praevia'] = False
 
-        df.at[individual_id, 'ps_placental_abruption'] = False
-        df.at[individual_id, 'ps_placenta_praevia'] = False
+            df.at[individual_id, 'la_sepsis_treatment'] = False
+            df.at[individual_id, 'la_obstructed_labour_treatment'] = False
+            df.at[individual_id, 'la_antepartum_haem_treatment'] = False
+            df.at[individual_id, 'la_uterine_rupture_treatment'] = False
+            df.at[individual_id, 'la_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
+            df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
+            df.at[individual_id, 'la_postpartum_haem_treatment'] = False
 
-        df.at[individual_id, 'la_sepsis_treatment'] = False
-        df.at[individual_id, 'la_obstructed_labour_treatment'] = False
-        df.at[individual_id, 'la_antepartum_haem_treatment'] = False
-        df.at[individual_id, 'la_uterine_rupture_treatment'] = False
-        df.at[individual_id, 'la_eclampsia_treatment'] = False
-        df.at[individual_id, 'la_severe_pre_eclampsia_treatment'] = False
-        df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
-        df.at[individual_id, 'la_postpartum_haem_treatment'] = False
+            # TODO: these should not be reset here as they wont be captured by DALY function
+            df.at[individual_id, 'la_sepsis_disab'] = False
+            df.at[individual_id, 'la_obstructed_labour_disab'] = False
+            df.at[individual_id, 'la_uterine_rupture_disab'] = False
+            df.at[individual_id, 'la_eclampsia_disab'] = False
+            df.at[individual_id, 'la_maternal_haem_severe_disab'] = False
+            df.at[individual_id, 'la_maternal_haem_non_severe_disab'] = False
 
-        # TODO: these should not be reset here as they wont be captured by DALY function
-        df.at[individual_id, 'la_sepsis_disab'] = False
-        df.at[individual_id, 'la_obstructed_labour_disab'] = False
-        df.at[individual_id, 'la_uterine_rupture_disab'] = False
-        df.at[individual_id, 'la_eclampsia_disab'] = False
-        df.at[individual_id, 'la_maternal_haem_severe_disab'] = False
-        df.at[individual_id, 'la_maternal_haem_non_severe_disab'] = False
+            # Reset this variable here so that in future pregnancies women still have risk applied through pregnancy
+            # supervisor
+            df.at[individual_id, 'ac_inpatient'] = False
 
-        # Reset this variable here so that in future pregnancies women still have risk applied through pregnancy
-        # supervisor
-        df.at[individual_id, 'ac_inpatient'] = False
+            # todo: CALCULATE PERSONS DAYS POSTPARTUM AND USE THAT TO SCHEDULE BELOW (ENSURING AS EARLY AS
+            #  POSSIBLE FOR ALL BUT >DAY1)
+            self.sim.schedule_event(postnatal_supervisor.PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'],
+                                                                               individual_id), self.sim.date +
+                                    DateOffset(days=1))
 
         # Here we remove all women (dead and alive) who have passed through the labour events
         self.women_in_labour.remove(individual_id)
@@ -2440,11 +2428,6 @@ class PostpartumLabourAtHomeEvent(Event, IndividualScopeEventMixin):
                              'postpartum_haem']:
             self.module.set_postpartum_complications(individual_id, complication=complication)
 
-        if mni[individual_id]['delayed_pp_infection']:
-            self.sim.schedule_event(postnatal_supervisor.LatePostpartumInfectionOnsetEvent
-                                    (self.sim.modules['PostnatalSupervisor'], individual_id),
-                                    self.sim.date + DateOffset(days=mni[individual_id]['onset_of_delayed_inf']))
-
         self.module.progression_of_hypertensive_disorders(individual_id)
 
         # For women who experience a complication at home immediately following birth we use a care seeking equation to
@@ -2899,12 +2882,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour(HSI_Event, Indivi
                                  'postpartum_haem']:
                 self.module.set_postpartum_complications(person_id, complication=complication)
 
-            if mni[person_id]['delayed_pp_infection']:
-                self.sim.schedule_event(postnatal_supervisor.LatePostpartumInfectionOnsetEvent
-                                        (self.sim.modules['PostnatalSupervisor'], person_id,
-                                         ),
-                                        self.sim.date + DateOffset(days=mni[person_id]['onset_of_delayed_inf']))
-
             self.module.progression_of_hypertensive_disorders(person_id)
 
         # ======================================= COMPLICATION MANAGEMENT =============================================
@@ -3170,12 +3147,6 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
         for complication in ['endometritis', 'urinary_tract_inf', 'skin_soft_tissue_inf',
                              'other_maternal_infection', 'sepsis_pp']:
             self.module.set_postpartum_complications(person_id, complication=complication)
-
-        if mni[person_id]['delayed_pp_infection']:
-            self.sim.schedule_event(postnatal_supervisor.LatePostpartumInfectionOnsetEvent
-                                    (self.sim.modules['PostnatalSupervisor'], person_id,
-                                     ),
-                                    self.sim.date + DateOffset(days=mni[person_id]['onset_of_delayed_inf']))
 
         self.module.progression_of_hypertensive_disorders(person_id)
 
