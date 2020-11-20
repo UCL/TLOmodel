@@ -73,30 +73,30 @@ def test_py_calc(simulation):
     assert (0 == calc_py_lived_in_last_year(delta=one_year)['M']).all()
 
     # calc person who is alive and aged 20, with birthdays on today's date and lives throughout the period
-    df.date_of_birth = now - (one_year * 20)  #pd.Timedelta(20 * DAYS_IN_YEAR, 'D')
+    df.date_of_birth = now - (one_year * 20)
     df.date_of_death = pd.NaT
     df.is_alive = True
     age_update.apply(simulation.population)
     np.testing.assert_almost_equal(calc_py_lived_in_last_year(delta=one_year)['M'][19], 1.0)
 
     # calc person who is alive and aged 20, with birthdays on today's date, and dies 3 months ago
-    df.date_of_birth = now - (one_year * 20)  #pd.Timedelta(20 * DAYS_IN_YEAR, 'D')
-    df.date_of_death = now - pd.Timedelta(one_year) * 0.25  #pd.Timedelta(1 * DAYS_IN_YEAR, 'D') * 0.25
+    df.date_of_birth = now - (one_year * 20)
+    df.date_of_death = now - pd.Timedelta(one_year) * 0.25
     # we have to set the age at time of death - usually this would have been set by the AgeUpdateEvent
-    df.age_exact_years = (df.date_of_death - df.date_of_birth) / one_year  #pd.Timedelta(1 * DAYS_IN_YEAR, 'D')
+    df.age_exact_years = (df.date_of_death - df.date_of_birth) / one_year
     df.age_years = df.age_exact_years.astype('int64')
     df.is_alive = False
     age_update.apply(simulation.population)
-    df_py = calc_py_lived_in_last_year(delta=one_year)  #pd.Timedelta(1 * DAYS_IN_YEAR, 'D'))
+    df_py = calc_py_lived_in_last_year(delta=one_year)
     np.testing.assert_almost_equal(0.75, df_py['M'][19])
     assert df_py['M'][20] == 0.0
 
     # calc person who is alive and aged 19, has birthday mid-way through the last year, and lives throughout
-    df.date_of_birth = now - (one_year * 20) - (one_month * 6)  #pd.Timedelta(6 * DAYS_IN_MONTH, 'D')
+    df.date_of_birth = now - (one_year * 20) - (one_month * 6)
     df.date_of_death = pd.NaT
     df.is_alive = True
     age_update.apply(simulation.population)
-    df_py = calc_py_lived_in_last_year(delta=one_year)  #pd.Timedelta(1 * DAYS_IN_YEAR, 'D'))
+    df_py = calc_py_lived_in_last_year(delta=one_year)
     np.testing.assert_almost_equal(0.5, df_py['M'][19])
     np.testing.assert_almost_equal(0.5, df_py['M'][20])
 

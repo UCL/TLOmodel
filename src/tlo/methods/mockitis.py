@@ -1,6 +1,6 @@
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging, DAYS_IN_YEAR
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
