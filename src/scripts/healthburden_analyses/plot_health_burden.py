@@ -198,20 +198,20 @@ plt.ylabel(f"Total deaths in {year}")
 plt.savefig(outputpath / f"Deaths by cause {datestamp}.pdf")
 plt.show()
 
-def plot_stacked_bar_chart_of_deaths_by_cause(pt, title):
-    pt.plot.bar(stacked=True)
-    plt.title(title)
-    plt.ylabel("Number of deaths")
-    plt.xlabel('Age Group')
-    plt.show()
+def plot_stacked_bar_chart_of_deaths_by_cause(ax, pt, title):
+    pt.plot.bar(stacked=True, ax=ax)
+    ax.set_title(title)
+    ax.set_ylabel("Number of deaths")
+    ax.set_label('Age Group')
+    ax.get_legend().remove()
 
 sex_as_string = lambda x: 'Females' if x == 'F' else 'Males'
 
-for sex in ['F', 'M']:
-    plot_stacked_bar_chart_of_deaths_by_cause(model_pt.loc[(sex,), ], title=f"Model: {sex_as_string(sex)}")
-    plot_stacked_bar_chart_of_deaths_by_cause(gbd_pt.loc[(sex, ), ], title=f"Data: {sex_as_string(sex)}")
-
-# todo - arrange into 2 X 2 table
+fig, axs = plt.subplots(2, 2)
+for i, sex in enumerate(['F', 'M']):
+     plot_stacked_bar_chart_of_deaths_by_cause(axs[i, 0], model_pt.loc[(sex,), ], title=f"Model: {sex_as_string(sex)}")
+     plot_stacked_bar_chart_of_deaths_by_cause(axs[i, 1], gbd_pt.loc[(sex, ), ], title=f"Data: {sex_as_string(sex)}")
+plt.show()
 
 
 # %% Plots comparing between model and actual deaths across all ages and sex:
@@ -236,7 +236,6 @@ plt.ylabel('Number of deaths in Model')
 plt.title(f'Total Numbers of Deaths in {year}')
 plt.savefig(outputpath / 'Deaths_Calibration_ScatterPlot.png')
 plt.show()
-
 
 # %% Plots of DALYS
 # todo!!!
