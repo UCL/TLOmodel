@@ -87,9 +87,7 @@ def test_sims(tmpdir):
 
     # check malaria deaths only being scheduled due to severe malaria (not clinical or asym)
     df = sim.population.props
-    assert not (
-        df.ma_date_death & ((df.ma_inf_type == "clinical") | (df.ma_inf_type == "none"))
-    ).any()
+    assert not (~df.ma_date_death.isna() & ~(df.ma_inf_type == "severe")).any()
 
     # check cases /  treatment are occurring
     assert not (df.ma_clinical_counter == 0).all()
