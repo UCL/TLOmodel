@@ -15,6 +15,7 @@ from tlo.methods.healthsystem import HSI_Event
 import pandas as pd
 import numpy as np
 import copy
+import math
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -250,6 +251,10 @@ class Ncds(Module):
             pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_NCDs2.xlsx",
                           sheet_name=f"{condition}")
         )
+
+        for key, value in self.parameters.items():
+            if math.isnan(value):
+                self.parameters[key] = 1.0
 
         p = self.parameters
         p['baseline_annual_probability'] = p['baseline_annual_probability'] * (interval_between_polls / 12)
