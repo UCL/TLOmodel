@@ -4,7 +4,7 @@ health system engagement for tuberculosis
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types, DAYS_IN_YEAR
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 
@@ -170,7 +170,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
             refer_xpert = tbXpertTest(self.module, individual_id=person)
             # TODO: take absolute value so no negatives
             referral_time = abs(np.random.normal(loc=(2/12), scale=(0.5/12), size=1))  # in years
-            referral_time_yrs = pd.to_timedelta(referral_time[0] * 365.25, unit='d')
+            referral_time_yrs = pd.to_timedelta(referral_time[0] * DAYS_IN_YEAR, unit='d')
             future_referral_time = now + referral_time_yrs
             # print('future_referral_time', now, referral_time_yrs, future_referral_time)
             self.sim.schedule_event(refer_xpert, future_referral_time)

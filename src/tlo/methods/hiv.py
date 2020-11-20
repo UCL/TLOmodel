@@ -6,7 +6,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, DAYS_IN_YEAR
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, tb
 from tlo.methods.healthsystem import HSI_Event
@@ -400,7 +400,7 @@ class hiv(Module):
         year_inf = self.rng.choice(self.time_inf['year'], size=len(inf_adult), replace=True,
                                    p=self.time_inf['scaled_prob'])
 
-        df.loc[inf_adult, 'hv_date_inf'] = now - pd.to_timedelta(year_inf, unit='y')
+        df.loc[inf_adult, 'hv_date_inf'] = now - pd.to_timedelta(year_inf * DAYS_IN_YEAR, unit='D')
 
         # ----------------------------------- CHILD HIV -----------------------------------
 
@@ -548,9 +548,9 @@ class hiv(Module):
 
         # while time of death is shorter than time infected - redraw
         while np.any(time_infected >
-                     (pd.to_timedelta(time_death_slow * 365.25, unit='d'))):
+                     (pd.to_timedelta(time_death_slow * DAYS_IN_YEAR, unit='D'))):
             redraw = time_infected.index[time_infected >
-                                         (pd.to_timedelta(time_death_slow * 365.25, unit='d'))]
+                                         (pd.to_timedelta(time_death_slow * DAYS_IN_YEAR, unit='D'))]
 
             new_time_death_slow = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                    size=len(redraw)) * params[
@@ -558,7 +558,7 @@ class hiv(Module):
 
             time_death_slow[redraw] = new_time_death_slow
 
-        time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
+        time_death_slow = pd.to_timedelta(time_death_slow * DAYS_IN_YEAR, unit='D')
 
         # remove microseconds
         time_death_slow = pd.Series(time_death_slow).dt.floor("S")
@@ -582,16 +582,16 @@ class hiv(Module):
 
         # while time of death is shorter than time infected - redraw
         while np.any(time_infected >
-                     (pd.to_timedelta(time_of_death * 365.25, unit='d'))):
+                     (pd.to_timedelta(time_of_death * DAYS_IN_YEAR, unit='D'))):
             redraw = time_infected.index[time_infected >
-                                         (pd.to_timedelta(time_of_death * 365.25, unit='d'))]
+                                         (pd.to_timedelta(time_of_death * DAYS_IN_YEAR, unit='D'))]
 
             new_time_of_death = (self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(redraw))
                                  * np.exp(self.log_scale(df.loc[redraw, 'age_years'])))
 
             time_of_death[redraw] = new_time_of_death
 
-        time_of_death = pd.to_timedelta(time_of_death * 365.25, unit='d')
+        time_of_death = pd.to_timedelta(time_of_death * DAYS_IN_YEAR, unit='d')
 
         # remove microseconds
         time_of_death = pd.Series(time_of_death).dt.floor("S")
@@ -806,7 +806,7 @@ class hiv(Module):
             df.at[child_id, 'hv_specific_symptoms'] = 'aids'
             df.at[child_id, 'hv_unified_symptom_code'] = 2
 
-            time_death = pd.to_timedelta(time_death[0] * 365.25, unit='d')
+            time_death = pd.to_timedelta(time_death[0] * DAYS_IN_YEAR, unit='d')
             df.at[child_id, 'hv_proj_date_death'] = now + time_death
 
             # schedule the death event
@@ -939,7 +939,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- TIME OF DEATH -----------------------------------
         death_date = (rng.weibull(a=params['weibull_shape_mort_adult'], size=len(newly_infected_index))
                       * np.exp(self.module.log_scale(df.loc[newly_infected_index, 'age_years'])))
-        death_date = pd.to_timedelta(death_date * 365.25, unit='d')
+        death_date = pd.to_timedelta(death_date * DAYS_IN_YEAR, unit='d')
 
         death_date = pd.Series(death_date).dt.floor("S")  # remove microseconds
         df.loc[newly_infected_index, 'hv_proj_date_death'] = df.loc[newly_infected_index, 'hv_date_inf'] + death_date
@@ -1025,7 +1025,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
             time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                       size=len(new_inf)) * params[
                                   'weibull_scale_mort_infant_slow_progressor']
-            time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
+            time_death_slow = pd.to_timedelta(time_death_slow[0] * DAYS_IN_YEAR, unit='d')
             df.loc[new_inf, 'hv_proj_date_death'] = now + time_death_slow
 
             # schedule the death event
@@ -2015,13 +2015,13 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                         time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                                   size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
-                        time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
+                        time_death_slow = pd.to_timedelta(time_death_slow[0] * DAYS_IN_YEAR, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
                     else:
                         death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
                                                              size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
-                        death_date = pd.to_timedelta(death_date * 365.25, unit='d')
+                        death_date = pd.to_timedelta(death_date * DAYS_IN_YEAR, unit='d')
 
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + death_date
 
@@ -2107,13 +2107,13 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
                         time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                                   size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
-                        time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
+                        time_death_slow = pd.to_timedelta(time_death_slow[0] * DAYS_IN_YEAR, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
                     else:
                         death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
                                                              size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
-                        death_date = pd.to_timedelta(death_date * 365.25, unit='d')
+                        death_date = pd.to_timedelta(death_date * DAYS_IN_YEAR, unit='d')
 
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + death_date
 

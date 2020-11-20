@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DateOffset, Module, Parameter, Property, Types, logging, DAYS_IN_YEAR
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.demography import InstantaneousDeath
@@ -151,11 +151,11 @@ class ChronicSyndrome(Module):
         acquired_years_ago = self.rng.exponential(scale=10, size=acquired_count)
 
         # pandas requires 'timedelta' type for date calculations
-        acquired_td_ago = pd.to_timedelta(acquired_years_ago, unit='y')
+        acquired_td_ago = pd.to_timedelta(acquired_years_ago * DAYS_IN_YEAR, unit='D')
 
         # date of death of the infected individuals (in the future)
         death_years_ahead = self.rng.exponential(scale=20, size=acquired_count)
-        death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+        death_td_ahead = pd.to_timedelta(death_years_ahead * DAYS_IN_YEAR, unit='D')
 
         # set the properties of infected individuals
         df.loc[df.cs_has_cs, 'cs_date_acquired'] = self.sim.date - acquired_td_ago
@@ -285,7 +285,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             newcases_idx = currently_not_cs[now_acquired]
 
             death_years_ahead = rng.exponential(scale=20, size=now_acquired.sum())
-            death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+            death_td_ahead = pd.to_timedelta(death_years_ahead * DAYS_IN_YEAR, unit='D')
 
             df.loc[newcases_idx, 'cs_has_cs'] = True
             df.loc[newcases_idx, 'cs_status'].values[:] = 'C'
