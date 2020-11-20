@@ -1431,6 +1431,10 @@ class Labour (Module):
         df = self.sim.population.props
         mni = self.mother_and_newborn_info
 
+        # TODO: remove
+        mni[individual_id]['dummy_counter'] += 1
+        assert mni[individual_id]['dummy_counter'] == 1
+
         self.postpartum_characteristics_checker(individual_id)
 
         if df.at[individual_id, 'ps_htn_disorders'] == 'eclampsia':
@@ -1490,8 +1494,8 @@ class Labour (Module):
             # todo: CALCULATE PERSONS DAYS POSTPARTUM AND USE THAT TO SCHEDULE BELOW (ENSURING AS EARLY AS
             #  POSSIBLE FOR ALL BUT >DAY1)
             self.sim.schedule_event(postnatal_supervisor.PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'],
-                                                                               individual_id), self.sim.date +
-                                    DateOffset(days=1))
+                                                                               individual_id, mother_or_child='mother'),
+                                    self.sim.date + DateOffset(days=1))
 
         # Here we remove all women (dead and alive) who have passed through the labour events
         self.women_in_labour.remove(individual_id)
@@ -2093,7 +2097,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                   'cause_of_death_in_labour': [],
                                   'stillbirth_in_labour': False,  # True (T) or False (F)
                                   'cause_of_stillbirth_in_labour': [],
-                                  'death_postpartum': False}  # True (T) or False (F)
+                                  'death_postpartum': False,
+                                  'dummy_counter': 0}  # True (T) or False (F)
 
             # ===================================== LABOUR STATE  ==================================
             # Next we calculate the number of days pregnant this woman is, and use that to log if her labour is early or
@@ -2517,6 +2522,9 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         # Check the correct amount of time has passed between labour onset and postpartum event
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D')
         self.module.labour_characteristics_checker(individual_id)
+
+        if not df.at[individual_id, 'is_alive']:
+            return
 
         # We cycle through each complication and apply risk of death using the following function
         if df.at[individual_id, 'ps_htn_disorders'] == 'severe_pre_eclamp':
@@ -3030,6 +3038,9 @@ class HSI_Labour_CaesareanSection(HSI_Event, IndividualScopeEventMixin):
         assert mni[person_id]['delivery_setting'] != 'home_birth'
         assert mni[person_id]['referred_for_cs'] != 'none'
 
+        if not df.at[person_id, 'is_alive']:
+            return
+
         logger.info(key='message', data=f'This is HSI_Labour_CaesareanSection: Person {person_id} will now undergo '
                                         f'delivery via Caesarean Section')
 
@@ -3132,6 +3143,9 @@ class HSI_Labour_ReceivesCareFollowingCaesareanSection(HSI_Event, IndividualScop
         df = self.sim.population.props
 
         logger.debug(key='message', data='Labour_ReceivesCareFollowingCaesareanSection is firing')
+
+        if not df.at[person_id, 'is_alive']:
+            return
 
         assert mni[person_id]['mode_of_delivery'] == 'caesarean_section'
         assert mni[person_id]['referred_for_cs'] != 'none'
@@ -3260,6 +3274,9 @@ class HSI_Labour_ElectiveCaesareanSection(HSI_Event, IndividualScopeEventMixin):
         mni = self.module.mother_and_newborn_info
         df = self.sim.population.props
 
+        if not df.at[person_id, 'is_alive']:
+            return
+
         # TODO: code
         # todo: being schedule in acute APH- not really elective
 
@@ -3280,9 +3297,13 @@ class HSI_Labour_ReceivesBloodTransfusion(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
         mni = self.module.mother_and_newborn_info
+        df = self.sim.population.props
 
         assert mni[person_id]['delivery_setting'] != 'home_birth'
         assert mni[person_id]['referred_for_blood'] != 'none'
+
+        if not df.at[person_id, 'is_alive']:
+            return
 
         logger.info(key='message', data=f'This is HSI_Labour_ReceivesBloodTransfusionFacilityLevel1: Person {person_id} '
                                         f'will now receive a blood transfusion following haemorrhage/blood loss '
@@ -3345,6 +3366,9 @@ class HSI_Labour_SurgeryForComplicationsDuringOrFollowingLabour(HSI_Event, Indiv
 
         logger.info(key='message', data=f'This is HSI_Labour_SurgeryForLabourComplications: Person {person_id} will now '
                                         f'undergo surgery for complications developed in labour')
+
+        if not df.at[person_id, 'is_alive']:
+            return
 
         # TODO: Consumable aren't currently correct
         # ========================================== SURGERY ==========================================================

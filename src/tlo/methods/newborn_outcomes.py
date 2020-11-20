@@ -447,6 +447,7 @@ class NewbornOutcomes(Module):
         params = self.parameters
         df = self.sim.population.props
 
+        # TODO: move to labour so the size of baby about to be born can be used as predictor (or should it live in PS?)
         # TODO: We dont have data for mean birth weight after 41 weeks, so currently convert
         # gestational age of >41 to 41
 
@@ -516,21 +517,10 @@ class NewbornOutcomes(Module):
         if self.eval(params['nb_newborn_equations']['neonatal_sepsis'], child_id):
             self.NewbornComplicationTracker['neonatal_sepsis'] += 1
 
-            length_of_neonatal_period = params['days_of_neonatal_period']
-            day_of_onset = int(self.rng.choice(length_of_neonatal_period, size=1,
-                                           p=params['daily_risk_of_neonatal_sepsis_onset']))
-            if day_of_onset < 2:
-                df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
-                logger.debug(key='message', data=f'Neonate {child_id} has developed early onset sepsis following a home '
-                                                 f'birth on date {self.sim.date}')
+            df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
+            logger.debug(key='message', data=f'Neonate {child_id} has developed early onset sepsis following a home '
+                                             f'birth on date {self.sim.date}')
 
-            elif day_of_onset > 1:
-                logger.debug(key='message', data=f'Neonate {child_id} will develop late onset sepsis following a home '
-                                                 f'birth on date {self.sim.date}')
-
-                self.sim.schedule_event(postnatal_supervisor.LateNeonatalSepsisOnsetEvent
-                                        (self.sim.modules['PostnatalSupervisor'], child_id), self.sim.date +
-                                        DateOffset(days=day_of_onset))
 
     def apply_risk_of_encephalopathy(self, child_id):
         """This function uses the linear model to determines if a neonate will develop neonatal
@@ -651,6 +641,11 @@ class NewbornOutcomes(Module):
                 df.at[individual_id, 'nb_early_onset_neonatal_sepsis'] = False
                 df.at[individual_id, 'nb_failed_to_transition'] = False
                 df.at[individual_id, 'nb_encephalopathy'] = 'none'
+
+                self.sim.schedule_event(
+                    postnatal_supervisor.PostnatalWeekOneEvent(self.sim.modules['PostnatalSupervisor'],
+                                                               individual_id, mother_or_child='child'),
+                    self.sim.date + DateOffset(days=1))
 
         # We now delete the MNI dictionary for mothers who have died in labour but their children have survived, this
         # is done here as we use variables from the mni as predictors in some of the above equations

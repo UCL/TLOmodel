@@ -877,6 +877,7 @@ class PregnancySupervisor(Module):
         non_care_seekers = temp_df.index[temp_df.random_draw > temp_df.result]
 
         for person in care_seekers:
+            df.at[person, 'ps_emergency_event'] = False
             logger.debug(key='message', data=f'Mother {person} will seek care following acute pregnancy'
                                              f'complications')
 
@@ -896,6 +897,7 @@ class PregnancySupervisor(Module):
             # todo: whats the best way to apply to the data frame and avoid a for loop? (to allow for multiple
             #  possible causes of death?)
             for person in non_care_seekers:
+                df.at[person, 'ps_emergency_event'] = False
                 mother = df.loc[person]
 
                 antenatal_death = False
