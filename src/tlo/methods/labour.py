@@ -2519,6 +2519,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         mni = self.module.mother_and_newborn_info
 
+        # TODO: match causes of GBD nomenclature- see slack chat with TH
+
         # Check the correct amount of time has passed between labour onset and postpartum event
         assert (self.sim.date - df.at[individual_id, 'la_due_date_current_pregnancy']) == pd.to_timedelta(4, unit='D')
         self.module.labour_characteristics_checker(individual_id)

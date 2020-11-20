@@ -10,6 +10,7 @@ from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, postnatal_supervisor
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
+from tlo.util import BitsetHandler
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -53,6 +54,18 @@ class NewbornOutcomes(Module):
             Types.REAL, 'baseline probability of a neonate being born with a congenital anomaly'),
         'prob_cba_type': Parameter(
             Types.LIST, 'Probability of types of CBA'),
+        'prob_gbs_infection': Parameter(
+            Types.REAL, 'Probability of a newborn developing a GBS infection after birth'),
+        'prob_ecoli_infection': Parameter(
+            Types.REAL, 'Probability of a newborn developing a Ecoli. infection after birth'),
+        'prob_other_infection': Parameter(
+            Types.REAL, 'Probability of a newborn developing another infection after birth'),
+        'prob_eons_gbs_infection': Parameter(
+            Types.REAL, 'Probability of a GBS infection developing into sepsis'),
+        'prob_eons_ecoli_infection': Parameter(
+            Types.REAL, 'Probability of a Ecoli. infection developing into sepsis'),
+        'prob_eons_other_infection': Parameter(
+            Types.REAL, 'Probability of another infection developing into sepsis'),
         'odds_early_onset_neonatal_sepsis': Parameter(
             Types.REAL, 'baseline odds of a neonate developing sepsis following birth (early onset)'),
         'odds_ratio_sepsis_parity0': Parameter(
@@ -167,6 +180,8 @@ class NewbornOutcomes(Module):
         'nb_congenital_anomaly': Property(Types.CATEGORICAL, 'Congenital Anomalies: None, Orthopedic, Gastrointestinal,'
                                                              'Neurological, Cosmetic, Other',
                                           categories=['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']),
+        'nb_early_onset_neonatal_infection': Property(Types.INT, 'bitset column containing early onset neonatal '
+                                                                 'infections'),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
         'nb_treatment_for_neonatal_sepsis': Property(Types.BOOL, 'If this neonate has received treatment for '
@@ -242,11 +257,37 @@ class NewbornOutcomes(Module):
 
         params = self.parameters
         params['nb_newborn_equations'] = {
-            'neonatal_sepsis': LinearModel(
+            'gbs_infection': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
-                params['odds_early_onset_neonatal_sepsis'],
-                Predictor('cord_care_given', external=True).when(True, params['rr_sepsis_cord_care']),
-                Predictor('tetra_cycline_given', external=True).when(True, params['rr_sepsis_tetracycline']),
+                params['prob_gbs_infection']),
+
+            'ecoli_infection': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_ecoli_infection']),
+
+            'other_infection': LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                params['prob_other_infection']),
+
+            'neonatal_sepsis': LinearModel(
+                LinearModelType.ADDITIVE,
+                0,
+                Predictor('nb_early_onset_neonatal_infection').apply(
+                    lambda x: params['prob_eons_gbs_infection']
+                    if x & self.early_onset_infections.element_repr('gbs_infection') else 0),
+                Predictor('nb_early_onset_neonatal_infection').apply(
+                    lambda x: params['prob_eons_ecoli_infection']
+                    if x & self.early_onset_infections.element_repr('ecoli_infection') else 0),
+                Predictor('nb_early_onset_neonatal_infection').apply(
+                    lambda x: params['prob_eons_other_infection']
+                    if x & self.early_onset_infections.element_repr('other_infection') else 0),
+            ),
+
+            # 'neonatal_sepsis': LinearModel(
+                # LinearModelType.MULTIPLICATIVE,
+                # params['odds_early_onset_neonatal_sepsis'],
+                # Predictor('cord_care_given', external=True).when(True, params['rr_sepsis_cord_care']),
+                # Predictor('tetra_cycline_given', external=True).when(True, params['rr_sepsis_tetracycline']),
                 # Predictor('la_parity').when('0', params['odds_ratio_sepsis_parity0']),
                 # Predictor('nb_early_preterm').when(True, params['odds_ratio_sepsis_preterm']),
                 # Predictor('nb_late_preterm').when(True, params['odds_ratio_sepsis_preterm']),
@@ -254,7 +295,7 @@ class NewbornOutcomes(Module):
                 # .when('low_birth_weight', params['odds_ratio_sepsis_lbw'])
                 # .when( 'very_low_birth_weight', params['odds_ratio_sepsis_vlbw'])
                 # .when('extremely_low_birth_weight', params['odds_ratio_sepsis_vlbw'])),
-            ),
+            # ),
 
             'encephalopathy': LinearModel(
                 LinearModelType.MULTIPLICATIVE,
@@ -359,6 +400,10 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_kangaroo_mother_care'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
         df.loc[df.is_alive, 'nb_death_after_birth_date'] = pd.NaT
+
+        # This biset property stores infections that can occur in the postnatal period
+        self.early_onset_infections = BitsetHandler(self.sim.population, 'nb_early_onset_neonatal_infection',
+                                                    ['gbs_infection', 'ecoli_infection', 'other_infection'])
 
     def initialise_simulation(self, sim):
         # Register logging event
@@ -508,19 +553,27 @@ class NewbornOutcomes(Module):
                                              F'date {self.sim.date} who died due to {complication} complications following '
                                              F'birth')
 
-    def apply_risk_of_neonatal_sepsis(self, child_id):
+    def apply_risk_of_neonatal_infection_and_sepsis(self, child_id):
         """This function uses the linear model to determines if a neonate will develop early onset
         neonatal sepsis and makes the appropriate changes to the data frame"""
         params = self.parameters
         df = self.sim.population.props
 
+        if self.eval(params['nb_newborn_equations']['gbs_infection'], child_id):
+            self.early_onset_infections.set([child_id], 'gbs_infection')
+
+        if self.eval(params['nb_newborn_equations']['ecoli_infection'], child_id):
+            self.early_onset_infections.set([child_id], 'ecoli_infection')
+
+        if self.eval(params['nb_newborn_equations']['other_infection'], child_id):
+            self.early_onset_infections.set([child_id], 'other_infection')
+
         if self.eval(params['nb_newborn_equations']['neonatal_sepsis'], child_id):
             self.NewbornComplicationTracker['neonatal_sepsis'] += 1
 
             df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
-            logger.debug(key='message', data=f'Neonate {child_id} has developed early onset sepsis following a home '
+            logger.debug(key='message', data=f'Neonate {child_id} has developed early onset sepsis following a '
                                              f'birth on date {self.sim.date}')
-
 
     def apply_risk_of_encephalopathy(self, child_id):
         """This function uses the linear model to determines if a neonate will develop neonatal
@@ -734,7 +787,7 @@ class NewbornOutcomes(Module):
 
         # We apply the risk of neonatal complications that would have occured if the HSI was able to run
         if ~nci[individual_id]['sought_care_for_complication']:
-            self.module.apply_risk_of_neonatal_sepsis(individual_id)
+            self.module.apply_risk_of_neonatal_infection_and_sepsis(individual_id)
             self.module.apply_risk_of_encephalopathy(individual_id)
             self.module.apply_risk_of_failure_to_transition(individual_id)
 
@@ -834,7 +887,7 @@ class NewbornOutcomes(Module):
             # If the child's mother has delivered at home, we immediately apply the risk and make changes to the
             # data frame. Otherwise this is done during the HSI
             if nci[child_id]['delivery_setting'] == 'home_birth':
-                self.apply_risk_of_neonatal_sepsis(child_id)
+                self.apply_risk_of_neonatal_infection_and_sepsis(child_id)
 
                 # Term neonates then have a risk of encephalopathy applied
                 if ~child.nb_early_preterm and ~child.nb_late_preterm:
@@ -1063,7 +1116,7 @@ class HSI_NewbornOutcomes_ReceivesSkilledAttendanceFollowingBirth(HSI_Event, Ind
             # Following the administration of prophylaxis we determine if this neonate has developed
             # any complications following birth
             if ~nci[person_id]['sought_care_for_complication']:
-                self.module.apply_risk_of_neonatal_sepsis(person_id)
+                self.module.apply_risk_of_neonatal_infection_and_sepsis(person_id)
 
                 self.module.apply_risk_of_encephalopathy(person_id)
 

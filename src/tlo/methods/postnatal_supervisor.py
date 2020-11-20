@@ -530,7 +530,7 @@ class PostnatalSupervisor(Module):
         result = params['pn_linear_equations']['care_seeking_postnatal_complication'].predict(df_slice)
         random_draw = pd.Series(self.rng.random_sample(size=len(df_slice)), index=df_slice.index)
         temp_df = pd.concat([result, random_draw], axis=1)
-        temp_df.columns = ['result', 'random_draw']
+        temp_df.columns = ['result', 'random_draw']\
 
         care_seekers = temp_df.index[temp_df.random_draw < temp_df.result]
         non_care_seekers = temp_df.index[temp_df.random_draw > temp_df.result]
@@ -545,7 +545,7 @@ class PostnatalSupervisor(Module):
             for person in non_care_seekers:
                 df.at[person, 'pn_emergency_event_mother'] = False
                 # todo: replace with death just in this function (reduce scheduling)
-                self.sim.schedule_event(LatePostpartumDeathEvent(self.module, person),
+                self.sim.schedule_event(LatePostpartumDeathEvent(self, person),
                                         self.sim.date)
 
 
@@ -680,7 +680,9 @@ class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: unset neonate properties
 
 class PostnatalWeekOneEvent(Event, IndividualScopeEventMixin):
-    """"""
+    """This is PostnatalWeekOneEvent. It is scheduled for both mothers (via tha labour module) and newborns following
+     birth. This event is used to apply risk of complications occuring during the first week of the postnatal period
+     prior to being picked up by the PostnatalSupervisorEvent."""
 
     def __init__(self, module, individual_id, mother_or_child):
         super().__init__(module, person_id=individual_id)
