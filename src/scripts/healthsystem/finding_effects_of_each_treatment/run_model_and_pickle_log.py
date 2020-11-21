@@ -30,7 +30,7 @@ from tlo.methods import (
 
 # Define output path
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / 'long_run.pickle'
+results_filename = outputpath / 'health_system_systematic_run.pickle'
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
