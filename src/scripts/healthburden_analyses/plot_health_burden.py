@@ -3,6 +3,8 @@
 # todo - update to newest data
 # todo - deaths, to include 0 year-olds.
 # todo - look to see why diarrhoea causes so many deaths
+# todo - get GBD dalys database
+
 
 import pickle
 from datetime import datetime

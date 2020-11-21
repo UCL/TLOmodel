@@ -88,3 +88,4 @@ output = parse_log_file(sim.log_filepath)
 with open(results_filename, 'wb') as f:
     pickle.dump({'output': output}, f, pickle.HIGHEST_PROTOCOL)
 
+
