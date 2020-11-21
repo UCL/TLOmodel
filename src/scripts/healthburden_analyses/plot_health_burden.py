@@ -1,5 +1,9 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular year."""
 
+# todo - update to newest data
+# todo - deaths, to include 0 year-olds.
+# todo - look to see why diarrhoea causes so many deaths
+
 import pickle
 from datetime import datetime
 from pathlib import Path
@@ -144,9 +148,12 @@ def age_cats(ages_in_years):
     for age in range(95, 100):
         AGE_RANGE_LOOKUP[age] = '95+'
 
-    AGE_RANGE_CATEGORIES.remove('95-99')
-    AGE_RANGE_CATEGORIES.remove('100+')
-    AGE_RANGE_CATEGORIES.append('95+')
+    if '95-99' in AGE_RANGE_CATEGORIES:
+        AGE_RANGE_CATEGORIES.remove('95-99')
+    if '100+' in AGE_RANGE_CATEGORIES:
+        AGE_RANGE_CATEGORIES.remove('100+')
+    if '95+' not in AGE_RANGE_CATEGORIES:
+        AGE_RANGE_CATEGORIES.append('95+')
 
     age_cats = pd.Series(
         pd.Categorical(ages_in_years.map(AGE_RANGE_LOOKUP),
@@ -212,7 +219,7 @@ for i, sex in enumerate(['F', 'M']):
      plot_stacked_bar_chart_of_deaths_by_cause(axs[i, 0], model_pt.loc[(sex,), ], title=f"Model: {sex_as_string(sex)}")
      plot_stacked_bar_chart_of_deaths_by_cause(axs[i, 1], gbd_pt.loc[(sex, ), ], title=f"Data: {sex_as_string(sex)}")
 plt.show()
-
+plt.savefig(outputpath / 'Deaths_Calibration_StackedBars.png')
 
 # %% Plots comparing between model and actual deaths across all ages and sex:
 xs = gbd_pt.sum()
@@ -238,4 +245,34 @@ plt.savefig(outputpath / 'Deaths_Calibration_ScatterPlot.png')
 plt.show()
 
 # %% Plots of DALYS
-# todo!!!
+
+# Get Model DALYS:
+dalys = output['tlo.methods.healthburden']['dalys'].copy()
+
+# drop date because this is just the date of logging and not the date to which the results pertain.
+dalys = dalys.drop(columns=['date'])
+
+# limit to the year (so the output wil be new year's day of the next year)
+dalys = dalys.loc[dalys.year == (year + 1)]
+dalys = dalys.drop(columns=['year'])
+
+# format age-groups and set index to be sex/age_range: collapse the
+dalys['age_range'] = pd.Categorical(dalys['age_range'].replace({
+    '95-99': '95+',
+    '100+': '95+'}
+), categories=AGE_RANGE_CATEGORIES, ordered=True)
+
+dalys = pd.DataFrame(dalys.groupby(['sex', 'age_range']).sum())
+
+# Get GBD Dalys
+# todo!
+
+
+fig, axs = plt.subplots(2, 1)
+for i, sex in enumerate(['F', 'M']):
+    dalys.loc[(sex, )].plot.bar(stacked=True, legend=False, ax=axs[i])
+    axs[i].set_title(f"DALYS in Model for {sex_as_string(sex)}")
+
+plt.savefig(outputpath / 'DALYS_stacked_bars.png')
+plt.show()
+
