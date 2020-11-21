@@ -1,5 +1,6 @@
 """
 A run of the model with logging so as to allow for descriptions of overall Health Burden and usage of the Health System.
+TODO -- have turned off spurious_symptoms to make it go faster, but this should be on really!
 """
 import pickle
 from pathlib import Path
@@ -34,8 +35,8 @@ results_filename = outputpath / 'health_system_systematic_run.pickle'
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(months=1)
-pop_size = 200
+end_date = start_date + pd.DateOffset(years=4)
+pop_size = 20_000
 
 # The resource files
 rfp = Path("./resources")
@@ -60,7 +61,7 @@ def run_sim(service_availability):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
         healthsystem.HealthSystem(resourcefilepath=rfp, service_availability=service_availability),
-        symptommanager.SymptomManager(resourcefilepath=rfp, spurious_symptoms=True),
+        symptommanager.SymptomManager(resourcefilepath=rfp, spurious_symptoms=False),
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=rfp),
         healthburden.HealthBurden(resourcefilepath=rfp),
         contraception.Contraception(resourcefilepath=rfp),
