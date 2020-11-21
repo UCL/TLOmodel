@@ -593,13 +593,14 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
     treatment or palliative care.
     It is for men with the symptom urinary.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "ProstateCancer_Investigation_Following_Urinary_Symptoms"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        # Define the necessary information for an HSI
+
+        self.TREATMENT_ID = "ProstateCancer_Investigation_Following_blood_urine"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -665,22 +666,14 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
     def did_not_run(self):
         pass
 
-
 class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, IndividualScopeEventMixin):
-    """
-    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    urinary symptoms.
-    This event begins the investigation that may result in diagnosis of prostate cancer and the scheduling of
-    treatment or palliative care.
-    It is for men with the symptom urinary.
-    """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
 
-        self.TREATMENT_ID = "ProstateCancer_Investigation_Following_Pelvic_Pain"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        # Define the necessary information for an HSI
+
+        self.TREATMENT_ID = "ProstateCancer_Investigation_Following_pelvic_pain"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -730,7 +723,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
                 )
 
             else:
-                # start palliative care:
+                 # start palliative care:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_ProstateCancer_PalliativeCare(
                         module=self.module,
@@ -774,6 +767,11 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
+        # we don't treat if cancer is metastatic
+        if df.at[person_id, "pc_status"] == 'metastatic':
+            logger.warning(key="warning", data="Cancer is metastatic - aborting HSI_ProstateCancer_StartTreatment")
+            return hs.get_blank_appt_footprint()
+
         # Check that the person has cancer, not in metastatic, has been diagnosed and is not on treatment
         assert not df.at[person_id, "pc_status"] == 'none'
         assert not df.at[person_id, "pc_status"] == 'metastatic'
@@ -783,7 +781,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Record date and stage of starting treatment
         df.at[person_id, "pc_date_treatment"] = self.sim.date
-        df.at[person_id, "pc_stage_at_which_treatment_applied"] = df.at[person_id, "pc_status"]
+        df.at[person_id, "pc_stage_at_which_treatment_given"] = df.at[person_id, "pc_status"]
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
@@ -964,8 +962,8 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_prostate_cancer_since_last_log': df.pc_date_death.between(date_lastlog, date_now).sum()
         })
 
- #      logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-        logger.info('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[10].to_dict())
+#       logger.info('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[10].to_dict())
