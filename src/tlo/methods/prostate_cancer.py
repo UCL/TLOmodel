@@ -137,7 +137,7 @@ class ProstateCancer(Module):
 
         "pc_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnsosis of the prostate cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of the prostate cancer (pd.NaT if never diagnosed)"
         ),
 
         "pc_date_treatment": Property(
@@ -228,39 +228,59 @@ class ProstateCancer(Module):
 
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have pelvic pain:
-        lm_init_pelvic_pain = LinearModel.multiplicative(
-        Predictor('pc_status').when("none", 0.0)
-                            .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
-                            .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
-                            .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
-        )
+#       lm_init_pelvic_pain = LinearModel.multiplicative(
+#       Predictor('pc_status').when("none", 0.0)
+#                           .when("prostate_confined", p['init_prop_urinary_symptoms_by_stage'][0])
+#                           .when("local_ln", p['init_prop_urinary_symptoms_by_stage'][1])
+#                           .when("metastatic", p['init_prop_urinary_symptoms_by_stage'][2])
+#       )
 
-        has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
+#       has_pelvic_pain_symptoms_at_init = lm_init_pelvic_pain.predict(df.loc[df.is_alive], self.rng)
+#       self.sim.modules['SymptomManager'].change_symptom(
+#           person_id=has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
+#           symptom_string='pelvic_pain',
+#           add_or_remove='+',
+#           disease_module=self
+#       )
+
+#       this code replaced with below when running for n=1 - was not running otherwise
+
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_pelvic_pain_symptoms_at_init.index[has_pelvic_pain_symptoms_at_init].tolist(),
+            person_id=1,
             symptom_string='pelvic_pain',
             add_or_remove='+',
             disease_module=self
         )
 
-        # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
-        lm_init_urinary = LinearModel.multiplicative(
-            Predictor('pc_status')  .when("none", 0.0)
-                                    .when("prostate_confined",
-                                          p['init_prop_urinary_symptoms_by_stage'][0])
-                                    .when("local_ln",
-                                          p['init_prop_urinary_symptoms_by_stage'][1])
-                                    .when("metastatic",
-                                          p['init_prop_urinary_symptoms_by_stage'][2])
 
-        )
-        has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
+        # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
+#       lm_init_urinary = LinearModel.multiplicative(
+#           Predictor('pc_status')  .when("none", 0.0)
+#                                   .when("prostate_confined",
+#                                         p['init_prop_urinary_symptoms_by_stage'][0])
+#                                   .when("local_ln",
+#                                         p['init_prop_urinary_symptoms_by_stage'][1])
+#                                   .when("metastatic",
+#                                         p['init_prop_urinary_symptoms_by_stage'][2])
+
+#       )
+#       has_urinary_symptoms_at_init = lm_init_urinary.predict(df.loc[df.is_alive], self.rng)
+#       self.sim.modules['SymptomManager'].change_symptom(
+#           person_id=has_urinary_symptoms_at_init.index[has_urinary_symptoms_at_init].tolist(),
+#           symptom_string='urinary',
+#           add_or_remove='+',
+#           disease_module=self
+#       )
+
+#       this code replaced with below when running for n=1 - was not running otherwise
+
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_urinary_symptoms_at_init.index[has_urinary_symptoms_at_init].tolist(),
-            symptom_string='urinary',
+            person_id=1,
+            symptom_string='pelvic_pain',
             add_or_remove='+',
             disease_module=self
         )
+
 
 # -------------------- pc_date_diagnosis -----------
         # todo: should depend also on baseline pelvic pain symptoms
@@ -276,7 +296,7 @@ class ProstateCancer(Module):
         ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
         # ensure that persons who have not ever had urinary or pelvic pain symptoms are not diagnosed:
-        ever_diagnosed.loc[~has_urinary_symptoms_at_init] = False
+#       ever_diagnosed.loc[~has_urinary_symptoms_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
         df.loc[ever_diagnosed, "pc_date_diagnosis"] = self.sim.date
@@ -651,7 +671,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
                     tclose=None
                 )
 
-            else:
+            if in_metastatic:
                 # start palliative care:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_ProstateCancer_PalliativeCare(
@@ -722,7 +742,8 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
                     tclose=None
                 )
 
-            else:
+
+            if in_metastatic:
                  # start palliative care:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_ProstateCancer_PalliativeCare(
@@ -789,7 +810,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 module=self.module,
                 person_id=person_id,
             ),
-            topen=self.sim.date + DateOffset(years=12),
+            topen=self.sim.date + DateOffset(months=12),
             tclose=None,
             priority=0
         )
@@ -915,7 +936,7 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
-        """schedule logging to repeat every 3 months
+        """schedule logging to repeat every 1 months
         """
         self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
@@ -962,8 +983,8 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_prostate_cancer_since_last_log': df.pc_date_death.between(date_lastlog, date_now).sum()
         })
 
-        logger.info('%s|summary_stats|%s', self.sim.date, out)
+#       logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[10].to_dict())
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[1].to_dict())

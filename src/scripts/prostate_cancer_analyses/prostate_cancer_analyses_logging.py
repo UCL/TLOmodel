@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2030,  1, 1)
-popsize = 3000
+end_date = Date(2040,  1, 1)
+popsize = 10
 
 # Establish the simulation object
 log_config = {
