@@ -1,9 +1,9 @@
 import pandas as pd
 from pathlib import Path
 
-# Resource file path
 from tlo.methods import demography
 
+# Resource file path
 rfp = Path("./resources")
 
 def get_scaling_factor(parsed_output):
@@ -25,7 +25,6 @@ def get_scaling_factor(parsed_output):
     # Calculate ratio for scaling
     return cens_tot / model_tot
 
-
 def get_list_of_gbd_causes():
     """Helper function to get the complete list of possible causes of deaths and disability (at their level 3).
     This uses the ResourceFile_Deaths_and_DALYS_GBD2019.csv"""
@@ -37,10 +36,9 @@ def get_list_of_gbd_causes():
 
 def get_list_of_tlo_causes(output):
     """Helper function to get the complete list of possible causes of deaths and disability in the TLO model.
-    This should do a cold-read of the code, but for now it accepts an output data-structure from parse_log.
+    todo - This should do a cold-read of the code, but, for now, it accepts an output data-structure from parse_log.
     """
     return pd.Series(list(set(pd.unique(output['tlo.methods.demography']['death']['cause'])))).sort_values()
-
 
 def get_causes_mappers(output):
     """
@@ -193,6 +191,7 @@ def load_gbd_deaths_and_dalys_data(output):
     _, mapper_from_gbd_strings = get_causes_mappers(output)
 
     gbd["unified_cause"] = gbd["cause_name"].map(mapper_from_gbd_strings)
+    assert not gbd["unified_cause"].isna().any()
 
     # sort out labelling of sex:
     gbd['sex'] = gbd['sex_name'].map({'Male': 'M', 'Female': 'F'})

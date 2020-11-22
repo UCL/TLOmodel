@@ -1,10 +1,9 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular year."""
 
-
 # todo - look to see why diarrhoea causes so many deaths
 # todo - look to see why "other" deaths are so few in number in GBD
 # todo - update the processing of GBD file in the demography (formatting and plotting) using new data and new helper fns
-
+# todo - last snags on this script!
 
 import pickle
 from datetime import datetime
@@ -13,11 +12,17 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from scripts.healthburden_analyses.single_long_run.helper_funcs_for_processing_data_files import *
+from scripts.healthburden_analyses.single_long_run.helper_funcs_for_processing_data_files import (
+    get_scaling_factor,
+    get_causes_mappers,
+    age_cats,
+    get_age_range_categories,
+    load_gbd_deaths_and_dalys_data
+)
 
-from tlo.methods import demography
 
 # %% Set file paths etc
+
 # Define the particular year for the focus of this analysis
 year = 2010
 
@@ -46,12 +51,12 @@ gbd_deaths_pt = gbd.loc[(gbd.year == year) & (gbd.measure_name == 'Deaths')]\
 gbd_dalys_pt = gbd.loc[(gbd.year == year) & (gbd.measure_name == 'DALYs (Disability-Adjusted Life Years)')]\
     .pivot_table(index=['sex', 'age_range'], columns='unified_cause', values='val', fill_value=0)
 
-
 # %% Get the scaling so that the population size matches that of the real population of Malawi
+
 scaling_factor = get_scaling_factor(output)
 
-
 # %% Get deaths from Model into a pivot-table (index=sex/age, columns=unified_cause) (in the particular year)
+
 deaths_df = output["tlo.methods.demography"]["death"]
 deaths_df["date"] = pd.to_datetime(deaths_df["date"])
 deaths_df["year"] = deaths_df["date"].dt.year
@@ -68,15 +73,16 @@ df['count'] *= scaling_factor
 
 deaths_pt = df.pivot_table(index=['sex', 'age_range'], columns='unified_cause', values='count', fill_value=0)
 
-# todo - guaranteee that all values of age_range are represented
+# todo - ** guarantee that all values of age_range are represented **
 
 # %% Get DALYS from Model into a pivot-table (index=sex/age, columns=unified_cause) (in the particular year)
+
 dalys = output['tlo.methods.healthburden']['dalys'].copy()
 
 # drop date because this is just the date of logging and not the date to which the results pertain.
 dalys = dalys.drop(columns=['date'])
 
-# re-clasify the causes of DALYS
+# re-classify the causes of DALYS
 dalys_melt = dalys.melt(id_vars=['sex', 'age_range', 'year'], var_name='cause', value_name='value')
 dalys_melt['cause'] = dalys_melt.cause\
     .replace({'YLL_Demography_Other': '_Other'})\
@@ -102,6 +108,7 @@ dalys_pt = dalys_melt.pivot_table(index=['sex', 'age_range'], columns='cause', v
 
 
 # %% Make figures of overall summaries of deaths by cause
+
 deaths_pt.sum().plot.bar()
 plt.xlabel('Cause')
 plt.ylabel(f"Total deaths in {year}")
@@ -202,4 +209,3 @@ make_stacked_bar_comparison(
     model_pt=dalys_pt,
     gbd_pt=gbd_dalys_pt,
     ylabel='DALYS')
-
