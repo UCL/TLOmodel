@@ -140,8 +140,6 @@ def get_causes_mappers(output):
 
     return mapper_from_tlo_strings, mapper_from_gbd_strings
 
-
-
 def age_cats(ages_in_years):
     """Accepts a pd.Series with age in single years and returns pd.Series in the age-categories compatible with GBD:
     (0-4, 5-9, ..., 90-94, 95+)"""

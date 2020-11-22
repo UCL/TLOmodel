@@ -1,9 +1,9 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular year."""
 
-# todo - update to newest data
-# todo - deaths, to include 0 year-olds.
+
 # todo - look to see why diarrhoea causes so many deaths
-# todo - get GBD dalys database
+# todo - look to see why "other" deaths are so few in number in GBD
+# todo - update the processing of GBD file in the demography (formatting and plotting) using new data and new helper fns
 
 
 import pickle
