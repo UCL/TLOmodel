@@ -100,3 +100,7 @@ autodoc_default_options = {
 
 # The checker can't see private repos
 linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
+
+# Stop displaying fully-qualified domain names of classes.
+# e.g. rather than "class A.B.C", just say "class C".
+add_module_names = False

@@ -72,7 +72,7 @@ def get_classes_in_module(fqn, module_obj):
     :param fqn: Fully-qualified name of the module,
                 e.g. "tlo.methods.mockitis"
     :param module_obj: an object representing this module
-    :return: list of entries, each of the form:
+    :param return: list of entries, each of the form:
                 [class name, class object, line number]
     '''
     classes = []
@@ -147,8 +147,8 @@ def write_rst_file(rst_dir, fqn, mobj):
         classes_in_module = get_classes_in_module(fqn, mobj)
         for c in classes_in_module:
             # c is [class name, class object, line number]
-            str = get_class_output_string(c)
-            out.write(f"{str}\n")
+            mystr = get_class_output_string(c)
+            out.write(f"{mystr}\n")
         # Example of use in .rst file:
         # out.write(".. class:: Noodle\n\n")
         # out.write("   Noodle's docstring.\n")
@@ -162,7 +162,12 @@ def get_class_output_string(classinfo):
 
     '''
     class_name, class_obj, _ = classinfo
-    str = f"\n\n\n.. autoclass:: {class_name}\n\n"
+    #mystr = f"\n\n\n" \
+    #        f".. autoclass:: {class_name}\n" \
+    #        f"   :members:\n\n" \
+    #        f"   ..automethod:: __init__\n\n"
+    mystr = f"\n\n\n.. autoclass:: {class_name}\n\n"
+
 
     # This is needed to keep information neatly aligned
     # with each class.
@@ -171,50 +176,24 @@ def get_class_output_string(classinfo):
 
     # Now we want to add base classes, class members, comments and methods
     # Presumably in source file order.
-    # is_descendent_of_Event = False
-    # is_descendent_of_HSI_Event = False
-    is_descendent_of_Module = False
 
-    (base_str, base_objects) = extract_bases(class_name, class_obj, spacer)
+    mystr += extract_bases(class_name, class_obj, spacer)
+    mystr += "\n\n"
 
-    count = 0
-    for mybase in base_objects:
-        if mybase.__name__ == "HSI_Event":
-            # is_descendent_of_HSI_Event = True
-            count += 1
-        elif mybase.__name__ == "Module":
-            is_descendent_of_Module = True
-            count += 1
-        elif mybase.__name__ == "Event":
-            # is_descendent_of_Event = True
-            count += 1
-
-    # Make sure it has only matched one of the criteria in the loop above:
-    if count > 1:
-        # I don't think this will ever happen, but if it does...
-        import pdb
-        pdb.set_trace()
-        # Maybe raising an assertion would be better?
-
-    str += base_str
-    str += "\n\n"
-
-    # We don't want these to appear in our documentation:
+    # Asif says we should probably not exclude __init__ in the following,
+    # because some disease classes have custom arguments:
     general_exclusions = ["__class__", "__dict__", "__module__",
                           "__slots__", "__weakref__", ]
 
-    # Asif: I think it's mandatory to a subclass of HSI Event to have an
-    # apply() implementation, so I think that should always be displayed
-    # actually. To encourage people to add a sensible docstring for that
-    # method. The other [post_apply_hook(), which just has pass as its
-    # implementation in the parent] is optional, so should only be
-    # displayed if it's actually overridden
+    inherited_exclusions = ["initialise_population", "initialise_simulation",
+                            "on_birth", "read_parameters", "apply",
+                            "post_apply_hook", "on_hsi_alert",
+                            "report_daly_values", "run", "did_not_run",
+                            "SYMPTOMS", ]
 
     # Return all the members of an object in a list of (name, value) pairs
     # sorted by name:
     classdat = inspect.getmembers(class_obj)  # Gets everything
-
-    func_objects_to_document = which_functions_to_print(class_obj)
 
     for name, obj in classdat:
         # We only want to document things defined in this class itself,
@@ -223,20 +202,18 @@ def get_class_output_string(classinfo):
         # e.g. we don't want:
         # __delattr__ = <slot wrapper '__delattr__' of 'object' objects>
         # Skip over things inherited from object class or Module class
-        object_description = f"{obj}"
-
-        if (is_descendent_of_Module and
-            ("of 'object' objects" in object_description
-                or "built-in method" in object_description
-                # or "function Module." in object_description
-                or "of 'Module' objects" in object_description
-                or name in general_exclusions
-                # or name in module_inherited_functions
-                or object_description == 'None')):
-            continue
+        #object_description = f"{obj}"
+        #if ("of 'object' objects" in object_description
+        #        or "built-in method" in object_description
+        #        or "function Module." in object_description
+        #        or "of 'Module' objects" in object_description
+        #        or name in general_exclusions
+        #        or name in inherited_exclusions
+        #        or object_description == 'None'):
+        #    continue
 
         # if name == "__doc__" and obj is not None:
-        #    str += f"**Description:**\n{obj}"
+        #    mystr += f"**Description:**\n{obj}"
         #    continue
         # print(f"next object in class {class_name} is {name} = {obj}")
 
@@ -245,93 +222,38 @@ def get_class_output_string(classinfo):
             table_list = create_table(obj)
             if table_list == []:
                 continue
-            str += f"{spacer}**{name}:**\n"
+            mystr += f"{spacer}**{name}:**\n"
             for t in table_list:
-                str += f"{spacer}{t}\n"
-            str += "\n\n"
+                mystr += f"{spacer}{t}\n"
+            mystr += "\n\n"
             continue
 
         # Interrogate the object. It's something else, maybe a
         # function which hasn't been filtered out.
+        #
         if inspect.isfunction(obj):
             # print(f"DEBUG: got a function: {name}, {object}")
-
-            if not func_objects_to_document:
-                print(f"**DEBUG: no func_objects_to_document in class"
-                      f"{class_name}")
-                continue
-
-            if obj not in func_objects_to_document:
-                print(f"**DEBUG: skipping {obj} of class {class_name}")
-                continue
-
-            # Document this function if necessary:
-            str += f"{spacer}.. automethod:: {name}\n\n"
+            # mystr = f"\n\n**Function {name}():**\n"
+            # mydat = inspect.getmembers(obj)
+            # for the_name, the_object in mydat:
+            # print(f"{the_name}: {the_object}")
+            #    if the_name == "__doc__":
+            #        mystr += f"\n\n{the_object} \n\n"
+            # str += mystr
+            mystr += f"{spacer}.. automethod:: {name}\n\n"
             continue
+        #    if "population" in class_name:
+        #        import pdb; pdb.set_trace()
 
         # Anything else?
-        # str += f"{name} : {obj}\n\n"
+        # mystr += f"{name} : {obj}\n\n"
         # print(f"DEBUG: something else... {name}, {obj}")
 
         # getdoc, getcomments,
 
-    str += "\n\n\n"
+    mystr += "\n\n\n"
 
-    return str
-
-
-def which_functions_to_print(clazz):
-    """
-    Which functions do we want to print?
-
-    :param clazz: class object under consideration
-    :return: returns a list of function objects we want to print
-
-    Written by Asif
-    """
-    # get all the functions in this class
-    class_functions = dict(inspect.getmembers(clazz,
-                                              predicate=inspect.isfunction))
-
-    ok_to_print = []
-
-    # for each function in this class
-    for func_name, func_obj in class_functions.items():
-        should_i_print = True
-
-        # for each base class of this class
-        for baseclass in clazz.__mro__:
-            # skip over the class we're checking
-            if baseclass != clazz:
-                # get the functions of the base class
-                functions_base_class = dict(
-                    inspect.getmembers(baseclass,
-                                       predicate=inspect.isfunction))
-
-                # if there is a function with the same name as base class
-                if func_name in functions_base_class:
-                    # if the function object is the same
-                    # as one defined in a base class
-                    if func_obj == functions_base_class[func_name]:
-                        print(f'{func_name} in subclass is same as function in'
-                              f'{baseclass.__name__} (not overridden)')
-                        should_i_print = False
-                        break
-                    else:
-                        print(f'{func_name} in subclass is not the same '
-                              f'as one in baseclass {baseclass.__name__}')
-                else:
-                    print(f'{func_name} is not in '
-                          f'baseclass {baseclass.__name__}')
-
-        if should_i_print:
-            print(f'\t✓✓✓ {func_name} is implemented in the subclass - print ')
-            ok_to_print.append(func_obj)
-        else:
-            print(f'\txxx {func_name} has been inherited from a subclass'
-                  f'- do not print')
-
-    return ok_to_print
+    return mystr
 
 
 def extract_bases(class_name, class_obj, spacer=""):
@@ -343,8 +265,8 @@ def extract_bases(class_name, class_obj, spacer=""):
                        bases
     :param class_obj: object with information about this class
     :param spacer: string to use as whitespace padding.
-    :return: Tuple with (1) string of base(s) for this class (if any), with
-             links to their docs. (2) the list of base class objects
+    :return: string of base(s) for this class (if any), with links to their
+             docs.
     '''
     # This next line gets the base classes including "object" class,
     # and also the class_name class itself:
@@ -357,7 +279,6 @@ def extract_bases(class_name, class_obj, spacer=""):
     # print(f"classtree = {classtree}")
 
     parents = []
-    relevant_bases = []
 
     for b in bases:
         # Example of this_base_string:
@@ -365,19 +286,14 @@ def extract_bases(class_name, class_obj, spacer=""):
         this_base_string = get_base_string(class_name, class_obj, b)
         if this_base_string is not (None or ""):
             parents.append(this_base_string)
-        # We don't want to include the name of the child class.
-        # Or the "object" class, which all objects will
-        # ultimately inherit from.
-        if ("object" not in str(b) and class_name not in str(b)):
-            relevant_bases.append(b)
 
     if len(parents) > 0:
         out = f"{spacer}Bases: {', '.join(parents)}\n"
     else:
         out = ""
 
-    # print(f"DEBUG: extract_bases: str = {str}")
-    return (out, relevant_bases)
+    # print(f"DEBUG: extract_bases: mystr = {mystr}")
+    return out
 
 
 def get_base_string(class_name, class_obj, base_obj):
