@@ -3,6 +3,7 @@ A run of the model with logging so as to allow for descriptions of overall Healt
 TODO -- have turned off spurious_symptoms to make it go faster, but this should be on really!
 """
 import pickle
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -31,7 +32,9 @@ from tlo.methods import (
 
 # Define output path
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-results_filename = outputpath / 'health_system_systematic_run.pickle'
+datestamp = datetime.today().strftime("%Y_%m_%d")
+results_filename_stub = 'health_system_systematic_run'
+results_filename = outputpath / f"{datestamp}_{results_filename_stub}.pickle"
 
 # Key parameters about the simulation:
 start_date = Date(2010, 1, 1)
@@ -88,9 +91,9 @@ def run_sim(service_availability):
 
 # %% Define scenarios for the parameter 'service_availability'
 
-# scoop-up all the treamtent_ids that are defined
+# scoop-up all the TREATMENT_IDs that are defined in the code
 # (todo - automate this in future)
-# (todo - enforce the treatment_id convension of them beginning with the name of the module)
+# (todo - enforce the treatment_id convention of them beginning with the name of the module)
 # (todo - or consider letting the gating be at the level of the disease module or not rely on the naming)
 
 treatment_ids = [
@@ -152,12 +155,13 @@ stubs = {s.split('_')[0] for s in treatment_ids}
 
 scenarios = {
     'Nothing': [],
-    'Everything': ['*']
+    'Everything': ['*'],
 }
 
-# create scenarios in which each one of the stubs is 'removed'
+# create scenarios in which only one of the stubs is permitted.
+# Note that 'wildcard is needed to allow all Treatment_IDs with that stub.
 for s in stubs:
-    scenarios[f"No {s}"] = [st for st in stubs if st != s]
+    scenarios[f"Only {s}"] = [f"{st}*" for st in stubs if st == s]
 
 # %% Run the model
 results = dict()
@@ -169,8 +173,4 @@ for name, serv_av in scenarios.items():
 with open(results_filename, 'wb') as f:
     pickle.dump({'results': results}, f, pickle.HIGHEST_PROTOCOL)
 
-# %% test can open it:
-with open(results_filename, 'rb') as f:
-    X = pickle.load(f)
-    assert 'results' in X
 
