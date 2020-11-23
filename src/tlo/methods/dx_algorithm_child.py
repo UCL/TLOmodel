@@ -1058,7 +1058,15 @@ class IMNCIManagementLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     data=imci_class_df_transposed,
                     description='IMCI pneumonia classification')
 
-        # logger.info('%s|person_id|%s',
-        #             self.sim.date)
+        # get single row of dataframe (but not a series) ----------------
+        index_children_with_alri = df.index[df.is_alive & (df.age_exact_years < 5) & df.ri_ALRI_status]
+        individual_child = df.loc[[index_children_with_alri[0]]]
+
+        logger.debug(key='individual_check',
+                     data=individual_child,
+                     description='following an individual child through simulation')
+
+        logger.info('%s|person_id|%s',
+                    self.sim.date)
 
 
