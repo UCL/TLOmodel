@@ -22,6 +22,7 @@ setup(
     description='Thanzi la Onse Epidemiology Model',
     long_description=re.compile(
         '^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
+    long_description_content_type="text/x-rst",
     author='Thanzi la Onse team',
     author_email='j.p.cooper@ucl.ac.uk',
     url='https://github.com/UCL/TLOmodel',
