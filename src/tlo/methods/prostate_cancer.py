@@ -548,7 +548,7 @@ class ProstateCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
+        # scheduled to run every 1 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
@@ -990,5 +990,5 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 #       logger.info('%s|person_one|%s',
 #                    self.sim.date,
-#                    df.loc[1].to_dict())
+#                    df.loc[11].to_dict())
 
