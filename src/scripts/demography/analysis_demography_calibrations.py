@@ -262,9 +262,9 @@ deaths_model['Variant'] = 'Model'
 wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalDeaths_WPP.csv")
 
 # Load GBD
-# TODO: Deaths among 0-1 for GBD?
-gbd = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalDeaths_GBD.csv")
-gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
+# TODO: *** USE THE NEW GBD DATA AND PROCESSING FILES **
+# gbd = pd.read_csv(Path(path_for_saved_files) / "ResourceFile_TotalDeaths_GBD.csv")
+# gbd = pd.DataFrame(gbd.drop(columns=['Year']).groupby(by=['Period', 'Sex', 'Age_Grp', 'Variant']).sum()).reset_index()
 
 # Combine into one large dataframe
 deaths = pd.concat([deaths_model, wpp, gbd], ignore_index=True, sort=False)

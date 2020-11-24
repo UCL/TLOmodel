@@ -21,7 +21,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-# resourcefilepath = Path("./resources")
+# path_for_saved_files = Path("./resources")
 resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 # %% Run the Simulation

@@ -56,7 +56,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True))
-# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+# sim.register(healthsystem.HealthSystem(path_for_saved_files=path_for_saved_files,
 #                                       service_availability=[]))
 
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))

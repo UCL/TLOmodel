@@ -60,7 +60,7 @@ class PregnancySupervisor(Module):
 
     def read_parameters(self, data_folder):
         params = self.parameters
-        #  dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_PregnancySupervisor.xlsx',
+        #  dfd = pd.read_excel(Path(self.path_for_saved_files) / 'ResourceFile_PregnancySupervisor.xlsx',
         #                      sheet_name='parameter_values_old')
         #  self.load_parameters_from_dataframe(dfd)
 

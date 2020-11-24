@@ -83,17 +83,17 @@ class Demography(Module):
 
         # Initial population size:
         self.parameters['pop_2010'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Population_2010.csv'
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv'
         )
 
         # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Pop_Frac_Births_Male.csv'
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_Frac_Births_Male.csv'
         ).set_index('Year')['frac_births_male']
 
         # Mortality schedule:
         self.parameters['mortality_schedule'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
     def initialise_population(self, population):
@@ -431,12 +431,13 @@ def scale_to_population(parsed_output, resourcefilepath, rtn_scaling_ratio=False
     NB. This file gives precedence to the Malawi Population Census
 
     :param parsed_outoput: The outputs from parse_output
-    :param resourcefilepath: The resourcefilepath
+    :param resourcefilepath: The path_for_saved_files
     :return: a new version of parsed_output that includes certain variables scaled
     """
 
     # Get information about the real population size (Malawi Census in 2018)
-    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
+    cens_tot = pd.read_csv(
+        Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
     cens_yr = 2018
 
     # Get information about the model population size in 2018 (and fail if no 2018)

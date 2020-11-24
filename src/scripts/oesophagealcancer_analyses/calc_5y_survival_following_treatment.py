@@ -45,15 +45,15 @@ sim = Simulation(start_date=start_date)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             # contraception.Contraception(resourcefilepath=resourcefilepath),
+             # contraception.Contraception(path_for_saved_files=path_for_saved_files),
              enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
              healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        disable=True),
              symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
              healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             # labour.Labour(resourcefilepath=resourcefilepath),
-             # pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+             # labour.Labour(path_for_saved_files=path_for_saved_files),
+             # pregnancy_supervisor.PregnancySupervisor(path_for_saved_files=path_for_saved_files),
              oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath)
              )
 

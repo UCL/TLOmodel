@@ -205,3 +205,10 @@ make_stacked_bar_comparison(
     model_pt=dalys_pt,
     gbd_pt=gbd_dalys_pt,
     ylabel='DALYS')
+
+# %% make figure for Malaria:
+plt.bar(
+    ['GBD', 'TLO'],
+    [gbd_deaths_pt['Malaria'].sum(), deaths_pt['Malaria'].sum()]
+)
+plt.show()

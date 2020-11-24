@@ -71,7 +71,7 @@ class Skeleton(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-        To access files use: Path(self.resourcefilepath) / file_name
+        To access files use: Path(self.path_for_saved_files) / file_name
         """
         pass
 
