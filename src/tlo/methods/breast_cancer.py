@@ -91,9 +91,6 @@ class BreastCancer(Module):
             "rate ratio for stage 4 breast cancer for people with stage 3 "
             "breast cancer if had curative treatment at stage 3",
         ),
-        "rate_palliative_care_stage4": Parameter(
-            Types.REAL, "prob palliative care this 3 month period if stage4"
-        ),
         "r_death_breast_cancer": Parameter(
             Types.REAL,
             "probabilty per 3 months of death from breast cancer amongst people with stage 4 breast cancer",
@@ -521,7 +518,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=1))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
@@ -688,7 +685,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 module=self.module,
                 person_id=person_id,
             ),
-            topen=self.sim.date + DateOffset(years=12),
+            topen=self.sim.date + DateOffset(months=12),
             tclose=None,
             priority=0
         )
@@ -748,7 +745,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
                     module=self.module,
                     person_id=person_id
                 ),
-                topen=self.sim.date + DateOffset(years=1),
+                topen=self.sim.date + DateOffset(months=3),
                 tclose=None,
                 priority=0
             )
@@ -800,7 +797,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
                 module=self.module,
                 person_id=person_id
             ),
-            topen=self.sim.date + DateOffset(months=1),
+            topen=self.sim.date + DateOffset(months=3),
             tclose=None,
             priority=0
         )
