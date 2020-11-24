@@ -37,7 +37,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 1, 1)
-popsize = 20000
+popsize = 20_000
 
 log_config = {
     'filename': 'LogFile',
@@ -218,7 +218,6 @@ plt.show()
 
 
 # %% ----------------------------  MEAN DEATH RATE BY PATHOGEN  ----------------------------
-# # TODO: this set of graphs
 # Load the death data to which we calibrate:
 # IHME (www.healthdata.org) / GBD project --> total deaths due to diarrhoea in Malawi,
 # per 100,000 child-years (under 5's) https://vizhub.healthdata.org/gbd-compare/
@@ -244,7 +243,7 @@ deaths['cause_simplified'] = [x[0] for x in deaths['cause'].str.split('_')]
 deaths = deaths.drop(deaths.loc[deaths['cause_simplified'] != 'Diarrhoea'].index)
 deaths = deaths.groupby(by=['age_grp', 'year']).size().reset_index()
 deaths.rename(columns={0: 'count'}, inplace=True)
-deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
+# deaths.drop(deaths.index[deaths['year'] > 2010.0], inplace=True)
 deaths = deaths.pivot(values='count', columns='age_grp', index='year')
 
 # Death Rate = death count (by year, by age-group) / person-years
@@ -261,4 +260,44 @@ death_rate_comparison = pd.Series(
 death_rate_comparison.plot.bar()
 plt.title('Death Rate to Diarrhoea in Under 5s')
 plt.savefig(outputpath / ("Diarrhoea_death_rate_0-5_year_olds" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+
+# %% Plot total numbers of death against comparable estimate from GBD
+from scripts.utils.helper_funcs_for_processing_data_files import get_scaling_factor, load_gbd_deaths_and_dalys_data
+
+scaling_factor = get_scaling_factor(output)
+gbd = load_gbd_deaths_and_dalys_data(output)
+
+diarrhoea_deaths_gbd = (gbd.loc[
+    (gbd.measure_name == 'Deaths') &
+    (gbd.unified_cause == 'Childhood Diarrhoea') &
+    (gbd.age_range == '0-4') &
+    gbd.year.isin([2010, 2011, 2012, 2013, 2014, 2015, 2016])
+    ]).groupby(by='year')[['val', 'upper', 'lower']].sum()
+
+deaths_under_5s_scaled = deaths.sum(axis=1) * scaling_factor
+
+fig, ax = plt.subplots()
+ax.plot(deaths_under_5s_scaled.index, deaths_under_5s_scaled.values, 'r--', label='Model: With Treatment')
+ax.plot(diarrhoea_deaths_gbd.index, diarrhoea_deaths_gbd.val, 'b', label='GBD Diarrhoea deaths <5s')
+ax.fill_between(
+    diarrhoea_deaths_gbd.index,
+    diarrhoea_deaths_gbd.lower,
+    diarrhoea_deaths_gbd.upper, color='b', alpha=0.5)
+ax.legend()
+ax.set_ylabel('Number of deaths')
+ax.set_title('Comparison Between Model and GBD')
+plt.show()
+
+#%% Look at Case Fatality Rate
+cfr = dict()
+for age_grp in ['0y', '1y', '2-4y']:
+    cfr[age_grp] = deaths[age_grp] / counts[age_grp].apply(pd.Series).sum(axis=1)
+cfr = pd.DataFrame(cfr).drop(index=2010).mean() * 100_000
+
+cfr.plot.bar()
+plt.title('Case Fatality Rate for Diarrhoea')
+plt.ylabel('Deaths per 100k Cases')
+plt.xlabel('Age-Group')
 plt.show()

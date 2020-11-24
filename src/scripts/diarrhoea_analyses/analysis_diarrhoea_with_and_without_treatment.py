@@ -1,5 +1,6 @@
 """
-This will demonstrate the effect of different treatment
+This will demonstrate the effect of different treatment.
+Has very high health-seeking behaviour
 """
 
 # %% Import Statements and initial declarations
@@ -8,6 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import pyplot as plt
+from scripts.utils.helper_funcs_for_processing_data_files import get_scaling_factor, load_gbd_deaths_and_dalys_data
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -56,9 +58,11 @@ for label, service_avail in scenarios.items():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  contraception.Contraception(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_avail),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=True),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  labour.Labour(resourcefilepath=resourcefilepath),
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
@@ -138,7 +142,7 @@ def plot_for_column_of_interest(results, column_of_interest):
     plt.show()
 
 
-# Plot incidence by pathogen: across the sceanrios
+# Plot incidence by pathogen: across the scenarios
 for column_of_interest in inc_by_pathogen[list(inc_by_pathogen.keys())[0]].columns:
     plot_for_column_of_interest(inc_by_pathogen, column_of_interest)
 
@@ -149,4 +153,32 @@ for label in deaths.keys():
 pd.concat(data, axis=1).plot.bar()
 plt.title('Number of Deaths Due to Diarrhoea')
 plt.savefig(outputpath / ("Diarrhoea_deaths_by_scenario" + datestamp + ".pdf"), format='pdf')
+plt.show()
+
+
+# %% Scale so that the number can be compared to the GBD data
+output = parse_log_file(output_files['No_Treatment'])
+scaling_factor = get_scaling_factor(output)
+gbd = load_gbd_deaths_and_dalys_data(output)
+
+diarrhoea_deaths_gbd = (gbd.loc[
+    (gbd.measure_name == 'Deaths') &
+    (gbd.unified_cause == 'Childhood Diarrhoea') &
+    (gbd.age_range == '0-4') &
+    gbd.year.isin([2010, 2011, 2012, 2013, 2014])
+    ]).groupby(by='year')[['val', 'upper', 'lower']].sum()
+
+deaths_scaled = pd.DataFrame(deaths) * scaling_factor
+
+fig, ax = plt.subplots()
+ax.plot(deaths_scaled.index, deaths_scaled.No_Treatment, 'r', label='Model: No Treatment')
+ax.plot(deaths_scaled.index, deaths_scaled.Treatment, 'r--', label='Model: With Treatment')
+ax.plot(diarrhoea_deaths_gbd.index, diarrhoea_deaths_gbd.val, 'b', label='GBD Diarrhoea deaths <5s')
+ax.fill_between(
+    diarrhoea_deaths_gbd.index,
+    diarrhoea_deaths_gbd.lower,
+    diarrhoea_deaths_gbd.upper, color='b', alpha=0.5)
+ax.legend()
+ax.set_ylabel('Number of deaths')
+ax.set_title('Comparison Between Model and GBD')
 plt.show()

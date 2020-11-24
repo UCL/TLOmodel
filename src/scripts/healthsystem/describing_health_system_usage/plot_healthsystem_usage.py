@@ -1,4 +1,6 @@
-"""Produce plots to show the usage of the healthcare system"""
+"""Produce plots to show the usage of the healthcare system.
+This uses the file that is created by: /src/scripts/healthburden_analyses/single_long_run/run_model_and_pickle_log.py
+"""
 
 import pickle
 from datetime import datetime

@@ -1,9 +1,7 @@
 """Produce comparisons between model and GBD of deaths by cause in a particular year."""
 
 # todo - look to see why diarrhoea causes so many deaths
-# todo - look to see why "other" deaths are so few in number in GBD
 # todo - update the processing of GBD file in the demography (formatting and plotting) using new data and new helper fns
-# todo - last snags on this script!
 
 import pickle
 from datetime import datetime
@@ -12,7 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from scripts.healthburden_analyses.single_long_run.helper_funcs_for_processing_data_files import (
+from scripts.utils.helper_funcs_for_processing_data_files import (
     get_scaling_factor,
     get_causes_mappers,
     age_cats,
@@ -45,11 +43,11 @@ gbd = load_gbd_deaths_and_dalys_data(output)
 # Make pivot-tables of the form (index=sex/age, columns=unified_cause) (in a particular year)
 #  - Limit to relevant year and make the pivot table for deaths
 gbd_deaths_pt = gbd.loc[(gbd.year == year) & (gbd.measure_name == 'Deaths')]\
-    .pivot_table(index=['sex', 'age_range'], columns='unified_cause', values='val', fill_value=0)
+    .groupby(['sex', 'age_range', 'unified_cause'])['val'].sum().unstack()
 
 #  - Limit to relevant year and make the pivot table for deaths
 gbd_dalys_pt = gbd.loc[(gbd.year == year) & (gbd.measure_name == 'DALYs (Disability-Adjusted Life Years)')]\
-    .pivot_table(index=['sex', 'age_range'], columns='unified_cause', values='val', fill_value=0)
+    .groupby(['sex', 'age_range', 'unified_cause'])['val'].sum().unstack()
 
 # %% Get the scaling so that the population size matches that of the real population of Malawi
 
@@ -71,9 +69,7 @@ df = deaths_df.loc[(deaths_df.year == year)].groupby(
 df = df.rename(columns={0: 'count'})
 df['count'] *= scaling_factor
 
-deaths_pt = df.pivot_table(index=['sex', 'age_range'], columns='unified_cause', values='count', fill_value=0)
-
-# todo - ** guarantee that all values of age_range are represented **
+deaths_pt = df.groupby(by=['sex', 'age_range', 'unified_cause'])['count'].sum().unstack(fill_value=0.0)
 
 # %% Get DALYS from Model into a pivot-table (index=sex/age, columns=unified_cause) (in the particular year)
 
@@ -104,7 +100,7 @@ dalys_melt['age_range'] = pd.Categorical(dalys_melt['age_range'].replace({
 dalys_melt['value'] *= scaling_factor
 
 # Make pivot-table
-dalys_pt = dalys_melt.pivot_table(index=['sex', 'age_range'], columns='cause', values='value', fill_value=0)
+dalys_pt = dalys_melt.groupby(by=['sex', 'age_range', 'cause'])['value'].sum().unstack(fill_value=0.0)
 
 
 # %% Make figures of overall summaries of deaths by cause
