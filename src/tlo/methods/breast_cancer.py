@@ -320,6 +320,10 @@ class BreastCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage1_none'],
             Predictor('sex').when('M', 0.0),
+            Predictor('brc_status').when('stage1', 0.0),
+            Predictor('brc_status').when('stage2', 0.0),
+            Predictor('brc_status').when('stage3', 0.0),
+            Predictor('brc_status').when('stage4', 0.0),
             Predictor('age_years').when('.between(0,14)', 0.0)
                                   .when('.between(30,49)', p['rr_stage1_none_age3049'])
                                   .when('.between(50,120)', p['rr_stage1_none_agege50'])
@@ -859,4 +863,4 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|person_one|%s',
                      self.sim.date,
-                     df.loc[10].to_dict())
+                     df.loc[0].to_dict())
