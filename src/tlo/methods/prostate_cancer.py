@@ -362,6 +362,9 @@ class ProstateCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_prostate_confined_prostate_ca_none'],
             Predictor('sex').when('F', 0),
+            Predictor('pc_status').when('prostate_confined', 0),
+            Predictor('pc_status').when('local_ln', 0),
+            Predictor('pc_status').when('metastatic', 0),
             Predictor('age_years').when('.between(50,69)', p['rr_prostate_confined_prostate_ca_age5069'])
                                   .when('.between(70,120)', p['rr_prostate_confined_prostate_ca_agege70'])
                                   .when('.between(0,34)', 0.0)
@@ -671,7 +674,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
                     tclose=None
                 )
 
-            if in_metastatic:
+            else :
                 # start palliative care:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_ProstateCancer_PalliativeCare(
@@ -743,7 +746,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
                 )
 
 
-            if in_metastatic:
+            else:
                  # start palliative care:
                 hs.schedule_hsi_event(
                     hsi_event=HSI_ProstateCancer_PalliativeCare(
@@ -983,8 +986,9 @@ class ProstateCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_prostate_cancer_since_last_log': df.pc_date_death.between(date_lastlog, date_now).sum()
         })
 
-#       logger.info('%s|summary_stats|%s', self.sim.date, out)
+        logger.info('%s|summary_stats|%s', self.sim.date, out)
 
-        logger.info('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[1].to_dict())
+#       logger.info('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[1].to_dict())
+

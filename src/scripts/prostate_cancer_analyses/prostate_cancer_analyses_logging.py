@@ -16,6 +16,7 @@ from tlo.methods import (
     healthsystem,
     labour,
     prostate_cancer,
+#   bladder_cancer,
     pregnancy_supervisor,
     symptommanager,
 )
@@ -31,8 +32,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2040,  1, 1)
-popsize = 10
+end_date = Date(2020,  1, 1)
+popsize = 190000
 
 # Establish the simulation object
 log_config = {
@@ -46,10 +47,12 @@ log_config = {
         'tlo.methods.healthburden': logging.CRITICAL,
         'tlo.methods.symptommanager': logging.CRITICAL,
         'tlo.methods.healthseekingbehaviour': logging.CRITICAL,
-        'tlo.methods.pregnancy_supervisor': logging.CRITICAL
+        'tlo.methods.pregnancy_supervisor': logging.CRITICAL,
+#       'tlo.methods.bladder_cancer': logging.INFO,
     }
 }
-sim = Simulation(start_date=start_date, seed=    16   , log_config=log_config)
+sim = Simulation(start_date=start_date, seed=    1   , log_config=log_config)
+# 20 # 1
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -64,8 +67,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
              healthburden.HealthBurden(resourcefilepath=resourcefilepath),
              labour.Labour(resourcefilepath=resourcefilepath),
              pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+#            bladder_cancer.BladderCancer(resourcefilepath=resourcefilepath),
              prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
-             )
+)
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
