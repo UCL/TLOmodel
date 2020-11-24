@@ -32,7 +32,12 @@ class BreastCancer(Module):
         self.lm_onset_breast_lump_discernible = None
         self.daly_wts = dict()
 
-    METADATA = {Metadata.DISEASE_MODULE}
+    METADATA = {
+        Metadata.DISEASE_MODULE,
+        Metadata.USES_SYMPTOMMANAGER,
+        Metadata.USES_HEALTHSYSTEM,
+        Metadata.USES_HEALTHBURDEN
+    }
 
     PARAMETERS = {
         "init_prop_breast_cancer_stage": Parameter(
@@ -165,9 +170,6 @@ class BreastCancer(Module):
                           sheet_name="parameter_values")
         )
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='breast_lump_discernible',
@@ -185,6 +187,7 @@ class BreastCancer(Module):
         df.loc[df.is_alive, "brc_date_treatment"] = pd.NaT
         df.loc[df.is_alive, "brc_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "brc_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "brc_date_death"] = pd.NaT
 
         # -------------------- brc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -561,6 +564,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(
                 InstantaneousDeath(self.module, person_id, "BreastCancer"), self.sim.date
             )
+            df.loc[selected_to_die, 'brc_date_death'] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -575,13 +579,13 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
     treatment or palliative care.
     It is for people with the symptom breast_lump_discernible.
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-        the_appt_footprint["Over5OPD"] = 1
 
+        # Define the necessary information for an HSI
         self.TREATMENT_ID = "BreastCancer_Investigation_Following_breast_lump_discernible"
-        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -815,7 +819,7 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 3 months
         """
-        self.repeat = 3
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -856,7 +860,8 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             'diagnosed_since_last_log': df.brc_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.brc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.brc_date_palliative_care.between(date_lastlog, date_now).sum()
+            'palliative_since_last_log': df.brc_date_palliative_care.between(date_lastlog, date_now).sum(),
+            'death_breast_cancer_since_last_log': df.brc_date_death.between(date_lastlog, date_now).sum()
         })
 
 #       logger.info('%s|summary_stats|%s', self.sim.date, out)
